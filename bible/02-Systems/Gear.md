@@ -167,8 +167,8 @@ number is one of [[Gear as Claude Shapes It]].
   times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each level the player is
   below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full set's, torso 0.3375,
   arms 0.2625, legs 0.2375.
-- **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]], [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). A kill may leave a Vestige for each player who
-  struck the foe, seen by them alone: by the foe's rank (Minor 2 in 100, Major 4, Elite 10, Miniboss 35, a Boss always;
+- **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]], [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], [[Kills Drop Four Times as Often, and a Miniboss Half the Time]]). A kill may leave a Vestige for each player who
+  struck the foe, seen by them alone: by the foe's rank (Minor 8 in 100, Major 16, Elite 40, Miniboss 50, a Boss always;
   `vestige::chance`), raised by the voyage's tier, a chance past one leaving one sure and another by what is over; its
   colour weighted by its rank, for one slot, its item at the foe's level. At every rank each colour is half or less of
   the one below it, and each colour or better likelier the higher the rank (`vestige::colours`, in 1,000: Minor 750,
@@ -236,8 +236,8 @@ number is one of [[Gear as Claude Shapes It]].
   player still in the room who shared a kill of a foe of its own groups, not a wave's or a quest's, since its last
   clear ([[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]; as their account, so one who rejoined keeps it) is paid, at the garrison's highest level as a
   kill is: at level 5 a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120
-  (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
-  Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid
+  (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige 35 times in 100
+  (`CLEAR_VESTIGE`). It pays once until a group stands again. A patrol never ends, so it pays none. A laid
   dungeon's room pays the same clear as its cache opens ([[Dungeons]], "The cache").
 - **A find** ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]], `gear::finds`): a chest
   opened in a patrol or a dungeon pays 30 Aurem at level 5, grown with the level as a kill's worth is, 2 to 4 of the
@@ -267,7 +267,8 @@ number is one of [[Gear as Claude Shapes It]].
 ## In the rooms
 
 - **A new character** arrives with no weapon and no armour, only their ship's first modules
-  ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]); the Test Ground's player, and the
+  ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]), dressed by the prologue's end in
+  plain clothes (below); the Test Ground's player, and the
   scripted players that try the public events, wear a level 1 Normal sword and level 1 Normal armour
   (`Character::kitted`). A character kept before keeps its gear.
 - **Each player's gear** is held by the room they are in ([[Server]]), a new character's as they join, and sent to
@@ -289,8 +290,8 @@ number is one of [[Gear as Claude Shapes It]].
   faction pledged, as the kill's own goes ([[Factions]]) (`boon_xp`).
 - **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens
   and pays every player then in the dungeon's room a dungeon's clear at the end foe's level, whoever struck it
-  (`pay_cache`; "A clear", above): its XP and Aurem, an item coloured as its Miniboss's, and a Vestige as often as its
-  Miniboss leaves one, poured out of the cache onto the floor before it for them ("Drops", below;
+  (`pay_cache`; "A clear", above): its XP and Aurem, an item coloured as its Miniboss's, and a Vestige 35 times in 100,
+  poured out of the cache onto the floor before it for them ("Drops", below;
   [[Dungeons]], "In the rooms"). A run's first clear in its period pays as well, the dungeon of the day's or the
   week's two's, its Vestige kept straight into the carried ten, else the vault, else the mail ([[Activities]], "What it
   pays, once").
@@ -653,8 +654,9 @@ is a horse's hide, kept as its horse ("Horses").
 ## Horses
 
 [[Horses Are Items Worn in a Mount Slot]] (`gear::horses`; Claude's calls in
-[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]; the stranger's Bay in
-[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]).
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]; the free Bay in
+[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], given by
+the Tack in [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]).
 
 - **A horse is an item** of its own kind (28), worn in the Mount slot (11), one to each coat: the Bay Horse, the
   Chestnut Horse and so on, its name its coat's place among the coats (`content/gear/rolled.json` names them in that
@@ -665,11 +667,11 @@ is a horse's hide, kept as its horse ("Horses").
 - **The Tack** sells horses as it sells bardings, at its coat's price; one bought goes to the pack, one of each coat,
   refused while the Mount slot carries nine. Beside its day's four it sells the Bay Horse every day, first on its
   screen, at the cheapest coat's price (1,500 Aurem, from level 1).
-- **A new character starts with no horse, and the stranger gives the Bay** (`horses::FIRST_HORSE`): her task's reward
-  (`"horse": true` in `content/quests/quests.json`) is her 400 Aurem and the Bay Horse, paid together as the room
-  pays the task, so a page that asks for her gift late, after a reload, has both from it then. It is worn in the Mount
-  slot, or carried where one is worn already, and never a second: one who keeps a Bay already is given only the
-  Aurem. A character already past her task is given nothing new. A character kept while coats were cosmetics is given, as it is read, a horse in
+- **A new character starts with no horse, and the Tack gives the Bay** (`horses::FIRST_HORSE`): the opening's round
+  of the counters asks the player to speak with her, and that goal's own reward (`"horse": true` in
+  `content/quests/quests.json`) is the Bay Horse, given by the room as she is spoken with at her counter, for
+  nothing. It is worn in the Mount slot, or carried where one is worn already, and never a second: one who keeps a
+  Bay already is given none. A character already past that goal is given nothing new. A character kept while coats were cosmetics is given, as it is read, a horse in
   the pack for each coat it kept and the one it wore worn in the Mount slot; one kept before cosmetics wore the Bay,
   so it is given the Bay Horse worn. The coats leave its cosmetics, and a room with horses marks every character's
   cosmetics (`horses`), so this is done once: a coat found beside the mark is what a room from before horses wrote
@@ -678,6 +680,21 @@ is a horse's hide, kept as its horse ("Horses").
   worn). A room rolled back past the welcome to Overlook resets an opening task it does not know to its own first, so a
   new character rolled back and forward reads on "Hear the three houses": the stranger's 400 Aurem and the round of the
   counters are lost to it.
+
+## Plain clothes
+
+[[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]] (`gear::story::plain_item`).
+
+- **The prologue's end dresses the player in plain clothes**: where their torso and legs are bare as it takes back
+  the story's steel, the room gives a Plain Shirt (Torso) and Plain Breeches (Legs), worn. They are Normal pieces
+  marked plain (`Item::plain`, on the wire as `plain`): no Defense, Prestige, nodes, perks or XP, and no level or power
+  shown on their cards, as a horse's. A slot worn with a piece of the player's own is given nothing.
+- **Drawn as the shore's clothes**: the shirt in white, the breeches and boots in dark brown (`PLAIN_CLOTHES`,
+  `player/dressing.ts`), the same the shore and the deep draw the player in, so the figure that comes ashore is the
+  one that arrives.
+- **Replaced, they go to the pack**, as any piece does; dismantled, they give nothing back. A goal to put armour on
+  is not met by them (`tell_held`), so the opening's "Put them on" asks for the pieces bought.
+- **Others see them** as the page sends them: garments are never held back by the room.
 
 ## Elements and shields
 

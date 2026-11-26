@@ -62,6 +62,20 @@ export function struckCue(surface: Surface, ball: boolean): string | null {
 
 const ELEMENTS = ['', 'blaze', 'volt', 'cosmic'] as const;
 
+/** A foe faction's own voice: the Grey Tithe's, or the Lattice's. */
+export type Voice = 'tithe' | 'lattice';
+/** The moments a foe's voice is heard: as it spots the player, as its blow swings, as it is struck, as it falls. */
+export type VoiceMoment = 'alert' | 'attack' | 'hurt' | 'death';
+
+/** Each foe faction's voice, by its number (the foes crate's `GREY_TITHE` and `LATTICE`). */
+export const VOICES: Readonly<Record<number, Voice>> = { 1: 'tithe', 3: 'lattice' };
+
+/** A foe's voice at a moment; its alert is the one every foe shared (`foe.alert`) until its own is `recorded`. */
+export function voiceCue(voice: Voice, moment: VoiceMoment, recorded: (cue: string) => boolean): string {
+  const own = `foe.${voice}.${moment}`;
+  return moment === 'alert' && !recorded(own) ? 'foe.alert' : own;
+}
+
 /** A cue an event calls for, heard where its striker or its defender stands. */
 export interface EventCue {
   readonly cue: string;

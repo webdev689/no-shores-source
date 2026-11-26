@@ -197,7 +197,9 @@ fn glow_reach(look: u32, cell: vec2f, time: f32, surge: f32) -> f32 {
     return min((3.0 + smoothstep(0.55, 0.85, arc) * 4.0) * surge, GLOW_PAD);
   }
   let breath = 0.7 + 0.3 * sin(time * GLOW_TAU / 4.0);
-  let turn = atan2(cell.y, cell.x) / GLOW_TAU - time / 8.0;
+  // The field's middle cell has no bearing, and WGSL gives atan2 of nothing no answer to rely on.
+  let bearing = select(atan2(cell.y, cell.x), 0.0, all(cell == vec2f(0.0)));
+  let turn = bearing / GLOW_TAU - time / 8.0;
   let swirl = glow_noise(vec2f(length(cell) * 0.35, turn * 12.0), 12.0);
   return min((2.2 + 0.8 * breath) * (0.75 + 0.5 * swirl) * surge, GLOW_PAD - 1.0);
 }

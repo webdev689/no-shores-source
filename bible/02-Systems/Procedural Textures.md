@@ -38,6 +38,9 @@ and record, at Daggerfall's sizes and in its palette, so every model's mapping h
   named for (`wall`, `roof`, `window`, `door`, `floor`, `ceiling`, `slope`, `prop`, `cloth`), carried to every
   climate's and season's turn of it. Within an archive that holds many kinds, the use chooses what is painted.
   `pictureArchives(uses)` lists the archives those uses name.
+- `windowFrameOf(archive, record)` says where a window picture's window and frame stand in it, as its recipe lays them
+  (a wall family's opening by its kind, a city's special walls' lattice, a thing's leaded window): what a building
+  lays as its window ([[Forged Models]]).
 - `shipPictures()` answers the five pictures a ship's parts wear ([[Sailing]]): hull and deck from the ship archive,
   spar, canvas and iron painted on the same surface and finish. `flagPictures()` answers a flag a side (a player's, a
   friendly ship's and the Grey Tithe's), 64 texels square: the side's ground over a faint weave, and
@@ -51,7 +54,8 @@ and record, at Daggerfall's sizes and in its palette, so every model's mapping h
 
 A recipe paints a surface at two sub-texels a texel side: each place a material, a tone and a relief. Walls and
 rooms are families written as a few words per set (a face, a frame, corner stones, bands, a window); roofs, doors,
-dungeons and the archives that stand alone paint by their kind; the ground mixes four classes where they meet by its
+dungeons and the archives that stand alone paint by their kind, a signpost's and a signboard's boards filed among
+stone and leaves (86.2, 86.3, 89.4) as a shop's sign is; the ground mixes four classes where they meet by its
 climate's rules. A winter set is its summer one with snow, finished alike, so the two differ only where the snow lies.
 An animated record's frames share one seed, so only the part that moves, a hearth's fire, changes.
 

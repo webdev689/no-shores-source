@@ -68,8 +68,10 @@ the tundra's fall is snow by night and sleet by day.
 - **Shelter.** On foot nothing falls, wets, puddles or snows under something a body meets overhead: a roof, a
   ceiling, an arch, a bridge ([[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]). A grid 224 m
   round the eye, so the far end of a great hall is on it, holds over each 2 m cell the highest underside of the
-  node's boxes reaching a quarter of a cell or more into it, so a roof ending on a wall's face shelters the floor up
-  to it; a box narrower than a cell (a brazier, a lamp's head) shelters nothing. It is laid again when the eye strays
+  node's boxes reaching a tenth of a cell or more into it: less than a room's lining stands inside its outer face, so
+  a room walked into, its ceiling's box spanning it to its outer faces ([[Layouts]], "Boxes"), is dry inside its walls
+  wherever they fall on the grid, and the dry ground outside runs at most 1.8 m past a roof's edge; a box narrower
+  than a cell (a brazier, a lamp's head) shelters nothing. It is laid again when the eye strays
   16 m (`client/src/sky/shelter.ts`), and rides in the sky's uniform, so every sunlit shader reads it
   (`sky_sheltered`). A face is read 0.6 m out from itself, so a wall's outside is not its room. Under an awning or a
   tree, which no body meets, it still rains.

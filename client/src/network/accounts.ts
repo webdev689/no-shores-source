@@ -181,6 +181,8 @@ export interface ShownPiece {
   readonly gilded: boolean;
   /** The content it came from, which its look follows; none in what an older room kept, read as the world's. */
   readonly source?: number;
+  /** Plain clothes, with no stats; none said is none. */
+  readonly plain?: boolean;
 }
 
 /** Another player's details, as Destiny's Inspect shows them. */

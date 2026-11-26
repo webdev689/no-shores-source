@@ -38,6 +38,8 @@ export const ACCOUNTS_TROUBLE = 'Something went wrong. Try again.';
 export interface KeptRoom {
   /** A player's character as kept with the account's vault and Aurem apart (`RoomDoor.keptApart`). */
   keptApart(player: number): { body: string; vault: string } | null;
+  /** Opens a leaving player's chests and posts what lies for them to their mail (`partFrom`). */
+  mailLying?(player: number): void;
   /** Gives a player their character with the account's vault and Aurem joined in (`RoomDoor.restoreJoined`). */
   restoreJoined(player: number, body: string, vault: string | null): boolean;
   /** Notes the account that keeps a player's character. */
@@ -264,12 +266,20 @@ export class Keeper {
       if (this.closed && !given && here()) this.lost(player, ACCOUNTS_TROUBLE, false);
       return false;
     }
-    // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes
-    // first, so the room keeps that body before this player is given it.
+    // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes.
+    // While the accounts hold what this room last saved of it, and gave nothing back to it since (an errand's answer),
+    // the room's own body of it is the newest, with what it gained since that save: this player takes that on.
+    let takenOn = false;
     for (const [other, kept] of this.held)
       if (kept.account === claimed.account) {
+        const lastSaved = claimed.body === null ? null : savedKey(claimed.body, claimed.vault);
+        const takeOn = kept.saved === lastSaved && body === claimed.body;
+        if (takeOn) this.room.mailLying?.(other);
+        const newest = takeOn ? this.room.keptApart(other) : null;
         this.held.delete(other);
         this.lost(other);
+        if (newest !== null && savedKey(newest.body, newest.vault) !== lastSaved)
+          takenOn ||= this.room.restoreJoined(player, newest.body, newest.vault);
       }
     this.room.own(player, claimed.account);
     if (claimed.name !== null) this.room.name(player, claimed.name);
@@ -282,7 +292,7 @@ export class Keeper {
       from: claimed.from,
       out: leftByWayOut(claimed.body),
       // One kept before the vault was the account's holds its own until its first save parts it.
-      changed: claimed.body === null || claimed.vault === null || body !== claimed.body,
+      changed: claimed.body === null || claimed.vault === null || body !== claimed.body || takenOn,
       savedAt: now(),
       saving: false,
       saved: claimed.body === null ? null : savedKey(claimed.body, claimed.vault),

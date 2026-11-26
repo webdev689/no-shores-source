@@ -118,6 +118,7 @@ export function roomSource(room: SeaRoom, first: FightView): FightSource {
       return Promise.resolve(latest);
     },
     fightEnd: () => Promise.resolve(),
+    quiet: () => room.quiet,
   };
 }
 

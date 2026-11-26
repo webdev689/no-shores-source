@@ -63,7 +63,12 @@ export async function contentBytes(url: string, range?: readonly [first: number,
   const key = range ? `${url}?bytes=${range[0]}-${range[1]}` : url;
   const kept = await opened();
   const found = await kept?.match(key).catch(() => undefined);
-  if (found) return { bytes: await found.arrayBuffer(), total: totalOfRange(found.headers.get('x-total')) };
+  // A kept copy that cannot be read whole is let go and fetched again, never failed on at every load after.
+  const read = await found?.arrayBuffer().catch(() => null);
+  const size = Number(found?.headers.get('x-size') ?? Number.NaN);
+  if (found && read && (Number.isNaN(size) || read.byteLength === size))
+    return { bytes: read, total: totalOfRange(found.headers.get('x-total')) };
+  if (found) void kept?.delete(key).catch(() => undefined);
   const fetched = await whole(url, range);
   // The store's copy is a copy: decoding the bytes handed back may take them.
   const headers = { 'x-total': `/${fetched.total ?? ''}`, 'x-size': String(fetched.bytes.byteLength) };

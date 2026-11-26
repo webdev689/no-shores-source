@@ -454,7 +454,7 @@ export class WreckRun {
     this.arrivals.told(events, clock);
     const ownWeapon = effects.flashes.ownOf(fight.own);
     walker.fought(ownWeapon.surge, ownWeapon.contact);
-    feel.frame(events, fight.own, fight.player, seconds, new Set());
+    feel.frame(events, fight.own, fight.player, seconds, new Set(), effects.foreseen);
     const firstPerson = walker.inFirstPerson;
     const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
@@ -513,6 +513,7 @@ export class WreckRun {
       quiet: still,
       fight,
       events,
+      foreseen: effects.foreseen,
       shots: effects.shotsHeard,
       eye: shot.eye,
       yaw: shot.yaw,

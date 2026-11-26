@@ -428,8 +428,12 @@ impl Character {
 
     /// Adds what an item dismantled gives back: Aurem, and its stock's fragments and, from a Legendary or Atheric,
     /// Essence with a third of what was spent on it. A faction's piece, sold for Aurem, gives back as a Normal one and
-    /// the third of its Essence, so buying and dismantling faction gear makes no Essence.
+    /// the third of its Essence, so buying and dismantling faction gear makes no Essence. Plain clothes, worth
+    /// nothing, give nothing back.
     pub(crate) fn salvage(&mut self, item: &Item, dice: &Dice) {
+        if item.plain {
+            return;
+        }
         let stock = item.kind.stock();
         let back = u16::try_from(item.essence_spent() / 3).unwrap_or(u16::MAX);
         let bought = item.named.as_deref().is_some_and(crate::factions::sold_by_faction);

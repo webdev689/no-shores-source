@@ -29,6 +29,7 @@ import { guildRead } from './guild/guildHeld.ts';
 import { GUILD_CHANGED } from './gearScreen.ts';
 import { nodeRoom, testZoneOf } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
+import type { MapMarks } from '../heldmap/landSheet.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
@@ -216,6 +217,8 @@ export interface FootFrame {
   readonly props?: readonly EventProp[];
   readonly quest?: Quest | null;
   readonly sting?: 'cadence' | 'victory' | 'defeat' | null;
+  /** What moves on the land's held map, worked out only while it is up. */
+  readonly map?: () => MapMarks;
 }
 
 /** Runs `work` on a room just joined by `link`; should it throw, the link is let go first, so a trip that failed after

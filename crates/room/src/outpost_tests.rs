@@ -267,3 +267,35 @@ fn the_same_account_joining_again_while_its_errand_settles_takes_it_over_and_is_
     let mut plain = Room::new(Vec::new(), (0.0, 0.0));
     assert!(!plain.outpost_parting(0), "no outpost");
 }
+
+#[test]
+fn the_same_account_joining_again_while_its_horn_sounds_asks_nothing_more_until_it_is_answered() {
+    let (mut room, player) = outpost();
+    let saved = room.players[&player].character.to_json();
+    ask(&mut room, player, OutpostAsk::Horn);
+    room.outpost_errands();
+    let again = room.join().expect("a room with space");
+    assert!(room.outpost_parting(player));
+    assert!(room.restore_character(again, &saved));
+    assert!(room.own(again, "salt"));
+    let seen = GuildSeen { id: GUILD.to_owned(), standing: Standing::default(), boons: Boons::default() };
+    room.guild_player(again, Some(seen));
+    let refused = ask(&mut room, again, OutpostAsk::Deposit { count: 200 });
+    assert_eq!(refused, answer_code(Err(Refusal::AskInFlight)), "one account, one ask with the accounts");
+    assert_eq!(room.players[&again].character.materials.aurem, 500, "nothing taken");
+}
+
+#[test]
+fn a_horn_answered_leaves_an_errand_the_character_carries_from_another_room_to_be_answered() {
+    let (mut room, player) = outpost();
+    ask(&mut room, player, OutpostAsk::Horn);
+    let horn = room.outpost_errands().remove(0);
+    // The same account back with a character still carrying a deposit made in another of the guild's rooms.
+    let again = room.join().expect("a room with space");
+    assert!(room.outpost_parting(player));
+    assert!(room.own(again, "salt"));
+    let deposit = gear::errand::Carried { rid: "elsewhere".to_owned(), what: What::Deposit(200), answer: None };
+    room.players.get_mut(&again).expect("in").character.errand = Some(deposit.clone());
+    assert!(room.outpost_answered(horn.id, Some(0)));
+    assert_eq!(room.players[&again].character.errand, Some(deposit), "still carried, to be settled");
+}

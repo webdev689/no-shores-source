@@ -30,6 +30,10 @@ export class PagePanels {
     this.locked = locked;
     this.events = new CanvasEvents(canvas);
     canvas.addEventListener('pointerdown', (event) => (this.downOnPanel = this.takes(event.offsetX, event.offsetY)));
+    // Tab moves the panels' focus, never the page's off its one canvas, where the keys would stop reaching it.
+    addEventListener('keydown', (event) => {
+      if (event.key === 'Tab' && !this.events.typingHere) event.preventDefault();
+    });
     face.then((read) => (this.ui = seen(new Interface(new UiRenderer(gpu, read))))).catch(() => undefined);
   }
 

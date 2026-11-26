@@ -12,6 +12,7 @@ import {
   RARITIES,
   SLOTS,
   STOCK_NAMES,
+  FIRST_HORSE,
   coatOfHorse,
   itemName,
   kindName,
@@ -149,7 +150,9 @@ export function itemWare(key: string, item: GearItem, price: Price, short: boole
   };
 }
 
-/** A coat sold as its horse, an item to the pack (`horses.rs`): kept once a horse in that coat is held. */
+/** A coat sold as its horse, an item to the pack (`horses.rs`): kept once a horse in that coat is held. The first
+ *  horse is free to one who keeps none and pledged before the round reached the Tack, whose goal gives it
+ *  (`buy_cosmetic`), as the Harbourmaster's Sloop is. */
 function horseWare(gear: GearState, coat: Cosmetic, number: number): Ware {
   const name = COSMETICS.filter((each) => each.kind === 'coat').indexOf(coat);
   const horse: GearItem = {
@@ -178,7 +181,9 @@ function horseWare(gear: GearState, coat: Cosmetic, number: number): Ware {
   };
   const kept = gear.items.some((item) => coatOfHorse(item) === coat.id);
   const { aurem = 0, level = 1 } = coat.source;
-  const sold = soldOnce(gear, aurem, level, kept, { kind: ASKS.buyCosmetic, item: number });
+  const ask = { kind: ASKS.buyCosmetic, item: number };
+  const given = coat.id === FIRST_HORSE && !kept && (gear.standing?.pledge ?? 0) !== 0;
+  const sold = given ? { price: null, short: false, note: 'Free', ask } : soldOnce(gear, aurem, level, kept, ask);
   const ware = itemWare(`cosmetic-${number}`, horse, { amount: aurem, currency: 'aurem' }, false, null);
   return { ...ware, about: `${RARITIES[0]?.name ?? ''} ${kindName(HORSE)}`, words: coat.words, ...sold };
 }

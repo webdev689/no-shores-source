@@ -2,7 +2,7 @@
 // kick and the lunge, each at its default here and switched and set in the Test Ground's panel. Only the drawing moves:
 // the fight's rules and their clock never do.
 import { CameraKick, kicksOf, leanOf } from './cameraKick.ts';
-import { EVENT, notABlow } from './cues.ts';
+import { EVENT, feltNow, notABlow } from './cues.ts';
 import { HitStops, heldBack } from './hitStop.ts';
 import { lungeOf } from './lunge.ts';
 import { type Smear, type Swing, SwingArcs, type Vector, weaponTint } from './swingArcs.ts';
@@ -109,13 +109,15 @@ export class AttackFeel {
 
   /** Takes a frame of `seconds`: each blow landing holds its fighters still from the next frame (so its landing is what
    *  holds), flares its arc, and kicks the view of `player` (its fighter `own`) as it lands on or by them; their own
-   *  blow leans the view as it lands, met or not. `unheld` are fighters whose drawing is not held. */
+   *  blow leans the view as it lands, met or not. `unheld` are fighters whose drawing is not held. The player's own
+   *  hits `foreseen` hold as they land, and the room's word on them holds nothing more. */
   frame(
     events: readonly FightEvent[],
     own: FighterView | null,
     player: number,
     seconds: number,
     unheld: ReadonlySet<number>,
+    foreseen: readonly FightEvent[] = [],
   ): void {
     const { feel } = this;
     this.unheld = unheld;
@@ -127,7 +129,7 @@ export class AttackFeel {
     const anew = clock !== null && this.ownClock !== null && clock < this.ownClock;
     if (kind !== this.ownKind || anew) this.stops.release(player);
     [this.ownKind, this.ownClock] = [kind, clock];
-    this.stops.struck(events, feel.stop ? feel.stopLength : 0);
+    this.stops.struck(feltNow(foreseen, events), feel.stop ? feel.stopLength : 0);
     for (const event of events) {
       // Only a blade's own blow flares its arc: a spell or a shot landing mid-swing never touched it.
       if (notABlow(event)) continue;

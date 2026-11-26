@@ -10,7 +10,7 @@ test('the interface hears the pointer as it goes down to the canvas, before a wo
   Object.assign(page, { addEventListener: listen, document: { pointerLockElement: null } });
   const canvas = { tabIndex: 0, addEventListener: listen } as unknown as HTMLCanvasElement;
   new CanvasEvents(canvas);
-  for (const kind of ['pointermove', 'pointerdown', 'pointerup'])
+  for (const kind of ['pointermove', 'pointerdown', 'pointerup', 'pointercancel'])
     assert.deepEqual(heard.get(kind), { capture: true }, kind);
   delete page['addEventListener'];
   delete page['document'];
@@ -231,6 +231,30 @@ test('a move of the pointer that went nowhere, or within 0.3 s of a lock or its 
   clock += 150;
   assert.deepEqual(move(4), [false]);
   performance.now = now;
+  delete page['addEventListener'];
+  delete page['document'];
+});
+
+test('a press the browser takes back is heard as a cancel, the gauntlet let go', () => {
+  const page = globalThis as unknown as Record<string, unknown>;
+  const listeners = new Map<string, (event: unknown) => void>();
+  const listen = (kind: string, run: (event: unknown) => void) => listeners.set(kind, run);
+  Object.assign(page, { addEventListener: listen, document: { pointerLockElement: null } });
+  const style = { cursor: '' };
+  const canvas = { tabIndex: 0, addEventListener: listen, style, getBoundingClientRect: () => ({ left: 0, top: 0 }) };
+  const events = new CanvasEvents(canvas as unknown as HTMLCanvasElement);
+  events.sync(null, gauntletOver('pointer'));
+  listeners.get('pointerdown')?.({ pointerType: 'mouse', button: 0, shiftKey: false, clientX: 1, clientY: 1 });
+  assert.equal(style.cursor, gauntletCss('press')[1]);
+  listeners.get('pointercancel')?.({ pointerType: 'mouse', clientX: 1, clientY: 1 });
+  assert.deepEqual(
+    events
+      .take()
+      .map((event) => event.kind)
+      .filter((kind) => kind !== 'pad'),
+    ['down', 'cancel'],
+  );
+  assert.equal(style.cursor, gauntletCss('point')[1], 'the gauntlet no longer pressed');
   delete page['addEventListener'];
   delete page['document'];
 });

@@ -1,11 +1,11 @@
 //! How far a character is through the story, kept with the account so every room can see it: the prologue's end. The
 //! houses' roads keep their own place (`crate::quests`). The prologue lends its own items and the Storm, which its end
-//! takes back.
+//! takes back, and dresses the player in plain clothes in their place.
 
 use crate::arts::STORM;
 use crate::asks::{Done, Refusal};
 use crate::character::Character;
-use crate::{Item, Kind, Rarity};
+use crate::{At, Item, Kind, Rarity};
 use serde::{Deserialize, Serialize};
 
 /// A character's progress through the story.
@@ -43,13 +43,29 @@ pub fn story_item(id: u32, kind: Kind) -> Item {
     Item { story: true, ..Item::new(id, kind, Rarity::Normal, 1, kind.slot()) }
 }
 
+/// The plain clothes the prologue's end dresses a player in, by kind: a shirt, and breeches and boots.
+pub const PLAIN_CLOTHES: [Kind; 2] = [Kind::Torso, Kind::Legs];
+
+/// Plain clothes of `kind`, numbered `id`: Normal, worn in its kind's slot, with no stats and no nodes.
+#[must_use]
+pub fn plain_item(id: u32, kind: Kind) -> Item {
+    Item { plain: true, chosen: Vec::new(), ..Item::new(id, kind, Rarity::Normal, 1, kind.slot()) }
+}
+
 impl Character {
     /// Marks the prologue played, taking back what it lent: every story item wherever it lies, and the Storm, unearned
-    /// and unworn. One that finished it before keeps what it has. The lore found as it ends is kept as every ask ends
-    /// (`earn_due`). Asked again, it is not refused: a page tells each room that has not kept it.
+    /// and unworn; and dresses the player in plain clothes wherever their torso and legs are bare. One that finished
+    /// it before keeps what it has. The lore found as it ends is kept as every ask ends (`earn_due`). Asked again, it
+    /// is not refused: a page tells each room that has not kept it.
     pub(crate) fn finish_prologue(&mut self) -> Result<Option<Done>, Refusal> {
         if !self.story.prologue {
             self.items.retain(|_, (item, _)| !item.story);
+            for kind in PLAIN_CLOTHES {
+                if self.worn(kind.slot()).is_none() {
+                    let id = self.take_id();
+                    self.items.insert(id, (plain_item(id, kind), At::Worn(kind.slot())));
+                }
+            }
             if let Some(bits) = self.arts.earned.as_mut().and_then(|earned| earned.get_mut(usize::from(STORM) - 1)) {
                 *bits = 0;
             }

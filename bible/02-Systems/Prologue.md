@@ -86,8 +86,8 @@ how its lines are written, [[Every Line Reads as Spoken, and the Lore Is Detaile
 
 **The way in.** The page shows black, the game's logo and "Click or press any key to start" ("Tap to start" on a
 touch screen) at once, and loads the world behind it. The tap wakes the browser's sound. Once both are done the intro
-begins. In the [[Desktop App]] the launcher stands over it first, once a run, and the tap is heard only after Play.
-With `?at=<node>` the page goes straight to that node, and plays no story.
+begins. A pad's button held as the title appears taps nothing until pressed anew. With `?at=<node>` the page goes
+straight to that node, and plays no story.
 
 **The director** (`Prologue`) plays the beats in the owner's order, each a module of its own, handing each what the
 last left: the camera's shot, the ships sighted, where the two ships met. A cutscene's beat is skipped by holding
@@ -104,7 +104,9 @@ takes them straight to Overlook's social space. Where the page has accounts, Beg
 ([[Interface]], "The character screen"), which sets `noshores.prologue` and `noshores.look` from the character chosen. Every way onto foot comes after the story, played through or passed
 over (Begin, `?at=`, a story that could not start or go on), so on foot the page tells each room on land whose word
 on the gear says the prologue is not kept that it is done (`Ask::FinishPrologue`), and the room keeps it with the
-character, the page's word while the prologue pays nothing ([[The Server Is the Authority Over Everything]]). While the
+character, the page's word while the prologue pays nothing ([[The Server Is the Authority Over Everything]]). At
+that end the room takes back the story's items and dresses the player in plain clothes, a Plain Shirt and Plain
+Breeches with no stats, worn where nothing of their own is ([[Gear]], "Plain clothes"; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]). While the
 story plays the menu (I, O, or the pad's Start) opens only on the wreck, while the player plays it, and shuts as that
 ends. At its end the
 story lets go of what it alone drew with on the GPU (the Brig's and the Frigate's views, the birds, the fire and any
@@ -302,7 +304,7 @@ their slots and shown on the Character page and in the pack ("Steel Cuirass", "S
 drawn in steel from the gear as the game's gear is drawn (`gearOutfit`, `STORY_SET`). On the wreck the figure is
 dressed from their gear as on foot (`dressInGear`): once they equip the story's sword and shield they hold the item as
 their gear has it, a Normal Sword & Shield drawn in iron, and once they equip its bow it is their other loadout; the
-Melee loadout put away is their dress for the rest of the story; a swing draws it, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
+Melee loadout put away is their dress for the rest of the story; a swing draws it and swings, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
 
 ## The wreck
 

@@ -197,12 +197,42 @@ function paintFace(surf: Surface, mats: Materials, family: WallFamily, seed: num
   }
 }
 
-/** The window of its kind in its opening, with shutters, a sill and leading. */
-function paintWindow(surf: Surface, mats: Materials, win: WallWindow, seed: number): void {
+/** A window's box in its picture, texels: left, top, right, bottom, its frame inside it. */
+export type WindowBox = readonly [number, number, number, number];
+
+/** The window a picture of a wall's family is painted with, and where it stands: none where it holds none (a special
+ *  set's odd records, a family's walls but its third, a picture too short). */
+function glazing(archive: number, record: number, width: number, height: number): [WallWindow, WindowBox] | null {
+  const win: WallWindow | undefined = SPECIAL_SETS.includes(archive)
+    ? record % 2 === 0 && height >= 96
+      ? { kind: 'lattice', frame: 'iron', lead: 'iron' }
+      : undefined
+    : record === 3 && height >= 96 && width >= 64
+      ? WALL_FAMILIES[archive]?.window
+      : undefined;
+  if (!win) return null;
   const [left, top, right, bottom] = OPENING[win.kind];
-  const scaleX = surf.width / 64;
-  const scaleY = surf.height / 128;
-  const box = [left * scaleX, top * scaleY, right * scaleX, bottom * scaleY].map((value) => Math.round(value));
+  const [scaleX, scaleY] = [width / 64, height / 128];
+  const box: WindowBox = [
+    Math.round(left * scaleX),
+    Math.round(top * scaleY),
+    Math.round(right * scaleX),
+    Math.round(bottom * scaleY),
+  ];
+  return [win, box];
+}
+
+/** Where paintWall lays a picture's window, its frame round it; null where it lays none or paints no such wall. */
+export function wallWindowBox(archive: number, record: number, width: number, height: number): WindowBox | null {
+  return glazing(archive, record, width, height)?.[1] ?? null;
+}
+
+/** Whether paintWall paints an archive: a wall family's, or a city's special walls. */
+export const paintsWall = (archive: number): boolean =>
+  SPECIAL_SETS.includes(archive) || WALL_FAMILIES[archive] !== undefined;
+
+/** The window of its kind in its opening, with shutters, a sill and leading. */
+function paintWindow(surf: Surface, mats: Materials, win: WallWindow, box: WindowBox, seed: number): void {
   const iron = mats.index.iron;
   const frame = mats.index[win.frame] ?? iron;
   const lead = (win.lead === undefined ? undefined : mats.index[win.lead]) ?? iron;
@@ -327,12 +357,12 @@ export function paintWall(ctx: RecipeContext): Job | null {
   }
   paintFace(surf, mats, family, seed);
   dressWall(surf, mats, family, ctx, tall);
-  const glazed = record === 3 && family.window !== undefined && tall;
-  if (glazed && family.window) paintWindow(surf, mats, family.window, seed);
+  const glazed = glazing(ctx.archive, record, width, height);
+  if (glazed) paintWindow(surf, mats, glazed[0], glazed[1], seed);
   if (family.moss) moss(surf, { material: index.moss, below: 0, joints: 0.35, amount: family.moss, seed });
   if (family.vines) overgrow(surf, mats, family.vines, seed);
   grime(surf, { foot: 0.05, blot: 0.3, seed });
-  return { surf, mats, finish: { strength: 0.75 }, window: glazed };
+  return { surf, mats, finish: { strength: 0.75 }, window: glazed !== null };
 }
 
 /** What stands on a wall's face: panels, pillars, posts and frame, bands, the edge record's corner, ivy, a carved
@@ -476,9 +506,9 @@ function paintSpecial(ctx: RecipeContext): Job {
     braces: record % 2 ? [[4, 50, width - 6, height - 2, -0.4]] : [],
     w: 7,
   });
-  const glazed = record % 2 === 0 && height >= 96;
-  if (glazed) paintWindow(surf, mats, { kind: 'lattice', frame: 'iron', lead: 'iron' }, seed);
-  return { surf, mats, finish: { strength: 0.75 }, window: glazed };
+  const glazed = glazing(ctx.archive, record, width, height);
+  if (glazed) paintWindow(surf, mats, glazed[0], glazed[1], seed);
+  return { surf, mats, finish: { strength: 0.75 }, window: glazed !== null };
 }
 
 /** A record's seed: its archive and record, so every client paints the same wall. An animated record's frames share

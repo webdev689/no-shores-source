@@ -94,3 +94,32 @@ test('a key held in a fight is let go as the window loses focus or the page is h
   page.document.dispatchEvent(new FakeEvent('visibilitychange', {}));
   assert.equal(letGo, 2, 'let go on each');
 });
+
+test('a key or button let go over the interface, or the window lost there, still reaches the fight', () => {
+  const { window } = fakeWindow();
+  const heard: string[] = [];
+  const combat = {
+    key: (key: string, down: boolean) => heard.push(`${key} ${down ? 'down' : 'up'}`) > 0,
+    letGo: () => heard.push('let go'),
+    act: (id: string, down: boolean) => heard.push(`${id} ${down ? 'down' : 'up'}`),
+  } as unknown as SeaCombat;
+  const listeners = new Map<string, (event: unknown) => void>();
+  const canvas = { addEventListener: (kind: string, run: (event: unknown) => void) => listeners.set(kind, run) };
+  let over = false;
+  fightControls(
+    canvas as unknown as HTMLCanvasElement,
+    () => (over ? null : combat),
+    () => combat,
+  );
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'a', code: 'KeyA' }));
+  over = true;
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'w', code: 'KeyW' }));
+  window.dispatchEvent(new FakeEvent('keyup', { key: 'a', code: 'KeyA' }));
+  window.dispatchEvent(new FakeEvent('blur', {}));
+  let stopped = false;
+  const stop = () => void (stopped = true);
+  listeners.get('pointerup')?.({ button: 2, preventDefault: () => undefined, stopImmediatePropagation: stop });
+  assert.deepEqual(heard.slice(0, 3), ['a down', 'a up', 'let go'], 'no press over the interface, every release');
+  assert.equal(heard.length, 4, 'the button let go too');
+  assert.equal(stopped, false, 'and still heard by the sea and the map, which let go of their own presses');
+});
