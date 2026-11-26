@@ -480,12 +480,15 @@ class Shapes(unittest.TestCase):
 
 
 class Catalog(unittest.TestCase):
-    def test_a_style_needs_every_kit_piece_and_its_three_landmarks(self):
+    def test_a_style_needs_every_kit_piece_but_those_it_leaves_and_its_three_landmarks(self):
         for style in catalog.STYLES:
             names = catalog.required(style)
-            self.assertEqual(names[:len(catalog.PIECES)], [f'{style}.{piece}' for piece in catalog.PIECES])
-            self.assertEqual(len(names), len(catalog.PIECES) + 3)
-            self.assertTrue(all(catalog.landmark(name)['style'] == style for name in names[len(catalog.PIECES):]))
+            pieces = [piece for piece in catalog.PIECES if piece not in catalog.STYLES[style].get('leaves', ())]
+            self.assertEqual(names[:len(pieces)], [f'{style}.{piece}' for piece in pieces])
+            self.assertEqual(len(names), len(pieces) + 3)
+            self.assertTrue(all(catalog.landmark(name)['style'] == style for name in names[len(pieces):]))
+        self.assertNotIn('chalk.stair.head', catalog.required('chalk'), "a passage's style lays no flight")
+        self.assertIn('crypt.stair.head', catalog.required('crypt'))
         self.assertEqual(catalog.piece_of('mines.wall.cap'), 'wall.cap')
         self.assertIsNone(catalog.piece_of('mines.collapse'))
 

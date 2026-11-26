@@ -38,8 +38,9 @@ rules place the landmarks and the page places the kits ([[Dungeons]]). The calls
 Two files in `content/dungeon/` say what every style builds, and the rules, the page and the build all read them:
 
 - **`kits.json`** names the nineteen parts a piece may wear, the twenty-one kit pieces, and how each style places them:
-  how often a wall set stands, where, what its ceilings and floors carry, how many features a room takes, and its
-  least ceiling. Its `passage` holds the passages' own pieces: each one's size, its solids (boxes and discs, each
+  how often a wall set stands, where, what its ceilings and floors carry, how many features a room takes, its
+  least ceiling, and the pieces it `leaves` unbuilt (a passage's style, one storey deep: its flights' and
+  balustrade). Its `passage` holds the passages' own pieces: each one's size, its solids (boxes and discs, each
   with its top) and its glows, from the piece's middle at its foot, its front to the north.
 - **`landmarks.json`** gives each landmark its footprint in cells, whether it stands against a wall, its solids
   (each a box with its top) and its glows (each a light and its kind), in its own frame from the footprint's
