@@ -368,7 +368,7 @@ fn a_holds_ring_lies_whole_on_its_zones_floor_under_ground_and_above() {
             let ring = plan.pieces.iter().find(|piece| piece.kind == Kind::Ring).expect("a ring");
             let middle = [ring.at[0], ring.at[1]];
             let share = match &plan.ground {
-                Laid::Under(dungeon) => crate::under::ring_on_floor(dungeon, middle),
+                Laid::Under(dungeon) => f64::from(u8::from(crate::under::ring_clear(dungeon, middle))),
                 Laid::Open(hollow) => {
                     // Its stones lie in the floor, no more than 4 cm over it or 25 cm under: the floor is levelled.
                     let floor = plan.floor_at(middle);
@@ -414,4 +414,80 @@ fn a_hollows_dressing_stands_clear_of_its_holds_levelled_ring() {
         }
     }
     assert!(on.is_empty(), "dressing on a Hold's ring: {on:?}");
+}
+
+/// Every zone laid under ground over a run of weeks, each with its plan, its dungeon and a name for its asserts.
+fn under_plans(weeks: core::ops::Range<u64>, keep: fn(&Zone) -> bool) -> Vec<(String, Plan, dungeon::Dungeon)> {
+    let mut found = Vec::new();
+    for week in weeks {
+        let web = Web::of(saltmere(), week);
+        for zone in web.zones.iter().filter(|zone| matches!(zone.ground, Ground::Under { .. }) && keep(zone)) {
+            let Some(plan) = Plan::of(&web, zone.number) else { continue };
+            let Laid::Under(dungeon) = &plan.ground else { continue };
+            let dungeon = (**dungeon).clone();
+            found.push((format!("week {week} zone {} {:?}", zone.number, zone.deal), plan, dungeon));
+        }
+    }
+    found
+}
+
+/// The cell of a dungeon a point stands in.
+fn cell_of(dungeon: &dungeon::Dungeon, at: [f64; 2]) -> usize {
+    (at[1] / dungeon::CELL_M) as usize * dungeon.columns + (at[0] / dungeon::CELL_M) as usize
+}
+
+#[test]
+fn under_ground_the_lamp_and_the_deals_pieces_stand_clear_of_the_forges_solids_and_mouths_off_its_stones() {
+    let overlaps = |one: &[f64; 5], other: &[f64; 5]| {
+        one[0] < other[2] && other[0] < one[2] && one[1] < other[3] && other[1] < one[3]
+    };
+    let (mut in_solid, mut on_stone) = (Vec::new(), Vec::new());
+    for (what, plan, dungeon) in under_plans(2_900..2_952, |_| true) {
+        let boxes = dungeon.boxes();
+        for piece in plan.pieces.iter().filter(|piece| !matches!(piece.kind, Kind::WayIn | Kind::Mouth(_))) {
+            let at = [piece.at[0], piece.at[1]];
+            let solids = piece.kind.solids_at(piece.at, piece.facing);
+            let on_rock = |&[west, north, east, south, _]: &[f64; 5]| {
+                [[west, north], [east, north], [east, south], [west, south]]
+                    .into_iter()
+                    .any(|corner| !matches!(dungeon.cells[cell_of(&dungeon, corner)], dungeon::Cell::Room(_)))
+            };
+            if dungeon.holds_solid(cell_of(&dungeon, at))
+                || solids.iter().any(|solid| on_rock(solid) || boxes.iter().any(|held| overlaps(solid, held)))
+            {
+                in_solid.push(format!("{what}: {:?} at {at:?}", piece.kind));
+            }
+        }
+        for &spot in &plan.sites.spots {
+            if dungeon.holds_solid(cell_of(&dungeon, spot)) {
+                in_solid.push(format!("{what}: a spot at {spot:?}"));
+            }
+        }
+        for door in &plan.sites.onward {
+            // The cell behind the mouth's wall, half a cell back from the way it faces.
+            let back = [door.at[0] - 0.5 * libm::sin(door.facing), door.at[1] + 0.5 * libm::cos(door.facing)];
+            let behind = cell_of(&dungeon, back);
+            if dungeon.rooms.iter().any(|room| room.stones.contains(&behind)) {
+                on_stone.push(format!("{what}: mouth at {:?}", door.at));
+            }
+        }
+    }
+    assert!(in_solid.is_empty(), "{} pieces in the Forge's solids: {in_solid:#?}", in_solid.len());
+    assert!(on_stone.is_empty(), "{} mouths on a cave's stone: {on_stone:#?}", on_stone.len());
+}
+
+#[test]
+fn every_under_ground_lamp_of_ten_years_stands_under_a_ceiling_tall_enough() {
+    let mut low = Vec::new();
+    for (what, plan, dungeon) in under_plans(2_900..3_420, Zone::has_lamp) {
+        let Some(lamp) = plan.sites.lamp else { continue };
+        // The lamp never stands in the way in's room.
+        let rooms = dungeon.rooms.iter().enumerate().filter(|(number, _)| *number != dungeon.way_in.room);
+        let tallest = rooms.map(|(_, room)| room.height).fold(0.0, f64::max);
+        let ceiling = dungeon.ceilings[cell_of(&dungeon, lamp)];
+        if ceiling < tallest.min(crate::LAMP_CEILING_M) {
+            low.push(format!("{what}: {ceiling} under {tallest}"));
+        }
+    }
+    assert!(low.is_empty(), "{} lamps under a low ceiling: {low:#?}", low.len());
 }

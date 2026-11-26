@@ -3,6 +3,7 @@
 //! greatest room, its foes' posts in its rooms and its spots on their quiet floor.
 
 use crate::LAMP_CEILING_M;
+use crate::plan::Kind;
 use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of, spread};
 use crate::zone::{Deal, Mission, Zone};
 use dungeon::{CELL_M, Cell, Dungeon, SIDES, Side};
@@ -44,7 +45,10 @@ fn walls(dungeon: &Dungeon) -> Vec<Wall> {
     for (cell, kind) in dungeon.cells.iter().enumerate() {
         let Cell::Room(room) = *kind else { continue };
         for side in SIDES {
-            let rock = dungeon.beside(cell, side).is_none_or(|next| dungeon.cells[next] == Cell::Rock);
+            // A great cave's stones stand free inside it: rock, but no wall.
+            let rock = dungeon.beside(cell, side).is_none_or(|next| {
+                dungeon.cells[next] == Cell::Rock && dungeon.rooms.iter().all(|room| !room.stones.contains(&next))
+            });
             let door = door_on(dungeon, cell, side);
             let clear = taken.iter().all(|place| apart(*place, door.at) >= MOUTH_CLEAR_M);
             if rock && clear && cell != dungeon.way_in.cell {
@@ -90,34 +94,73 @@ fn onward(dungeon: &Dungeon, count: usize, way_in: [f64; 2]) -> Vec<Door> {
 }
 
 /// The lamp's room: the greatest room but the way in's, three cells or more each way where one is, and its quiet
-/// cell nearest its middle.
-fn lamp(dungeon: &Dungeon) -> Option<[f64; 2]> {
+/// cell nearest its middle where the lamp, facing the arrival, stands clear of every prop, fixture, landmark, pillar
+/// and doorway; where its room holds no such cell, the next room as great and as tall, and where none does, the
+/// greatest room's quiet cell nearest its middle.
+fn lamp(dungeon: &Dungeon, arrive: [f64; 2]) -> Option<[f64; 2]> {
     let way_in_room = dungeon.way_in.room;
     let roomy = |room: &dungeon::Room| room.width >= 3 && room.depth >= 3;
     // The lamp stands 3.8 m high with its flame: a room tall enough first.
     let tall = |room: &dungeon::Room| room.height >= LAMP_CEILING_M;
-    let rooms = dungeon.rooms.iter().enumerate().filter(|(number, _)| *number != way_in_room);
-    let (_, room) = rooms.max_by_key(|(number, room)| {
+    let rank = |number: usize, room: &dungeon::Room| {
         (roomy(room) && tall(room), tall(room), roomy(room), room.cells.len(), usize::MAX - number)
-    })?;
-    let middle =
-        [(room.x as f64 + room.width as f64 / 2.0) * CELL_M, (room.y as f64 + room.depth as f64 / 2.0) * CELL_M];
-    let cells = if room.quiet.is_empty() { &room.cells } else { &room.quiet };
-    cells
-        .iter()
-        .map(|&cell| dungeon.centre(cell))
-        .min_by(|one, other| apart(*one, middle).total_cmp(&apart(*other, middle)))
+    };
+    let mut rooms: Vec<(usize, &dungeon::Room)> =
+        dungeon.rooms.iter().enumerate().filter(|(number, _)| *number != way_in_room).collect();
+    rooms.sort_by_key(|&(number, room)| std::cmp::Reverse(rank(number, room)));
+    let nearest_middle = |room: &dungeon::Room| {
+        let middle =
+            [(room.x as f64 + room.width as f64 / 2.0) * CELL_M, (room.y as f64 + room.depth as f64 / 2.0) * CELL_M];
+        let cells = if room.quiet.is_empty() { &room.cells } else { &room.quiet };
+        let mut places: Vec<(usize, [f64; 2])> = cells.iter().map(|&cell| (cell, dungeon.centre(cell))).collect();
+        places.sort_by(|one, other| apart(one.1, middle).total_cmp(&apart(other.1, middle)));
+        places
+    };
+    let boxes = dungeon.boxes();
+    let &(_, greatest) = rooms.first()?;
+    let alike = rooms.iter().filter(|(_, room)| (roomy(room), tall(room)) == (roomy(greatest), tall(greatest)));
+    let placed =
+        alike.flat_map(|(_, room)| nearest_middle(room)).find(|&(_, at)| lamp_clear(dungeon, &boxes, at, arrive));
+    placed.or_else(|| nearest_middle(greatest).first().copied()).map(|(_, at)| at)
+}
+
+/// Whether the lamp at `at`, facing the arrival, stands on a cell that holds no solid with its plinth and stones
+/// on its rooms' floor and clear of the dungeon's `boxes`.
+fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 5]], at: [f64; 2], arrive: [f64; 2]) -> bool {
+    let overlap = |one: &[f64; 5], other: &[f64; 5]| {
+        one[0] < other[2] && other[0] < one[2] && one[1] < other[3] && other[1] < one[3]
+    };
+    let cell_at = |[x, y]: [f64; 2]| {
+        let (column, row) = ((x / CELL_M).floor(), (y / CELL_M).floor());
+        let inside =
+            column >= 0.0 && row >= 0.0 && (column as usize) < dungeon.columns && (row as usize) < dungeon.rows;
+        inside.then(|| row as usize * dungeon.columns + column as usize)
+    };
+    let on_room_floor =
+        |point: [f64; 2]| cell_at(point).is_some_and(|cell| matches!(dungeon.cells[cell], Cell::Room(_)));
+    let facing = libm::atan2(arrive[0] - at[0], -(arrive[1] - at[1]));
+    let solids = Kind::Lamp.solids_at([at[0], at[1], dungeon::FLOOR_M], facing);
+    let whole = |&[west, north, east, south, _]: &[f64; 5]| {
+        [[west, north], [east, north], [east, south], [west, south]].into_iter().all(on_room_floor)
+    };
+    cell_at(at).is_some_and(|cell| !dungeon.holds_solid(cell))
+        && solids.iter().all(|solid| whole(solid) && boxes.iter().all(|held| !overlap(solid, held)))
 }
 
 /// The zone's layings under ground in its style, each from the next seed, the first first; a lamp's zone only where
-/// a room is tall enough to stand the lamp in, and a Hold's where a room holds its ring whole, its seeds tried once in
-/// turn, else its first seed's alone. None for a style the Forge does not know.
+/// a room but the way in's is tall enough to stand the lamp in and the lamp stands clear of the Forge's solids, a
+/// Hold's where a room holds its ring whole, and any where its floor gives its deal every spot it wants, its seeds
+/// tried once in turn, else its first seed's alone. None for a style the Forge does not know.
 pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<impl Iterator<Item = (Dungeon, Sites)>> {
     let style = dungeon::style_of(style)?;
     let blocks = zone.size.blocks();
     let first = zone.forge_seed();
     let forged = move |step: u32| Dungeon::forge_within(first.wrapping_add(step), style, (blocks, blocks));
-    let tall_enough = |dungeon: &Dungeon| dungeon.rooms.iter().any(|room| room.height >= LAMP_CEILING_M);
+    // The lamp never stands in the way in's room, so that room's height does not count.
+    let tall_enough = |dungeon: &Dungeon| {
+        let mut rooms = dungeon.rooms.iter().enumerate().filter(|(number, _)| *number != dungeon.way_in.room);
+        rooms.any(|(_, room)| room.height >= LAMP_CEILING_M)
+    };
     let lamp = zone.has_lamp();
     let hold = zone.deal == Deal::Mission(Mission::Hold);
     let laid_out = {
@@ -129,12 +172,19 @@ pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<i
     };
     // A Hold's ring, at its first spot, lies whole on the floor.
     let ring_whole =
-        |(dungeon, sites): &(Dungeon, Sites)| sites.spots.first().is_some_and(|&at| ring_on_floor(dungeon, at) >= 1.0);
+        |(dungeon, sites): &(Dungeon, Sites)| sites.spots.first().is_some_and(|&at| ring_clear(dungeon, at));
+    // The lamp stands clear of the Forge's solids, and the deal finds a spot for each of its things.
+    let lamp_whole = |(dungeon, sites): &(Dungeon, Sites)| {
+        sites.lamp.is_some_and(|at| lamp_clear(dungeon, &dungeon.boxes(), at, sites.arrive))
+    };
+    let wanted = crate::plan::spots_wanted(zone.deal);
     let tall = (0..LAMP_TRIES * 2)
         .map(forged)
         .filter(move |dungeon| !lamp || tall_enough(dungeon))
         .map(laid_out.clone())
-        .filter(move |laid| !hold || ring_whole(laid));
+        .filter(move |laid| !hold || ring_whole(laid))
+        .filter(move |laid| !lamp || lamp_whole(laid))
+        .filter(move |(_, sites)| sites.spots.len() >= wanted);
     let mut tall = tall.peekable();
     let laid: Box<dyn Iterator<Item = (Dungeon, Sites)>> =
         if tall.peek().is_some() { Box::new(tall) } else { Box::new(std::iter::once(laid_out(forged(0)))) };
@@ -147,7 +197,7 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
     let facing = libm::atan2(toward[0], -toward[1]);
     let way_in = Door { at: dungeon.exit_door(), facing: dungeon.way_in.side.opposite().bearing() };
     let onward = onward(dungeon, onward_count, way_in.at);
-    let lamp = if zone.has_lamp() { lamp(dungeon) } else { None };
+    let lamp = if zone.has_lamp() { lamp(dungeon, arrive) } else { None };
     let clear = |place: [f64; 2]| {
         lamp.is_none_or(|lamp| apart(lamp, place) >= LAMP_CLEAR_M)
             && onward.iter().chain([&way_in]).all(|door| apart(door.at, place) >= SPOT_APART_M / 2.0)
@@ -173,6 +223,8 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
         .rooms
         .iter()
         .flat_map(|room| if room.quiet.is_empty() { room.cells.iter() } else { room.quiet.iter() })
+        // A deal's thing stands on open floor, never in a prop, a fixture or a landmark.
+        .filter(|&&cell| !dungeon.holds_solid(cell))
         .map(|&cell| dungeon.centre(cell))
         .filter(|at| clear(*at))
         .collect();
@@ -180,7 +232,10 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
     // A Hold's ring, the first spot's, stands where most of it lies on the floor, the farthest such from the way in.
     if zone.deal == Deal::Mission(Mission::Hold)
         && let Some(best) = (0..floor.len()).max_by(|one, other| {
-            ring_on_floor(dungeon, floor[*one]).total_cmp(&ring_on_floor(dungeon, floor[*other])).then(other.cmp(one))
+            let whole = |at: [f64; 2]| (ring_clear(dungeon, at), ring_on_floor(dungeon, at));
+            let (one_whole, one_share) = whole(floor[*one]);
+            let (other_whole, other_share) = whole(floor[*other]);
+            one_whole.cmp(&other_whole).then(one_share.total_cmp(&other_share)).then(other.cmp(one))
         })
     {
         let ring = floor.remove(best);
@@ -191,7 +246,7 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
 }
 
 /// The share of a Hold's ring round `middle`, sampled every 10 degrees, that lies on a cell of the dungeon's floor.
-pub(crate) fn ring_on_floor(dungeon: &Dungeon, middle: [f64; 2]) -> f64 {
+fn ring_on_floor(dungeon: &Dungeon, middle: [f64; 2]) -> f64 {
     let cell_of = |at: [f64; 2]| ((at[0] / CELL_M).floor() as i64, (at[1] / CELL_M).floor() as i64);
     let floor: std::collections::BTreeSet<(i64, i64)> =
         dungeon.rooms.iter().flat_map(|room| room.cells.iter()).map(|&cell| cell_of(dungeon.centre(cell))).collect();
@@ -201,4 +256,19 @@ pub(crate) fn ring_on_floor(dungeon: &Dungeon, middle: [f64; 2]) -> f64 {
         floor.contains(&cell_of([middle[0] + radius * libm::sin(turn), middle[1] - radius * libm::cos(turn)]))
     });
     on.count() as f64 / 36.0
+}
+
+/// Whether a Hold's ring round `middle` lies whole on the floor of the dungeon's rooms: no rock or corridor cell, and
+/// no edge of the dungeon, comes within `RING_M` of its middle.
+pub(crate) fn ring_clear(dungeon: &Dungeon, middle: [f64; 2]) -> bool {
+    let (radius, half) = (crate::plan::RING_M, CELL_M / 2.0);
+    let within = |at: f64, cells: usize| at - radius >= 0.0 && at + radius <= cells as f64 * CELL_M;
+    if !within(middle[0], dungeon.columns) || !within(middle[1], dungeon.rows) {
+        return false;
+    }
+    let near = |cell: usize| {
+        let [x, y] = dungeon.centre(cell);
+        libm::hypot((middle[0] - x).abs().max(half) - half, (middle[1] - y).abs().max(half) - half)
+    };
+    (0..dungeon.cells.len()).all(|cell| matches!(dungeon.cells[cell], Cell::Room(_)) || near(cell) >= radius)
 }
