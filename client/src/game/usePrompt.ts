@@ -81,7 +81,7 @@ export class UsePrompt {
     this.under = deed === null ? null : under;
     if (deed === this.said) return;
     this.said = deed;
-    if (deed !== null) announce(deed);
+    if (deed !== null) announce(under === null ? deed : `${deed}. ${under}`);
   }
 
   /** The prompt in a view `width` by `height` CSS pixels, standing taller where the fight's display takes its larger

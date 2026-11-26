@@ -224,7 +224,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     } as const;
     const guided = quests.guide(afoot, { nodes: playing.zones, layouts: playing.landmass.layouts });
     // In a passage zone the compass points at what its deal asks, not at the roads, as its tracker shows its deal.
-    // Built only in a zone, not every frame on foot.
+    // Read only while standing in a zone.
     const inZone = () =>
       [...here.fight.foes.values()].map((foe) => {
         const standing = foe.view.health > 0 && foe.view.action.kind !== 'dead';
