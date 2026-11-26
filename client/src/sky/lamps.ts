@@ -16,13 +16,15 @@ export interface LampPlace {
 
 /** A fire a place burns, drawn as the game's fire (../cinema/flames.ts): its base (world metres), how tall it burns,
  *  the seed it flickers by, the run of an edge it burns along, and whether it casts its own light as a fire does, or
- *  its light is a lamp of the place's, seeded alike (a lantern's flame behind its glass). */
+ *  its light is a lamp of the place's, seeded alike (a lantern's flame behind its glass), and whether it burns behind
+ *  glass, which keeps its smoke and embers in. */
 export interface FirePlace {
   readonly at: readonly [number, number, number];
   readonly sizeM: number;
   readonly seed: number;
   readonly along?: readonly [number, number, number];
   readonly casts: boolean;
+  readonly glassed?: boolean;
 }
 
 /** What the land drawn now lights and burns (a city, its layouts, the islands, a passage zone's hollow, the events'
@@ -99,7 +101,7 @@ export function lanternLights(
   const seed = seedAt(middle);
   const sizeM = Math.min(LANTERN_FLAME.most, Math.max(LANTERN_FLAME.least, narrowest * LANTERN_FLAME.share));
   return {
-    fire: { at: [middle[0], middle[1], middle[2] - sizeM * 0.4], sizeM, seed, casts: false },
+    fire: { at: [middle[0], middle[1], middle[2] - sizeM * 0.4], sizeM, seed, casts: false, glassed: true },
     lamp: glowLamp(middle, largest, seed, 'lantern'),
   };
 }

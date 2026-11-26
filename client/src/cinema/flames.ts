@@ -236,10 +236,11 @@ export class Flames {
 
   /** Lights a fire `sizeM` tall (half a metre to four) with its base at `base` (world metres); gives its id. With
    *  `along`, the run in metres of an edge burning from `base` (a rail, a spar), it burns all along that edge. Without
-   *  `casts`, its light is not among `lamps`: its place lights a lamp of its own, seeded alike. */
-  light(base: Point, sizeM: number, seed: number, along?: Point, casts = true): number {
+   *  `casts`, its light is not among `lamps`: its place lights a lamp of its own, seeded alike. `glassed`, behind a
+   *  lantern's glass, it throws no smoke or embers. */
+  light(base: Point, sizeM: number, seed: number, along?: Point, casts = true, glassed = false): number {
     const id = this.nextId++;
-    const fire = along ? { at: base, sizeM, seed, along } : { at: base, sizeM, seed };
+    const fire = { at: base, sizeM, seed, ...(along ? { along } : {}), ...(glassed ? { glassed } : {}) };
     this.fires.set(id, fire);
     if (!casts) this.dark.add(fire);
     this.lit = null;

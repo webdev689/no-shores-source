@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CityLamps, carriedLight, flicker, type LampPlace, lampsLit, lampsRound } from './lamps.ts';
+import { CityLamps, carriedLight, flicker, type LampPlace, lampsLit, lampsRound, lanternLights } from './lamps.ts';
 import { AFTERNOON, LAMPS_MOST, PUDDLE_WRAP_M, skyNumbers, WRAP_M } from './skyUniform.ts';
 import { breath, lightMotion, motionCode } from './flicker.ts';
 
@@ -195,4 +195,9 @@ test("a lamp carries its motion to the uniform, a stone's breathing; one carried
   const firstLamp = 16 * 4;
   assert.equal(numbers[firstLamp + 7], 0);
   assert.equal(numbers[firstLamp + 15], lit?.motion);
+});
+
+test("a lantern's flame burns behind its glass, which keeps its smoke and embers in, and lights no lamp of its own", () => {
+  const { fire } = lanternLights([4, 6, 2], 0.3, 0.4);
+  assert.deepEqual([fire.glassed, fire.casts], [true, false]);
 });

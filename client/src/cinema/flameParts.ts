@@ -13,6 +13,8 @@ export interface Fire {
   readonly sizeM: number;
   readonly seed: number;
   readonly along?: Point;
+  /** Behind glass, as a lantern's: its glass keeps its smoke and embers in. */
+  readonly glassed?: boolean;
 }
 
 /** A fire at one moment, each part in world metres: its tongues of flame, the wisps torn from their tips, its smoke,
@@ -83,7 +85,8 @@ function runOf(fire: Fire): number {
 
 /** The fire's parts at `seconds` in a `wind` (m/s east and south). Its tongues wander in height, sway and lean a
  *  little downwind, and throw wisps from their tips that rise and fade; its smoke rolls up in a column that widens,
- *  thins and leans further; its embers swirl up in the heat and burn out. Along an edge, all of it spreads along. */
+ *  thins and leans further; its embers swirl up in the heat and burn out. Along an edge, all of it spreads along.
+ *  Behind glass, it has no smoke or embers. */
 export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
   const { at, sizeM: size, seed } = fire;
   const held = fireFrame(fire, seconds) / FIRE_FRAMES_PER_SECOND;
@@ -132,7 +135,7 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
     }),
   );
 
-  const puffCount = many(PUFFS * run);
+  const puffCount = fire.glassed ? 0 : many(PUFFS * run);
   const smoke = Array.from({ length: puffCount }, (_slot, index) => {
     const lived = held / SMOKE_LIFE_S + index / puffCount + lot(7_000 + index);
     const age = lived % 1;
@@ -154,7 +157,7 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
   });
   smoke.sort((first, second) => second.age - first.age);
 
-  const emberCount = Math.min(MOST_EMBERS, many((EMBERS + EMBERS_A_METRE * size) * run));
+  const emberCount = fire.glassed ? 0 : Math.min(MOST_EMBERS, many((EMBERS + EMBERS_A_METRE * size) * run));
   const embers = Array.from({ length: emberCount }, (_slot, index) => {
     const life = 1.1 + 0.9 * lot(8_000 + index);
     const lived = held / life + index / emberCount + lot(9_000 + index);
@@ -168,7 +171,8 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
       position: [
         base[0] + wind[0] * aloft * 0.6,
         base[1] + wind[1] * aloft * 0.6,
-        base[2] + size * 0.3 + aloft * (rise + 0.4),
+        // A small fire's embers climb slower, so they rise no further for its size than a half-metre fire's.
+        base[2] + size * 0.3 + aloft * (rise + 0.4) * shareOf(size),
       ] as Point,
       brightness: (1 - age) ** 1.2 * (0.7 + 0.3 * smoothNoise(seed + index, held * 9)),
       texels: lot(12_000 + index) < 0.3 ? 2 : 1,

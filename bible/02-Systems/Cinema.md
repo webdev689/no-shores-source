@@ -153,7 +153,8 @@ in a column of puffs that rise, widen, thin and lean with `Flames.wind`; while l
 from below, and it darkens from grey to black as it climbs. Embers are sparks one or two texels square, two dozen to a
 small fire and more to a larger one, that swirl up in the heat, drift with the wind and burn out from a pale heart to
 red. A fire under half a metre tall (a torch's, a candle's) takes fewer of each part, by its height, at least one of
-each. A fire's parts are worked out on the CPU once a frame of its flicker and kept; forty fires, a quarter of them
+each, and its embers climb slower by the same share, so they rise no further for its size than a half-metre
+fire's. A fire lit `glassed`, behind a lantern's glass, has no smoke or embers. A fire's parts are worked out on the CPU once a frame of its flicker and kept; forty fires, a quarter of them
 along edges, cost about 0.8 ms a frame on the test machine, and no frame draws more than 16,384 parts. Past where its
 tongues read from the eye, 120 times its height and never nearer than 12 m (`farFire`), a fire is its glow alone,
 worked out with no part; past 600 times its height, where its glow is under some two pixels, it is not drawn at all,
