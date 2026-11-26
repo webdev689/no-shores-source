@@ -268,7 +268,8 @@ The room named `sea` holds every player's ship at Normal; `sea--elite` and `sea-
 voyage's harder difficulty, each a room of its own whose ships come at the levels that difficulty raises them to
 (`room_difficulty` after `room_open_sea`). A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s,
-or 1, the world's own time, which the page sails it at while its view is close on it ([[Game]], "At sea").
+200 (2,400 m/s), at which a voyage planned on the held map sails, or 1, the world's own time, which the page sails it
+at while its view is close on it ([[Game]], "At sea").
 A ship not yet at sea puts in only by a port city, its course's first point within 3 km of the roadstead, and then at
 that roadstead itself, never the page's own point, the page told so (`Sea::puts_in`; a sea opened with no port cities
 puts it to sea where the page asks); a ship its owner sailed before comes back where the sea last had it, however far

@@ -490,7 +490,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   course; the room takes one course each half second, so it sails the ship at the latest step it has, and the game sails
   the ship at the room's pace until it takes the next. Once the room's word on the ship comes and its pace is not the one the ship is
   sailed at, a step it refused, the game asks it again with the ship's course, until the two agree (`paceToAskAgain`); a
-  slower word with a hostile ship within 1.7 km is the room holding the ship, not a refusal. While the pace is eased, and
+  slower word with a hostile ship within 2.75 km is the room holding the ship, not a refusal. While the pace is eased, and
   the room sails the ship at it, the voyage's line adds "Sailing at true speed while you watch close."
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,

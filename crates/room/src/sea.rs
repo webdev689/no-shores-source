@@ -28,8 +28,9 @@ use world::traffic::Port;
 
 /// A ship's speed at a pace of 1, metres a second.
 pub const SHIP_SPEED_M_S: f64 = 12.0;
-/// The paces a player may set a ship to, as multiples of its speed: DFO's steps.
-pub const PACES: [u16; 7] = [5, 10, 20, 30, 40, 60, 100];
+/// The paces a player may set a ship to, as multiples of its speed: DFO's steps, and 200, the pace a voyage planned on
+/// the held map sails at.
+pub const PACES: [u16; 8] = [5, 10, 20, 30, 40, 60, 100, 200];
 /// The world's own time, a pace of 1: the page sails its ship at it while the view is close on it, so it is seen
 /// at its true speed.
 pub const WORLD_PACE: u16 = 1;

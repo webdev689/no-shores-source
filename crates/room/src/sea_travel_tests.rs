@@ -1,6 +1,6 @@
 use super::*;
 use crate::hostiles::{FIRST_ROLL_S, Hostile};
-use crate::sea::{COURSE_EVERY_TICKS, CourseRefused, Ship};
+use crate::sea::{COURSE_EVERY_TICKS, CourseRefused, SHIP_SPEED_M_S, Ship};
 use core::f64::consts::FRAC_PI_2;
 use naval::ranks::{Commission, GREY_TITHE, Rank};
 
@@ -52,6 +52,24 @@ fn a_travel_puts_the_ship_400_metres_short_of_its_course_end_heading_along_its_l
     ticks(&mut sea, 200);
     let ship = self::ship(&sea, player);
     assert_eq!(([ship.x, ship.y], ship.pace), (end, 0), "it sails on to the course's end and comes to rest");
+}
+
+#[test]
+fn a_course_and_a_travel_at_200_are_taken_and_sail_at_200_times_12_metres_a_second() {
+    let mut sea = sea();
+    let player = at_sea(&mut sea);
+    assert_eq!(sea.course(player, &[[250_000.0, 50_000.0]], 200), Ok(()));
+    ticks(&mut sea, 60);
+    let sailed = ship(&sea, player);
+    assert_eq!((sailed.pace, sailed.rate), (200, 200), "an empty sea holds no one back");
+    assert!((150_000.0 - sailed.y - 200.0 * SHIP_SPEED_M_S).abs() < 1e-6, "a second at 2,400 m/s: {}", sailed.y);
+    assert_eq!(sea.travel(player, &[[550_000.0, 150_000.0]], 200), Ok(()));
+    let placed = ship(&sea, player);
+    ticks(&mut sea, 5);
+    let on = ship(&sea, player);
+    assert_eq!((on.pace, on.rate), (200, 200));
+    let gone = libm::hypot(on.x - placed.x, on.y - placed.y);
+    assert!((gone - 5.0 * 200.0 * SHIP_SPEED_M_S / 60.0).abs() < 1e-6, "40 m a tick: {gone}");
 }
 
 #[test]

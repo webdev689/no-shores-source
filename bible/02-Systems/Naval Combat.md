@@ -608,9 +608,9 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the game's worker's from its
   own), so each sea sends its ships in an order of its own, as DFO draws its rolls.
 - **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at
-  rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100, so one met head-on stays in
-  sight half a minute and more. Each keeps the largest sight it has been given, from the pace of the player nearest
-  it, and goes once no player is within 1.1 times it.
+  rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100 and 86.4 km at ×200, so one
+  met head-on stays in sight half a minute and more. Each keeps the largest sight it has been given, from the pace of
+  the player nearest it, and goes once no player is within 1.1 times it.
 - **Where.** Between 0.9 and 1 of its sight out from the player, within 60 degrees of their heading while under way and
   anywhere at rest; a bold ship, under way above ×10, within its meeting cone off their course shrunk to 0.8 of it
   (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
