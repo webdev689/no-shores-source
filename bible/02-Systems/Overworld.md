@@ -6,7 +6,6 @@ code:
   - client/src/overworld/overworldInput.ts#pressMove
   - client/src/overworld/overworldPick.ts#pickAt
   - client/src/overworld/overworldMarks.ts#placeMarks
-  - client/src/game/seaMarks.ts#landingChoice
   - client/src/game/seaMarks.ts#landfallMarks
   - client/src/overworld/seaRoute.ts#planSeaRoute
   - client/src/overworld/voyage.ts#shipAt
