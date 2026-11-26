@@ -39,3 +39,12 @@ that answers for the check is `npm run -s types`.
 first on `npm run -s format:check` (an unformatted `layouts.test.ts`), and `cargo xtask repo` found the layout
 crate's `lib.rs` at 633 lines. The fast pre-check a worker should run is `npm run -s types && npm run -s lint &&
 npm run -s format:check && cargo xtask repo`, each seconds long.
+
+2026-11-26, character slots and test runs (controller's own brief again): the controller's hand-filled "Hard rules"
+told three workers to run "`npx tsc -p <the tsconfig of what you changed>`"; worker testruns ran
+`server/tsconfig.json`, reported tsc clean, and `server/testRuns.test.ts` failed `npm run -s types` after the merge
+(TS18047, a `readFromRoom` result read without a null check). The same rule broken by the same author after four
+logged instances: wording is not holding it. Barrier proposed: `workers/audit.py` (or run-worker.sh's finish step)
+runs `npm run -s types` on the worker's head and prints TYPES FAIL as it prints MISSING, so a worker cannot report
+"types clean" past it, and the template's Hard rules line names `npm run -s types && npm run -s lint && cargo xtask
+repo` as the one pre-commit set, with no `<tsconfig>` placeholder to fill.
