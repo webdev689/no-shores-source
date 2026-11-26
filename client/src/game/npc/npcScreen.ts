@@ -254,14 +254,21 @@ function greet(context: MenuContext, kind: FigureKind): void {
 
 /** The quest the keeper offers, `width` wide: its card with its objectives (Acquire at its foot while it waits), its
  *  tile framed in gold, and its story; none while they offer none now. Acquire asks the room (ask 85). */
-function offerNode(context: MenuContext, kind: FigureKind, width: number, narrow: boolean): Node | null {
+function offerNode(
+  context: MenuContext,
+  kind: FigureKind,
+  width: number,
+  narrow: boolean,
+  ask: MenuContext['ask'],
+): Node | null {
   const { ui, gear, sizes } = context;
   const text = sizes.label;
   const offered = offeredAt(gear.quest, kind);
   offerWaiting = offered !== null && !offered.acquired;
   if (!offered || !gear.quest) return null;
   const column = COUNTERS[kind];
-  if (offerWaiting && column !== undefined && ui.clicked(ACQUIRE)) context.ask({ kind: ASKS.acquire, column });
+  // Asked once until the room answers, as a ware is bought once.
+  if (offerWaiting && column !== undefined && ui.clicked(ACQUIRE) && !pending) ask({ kind: ASKS.acquire, column });
   // Acquire takes the focus once it has been laid, so the keys and the pad reach it first.
   if (offerWaiting && ++offerShown === 2) ui.focusOn(ACQUIRE);
   const steps = trackedOf({ ...gear.quest, offered: 0 })?.steps ?? [];
@@ -293,8 +300,15 @@ function offerNode(context: MenuContext, kind: FigureKind, width: number, narrow
 }
 
 /** A keeper's screen in the frame (keeperFrame.ts): their figure, name and crest, then the line they say, the quest
- *  they offer, and `body` in a scroll of its own, `foot` under it. The Harbourmaster's counter stands in it too. */
-export function keeperScreen(context: MenuContext, kind: FigureKind, body: readonly Child[], foot: Child = null): Node {
+ *  they offer, and `body` in a scroll of its own, `foot` under it. The Harbourmaster's counter stands in it too.
+ *  Acquire asks through `ask`, so a page that waits on the room's answer hears it as it does a ware's. */
+export function keeperScreen(
+  context: MenuContext,
+  kind: FigureKind,
+  body: readonly Child[],
+  foot: Child = null,
+  ask: MenuContext['ask'] = context.ask,
+): Node {
   const { room, sizes, forge } = context;
   if (!greeted) greet(context, kind);
   const keeper = keeperOf(kind);
@@ -311,7 +325,7 @@ export function keeperScreen(context: MenuContext, kind: FigureKind, body: reado
     motionReduced(),
     FIGURE_KEPT,
   );
-  const offer = offerNode(context, kind, width, stage.narrow);
+  const offer = offerNode(context, kind, width, stage.narrow, ask);
   return keeperFrame(room, text, {
     glow,
     figure,
@@ -370,8 +384,12 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
       : kind === 'mail'
         ? [mailPage(thanked, look, width)]
         : rowsNode(context, rows, look, act, open);
-  // The focus on a ware or a letter gone (bought, taken, or its row closed) goes to the one beside it.
-  const presses = kind === 'mail' ? letterPresses(gear) : rows.map((row) => row.wares.map((ware) => `npc-${ware.key}`));
+  // The focus on a ware or a letter gone (bought, taken, or its row closed) goes to the one beside it; on Acquire,
+  // a row of its own over them while a quest waits, to the first under it once acquired.
+  const presses = [
+    ...(offeredAt(gear.quest, kind)?.acquired === false ? [[ACQUIRE]] : []),
+    ...(kind === 'mail' ? letterPresses(gear) : rows.map((row) => row.wares.map((ware) => `npc-${ware.key}`))),
+  ];
   const focused = ui.focusedId;
   if (focused && !presses.flat().includes(focused) && pressesShown.flat().includes(focused)) {
     const beside = keyBeside(pressesShown, focused);
@@ -384,5 +402,5 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
     if (wanted && presses.flat().includes(wanted)) [focusNext] = [null, ui.focusOn(wanted)];
     else if (++focusWaited > 1) focusNext = null;
   }
-  return keeperScreen(context, kind, [...wares, ...more], footNode(kind, gear, look, width));
+  return keeperScreen(context, kind, [...wares, ...more], footNode(kind, gear, look, width), thanked.ask);
 }

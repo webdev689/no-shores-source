@@ -285,10 +285,12 @@ impl Character {
         (0..goals).map(|goal| road.get(goal).copied().unwrap_or(0)).collect()
     }
 
-    /// The goals of the task the player is on not yet met, each with its place in the task.
+    /// The goals of the task the player is on not yet met, each with its place in the task; none while the quest waits
+    /// to be acquired, so the room neither walks nor marks a goal that cannot count yet.
     pub fn goals_unmet(&self) -> impl Iterator<Item = (usize, &'static GoalDef)> {
         let counts = self.quest_counts();
-        let now = self.quest_now().and_then(|(quest, task)| quests().quests[quest].tasks.get(task));
+        let now = self.quest_now().filter(|_| self.quest_offered().is_none());
+        let now = now.and_then(|(quest, task)| quests().quests[quest].tasks.get(task));
         let goals = now.map_or(&[][..], |task| task.goals.as_slice());
         goals.iter().enumerate().filter(move |(at, goal)| counts.get(*at).is_some_and(|count| *count < goal.count))
     }

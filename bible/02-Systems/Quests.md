@@ -164,8 +164,9 @@ numbers), its `words`, the keeper's `quote` (a line, held to [[Dialogue]]'s word
 (`story`). The opening is offered by the Weaponsmith from **Find your way round Overlook** (the stranger's task walks
 before), so her word and her gift come as it is acquired; each house's road by its leader, at the chapel, from its
 first task, in its own begin's words. While the quest walked waits on the task its offer names with nothing counted
-there and is not acquired, nothing of it counts and no word is asked of anyone but by Acquire at that keeper's
-counter (ask 85), which is a word with them; a save with a place past it, or a count at it, reads as acquired. The
+there and is not acquired, nothing of it counts, the room walks and marks none of its goals (`goals_unmet` is empty),
+and no word is asked of anyone but by Acquire at that keeper's counter (ask 85), which is a word with them and is
+asked once until the room answers, the keeper thanking the player for it; a save with a place past it, or a count at it, reads as acquired. The
 acquired are kept by quest id (`acquired`). Claude's calls:
 [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]].
 

@@ -210,6 +210,7 @@ fn a_quest_offered_by_a_keeper_counts_nothing_until_acquired_from_them_at_their_
     let (quest, task) = character.quest_now().expect("the opening");
     assert_eq!(character.ask(Ask::Speak { keeper: weaponsmith }, AT_COUNTER, &DICE), Err(Refusal::NothingToSay));
     assert!(!character.tell(&Event::Talk("armorsmith")), "nothing counts before it is acquired");
+    assert_eq!(character.goals_unmet().count(), 0, "so the room walks and marks none of its goals");
     assert_eq!(character.ask(Ask::Acquire { keeper: weaponsmith }, AFIELD, &DICE), Err(Refusal::NotHere));
     let before = character.clone();
     let armorsmith = keeper("armorsmith");
