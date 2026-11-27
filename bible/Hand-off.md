@@ -9,10 +9,9 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: #229 (the deeper dungeons: storeys and stairs, more ways, great rooms and galleries,
-  vaults, richer chests and DFO's 3D map; [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]],
-  its pieces published by the dungeon-modules workflow's run 53) and #159 (the rooms' worker tests wait for what they
-  check; it conflicts with `main` in `roomThread.test.ts`).
+- **For the owner's yes**: #248 (the page's lying-still intent has the 18 numbers the rules read, every intent it
+  predicts by built by `intentOf`; players saw no difference, as the rules' buffer read the missing drink as none) and
+  #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in `roomThread.test.ts`).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -106,6 +105,9 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
+  and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
+  the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
 - **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
   third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
   a walk through a three-storey dungeon and its vault. Headless pictures of three (`dungeon-plan.ts`) were taken before
