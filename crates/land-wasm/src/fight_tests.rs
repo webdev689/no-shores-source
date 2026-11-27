@@ -159,10 +159,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     assert_eq!(last["player"]["guns"]["load"], "grape");
     assert!((bursts[2] - 0.75).abs() < 0.01 && bursts[6] == 0.0, "the third leg's burst runs four legs: {bursts:?}");
     // Each leg's: the balls aloft at a leg's end are in it, and the captain's commission and strike share.
-    assert_eq!(
-        prints.join(" "),
-        "267f8247d7554225 f323f86f087cfc0f 7d630d5c100baf80 e0876dc3957a91f2 7c64577f8d401b3e d4ce09f5b7086c2b 6e8c4d70ac9c54e5 586c24cab001a279 aa170d1f5fde03a6"
-    );
+    assert_eq!(prints.join(" "), crate::door_tests::pinned("fight.legs"));
 }
 
 #[test]
@@ -207,14 +204,16 @@ fn fought_with(rank: u8) -> Vec<String> {
     prints
 }
 
-/// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its last leg's
-/// fingerprint, which the browser's test (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
-pub const HULL_FIGHTS: [(u8, u8, &str); 4] =
-    [(2, 0, "aa170d1f5fde03a6"), (3, 1, "b43b96f89724731d"), (4, 2, "dae0fb635d4f368f"), (5, 3, "91d5d75d55d8c7b8")];
+/// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its captain's
+/// rank and hull, in the order `fight.hulls` pins their last legs' fingerprints, which the browser's test
+/// (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
+pub const HULL_FIGHTS: [(u8, u8); 4] = [(2, 0), (3, 1), (4, 2), (5, 3)];
 
 #[test]
 fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
-    for (rank, hull, print) in HULL_FIGHTS {
+    let pinned = crate::door_tests::pinned("fight.hulls");
+    assert_eq!(pinned.split(' ').count(), HULL_FIGHTS.len(), "a fingerprint pinned for each hull");
+    for ((rank, hull), print) in HULL_FIGHTS.into_iter().zip(pinned.split(' ')) {
         let prints = fought_with(rank);
         let begun = answer(&fight_begin_json(
             format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#)

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startRoomDoor } from './roomDoor.ts';
+import { pinned } from './pinnedForTests.ts';
 
 const compiled = new WebAssembly.Module(
   await readFile(new URL('../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)).catch(() => {
@@ -9,8 +10,8 @@ const compiled = new WebAssembly.Module(
   }),
 );
 
-/** The isle crate's own test pins the same fingerprint natively (crates/isle/src/tests.rs, GROUND_41_DESERT). */
-const GROUND_41_DESERT = '5372bca559dd7c59';
+/** The isle crate's own test holds the same fingerprint natively (crates/isle/src/tests.rs). */
+const GROUND_41_DESERT = pinned('isle.ground_41_desert');
 
 /** FNV-1a over the numbers' bits, little-endian, as the crate's test takes it. */
 function fingerprint(numbers: Float64Array): string {
@@ -26,8 +27,8 @@ test("the page's WebAssembly builds an island's ground to the room's own bits", 
   assert.equal(fingerprint(door.isleHeights('41', 'desert', [0, 0])), GROUND_41_DESERT);
 });
 
-/** crates/room-wasm/src/isle_door_tests.rs pins the same of the room's own plans (PLANS): a cove and a quarry. */
-const PLANS = 'baa11ec6b5b25530';
+/** crates/room-wasm/src/isle_door_tests.rs holds the same of the room's own plans: a cove and a quarry. */
+const PLANS = pinned('isle.plans');
 
 test("the page's WebAssembly lays every module, block and post of an island where the room does", () => {
   const door = startRoomDoor(compiled);

@@ -9,6 +9,7 @@ import { LocalRoom } from '../../network/localRoom.ts';
 import { inputBytes } from '../../network/messages.ts';
 import { nodeText } from '../footGround.ts';
 import type { NodeInfo } from '../worldData.ts';
+import { INTENT_FLOATS } from '../../rules/fighters.ts';
 
 const MODULE = new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -75,7 +76,7 @@ test('Saltgrass Downs opened alone lays its three mouths, and a dive begins at a
   const room = LocalRoom.openNode(compiled, text, () => undefined, false, { gear: (said) => (gear = said) });
   room.pump(0.5);
   const ask = { kind: ASKS.beginDive, column: 0, slot: 1, node: 0 };
-  const intent = new Float64Array(18);
+  const intent = new Float64Array(INTENT_FLOATS);
   room.send(inputBytes(1, { intent, look: { anim: 'idle', frame: 0, facing: 0 }, arms: 0, seen: 0n, ask }));
   room.pump(0.5);
   const dive = (gear as GearState | null)?.dive;

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { type Helm, startLand } from './landRules.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/land_wasm.wasm', import.meta.url);
 
@@ -64,7 +65,7 @@ test('a voyage through WebAssembly sails to the same fingerprint as the door nat
     time += ticks / 60;
   }
   assert.equal(ship[7], 1, 'it ends on its oars');
-  assert.equal(fingerprint(sailed), 'd601ea9a3a491186');
+  assert.equal(fingerprint(sailed), pinned('land.sail_square'));
 });
 
 test('the sail door refuses a ship that is not a ship, and answers aground on land', async () => {
@@ -97,5 +98,5 @@ test('a voyage onto the shore and off it sails to the same fingerprint as the do
     time += 1;
   }
   assert.ok(touched, 'it took the ground');
-  assert.equal(fingerprint(sailed), '3128c283b0a2a3ea');
+  assert.equal(fingerprint(sailed), pinned('land.shore_voyage'));
 });

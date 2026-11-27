@@ -236,9 +236,6 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
     assert!(open_sea(layout.as_bytes(), 7), "a layout alone, with no lanes");
 }
 
-/// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "6758ee910bd8e6a0";
-
 /// A new player handed the Sloop, as the Harbourmaster hands it over in the welcome: one the sea lets in.
 fn sailor() -> gear::Character {
     let mut character = gear::Character::starting();
@@ -276,7 +273,8 @@ fn a_sea_where_a_tithe_ship_attacks_a_friendly_ship_and_a_player_joins_them_snap
         }
     }
     assert!(clashed && three, "the Tithe ship attacked, and the player joined beside the friendly ship");
-    assert_eq!(format!("{hash:016x}"), SEA_CLASH_HASH);
+    // roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do, to the same value.
+    assert_eq!(format!("{hash:016x}"), pinned("sea.clash"));
 }
 
 #[test]
@@ -727,3 +725,7 @@ fn a_sea_opened_with_the_islands_names_locks_the_sea_of_every_island_not_named()
     let player = room_join();
     assert_eq!(input(player, &protocol::course_bytes(&[[350_000.0, 150_000.0]], 10)), TAKEN);
 }
+
+#[path = "../../land/tests/support/pinned.rs"]
+mod pinned;
+pub(crate) use pinned::pinned;
