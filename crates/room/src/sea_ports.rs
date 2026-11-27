@@ -112,7 +112,10 @@ impl Sea {
                 || pieces.iter().any(|piece| piece.player == *each)
         });
         self.harbour.accounts.insert(player, account.to_owned());
-        self.unpark(account);
+        // A passenger sails no ship of their own, so theirs lies parked on, to be parked again as they leave.
+        if !self.travels_aboard(player) {
+            self.unpark(account);
+        }
         self.moor_left(player);
         true
     }

@@ -2,7 +2,8 @@
 //! the sea (`ask_aboard`) is let in with no ship of their own, and theirs, if they keep one, stays where it lies; once
 //! their account is known they board the ship of the player of their company they named (`go_aboard`). Aboard, they
 //! set no course and take no helm, and are sent what its captain is sent, its ship as their own. They get off by
-//! leaving the sea, and are let off, told so (`LET_OFF`), as its captain leaves it.
+//! leaving the sea, and are let off, told so (`LET_OFF`), as its captain leaves it, still setting no course until they
+//! leave in turn.
 
 use super::Sea;
 use crate::PlayerId;
@@ -20,7 +21,7 @@ pub enum AboardRefused {
     NoCaptain,
 }
 
-/// The players who asked to travel aboard and are not aboard yet, and each passenger's captain.
+/// The players who asked to travel aboard and are not aboard yet, or were let off, and each passenger's captain.
 #[derive(Debug, Default)]
 pub(crate) struct Passengers {
     asked: BTreeSet<PlayerId>,
@@ -68,13 +69,15 @@ impl Sea {
         self.passengers.captains.iter().map(|(player, captain)| (*player, *captain))
     }
 
-    /// Whether a player asked to travel aboard another's ship or is aboard one: they sail no ship of their own.
+    /// Whether a player asked to travel aboard another's ship, is aboard one or was let off one: they sail no ship of
+    /// their own.
     #[must_use]
     pub fn travels_aboard(&self, player: PlayerId) -> bool {
         self.passengers.asked.contains(&player) || self.passengers.captains.contains_key(&player)
     }
 
-    /// A player leaves the sea: they travel aboard no more, and every passenger aboard their ship is let off.
+    /// A player leaves the sea: they travel aboard no more, and every passenger aboard their ship is let off, sailing
+    /// no ship of their own until they leave the sea in turn.
     pub(super) fn let_off(&mut self, player: PlayerId) {
         self.passengers.asked.remove(&player);
         self.passengers.captains.remove(&player);
@@ -82,6 +85,8 @@ impl Sea {
             self.passengers.captains.iter().filter(|(_, captain)| **captain == player).map(|(each, _)| *each).collect();
         for passenger in aboard {
             self.passengers.captains.remove(&passenger);
+            // Their own ship was never put to sea here, so they sail none until they leave.
+            self.passengers.asked.insert(passenger);
             self.harbour.told.push((passenger, vec![LET_OFF, self.clock as f64]));
         }
     }
