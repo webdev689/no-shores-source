@@ -51,11 +51,17 @@ fn pledge(character: &mut Character, faction: u8) {
 
 /// A new character in Overlook, round heard, ridden and sailed, its gifts worn: at "Use your gifts".
 fn dressed() -> Character {
+    dressed_after(|_| {})
+}
+
+/// As `dressed`, with `early` done once the round is heard, before the ride.
+fn dressed_after(early: fn(&mut Character)) -> Character {
     let mut character = Character::starting();
     speak(&mut character, "stranger");
     for key in ROUND {
         speak(&mut character, key);
     }
+    early(&mut character);
     character.ride_the_lesson();
     speak(&mut character, "harbourmaster");
     character.sail_the_lesson();
@@ -154,6 +160,37 @@ fn use_your_gifts_follows_put_them_on_and_each_step_ticks_as_the_room_answers_it
     let letter = character.mail[0].id;
     assert!(character.ask(Ask::TakeLetter { letter }, SOCIAL, &DICE).is_ok());
     assert_eq!(task(&character), Some("hear-three-houses"));
+}
+
+#[test]
+fn a_cloak_taken_out_and_a_dye_worn_before_the_task_count_as_it_begins() {
+    let character = dressed_after(|character| {
+        let cloak = character.items.iter().find(|(_, (item, at))| item.kind == Kind::Cloak && *at == At::Vault);
+        let item = *cloak.expect("the Vault Keeper's cloak").0;
+        assert!(character.ask(Ask::Withdraw { item }, SOCIAL, &DICE).is_ok());
+        assert!(character.ask(Ask::Wear { item, slot: Slot::Cloak }, SOCIAL, &DICE).is_ok());
+        let cosmetic = crate::cosmetics::number_of(TAILORS_DYE).expect("a dye");
+        assert!(character.ask(Ask::WearCosmetic { cosmetic }, SOCIAL, &DICE).is_ok());
+    });
+    assert_eq!(task(&character), Some("use-your-gifts"));
+    assert_eq!(character.quest_counts(), [0, 1, 1, 0], "the cloak and the dye, done before, count; not done again");
+}
+
+#[test]
+fn every_gift_used_on_the_round_meets_its_step_though_the_letter_brings_a_vestige() {
+    let character = dressed_after(|character| {
+        let vestige = *character.vestiges.keys().next().expect("the Mage's Vestige");
+        assert!(character.ask(Ask::Identify { vestige }, SOCIAL, &DICE).is_ok());
+        let cloak = character.items.iter().find(|(_, (item, at))| item.kind == Kind::Cloak && *at == At::Vault);
+        let item = *cloak.expect("the Vault Keeper's cloak").0;
+        assert!(character.ask(Ask::Withdraw { item }, SOCIAL, &DICE).is_ok());
+        let cosmetic = crate::cosmetics::number_of(TAILORS_DYE).expect("a dye");
+        assert!(character.ask(Ask::WearCosmetic { cosmetic }, SOCIAL, &DICE).is_ok());
+        let letter = character.mail[0].id;
+        assert!(character.ask(Ask::TakeLetter { letter }, SOCIAL, &DICE).is_ok());
+        assert_eq!(character.vestiges.len(), 1, "the Postmaster's, sealed");
+    });
+    assert_eq!(task(&character), Some("hear-three-houses"), "no step asked again");
 }
 
 #[test]

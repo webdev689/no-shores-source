@@ -5,8 +5,9 @@
 
 use crate::arts::{EARNED_ART, EARNED_TENET_ONE, EARNED_TENET_TWO, FRAGMENTS, arts};
 use crate::asks::{Done, Here, Refusal};
-use crate::character::{Character, UnknownKeys};
+use crate::character::{At, Character, UnknownKeys, Vestige};
 use crate::factions::factions;
+use crate::gifts::{GIFT_VESTIGE, MAGES_SLOT, POSTMASTERS_SLOT};
 use crate::horses::FIRST_HORSE;
 use crate::kinds::Slot;
 pub use crate::quest_defs::{
@@ -365,8 +366,9 @@ impl Character {
     }
 
     /// Tells the quest walked of every piece worn but plain clothes, and of every slot a smith has sold a piece for, so
-    /// a piece bought or put on before its task was reached counts once it is; and, to a use goal, of a Vestige opened
-    /// and a letter taken while none is left to open or take, so a save that used them before the task is not stuck.
+    /// a piece bought or put on before its task was reached counts once it is; and, to a use goal, of a gift used
+    /// before it: the Mage's Vestige no longer held sealed, the Postmaster's letter no longer in the mail, a cloak held
+    /// out of the vault, and a dye worn other than the one every player starts in.
     pub(crate) fn tell_held(&mut self) {
         // Told again until nothing more counts: a task met here may reach one the pieces held already meet.
         loop {
@@ -374,11 +376,19 @@ impl Character {
             let (wear, buy) = (asks(GoalKind::Wear), asks(GoalKind::Buy));
             let mut told = false;
             if asks(GoalKind::Use) {
-                if self.vestiges.is_empty() {
+                let gift = |vestige: &Vestige, slot| vestige.slot == slot && vestige.rarity == GIFT_VESTIGE;
+                if !self.vestiges.values().any(|(vestige, _)| gift(vestige, MAGES_SLOT)) {
                     told |= self.tell(&Event::Used(UseAct::Identify));
                 }
-                if self.mail.is_empty() {
+                if !self.mail.iter().any(|letter| letter.vestige.as_ref().is_some_and(|it| gift(it, POSTMASTERS_SLOT)))
+                {
                     told |= self.tell(&Event::Used(UseAct::Letter));
+                }
+                if self.items.values().any(|(item, at)| item.kind.slot() == Slot::Cloak && *at != At::Vault) {
+                    told |= self.tell(&Event::Used(UseAct::Withdraw));
+                }
+                if self.cosmetics.dye != crate::cosmetics::starting(crate::cosmetics::CosmeticKind::Dye) {
+                    told |= self.tell(&Event::Used(UseAct::Dye));
                 }
             }
             for slot in Slot::VESTIGE {
