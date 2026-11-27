@@ -1,5 +1,6 @@
 //! The repository's own checks, run as `cargo xtask <command>`.
-//! `check` is the one command CI runs and every change passes: format, lints, tests, then the repo's structure.
+//! `check` is the one command every change passes: format, lints, tests, then the repo's structure. CI runs it in its
+//! three parts side by side (`check rest`, `check rust`, `check page`).
 //! `repo` runs only the structure checks, which take about a second.
 #![allow(clippy::print_stdout, reason = "a command-line tool reports to the terminal")]
 
@@ -14,6 +15,7 @@ const USAGE: &str = "usage: cargo xtask <command>
 
 commands:
   check   everything CI runs: format, lints, tests, then the repo checks
+          check rest | rust | page: one of the parts CI runs side by side (rest holds the repo checks)
   shaders only the shaders: every one the client compiles, written out and validated as WGSL
   repo    only the repo checks: layout, file size, comments, layers, html, assets, versions, crates, vault links
           and dialogue";
@@ -22,9 +24,23 @@ fn main() -> ExitCode {
     let command = std::env::args().nth(1);
     match command.as_deref() {
         Some("check") => {
+            let part = std::env::args().nth(2);
+            let part = match part.as_deref().map(toolchain::Part::named) {
+                None => None,
+                Some(Some(part)) => Some(part),
+                Some(None) => {
+                    println!("{USAGE}");
+                    return ExitCode::from(2);
+                }
+            };
             // Read before the check, which takes minutes: a commit made meanwhile was never checked.
             let checked = checked_commit();
-            let code = if toolchain::run_all() { report_repo_checks() } else { ExitCode::FAILURE };
+            let passed = part.map_or_else(toolchain::run_all, toolchain::run_part);
+            let code = match (passed, part) {
+                (false, _) => ExitCode::FAILURE,
+                (true, None | Some(toolchain::Part::Rest)) => report_repo_checks(),
+                (true, Some(_)) => ExitCode::SUCCESS,
+            };
             println!("{checked}");
             code
         }

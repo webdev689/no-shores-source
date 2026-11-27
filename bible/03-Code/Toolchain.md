@@ -117,12 +117,12 @@ it). Cycles renders on the CPU, so it bakes anywhere: `python -I tools/flora/bak
 | Command | What it does |
 |---|---|
 | `npm ci` | Install the TypeScript tools (once, and when `package-lock.json` changes) |
-| `cargo xtask check` | Everything CI runs, both languages |
+| `cargo xtask check` | Everything CI runs, both languages; `cargo xtask check rest`, `rust` or `page`, one of the three parts CI runs at once ([[Checks]]) |
 | `cargo xtask repo` | Only the repo checks, in about a second |
 | `npm run dev` | The client in a browser, reloading as you edit; the [[World Editor]] at `/editor/` |
 | `npm run schema` | Makes the messages' Rust and TypeScript into `generated/messages/` (not in git), installing the pinned `flatc` first if it is not there |
 | `npm run wasm` | Builds the world rules, the land and movement as WebAssembly into `client/public/` (not in git), and the room for the server; `dev` and `build` run it first |
 | `npm run bake` | Cuts each node's window of the land, its section and its boxes into `generated/nodes/` (not in git), for the server's rooms |
 | `npm run server` | Runs the server's rooms locally, at `ws://127.0.0.1:8787/room/<name>`, after the messages, the WebAssembly and the bake |
-| `npm test`, `cargo test` | One side's tests |
+| `npm test`, `cargo test` | One side's tests; `cargo nextest run --workspace` runs every crate's Rust tests at once, once installed (`cargo install cargo-nextest --locked`) |
 | `npm run desktop` | The [[Desktop App]] on the live game, or on `NOSHORES_GAME_URL` |
