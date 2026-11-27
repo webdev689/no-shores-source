@@ -13,24 +13,19 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   built: the sea, foes and fighting, the patrol zones' folk, the Drowned Vale, the lore, the page, and the repo's
   rate limit, workflows and two new checks). A merge deploys the page, the site, the rooms and the bot, and releases
   the desktop app.
-- **Merging on the owner's yes once CI passes on its head**: #236 (a player's feedback: M the map and N the leave,
-  Tab and the side buttons bound anywhere, the controls sheet's words first, a master volume and an interface size, the
-  held map's legend hidden on L, a landing icon's card on hover, the mouse back as a window shuts, and the sea map's
-  names laid out far less often and faster; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]];
-  `main` taken in). A merge deploys the page, the site, the rooms and the bot, and releases the
-  desktop app.
 - **Merging on the owner's yes ("merge and deploy all") as CI passes**:
-  - #235: hostile ships come out 1 km off at the helm, still seen and kept from 5 km.
   - #242: helpers capped at two, their briefs corrected, `headroom learn` suggesting only (review 4, 5, 13).
-  - #243: the game's test hooks and the picture tools work everywhere or say why not (review 10).
   - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
   - #245: new repo checks, each landing with what it refuses fixed (review 8).
+- **Other sessions' pull requests**: #248 (the lying-still intent built by one helper), #249 (the welcome's steps
+  done early count), #250 (the kit runs only in cloud sessions), #251 (drops larger, weapons and armour as pickups)
+  and #252 (a newer merge on main cancels the older run's check).
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
 - **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
-- **Merge order**: #235 and #245 both move the sea clash pin: whichever merges second moves its line in
-  `content/fingerprints.txt`. #242 and #244 share lines in `install-all.sh`, `check_tools.py`, CLAUDE.md
+- **Merge order**: #245 moves the sea clash pin #235 moved: it takes main's line in `content/fingerprints.txt`
+  before it merges. #242 and #244 share lines in `install-all.sh`, `check_tools.py`, CLAUDE.md
   and the Toolkit.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
