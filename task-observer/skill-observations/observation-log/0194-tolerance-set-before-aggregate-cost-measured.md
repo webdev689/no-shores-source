@@ -1,7 +1,7 @@
 ---
 id: 194
 title: "A collision tolerance chosen from first principles (0.25 m) multiplied a world's boxes 5.6x, and a cap was later set the same way; both times the aggregate cost was measured on one part of the real data (continent 1) and only later on all of it, forcing rework"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "choosing a tolerance that a system applies to every element"
 date: 2026-11-24
 session_context: "No Shores, invisible climbable prop bounds: boxes made to keep within KEEP_M of each solid and prop. At 0.25 m the continent's zones went from 22,518 boxes to 237,335; tilted rubble domes alone were 44,000 in one zone. The codebase already had a precedent (halls.rs OVERSHOOT_M = 0.45) that settled it at 2.75x once found."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: cargo test -p room --test zz_prop_probe (a temporary probe) -> totals 237,335 at 0.25 m, 61,851 at 0.45 m with tilt rules, 70,268 final; old code 22,518. Second instance: cargo test --release -p room --test zz_counts over all nine continents -> 3,178,600 boxes uncapped against 272K on main (cities 21x), up to 11,168 of one solid over a 2 m movement cell; main measured from a git worktree of the merge base"
 ---

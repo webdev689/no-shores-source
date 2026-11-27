@@ -1,7 +1,7 @@
 ---
 id: 246
 title: "A Breach's run cannot be pictured offline, so its look was judged on a scratch harness"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "picturing a place's look headless (Browser QA)"
 date: 2026-11-24
 session_context: "#200, wk-breach-look: enterBreachRun needs the rooms, and the &run= dev hook opens dungeons only, so the worker drew the run's props through a scratch runShot.ts on a vite URL; vite's HMR reloaded the page mid-capture when the harness changed."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference:
 commands_verified: "reported by the worker (OBSERVATIONS line); the harness is in ~/wt/reports/wk-breach-look-shots/runShot.ts, never committed"
 ---

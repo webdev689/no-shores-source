@@ -1,7 +1,7 @@
 ---
 id: 203
 title: "Geometry tests measured boxes against an idealised shape (smooth rounds, a pyramid as a cone, tilts by sin) instead of what the page actually draws, so real misfits of up to 37 m passed; five independent read-only audits found them"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "choosing what a test measures against (its oracle)"
 date: 2026-11-24
 session_context: "No Shores, PR #186 deep audit. hug_tests.rs measured every round as a smooth circle while solidMesh.ts draws an n-gon and a dome in 2-8 rings (boxes stood 0.5-1.6 m off the drawn mesh); tilt_reach used sin|angle|, which falls to 0 at pi, so mill sails rolled 3.54/5.11 rad were boxed 34-37 m off and wholly left out; no test used an angle past 1.39 rad; the halving cap returned whole boxes while the budget reported a fit; the prop-parts tests read their tolerances from the code under test."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: cargo test -p city --lib (after switching distance_to to the drawn polygon/ring model) -> every_shape test failed at 0.50 m off for a 16-sided dome; a_shape_tilted_past_a_right_angle test failed with 12 m left out before the chord fix; node --test propParts.test.ts top-to-mesh test failed at 0.665 m with the old 0.5 m columns"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 177
 title: "uiShot calls a shot's build every frame, so a shot that makes its own display inside build restarts it each frame"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "headless interface pictures"
 date: 2026-11-24
 session_context: "hudShots.ts first built a new Hud inside each build: the veil's fade restarted every frame and the strip's placement (which reads the frame before) never settled. Kept per shot in a Map, as journalShots keeps its layer."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference: "client/src/game/hudShots.ts"
 commands_verified: "node tools/uiShot.mjs <shots.json> with frames 60"
 ---

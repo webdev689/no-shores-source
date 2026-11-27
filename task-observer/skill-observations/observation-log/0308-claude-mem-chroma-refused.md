@@ -1,7 +1,7 @@
 ---
 id: 308
 title: "claude-mem's semantic search refused its connection in workers; only the keyword fallback answered"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "claude-mem in a fresh container"
 date: 2026-11-26
 session_context: "music-pass's first claude-mem search: chroma connection refused, keyword fallback found nothing; check-tools had passed it with a WARN for no store."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "~/wt/reports/music-pass.log"
 commands_verified: "none by the controller; the worker's report"
 ---

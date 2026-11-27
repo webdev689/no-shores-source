@@ -1,7 +1,7 @@
 ---
 id: 146
 title: "Workers sharing the main checkout's CARGO_TARGET_DIR left cargo xtask checking a worker's worktree"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running parallel workers in git worktrees"
 date: 2026-11-22
 session_context: "No Shores prologue work. Three Agent workers in worktrees were told to use CARGO_TARGET_DIR=/home/user/overlook-source/target to spare the CPU. Afterwards `cargo xtask check` run in the main checkout printed 'checked 13d65a5e' (a worker's commit) and failed for that worktree's missing node_modules: the xtask binary last built in the worker's tree kept its root."
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference:
 commands_verified: "cargo xtask check (run: checked the worker's 13d65a5e, failed on 'npm ci first'; after touching crates/xtask/src/main.rs and rebuilding, it checked the main tree)"
 ---

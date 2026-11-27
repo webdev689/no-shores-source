@@ -1,7 +1,7 @@
 ---
 id: 265
 title: "A worker's cargo xtask repo piped through tail hid its failure and let a commit through"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "no-shores-source, regions worker"
 date: 2026-11-25
 session_context: "The regions worker ran `cargo xtask repo | tail` before committing; the pipe's status was tail's, so a failing repo check passed unnoticed and the commit went in, fixed later by an amend. The same worker had to revert its whole first cut when the owner changed the plan mid-item, and found that planning extra gate areas reshuffles every later layout step, so it added crossings after planning. CLAUDE.local.md itself advises piping long commands through tail."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "git log /root/wt/cut (6fe5d6a6 amended after the hidden failure)"
 ---

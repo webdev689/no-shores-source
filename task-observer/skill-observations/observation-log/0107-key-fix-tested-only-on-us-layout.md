@@ -1,7 +1,7 @@
 ---
 id: 107
 title: "A fix to how keys are named was tested only on US codes and broke letters on AZERTY and Dvorak; an audit of the audit caught it"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "audits; tests of input handling"
 date: 2026-11-22
 session_context: "The codebase audit (PR #142) named signs by their US key position so Shift could not rename them; its test used KeyA, Comma and Digit2. An independent read-only audit of the pull request found AZERTY's M (code Semicolon) became ';' and stopped opening the menu, and Dvorak's W, S, V and Z became signs."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference: "PR #142, commits 88f1be0a (the regression) and 0ed5b1d1 (the fix)"
 commands_verified: "run: node --test client/src/player/input.test.ts fails on 88f1be0a's naming with AZERTY/Dvorak/German cases and passes after 0ed5b1d1"
 ---

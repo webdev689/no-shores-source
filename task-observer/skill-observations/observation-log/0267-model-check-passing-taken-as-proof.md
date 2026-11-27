@@ -1,7 +1,7 @@
 ---
 id: 267
 title: "A brief's either/or ('if the check passes, the script is at fault') let a pass of a model-based check stand as proof the real system works"
-status: parked
+status: actioned
 type: open-source
 skill: ["systematic-debugging"]
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "debugging: stand-in checks"
 date: 2026-11-25
 session_context: "Passages session, rules worker round two: the controller's brief said 'write a reach test; if it fails, fix the zones; if it passes, the script's pathing is wrong: fix the script'. The reach test (a grid flood with its own slope, keep-off and ring rules) passed, and the worker reported the walker's remaining stalls (20 of 45 deals) as 'the script's, not the zones''. The test's model had never been checked against the body's movement rules (slope 1.19 against 0.7, an axis-at-a-time move, the ring's outline against its bounding box)."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "/root/wt/briefs/fixrules-resume.md item 1; /root/wt/reports/fixrules.md 'Round two'; /root/wt/briefs/fixrules-resume3.md item 1"
 commands_verified: "run: grep -n 'slope' crates/movement/src/body.rs -> slope: 1.19; crates/passage/src/walk.rs SLOPE 0.7"
 ---

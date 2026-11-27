@@ -1,7 +1,7 @@
 ---
 id: 158
 title: "A pinned fight fingerprint broke after several fixes at once: each fix was taken out alone to find which moved it, and the fight it pins measured, before re-pinning"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "re-pinning a golden fingerprint after a behaviour change"
 date: 2026-11-23
 session_context: "2026-11-27, session 01AQ3N4rcsyHKfuU32sdJH24: the passage Ambush fingerprint broke after the arrival grace and the farther posts merged together; each was taken out alone (grace off: still never done; posts at 14 m: done at 3838), which pointed at the posts, and the bands worker then found the scripted player climbing a tree beside a foe. Earlier: Patrol audit: four fixes to the foes' minds landed together (stale answers, the section's dead, a falling-back target, swings told only to the foe they are at). spread_tests::one_player_against_a_group_fights_as_it_always_did failed on its fingerprint. Taking out the swing filter alone brought the old fingerprint back, so the other three did not touch that fight; a throwaway test then measured blows landed on a lone swinging player a minute against 3, 6 and 12 foes with and without the filter (44.7/44.3/42.5 vs 45.2/44.2/43.0) before the pin was moved."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: cargo test -p room --lib one_player_against_a_group_fights_as_it_always_did with the filter taken out -> ok on the old hash; with it -> 592690bc435b7cb3"
 ---

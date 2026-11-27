@@ -1,7 +1,7 @@
 ---
 id: 205
 title: "A full module bake took over 2 hours on shared cores; baking only the changed modules with bake.py's own baked() and splicing took 2 minutes, and 'before' renders raced the edits"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "re-baking a few Blender modules locally while other workers share the cor
 date: 2026-11-24
 session_context: "PR #179's third audit, fix3-look: changed outpost_*.py (slits, windows, braziers, Delve Gate). The brief said a full bake takes ~20 min; with four workers on 4 cores it ran over 2 h. The worker baked only the 12 outpost modules through bake.py's baked() with a scratch script and spliced them into content/modules/modules.json, twice, byte-identical. Its background Blender 'before' renders read module files after later edits, so they showed the new shapes; it re-rendered 'before' from a git archive copy of HEAD."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference:
 commands_verified: "worker's report /root/wt/reports/fix3-look.md and its OBSERVATIONS lines; .github/workflows/modules.yml lines 44-54"
 ---

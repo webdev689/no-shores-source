@@ -1,7 +1,7 @@
 ---
 id: 170
 title: "A TypeScript test edited by script went to the full check without its own lint and type check, so two full runs stopped at one-line faults"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running the repo's slow full check after small edits"
 date: 2026-11-23
 session_context: "Audit fixes for a writing pass added a timing test to client/src/game/prologue/seaBeats.test.ts by python. The full `cargo xtask check` (about 25 minutes) failed first at ESLint id-length on a variable named `at`, then, after a rename, at tsc (JSON scene typed as string where the Line type wants 'bark'). Each fault took seconds to find with `npx eslint <file>` and `npm run -s types`, and xtask stops at the first failed step."
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference: "branch ccr-c249af15-iwfmsb commits 4d6b2823 and 06899477"
 commands_verified: "run: npx eslint client/src/game/prologue/seaBeats.test.ts -> 2 id-length errors before the rename, clean after; run: npm run -s types -> TS2322 before scenesOf, exit 0 after"
 ---

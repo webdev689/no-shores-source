@@ -1,7 +1,7 @@
 ---
 id: 317
 title: "A pull request's 'tested offline' stood for weeks of pushes on which CI never reached the tests: the types step failed first on every head"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "reading CI's result before calling a pull request tested"
 date: 2026-11-26
 session_context: "Audit of #221: its body said the suites passed offline and left the full check to CI; every check run on its four heads failed at 'types (TypeScript)' (heldMapAsk.test.ts:78, a strict assert narrowing to never), so cargo test and npm test never ran in CI. The previous session ran the suites but never tsc on the test config. The same session's re-pinned fingerprint was never run in CI either."
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference: "CI job 139932413175 on 01c721ba; fix 1f846c5b on ccr-c7c30290-wwnvc5"
 commands_verified: "mcp get_job_logs on the check job: run, showed the failure at types before any test step; npx tsc -p tsconfig.node.json: run, reproduced TS2339"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 105
 title: "A cloud clone's local main is stale, so an audit brief that says main...branch hands the auditor 1,350 files"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "audits, git ranges"
 date: 2026-11-22
 session_context: "Auditing PR #143: the brief said `git diff main...ccr-e806aa9f-fngvgz`. Local main and origin/main were at #98 (4da959f5) while the branch started at #136 (011da6bf), so the range showed 1,350 files; a correction (`011da6bf..branch`) was sent mid-run. Main had also moved on to f8d220cc with seven conflicting files, found only by fetching."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: git log -1 main and origin/main both 4da959f5 before `git fetch origin main`; after it f8d220cc; `git merge-tree --write-tree --name-only HEAD origin/main` listed the seven conflicts without touching the tree"
 ---

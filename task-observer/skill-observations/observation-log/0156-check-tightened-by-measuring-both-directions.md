@@ -1,7 +1,7 @@
 ---
 id: 156
 title: "Tightening a repo check: prototype the new rule over the whole corpus and measure false alarms and leaks before writing it"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "changing a lint or repo check without breaking what it already passes"
 date: 2026-11-23
 session_context: "Audit leftovers session: the owner approved tightening the vault check (a code: #symbol passed if any word of its file named it, an import included) and the html check. A Python prototype of 'defined, not only named' was run over all 1,610 code: symbols (false alarms) and over 23,566 names files only import (leaks): first cut 0 false alarms but 2,666 leaks (calls at a line's start read as methods); second cut 1 false alarm (a parameter holding a function); third cut 0 false alarms, 572 leaks. The Rust port was then proven live by planting two bad refs and seeing exactly those two flagged."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: python3 defproto.py (scratchpad) -> 0 failing refs, 572 of 23566 import-only names passing; cargo xtask repo -> 'repo checks: 3703 files, no problems'; with two planted refs -> 2 problem(s)"
 ---

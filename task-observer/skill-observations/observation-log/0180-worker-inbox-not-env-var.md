@@ -1,7 +1,7 @@
 ---
 id: 180
 title: "The common brief names `$WORKER_INBOX` as if it were set, but it is only a path in the task text; files sitting at 593-599 lines turn any edit into a size violation"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "headless workers: the common brief's inbox and the line limits"
 date: 2026-11-23
 session_context: "Guild outposts session: the outpost-room worker's OBSERVATIONS said `$WORKER_INBOX` is a path in the task text, not a set environment variable; that a size fix once pushed garrison.rs to 601 lines after cargo fmt wrapped an edit, caught only by `cargo xtask repo`; and that room-wasm/lib.rs at 593 lines forces new doors into new files."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "/root/wt/reports/outpost-room.log (OBSERVATIONS line)"
 commands_verified: "run: python3 tools/claude-toolkit/workers/audit.py /root/wt/outpost-room -> MISSING (defect): none; FIRST3 ok"
 ---

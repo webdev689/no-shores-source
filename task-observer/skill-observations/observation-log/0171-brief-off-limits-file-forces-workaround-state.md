@@ -1,7 +1,7 @@
 ---
 id: 171
 title: "A worker brief that put a file off-limits to avoid a clash forced its state into a side map, and a test helper stood players on roofs"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "scoping parallel workers' files, and walking tests on covered ground"
 date: 2026-11-23
 session_context: "Patrol audit 'Fix everything': the controller kept crates/room/src/quests.rs for itself and listed it off-limits to worker cavefoes; the worker needed a 'since when' on garrison posts that quests.rs builds as Post literals, so it kept the field in a Room map keyed by a group's first foe instead of on Post. It also found the room's put_player stands a body on the highest roof, so a test walking covered run beats had to drive real inputs; and a new Room field's name clashed with an existing 'quiet'."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "none"
 ---

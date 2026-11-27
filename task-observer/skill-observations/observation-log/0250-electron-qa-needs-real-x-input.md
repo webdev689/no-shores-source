@@ -1,7 +1,7 @@
 ---
 id: 250
 title: "Driving the desktop app headless: Playwright's keys never reach Electron's shell, and a packed app cannot be attached"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Browser QA of the desktop app (desktop/)"
 date: 2026-11-25
 session_context: "The desktop app session, branch ccr-42a55a97-wkid9r, PR #210. Playwright's _electron.launch drove the unpacked shell under xvfb; F11, Alt+Enter and F12 went unanswered until sent as real X keys."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference:
 commands_verified: "page.keyboard.press('F11') -> before-input-event heard nothing; xdotool windowfocus --sync <id>; xdotool key F11 -> isFullScreen() true (windowactivate refused: no window manager under xvfb)"
 ---

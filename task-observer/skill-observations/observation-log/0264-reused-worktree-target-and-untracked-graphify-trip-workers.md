@@ -1,7 +1,7 @@
 ---
 id: 264
 title: "A worktree moved to a second worker keeps the first one's build (fixtures and build scripts point at the old path), the disk runs low, and the template's graphify-out step errors where it is untracked"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "no-shores-source, passages client part-two worker"
 date: 2026-11-25
 session_context: "To save disk the controller moved finished worktrees (git worktree move) and gave them to new workers on new branches. The client part-two worker found its target/ tied to the earlier worker's build, so cargo test -p protocol built against content lacking a new file and five fixture tests stayed red. graphify-out is in .gitignore here, so the template's git checkout -- graphify-out step errored. uiShot.mjs cannot run builders that need async setup, so the worker reused a scratch script."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "git worktree move /root/wt/client /root/wt/client2; node --test client/src/game/*.test.ts (5 fixture failures)"
 ---

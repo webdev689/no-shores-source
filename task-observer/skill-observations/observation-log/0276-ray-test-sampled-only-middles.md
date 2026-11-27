@@ -1,7 +1,7 @@
 ---
 id: 276
 title: "A geometry test that samples one point per opening passes over openings partly covered"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "geometric tests of openings (windows, doorways)"
 date: "2026-11-25"
 session_context: "#207 audit: 'an open building's windows are holes through its wall' cast one ray through each pane's middle. A lower wing's gable reached half a metre into 33 windows' feet in 16 buildings; every middle stood above it, so the test passed. Sampling near the four corners as well failed 60 panes on the old code and none on the fix."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "node --test --test-name-pattern='windows are holes' client/src/models/buildings.test.ts: before the fix, 'seen through: 24276 of 24336' with corner samples; with middles only it passed"
 ---

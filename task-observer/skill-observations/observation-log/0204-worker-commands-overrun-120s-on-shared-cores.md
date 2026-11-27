@@ -1,7 +1,7 @@
 ---
 id: 204
 title: "With four workers on four cores, a worker's npm run types and full client tests overran the 120 s Bash default"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "timeouts for check commands when workers share the cores"
 date: 2026-11-24
 session_context: "PR #179's third audit: four fix workers (errands, page, look, world) ran on the 4-core box, started 5 minutes apart. fix3-page reported that npm run types and the full client tests overran the 120 s Bash limit and had to be rerun with 300 s. It also found that the audit's picture harness needs playwright from /opt/node-tools, because worktrees have none in node_modules, and that menuForTests' drawn() has a fixed 1280x720 view."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "worker's own report, /root/wt/reports/fix3-page.md and fix3-page.log OBSERVATIONS line"
 ---

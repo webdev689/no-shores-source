@@ -1,7 +1,7 @@
 ---
 id: 121
 title: "A change to the naval rules moved a fingerprint pinned in room-wasm and server/roomDoor.test.ts, which the crate's own tests never ran"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "pinned determinism fingerprints"
 date: 2026-11-22
 session_context: "Overlook bugs and polish: captains' gunnery misjudgement in crates/naval changed fight outcomes."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "grep -rn <old hash> crates server client; cargo test -q -p room-wasm; node --import ./tools/testStyles.mjs --test server/roomDoor.test.ts"
 ---

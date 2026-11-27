@@ -1,7 +1,7 @@
 ---
 id: 209
 title: "A picture plan cannot set the weather: a shifted Date.now never reaches the sky, and the QA hooks lend no scene"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "picturing the weather"
 date: 2026-11-24
 session_context: "Picturing the island view in heavy rain for the owner's shrouded-overworld report. A plan's init shifting Date.now to a rainy world time (found with the sky crate) left the sky clear: two runs, before and after, came out identical. The offline room, in a worker the driver does not patch, keeps telling the page the real world time. A scratch build adding Object.assign(self, { __qaScene: scene }) and an eval setting scene.sky.told to a heavy rain pictured it (the old law solid grey, the new the island through rain). Also: a stop hook asks for a push on every turn while CLAUDE.md wants cargo xtask check first, and the check cannot run beside a picture run."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference:
 commands_verified: "node tools/claude-toolkit/webgpu-shot.cjs (four runs); NODE_ENV=development npx vite build"
 ---

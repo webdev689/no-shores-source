@@ -1,7 +1,7 @@
 ---
 id: 207
 title: "cargo test stops at the first failing test binary, hiding later failures, and a binary that never ran reads as a pass; workers and the controller need --no-fail-fast, and cargo test -p room ran over 10 minutes on shared cores"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "targeted Rust test runs inside workers"
 date: 2026-11-24
 session_context: "Second instance, 2026-11-24, the foes breath change (controller, not a worker): `cargo test -q -p foes` failed in crowds.rs and never ran groups.rs, so a lone-foe golden hash looked unbroken for two edits; the cause was then sought in the wrong edit. First instance: PR #179's third audit, fix3-errands: changed crates gear, room and room-wasm and server/*.ts. Its targeted cargo test runs stopped at the first failing binary, so each fix revealed the next failure one run at a time; cargo test -p room took over 10 minutes under the four-worker load. A new test helper (server/outpostReloadForTests.ts) importing client code tripped server/roomsDeploy.test.ts."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "worker's report /root/wt/reports/fix3-errands.md and fix3-errands.log OBSERVATIONS line"
 ---

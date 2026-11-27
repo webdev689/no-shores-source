@@ -1,7 +1,7 @@
 ---
 id: 247
 title: "A headless view taken before a zone's layouts' city is built shows none of its buildings, with no word that it is still building"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "picturing a layout's buildings headless"
 date: "2026-11-25"
 session_context: "The town fixes on #207 (claude/amazing-euler-gefw4k). Views inside the Saltgrass Downs' tavern after a 90 s wait showed open meadow where it stands; the same views after 240 s, or a few minutes later in the run, showed it whole. Mistaken first for walls seen through. The layouts' city is built in steps (landDrawers.ts standIn('city') while view.underWay)."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference:
 commands_verified: "node tools/claude-toolkit/webgpu-shot.cjs <plan> with { wait: 90 } (no buildings) and { wait: 240 } (the hamlet drawn)"
 ---

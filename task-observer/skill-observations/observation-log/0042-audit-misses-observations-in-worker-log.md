@@ -2,7 +2,7 @@
 id: 42
 title: "audit.py reports a missing OBSERVATIONS line that the worker's log holds"
 parked_until: "PR #242 merge"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []

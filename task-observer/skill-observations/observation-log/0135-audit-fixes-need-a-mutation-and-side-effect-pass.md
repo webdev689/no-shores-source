@@ -1,7 +1,7 @@
 ---
 id: 135
 title: "Workers' 'each test fails without its fix' held for helpers, not wiring; and three fixes caused regressions only a side-effect review found"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "calling an audit's fixes done"
 date: 2026-11-22
 session_context: "Overlook third audit, then the owner asked for an audit of the audit. Two workers reverted each fix's own lines and ran its tests: 46 of 52 Rust and 34 of 47 TypeScript fixes were caught; the 19 others were wiring (a helper tested, the call that puts it in the game not) or had no test. A side-effect review found three of the fixes themselves doing more than meant (a home-waters rule that left a hold in place, sails left furled, a stacked-wall rule too loose), and a reconciliation found a confirmed finding dropped from the PR."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: the mutation workers' reports (reverted hunk, test run, FAILS/PASSES), ~/wt/reports2/mut-rust.md and mut-ts.md this session"
 ---

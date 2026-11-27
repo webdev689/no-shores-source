@@ -1,7 +1,7 @@
 ---
 id: 296
 title: "Type-checking with tsc -p tsconfig.json alone passes while the tests' own project fails: run npm run types"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "checking types before a push"
 date: 2026-11-26
 session_context: "#216's audit fixes: the controller and a fixing sub-agent both ran npx tsc -p tsconfig.json --noEmit, clean; cargo xtask check then failed at 'types' on two tests whose assert.deepEqual(list, []) narrowed the list to never[]. A 50-minute check was spent to find it.; 2026-11-26 and 2026-11-27: two more sessions, one costing a 50-minute CI round (#319, folded in), one the first CI run of #232"
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "check3 on b06d383b after the fix; the failure on a152e3fe"
 commands_verified: "npm run -s types: run, clean after the fix; npx tsc -p tsconfig.json --noEmit: run, clean before it"
 ---

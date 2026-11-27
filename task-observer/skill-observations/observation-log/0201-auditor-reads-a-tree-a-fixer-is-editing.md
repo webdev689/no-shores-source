@@ -1,7 +1,7 @@
 ---
 id: 201
 title: "An audit agent run in the same checkout while the lead edits fixes reads a moving tree, and must fall back to git show HEAD"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "parallel audit and fix in one checkout"
 date: 2026-11-24
 session_context: "Revives branch (#184): the lead fixed code findings while a background agent audited the bible notes against the code. The agent saw footRevive.ts, checkpoints.rs, left.rs and lib.rs change under it and switched to git show HEAD:<file> to keep its claims about one commit."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference: "the agent's OBSERVATIONS line in its report"
 commands_verified: none
 ---

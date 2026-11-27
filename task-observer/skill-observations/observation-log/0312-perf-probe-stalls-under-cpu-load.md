@@ -1,7 +1,7 @@
 ---
 id: 312
 title: "The performance probe's first wait for the game timed out while two workers built Rust: R2 mesh fetches failed and the page never reached foot"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "headless profiling"
 date: 2026-11-26
 session_context: "Held map performance: the same plan on the same old build ran in 90 s on an idle machine and failed its 600 s 'until foot' wait with dozens of 'Failed to fetch' mesh errors while fix-rooms and fix-server workers compiled."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference: "scratchpad perf-before.log"
 commands_verified: "node tools/claude-toolkit/webgpu-perf.cjs <dist-before> <plan> <out>: run twice, once idle (passed), once beside two cargo builds (until not met)"
 ---

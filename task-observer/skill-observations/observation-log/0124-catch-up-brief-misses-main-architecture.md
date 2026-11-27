@@ -1,7 +1,7 @@
 ---
 id: 124
 title: "A catch-up brief that names main's merges but not their architecture leaves the merger to find a rewrite"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "catching a stacked PR up with main"
 date: 2026-11-22
 session_context: "Merging the five-PR stack after about 15 of main's merges. The brief listed the merges; it did not say main's #127 bans HTML in the interface, so #97's merger found its HTML screens refused and rebuilt the Journal, the board and an entrance card in the drawn interface (half the layer), and #123's the Postmaster's. Main also moved under every layer while it merged."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "git merge-tree --write-tree --name-only origin/main HEAD (the conflicts before merging)"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 261
 title: "A worker brief named the wrong folders for readers, and a fresh worktree lacks fixtures cargo tests write, so client tests fail there"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "no-shores-source, passages client worker"
 date: 2026-11-25
 session_context: "The controller's brief told the client worker to put the passages' readers 'in the client's rules folder beside the isle's and the dungeon's', but those live in client/src/islands and client/src/game, and the layer check forbids rules/ importing anything. Three client tests failed in the fresh worktree because they read fixtures only cargo test runs write (art_levels.json, schedule.json, native layouts); run-worker.sh builds the messages, the WebAssembly and protocol's fixtures, not these. tools/uiShot.mjs needs vite resolved from the repo root, so the worker imported it by full path. The container restarted mid-run once; the workers' uncommitted edits survived and --resume carried on."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "python3 tools/claude-toolkit/workers/audit.py /root/wt/client; git merge passages-client; cargo xtask repo"
 ---

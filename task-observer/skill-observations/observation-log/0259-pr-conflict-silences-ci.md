@@ -1,7 +1,7 @@
 ---
 id: 259
 title: "A pull request with a merge conflict runs no CI, and six pushes went unchecked for three hours unnoticed"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "waiting on CI"
 date: 2026-11-25
 session_context: "PR #208 went 'dirty' when main took #201 (both rewrote the hand-off's merged entries). GitHub then made no pull_request run for 243fe9f9 through bf4d8e44; I was watching the freesound workflow (push-triggered) and only noticed when listing ci.yml runs showed the last at 13:15. mcp pull_request_read get showed mergeable_state: dirty. Merged main (1f425f61), regenerated the schema (npm run schema: crates/protocol/src/generated is ignored and stale after a merge), CI run 1098 started at once."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference: "https://github.com/Lattymoy/no-shores-source/pull/208"
 commands_verified: "mcp__github__pull_request_read get (mergeable_state); npm run -s schema before cargo check after a merge"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 224
 title: "A baseline cargo xtask check run in the checkout being edited is spoiled by the edits; and cargo test stops at the first failing crate"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running the full check beside work in progress"
 date: 2026-11-24
 session_context: "Ships at the Harbourmaster: a baseline 'cargo xtask check' started on main's head in the same checkout reached its doctest stage after I had begun editing crates/naval, compiled the half-edited sources and failed (E0425 Helm), so its TypeScript half never ran and it told nothing about main. Later a 'cargo test --workspace' stopped at the first failing crate (room-wasm), hiding whether later crates passed; '--no-fail-fast' gave every failure in one run."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "NODE_USE_ENV_PROXY=1 cargo xtask check (failed in doctests on my edits); cargo test --workspace --locked -q (stopped at room-wasm); cargo test --workspace --locked -q --no-fail-fast (exit 0 after fixes)"
 ---

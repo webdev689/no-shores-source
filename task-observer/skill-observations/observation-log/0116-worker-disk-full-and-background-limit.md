@@ -1,7 +1,7 @@
 ---
 id: 116
 title: "Worker targets filled the disk allowance, and a background full check died at the default 10-minute limit"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "worker disk and background limits"
 date: 2026-11-21
 session_context: "Public events' second audit, worker biblefix2"
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: none
 ---

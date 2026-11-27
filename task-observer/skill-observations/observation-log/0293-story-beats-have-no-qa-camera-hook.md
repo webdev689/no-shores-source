@@ -1,7 +1,7 @@
 ---
 id: 293
 title: "The prologue story has no QA camera hook (__qaEye works in nodes only), so pictures of a story scene need pointer-locked mouse moves"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "picturing the prologue wreck headless"
 date: 2026-11-26
 session_context: "wreck worker turned the view with pointer-locked mouse moves to picture the heap; a skip at a given story second needed about 150 s of real time at 4 s a frame."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference:
 commands_verified: "wreck.md OBSERVATIONS"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 275
 title: "A page build started beside a running cargo xtask check deletes the generated messages the check's tests read"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running headless pictures beside the full check"
 date: "2026-11-25"
 session_context: "#207 audit: with `cargo xtask check` running in the background, a picture run began `npm run -s build`, whose prebuild runs tools/schema.mjs: it rmSync's generated/messages and writes it again. The check's TypeScript tests import generated/messages/ts. Caught and stopped before the schema step overlapped the tests; the earlier pictures beside a check reused a page already built."
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference:
 commands_verified: "none run to reproduce; read tools/schema.mjs (rmSync(OUT, { recursive: true, force: true }) before flatc) and package.json (prebuild: schema && wasm)"
 ---

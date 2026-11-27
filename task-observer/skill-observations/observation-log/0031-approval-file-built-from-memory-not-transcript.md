@@ -1,7 +1,7 @@
 ---
 id: 31
 title: "The fidelity review's approval file paraphrased what the owner was shown, so the review measured a correct note against wrong words"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Toolkit, Audits: the owner's words an audit brief is given (the fidelity 
 date: 2026-11-20
 session_context: "#102's fourth fidelity review, after the comprehensive audit"
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: a python scan of the session's transcript for the assistant text before the owner's 'Dont use the blurbs please' found 'a \"mood\" byte on each foe (steady, broken, raging) so the page can show it' and 'how to picture the emotes', and no message naming fear and anger emotes with their sounds"
 ---

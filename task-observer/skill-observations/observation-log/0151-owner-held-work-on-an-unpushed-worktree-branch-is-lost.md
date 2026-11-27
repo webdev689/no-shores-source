@@ -1,7 +1,7 @@
 ---
 id: 151
 title: "Work held for the owner sat on a local worktree branch (wt/fblade) never pushed, so it was lost with the container and the bible still points at it"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "keeping held or unmerged work alive across ephemeral cloud containers"
 date: 2026-11-23
 session_context: "Pickup of claude/bible-dungeon-matchmaking-5421wl: bible/Hand-off.md, Open Questions and the decision 'Faction Blades Wear Their Faction's Colour on Hilt and Trim' all say the faction blades are 'built on the branch wt/fblade', held by the owner. git ls-remote origin (290 refs) has no wt/fblade and no branch matching blade or trim; the earlier session's container is gone. The owner has since made the call that unblocks it (the Veiled's faint cold violet), and the work must be redone. The same pickup found the branch's last two decision commits pushed but with no pull request and no hand-off rewrite: the earlier session ended before its end-of-session steps."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "run: git ls-remote origin | grep -iE 'blade|faction|trim' -> only claude/enemies-factions-ai-fiapxf and claude/game-experience-factions-94un6s; no wt/fblade"
 ---

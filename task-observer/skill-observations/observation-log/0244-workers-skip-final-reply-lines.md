@@ -1,7 +1,7 @@
 ---
 id: 244
 title: "Both audio workers ended without naming their inbox headings, and one without its OBSERVATIONS line, though their reports covered them"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "no-shores-source, headless workers"
 date: 2026-11-24
 session_context: "wk-breach-ambience and wk-breach-music wrote full reports to ~/wt/reports/*.md, including the inbox items done, but their final replies lacked the INBOX line naming each heading; the music worker's lacked OBSERVATIONS. Their resumes were told again."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "python3 tools/claude-toolkit/workers/audit.py ~/wt/wk-breach-ambience; ... ~/wt/wk-breach-music"
 ---

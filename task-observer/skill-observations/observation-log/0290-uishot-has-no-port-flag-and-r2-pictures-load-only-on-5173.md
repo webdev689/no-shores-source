@@ -1,7 +1,7 @@
 ---
 id: 290
 title: "tools/uiShot.mjs has no port flag and falls back to 5173; a copy under target/ cannot find its modules; R2 serves pictures only to 5173"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "taking interface pictures from worker worktrees"
 date: 2026-11-26
 session_context: "welcome, wreck and hordes workers each copied uiShot.mjs to pick a port in 5180-5189 (the brief bars 5173); hordes found a copy under target/ fails since Vite's root is client/, so it copied into tools/ and deleted after; welcome's tiles showed initials and the keeper figure panel was empty because R2's CORS allows only 5173."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference:
 commands_verified: "welcome.md and hordes.md reports; v1_weaponsmith shots with initials"
 ---

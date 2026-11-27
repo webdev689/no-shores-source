@@ -2,7 +2,7 @@
 id: 44
 title: "A change ran its own crates' tests and missed a dependent crate's (a wire change; a passage change whose fingerprint lives in room-wasm): run every dependent's before the full check"
 parked_until: "PR #244 merge"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []

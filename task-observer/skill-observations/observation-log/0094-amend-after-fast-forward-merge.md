@@ -1,7 +1,7 @@
 ---
 id: 94
 title: "An amend after a merge that fast-forwarded rewrote a worker's commit; a clean merge left no attribution trailers"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "merging worker branches and main with trailers"
 date: 2026-11-21
 session_context: "Merging worker branches (overlook-source); again on #211"
 parked_until: "PR #239 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #239, merged 2026-11-27"
 reference:
 commands_verified: none
 ---

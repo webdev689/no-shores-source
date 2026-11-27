@@ -1,7 +1,7 @@
 ---
 id: 292
 title: "Four workers at once on 4 cores and 15 GB ran load 12 to 14: a timing test flaked, lint was OOM-killed during a picture run"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running item workers in parallel"
 date: 2026-11-26
 session_context: "welcome: a chalk-zone timing test failed at load 13 and passed alone; wreck: eslint OOM-killed while a headless picture run was going; SwiftShader frames took about 4 s each."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "uptime load 12.46 at 02:22; reports welcome.md, wreck.md"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 16
 title: "Workers twice wrote client tests that read Rust source text, against the Tests Check Behaviour rule"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "test rules enforcement"
 date: 2026-11-20
 session_context: "Overlook factions round: art-levels' artLevels.test.ts and plaza-welcome's lockedSpaces.test.ts each read a crates/**/*.rs file with readFileSync and regexes to keep the page in step with the rules; both passed review by their workers and were caught only by the controller and an audit"
 parked_until: "PR #245 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #245, merged 2026-11-27"
 reference:
 commands_verified: "none"
 ---

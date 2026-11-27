@@ -1,7 +1,7 @@
 ---
 id: 153
 title: "Every PR adds its entry at the head of the hand-off's 'Waiting on the owner', so an open PR conflicts as soon as another merges, and GitHub then runs no CI on it"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "parallel sessions' PRs and the shared hand-off note"
 date: 2026-11-23
 session_context: "Picked up session ccr-bc9c76c9-rau31m: its PR #168 (the ship aim) was opened at 18:29 while #163 and #167 merged into main around it. #168 showed mergeable_state dirty and no check runs at all: GitHub builds no merge ref for a conflicting PR, so its CI never ran. The conflict was one hunk: both sides had put their entry first under '## Waiting on the owner' (main also added an intro line there). Again 2026-11-24, bounty board #196: opened 18:35, dirty within the hour (main took 158 commits, #179 and #191 among them); conflicts in Hand-off.md, a moved test helper and factions.rs; no check run at all until main was merged in on the owner's next ask. Again 2026-11-24, website and bot #194: main merged #186, #192 and #196 while #194 waited; conflicts in Hand-off.md and Decisions.md (both sides adding at the same list end); no CI for five pushes over about an hour, found by reading mergeable_state after list_workflow_runs and get_check_runs came back empty."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference: "PR #168; merge commit a5868527 on ccr-bc9c76c9-rau31m"
 commands_verified: "run: git merge --no-edit origin/main -> CONFLICT (content): Merge conflict in bible/Hand-off.md, only file; get_check_runs on #168 -> total_count 0"
 ---

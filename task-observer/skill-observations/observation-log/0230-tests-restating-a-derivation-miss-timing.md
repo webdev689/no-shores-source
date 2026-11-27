@@ -1,7 +1,7 @@
 ---
 id: 230
 title: "Tests that restated the stats' own formulas let a one-tick fire-rate error through; stepping a real fighter caught it at once"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "testing derived numbers that a simulation also computes"
 date: 2026-11-24
 session_context: "Inspect panel PR #202: room::stats derived a ranged weapon's shots a second from reload ticks; its tests asserted rate == 1/(reload*TICK), the same formula. A read-only audit traced combat's step and found the tick a reload ends begins nothing, so every shot comes a tick later (combat's own loadouts.rs already pinned it). A new test steps a fighter holding the trigger and compares the gap: it failed on the old code (bow 1.58/s stepped, 1.62/s shown) and passes on the fix."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: cargo test -p room --lib stats -> 'Bow []: combat steps 1.5789/s, the page shows 1.6216/s' before the fix; ok after"
 ---

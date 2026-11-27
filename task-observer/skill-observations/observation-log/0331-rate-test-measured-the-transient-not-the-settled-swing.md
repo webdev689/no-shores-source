@@ -1,7 +1,7 @@
 ---
 id: 331
 title: "A test of a ship's swing ratio measured it one second after the wheel went over, while the swing was still limited by its acceleration, so it passed while the settled swing was wrong; a review found it, and a 6-fight paired table had been read as a balance defect"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "testing a rate or a balance claim"
 date: 2026-11-24
 session_context: "Ships at the Harbourmaster: naval class_tests asserted each hull's swing was its class's share of the Sloop's, read one second after hard over. Swing there is acceleration-limited (turn_accel times the class factor), so the ratio held exactly, while the settled swing went through each hull's own gain (steerage(way/gain)) and differed (Schooner 1.067 for a 1.1 class). An independent read-only review caught it. Separately, measure_fights_by_hull at 6 fights a row showed the Schooner losing far more closing in (1 of 6 against the Sloop's 4); a per-fight probe and 12 fights a row showed most of it was noise, and the rest the same handling cause."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "cargo test -p naval --lib held_at_the_same_way (fails on the old helm, passes with the Sloop's gain); cargo test -p room --release measure_fights_by_hull -- --ignored --nocapture --test-threads=1"
 ---

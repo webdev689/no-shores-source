@@ -1,7 +1,7 @@
 ---
 id: 253
 title: "A check piped through tail hid its failure, and the && chain committed unformatted files"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Checks before a commit (prettier, eslint, cargo xtask repo)"
 date: 2026-11-25
 session_context: "The desktop app session, lane 1's commit: 'npx prettier --check desktop/src/*.ts | tail -1 && git add ... && git commit' printed [warn] for two files and committed them anyway."
 parked_until: "PR #239 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #239, merged 2026-11-27"
 reference:
 commands_verified: "npx prettier --check desktop/src/*.ts | tail -1 -> exit 0 though prettier found two files; amended after 'npx prettier --write' (tested offline)"
 ---

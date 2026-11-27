@@ -1,7 +1,7 @@
 ---
 id: 289
 title: "Seven worktrees' target folders (4 to 9 GB each) filled the disk; a room test build failed with no space left"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running item workers in parallel"
 date: 2026-11-26
 session_context: "Main checkout plus six worktrees under ~/wt, each building its own target (wasm, room tests): 54 GB; rustc failed writing its incremental cache and the running workers may have lost writes. Deleting the three merged worktrees' targets freed 25 GB."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "df: 0 MB free, then 34 GB after rm -rf of wreck, welcome, escort and hordes targets"
 ---

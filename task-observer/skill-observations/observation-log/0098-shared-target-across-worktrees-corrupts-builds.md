@@ -1,7 +1,7 @@
 ---
 id: 98
 title: "Two cargo runs on one target/ (a worktree linking it, or a background suite beside a foreground run in the same checkout) overwrite each other's crates; seen four times, needs a barrier"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "worktrees, cargo target directory"
 date: 2026-11-21
 session_context: "Bisecting a headless WebGPU start failure across five commits of main, each built in a worktree whose target/ was a symlink to the main checkout's."
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference:
 commands_verified: "run: after the worktree builds, the main checkout's footRoom test failed 'the game's rules are from another version'; npm run wasm did not rebuild; touching every crate source and rebuilding fixed it"
 ---

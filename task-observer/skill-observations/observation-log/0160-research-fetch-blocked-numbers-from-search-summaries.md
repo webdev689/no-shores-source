@@ -1,7 +1,7 @@
 ---
 id: 160
 title: "A web-research worker could open no page (wikis, bungie.net and the Wayback Machine all failed) and built every number from WebSearch's summaries; the brief had not asked it to say which numbers it read and which it was told"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "delegated web research in a cloud session"
 date: 2026-11-23
 session_context: "The balance and economy pass after Destiny 1 vanilla: a background research agent gathered D1's numbers (XP, Light, marks, engrams, Ascendant materials, Xur). It reported that destinypedia, destinygamewiki, the fandom mirrors, kotaku, bungie.net and web.archive.org all failed to fetch, so each number was a search engine's summary of the cited page. Its brief asked for a confidence tag per number, which caught it; without that line the report would have read as page-checked.; worker shape: origin/main was 13 commits behind its base, so it reviewed 8d698c1f~1..8d698c1f by hand; worker breach likewise"
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference: "the agent's file d1-vanilla.md in that session's scratchpad (not kept)"
 commands_verified: "none"
 ---

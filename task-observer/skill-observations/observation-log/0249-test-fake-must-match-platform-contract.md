@@ -1,7 +1,7 @@
 ---
 id: 249
 title: "A test's stand-in dialog answered an abort as Electron's does not, and hid a bug that recorded working graphics as failed"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "unit tests with injected effects (desktop/src/graphicsWatch.test.ts)"
 date: 2026-11-25
 session_context: "The desktop app session: the fake ask() resolved null on abort; Electron's showMessageBox resolves with cancelId when its signal aborts ('as if it was cancelled by the user', electron.d.ts). The audit found it; the test failed once the fake did what Electron documents."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "node --test desktop/src/graphicsWatch.test.ts: 1 fail with the faithful fake before the fix, 16 pass after"
 ---

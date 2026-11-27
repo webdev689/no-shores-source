@@ -1,7 +1,7 @@
 ---
 id: 332
 title: "A clean auto-merge broke Rust the controller never compiled before pushing"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "merging main into a long branch"
 date: 2026-11-25
 session_context: "#200: main's #202 split room/src/perks.rs trim_of into trim_by; git auto-merged the branch's Forged lines into the new function, where they named variables no longer in scope. The controller resolved the three page conflicts, ran the page's types and tests, and pushed; the full check found the Rust failing at 'lints (Rust)'."
 parked_until: "PR #239 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #239, merged 2026-11-27"
 reference:
 commands_verified: "cargo xtask check on b1d8a51f failed at lints (Rust): E0425 character/drawn not found in perks.rs:228-229"
 ---

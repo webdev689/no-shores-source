@@ -1,7 +1,7 @@
 ---
 id: 54
 title: "A fight fingerprint is pinned separately in Rust, the page's tests and the server's tests"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Agree to the Bit pins across languages"
 date: 2026-11-19
 session_context: "Hulls worker: every change to a fight's numbers repinned the same hashes in Rust, client and server tests."
 parked_until: "PR #245 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #245, merged 2026-11-27"
 reference:
 commands_verified: "NOT RUN: reported by the worker (pins it changed: every fight fingerprint, HULL_FIGHTS, the sea-clash hash in Rust and server/roomDoor.test.ts)"
 ---

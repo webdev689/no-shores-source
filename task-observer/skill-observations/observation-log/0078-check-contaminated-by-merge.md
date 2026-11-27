@@ -2,7 +2,7 @@
 id: 78
 title: "A background cargo xtask check read a tree mid-merge, and a PR went unmergeable without anyone noticing"
 parked_until: "PR #240 merge"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []

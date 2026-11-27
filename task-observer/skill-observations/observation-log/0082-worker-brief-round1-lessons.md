@@ -1,7 +1,7 @@
 ---
 id: 82
 title: "Porting workers' brief: type-check the tests, delete with rm, and the kit's tools under three parallel workers"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "worker briefs: running several porting workers in parallel on 4 CPUs"
 date: 2026-11-21
 session_context: "The no-HTML port's round one: three workers (hud, gearshell, fighthud) in parallel on the drawn interface's foundation"
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "~/wt/reports/{hud,gearshell,fighthud}.md and their logs' OBSERVATIONS lines"
 commands_verified: "read: the three workers' final replies; ran: cargo xtask check after merging (types failed on fighthud's tests that tsc -p . never saw)"
 ---

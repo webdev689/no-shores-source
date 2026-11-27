@@ -1,7 +1,7 @@
 ---
 id: 64
 title: "The controller removed finished worktrees whose scratch folders running workers' briefs still named"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "fanning out: cleaning up after merges"
 date: 2026-11-20
 session_context: "Sea audit and fix rounds: four read-only audit worktrees removed while three fix workers' briefs pointed at their scratch."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "run: grep -rl for the removed scratch paths in the running worktrees found none; the briefs (brief-fix-fight.md, brief-dfo-aim.md, brief-fix-look.md) named them"
 ---

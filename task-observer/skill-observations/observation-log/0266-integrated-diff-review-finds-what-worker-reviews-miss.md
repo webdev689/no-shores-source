@@ -1,7 +1,7 @@
 ---
 id: 266
 title: "Every worker's own review said Ship, yet four area reviews of the integrated diff found 39 findings, most crossing worker boundaries"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "multi-worker builds: review scope"
 date: 2026-11-25
 session_context: "Passages session: nine workers each ran the template's reviewer and ponytail-review on their own diff (all Ship or one fix round). After merging, the controller ran four read-only reviewers on `git diff origin/main...HEAD` (16k lines), split by area (rules crates, wire/door/server, client, content/tools/bible). They returned 6, 12, 12 and 9 findings."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "this session's four review hand-backs; briefs /root/wt/briefs/fixrules-item.md, fixsave-item.md, fixclient-item.md"
 commands_verified: "run: git diff --stat origin/main...HEAD -> 276 files, +16047 -1616"
 ---

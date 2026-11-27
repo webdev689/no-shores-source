@@ -1,7 +1,7 @@
 ---
 id: 273
 title: "A presence probe's walker died in its first 20 s and was carried dead across the zone, then (respawning) strayed out of the section unseen, so the probe misreported both trees twice"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "ad hoc measurement tests over the real baked nodes (a scratch test like c
 date: 2026-11-25
 session_context: "Foe arrivals branch: a scratch test walked a player across each real patrol zone with put_player and counted foes within 80 m. It said 'ships at once 0' after two rule changes. A trace of the room showed 'roaming 0' at every sample; a second trace of the player showed health 0 from tick 1,200. The garrison at the landing killed the walker, which never fought or healed, and put_player moved the corpse on. The rules rightly send nothing to a dead player. The main baseline numbers came from the same dead walker, so they were wrong too."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference: "crates/room/src/reinforcements.rs roaming(); crates/room/src/course.rs put_player (moves a fallen player too)"
 commands_verified: "run: cargo test --release -p room --test zz_presence_probe -- --ignored --nocapture with an eprintln of each player's living/health every 300 ticks -> living false from t1200 to the end"
 ---

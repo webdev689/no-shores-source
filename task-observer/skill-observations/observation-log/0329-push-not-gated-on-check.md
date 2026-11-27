@@ -1,7 +1,7 @@
 ---
 id: 329
 title: "A push chained after cargo xtask check with ';' ran though the check failed"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "pushing only after the check passes"
 date: 2026-11-20
 session_context: "A commit-check-push command in a Lattice session"
 parked_until: "PR #239 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #239, merged 2026-11-27"
 reference:
 commands_verified: none
 ---

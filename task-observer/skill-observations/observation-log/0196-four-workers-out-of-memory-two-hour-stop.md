@@ -1,7 +1,7 @@
 ---
 id: 196
 title: "Four headless workers at once on a 16 GB, 4-core container ran out of memory and all hit the two-hour stop"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running several workers in parallel"
 date: 2026-11-24
 session_context: "Playtest notes split over four workers (town, sea, horse, lattice), each started at once with run_in_background and the 2 h cap. Each built its own wasm, ran cargo and node tests, vite builds, a WebGPU browser for before/after pictures, and one or two ran `cargo xtask check`. Browsers kept dying (out of memory), workers retried, and all four were killed at 2 h with the pictures unfinished, two with edits uncommitted. Resumed two at a time with no full check and at most three picture runs."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "free -m (16087 MB total), nproc (4)"
 ---

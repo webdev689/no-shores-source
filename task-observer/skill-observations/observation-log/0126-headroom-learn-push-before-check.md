@@ -1,7 +1,7 @@
 ---
 id: 126
 title: "headroom learn wrote a push-before-check rule into project memory five times; new-observation.sh choked on dashed claims"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "end-of-session headroom learn and the Stop hook"
 date: 2026-11-22
 session_context: "overlook-source, and again on #161"
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: none
 ---

@@ -1,7 +1,7 @@
 ---
 id: 25
-title: "Processes stopped or waited on by pattern (pkill -P on a pgrep -f match; pkill -f; a pgrep -f wait loop) instead of by pid: the pattern matches the shell that typed it"
-status: parked
+title: "The controller stopped background servers by pattern (pkill -P on a pgrep -f match; pkill -f) instead of by pid, twice"
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "stopping processes"
 date: 2026-11-20
 session_context: "2026-11-27, session 01AQ3N4rcsyHKfuU32sdJH24: the repair worker twice waited on a build with a loop on pgrep -f '<pattern>', which matched its own shell and never ended until its time limit. Earlier: Overlook factions round, final audit: after a live headless check, the controller stopped the local room server with pkill -P $(pgrep -f 'wrangler dev ...') before reaching for TaskStop on its background task. Again on 2026-11-24, PR #194 site fixes: a timeout-wrapped wrangler dev for a 404 and caching check, stopped with pkill -f 'wrangler dev --config site/wrangler.jsonc'."
 parked_until: "PR #239 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #239, merged 2026-11-27"
 reference: "this session's transcript, the live check after the regression fixes"
 commands_verified: "none"
 ---

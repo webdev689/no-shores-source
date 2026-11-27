@@ -1,7 +1,7 @@
 ---
 id: 291
 title: "A worker reported tsc clean having run only tsconfig.json; tsconfig.node.json failed on its test file after merge"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "a worker's own checks before reporting"
 date: 2026-11-26
 session_context: "wreck worker: tsc clean on tsconfig.json; after merging, npx tsc -p tsconfig.node.json failed with TS18047 in wreckTeaching.test.ts (a let narrowed through a const alias). Fixed in a31eef6d."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "a31eef6d"
 ---

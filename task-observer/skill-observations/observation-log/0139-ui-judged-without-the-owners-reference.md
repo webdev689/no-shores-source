@@ -1,7 +1,7 @@
 ---
 id: 139
 title: "A new screen was judged on legibility alone, not against the owner's reference picture; the owner called it really bad"
-status: parked
+status: actioned
 type: open-source
 skill: [impeccable]
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "reviewing a new interface screen before calling it done"
 date: 2026-11-22
 session_context: "Overlook Playlist session: the owner gave a Destiny 2 Vanguard-screen picture (playlist nodes on a map, one tooltip card) as the reference. The worker built four tiles of words side by side, pictured it headless four times and judged each version on fit and legibility; the controller looked at v4 and called it readable. The owner: 'The playlist UI is really bad'. Rebuilt as crests on a chart with one card, compared side by side with the reference."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "run: node tools/uiShot.mjs <shots.json> -> v4 tiles and v7 chart pictures in the controller's and worker's scratchpads"
 ---

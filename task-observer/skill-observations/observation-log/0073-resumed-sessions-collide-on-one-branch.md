@@ -2,7 +2,7 @@
 id: 73
 title: "Two sessions resumed the same unfinished work, and one learned it only from list_sessions"
 parked_until: "PR #244 merge"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []

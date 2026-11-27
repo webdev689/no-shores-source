@@ -1,7 +1,7 @@
 ---
 id: 199
 title: "Two new body numbers broke a dozen tests that write 22/7/17 by hand; riding cannot be pictured offline"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "changing a wire layout; picturing a mounted player"
 date: 2026-11-24
 session_context: "Horse worker added the boost's two clocks to the movement body and a tap to the controls. About a dozen tests (Rust, TS and server) hard-coded the old lengths, and six fingerprints are mirrored across Rust, TS and the server's tests. The server tests' protocol hashes stayed stale until `npm run wasm` was rerun. Offline `&spawn=` pages give no horse, so Riding never showed and no picture of the boost was possible. Context7 and SkillsMP were unreachable (proxy 403)."
 parked_until: "PR #245 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #245, merged 2026-11-27"
 reference:
 commands_verified: "none (from the worker's report)"
 ---

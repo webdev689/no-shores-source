@@ -1,7 +1,7 @@
 ---
 id: 23
 title: "After a merge, the page's tests fail on stale fixtures in target/ until wasm and two cargo test runs refresh them"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "test fixtures"
 date: 2026-11-20
 session_context: "Overlook factions round, final audit's fix pass: fix3-looks hit artLevels.test.ts and gearMessages.test.ts failing on target/protocol fixtures after merging the branch; the controller's own full check needed the same refresh; fix3-keepers hit it too (messages.test.ts after a schema regen)"
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference: "/root/wt/reports/fix3-looks.md OBSERVATIONS"
 commands_verified: "none"
 ---

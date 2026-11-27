@@ -1,7 +1,7 @@
 ---
 id: 277
 title: "A headless picture checked only for the change in hand passed over a plain fault in the same frame"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "reading headless pictures"
 date: "2026-11-25"
 session_context: "#207 audit: the tavern's upper room was pictured to show its windows seen through; rain streaks fell across the room in the same picture, and the report called it fine. The owner saw it: an open building's ceiling was drawn but never a collider, so the shelter grid (built from colliders) left its top storey open to the rain. The same streaks, fainter, were in a picture taken before any of the PR's changes."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference:
 commands_verified: "none to run; the pictures are scratchpad/shots/audit/tavern-west-windows.png and shots/town2/upper-west-block-e.png"
 ---

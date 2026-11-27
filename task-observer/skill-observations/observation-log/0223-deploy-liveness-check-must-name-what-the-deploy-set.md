@@ -1,7 +1,7 @@
 ---
 id: 223
 title: "A deploy's liveness check compared /health against a hand-set version constant, so after the first deploy it passed with the old code still serving"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "post-deploy health checks in CI workflows"
 date: 2026-11-24
 session_context: "PR #194: bot.yml first checked that /health answered BOT_VERSION ('core1'), a constant nobody bumps. A read-only review caught it; fixed by stamping GITHUB_SHA on the Worker as BOT_COMMIT and requiring /health to answer it. The accounts' check in rooms.yml asks only for ok."
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference:
 commands_verified: "run: node --test server/bot/worker.test.ts -> failed before the BOT_COMMIT fix, 17 pass after"
 ---

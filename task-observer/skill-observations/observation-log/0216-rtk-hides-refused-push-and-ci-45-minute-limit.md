@@ -1,7 +1,7 @@
 ---
 id: 216
 title: "rtk showed a refused branch delete as 'Everything up-to-date'; CI's 45-minute check limit now cuts runs on main"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "pushing; CI"
 date: 2026-11-24
 session_context: "After merging #191 on the owner's 'Deploy': 'git push origin --delete <branch>' through rtk answered only 'Everything up-to-date' though the branch stayed (ls-remote showed it); rtk bypass showed the proxy refused it. Earlier, #191's CI run 998 was cancelled at 45 minutes in its last stage (server bundle) while five CI runs shared the runners; main's own run for #179 was cancelled the same way, so #179 never deployed."
 parked_until: "PR #239 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #239, merged 2026-11-27"
 reference: "PR #191; runs 45442300990, 45450525381"
 commands_verified: "git ls-remote --heads origin <branch>; rtk bypass git push origin --delete <branch>"
 ---

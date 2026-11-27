@@ -1,7 +1,7 @@
 ---
 id: 315
 title: "A chained command ran cargo xtask repo with ';' so a failing check still committed and pushed"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "the repo check before a push"
 date: 2026-11-26
 session_context: "Deeper dungeons session: after merging two workers, the controller ran 'cargo xtask repo 2>&1 | tail -1; git add ... && git commit ... && git push'. The check reported gameFrame.ts at 602 lines (over the 600 cap), and the commit and push went ahead. Fixed in the next commit (030778d59)."
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference:
 commands_verified: "cargo xtask repo: run, printed the size problem; the push that followed: run, went through"
 ---

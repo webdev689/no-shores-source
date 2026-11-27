@@ -1,7 +1,7 @@
 ---
 id: 191
 title: "Picture checks drawn outside the real menu window hid a z-order bug that left the Outposts plan blank in the game"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "picture checks of menu pages: what the builder draws around the page"
 date: 2026-11-24
 session_context: "Guild outposts session, second deep audit: the visual auditor drove the real menu (startGearWindow, presses faked on chosen frames) and found the Outposts plan's blocks and ghost float at z 1-2 while the menu window floats at z 19-20, so they are drawn under it: the plan is empty in the game at every size. Every earlier picture of the plan came from guildShots.ts, which draws the page with no window around it, so the bug never showed."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "/tmp/claude-0/-home-user-no-shores-source/7057fde7-633e-533e-95d2-1e2510121b2b/scratchpad/audit2/findings-visual.md; visual/v1_outpostsFull_720.png, v2_outpostsFull_scrolled_900.png"
 commands_verified: "read: the visual auditor's report and outpostPlan.ts blockNode/ghostNode z against gearShell.ts:216/231"
 ---

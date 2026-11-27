@@ -1,7 +1,7 @@
 ---
 id: 254
 title: "Auditing a branch that merged main: its own change is HEAD^2..HEAD, and path loops need a real parser"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Audits (read-only audit agents)"
 date: 2026-11-25
 session_context: "The desktop app's five-lane audit at a pinned worktree (16d6063a, a merge of origin/main): the notes lane reported these in its OBSERVATIONS line."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "reported by the audit agent: '672294ee..HEAD includes the merged main's ship work; HEAD^2..HEAD is the branch's own change'; 'a Bash link-check loop split file paths with spaces and hung; a Python script worked'; 'auto mode refused a read-only git merge-base HEAD origin/main; git show --stat HEAD as Irreversible Local Destruction'"
 ---

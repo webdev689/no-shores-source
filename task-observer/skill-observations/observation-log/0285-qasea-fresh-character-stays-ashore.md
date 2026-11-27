@@ -1,7 +1,7 @@
 ---
 id: 285
 title: "Toolkit says __qaSea() puts the player aboard; on a fresh offline page it left the player on foot for 10 minutes"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Browser QA: picturing the sea headless"
 date: 2026-11-26
 session_context: "PR #221 (hostile marks on the sea map). Development build, vite preview on 5173, /?at=overlook-social&spawn=, an eval awaiting self.__qaSea() then polling __qaGame.flow.mode: still 'foot' after 600 s; the capture was stopped and the change reported not pictured."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference: "plan: the session's scratchpad sea-map.json (not kept); __qaSea is game.ts travel({ kind: 'return-to-ship' }, goSea)"
 commands_verified: "node tools/claude-toolkit/webgpu-shot.cjs sea-map.json: run, eval returned \"foot\" after 615.7 s"
 ---

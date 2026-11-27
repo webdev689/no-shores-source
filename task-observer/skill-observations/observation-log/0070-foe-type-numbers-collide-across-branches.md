@@ -2,7 +2,7 @@
 id: 70
 title: "Two branches take the same wire number at once (foe types 19 and 20; later ask 75): nothing checks a number is free"
 parked_until: "PR #245 merge"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []

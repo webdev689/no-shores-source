@@ -1,7 +1,7 @@
 ---
 id: 304
 title: "A worktree's link to the main checkout's client/public was committed by git add -A, and merging it replaced the main checkout's folder"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "worktrees that link the main checkout's build folders"
 date: 2026-11-26
 session_context: "#223's left-for-later: a worktree made by hand linked node_modules, generated and client/public; git add -A committed client/public as a symlink (mode 120000); merging that branch into the main checkout turned its client/public into a link to itself and git removed the ignored wasm in it. Caught before push, the two commits rebuilt without it, the wasm rebuilt with npm run -s wasm."
 parked_until: "PR #239 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #239, merged 2026-11-27"
 reference: "95e0955e0 (later), rebuilt as 33de197e1 on ccr-6e659de3-v7ph7h"
 commands_verified: "git show --name-status 95e0955e0: showed 'A client/public'; ls -la client/: showed the self-link"
 ---

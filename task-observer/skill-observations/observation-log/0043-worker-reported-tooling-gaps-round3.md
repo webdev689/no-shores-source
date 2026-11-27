@@ -2,7 +2,7 @@
 id: 43
 title: "Workers' observations, round three: wreck export iteration tools, early clippy, xtask past the background limit"
 parked_until: "PR #244 merge"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []

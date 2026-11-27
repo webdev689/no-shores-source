@@ -1,7 +1,7 @@
 ---
 id: 95
 title: "Room tests on made-up nodes missed a road that could not be finished; a test over the real baked nodes caught it"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "testing data-driven content against the real world it names"
 date: 2026-11-21
 session_context: "The quest builders' room tests used made-up nodes; an auditor loading the real baked nodes found one road's foe group never stood (its place's middle off the mesh), so that road could not be finished."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "the auditor's probe over generated/nodes; the rules builder's test baking the first landmass with bake::nodes_of (about 10 s)"
 ---

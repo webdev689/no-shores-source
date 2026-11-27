@@ -1,7 +1,7 @@
 ---
 id: 222
 title: "A ported module's comment named a counterpart that was never ported: the bot's slash commands had no writer to Discord"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "porting from DFO: checking every counterpart a ported file assumes"
 date: 2026-11-24
 session_context: "PR #194, the Discord bot ported from DFO's unmerged branch. server/bot/commands.ts said 'Whatever writes the list to Discord writes this whole list', and nothing in the port (or DFO's picked paths, whose bot-deploy.yml was listed but not brought over) wrote it, so /panel, /rank and every module's command would never appear in Discord. Found only while building the bot's deploy; fixed with writeCommands and a deploy step."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: grep -rn 'commandsOf' server site -> used only by worker.test.ts before the fix"
 ---

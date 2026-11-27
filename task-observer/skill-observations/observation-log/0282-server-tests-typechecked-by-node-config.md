@@ -1,7 +1,7 @@
 ---
 id: 282
 title: "A server test file's type errors are not shown by `tsc -p server/tsconfig.json`; only `npm run types` (all five configs) catches them"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "verification before push"
 date: 2026-11-25
 session_context: "Audit session (ccr-502bc640-qlks7c): a new test in server/accounts/roster.test.ts assigned a read-only `deps.database`; `npx tsc -p server/tsconfig.json` printed nothing, and the error showed only when `npm run types` ran after merging main."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference: "commit dcf2a3a0 (the fix); package.json `types` script"
 commands_verified: "npm run -s types (5 errors before the fix, none after)"
 ---

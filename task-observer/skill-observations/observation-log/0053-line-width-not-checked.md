@@ -1,7 +1,7 @@
 ---
 id: 53
 title: "The 120-character width of comments and notes is held only by review, so workers fix it in an extra round"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is the repo's checks, not a skill"
 area: "repo checks: line width of comments and notes"
 date: 2026-11-19
 session_context: "Hulls worker's reviewer flagged long comment and note lines that cargo xtask check passed. Again 2026-11-24 (revives branch, #184): a docs auditor found five added note lines past 120 after cargo xtask repo passed, and counted 559 prose lines in bible/02-Systems already past it; Prettier's printWidth does not cover Markdown."
-parked_until:
+parked_until: "PR #257 merge"
 resolved:
 resolution:
 reference:

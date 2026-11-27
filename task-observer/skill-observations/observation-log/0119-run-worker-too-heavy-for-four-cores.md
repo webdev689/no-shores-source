@@ -1,7 +1,7 @@
 ---
 id: 119
 title: "On a 4-core container, three run-worker.sh workers (each building its own WebAssembly and starting Serena with rust-analyzer) would starve each other; in-process worktree agents were used instead"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "fanning out on a small container"
 date: 2026-11-22
 session_context: "Overlook prologue bugs and polish: three TypeScript-only jobs (ship bar, ships' crew, music) fanned out while the controller worked on Rust and the wreck; nproc 4, 15 GB."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "nproc (4); run-worker.sh builds npm run wasm in each worktree that lacks it; Serena's project lists rust (rust-analyzer per worker)"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 66
 title: "The controller passed new HUD pictures against the port source's code, never against the game's own approved look"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "browser QA: judging UI pictures before a merge"
 date: 2026-11-20
 session_context: "Sea fight readout (dfo-mount, plus rounds) merged into #75; the owner, shown plus-shots/v2_fight_aiming.png: 'The readout at the top and the bottom right are not enhanced plus design'."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "read: deck-shots/v8_fight_first.png (the on-foot vitals window with brass fittings and labelled bars; the light target plate) beside plus-shots/v2_fight_aiming.png (plain plus-panel boxes); seaFight.ts gives the plate and card 'plus-panel' and its own thin bars"
 ---

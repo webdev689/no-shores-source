@@ -1,7 +1,7 @@
 ---
 id: 65
 title: "Staged pictures mislead when each staged input is set on its own, and the picture budget is overrun"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "browser QA: staging a scene for headless WebGPU pictures"
 date: 2026-11-20
 session_context: "dfo-mount worker's sea-fight readout pictures (reports/dfo-mount-shots, steps_v3.json), reviewed by the controller before merging into #75; plus worker (reports/plus.md, plus-shots): v1 staged the lay off the target again, and 1 of 6 pictures fit its 60-minute aim."
 parked_until: "PR #243 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #243, merged 2026-11-27"
 reference:
 commands_verified: "read: steps_v3.json staged the lay at c.last.captain (the Tithe Frigate) while __aimAt drew the sights on the Pirate Brig; fightDisplay.test.ts shows the card follows the lay. v3_burning_magazine shows 'Going down' at hull 100/100"
 ---

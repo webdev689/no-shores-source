@@ -1,7 +1,7 @@
 ---
 id: 103
 title: "A full check run beside other heavy work fails its timing tests; an unquoted heredoc ran a second check"
-status: parked
+status: actioned
 type: open-source
 skill: [task-observer]
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running cargo xtask check; writing an observation's body"
 date: 2026-11-21
 session_context: "The full check on the leak fixes ran while a second worktree ran the whole TypeScript suite; later an observation's body was written while the audio branch's check ran."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "run: flames.test.ts 'forty fires ... within about a millisecond a frame' failed at 4.66 ms during the overlap, passed alone, and the whole check passed on an idle machine; the stray check was found in ps under the observation's own shell and stopped after about two minutes"
 ---

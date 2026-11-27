@@ -1,7 +1,7 @@
 ---
 id: 17
 title: "An auditor called owner-approved lore invented because its brief never said to search other branches' decisions"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "independent audit briefs"
 date: 2026-11-20
 session_context: "Overlook factions round, second audit pass: six parallel auditors on PR #92; the keepers auditor reported the Grey Tithe's tenth as invented lore breaking the Dialogue rule, while the bible auditor found the owner's approving decision on open PR #77's branch"
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "/root/wt/reports/audit-keepers.md finding 4; /root/wt/reports/audit-bible.md finding 6"
 commands_verified: "git for-each-ref refs/remotes + git grep 'take a tenth' -- bible: run, found the decision on origin/ccr-e003e24b-5hcnat"
 ---

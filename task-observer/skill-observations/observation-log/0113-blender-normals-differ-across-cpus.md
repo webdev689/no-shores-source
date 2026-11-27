@@ -2,7 +2,7 @@
 id: 113
 title: "Blender's single-float normals differ across CPUs; a byte-packed normal tips over a rounding edge"
 parked_until: "PR #240 merge"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []

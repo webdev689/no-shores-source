@@ -1,7 +1,7 @@
 ---
 id: 217
 title: "A python textwrap rewrap of a Hand-off entry split an Obsidian [[link]] across lines; the vault check failed the full check only at its end, 35 minutes later"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "rewrapping bible paragraphs to the 120-column width"
 date: 2026-11-24
 session_context: "PR #179, merging main #190 before the owner's 'Merge and deploy when ready': the guild entry in bible/Hand-off.md was rewrapped with textwrap.fill(width=120). It broke [[Guilds Gain Banners, Levels, Bounties and Outposts]] across two lines. cargo xtask check ran 35 minutes, passed every test, then failed on '[vault] ... breaks across lines'. Fixed by swapping spaces inside [[...]] and `...` for a placeholder before wrapping, then running cargo xtask repo (seconds) before the full check."
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference:
 commands_verified: "run: cargo xtask repo -> 'repo checks: 3894 files, no problems' after the protected rewrap"
 ---

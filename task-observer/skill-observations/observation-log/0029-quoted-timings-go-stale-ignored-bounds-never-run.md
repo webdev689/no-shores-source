@@ -1,7 +1,7 @@
 ---
 id: 29
 title: "A bible timing stayed quoted after the code under it changed, and an ignored measurement test's bound never ran"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "measured numbers in documentation"
 date: 2026-11-20
 session_context: "Filling the room-open timing after merging main into overlook-source#63 (Navmesh.md, Server.md, Movement.md; crates/room/tests/near_blocks.rs)"
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: near_blocks' bake measurement at the pre-merge head 25d9f206 opened the Downs room in 597 to 723 ms bare, against the 330 to 430 ms Navmesh.md quoted; callgrind put 79% of it in Ground::nearest; after the fix 128 ms bare, 206 ms among the boxes"
 ---

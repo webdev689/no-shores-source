@@ -1,7 +1,7 @@
 ---
 id: 28
 title: "A guard added to one test walker never reached a second, inline walker loop; its test passed for a round by climbing"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "test helpers duplicated across files"
 date: 2026-11-20
 session_context: "Merging main into overlook-source#63: crates/room/tests/layouts_laid.rs's Saltgrass Downs gate walk against runs_walked.rs's walked()"
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "run: with a mode trace in the gate walk, the body went Ground -> Climb -> Mantle onto a palisade stake (top 6.71 m) on the pre-fix route; after the fix the walk asserts no Hang, Climb or Mantle at any tick and passes"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 122
 title: "Waiting on a PR's CI, the session reached for `gh api` where the session allows `gh` only for search"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "waiting on CI from a cloud session"
 date: 2026-11-21
 session_context: "Merging #136 after its CI; the MCP check-run read cannot be looped in a shell, so a shell loop polled the run with gh api."
 parked_until: "PR #239 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #239, merged 2026-11-27"
 reference:
 commands_verified: "run: gh api repos/<owner>/<repo>/actions/runs/<id> answered 'completed success'"
 ---

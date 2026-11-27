@@ -1,7 +1,7 @@
 ---
 id: 305
 title: "Starting workers in parallel on a fresh container races rustup's toolchain install and corrupts it"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "starting several workers at once"
 date: 2026-11-26
 session_context: "Seen again 2026-11-27 (session 01AQ3N4rcsyHKfuU32sdJH24: two workers, repair and arrival, started together; both preps failed the cargo component download, the toolchain then whole, the WebAssembly and fixtures unbuilt, told through their inboxes). First: Three workers started seconds apart on a container that had only stable; each worktree's first cargo call made rustup install 1.97.0 at once. Two setups failed 'component download failed ... No such file or directory', and the third's build then failed 'can't find crate for std' on the half-installed toolchain. Fixed by stopping two workers, rustup toolchain uninstall 1.97.0, reinstalling, rebuilding the third's setup by hand and restarting the two."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "session 01AQ3N4ngdqNdXFFNT7JJmBM, worktrees hub-ground, ship-stern, music-pass"
 commands_verified: "rustup toolchain uninstall 1.97.0 then cargo --version: run, reinstalled; npm run schema && npm run wasm && cargo test -p protocol in music-pass: run, exit 0"
 ---

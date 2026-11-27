@@ -1,7 +1,7 @@
 ---
 id: 283
 title: "`npx eslint ... | tail -3 && git commit` commits through a lint error: the pipe's status is tail's"
-status: parked
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "verification before commit"
 date: 2026-11-25
 session_context: "Audit session: a layout test's short loop name failed ESLint's id-length; the command `npx eslint ... | tail -2; git add -A && git commit` committed it, and the error was seen only in the printed tail; amended at once (ad3df684)."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference: "commit ad3df684 (amended)"
 commands_verified: "npx eslint client/src/ui/layout.test.ts (1 error before, none after)"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 99
 title: "A live check in the player's real mode (no account) caught a gating bug every test missed; and malformed id-claim markers break new-observation.sh's floor"
-status: parked
+status: actioned
 type: open-source
 skill: [task-observer]
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "verification of features gated on who the player is; observation id claim
 date: 2026-11-21
 session_context: "Overlook #131 houses' roads: the full check and unit tests passed, but the live headless run without an account showed no quest tracker, because the gear message's `claimed` flag was never set for an unkept player on land."
 parked_until: "PR #242 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #242, merged 2026-11-27"
 reference:
 commands_verified: "node target/grab720.mjs '/?at=overlook-social&room=ws://127.0.0.1:8787' ':online-v4' against a local wrangler dev"
 ---

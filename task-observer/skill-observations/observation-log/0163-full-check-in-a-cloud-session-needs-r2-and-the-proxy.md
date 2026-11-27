@@ -1,7 +1,7 @@
 ---
 id: 163
 title: "The full check's ship tests fail with 'fetch failed' in a session on a Default environment, and Node's fetch ignores the proxy"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running cargo xtask check in a cloud session"
 date: 2026-11-23
 session_context: "Session pickup of ccr-06efd4d0-ffd79v onto ccr-435c1d22-loawza: the session ran on a Default environment (no allowed hosts); four shipTags.test.ts tests failed 'fetch failed' because the proxy refused pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev (403 on CONNECT) and Node's built-in fetch does not read HTTPS_PROXY without NODE_USE_ENV_PROXY=1. The no-shores-source environment allows that host; switch_environment moved the session's network there and the four passed."
 parked_until: "PR #240 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
 reference: "PR #172"
 commands_verified: "run: NODE_USE_ENV_PROXY=1 node --test client/src/ships/shipTags.test.ts -> pass 4 after the switch; fail 4 before; NODE_USE_ENV_PROXY=1 cargo xtask check -> passed at 8bfe6951"
 ---

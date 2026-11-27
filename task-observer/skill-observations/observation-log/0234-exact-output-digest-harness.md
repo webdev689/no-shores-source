@@ -1,7 +1,7 @@
 ---
 id: 234
 title: "Exact-output performance refactors need a before/after digest of every real output; the project has no kept harness for it, so each session rebuilds one"
-status: parked
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "proving a speedup changes nothing"
 date: 2026-11-24
 session_context: "The owner's extreme performance pass. The navmesh watershed (pending list), ear-clip (kept ears), links slicing and Ground::nearest (box reject) were each claimed to give the same output to the bit. The unit tests passed either way and could not show it: only a scratch ignored test in room's quest_grounds_tests.rs, which baked every mesh of the first landmass's nodes (77) and printed an FNV digest of each mesh's Debug text, did. Run before the first change and after each, its diff proved every step (commits fc644b75, f5e564f6, c5c54aaa). It was removed before committing, as a golden digest would break on every intended mesh change."
 parked_until: "PR #244 merge"
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27: applied in PR #244, merged 2026-11-27"
 reference:
 commands_verified: "cargo test -q -p room --release scratch_mesh_digests -- --ignored --nocapture (77 digests, identical before and after each change)"
 ---
