@@ -99,6 +99,16 @@ impl Kind {
     }
 }
 
+/// How far under ground the lamp stands sunk into the floor, metres: past its ring of flags, which stand 3 cm over its
+/// foot (tools/dungeon `forms.flags`).
+const LAMP_SUNK_UNDER_M: f64 = 0.05;
+
+/// The way a lamp at `lamp` faces: toward the arrival, turned half the step between its five stones, so the way from
+/// the arrival comes in between two stones and no stone stands between the arrival and the plinth.
+pub(crate) fn lamp_facing(lamp: [f64; 2], arrive: [f64; 2]) -> f64 {
+    libm::atan2(arrive[0] - lamp[0], -(arrive[1] - lamp[1])) + core::f64::consts::PI / 5.0
+}
+
 /// A piece standing in a zone: its kind, its middle at its foot (x, y, z) and the way its front faces.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Piece {
@@ -233,8 +243,12 @@ impl Plan {
             pieces.push(on_floor(Kind::Mouth(u8::try_from(number).unwrap_or(u8::MAX)), door.at, door.facing));
         }
         if let Some(lamp) = sites.lamp {
-            let facing = libm::atan2(sites.arrive[0] - lamp[0], -(sites.arrive[1] - lamp[1]));
-            pieces.push(on_floor(Kind::Lamp, lamp, facing));
+            let mut piece = on_floor(Kind::Lamp, lamp, lamp_facing(lamp, sites.arrive));
+            // Under ground the room's own flagstones are its floor: the lamp's ring of flags lies under them.
+            if matches!(self.ground, Ground::Under(_)) {
+                piece.at[2] -= LAMP_SUNK_UNDER_M;
+            }
+            pieces.push(piece);
         }
         let mut spots = sites.spots.iter().copied();
         let mut take = |count: usize, kind: fn(u8) -> Kind, pieces: &mut Vec<Piece>| {

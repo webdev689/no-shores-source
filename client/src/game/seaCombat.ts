@@ -14,10 +14,12 @@ import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
 import type { SeaFightModel } from '../plus/seaFight.ts';
 import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
 import { type FeelShip, FightFeel } from '../ships/fightFeel.ts';
+import { FightLamps } from '../ships/fightLamps.ts';
 import { playCues } from '../ships/fightSounds.ts';
 import { Shake } from '../ships/shake.ts';
 import type { Stir } from '../ships/swellPose.ts';
 import type { ShadowMap } from '../shadow.ts';
+import type { LampPlace } from '../sky/lamps.ts';
 import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { factionSide, type ShipLook } from '../ships/dress.ts';
@@ -127,7 +129,8 @@ export class SeaCombat {
   /** The sea room, whose last word says whether a boarding would be taken now. */
   private readonly room: Pick<SeaRoom, 'mayBoard'>;
   private readonly naval: Naval;
-  private readonly marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight'>>;
+  private readonly fightLamps = new FightLamps();
+  private readonly marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight' | 'lights'>>;
   /** The hull a ship is drawn as: its own once its model has come. */
   private readonly shown: (hull: number) => number;
   private readonly fought = new Fought();
@@ -182,7 +185,7 @@ export class SeaCombat {
   constructor(
     fought: SeaRoom | { readonly source: FightSource; readonly own: string; readonly hull?: number },
     first: FightView,
-    marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight'>>,
+    marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight' | 'lights'>>,
     now: number,
     shown: (hull: number) => number = (hull) => hull,
   ) {
@@ -480,7 +483,9 @@ export class SeaCombat {
       ship.rig?.step(seconds, wind, time);
       const captain = number === boarded ? undefined : captains.get(number);
       const crew = captain && number > 0 ? { crew: captainInFight(`fight-${number}`, captain) } : {};
-      const look = number === 0 ? this.ownLook : { side: ship.side };
+      // A friendly ship running from the fight puts her lanterns out.
+      const fleeing = ship.side === 'friendly' && captains.get(number)?.mode === 'flee';
+      const look = number === 0 ? this.ownLook : { side: ship.side, dark: fleeing };
       return { hull: ship.hull, place, rig: ship.rig, look, ...crew };
     });
   }
@@ -534,6 +539,11 @@ export class SeaCombat {
     const cues = this.naval.takeCues();
     this.shake.take(cues, now);
     playCues(worldOutput(), cues, eye, this.orbit.yaw);
+  }
+
+  /** The fight's lights (its flashes, fires and blasts) as the last frame drew them, as lamps in world metres. */
+  lamps(): readonly LampPlace[] {
+    return this.fightLamps.lampsOf(this.marks.lights ?? [], this.window);
   }
 
   /** The puffs' light on what stands round them, into the light layer's pass. */

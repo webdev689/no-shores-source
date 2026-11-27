@@ -421,8 +421,9 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   says ("Encounters", "In the Game"), from the layout's plan and each snapshot's `encounter`, held with the cache
   (`heardRun`).
 - **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives left", "1
-  revive left", "No revives left"), and with "Darkness zone" while the darkness holds the player (lying in the Court
-  while its Boss stands, or no revive left; [[Revives]]). When the room says this player's company fell (`Wiped`,
+  revive left", "No revives left"), with "Darkness zone" while the darkness holds the player (lying in the Court
+  while its Boss stands, or no revive left; [[Revives]]), and last with the chests found of those the run stands
+  ("Chests 2 of 5", from the player's gear). When the room says this player's company fell (`Wiped`,
   `heardRun`), the page takes them out by the way they came in, even with the menu open, the veil saying "Your company
   fell. Leaving" the dungeon: before its entrance, or from a sea island's back to the sea.
 
@@ -433,8 +434,8 @@ wall wherever an open cell meets rock or the grid's edge, a trim band at its foo
 wall from a lower ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a
 lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; the exit
 door; the return portal, an arch of the end room's trim standing off its wall round a face of its wall darkened, which
-while the portal stands open glows bright and shimmering and lights the room as a torch does; and the forged props the
-dungeon lays, each standing and turned as the city stands a prop. Every surface wears a picture the procedural
+while the portal stands open glows bright, breathing and shimmering, and lights the room as a torch does; and the
+forged props the dungeon lays, each standing and turned as the city stands a prop. Every surface wears a picture the procedural
 textures paint: the brackets and the cache's bands the textures' ironwork (archive 93), the cache's wood the island's
 timber; only a flame and the open portal glow in a colour, as the city's braziers do. Its pictures are filed by role as the Forge files them: a room whose number leaves 2 over three wears the
 style's second set and any other its main one, as every corridor does; record 0 for a wall (1 in a room whose number
@@ -442,18 +443,20 @@ is odd), 2 the floor, 3 the ceiling and 4 the trim, each set turned to the islan
 procedural textures as the city paints its own ([[Procedural Textures]]). Their UVs run in world metres, one picture to
 3.2 m. The exit door wears the door picture its entrance's model wears.
 
-- **The light.** The 32 lights that reach nearest the eye each light round them in their kind's own colour, reach
-  and flicker, none in step, fading to nothing at their reach, a face turned from one catching half: a torch warm to
-  8 m, a brazier deep orange to 9 m, candles pale to 4.5 m, crystals a steady blue-green to 7 m, a lantern warm to
-  8 m, a hearth's fire to 9.5 m, and the open portal cold. A faint light lies everywhere in the mood of the style of
-  each cell (`MOODS`): the crypt's cold grey-blue, the halls' grey, the cells' sickly green, the sanctum's pale gold,
+- **The light.** The 32 lights that reach nearest the eye each light round them in their kind's own colour and
+  reach, a fire's flickering and a glow's breathing, none in step, fading to nothing at their reach, a face turned
+  from one catching half: a torch warm to 8 m, a brazier deep orange to 9 m, candles pale to 4.5 m, crystals a
+  breathing blue-green to 7 m, a lantern warm to 8 m, a hearth's fire to 9.5 m, the open portal cold, and the torch
+  or lantern in the player's left hand at their hand
+  ([[Every Light Is Redesigned and Animated, and Each Casts Light]]). A faint light lies everywhere in the mood of the
+  style of each cell (`MOODS`): the crypt's cold grey-blue, the halls' grey, the cells' sickly green, the sanctum's pale gold,
   the caverns' teal and the mines' dusty brown, enough that a room past every light still shows its walls. Each
-  torch is an iron bracket off its wall, plate, arm and cup, under a flame that glows as the city's braziers glow;
-  the props and the fixtures are lit by the same light as the walls.
+  torch is an iron bracket off its wall, plate, arm and cup, its flame a fire burning out of the cup, flickering with
+  its light ([[Dungeons]], "Its flames"); the props and the fixtures are lit by the same light as the walls.
 - **The fixtures** (`dungeonFixtures.ts`), each shaped by where it stands: a brazier, an iron bowl on three legs heaped
-  with embers under flames; three to five candles of wax, each with its small flame; five to eight crystals leaning
-  out from where they grow, glowing; a lantern of glowing glass in an iron frame on its chain; a hearth's embers and
-  flames.
+  with embers under a fire; three to five candles of wax, each with its small fire; five to eight crystals leaning
+  out from where they grow, glowing; a lantern of glowing glass in an iron frame on its chain, a small fire behind the
+  glass; a hearth's embers and a fire along them.
 - **The ceilings** (`dungeonCeilings.ts`): a room's ceiling flat; a barrel vault across its narrower side, rising up to
   1.6 m over its walls; a dome over its middle, up to 2.2 m; or a cave's rough rock a quarter to over a metre over its
   walls, as are the corridors of the caverns. Where two cells' ceilings differ along their edge, the higher one's side
@@ -662,15 +665,19 @@ sails out from its berth ("Landings").
 Landing asks first ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]];
 `landingAsk.ts`, `seaLandings.ts`). A click on a port's icon, or anywhere on its island's land, asks "Dock at
 Overlook?"; on a coast with no living port (a ruined city's harbour is no port, `portOf`), "Go ashore on Cairnwatch?";
+on an island cut into regions ([[World Map]], "Regions"), its land asks to dock only within the region that holds the
+living port, and within any other region to go ashore on it ("Go ashore on the Weirlands?"), each judged at the coast
+nearest the point clicked, where the ship comes in, so each region's view is reached from the sea;
 on one of the sea's islands, its own ground (which a click meets as it meets the land's, `Isles.groundAt`) or the
 water within 400 m of its reach, "Go ashore on the cove?", before the open landmass's. L, Enter or the pad's A asks
-after what the sea offers where the ship lies. The confirmation stands a little above the middle of the view, clear of
+after what the sea offers where the ship lies, by the same rule off an island cut into regions: off the port's region,
+to dock there; off another, to go ashore on it. The confirmation stands a little above the middle of the view, clear of
 the console, its question in brass and what yes does under it; Enter, the pad's A or its press says yes, Escape, the
 pad's B or Cancel no, and a click elsewhere puts it by, as does a fight, the helm, going aboard, a travel or leaving the
 sea.
 
 Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,
-to dock there; anywhere else, to go ashore. Yes within reach docks in sight at once, or once nothing else holds the
+and on an island cut into regions off the region that holds the port, to dock there; anywhere else, to go ashore. Yes within reach docks in sight at once, or once nothing else holds the
 player (another landmass opening); out of reach the ship makes for the harbour (or the coast nearest the point clicked)
 at ×60 and docks in sight once it is within reach, which the console names ("Bound for Overlook's harbour, to dock").
 Another course
@@ -703,19 +710,30 @@ the ship (its settled word on the ship lying within 2 m of where the page has it
 taken) and the player has the helm with nothing else holding them, a ship lying within 30 m of its berth sails out at
 ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen pulling away,
 and is the player's to sail from there. A course the player sets first, or the room placing the ship away from its
-berth, leaves it as it is; either way it is docked no more.
+berth, leaves it as it is; either way it is docked no more. Back at sea from a patrol zone's own land (at any tier;
+never its dungeon, a run, a Breach's gate copy, an Elite Dungeon or a run started at sea), walked to through the
+crossing gates or landed on, with the ship off another region of the zone's island (the region of that island whose
+centre is nearest the ship; [[World Map]], "Regions"), the ship lies at the zone's region's anchorage, 3 km off its
+coast, facing as it did, and the view stands over it there (`regionLeft.ts`); the room places it there too
+([[Server]], "The sea"), and the player sails from there, in reach to land on that zone again. From a zone of the
+region it lies off, from anywhere else, or with the ship off another island, it lies where it was left.
 
 Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
-framed on the nodes of its side, the city's social space among them when docking. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
+framed on the places of the region it lies off, the one whose centre is nearest it (on an island with no regions, the
+nodes of its side), the city's social space among them when docking, so each region has its own view ([[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
 `islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid with space between them. First the
-island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner; then every
-patrol zone, Elite Dungeon, mission, world boss and outpost of the island; gone ashore, the places alone. A click on a
+island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner (only where the region holds
+the port); then every patrol zone, Elite Dungeon, mission and world boss of that region, with any place no
+region lists, and one Outposts tile for the region's outpost sites; gone ashore, the places alone. The room a place
+lands in holds to the same rule: from the sea it takes only a player whose ship lies off the region that lists the
+place ([[Server]], "Arrivals"). A click on a
 tile does what it does: a place lands there (the player stands at its first spawn, facing inland from the ship, or at a
 social space out from its landmark over the city, as on arriving), choosing its node first; an Elite Dungeon opens its
-card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist. Tab, the arrows
+card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist; the Outposts tile opens the region's sites, choosing one landing there.
+Tab, the arrows
 and the pad's cross walk the tiles, and Enter or the pad's A presses the one they reach; else Enter does what the lit
 tile does (the one under the pointer, else the first place's). Escape, the pad's B, or Back to the sea, flies back
-down.
+down; over the Outposts tile's sites, they close them first, back to the tiles.
 
 A sea island's landing docks in sight at once, from wherever the ship lies: it sails for the island's offing, out on
 the bearing it is landed on, planned on water as any route and bent round every island in sight, then in to its
@@ -768,8 +786,8 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 ## Drawing
 
 `GameScene` reads the sky over the eye each frame with the lamps lit round it, a torch or lantern in the player's left
-hand among them ([[Sky]]), then draws the open landmass in rings round the eye, the exact ground round the player or
-the ship, every drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then
+hand and its own fires' (`fires`) among them ([[Sky]]), then draws the open landmass in rings round the eye, the
+exact ground round the player or the ship, every drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then
 what a drawer draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each
 tested by hand against the scene's depth, so the water's sky and its surface near a coast never cover them.
 

@@ -37,6 +37,9 @@ code:
   - client/src/ships/flag.ts#flagGrid
   - client/src/ships/flagPictures.ts#flagPictures
   - client/src/ships/shipModels.ts#openHull
+  - client/src/ships/lanterns.ts#lanternsLit
+  - client/src/ships/shipLights.ts#shipLanterns
+  - crates/naval/src/night.rs#runs_dark
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
@@ -195,6 +198,17 @@ picture's grain, the picture's lightness about its mean kept:
   3 cm of its breadth in its own slice, where the inside of a bulwark never lies. A face whose corners differ is
   painted to the halfway between them. Its deck,
   its fittings and the insides of its bulwarks keep their timber.
+- **Its lanterns.** A Schooner's, a Brig's and a Frigate's stern lantern stands on a post at its taffrail: its glass
+  between six iron posts under a cap and a ring, an empty named `Lantern` in its model at its middle, which the export
+  writes to its manifest (`lanterns`; the Sloop's model has none). Caged, it shows no flame ([[An Enclosed Light Hides Its Flame]]): the glass is lit from
+  inside as the city's lanterns are, by day as by night and brighter against the dark, glowing amber, brightest at
+  its middle, and a soft halo stands round it, brighter at night (`ShipModels`). Its glass and its light, a lamp
+  ([[Sky]], "Lamps at sea"), flicker alike as a lantern, seeded by the ship (`shipSeed`: its hull and its slot of that
+  hull's model), so no two ships drawn in a frame flicker in step; its light falls on its deck and hull, the sea round
+  it and the people aboard. Her other lanterns, at her quarters and her door ([[Hulls]], "Lanterns"), burn and light
+  alike. A ship settled more than three metres into the sea, sinking, a wreck, and a ship running dark ("Lanterns at
+  night") have their lanterns out
+  ([[Every Light Is Redesigned and Animated, and Each Casts Light]], [[Lights as Claude Builds Them]]).
 - **Its stripe** is 0.6 m deep along the line through the mouths of its upper tier of guns, rising with its sheer.
 - **Its flag** flies at the head of its tallest mast (the highest point of its spars), a tenth of its waterline's
   length long and two thirds as deep, its hoist down the mast. It streams the way the wind blows and waves along its
@@ -282,6 +296,28 @@ side's colours, its pose, its heel and its footprint on the water taken from its
   ship whose player is ashore lies at rest where they left it, at the coast nearest it within 5 km: the sea room sends
   it to players within sight at sea, and the rooms on that island's own ground (a node's, or a sea island's) to the
   players there, its own player among them ([[Server]], "Parked ships").
+
+## Lanterns at night
+
+Ships show their lanterns at night, as DFO's did ([[Ships' Lanterns Come Over From DFO]]): the friendly traffic between
+the ports, the Sloops moored at Overlook's pier, the players' ships and hostile ships, each on its own hull ([[Hulls]],
+"Lanterns"). Their glass burns by day and night ("Its lanterns" above); their light comes up as the daylight fades,
+through the dusk with the lamps ([[Sky]], "Lamps at sea").
+
+- **Who runs dark.** The Grey Tithe's ships sail with their lanterns out ([[Pirates Are Replaced by the Grey Tithe]]),
+  and a friendly ship running from an attack puts hers out: a merchant fleeing the Tithe ship she clashed with, as the
+  room sends her (`Friendly.dark`), and a friendly captain fleeing in a player's fight (`runs_dark`).
+- **Her stern windows.** A lit ship's stern windows burn with her lanterns, and a dark ship's stay dark
+  ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]], [[Hulls]], "Stern
+  windows").
+- **Near.** Each of a lit ship's lanterns is a lamp reaching 13 m, the nearest sixteen of the sky's lamps lit, lighting
+  her deck and the water round her ("Its lanterns" above).
+- **Far.** Past 45 m a lit ship shows up to four of her lanterns (her first, her last and spread between) as warm points
+  over the water, fading in over 45 m, half a metre across or 0.004 of their distance, whichever is more, so a ship
+  reads across the sea at night as her lanterns (`GlowPoints`).
+- **Seen by them.** By night a lit ship is spotted to 650 m and a dark one only to 220 m: by the captains in a fight,
+  the player's marks, a player joining a clash, and a hostile ship choosing whom to come for ([[Naval Combat]], "Night
+  sight").
 
 ## Its deck
 

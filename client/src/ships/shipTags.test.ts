@@ -9,6 +9,7 @@ import { HULL_NAMES, hullSails, hullWaterline } from './hulls.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, SailRig } from './sails.ts';
 import { readShipMesh, type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
 import { mastsOf } from './shipHarm.ts';
+import { GLASS_SHELL } from './lanternMesh.ts';
 import { braced, tagShip } from './shipTags.ts';
 
 /** A published hull's mesh, fetched from R2 once and kept by its content's name in the machine's temporary folder. */
@@ -45,6 +46,32 @@ function verticesOf(vertices: ArrayBuffer, count: number) {
   });
 }
 const HULL = SHIP_PARTS.indexOf('hull');
+
+test("every hull's stern windows are glass through its tags, and nothing else of it is", async () => {
+  const iron = SHIP_PARTS.indexOf('iron');
+  for (const [hull, name] of HULL_NAMES.entries()) {
+    const mesh = await published(hull);
+    const view = new DataView(tagShip(mesh, hullSails(hull)).vertices);
+    const glass = verticesOf(view.buffer as ArrayBuffer, mesh.vertexCount).filter(
+      (unused, vertex) => view.getUint8(vertex * VERTEX_BYTES + 25) === GLASS_SHELL,
+    );
+    assert.ok(
+      glass.every((vertex) => vertex.part === iron),
+      `${name}: its glass is iron`,
+    );
+    // The Sloop's model has no stern windows; the others carry four, two each side of their stern, aft of amidships.
+    if (name === 'sloop') assert.equal(glass.length, 0, 'the Sloop has no glass');
+    else {
+      assert.equal(glass.length, 16, `${name}: four panes of four corners`);
+      assert.ok(
+        glass.every(({ point: [x] }) => x < -mesh.waterline.lengthM / 3),
+        `${name}: its glass is at its stern`,
+      );
+      for (const side of [1, -1])
+        assert.equal(glass.filter(({ point }) => Math.sign(point[1]) === side).length, 8, `${name}: two a side`);
+    }
+  }
+});
 
 test("the Sloop's after cabin keeps its timber, and every hull's sides amidships and transom are its shell", async () => {
   for (const [hull] of HULL_NAMES.entries()) {

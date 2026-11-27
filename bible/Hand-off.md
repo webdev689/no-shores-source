@@ -9,16 +9,11 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: #232, this session's audit and cleanup (branch `claude/epic-faraday-xmfrot`: the sea's
-  held map some twenty times faster and no longer laid out as the ship sails, a settled rig no longer redrawing the
-  far shadow map, six audits' fixes across the client, rooms, server, bot and repo checks, the bible's review; `main`
-  with #221 taken in; its description says what and how it was tested); #159 (the rooms' worker tests wait for what
-  they check; it conflicts with `main` in `roomThread.test.ts`, which #232 also touches).
-- **Other sessions' work under way**: #229 (deeper dungeons and DFO's 3D map), #233 (lights redesigned, island and
-  hollow ground textured) and #234 (the owner's answers to the Open Questions).
-- **Drafts**: #228 (dialogue waits for a click, Overlook lit at night, ships' lanterns), #224 (the walk's left arm,
-  the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the
-  gear message carries the pledge once).
+- **For the owner's yes**: #229 (the deeper dungeons: storeys and stairs, more ways, great rooms and galleries,
+  vaults, richer chests and DFO's 3D map; [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]],
+  its pieces published by the dungeon-modules workflow's run 53) and #159 (the rooms' worker tests wait for what they
+  check; it conflicts with `main` in `roomThread.test.ts`).
+- **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
 
@@ -67,7 +62,7 @@ yet played by hand or with other players in a deployed room.
 - **Heard**: the music, the ambience, the world's, sea's and menu's sounds and their levels; the prologue's music and
   voices; the seams between a long recording's chunks; whether a browser drops an MP3's 25 to 40 ms of padding, as
   ffmpeg does, so each hoofbeat plays to its cut.
-- **Played by hand**: the prologue in one run; an hour's day; a ranged weapon's fight on foot; the travel's cinematic
+- **Played by hand**: the prologue in one run; an hour's day; a ranged weapon's fight on foot; the travel's fade
   from the helm; a clash of a Tithe ship and a merchant, joined; the welcome's tour with its 400 Aurem and a starter
   piece bought; the key strip, the leave held and a real pad's View held; the hit fixes; the Passages (every deal, a dive's way across zones, a public round, the held
   map's public way, the sea's new ranks and salvage, the week's Abyss Dungeon run again); the escort on its horse and
@@ -103,7 +98,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   redirects (unchecked whether done); press Build in the panel's Server layout and follow its checklist in #staff,
   first a fuller invite (the bot's first lacks Manage Threads, Mute Members and the two thread permissions). The
   Developer role appears once the layout is built again.
-- **Branches**: delete `ccr-9e470c58-pm6nyz` (#211, merged); a session cannot.
+- **Branches**: delete `ccr-9e470c58-pm6nyz` (#211, merged) and `ccr-c7c30290-wwnvc5` (#221, merged); a session
+  cannot.
 - **Security and deploys found by the tooling audit** (each needs the owner's named approval, as a rule on keys,
   security or deploys does): any branch's push runs the asset workflows (`modules.yml`, flora, ships, wreck, freesound,
   dungeon-modules, island-modules; lattice on every branch but main) with `CLOUDFLARE_TOKEN`, which writes the bucket
@@ -132,6 +128,17 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
+  third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
+  a walk through a three-storey dungeon and its vault. Headless pictures of three (`dungeon-plan.ts`) were taken before
+  the audit's fixes and show every room, flight, gallery and map drawn; seen from its head in a dim flight the treads'
+  edges merge. The audit's 31 findings, a navmesh bridged-hole bug, a lamp guard that never stood under ground and a
+  vault left no chest place are fixed on the branch (tested offline). Its notes' Limits name what is left (sight under
+  a flight's slope, a landmark's storey by its first solid). Whether passages go deeper than one storey is the
+  owner's call.
+- **The toolkit's barriers** (observations 0040, 0116, 0117, each seen a third time): a worker's run ending before the
+  2-hour kill with its edits committed, its target/ deleted once merged, and no picture run driving another
+  checkout's server.
 - **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
   deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
 - **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
@@ -146,7 +153,12 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   a deployed room: docking and undocking, parked ships ashore and at sea, the tiles and their icons, the console, the
   Playlist's crests.
 
-- **The five longest system notes**: Interface (1,856 lines), Server, Game, Gear and Naval Combat (859 to 963) want
+- **The lights at sea and in the city** (#228 on #233's lights): not pictured on a real GPU or played by hand; the
+  hub's city does not draw in the headless QA page, so Overlook's lights after the fold are unpictured; each lit ship
+  lights up to four lamps, which may crowd the nearest sixteen in a big night fight; the pad's Continue is untested;
+  a keeper's screen says its lines on its own 1.6 s.
+
+- **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
   merge").
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:

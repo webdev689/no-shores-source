@@ -42,6 +42,7 @@ pub use ranks::{Call, Place, Rank};
 pub use react::{shot_at, swung_at};
 pub use roles::Role;
 pub use roster::{FoeType, ROSTER, foe_type, in_role, spawn};
+pub use senses::storeys_apart;
 pub use shoot::aimed_shot;
 
 use dice::Dice;

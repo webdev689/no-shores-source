@@ -36,6 +36,84 @@ pub fn outpost_of(layout: &layout::Layout, window: &Ground) -> Option<OutpostGro
     Some(OutpostGround { plot, level: window.height_at(plot[0], plot[1]), muster, landing })
 }
 
+/// How far an outpost site's plot's ground stands off its level at most, read every 2 m across its square on the
+/// node's window, metres.
+#[must_use]
+pub fn plot_off(outpost: &OutpostGround, window: &Ground) -> f64 {
+    use layout::areas::PLOT_HALF_M;
+    let steps = (-16..=16).flat_map(|row| (-16..=16).map(move |column| (column, row)));
+    steps
+        .map(|(column, row): (i32, i32)| {
+            let x = outpost.plot[0] + PLOT_HALF_M * f64::from(column) / 16.0;
+            (window.height_at(x, outpost.plot[1] + PLOT_HALF_M * f64::from(row) / 16.0) - outpost.level).abs()
+        })
+        .fold(0.0, f64::max)
+}
+
+/// What stands on an outpost site's plot but its four corner stones, one line each: a model, a solid, a path, a
+/// planting, an outcrop or a site; empty for a bare plot, or a layout with none.
+#[must_use]
+pub fn on_plot(layout: &layout::Layout) -> Vec<String> {
+    use layout::areas::PLOT_HALF_M;
+    use layout::field::distance;
+    let Some(plot) = layout.areas.iter().find(|area| area.kind == layout::brief::AreaKind::Plot) else {
+        return Vec::new();
+    };
+    let on = |[west, north, east, south]: [f64; 4]| {
+        let reach = PLOT_HALF_M;
+        west < plot.at[0] + reach
+            && east > plot.at[0] - reach
+            && north < plot.at[1] + reach
+            && south > plot.at[1] - reach
+    };
+    let point = |at: [f64; 2]| on([at[0], at[1], at[0], at[1]]);
+    let mut found: Vec<String> = Vec::new();
+    let seating = &layout.seating;
+    for seated in seating.buildings.iter().chain(&seating.props).filter(|seated| on(seated.footprint)) {
+        found.push(format!("model {} at {:.0},{:.0}", seated.model, seated.at[0], seated.at[1]));
+    }
+    // A corner stone stands just outside its corner, reaching a little over it.
+    let corner = |at: [f64; 3]| {
+        let (east, south) = ((at[0] - plot.at[0]).abs(), (at[1] - plot.at[1]).abs());
+        (east - PLOT_HALF_M).abs() < 1.0 && (south - PLOT_HALF_M).abs() < 1.0
+    };
+    let solids = seating.solids.iter().chain(&seating.rooms).filter(|solid| !corner(solid.at));
+    for solid in solids.filter(|solid| {
+        let [west, north, east, south, ..] = solid.bounds();
+        on([west, north, east, south])
+    }) {
+        found.push(format!("a solid at {:.0},{:.0}", solid.at[0], solid.at[1]));
+    }
+    let corners = seating.solids.iter().filter(|solid| corner(solid.at)).count();
+    if corners != 4 {
+        found.push(format!("{corners} corner stones"));
+    }
+    // Every metre along each way, so no segment crosses the square between its ends.
+    let walked = layout.paths.iter().flat_map(|path| path.points.windows(2)).flat_map(|pair| {
+        let steps = distance(pair[0], pair[1]).ceil().max(1.0) as usize;
+        (0..=steps).map(move |step| {
+            let share = step as f64 / steps as f64;
+            [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share]
+        })
+    });
+    if let Some(at) = walked.into_iter().find(|&at| point(at)) {
+        found.push(format!("a path at {:.0},{:.0}", at[0], at[1]));
+    }
+    for planted in layout.plantings.iter().flat_map(|planting| &planting.points).filter(|&&at| point(at)) {
+        found.push(format!("a planting at {:.0},{:.0}", planted[0], planted[1]));
+    }
+    let reach = PLOT_HALF_M * std::f64::consts::SQRT_2;
+    for outcrop in
+        layout.sculpt.outcrops.iter().filter(|outcrop| distance(outcrop.at, plot.at) - outcrop.radius < reach)
+    {
+        found.push(format!("an outcrop at {:.0},{:.0}", outcrop.at[0], outcrop.at[1]));
+    }
+    for marked in layout.sites.iter().filter(|marked| point(marked.at)) {
+        found.push(format!("a {:?} site", marked.kind));
+    }
+    found
+}
+
 /// A place of a node: its name, middle and reach, metres.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Place {

@@ -100,6 +100,32 @@ impl Fitting {
         open && wall_free && clear
     }
 
+    /// Keeps a vault's chest a place before anything is laid: the first open cell away from its doorways with a rock
+    /// wall no torch hangs on stands nothing, so its chest always stands against that wall.
+    pub(crate) fn keep_chest_place(&mut self, dungeon: &Dungeon) {
+        let room = self.room;
+        let next_inner = |next: Cell| match next {
+            Cell::Rock => true,
+            Cell::Room(other) => usize::from(other) == room,
+            _ => false,
+        };
+        let inner = |cell: usize| {
+            SIDES.into_iter().all(|side| dungeon.beside(cell, side).is_none_or(|next| next_inner(dungeon.cells[next])))
+        };
+        let torch_on =
+            |cell, side| dungeon.torches.iter().any(|torch| torch.wall == side && dungeon.cell_at(torch.at) == cell);
+        let spot =
+            self.open.iter().copied().filter(|&cell| !self.taken.contains(&cell) && inner(cell)).find_map(|cell| {
+                SIDES
+                    .into_iter()
+                    .find(|&side| dungeon.rock_beside(cell, side) && !torch_on(cell, side))
+                    .map(|side| (cell, side))
+            });
+        if let Some((cell, side)) = spot {
+            self.take(cell, Some(side), false);
+        }
+    }
+
     /// Takes a cell, and a wall if one, for something that stands there.
     pub(crate) fn take(&mut self, cell: usize, wall: Option<Side>, solid: bool) {
         self.taken.push(cell);
@@ -235,8 +261,8 @@ impl Fitting {
         let room = &dungeon.rooms[self.room];
         let along_x = room.width >= room.depth;
         let (length, lines) = if along_x { (room.width, room.depth) } else { (room.depth, room.width) };
-        let entry_step =
-            if along_x { self.entry % dungeon.columns - room.x } else { self.entry / dungeon.columns - room.y };
+        let entry = self.entry % dungeon.plane();
+        let entry_step = if along_x { entry % dungeon.columns - room.x } else { entry / dungeon.columns - room.y };
         let onward = 2 * entry_step < length;
         let front = match (facing, along_x, onward) {
             (Facing::Along, true, true) => Side::East,
@@ -249,7 +275,7 @@ impl Fitting {
         for line in (1..lines).step_by(2) {
             for step in 1..length.saturating_sub(1) {
                 let (x, y) = if along_x { (room.x + step, room.y + line) } else { (room.x + line, room.y + step) };
-                let cell = y * dungeon.columns + x;
+                let cell = room.storey * dungeon.plane() + y * dungeon.columns + x;
                 if dungeon.room_at(cell) == Some(self.room) {
                     self.put(dungeon, cell, None, model.stood(dungeon.centre(cell), front, 0.0, true));
                 }
@@ -331,19 +357,20 @@ impl Dungeon {
         let open: Vec<usize> =
             found.quiet.iter().copied().filter(|cell| !kept.contains(cell) && !under.contains(cell)).collect();
         let mut walls = vec![(self.way_in.cell, self.way_in.side), (self.portal.cell, self.portal.side)];
-        walls.extend(self.torches.iter().map(|torch| (self.cell_at([torch.at[0], torch.at[1]]), torch.wall)));
-        let flames = self.torches.iter().map(|torch| [torch.at[0], torch.at[1]]).collect();
+        walls.extend(self.torches.iter().map(|torch| (self.cell_at(torch.at), torch.wall)));
+        let flames = self
+            .torches
+            .iter()
+            .filter(|torch| self.storey_of(self.cell_at(torch.at)) == found.storey)
+            .map(|torch| [torch.at[0], torch.at[1]])
+            .collect();
         let entry = found.cells.iter().copied().min_by_key(|&cell| (steps[cell], cell)).unwrap_or(0);
         let anchor = if room == self.end {
             Some((self.portal.cell, self.portal.side))
         } else if room == self.way_in.room {
             Some((self.way_in.cell, self.way_in.side))
         } else {
-            // The way on: the doorway farthest along the walk.
-            let doorways = found.cells.iter().flat_map(|&cell| SIDES.into_iter().map(move |side| (cell, side)));
-            doorways
-                .filter(|&(cell, side)| self.beside(cell, side).is_some_and(|next| self.cells[next] == Cell::Corridor))
-                .max_by_key(|&(cell, _)| (steps[cell], core::cmp::Reverse(cell)))
+            self.way_on(room)
         };
         Fitting {
             room,
@@ -362,14 +389,38 @@ impl Dungeon {
         }
     }
 
-    /// Furnishes and lights every room by its purpose, each on lanes of its own. The Reeve's post, and the floor round
-    /// it where his cache and its Vestiges lie, are kept clear.
+    /// The way on: the doorway the main way leaves a room by, its cell and side; none for a room off it.
+    #[must_use]
+    pub fn way_on(&self, room: usize) -> Option<(usize, Side)> {
+        let leaving = self
+            .main_way
+            .windows(2)
+            .rev()
+            .find(|pair| self.room_at(pair[0]) == Some(room) && self.room_at(pair[1]) != Some(room))?;
+        let side = SIDES.into_iter().find(|&side| self.beside(leaving[0], side) == Some(leaving[1]))?;
+        (self.cells[leaving[1]] == Cell::Corridor).then_some((leaving[0], side))
+    }
+
+    /// Furnishes and lights every room by its purpose, each on lanes of its own, after a pair of braziers flanking the
+    /// doorway the main way leaves it by, on the room's wall either side of it or, where that holds none, outside it.
+    /// The Reeve's post, and the floor round it where his cache and its Vestiges lie, are kept clear. Each room's
+    /// pieces and lights are laid on its own storey's floor.
     pub(crate) fn furnish(&mut self, seed: u32, steps: &[u32]) {
         let post = self.nearest_middle(self.end, 1).first().copied();
         let mut kept = vec![self.way_in.cell, self.portal.cell];
         kept.extend(post);
         for room in 0..self.rooms.len() {
             let mut fitting = self.fitting(room, &kept, post, steps);
+            let way_on = self.way_on(room).filter(|_| room != self.end);
+            if let Some(door) = way_on {
+                let anchor = fitting.anchor.replace(door);
+                fitting.light(self, &mut Lane::named(&format!("way:{seed}:{room}")), &crate::purposes::WAY_ON);
+                fitting.anchor = anchor;
+            }
+            let inside = !fitting.fixtures.is_empty();
+            if self.vaults.contains(&room) {
+                fitting.keep_chest_place(self);
+            }
             let purpose = self.rooms[room].purpose;
             let mut lane = Lane::named(&format!("props:{seed}:{room}"));
             for lay in purpose.lays {
@@ -379,8 +430,20 @@ impl Dungeon {
             for light in purpose.lights {
                 fitting.light(self, &mut lane, light);
             }
-            self.props.extend(fitting.props);
-            self.fixtures.extend(fitting.fixtures);
+            let floor = crate::storey_floor(self.rooms[room].storey);
+            self.props.extend(fitting.props.into_iter().map(|prop| crate::Prop {
+                at: [prop.at[0], prop.at[1], prop.at[2] + floor],
+                solid: prop.solid.map(|[min_x, min_y, max_x, max_y, top]| [min_x, min_y, max_x, max_y, top + floor]),
+                ..prop
+            }));
+            self.fixtures.extend(fitting.fixtures.into_iter().map(|fixture| Fixture {
+                at: [fixture.at[0], fixture.at[1], fixture.at[2] + floor],
+                solid: fixture.solid.map(|[min_x, min_y, max_x, max_y, top]| [min_x, min_y, max_x, max_y, top + floor]),
+                ..fixture
+            }));
+            if let Some((cell, side)) = way_on.filter(|_| !inside) {
+                self.flank_outside(cell, side);
+            }
         }
     }
 }

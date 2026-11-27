@@ -49,3 +49,16 @@ export const BLEND_OF: Readonly<Record<PuffKind, Blend | undefined>> = {
   shred: undefined,
   timber: undefined,
 };
+
+/** A puff's own turn (radians) from where it began, `anchor` and `from` off it: DFO turned each puff at random, so
+ *  the lumps of a bank of smoke never line up. */
+export function turnOf(anchor: readonly number[], from: readonly number[]): number {
+  const seed = Math.sin(
+    (anchor[0] ?? 0) * 12.9898 +
+      (anchor[1] ?? 0) * 78.233 +
+      (from[0] ?? 0) * 37.719 +
+      (from[1] ?? 0) * 4.581 +
+      (from[2] ?? 0) * 91.37,
+  );
+  return (seed * 43_758.5453 - Math.floor(seed * 43_758.5453)) * 2 * Math.PI;
+}

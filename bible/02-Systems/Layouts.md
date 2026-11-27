@@ -54,7 +54,7 @@ no brief is open ground to arrive on and fight over; an outpost site's is a land
 The Plot, The Muster Ground), and it links to no patrol area. A plot is the ground a guild builds on: a square 64 m a
 side, axis-aligned round its middle, on flat dry ground within 250 m of the landing where the land allows. Nothing
 stands on it: no beacon or resource is marked there, a way ends at its rim, and four low stones stand just outside its
-corners. Of the 99 drawn nodes, the 90 that are not outpost sites each have their own. A brief may also carry hints:
+corners. Of the 155 drawn nodes, the 74 that are not outpost sites each have their own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
 and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (Saltmere's
@@ -526,7 +526,9 @@ does nothing.
 The game draws the layouts within 4 km of the eye with the city layer ([[Cities]]), gathered again once the eye has
 moved 1.5 km: a plan of placed pieces (each building and prop where its layout stood it, a building walked into with
 its doorways open) and solids (plinths, set pieces, great works, rock, rooms), on a grid of cells just large enough
-to hold them, with no plates. Nature keeps off the buildings' yards, each place's open ground and the paths, and grows each
+to hold them, with no plates. Their lights are the city's ([[Cities]], `cityLights.ts`): a camp's, a watchtower's and
+a brazier's fire burns on its coals and casts its light, a post's lantern and the lighthouse's lantern room glow
+with their lamps, a sunstone breathes. Nature keeps off the buildings' yards, each place's open ground and the paths, and grows each
 layout's plantings where they were planted, as its own kind (`plantedOf`).
 
 The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within

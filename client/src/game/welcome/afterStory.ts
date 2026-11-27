@@ -1,7 +1,7 @@
 // What the story leaves to play on foot in Overlook's social space: the stranger's last moment (`Epilogue`), in which
 // she welcomes the player to Overlook (`tour.ts`). While she speaks the view is hers, on the pair face to face, and
-// the player's keys are held; a press of Space (jump) moves her words on a line. Her farewell asks the room to hear
-// her task done. Leaving the place ends it all at once, the view and the keys the player's again.
+// the player's keys are held; a press of Continue moves her words on a line (`dialogue.ts`). Her farewell asks the
+// room to hear her task done. Leaving the place ends it all at once, the view and the keys the player's again.
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import type { CardAt } from '../../player/cards.ts';
 import { IDLE, type InputFrame } from '../../player/input.ts';
@@ -173,13 +173,14 @@ export class AfterStory {
     return this.welcome?.holding ?? false;
   }
 
-  /** The keys the player's own play hears this frame of those pressed (`controls`): none while she speaks, Space
+  /** The keys the player's own play hears this frame of those pressed (`controls`): none while she speaks, Continue
    *  moving her words on apart from them (`gameKeys`). */
   heard(controls: InputFrame): InputFrame {
     return this.holding ? IDLE : controls;
   }
 
-  /** Space pressed while she speaks: her words move on a line. */
+  /** Continue pressed while she speaks under Auto: her words move on a line. A line that waits for the press is
+   *  moved on as every waiting line is (`gameFrame.ts`). */
   press(): void {
     if (this.holding) this.epilogue?.advance();
   }

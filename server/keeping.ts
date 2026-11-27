@@ -42,8 +42,9 @@ export interface KeptRoom {
   judgedMoved(player: number): boolean;
   /** Opens a leaving player's chests and posts what lies for them to their mail (`partFrom`). */
   mailLying(player: number): void;
-  /** Gives a player their character with the account's vault and Aurem joined in (`RoomDoor.restoreJoined`). */
-  restoreJoined(player: number, body: string, vault: string | null): boolean;
+  /** Gives a player their character with the account's vault and Aurem joined in (`RoomDoor.restoreJoined`), and
+   *  the room it came from. */
+  restoreJoined(player: number, body: string, vault: string | null, from?: string | null): boolean;
   /** Notes the account that keeps a player's character. */
   own(player: number, account: string): boolean;
   /** Names a player by their account's username, which others read over their head. */
@@ -272,7 +273,7 @@ export class Keeper {
     const own = full === null && claimed.body === null ? this.room.keptApart(player) : null;
     const joined =
       full === null && (own === null || this.room.restoreJoined(player, own.body, claimed.vault ?? own.vault));
-    const given = joined && (body === null || this.room.restoreJoined(player, body, claimed.vault));
+    const given = joined && (body === null || this.room.restoreJoined(player, body, claimed.vault, claimed.from));
     if (!here() || !given || this.held.has(player) || full !== null) {
       // Gone already, full now, or kept as nothing this room can read: let it go untouched rather than save over it.
       await characters.release(claimed.account, holder, null, null).catch(() => false);

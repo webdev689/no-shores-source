@@ -16,7 +16,7 @@ export function keptRoomOn(door: KeptDoor, guarded: <T>(call: () => T, fallback:
   return {
     keptApart: (player) => guarded(() => door.keptApart(player), null),
     judgedMoved: (player) => guarded(() => door.judgedMoved(player), false),
-    restoreJoined: (player, body, vault) => guarded(() => door.restoreJoined(player, body, vault), false),
+    restoreJoined: (player, body, vault, from) => guarded(() => door.restoreJoined(player, body, vault, from), false),
     mailLying: (player) => {
       guarded(() => door.parting(player), undefined);
       guarded(() => door.mailLying(player), undefined);

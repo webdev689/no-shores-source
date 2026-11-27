@@ -35,6 +35,11 @@ code:
   - crates/city/src/overtaken.rs#crown
   - crates/city/src/overtaken.rs#crusted
   - crates/city/src/overtaken.rs#spire
+  - crates/city/src/lights.rs#lights
+  - client/src/city/streetLamps.ts#streetLamps
+  - client/src/city/nightLights.ts#poolMapSteps
+  - client/src/city/windowLights.ts#windowGlow
+  - client/src/sky/glowPoints.ts#GlowPoints
   - crates/land/src/pads.rs#Pads
   - crates/land/src/sites.rs#City
   - client/src/city/cityView.ts#CityView
@@ -173,6 +178,15 @@ generated and shaped, before any city stands on it:
    a fall of 6 m or more kills ([[Reach]]).
 10. **Ramps** (`ramps`): every avenue's terraces are joined by a ramp the road's width, and a switchback climbs at
    each avenue's head; Overlook's harbour way is laid down them to the quay, sealed at its head.
+11. **Lights** (`lights`), Overlook's alone and never a ruin's ([[Overlook's City Below Is Lit at Night, in Detail]]):
+   a lamp post every four ground tiles (25.6 m) along each edge of an avenue's road, 0.8 m in from the paving's edge,
+   standing on the pad over it, so on a ramp at the ramp's height; a lantern every 20 m along the quay's seaward edge
+   and every 24 m down both edges of each pier, a pair at its head; and on the heads of the two piers nearest the
+   harbour, the harbour mouth's light, the tallest. Each keeps 0.5 m clear of every solid that rises over its foot,
+   off the plaza and the landmark's base, and 6 m from every other. The page adds the blocks' own streets' lamps, which
+   only it can place, holding their ground tiles (`streetLamps.ts`): just in from a dirt tile's edge where the street
+   ends beside it within its block, 2 m clear of every building's box (so of its doorways too) and 0.6 m of every
+   prop's, and 22 m from every other light, by one rule in the plan's order, the same on every machine.
 
 **Open and locked.** Only Overlook's social space opens for now (`content/world/social.json`, read by the city crate and the page;
 [[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and the
@@ -284,39 +298,46 @@ glow) moves in depth.
 
 **The pictures.** One texture array of at most 252 layers, each picture resampled to 128 texels square, sampled
 nearest up close and mipmapped far off. A building's windows are cut to their picture's frame as the city's climate
-turns the picture, a climate's turn holding its own kind of window. A window's panes are clear in its picture's
-alpha: an open building's windows draw them as nothing (`CLEAR_GLASS`), so they are seen through, its room's lining
-cut away behind each (`cutAtWindows`), while a closed building's windows are drawn whole. Daggerfall's stone is dark,
-so a solid's picture may be painted lighter or warmer, a factor a channel, as its own layer. The ground's tiles and
-the solids' pictures come first, then the forged models' by how much the city wears them. Up to four workers paint
-them; a layer shows its guessed colour until painted, and what is painted is kept for the next city. Gold, iron,
-bone, cloth and water are painted in the shader on the texels a picture would have, 24 a metre
-([[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]): wrought iron's hammer marks, pits and rust, most on what faces up;
-gilding burnished and worn through to the bronze; bone's grain and yellowing; cloth's dye under a weave of uneven
-threads, taken unevenly; still water (`water`: a fountain, a trough) deep green-blue, its face stirring slowly. A
-picture is lighter or darker in patches some metres wide, so its repeats do not line up. A walk's flagstones (`path`)
-wear their own picture over the paving's, the flags in courses, lighter and warmer, so a way reads apart from the
-ground; a garden's lawn (`lawn`) and a working yard's trodden earth (`earth`) wear their climate's own grass and
-dirt. A lawn and earth take their pattern on top from the world, not the piece, so their pieces join as one surface
-where they meet or overlap (`solidMesh.ts`, `grounded`). The plan names a grain for each walk piece and for the hub's
-paving (`grains`: a turn within a half turn, so a walk laid either way along one line runs one, a point on its middle
-line, and the width whole pictures fit across; `walkGrain.ts`), and a top with a grain takes its pattern from it. A
-walk's flags run along it, whole pictures across it from edge to edge and measured along it from the city's origin,
-so its pieces join along its way while a diagonal walk's courses still run with it. Where walks meet, the round and
-fillets take the grain of the walk on top there, so it runs on unbroken and the others meet it at its edge: a walk
-running straight through the joint, capped there where another stands over it, else the one standing highest. The
-plaza's paving and the walks' floors beside it share one grain, so the pattern carries across their seams. Every other
-piece of flagstones (a round's border) keeps the world's pattern. Pieces of a different grain never lie level: a
+turns the picture, a climate's turn holding its own kind of window. A window's panes are clear in its picture's alpha:
+an open building's windows draw them as nothing (`CLEAR_GLASS`), so they are seen through, its room's lining cut away
+behind each (`cutAtWindows`), while a closed building's windows are drawn whole. Daggerfall's stone is dark, so a
+solid's picture may be painted lighter or warmer, a factor a channel, as its own layer. The ground's tiles and the
+solids' pictures come first, then the forged models' by how much the city wears them. Up to four workers paint them; a
+layer shows its guessed colour until painted, and what is painted is kept for the next city. Gold, iron, bone, cloth
+and water are painted in the shader on the texels a picture would have, 24 a metre
+([[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]): wrought iron's hammer marks, pits and rust,
+most on what faces up; gilding burnished and worn through to the bronze; bone's grain and yellowing; cloth's dye under
+a weave of uneven threads, taken unevenly; still water (`water`: a fountain, a trough) deep green-blue, its face
+stirring slowly. A picture is lighter or darker in patches some metres wide, so its repeats do not line up. A walk's
+flagstones (`path`) wear their own picture over the paving's, the flags in courses, lighter and warmer, so a way reads
+apart from the ground; a garden's lawn (`lawn`) and a working yard's trodden earth (`earth`) wear their climate's own
+grass and dirt. A lawn and earth take their pattern on top from the world, not the piece, so their pieces join as one
+surface where they meet or overlap (`solidMesh.ts`, `grounded`). The plan names a grain for each walk piece and for
+the hub's paving (`grains`: a turn within a half turn, so a walk laid either way along one line runs one, a point on
+its middle line, and the width whole pictures fit across; `walkGrain.ts`), and a top with a grain takes its pattern
+from it. A walk's flags run along it, whole pictures across it from edge to edge and measured along it from the city's
+origin, so its pieces join along its way while a diagonal walk's courses still run with it. Where walks meet, the
+round and fillets take the grain of the walk on top there, so it runs on unbroken and the others meet it at its edge:
+a walk running straight through the joint, capped there where another stands over it, else the one standing highest.
+The plaza's paving and the walks' floors beside it share one grain, so the pattern carries across their seams. Every
+other piece of flagstones (a round's border) keeps the world's pattern. Pieces of a different grain never lie level: a
 joint's pieces stand 2 mm over the world's flagstones and over every other joint's they reach, the walks' strips over
 every joint and over each other walk leaving the same joint, and a cap over them all; a stone band laid across another
-in the paving stands 5 mm over it. The glow is lit warm and unshaded, brighter
-at night, each flame flickering on its own, and each glowing solid is a lamp ([[Sky]]). Faces are lit as the land is,
-with a little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and
-sheen. In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near one,
-and each building's masses (its hull past where the masses are drawn) into the far one, a few boxes standing in for a
-model whose shadow at the far map's 1.2 m texels is the same; every face and plate is lit through both ([[Game]]). An
-open building's windows let the sun into its rooms through their clear panes: its models cast through a pass that
-reads their pictures (`MODEL_CLEAR_CAST_SHADER`), every other model through one that reads none.
+in the paving stands 5 mm over it. The glow is lit warm and unshaded, brighter at night, moving with its own light
+([[Sky]], "Lamps"). Each glowing solid gives light by its shape and size (`cityLights.ts`,
+[[Lights as Claude Builds Them]]): coals (a brazier's, a hoop's, a pyramid's camp fire, a watchtower's) burn the
+game's fire on them, as tall as they are wide and a fifth more, casting its own light; a lantern (narrower than 0.65
+m: a station's, a courtyard's, a mail rack's, a lamp post's at each of its glows) shows no flame, its glass glowing
+and flickering with its lamp at the glass ([[An Enclosed Light Hides Its Flame]]); a sconce's candle and a wall
+brazier burn the game's fire round their glowing flame, lit by a fire's lamp; the Beacon's 22 m glass burns eight great fires round its foot and lights one great
+lamp; a lantern room wider than 2 m (a lighthouse's) is its glass alone; a dome (a sunstone) breathes. A city's lights
+are laid once it is whole, its modules' meshes come. Faces are lit as the land is, with a little light thrown back
+onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen. In the game the solids cast
+into the sun's near and far shadow maps, the near cells' models into the near one, and each building's masses (its
+hull past where the masses are drawn) into the far one, a few boxes standing in for a model whose shadow at the far
+map's 1.2 m texels is the same; every face and plate is lit through both ([[Game]]). An open building's windows let
+the sun into its rooms through their clear panes: its models cast through a pass that reads their pictures
+(`MODEL_CLEAR_CAST_SHADER`), every other model through one that reads none.
 
 | Material | Temperate | Desert | Mountain | Swamp |
 |---|---|---|---|---|
@@ -329,6 +350,35 @@ reads their pictures (`MODEL_CLEAR_CAST_SHADER`), every other model through one 
 | Terrace walls, a ruin's rubble | brown rubble (335.1) | sandstone rubble (17.1) | dark rubble (112.1) | mossy rubble (409.1) |
 
 Winter takes each picture's snowed turn where its set has one, unlightened.
+
+**At night**, Overlook's city below the hub is lit ([[Overlook's City Below Is Lit at Night, in Detail]], [[Sky]]),
+everything coming up through the dusk as the lamps do (`lampsLit`):
+
+- **Windows.** A forged model's window panes (its glass picture's glass texels) glow warm, each window lit or dark as
+  one: a model's pieces, its triangles joined by their corners, are numbered in its vertices (`pieceNumbers`). Far
+  off, each mass's and hull's walls are laid with windows as the forged buildings lay them (one a storey, 3.2 m,
+  apart, 2 m wide over a 0.9 m sill, the run's ends 0.5 m clear), drawn 1.8 m tall, and evened out to the share lit
+  where a window is narrower than a pixel, so far walls read warm without shimmering. Each window draws, from its
+  building's place and its own number, whether it is lit tonight and when it goes dark, by its cell's district
+  (`windowLights.ts`):
+
+  | District | Lit at dusk | Going dark |
+  |---|---|---|
+  | Markets | 62 % | 21:30 to 05:00 |
+  | Harbour | 58 % | 22:00 to the dawn |
+  | Houses | 45 % | 21:00 to 02:30 |
+  | Guilds | 42 % | 21:00 to 01:00 |
+  | Noble quarter | 50 % | 20:30 to 23:30 |
+  | Temples | 32 % | burning till the dawn |
+
+- **Lamps and lanterns.** Each light's post is a forged model of its kind, drawn by instance in the near cells: an
+  iron post, its lantern burning in the glow's colour and an iron cap. Its flame is a glowing point (`glowPoints.ts`)
+  drawn over the finished picture after the water, never less than 2.2 pixels across, so the lit city reads from
+  the sea; a lantern's and the mouth's lay a column of their light on the water under them, rippling. The pools of
+  light round them are a light map of the city, 3.2 m a texel, written once as the city is built: each lamp's pool
+  falls off as the square of the way out to its reach (a lamp's 9 m, a lantern's 8, the mouth's 14), pools adding
+  where they meet. The ground, the solids and the buildings read it at night, up to a few metres over their cell's
+  level, so a wall by a lamp is lit at its foot. None of them is one of the sky's sixteen lamps.
 
 **What it costs.** Cells are grouped by 4 x 4 into chunks, culled against the view; consecutive chunks are one draw
 call. Overlook's build is about 0.8 to 1 s of work in Node, some 118,000 steps: about 500 frames at 2 ms, 40 at
@@ -381,8 +431,7 @@ be, so its land, its nodes and its plaza's floor stand as they would. Then what 
   shader and drawn from both faces, an open shell, its level faces over a quarter of the break's height (its upper
   floors and ceilings) left out too; its shadow is cast as if every corner above the break stood at it, lidded there.
   Its masses and hull end at the break, open at the top and drawn from both faces, so a ruin reads as one at every
-  distance, from the sea and the Overworld too. A ruin's windows are as dark as a port city's: lit windows are not
-  drawn.
+  distance, from the sea and the Overworld too. A ruin's windows stay dark at night and its streets unlit.
 
 Every heap is a frustum of rubble, its top 0.3 of its base, dressed in the climate's terrace rubble. At sea a ruin
 shows no port icon over its harbour and offers no docking there; its island's other landings stay ([[Game]],
@@ -463,7 +512,7 @@ building's place to the centimetre in the page, the same on every machine.
   All of it casts into both shadows but the near cells' and the crust, which cast into the near one. A spire's body has
   no top meshed: its tip stands on it.
 - **At night** a ruin's crystal glows brighter than any other crystal a city draws (its core 0.8 alight, against
-  0.45), so a ruin is a scatter of red on a dark coast; each great formation lights a lamp of the crystal's
+  0.45), breathing, so a ruin is a scatter of red on a dark coast; each great formation lights a lamp of the crystal's
   light (`CRYSTAL_LAMP`) a third of the way up it, reaching 6 m more than it stands tall, at most 30 m; with the
   crown's three, the sky's nearest lamps are chosen from them as from any city's.
 - **Its cost**, over the six ruins (`ruinBudget.test.ts` holds each under its limits): 101 276 to 157 326 triangles of
@@ -480,7 +529,12 @@ building's place to the centimetre in the page, the same on every machine.
 - A leaning or rolled solid's box is square round all of it, so a body meets it a little early.
 - The parapet hides the city just below it from back on the plaza: from a spawn, 4 m in, the city shows from about
   250 m out, and all of it only from the parapet itself.
-- Props are drawn only near; flats (trees, people, lamps) and lit windows are not drawn.
+- Props are drawn only near; flats (trees, people, lamps) are not drawn: a lit city's street lamps stand by its own
+  rule instead.
+- Only Overlook is lit at night. A far mass's windows stand where the forged building's would on a plain wall: a
+  door's place or a lower wing's gable is not left out. An open building's panes stay clear at night, its room unlit.
+- The city's lamps light its ground and walls through its light map only: a figure, a ship or the land under it
+  takes none of their light, and the light map's pools ignore what stands between a lamp and a wall.
 - The depth pull lets the city show through land within its share of the distance in front of it.
 - A ruin's building's break is ragged by squares, not broken stone; inside its open shell the forged model's own
   faces show, lit from the side seen. At sea a wreck is drawn as large as the ships, and so larger than the city

@@ -55,8 +55,13 @@ const ARRIVAL_CLEAR_M: f64 = 5.0;
 const MOUTH_CLEAR_M: f64 = 2.5;
 const LAMP_CLEAR_M: f64 = 4.5;
 const BAND_CLEAR_M: f64 = 1.0;
+/// How far a growing module's plant spreads at least, metres: the page draws it as a plant of its climate's low layer
+/// (`isleNature.ts`), whose 4 m slots are wider than a grass module's footprint.
+const GROWN_REACH_M: f64 = 2.0;
 /// How many places a piece of dressing is tried at before it is left out.
 const PLACE_TRIES: usize = 8;
+/// The scales a strand's wreck is tried at in turn, so a small strand still stands a hull.
+const WRECK_SCALES: [f64; 3] = [1.0, 0.7, 0.5];
 /// How far apart a hollow's posts keep at least, metres.
 const POST_APART_M: f64 = 9.0;
 
@@ -340,8 +345,8 @@ fn sites(
         floor.iter().copied().filter(|at| apart(*at, arrive) >= POST_OFF_WAY_IN_M).collect();
     let posts = posts_of(&off_way_in, arrive, posts_wanted);
     floor.reverse();
-    // A Hold's ring, the first spot's, stands the farthest from the way in where it lies whole on the floor, else
-    // where most of it does.
+    // A Hold's ring, the first spot's, stands the farthest from the way in where it lies whole on the floor clear of
+    // the mouths, else where most of it does.
     if ring {
         // How far inside the floor's ring the ring's edge lies at its shallowest, sampled every 10 degrees.
         let shallowest = |middle: [f64; 2]| {
@@ -350,10 +355,16 @@ fn sites(
             let edge = edge.map(|turn| [middle[0] + radius * libm::sin(turn), middle[1] - radius * libm::cos(turn)]);
             edge.map(|at| outline.inside(at) - RING_IN_M).fold(f64::INFINITY, f64::min)
         };
-        let whole = floor.iter().position(|at| shallowest(*at) >= RING_CLEAR_M);
-        let deepest =
-            (0..floor.len()).max_by(|one, other| shallowest(floor[*one]).total_cmp(&shallowest(floor[*other])));
-        if let Some(best) = whole.or(deepest) {
+        // Its stones kept as far from a mouth's doorway as the dressing is, so none seems to touch.
+        let clear_of_pieces = |middle: &[f64; 2]| {
+            onward.iter().chain([&way_in]).all(|door| apart(door.at, *middle) >= crate::plan::RING_M + MOUTH_CLEAR_M)
+        };
+        let whole = floor.iter().position(|at| shallowest(*at) >= RING_CLEAR_M && clear_of_pieces(at));
+        let deepest_of = |clear: bool| {
+            let held = (0..floor.len()).filter(|at| !clear || clear_of_pieces(&floor[*at]));
+            held.max_by(|one, other| shallowest(floor[*one]).total_cmp(&shallowest(floor[*other])))
+        };
+        if let Some(best) = whole.or_else(|| deepest_of(true)).or_else(|| deepest_of(false)) {
             let middle = floor.remove(best);
             floor.insert(0, middle);
         }
@@ -395,8 +406,7 @@ fn dress(laying: &Laying, (sites, wanted): (&Sites, usize), kit: &str, draws: &m
     // spots the deal stands its things on, the lamp, where each band stands round its post and a Hold's levelled
     // ring, so a body walks in, sees the zone and reaches every mouth, thing and foe.
     let clear = |at: [f64; 2], module: u16, scale: f64| {
-        let size = book.module(module).size;
-        let reach = libm::hypot(size[0], size[1]) / 2.0 * scale;
+        let reach = reach_of(module, scale);
         apart(sites.arrive, at) - reach >= ARRIVAL_CLEAR_M
             && clear_of_mouths(at, reach + MOUTH_CLEAR_M)
             && sites.spots.iter().take(wanted).all(|spot| apart(*spot, at) - reach >= MOUTH_CLEAR_M)
@@ -430,7 +440,11 @@ fn dress(laying: &Laying, (sites, wanted): (&Sites, usize), kit: &str, draws: &m
     }
     let lay_many =
         |role: Role, count: usize, inward: (f64, f64), draws: &mut Draws, placements: &mut Vec<Placement>| {
-            let (modules, laid) = (book.of(kit, role), placements.len());
+            // The small boulder is stacked blocks, which at a wall's foot read as boxes left there: only the round
+            // and the split ones stand in a hollow.
+            let mut modules = book.of(kit, role);
+            modules.retain(|&module| !book.names[usize::from(module)].ends_with(".boulder.c"));
+            let laid = placements.len();
             for _ in 0..count * PLACE_TRIES {
                 if placements.len() >= laid + count {
                     return;
@@ -489,18 +503,46 @@ fn dress(laying: &Laying, (sites, wanted): (&Sites, usize), kit: &str, draws: &m
         for name in
             ["common.wreck.bow", "common.wreck.stern", "common.wreck.ribs", "common.wreck.mast", "common.wreck.planks"]
         {
-            for _ in 0..PLACE_TRIES {
+            // Tried whole, then smaller, between the strand's mouths and spots.
+            let tries = WRECK_SCALES.into_iter().flat_map(|scale| core::iter::repeat_n(scale, PLACE_TRIES * 2));
+            for scale in tries {
                 let at = outline.at_edge(draws.between(0.0, TAU), draws.between(4.0, reach * 0.7));
-                if outline.inside(at) > 2.0 && book.number(name).is_some_and(|module| clear(at, module, 1.0)) {
+                if outline.inside(at) > 2.0 && book.number(name).is_some_and(|module| clear(at, module, scale)) {
                     let turn = draws.between(0.0, TAU);
-                    placements.extend(placed(name, [at[0], at[1], laying.floor(at) - 0.3], turn, 1.0, 1.0));
+                    placements.extend(placed(name, [at[0], at[1], laying.floor(at) - 0.3], turn, scale, 1.0));
                     break;
                 }
             }
         }
         lay_many(Role::Drift, 6, (1.0, reach * 0.8), draws, &mut placements);
     }
+    // No plant grows through a ruin or a wreck: each laid before them is pulled up where their footprints meet.
+    let built: Vec<Placement> = placements
+        .iter()
+        .filter(|placement| matches!(book.module(placement.module).role, Role::Ruin | Role::Wreck | Role::WreckBit))
+        .copied()
+        .collect();
+    placements.retain(|plant| {
+        !grows(plant.module)
+            || built.iter().all(|other| {
+                apart([plant.at[0], plant.at[1]], [other.at[0], other.at[1]])
+                    >= reach_of(plant.module, plant.scale) + reach_of(other.module, other.scale)
+            })
+    });
     placements
+}
+
+/// Whether a module stands as a plant: the page draws a tree, a shrub or grass as a plant of its climate.
+fn grows(module: u16) -> bool {
+    matches!(catalog().module(module).role, Role::Tree | Role::Shrub | Role::Grass)
+}
+
+/// How far a module's footprint reaches from its middle at `scale`: the round its turned base fills, and for a plant
+/// at least as far as the plant the page draws for it spreads.
+fn reach_of(module: u16, scale: f64) -> f64 {
+    let size = catalog().module(module).size;
+    let reach = libm::hypot(size[0], size[1]) / 2.0 * scale;
+    if grows(module) { reach.max(GROWN_REACH_M) } else { reach }
 }
 
 /// The zone's layings above ground in its form, dressed from the islands' kit of `climate`: its outline, ground and

@@ -13,7 +13,10 @@ use dungeon::{CELL_M, Cell, Dungeon, SIDES, Side};
 const PASSES: [(f64, f64, bool); 4] = [(16.0, 9.0, true), (16.0, 9.0, false), (12.0, 6.0, false), (9.0, 4.0, false)];
 /// How far a mouth keeps from a torch, a prop, a fixture or a landmark, metres.
 const MOUTH_CLEAR_M: f64 = 2.4;
-/// How far a mouth stands off its wall, as the exit door does, metres.
+/// How far a mouth's piece reaches back from its foot, metres: its frame and the rough back round its way on's
+/// daylight (tools/dungeon/styles/passage/pieces.py `mouth`).
+pub(crate) const MOUTH_BACK_M: f64 = 0.45;
+/// How far a mouth's place on its wall stands off it, as the exit door does, metres.
 const OFF_WALL_M: f64 = CELL_M / 2.0 - 0.02;
 /// How many seeds a lamp's zone is tried from for a room tall enough to stand it in.
 const LAMP_TRIES: u32 = 32;
@@ -126,8 +129,8 @@ fn lamp(dungeon: &Dungeon, arrive: [f64; 2]) -> Option<[f64; 2]> {
 
 /// Whether the lamp at `at`, facing the arrival, stands on a cell that holds no solid with its plinth and stones
 /// on its rooms' floor and clear of the dungeon's `boxes`.
-fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 5]], at: [f64; 2], arrive: [f64; 2]) -> bool {
-    let overlap = |one: &[f64; 5], other: &[f64; 5]| {
+fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 6]], at: [f64; 2], arrive: [f64; 2]) -> bool {
+    let overlap = |one: &[f64; 5], other: &[f64; 6]| {
         one[0] < other[2] && other[0] < one[2] && one[1] < other[3] && other[1] < one[3]
     };
     let cell_at = |[x, y]: [f64; 2]| {
@@ -138,8 +141,7 @@ fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 5]], at: [f64; 2], arrive: [f64;
     };
     let on_room_floor =
         |point: [f64; 2]| cell_at(point).is_some_and(|cell| matches!(dungeon.cells[cell], Cell::Room(_)));
-    let facing = libm::atan2(arrive[0] - at[0], -(arrive[1] - at[1]));
-    let solids = Kind::Lamp.solids_at([at[0], at[1], dungeon::FLOOR_M], facing);
+    let solids = Kind::Lamp.solids_at([at[0], at[1], dungeon::FLOOR_M], crate::plan::lamp_facing(at, arrive));
     let whole = |&[west, north, east, south, _]: &[f64; 5]| {
         [[west, north], [east, north], [east, south], [west, south]].into_iter().all(on_room_floor)
     };
@@ -149,13 +151,14 @@ fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 5]], at: [f64; 2], arrive: [f64;
 
 /// The zone's layings under ground in its style, each from the next seed, the first first; a lamp's zone only where
 /// a room but the way in's is tall enough to stand the lamp in and the lamp stands clear of the Forge's solids, a
-/// Hold's where a room holds its ring whole, and any where its floor gives its deal every spot it wants, its seeds
-/// tried once in turn, else its first seed's alone. None for a style the Forge does not know.
+/// Hold's where a room holds its ring whole, and any where its floor gives its deal every spot it wants, every way on
+/// its mouth and its foes a post, its seeds tried once in turn, else its first seed's alone. None for a style the Forge does not know.
 pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<impl Iterator<Item = (Dungeon, Sites)>> {
     let style = dungeon::style_of(style)?;
     let blocks = zone.size.blocks();
     let first = zone.forge_seed();
-    let forged = move |step: u32| Dungeon::forge_within(first.wrapping_add(step), style, (blocks, blocks));
+    // A passage under ground keeps one storey, as its zones were laid for.
+    let forged = move |step: u32| Dungeon::forge_storeys(first.wrapping_add(step), style, (blocks, blocks), 1);
     // The lamp never stands in the way in's room, so that room's height does not count.
     let tall_enough = |dungeon: &Dungeon| {
         let mut rooms = dungeon.rooms.iter().enumerate().filter(|(number, _)| *number != dungeon.way_in.room);
@@ -184,7 +187,9 @@ pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<i
         .map(laid_out.clone())
         .filter(move |laid| !hold || ring_whole(laid))
         .filter(move |laid| !lamp || lamp_whole(laid))
-        .filter(move |(_, sites)| sites.spots.len() >= wanted);
+        // Every way on its mouth and the foes a post: a laying of one great room has neither.
+        .filter(move |(_, sites)| sites.spots.len() >= wanted && sites.onward.len() == onward_count)
+        .filter(|(_, sites)| !sites.posts.is_empty());
     let mut tall = tall.peekable();
     let laid: Box<dyn Iterator<Item = (Dungeon, Sites)>> =
         if tall.peek().is_some() { Box::new(tall) } else { Box::new(std::iter::once(laid_out(forged(0)))) };
@@ -206,14 +211,22 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
         .rooms
         .iter()
         .enumerate()
-        .filter(|(number, _)| *number != dungeon.way_in.room)
-        .map(|(_, room)| {
+        // A zone laid as one great room stands its foes in it, away from the arrival as ever.
+        .filter(|(number, _)| *number != dungeon.way_in.room || dungeon.rooms.len() == 1)
+        // A room with no floor to pick stands no post.
+        .filter_map(|(_, room)| {
             let cells = if room.quiet.is_empty() { &room.cells } else { &room.quiet };
             // A band stands on open floor: the middle of the room's cells no prop, fixture or landmark fills.
             let open: Vec<usize> = cells.iter().copied().filter(|&cell| !dungeon.holds_solid(cell)).collect();
             let cells = if open.is_empty() { cells } else { &open };
-            let middle = cells.get(cells.len() / 2).map_or([0.0, 0.0], |&cell| dungeon.centre(cell));
-            (room.walk, middle)
+            // In a zone of one room, its clear floor farthest from the arrival.
+            let far = |cell: &&usize| apart(dungeon.centre(**cell), arrive);
+            let farthest = cells
+                .iter()
+                .filter(|&&cell| clear(dungeon.centre(cell)))
+                .max_by(|one, other| far(one).total_cmp(&far(other)));
+            let pick = if dungeon.rooms.len() == 1 { farthest } else { cells.get(cells.len() / 2) };
+            Some((room.walk, dungeon.centre(*pick?)))
         })
         .collect();
     middles.sort_by(|one, other| one.0.cmp(&other.0).then(one.1[0].total_cmp(&other.1[0])));
@@ -245,6 +258,18 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
         floor.insert(0, ring);
     }
     let spots = spots_of(&floor, crate::plan::spots_wanted(zone.deal));
+    // Each onward mouth, kept clear of the rest from its place on its wall, stands its whole piece in front of the
+    // wall's face, so its way on's daylight shows through its arch rather than the wall.
+    let onward = onward
+        .into_iter()
+        .map(|door| Door {
+            at: [
+                door.at[0] + libm::sin(door.facing) * MOUTH_BACK_M,
+                door.at[1] - libm::cos(door.facing) * MOUTH_BACK_M,
+            ],
+            ..door
+        })
+        .collect();
     Sites { arrive, facing, way_in, onward, lamp, posts, spots }
 }
 
