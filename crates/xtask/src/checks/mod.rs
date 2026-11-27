@@ -7,6 +7,7 @@ mod dialogue;
 mod html;
 mod layers;
 mod layout;
+mod plain_text;
 mod script_comments;
 mod size;
 mod vault;
@@ -90,6 +91,9 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     let (story, skipped) = repo.sources(|path| path.starts_with(dialogue::STORY_ROOT) || path == dialogue::QUESTS);
     problems.extend(unreadable(&skipped));
     problems.extend(dialogue::check(&story));
+    let (content, skipped) = repo.sources(plain_text::is_read);
+    problems.extend(unreadable(&skipped));
+    problems.extend(plain_text::check(&content));
     problems
 }
 

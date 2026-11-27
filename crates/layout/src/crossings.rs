@@ -1,5 +1,4 @@
-//! A patrol area's gates toward the other patrol areas of its island
-//! ([[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]): passages across the island,
+//! A patrol area's gates toward the other patrol areas of its island: passages across the island,
 //! each on the zone's landing toward the zone it leads to, added once the zone is planned, so its places, ways and
 //! runs stand as they would alone. Its map joins each to the landing by a way, and its sites mark each as a gate.
 

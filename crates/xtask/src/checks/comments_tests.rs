@@ -80,6 +80,32 @@ fn every_script_extension_is_read_as_a_script() {
 }
 
 #[test]
+fn a_comment_that_links_or_names_a_note_is_a_problem() {
+    let cases = [
+        "// as [[Sailing]] says, the helm turns\n",
+        "/// The waves rise (`Water.md` \"Swell\")\n",
+        "// see Comments Say Why.md\n",
+        "# the forge's rule, Sprite Forge.md\n",
+    ];
+    for case in cases {
+        let path = if case.starts_with('#') { "tools/forge.py" } else { "crates/core/src/lib.rs" };
+        assert_eq!(problems_in(path, case).len(), 1, "{case}");
+    }
+}
+
+#[test]
+fn a_wiki_link_in_inline_code_or_a_shouting_file_is_no_note() {
+    let cases = [
+        "/// Links read as `[[Note]]` and `[[Note|shown]]`\n",
+        "// as README.md and CLAUDE.md say\n",
+        "/// \"borders\": [[a, b]], \"path\": [[x, y]]\n",
+    ];
+    for case in cases {
+        assert!(problems_in("crates/core/src/lib.rs", case).is_empty(), "{case}");
+    }
+}
+
+#[test]
 fn history_in_a_comment_is_a_problem() {
     let cases = [
         "// changed on 2026-11-14 for the patch\n",

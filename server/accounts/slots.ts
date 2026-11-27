@@ -1,5 +1,5 @@
 /**
- * An account's four characters ([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]]). The
+ * An account's four characters. The
  * one in play is the `characters` row, so all that reads the account's character reads it; the other three wait in
  * `benched`, each under its slot. The vault and Aurem are the account's (`vaults`), shared by all four, and never move
  * as a character is switched or deleted. Switching or deleting the one in play waits until no room holds it.

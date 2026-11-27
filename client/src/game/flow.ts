@@ -14,9 +14,8 @@ export type Flow =
   | { readonly mode: 'landing'; readonly chosen: string | null };
 
 /** The veil stays down until everything round the player is ready, or this long; and once it is, for this many frames
- *  more drawn whole under it, so the first frames' own work (pipelines made, pictures sent) is done unseen
- *  ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]). The way between passage zones waits as long
- *  on the body its room stands. */
+ *  more drawn whole under it, so the first frames' own work (pipelines made, pictures sent) is done unseen. The way
+ *  between passage zones waits as long on the body its room stands. */
 export const READY_WAIT_S = 20;
 
 /** Something that happened, from the player or the world. */

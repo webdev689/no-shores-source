@@ -10,8 +10,8 @@ A comment does not point into the bible: the note links to the code, not the oth
 **Why.** DFO Online's source comments hold 3,860 distinct all-caps tags, and sweeping history back out of them took
 its own tool and more than a hundred commits.
 
-**Checked by.** The comments check, on every `.ts`, `.js`, `.rs` and `.py` file. Lines inside a doc comment's code example do not
-count toward the eight.
+**Checked by.** The comments check, on every `.ts`, `.js`, `.rs` and `.py` file, which also refuses a note named in a
+comment. Lines inside a doc comment's code example do not count toward the eight.
 
 The owner's answers on it:
 

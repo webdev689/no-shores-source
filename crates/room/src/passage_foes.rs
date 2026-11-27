@@ -1,10 +1,10 @@
 //! A passage zone's foes: who stands at its depth, its bands on the sites' posts, its waves, and how many it stands at
-//! once. The depth sets the roster from the Grey Tithe's own (`Enemies.md`): its walkers, collectors and crossbowmen
+//! once. The depth sets the roster from the Grey Tithe's own: its walkers, collectors and crossbowmen
 //! shallow, its Enforcers among them from depth 6 and its Majors alone past 10, the Tithe-Taker and the Reeve leading
 //! deep; a strand, an old sea floor with its wrecks inland, stands the Tithe's deck crew. A lamp's guard is the
 //! design's, its Miniboss the Reeve at the second lamp and the Tithe-Mate at the third, and the fourth lamp's an Elite
 //! Dungeon's Boss of the island's, by the week. The most a zone stands is by its size, Crowded's extra foes not counted,
-//! and rises with its players as a public event's waves and great foes do (`Passages.md`, "A zone's room").
+//! and rises with its players as a public event's waves and great foes do.
 
 use super::{BAND_STREAM, WAVE_STREAM};
 use crate::garrison::{Group, draws_of, index};

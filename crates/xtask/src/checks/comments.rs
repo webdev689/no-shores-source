@@ -239,11 +239,29 @@ fn history_marker(words: &str) -> Option<&'static str> {
         Some("a pull request or issue number")
     } else if has_ticket_tag(words) {
         Some("a ticket tag")
-    } else if words.contains("bible/") {
+    } else if words.contains("bible/") || names_a_note(words) {
         Some("a pointer into the bible (pages move; the note links to the code, not the other way)")
     } else {
         None
     }
+}
+
+/// A wiki link to a note outside inline code (a note's name starts with a capital, unlike a nested list's numbers),
+/// or a note's file by its name: a markdown file whose name starts with a capital but is not all capitals, as the
+/// readme's is.
+fn names_a_note(words: &str) -> bool {
+    let linked = words.split('`').step_by(2).any(|outside| {
+        outside
+            .match_indices("[[")
+            .any(|(at, _)| outside[at + 2..].chars().next().is_some_and(|ch| ch.is_ascii_uppercase()))
+    });
+    let named = words.match_indices(".md").any(|(at, _)| {
+        let after_clear = words[at + 3..].chars().next().is_none_or(|next| !next.is_ascii_alphanumeric());
+        let stem: String = words[..at].chars().rev().take_while(|ch| ch.is_ascii_alphanumeric()).collect();
+        let first = stem.chars().last();
+        after_clear && first.is_some_and(|ch| ch.is_ascii_uppercase()) && stem.chars().any(|ch| ch.is_ascii_lowercase())
+    });
+    linked || named
 }
 
 const MONTHS: [&str; 12] = [
