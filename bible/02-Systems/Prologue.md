@@ -13,6 +13,7 @@ code:
   - client/src/game/prologue/introShots.ts#islandFrame
   - client/src/game/prologue/storm.ts#StormDive
   - client/src/game/prologue/making.ts#Making
+  - client/src/game/characters/characterMark.ts#inPlayPlayed
   - client/src/game/prologue/helm.ts#openingTurn
   - client/src/game/prologue/creation.ts#accountStep
   - client/src/game/prologue/creation.ts#lookStep
@@ -99,10 +100,14 @@ from, at its end or on a failure, lets go of what it holds (the helm its windows
 beat that fails is left for the next with what it said stopped and the view cleared before the next begins; a last
 beat that fails ends the story with its screen kept, so the black lifts only once the game's veil is up under it.
 The intro offers no skip once it has reached Saltmere. Each beat sets its own weather, sound and lightning at
-its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. A player who
-has played the story to its end (kept in the browser, `noshores.prologue`) sees the intro and the title, and Begin
-takes them straight to Overlook's social space. Where the page has accounts, Begin opens the character screen first
-([[Interface]], "The character screen"), which sets `noshores.prologue` and `noshores.look` from the character chosen. Every way onto foot comes after the story, played through or passed
+its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. Whether the
+story, and the stranger's welcome at its end, have been played is the character's, kept by its room
+([[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]): Begin opens
+the character screen ([[Interface]], "The character screen"), and a character past the story goes straight to the
+game, one not past it into the storm, whichever browser it plays on; the screen sets `noshores.prologue` and
+`noshores.look` in this browser from the character chosen. The browser's own mark decides only where there are no
+accounts (`?offline`) or the accounts do not answer ("Play without saving"): a player who has played the story there
+sees the intro and the title, and Begin takes them straight to Overlook's social space. Every way onto foot comes after the story, played through or passed
 over (Begin, `?at=`, a story that could not start or go on), so on foot the page tells each room on land whose word
 on the gear says the prologue is not kept that it is done (`Ask::FinishPrologue`), and the room keeps it with the
 character, the page's word while the prologue pays nothing ([[The Server Is the Authority Over Everything]]). At
@@ -266,12 +271,14 @@ Discord or play as a guest. A player already signed in is offered "Go on as" the
 Discord alone keeps; with the accounts out of reach, "Go on without an account", as the game played before. An ask
 the accounts leave unanswered for 10 s is given up as out of reach, so the way on is offered. A Discord sign-in that
 came back is said once, with that offer ("You are signed in with Discord.", or "Discord is linked." before "You are
-signed in as" the username); one that did not go through is said under the form, as a refusal is. Offline (no
-`?room=`) it says "Accounts are kept when you play online." and offers "Go on". A player who leaves for Discord comes
+signed in as" the username); one that did not go through is said under the form, as a refusal is. Offline
+(`?offline`) it says "Accounts are kept when you play online." and offers "Go on". A player who leaves for Discord comes
 back to the helm at the account step, not the story's start: the tab marks it (`noshores.story.helm`), read once and
 cleared at the next load, and never heeded once the story has been played through. The rooms read the session as each
 connects, and the step's end tells the page the account changed, so the menu's mark and banner and the company HUD
-follow the account signed in to at the helm.
+follow the account signed in to at the helm. One signed in there to an account whose character in play has played
+the story (on another browser, say) goes on past it as the character screen sends one, its slot set in this browser
+(`inPlayPlayed`): the story ends at the helm and the player arrives where that character last was, with no welcome.
 The camera stands off the player's port side, abeam of them on a screen wider than tall and 60° round from before them
 on one taller (`openingTurn`): from before them the wheel and its binnacle stand between it and the figure, and astern
 the boom's crutches and the taffrail. "Turn left" and "Turn right" (A and D) turn the figure on the spot, an eighth of a
@@ -290,7 +297,7 @@ their slots and shown on the Character page and in the pack ("Steel Cuirass", "S
 drawn in steel from the gear as the game's gear is drawn (`gearOutfit`, `STORY_SET`). On the wreck the figure is
 dressed from their gear as on foot (`dressInGear`): once they equip the story's sword and shield they hold the item as
 their gear has it, a Normal Sword & Shield drawn in iron, and once they equip its bow it is their other loadout; the
-Melee loadout put away is their dress for the rest of the story; a swing draws it and swings, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
+Melee loadout put away is their dress for the rest of the story; a swing draws it and swings, as the game's does. Their look is kept with the character and in the browser (`noshores.look`), and dresses them in the game afterwards.
 
 ## The wreck
 
@@ -590,8 +597,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 
 - Every ship is a Sloop by the naval rules, whatever is drawn: the Brig's guns and hull are the Sloop's in the fight.
 - Thule's ship is drawn as the Frigate, without the Tithe Ram's iron ram bow ([[Hulls]]): the Tithe Ram is not built.
-- The look is kept in the browser; whether the story was played is kept in the browser, and with the account once a
-  room is told.
+- The look and whether the story was played are kept with the character, and in the browser for a page with no
+  accounts. A character from before the four keeps only what its rooms wrote: a body kept before the story was is past
+  it, as the rules read it.
 - The story's songs are written to its beats' lengths, not timed to their moments: a song begins on the director's
   bar line, so a moment can fall up to a bar from its music.
 - The decks are boxes half a metre across: a deck's camber and the slope of its sheer are steps of 5 cm, a mast or a
