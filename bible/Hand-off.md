@@ -136,6 +136,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   lights up to four lamps, which may crowd the nearest sixteen in a big night fight; the pad's Continue is untested;
   a keeper's screen says its lines on its own 1.6 s.
 
+- **The lights under ground and on land, the islands' textures, the passages' polish** (#233, #241): not seen on a
+  real GPU or played by hand; not pictured: a dungeon with many torches (`dungeon-plan.ts`'s steps still drive the
+  page, but evals run in the game's worker), a ship's lantern (no offline way into a sea fight at night); not
+  measured: a night sea fight's frame (the probe dies on the battle beat) and the fires' GPU cost. Known: the
+  passages' lamp glass shows two dark marks like a face; a hollow's sky is pale at 1 a.m.; map labels can sit over
+  route lines; a strand's hull stands tilted; an open mouth's daylight is a flat pale sheet; islands' modules sample
+  the rock texture on every fragment; f32 time in the shaders drifts from the CPU's flicker after hours.
+
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
   merge").
