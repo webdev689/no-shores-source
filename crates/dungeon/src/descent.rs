@@ -1,6 +1,6 @@
 //! How a dungeon goes down, planned before any room is carved, as the Forge plans it: how many storeys each block
 //! holds, the doorways blocks side by side share and on which storey, each block's flights of stairs, its great rooms,
-//! and the one gallery a great room may rise into. Each block storey is then laid to its plan (`block.rs`).
+//! its warrens, and the galleries great rooms may rise into. Each block storey is then laid to its plan (`block.rs`).
 
 use crate::block::{BLOCK_CELLS, OPENING_FIRST, OPENING_LAST, Opening, opening_cell};
 use crate::lane::Lane;
@@ -8,10 +8,15 @@ use crate::styles::Style;
 use crate::{FLIGHT_CELLS, SIDES, Side};
 
 /// The storeys the way in's block holds at most, and how often a block storey is one great room, its sides fewest and
-/// most (cells).
+/// most (cells): in the six styles more often than in the passages' own two.
 const WAY_IN_STOREYS: usize = 2;
-const GREAT_SHARE: f64 = 0.12;
+const GREAT_SHARE: f64 = 0.2;
+const PASSAGE_GREAT_SHARE: f64 = 0.12;
 pub(crate) const GREAT_SIDES: (usize, usize) = (9, 12);
+/// How often a block storey of the six styles, past the way in's first, is a warren (`warren.rs`); and how many great
+/// rooms rise into the storey over them, at most.
+const WARREN_SHARE: f64 = 0.18;
+const GALLERIES_MOST: usize = 2;
 /// How often two blocks side by side that are not next in the chain share a doorway.
 const OTHER_DOORWAY_SHARE: f64 = 0.5;
 
@@ -96,6 +101,8 @@ pub(crate) struct StoreyPlan {
     pub landings: Vec<At>,
     pub great: Option<Great>,
     pub gallery: Option<Gallery>,
+    /// Whether the storey is a warren, a maze round a few chambers.
+    pub maze: bool,
 }
 
 /// A block's plan: a plan for each of its storeys, and its flights.
@@ -105,10 +112,17 @@ pub(crate) struct BlockPlan {
     pub flights: Vec<Flight>,
 }
 
-/// How many storeys each block holds, of at most `most`: the way in's one or two, any other one to `most`.
+/// How many storeys each block holds, of at most `most`: the way in's one or two, any other one to `most`, each count
+/// as likely, and the last as deep as the deepest, so the way down ends at the bottom.
 pub(crate) fn storey_counts(seed: u32, blocks: usize, most: usize) -> Vec<usize> {
     let mut lane = Lane::named(&format!("storeys:{seed}"));
-    (0..blocks).map(|block| lane.int(1, if block == 0 { WAY_IN_STOREYS.min(most) } else { most })).collect()
+    let mut counts: Vec<usize> =
+        (0..blocks).map(|block| lane.int(1, if block == 0 { WAY_IN_STOREYS.min(most) } else { most })).collect();
+    let deepest = counts.iter().copied().max().unwrap_or(1);
+    if let Some(last) = counts.last_mut().filter(|_| blocks > 1) {
+        *last = deepest;
+    }
+    counts
 }
 
 /// The side `after` lies on from `before`, where they are side by side.
@@ -257,16 +271,14 @@ impl BlockPlan {
         self.flights.push(flight);
     }
 
-    /// Now and then a storey of the block is one great room, in every style but the cells: a rectangle of nine to twelve
-    /// cells each way, drawn, inside the rim with rock round it, on the first spot clear of its storey's flights and
-    /// landings; or nine each way where the drawn sides find none.
+    /// Now and then a storey of the block is one great room: a rectangle of nine to twelve cells each way, drawn,
+    /// inside the rim with rock round it, on the first spot clear of its storey's flights and landings; or nine each
+    /// way where the drawn sides find none. One in five of the six styles' storeys, one in eight of the passages'.
     pub(crate) fn plan_great(&mut self, seed: u32, number: usize, style: &Style) {
-        if style.key == "cells" {
-            return;
-        }
+        let share = if deep(style) { GREAT_SHARE } else { PASSAGE_GREAT_SHARE };
         let mut lane = Lane::named(&format!("great:{seed}:{number}"));
         for storey in 0..self.storeys.len() {
-            if !lane.chance(GREAT_SHARE) {
+            if !lane.chance(share) {
                 continue;
             }
             let drawn = (lane.int(GREAT_SIDES.0, GREAT_SIDES.1), lane.int(GREAT_SIDES.0, GREAT_SIDES.1));
@@ -277,6 +289,18 @@ impl BlockPlan {
                 sides.into_iter().find_map(|(width, depth)| self.great_spot(storey, width, depth, order, under_free))
             });
             self.storeys[storey].great = found;
+        }
+    }
+
+    /// Now and then a storey of the six styles is a warren: never the way in's, nor a great room.
+    pub(crate) fn plan_warrens(&mut self, seed: u32, number: usize, style: &Style) {
+        if !deep(style) {
+            return;
+        }
+        let mut lane = Lane::named(&format!("warren:{seed}:{number}"));
+        for (storey, plan) in self.storeys.iter_mut().enumerate() {
+            let warren = lane.chance(WARREN_SHARE);
+            plan.maze = warren && plan.great.is_none() && (number, storey) != (0, 0);
         }
     }
 
@@ -352,20 +376,31 @@ pub(crate) fn plan_blocks(
         .map(|(number, openings)| {
             let mut plan = BlockPlan::planned(seed, number, openings);
             plan.plan_great(seed, number, &styles[number]);
+            plan.plan_warrens(seed, number, &styles[number]);
             plan
         })
         .collect();
     let lower = |plan: &BlockPlan| plan.storeys.iter().skip(1).any(|storey| storey.great.is_some());
     let mut lane = Lane::named(&format!("gallery:{seed}"));
+    let most = if styles.first().is_some_and(deep) { GALLERIES_MOST } else { 1 };
+    let mut risen = 0;
     if plans.iter().any(lower) {
         'blocks: for (number, plan) in plans.iter_mut().enumerate() {
             // The way in's storey keeps its rooms, one of which holds the way in.
             for storey in if number == 0 { 2 } else { 1 }..plan.storeys.len() {
                 if plan.plan_gallery(storey, &mut lane) {
-                    break 'blocks;
+                    risen += 1;
+                    if risen == most {
+                        break 'blocks;
+                    }
                 }
             }
         }
     }
     plans
+}
+
+/// Whether a style is one of the six the patrols, the sea and the Elite Dungeons lay, not the passages' own.
+fn deep(style: &Style) -> bool {
+    crate::STYLES.iter().any(|each| each.key == style.key)
 }

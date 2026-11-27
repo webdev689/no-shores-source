@@ -19,6 +19,14 @@ pub enum Shape {
     Alcoves,
     /// An irregular outline bitten from the rectangle, rock standing inside the great ones.
     Cave,
+    /// A round chamber: the cells inside the rectangle's own ellipse.
+    Round,
+    /// A walk round a core of rock left standing in the middle, as a cloister runs round its garth.
+    Ring,
+    /// A bar along one long side and a stem down the middle of the rest.
+    Tee,
+    /// A rhombus standing on its corners in the rectangle.
+    Diamond,
 }
 
 /// A cave with both sides at least this many cells is a great one, and stands rock inside; two stones where it
@@ -73,8 +81,52 @@ pub(crate) fn outline(shape: Shape, width: usize, depth: usize, lane: &mut Lane)
         }
         Shape::Alcoves => alcoves(&mut takes, width, depth, lane),
         Shape::Cave => stones = cave(&mut takes, width, depth, lane),
+        Shape::Round | Shape::Diamond => {
+            let (radius_x, radius_y) = (width as f64 / 2.0, depth as f64 / 2.0);
+            for y in 0..depth {
+                for x in 0..width {
+                    let off = |at: usize, radius: f64| ((at as f64 + 0.5 - radius) / radius).abs();
+                    let (east, south) = (off(x, radius_x), off(y, radius_y));
+                    // Each fattened a little, so its rim cells stay whole and a small one is never a plus sign.
+                    let outside =
+                        if shape == Shape::Round { east * east + south * south > 1.2 } else { east + south > 1.25 };
+                    if outside {
+                        leave(x, y);
+                    }
+                }
+            }
+        }
+        Shape::Ring => stones = ring_core(&mut takes, width, depth),
+        Shape::Tee => {
+            let bar = (depth / 3).max(1);
+            let stem = ((width + 2) / 3).max(1);
+            let (from, far) = ((width - stem) / 2, lane.chance(0.5));
+            for y in 0..depth {
+                for x in 0..width {
+                    let in_bar = if far { y >= depth - bar } else { y < bar };
+                    if !in_bar && (x < from || x >= from + stem) {
+                        leave(x, y);
+                    }
+                }
+            }
+        }
     }
     Outline { takes, stones }
+}
+
+/// Leaves a core of rock standing in the middle of a ring's rectangle, the walk round it two cells wide where the
+/// room is seven cells or more that way and one where it is less: the core's cells, as stones no way cuts.
+fn ring_core(takes: &mut [bool], width: usize, depth: usize) -> Vec<(usize, usize)> {
+    let walk = |side: usize| if side >= 7 { 2 } else { 1 };
+    let (inset_x, inset_y) = (walk(width), walk(depth));
+    let mut stones = Vec::new();
+    for y in inset_y..depth.saturating_sub(inset_y) {
+        for x in inset_x..width.saturating_sub(inset_x) {
+            takes[y * width + x] = false;
+            stones.push((x, y));
+        }
+    }
+    stones
 }
 
 /// Leaves the rows of alcoves rock but the alcoves: the outer row along each long wall that holds them, both or one
@@ -182,14 +234,14 @@ pub enum Roof {
     Rough,
 }
 
-/// A room's ceiling form: rough over a cave or under a rough roof; under an arched roof, a dome over a square room or
-/// an octagon, and a vault along a hall of alcoves or a long rectangle (its longer side at least half again its
-/// shorter); flat otherwise.
+/// A room's ceiling form: rough over a cave or under a rough roof; under an arched roof, a dome over a square room, an
+/// octagon or a round chamber, and a vault along a hall of alcoves, a T or a long rectangle (its longer side at least
+/// half again its shorter); flat otherwise, a ring's and a diamond's among them.
 pub(crate) fn ceiling(shape: Shape, width: usize, depth: usize, roof: Roof) -> Ceiling {
     let (long, short) = (width.max(depth), width.min(depth));
     match (roof, shape) {
         (Roof::Rough, _) | (_, Shape::Cave) => Ceiling::Cave,
-        (Roof::Arched, Shape::Octagon) => Ceiling::Dome,
+        (Roof::Arched, Shape::Octagon | Shape::Round) => Ceiling::Dome,
         (Roof::Arched, Shape::Alcoves) => Ceiling::Vault,
         (Roof::Arched, Shape::Rectangle) if long == short => Ceiling::Dome,
         (Roof::Arched, Shape::Rectangle) if 2 * long >= 3 * short => Ceiling::Vault,

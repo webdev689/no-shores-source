@@ -24,6 +24,7 @@ mod shapes;
 mod storeys;
 mod styles;
 mod torches;
+mod warren;
 mod ways;
 
 pub use block::{BLOCK_CELLS, Opening};

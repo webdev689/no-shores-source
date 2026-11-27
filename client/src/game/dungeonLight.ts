@@ -2,6 +2,7 @@
 // flickering as its kind does; a faint light lies everywhere, in the mood of the style of the cell, so a wall past
 // every light still reads. The page lights the figures by the same sums the shader lights the walls by (`LIGHT_WGSL`).
 import { breath, flicker, LIGHT_MOTION_WGSL } from '../sky/flicker.ts';
+import { coldRooms, coldTorch } from './dungeonDread.ts';
 import { fixtureFlames } from './dungeonFixtures.ts';
 import { type DungeonLayout, openAt, SIDE_STEPS, storeysOf, type StyleKey } from './dungeonLayout.ts';
 import { torchFlame } from './dungeonMesh.ts';
@@ -38,6 +39,9 @@ export const LIGHT_KINDS = {
   water: { colour: [0.22, 0.55, 0.6], reach: 5, flicker: 0, breath: 0.25, gleams: false },
   rune: { colour: [0.85, 0.4, 1.4], reach: 6, flicker: 0, breath: 1 },
 } as const satisfies Record<string, Burning>;
+
+/** A cold torch: no light and no reach. */
+const COLD: Burning = { colour: [0, 0, 0], reach: 0, flicker: 0 };
 
 /** The fixtures' kinds by their number in the layout. */
 export const FIXTURE_KINDS: readonly Burning[] = [
@@ -107,6 +111,11 @@ export const DAYLIGHT_GLOW: Colour = [0.6, 0.66, 0.74];
 /** Candle wax, and a vault chest's gold (the heroic chest's, eventPropsShader.ts), each lit as a surface is. */
 export const WAX: Colour = [0.86, 0.8, 0.66];
 export const GOLD: Colour = [0.85, 0.66, 0.27];
+/** The dread's dried blood, bone and grave-cloth, lit as a surface; and eyes in the dark, burning as their colour. */
+export const BLOOD: Colour = [0.24, 0.03, 0.025];
+export const BONE: Colour = [0.72, 0.68, 0.58];
+export const SHROUD: Colour = [0.32, 0.28, 0.22];
+export const EYES_GLOW: Colour = [1.1, 0.55, 0.12];
 
 /** A flame drawn as a fire (../cinema/flameParts.ts): its base, how tall it burns, and for one burning along a
  *  hearth the run of its edge. */
@@ -131,6 +140,8 @@ export interface Light {
  *  order, a torch and a fixture with the flames it burns from. */
 export function burningOf(layout: DungeonLayout): Light[] {
   const torch = { ...LIGHT_KINDS.torch, reach: layout.torchReach };
+  // A cold room's torches light nothing and burn no flame, keeping their numbers so every other light keeps its own.
+  const cold = coldRooms(layout);
   const spaces: Spaces | null = storeysOf(layout) > 1 ? spacesOf(layout) : null;
   const space = (where: Point, burning: Burning) =>
     spaces ? { space: reachOf(layout, spaces, where, burning.reach) } : {};
@@ -142,13 +153,17 @@ export function burningOf(layout: DungeonLayout): Light[] {
     };
   const fixture = placed(FIXTURE_KINDS, layout.torches.length);
   return [
-    ...layout.torches.map((each, number): Light => ({
-      at: [each[0], each[1], each[2]],
-      number,
-      burning: torch,
-      flames: [torchFlame(each)],
-      ...space([each[0], each[1], each[2]], torch),
-    })),
+    ...layout.torches.map((each, number): Light => {
+      const out = coldTorch(layout, cold, each);
+      const burning = out ? COLD : torch;
+      return {
+        at: [each[0], each[1], each[2]],
+        number,
+        burning,
+        flames: out ? [] : [torchFlame(each)],
+        ...space([each[0], each[1], each[2]], burning),
+      };
+    }),
     ...layout.fixtures.map((each, index) => ({ ...fixture(each, index), flames: fixtureFlames(each) })),
     ...layout.glows.map(placed(GLOW_KINDS, layout.torches.length + layout.fixtures.length)),
   ];
@@ -257,6 +272,10 @@ const EMBER_GLOW = ${vector(EMBER_GLOW)};
 const DAYLIGHT_GLOW = ${vector(DAYLIGHT_GLOW)};
 const WAX = ${vector(WAX)};
 const GOLD = ${vector(GOLD)};
+const BLOOD = ${vector(BLOOD)};
+const BONE = ${vector(BONE)};
+const SHROUD = ${vector(SHROUD)};
+const EYES_GLOW = ${vector(EYES_GLOW)};
 const PORTAL_LIGHT = ${vector(LIGHT_KINDS.portal.colour)};
 
 struct Light {

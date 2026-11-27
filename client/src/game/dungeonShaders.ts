@@ -81,6 +81,10 @@ ${LIGHT_WGSL}
 const GLOW = ${COLOUR_LAYERS.glow}u;
 const WAX_LAYER = ${DUNGEON_LAYERS.wax}u;
 const GOLD_LAYER = ${DUNGEON_LAYERS.gold}u;
+const BLOOD_LAYER = ${DUNGEON_LAYERS.blood}u;
+const BONE_LAYER = ${DUNGEON_LAYERS.bone}u;
+const SHROUD_LAYER = ${DUNGEON_LAYERS.shroud}u;
+const EYES_LAYER = ${DUNGEON_LAYERS.eyes}u;
 const EMBER = ${DUNGEON_LAYERS.ember}u;
 const LANTERN_GLASS = ${DUNGEON_LAYERS.lanternGlass}u;
 const CRYSTAL = ${DUNGEON_LAYERS.crystal}u;
@@ -339,6 +343,12 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   if layer == FUNGUS {
     return vec4f(FUNGUS_GLOW * light_breath(seed, time, 0.75), 1.0);
   }
+  if layer == EYES_LAYER {
+    // Eyes in the dark: they catch the light far off, blink now and then, and are gone within a few metres.
+    let away = distance(surface.point, view.eye.xyz);
+    let open = step(0.06, fract(time * 0.11 + surface.point.x * 0.37 + surface.point.y * 0.53));
+    return vec4f(EYES_GLOW * smoothstep(3.5, 8.0, away) * open, 1.0);
+  }
   if layer == DAYLIGHT {
     // An open mouth's way on, daylight far off down it.
     return vec4f(DAYLIGHT_GLOW, 1.0);
@@ -364,6 +374,15 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   }
   if layer == GOLD_LAYER {
     return vec4f(GOLD * light, 1.0);
+  }
+  if layer == BLOOD_LAYER {
+    return vec4f(BLOOD * light, 1.0);
+  }
+  if layer == BONE_LAYER {
+    return vec4f(BONE * light, 1.0);
+  }
+  if layer == SHROUD_LAYER {
+    return vec4f(SHROUD * light, 1.0);
   }
   // Shut, the portal's face is sealed stone, sunk in shadow so its arch stands out round it.
   let albedo = sampled * select(1.0, 0.12, portal);

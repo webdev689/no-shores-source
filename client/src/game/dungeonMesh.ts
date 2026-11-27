@@ -33,6 +33,10 @@ export const COLOUR = {
   foulWater: -10,
   daylight: -11,
   gold: -12,
+  blood: -13,
+  bone: -14,
+  shroud: -15,
+  eyes: -16,
 } as const;
 /** The textures' ironwork (archive 93), for the torches' brackets and the cache's bands. */
 export const IRON: Picture = [93, 0];

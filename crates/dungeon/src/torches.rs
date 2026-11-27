@@ -22,6 +22,9 @@ pub struct Torch {
     pub wall: Side,
 }
 
+/// A warren's corridors take a torch every this many cells, row by row.
+const WARREN_TORCHES_EVERY: usize = 9;
+
 impl Dungeon {
     /// A torch in the middle of the first wall of a cell that has one, never over the exit door or the portal, nor
     /// within `TORCH_APART_M` of another of its room's; whether it stood.
@@ -61,7 +64,7 @@ impl Dungeon {
 
     /// A block storey's torches: on a wall of each room, one for every sixteen of its rectangle's cells, its quiet
     /// cells on every third diagonal first and any of its cells if none will do; at each landing, so each flight is lit
-    /// from both ends; and on every fourth corridor cell, row by row.
+    /// from both ends; and on every fourth corridor cell, row by row, a warren's every ninth.
     pub(crate) fn light(&mut self, square: (usize, usize), storey: usize, block: &BlockLayout) {
         for (number, room) in block.rooms.iter().enumerate() {
             let want = ((room.width * room.depth + 8) / 16).max(1);
@@ -92,12 +95,14 @@ impl Dungeon {
                 self.torch_on(landing);
             }
         }
+        // A warren's ways are lit sparsely, so its maze is found by torchlight that is never far but never near.
+        let every = if block.warren { WARREN_TORCHES_EVERY } else { 4 };
         let mut corridors = 0;
         for y in 0..BLOCK_CELLS {
             for x in 0..BLOCK_CELLS {
                 if block.cells[y * BLOCK_CELLS + x] == Cell::Corridor {
                     let cell = self.cell_of(square, storey, x, y);
-                    if corridors % 4 == 0 && !self.torches.iter().any(|torch| self.cell_at(torch.at) == cell) {
+                    if corridors % every == 0 && !self.torches.iter().any(|torch| self.cell_at(torch.at) == cell) {
                         self.torch_on(cell);
                     }
                     corridors += 1;

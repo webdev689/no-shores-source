@@ -9,8 +9,8 @@ import { type DungeonLayout, ROCK, SIDE_STEPS, STAIR, storeysOf, storeyUnder, VO
 
 type Point = readonly [number, number, number];
 
-/** The storeys' bits, one each (a dungeon has three at most), and the joins' bits after them, reused past the last. */
-export const STOREY_BITS = 3;
+/** The storeys' bits, one each (a dungeon has five at most), and the joins' bits after them, reused past the last. */
+export const STOREY_BITS = 5;
 export const JOIN_BITS = 23;
 /** Every bit a space may hold: a point off the grid's. */
 export const EVERY_SPACE = 2 ** (STOREY_BITS + JOIN_BITS) - 1;

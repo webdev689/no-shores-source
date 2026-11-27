@@ -1,5 +1,5 @@
 //! A block storey's ways, as the Forge joins them: its nodes (each room's middle cell, its landings, its doorways onto
-//! the blocks beside and its gallery) joined by Prim's tree, nearest first by how many cells apart they lie, each pair
+//! the blocks beside, its gallery and a warren's pieces of maze) joined by Prim's tree, nearest first by how many cells apart they lie, each pair
 //! the tree left unjoined joined now and then for a loop; each join the cheapest way through the rock.
 
 use crate::block::{AREA, BLOCK_CELLS, BlockLayout, at, beside, on_rim, opening_cell};
@@ -19,7 +19,7 @@ impl BlockLayout {
     /// The cheapest way between two cells, through rock, rooms and corridors but never the rim (but `rim`'s cells and
     /// the goal), a room's stone or a cell its plan keeps; its cells, or None. Rock costs more than an open cell, so
     /// ways reuse ways.
-    fn route(&self, from: At, to: At, rim: &[At]) -> Option<Vec<At>> {
+    pub(crate) fn route(&self, from: At, to: At, rim: &[At]) -> Option<Vec<At>> {
         let cost = |index: usize| match self.cells[index] {
             Cell::Rock => 3.0,
             Cell::Room(_) => 2.0,
@@ -74,7 +74,7 @@ impl BlockLayout {
     }
 
     /// Carves a way's rock into corridor.
-    fn carve(&mut self, path: &[At]) {
+    pub(crate) fn carve(&mut self, path: &[At]) {
         for &(x, y) in path {
             if self.cells[at(x, y)] == Cell::Rock {
                 self.cells[at(x, y)] = Cell::Corridor;
@@ -96,7 +96,8 @@ impl BlockLayout {
         let rim: Vec<At> = plan.openings.iter().map(|&opening| opening_cell(opening)).collect();
         let others: Vec<At> = rim.iter().chain(&plan.landings).copied().collect();
         let gallery = plan.gallery.as_ref().and_then(|gallery| gallery.cells.first().copied());
-        self.nodes = middles.iter().chain(&others).copied().chain(gallery).collect();
+        let pieces = self.extra_nodes.clone();
+        self.nodes = middles.iter().chain(&others).copied().chain(gallery).chain(pieces).collect();
         let count = self.nodes.len();
         let mut joined = vec![false; count];
         let mut tree: Vec<(usize, usize)> = Vec::new();
