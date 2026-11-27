@@ -86,7 +86,7 @@ export function dungeonPlace(patrol: NodeInfo, layout: DungeonLayout): NodeInfo 
 }
 
 /** The place outside a sea island's dungeon, as a trip reads a patrol's: no place on land, its continent's climate. */
-export function seaPlace(continent: string, layout: DungeonLayout): NodeInfo {
+export function seaPlace(continent: string, layout: Pick<DungeonLayout, 'name'>): NodeInfo {
   return { id: 'sea-dungeon', kind: 'dungeon', name: layout.name, continent, ring: [], spawns: [], centre: [0, 0] };
 }
 

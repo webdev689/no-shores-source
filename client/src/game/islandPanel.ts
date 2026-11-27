@@ -1,8 +1,9 @@
 // The island's tiles, over an island docked at or gone ashore on, in place of marks on the map: rectangles of one size
-// in a grid with space between them, each a painted scene of its place (`islandArt.ts`) with its name and levels at its
-// foot and its details as glyphs at its head, the island seen between them. The island's own with its chart and the
-// way back to the sea, its port, the Playlist, and its places by kind; they rise into place as the view opens, and a
-// click, or Enter on the one lit, does what a tile does.
+// in a grid with space between them, each a painted scene of its place (`islandArt.ts`) in a carved frame, with its
+// name and levels at its foot and its details as glyphs at its head, the island seen between them. The tile lit by
+// the pointer, the keys or the pad opens a card beside it saying every glyph's meaning at once. The island's own with
+// its chart and the way back to the sea, its port, the Playlist, and its places by kind; they rise into place as the
+// view opens, and a click, or Enter on the one lit, does what a tile does.
 import type { Point2 } from '../overworld/ground.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { TONES } from '../plus/tones.ts';
@@ -12,17 +13,17 @@ import { noKey } from './controls.ts';
 import { DIM } from './hudPieces.ts';
 import { hudPress, said } from './hudParts.ts';
 import {
+  type DepthsEntry,
   type IslandEntry,
   type IslandFacts,
   type IslandPanel,
-  type OutpostSlot,
-  type OutpostsEntry,
   type PlaylistBanner,
   entriesOf,
   islandPanelOf,
   KIND_WORDS,
   tagOf,
 } from './islandWords.ts';
+import { drawFrame, frameKey } from './islandFrame.ts';
 import { iconNode } from './journalIcons.ts';
 import { CREST_SPOTS, type Scene, sceneSheet, TEXEL } from './islandArt.ts';
 import { rgbaOf } from '../art/sheet.ts';
@@ -33,9 +34,8 @@ import type { Sea } from './sea.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const BRASS = '#f3cf86';
-/** A tile's scene drawn 90% opaque, so the island shows through it a little; and its edge at rest. */
+/** A tile's scene drawn 90% opaque, so the island shows through it a little. */
 const SEEN = 'rgba(255,255,255,0.9)';
-const EDGE = 'rgba(192,138,62,0.45)';
 /** Where the grid stands (in from each side, under the place's name, over the view's foot) and how it is laid: tiles
  *  `least` to `most` wide, up to `columns` a row with `gap` between, as tall as three rows fit (`short` to `tall`),
  *  their sides in steps of `step`, even so each texel of a scene is two pixels, and a resize paints a few sizes. */
@@ -75,10 +75,10 @@ const SCENES: Readonly<Record<IslandEntry['kind'], Scene['kind']>> = {
   playlist: 'playlist',
   patrol: 'patrol',
   dungeon: 'dungeon',
-  mission: 'mission',
-  boss: 'boss',
-  outpost: 'outpost',
-  outposts: 'outpost',
+  depths: 'depths',
+  mission: 'dungeon',
+  boss: 'dungeon',
+  outpost: 'dungeon',
 };
 
 /** How far tile `place` has risen into place `opened` seconds after the view opened, 0 to 1, eased to a stop. */
@@ -88,20 +88,28 @@ export function risenTile(place: number, opened: number, still: boolean): number
   return 1 - (1 - share) ** 3;
 }
 
-/** A tile's motion and light: how far it has risen, whether it is lit, and whether the keys or the pad have focused
- *  any tile. */
+/** A tile's motion and light: how far it has risen, whether it is lit, whether the keys or the pad have focused
+ *  any tile, and which side of it its card opens on. */
 interface TileState {
   readonly rise: number;
   readonly lit: boolean;
   readonly keyed?: boolean;
+  readonly cardSide?: 'left' | 'right';
 }
 
 /** What a tile stands with as it rises and is lit: faded and lowered as it rises, the pointer passing through it
- *  until it stands, so nothing unseen is lit or pressed; a step up and a brass edge lit. */
+ *  until it stands, so nothing unseen is lit or pressed; a step up lit. Its edge is its frame (`islandFrame.ts`). */
 const standing = ({ rise, lit }: TileState): Partial<Node> => ({
-  outline: { width: lit ? 2 : 1, colour: lit ? TONES.brass : EDGE },
   ...(rise < 1 && { opacity: rise, through: true }),
   ...((rise < 1 || lit) && { offset: [0, Math.round((1 - rise) * RISE.from) - (lit ? LIT_STEP : 0)] as const }),
+});
+
+/** A tile's carved frame over its scene, in its tier's tone, lit or at rest. */
+const frameOver = (size: TileSize, lit: boolean, tier: number | null): Node => ({
+  ...size,
+  through: true,
+  float: { to: 'parent', at: [0, 0], anchor: [0, 0], z: 2 },
+  picture: { key: frameKey(size, lit, tier), source: { draw: drawFrame(lit, tier) } },
 });
 
 /** A tile's scene in pixels, `TEXEL` of the screen's to each, painted once at its size. */
@@ -144,47 +152,61 @@ const crestsOver = (banner: PlaylistBanner, size: TileSize): Node[] => {
 };
 
 /** Its glyphs in a row at the tile's head, a padlock first while it is shut. Nine fit a tile at its narrowest; more
- *  wrap onto a second row under the first, never past the tile's edge. The pointer on one says what it means, as a
- *  player asked, in a card over it. */
-function glyphsNode(ui: Interface, id: string, entry: IslandEntry): Node {
-  // The tile takes the pointer, so a glyph is under it where the tile is and the pointer is in the glyph's box.
-  const under = (glyphId: string) => {
-    const [box, spot] = [ui.boxOf(glyphId), ui.pointerAt];
-    return (
-      ui.hovered(id) &&
-      !!box &&
-      !!spot &&
-      spot.x >= box.x &&
-      spot.y >= box.y &&
-      spot.x < box.x + box.width &&
-      spot.y < box.y + box.height
-    );
-  };
-  const glyph = (key: string, icon: Node, says: string): Node => {
-    const glyphId = `${id}:glyph:${key}`;
-    return { ...icon, id: glyphId, children: under(glyphId) ? [glyphCard(says)] : [] };
-  };
+ *  wrap onto a second row under the first, never past the tile's edge. What each means the lit tile's card says. */
+function glyphsNode(entry: IslandEntry): Node {
   return {
     width: 'grow',
     gap: 4,
     alignX: 'end',
     wrap: true,
     children: [
-      entry.shut !== null && glyph('locked', iconNode('locked', 24), `Shut: ${entry.shut}`),
-      ...entry.glyphs.map((each, place) =>
-        glyph(String(place), { ...iconNode(each.icon, 24, each.tones), ...(each.dim && { opacity: 0.4 }) }, each.says),
-      ),
+      entry.shut !== null && iconNode('locked', 24),
+      ...entry.glyphs.map((each) => ({ ...iconNode(each.icon, 24, each.tones), ...(each.dim && { opacity: 0.4 }) })),
     ],
   };
 }
 
-/** What a glyph means, in a small dark card over it, kept on the screen and never clipped by its tile. */
-const glyphCard = (says: string): Node => ({
-  padding: [5, 8],
-  fill: 'rgba(8,9,12,0.88)',
-  float: { to: 'parent', anchor: [0.5, 1], at: [0.5, 0], y: -6, z: 30, clipped: false, kept: true },
-  children: [said(says, { colour: TONES.word })],
-});
+/** The tile's card, beside the lit tile: its name, its kind and levels, each glyph with what it means, why it is shut
+ *  if it is, and what a click does. Kept on the screen and never clipped by the list. */
+const CARD_WIDE = 264;
+function detailsCard(entry: IslandEntry, side: 'left' | 'right'): Node {
+  const tag = tagOf(entry.name, entry.levels, KIND_WORDS[entry.kind]);
+  const row = (icon: Node, says: string, dim = false): Node => ({
+    width: 'grow',
+    gap: 8,
+    alignY: 'center',
+    children: [
+      { ...icon, ...(dim && { opacity: 0.45 }) },
+      { width: 'grow', ...said(says, { colour: TONES.word }) },
+    ],
+  });
+  return {
+    id: `island:card:${entry.id}`,
+    width: CARD_WIDE,
+    direction: 'column',
+    gap: 6,
+    padding: [10, 12],
+    fill: 'rgba(8,10,14,0.94)',
+    outline: { width: 1, colour: 'rgba(192,138,62,0.55)' },
+    through: true,
+    float: {
+      to: 'parent',
+      ...(side === 'right' ? { anchor: [0, 0], at: [1, 0], x: 10 } : { anchor: [1, 0], at: [0, 0], x: -10 }),
+      z: 30,
+      clipped: false,
+      kept: true,
+    },
+    children: [
+      said(entry.name, { size: 2, colour: entry.shut === null ? BRASS : DIM }),
+      tag !== '' && said(tag, { colour: DIM }),
+      { width: 'grow', height: 1, fill: 'rgba(192,138,62,0.35)' },
+      entry.shut !== null && row(iconNode('locked', 18), entry.shut),
+      ...entry.glyphs.map((each) => row(iconNode(each.icon, 18, each.tones), each.says, each.dim === true)),
+      { width: 'grow', height: 1, fill: 'rgba(192,138,62,0.35)' },
+      said(entry.shut === null ? `Click or Enter: ${entry.act.words}` : 'Shut', { colour: DIM }),
+    ],
+  };
+}
 
 /** One entry's tile: its scene, its glyphs, and at its foot its name over its levels; a click does what it does, and
  *  the pointer or the focus on it lights it for Enter. */
@@ -203,8 +225,12 @@ function entryTile(
   const lights = state.keyed ? ui.focused(id) : ui.hovered(id);
   if (lights && !state.lit) acts.choose(entry.id);
   const banner = 'crests' in entry ? (entry as PlaylistBanner) : null;
-  const scene: Scene = { kind: SCENES[entry.kind], id: entry.id, abyss: entry.abyss ?? false };
-  const look = `${entry.abyss === true}`;
+  const style = entry.kind === 'depths' ? (entry as DepthsEntry).dungeon.style : undefined;
+  const scene: Scene = {
+    ...{ kind: SCENES[entry.kind], id: entry.id, abyss: entry.abyss ?? false },
+    ...(style && { style, tier: entry.tier ?? 0 }),
+  };
+  const look = `${entry.abyss === true} ${entry.tier ?? '-'}`;
   const tag = tagOf(entry.name, entry.levels, KIND_WORDS[entry.kind]);
   const details = [
     ...entry.glyphs.map((glyph) => glyph.says),
@@ -219,10 +245,16 @@ function entryTile(
     ...standing(state),
     children: [
       ...(banner ? crestsOver(banner, size) : []),
+      frameOver(size, state.lit, entry.tier ?? null),
+      // Its card only where the pointer, the keys or the pad are on it, not for the first tile lit by default.
+      state.lit &&
+        state.rise >= 1 &&
+        (ui.hovered(id) || ui.focused(id)) &&
+        detailsCard(entry, state.cardSide ?? 'right'),
       {
         ...WITHIN,
         children: [
-          glyphsNode(ui, id, entry),
+          glyphsNode(entry),
           { height: 'grow' },
           {
             width: 'grow',
@@ -264,6 +296,7 @@ function islandTile(
     ...tileOf(scene, size, look),
     ...standing({ ...state, lit: false }),
     children: [
+      frameOver(size, false, null),
       {
         ...WITHIN,
         gap: 4,
@@ -319,7 +352,9 @@ export function islandPanelNode(
   const tiles: Node[] = [
     islandTile(ui, [panel, tile], chart, { rise: risenTile(0, opened, still), lit: false }, acts.back),
     ...entries.map((entry, place) => {
-      const state = { rise: risenTile(place + 1, opened, still), lit: shown === entry.id, keyed };
+      // Its card opens toward the middle of the grid, so it stays clear of the view's edge.
+      const cardSide = (place + 1) % columns < columns / 2 ? 'right' : 'left';
+      const state = { rise: risenTile(place + 1, opened, still), lit: shown === entry.id, keyed, cardSide } as const;
       return entryTile(ui, [entry, tile], state, acts);
     }),
   ];
@@ -348,157 +383,6 @@ export function islandPanelNode(
   };
 }
 
-/** A slot's card: its name, its chart and whether it is the guild's, as wide as this; its chart as tall as this. */
-const CARD = { width: 260, chart: 140, padding: 10 } as const;
-const PANEL_GROUND = 'rgba(10,14,22,0.94)';
-const CARD_GROUND = 'rgba(22,28,40,0.92)';
-/** The chart's sea and land, the coast's ink, and the slots' marks. */
-const CHART = { sea: '#0c1724', land: '#2a3527', coast: '#8a6a3a', slot: '#7d8794', lit: BRASS, ours: '#9fd08a' };
-
-/** Draws a small chart of the region on a card: the coast round its slots, every slot of the region a dot,
- *  the card's own brass in a ring, and one holding the player's guild's outpost green. */
-function drawSlotChart(
-  outline: readonly Point2[],
-  entry: OutpostsEntry,
-  lit: OutpostSlot,
-): (context: OffscreenCanvasRenderingContext2D, width: number, height: number) => void {
-  return (context, width, height) => {
-    // Framed on the region's slots with a wide margin, so they stand apart on their stretch of coast (an island is
-    // hundreds of kilometres across, its slots a few apart); never closer than 20 km across, so a lone slot sits in
-    // its coast.
-    const extent = (values: readonly number[]) => Math.max(...values) - Math.min(...values);
-    const middleOf = (values: readonly number[]) => (Math.max(...values) + Math.min(...values)) / 2;
-    const [eastings, southings] = [entry.slots.map((slot) => slot.at[0]), entry.slots.map((slot) => slot.at[1])];
-    const middle = [middleOf(eastings), middleOf(southings)] as const;
-    const span = Math.max(20_000, extent(eastings) * 4, (extent(southings) * 4 * width) / height);
-    const scale = width / span;
-    const onChart = ([x, y]: Point2): [number, number] => [
-      width / 2 + (x - middle[0]) * scale,
-      height / 2 + (y - middle[1]) * scale,
-    ];
-    context.fillStyle = CHART.sea;
-    context.fillRect(0, 0, width, height);
-    if (outline.length > 2) {
-      context.beginPath();
-      outline.forEach((point, place) => context[place ? 'lineTo' : 'moveTo'](...onChart(point)));
-      context.closePath();
-      context.fillStyle = CHART.land;
-      context.fill();
-      context.strokeStyle = CHART.coast;
-      context.lineWidth = 1.5;
-      context.stroke();
-    }
-    for (const slot of entry.slots) {
-      const [x, y] = onChart(slot.at);
-      context.beginPath();
-      context.arc(x, y, slot === lit ? 5 : 3.5, 0, Math.PI * 2);
-      context.fillStyle = slot.ours ? CHART.ours : slot === lit ? CHART.lit : CHART.slot;
-      context.fill();
-      if (slot !== lit) continue;
-      context.beginPath();
-      context.arc(x, y, 10, 0, Math.PI * 2);
-      context.strokeStyle = CHART.lit;
-      context.lineWidth = 2;
-      context.stroke();
-    }
-  };
-}
-
-/** What the slots' panel does: light a slot for Enter, land at one, and close it back to the tiles. */
-export interface SlotActs {
-  readonly choose: (id: string) => void;
-  readonly land: (slot: OutpostSlot) => void;
-  readonly close: () => void;
-}
-
-/** One slot's card: its name, its place on the region's chart and whether the player's guild holds an outpost there;
- *  a click lands there, and the pointer or the focus on it lights it for Enter. */
-function slotCard(
-  ui: Interface,
-  [entry, slot]: readonly [OutpostsEntry, OutpostSlot],
-  [lit, keyed]: readonly [boolean, boolean],
-  chart: IslandChart | null,
-  acts: SlotActs,
-): Node {
-  const id = `outposts:${slot.id}`;
-  if (ui.clicked(id) || (ui.focused(id) && !ui.keyFocused)) ui.focusOn(null);
-  if (ui.clicked(id) && slot.shut === null) acts.land(slot);
-  if ((keyed ? ui.focused(id) : ui.hovered(id)) && !lit) acts.choose(slot.id);
-  const held = slot.ours ? "Your guild's outpost" : "No outpost of your guild's";
-  const [width, height] = [CARD.width - 2 * CARD.padding, CARD.chart];
-  return {
-    id,
-    press: true,
-    label: [slot.name, held, slot.shut ?? 'Land here'].join('. '),
-    width: CARD.width,
-    direction: 'column',
-    gap: 8,
-    padding: CARD.padding,
-    fill: CARD_GROUND,
-    outline: { width: lit ? 2 : 1, colour: lit ? TONES.brass : EDGE },
-    ...(lit && { offset: [0, -LIT_STEP] as const }),
-    children: [
-      said(slot.name, { size: 2, colour: slot.shut === null ? BRASS : DIM }),
-      {
-        width,
-        height,
-        picture: {
-          key: `outpost chart ${entry.id} ${slot.id} ${slot.ours} ${chart?.id ?? ''} ${width}x${height}`,
-          source: { draw: drawSlotChart(chart?.outline ?? [], entry, slot) },
-        },
-      },
-      {
-        gap: 6,
-        alignY: 'center',
-        children: [iconNode(slot.ours ? 'outpost' : 'slots', 24), said(held, { colour: DIM })],
-      },
-      slot.shut !== null && said(slot.shut, { colour: DIM }),
-    ],
-  };
-}
-
-/** The region's outpost slots over the view, in the tiles' place, as the Playlist's screen opens from its tile: its
- *  name and levels, a card for each slot, `chosen` the one Enter lands at (the first open one while none is), and
- *  the way back to the tiles. */
-export function outpostsNode(
-  ui: Interface,
-  entry: OutpostsEntry,
-  chosen: string | null,
-  chart: IslandChart | null,
-  acts: SlotActs,
-): Node {
-  const lit = litSlot(entry, chosen)?.id ?? null;
-  const keyed = ui.keyFocused && entry.slots.some((slot) => ui.focused(`outposts:${slot.id}`));
-  return {
-    id: 'outposts-panel',
-    solid: true,
-    modal: true,
-    label: `${entry.name}. ${entry.line}`,
-    float: { to: 'screen', at: [0.5, 0], anchor: [0.5, 0], y: GRID.top },
-    maxWidth: ui.size.width - 2 * GRID.side,
-    direction: 'column',
-    gap: 14,
-    padding: 20,
-    fill: PANEL_GROUND,
-    outline: { width: 1, colour: EDGE },
-    children: [
-      said(entry.name, { size: 2, colour: BRASS }),
-      said(`${tagOf(entry.name, entry.levels, KIND_WORDS.outposts)} · Choose a slot to land at`, { colour: DIM }),
-      {
-        gap: GRID.gap,
-        wrap: true,
-        padding: [LIT_STEP, 0, 0, 0],
-        children: entry.slots.map((slot) => slotCard(ui, [entry, slot], [slot.id === lit, keyed], chart, acts)),
-      },
-      { width: 'grow', alignX: 'end', children: [hudPress(ui, 'outposts-back', `Back  ${noKey()}`, acts.close)] },
-    ],
-  };
-}
-
-/** The slot Enter lands at: the one chosen, else the first open one. */
-const litSlot = (entry: OutpostsEntry, chosen: string | null): OutpostSlot | undefined =>
-  entry.slots.find((slot) => slot.id === chosen) ?? entry.slots.find((slot) => slot.shut === null);
-
 /** What the island's panel reads off the game, and what its entries do. */
 export interface IslandGame {
   readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'nodes' | 'outline' | 'regions'>;
@@ -506,13 +390,14 @@ export interface IslandGame {
   readonly chosen: () => string | null;
   readonly facts: () => Omit<IslandFacts, 'named'> | null;
   readonly named: (id: string) => string;
-  /** The sites the player's guild holds outposts at. */
-  readonly ours: () => readonly string[];
+  /** A dungeon's name by its seed and its style's key, as the rooms name it. */
+  readonly dungeonName?: (seed: number, style: string) => string;
   readonly choose: (id: string) => void;
   readonly back: () => void;
   readonly does: {
     readonly land: (id: string) => void;
     readonly dungeon: (node: NodeInfo) => void;
+    readonly depths: (entry: DepthsEntry) => void;
     readonly playlist: (city: string) => void;
   };
 }
@@ -524,37 +409,23 @@ export function islandScreen(game: IslandGame): {
   readonly act: (id: string | null) => void;
   readonly back: () => boolean;
 } {
-  /** The Outposts tile whose slots stand open, by its id; none while the tiles show. */
-  let picking: string | null = null;
   const panelNow = (): IslandPanel | null => {
     const sea = game.sea();
     if (!sea) return null;
     const facts = game.facts();
     const read = {
-      ...{ activities: facts?.activities ?? null, gates: facts?.gates ?? null },
-      ...{ named: game.named, ours: game.ours() },
+      ...{ activities: facts?.activities ?? null, gates: facts?.gates ?? null, named: game.named },
+      ...(game.dungeonName && { dungeonName: game.dungeonName }),
     };
     return islandPanelOf(game.landmass(), sea.view.docked, read, sea.position);
   };
-  // The open slots' tile as the panel is now: none once the ship lies off another region.
-  const pickedOf = (panel: IslandPanel | null): OutpostsEntry | undefined =>
-    picking === null
-      ? undefined
-      : (panel?.groups.flatMap((group) => group.entries).find((entry) => entry.id === picking) as
-          OutpostsEntry | undefined);
   // The flow lands only at the node chosen, so a landing chooses its node first.
-  const landAt = (id: string) => ((picking = null), game.choose(id), game.does.land(id));
-  // Closing the slots lights their tile again, so Enter on the tiles never holds a slot's id no tile has.
-  const close = () => {
-    if (picking !== null) game.choose(picking);
-    picking = null;
-  };
-  const land = (slot: OutpostSlot) => void (slot.shut === null && landAt(slot.id));
+  const landAt = (id: string) => (game.choose(id), game.does.land(id));
   const act = (entry: IslandEntry) => {
     if (entry.shut !== null) return;
     const landmass = game.landmass();
     if (entry.act.does === 'land') return landAt(entry.id);
-    if (entry.act.does === 'outposts') return void (picking = entry.id);
+    if (entry.act.does === 'depths') return game.does.depths(entry as DepthsEntry);
     if (entry.act.does === 'playlist') return landmass.plan && game.does.playlist(landmass.plan.id);
     const node = landmass.nodes.find((each) => each.id === entry.id);
     if (node) game.does.dungeon(node);
@@ -566,32 +437,15 @@ export function islandScreen(game: IslandGame): {
       const landmass = game.landmass();
       const harbour = landmass.plan && !landmass.plan.ruined ? landmass.plan.harbour : null;
       const chart = { id: landmass.id, outline: landmass.outline, harbour, ship: sea.position };
-      const picked = pickedOf(panel);
-      if (picked) {
-        return outpostsNode(ui, picked, game.chosen(), chart, { choose: game.choose, land, close });
-      }
-      return islandPanelNode(ui, panel, game.chosen(), chart, {
-        choose: game.choose,
-        act,
-        back: game.back,
-      });
+      return islandPanelNode(ui, panel, game.chosen(), chart, { choose: game.choose, act, back: game.back });
     },
     act: (id) => {
       const panel = panelNow();
-      const picked = pickedOf(panel);
-      if (picked) {
-        const slot = litSlot(picked, id);
-        return void (slot && land(slot));
-      }
       const entries = panel ? entriesOf(panel) : [];
       const entry = entries.find((each) => each.id === id) ?? (id === null ? entries[0] : undefined);
       if (entry) act(entry);
     },
-    // Escape and the pad's B close the slots first, back to the tiles.
-    back: () => {
-      const open = pickedOf(panelNow()) !== undefined;
-      close();
-      return open;
-    },
+    // Escape and the pad's B go back to the sea, as the island's own tile's Back does: nothing over the tiles to close.
+    back: () => false,
   };
 }

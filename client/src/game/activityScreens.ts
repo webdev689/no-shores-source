@@ -14,15 +14,18 @@ import {
   type Named,
   type ThisWeek,
   entranceCardOf,
+  regionCardOf,
   thisWeekOf,
 } from './activityWords.ts';
 import { type FinderSocket, type Finding, findCompany, findingWords } from './companyFinder.ts';
-import { askDungeon } from './dungeonLayout.ts';
+import { askDungeon, dungeonName, type StyleKey } from './dungeonLayout.ts';
 import { countBy } from './npc/npcClock.ts';
 import { type TripFoot, type TripGame, dungeonTrips } from './dungeonTrips.ts';
 import { breachTrips } from './breachTrips.ts';
 import { EntranceCardView } from './entranceCard.ts';
-import { type Trips, takeWipe } from './footTrips.ts';
+import { type Trips, seaPlace, takeWipe } from './footTrips.ts';
+import type { DepthsEntry } from './islandWords.ts';
+import type { RegionDungeon } from '../../../server/regionDungeons.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
 import type { AccountLink } from '../network/accounts.ts';
 import type { GearState } from '../network/gearMessages.ts';
@@ -65,6 +68,11 @@ export interface ActivityScreens {
   /** Opens the card of Elite Dungeon `node` at Normal from the sea (the island's panel): Enter and Find a Company go in
    *  from the sea, as the Playlist's runs do, and out back to it. */
   seaCard(node: NodeInfo): void;
+  /** Opens the card of a region's dungeon of the day (the island's tiles): Enter goes in from the sea, at the tier the
+   *  character meets it at, and out back to it. */
+  regionCard(entry: DepthsEntry): void;
+  /** A dungeon's name by its seed and style, as the rooms name it; its style's word before the room module. */
+  dungeonName(seed: number, style: string): string;
   /** The day's and week's draws and the character's gates now, for the island's panel; null before the room module. */
   facts(): { readonly activities: Activities; readonly gates: Gates | null } | null;
   /** The entrance's card or the Playlist as the interface draws it, while one stands. */
@@ -85,6 +93,7 @@ export function startActivityScreens(
     enter(number: number, name: string, run?: string): void;
     intoRun?(node: NodeInfo, run: string): void;
     fromSea?(node: NodeInfo): void;
+    fromRegion?(dungeon: RegionDungeon, tier: number): void;
     toBreach?(run: string): void;
   },
   link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster'>>) | null,
@@ -110,6 +119,8 @@ export function startActivityScreens(
   let opened: {
     readonly entrance: AtEntrance;
     readonly atSea: boolean;
+    /** A region's dungeon's, opened from its tile. */
+    readonly region?: DepthsEntry;
     readonly card: EntranceCard;
     readonly minute: number;
     readonly gear: GearState | null;
@@ -163,9 +174,10 @@ export function startActivityScreens(
   };
   const view = new EntranceCardView({
     enter: () => {
-      const [entrance, atSea] = [opened?.entrance, opened?.atSea ?? false];
+      const [entrance, atSea, region] = [opened?.entrance, opened?.atSea ?? false, opened?.region];
       close();
-      if (entrance && atSea) trips.fromSea?.(entrance.node);
+      if (region) trips.fromRegion?.(region.dungeon, region.tier);
+      else if (entrance && atSea) trips.fromSea?.(entrance.node);
       else if (entrance) trips.enter(entrance.number, entrance.name);
     },
     close,
@@ -176,8 +188,18 @@ export function startActivityScreens(
     },
   });
   /** Builds the card again for where it was opened. */
-  const showCard = (laying: WebAssembly.Module, entrance: AtEntrance, atSea = opened?.atSea ?? false) => {
+  const showCard = (
+    laying: WebAssembly.Module,
+    entrance: AtEntrance,
+    atSea = opened?.atSea ?? false,
+    region = opened?.region,
+  ) => {
     const minute = Math.floor(clock.now() / 60_000);
+    if (region) {
+      const card = regionCardOf({ ...region, island: region.dungeon.island }, activitiesAt(laying, minute));
+      opened = { entrance, atSea: true, region, card, minute, gear: kept };
+      return render();
+    }
     const gates = kept ? gatesAt(laying, kept.level, kept.prologueDone ?? true) : null;
     const card = entranceCardOf(entrance, activitiesAt(laying, minute), gates, kept?.activity ?? null);
     // From the sea, its company is found for the run started at sea (`node-<id>--sea`).
@@ -220,6 +242,13 @@ export function startActivityScreens(
       kept = atSea() ?? kept;
       showCard(compiled, { node, seas: 'normal', number: 0, name: node.name }, true);
     },
+    dungeonName: (seed, style) => (compiled ? dungeonName(compiled, seed, style as StyleKey) : `The ${style}`),
+    regionCard: (entry) => {
+      if (!compiled) return trips.fromRegion?.(entry.dungeon, entry.tier);
+      kept = atSea() ?? kept;
+      const node = seaPlace(entry.dungeon.island, entry);
+      showCard(compiled, { node, seas: 'normal', number: 0, name: entry.name }, true, entry);
+    },
     facts: () => {
       if (!compiled) return null;
       const minute = Math.floor(clock.now() / 60_000);
@@ -234,7 +263,9 @@ export function startActivityScreens(
       const minute = Math.floor(clock.now() / 60_000);
       if (built?.minute === minute && built.gear === kept) return built.board;
       const named: Named = {
-        dungeon: (patrol, number) => askDungeon(laying, patrol, placeName(patrol), number).name,
+        // A dungeon's own name says nothing of where it lies: the Journal names its patrol after it.
+        dungeon: (patrol, number) =>
+          `${askDungeon(laying, patrol, placeName(patrol), number).name} in ${placeName(patrol).replace(/^The /, 'the ')}`,
         place: placeName,
       };
       // A save with no story counts as past the prologue, as the rules read it.

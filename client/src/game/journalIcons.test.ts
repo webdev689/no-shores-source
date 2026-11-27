@@ -41,8 +41,6 @@ const NAMES: readonly IconName[] = [
   'blocks',
   'seals',
   'company',
-  'places',
-  'outpost',
 ];
 
 test('every icon is twelve square, drawn sharp, outlined as the gear glyphs are, and none another’s twin', () => {

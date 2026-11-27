@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { activitiesAt, gatesAt } from './activities.ts';
-import { entranceCardOf, levelWords, type Named, thisWeekOf } from './activityWords.ts';
+import { entranceCardOf, levelWords, type Named, regionCardOf, thisWeekOf } from './activityWords.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -193,4 +193,22 @@ test('an entrance’s card says its run’s tier, level, modifiers and pay, and 
     'Elite Dungeon · Levels 10 to 13',
     'the Elite’s, reached at Abyss seas: its Normal run',
   );
+});
+
+test("a region's dungeon's card says its tier in its island's band, that it is today's, and at Abyss its revives", async () => {
+  const drawn = activitiesAt(await module, FRIDAY_NINE);
+  const band = drawn.bands['continent-1']?.[1];
+  assert.ok(band);
+  const elite = regionCardOf({ name: 'The Weeping Ossuary', island: 'continent-1', tier: 1 }, drawn);
+  assert.deepEqual(elite, {
+    name: 'The Weeping Ossuary',
+    tier: `Elite seas · ${levelWords(band)}`,
+    rules: ['Drawn for today: tomorrow the region offers others.'],
+    modifiers: [],
+    pays: 'It pays its kills and its cache.',
+    shut: null,
+    finds: null,
+  });
+  const abyss = regionCardOf({ name: 'The Weeping Ossuary', island: 'continent-1', tier: 2 }, drawn);
+  assert.deepEqual(abyss.rules.slice(1), [revives, 'Never matched. Bring your company.']);
 });

@@ -20,6 +20,9 @@ struct Asked {
     place: Option<String>,
     seed: Option<u32>,
     style: Option<String>,
+    /// Its name alone, without laying it.
+    #[serde(default, rename = "nameOnly")]
+    name_only: bool,
 }
 
 const fn side_number(side: Side) -> u8 {
@@ -54,9 +57,12 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let (Ok(found), Some((seed, style, blocks))) = (serde_json::from_slice::<Asked>(text), asked(text)) else {
         return Value::Null.to_string();
     };
-    let laid = Dungeon::forge_within(seed, style, blocks);
     // An Elite Dungeon has a name of its own; any other is named by its seed and style.
     let name = if found.place.is_some() { found.name } else { dungeon::named(seed, &style) };
+    if found.name_only {
+        return json!({ "name": name }).to_string();
+    }
+    let laid = Dungeon::forge_within(seed, style, blocks);
     let mut layout = layout_json(&laid, &name);
     // An Elite Dungeon's encounters, laid by the room's own rules from the same dungeon.
     if found.place.is_some() {
@@ -315,14 +321,15 @@ mod tests {
     use serde_json::Value;
 
     #[test]
-    fn a_dungeon_reads_as_its_layout_named_for_its_patrol() {
+    fn a_dungeon_reads_as_its_layout_named_by_its_seed_and_style() {
         let ask = br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":0}"#;
         let laid: Value = serde_json::from_str(&dungeon_json(ask)).unwrap();
         let columns = laid["columns"].as_u64().unwrap();
         let rows = laid["rows"].as_u64().unwrap();
         let storeys = laid["storeys"].as_u64().unwrap();
         assert_eq!(laid["cells"].as_array().unwrap().len() as u64, storeys * columns * rows);
-        assert!(laid["name"].as_str().unwrap().ends_with(" of the Saltgrass Downs"));
+        let (seed, style) = dungeon::of_patrol("saltgrass-downs", 0);
+        assert_eq!(laid["name"], dungeon::named(seed, &style));
         assert_eq!(dungeon_json(ask), dungeon_json(ask), "the same ask, the same dungeon");
         let way_in = laid["wayIn"]["cell"].as_u64().unwrap() as usize;
         assert!(laid["cells"][way_in].as_i64().unwrap() >= 0, "the way in is a room's cell");
@@ -533,6 +540,18 @@ mod tests {
         let cove = dungeon_json(br#"{"name":"The Gull Cove","seed":4242,"style":"caverns"}"#);
         let laid: Value = serde_json::from_str(&cove).unwrap();
         assert_eq!(laid["style"], "caverns");
-        assert!(laid["name"].as_str().unwrap().ends_with(" of the Gull Cove"));
+        assert_eq!(laid["name"], dungeon::named(4242, &dungeon::style_of("caverns").unwrap()));
+    }
+
+    #[test]
+    fn a_dungeon_asked_for_its_name_alone_answers_its_name_and_lays_nothing() {
+        let named = |ask: &[u8]| -> Value { serde_json::from_str(&dungeon_json(ask)).unwrap() };
+        let cove = named(br#"{"name":"","seed":4242,"style":"caverns","nameOnly":true}"#);
+        assert_eq!(cove, serde_json::json!({ "name": dungeon::named(4242, &dungeon::style_of("caverns").unwrap()) }));
+        let whole = named(br#"{"name":"","seed":4242,"style":"caverns"}"#);
+        assert_eq!(whole["name"], cove["name"], "the name the whole layout carries");
+        let elite = named(br#"{"place":"pearl-tomb","name":"The Pearl Tomb","nameOnly":true}"#);
+        assert_eq!(elite["name"], "The Pearl Tomb", "an Elite Dungeon keeps its own");
+        assert_eq!(dungeon_json(br#"{"name":"","seed":7,"style":"grotto","nameOnly":true}"#), "null");
     }
 }

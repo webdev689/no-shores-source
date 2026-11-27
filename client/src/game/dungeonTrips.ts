@@ -2,7 +2,8 @@
 // door the player went in by, facing away from it; a sea island's from its door on the sea, back out onto the island;
 // and a run launched or found from the Playlist, from the sea and back out onto it where the ship lies. Every dungeon
 // at Elite or Abyss and every Elite Dungeon is a run: the company's where a member is in one.
-import { delveInstance, delveWeek, seaDungeonRoom } from '../../../server/roomNames.ts';
+import { delveInstance, delveWeek, regionDungeonRoom, seaDungeonRoom } from '../../../server/roomNames.ts';
+import { type RegionDungeon, regionDungeonBase, regionDungeons } from '../../../server/regionDungeons.ts';
 import { activitiesAt, eliteRun } from './activities.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import { askLayout, type DungeonAsk, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
@@ -104,6 +105,9 @@ export function dungeonTrips(
   /** Into the Elite Dungeon `node` at Normal from the sea, from the island's panel: the company's run of it started at
    *  sea where one plays it, else a new one (`node-<id>--sea--run-<instance>`); out of it back onto the sea. */
   fromSea(node: NodeInfo): void;
+  /** Into a region's dungeon of the day at `tier` (0 Normal to 2 Abyss) from the sea, from the island's tiles: the
+   *  company's run of it where one plays it, else a new one; out of it back onto the sea. */
+  fromRegion(dungeon: RegionDungeon, tier: number): void;
   /** Into the guild dungeon behind an outpost's Delve Gate, for the guild of `key`, at `tier` (0 Normal to 2 Abyss):
    *  the company's run of it or a new one, laid by its week's seed and style; out before the gate at `gate`. */
   enterDelve(key: string, tier: number, gate: Omit<AtEntrance, 'number'>): void;
@@ -168,6 +172,16 @@ export function dungeonTrips(
       await game.drawers.show(layout, outside.node, entrance);
       out = { from: game.foot(), way: (fell) => away(layout, fell) };
     };
+  /** Into a region's dungeon at `tier` by its run, from the sea or by a company member's place; out back onto the sea. */
+  const intoRegion = (dungeon: RegionDungeon, tier: number, room: () => Promise<string>, kind: 'enter' | 'join') => {
+    const ask = { seed: dungeon.seed, style: dungeon.style, name: '' };
+    void game.module.then((module) => {
+      const layout = askLayout(module, ask);
+      const outside = { node: seaPlace(dungeon.island, layout), text: '' };
+      const work = into(outside, { number: 0, ask }, DELVE_SEAS[tier] ?? 'normal', room, toSea);
+      game.travel({ kind, node: `${regionDungeonBase(dungeon, tier)}--dungeon`, name: layout.name }, work);
+    });
+  };
   return {
     props: () => game.drawers.props,
     enter: (number, name, found) => {
@@ -207,6 +221,9 @@ export function dungeonTrips(
     fell: () => leave(true),
     // A company joins online only, where a dungeon's room never asks for its node's file.
     join: (node, place) => {
+      const region = regionDungeonRoom(place);
+      const drawn = region && regionDungeons(region.island, region.region, region.day)[region.slot];
+      if (region && drawn) return intoRegion(drawn, region.seas, async () => place, 'join');
       const where = nodeOfRoom(place);
       if (!where) return;
       // A member's guild dungeon is joined by its name; its way out is before its gate as the accounts keep the plot,
@@ -257,6 +274,11 @@ export function dungeonTrips(
         const work = into({ node, text: '' }, { number: 0, ask }, 'normal', room, toSea);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon`, name }, work);
       });
+    },
+    fromRegion: (dungeon, tier) => {
+      const base = regionDungeonBase(dungeon, tier);
+      const room = async () => sharedRun(base, await game.companyPlaces()) ?? runOf(base, chance.instance());
+      intoRegion(dungeon, tier, room, 'enter');
     },
     enterDelve: (key, tier, gate) => {
       const from = game.foot();

@@ -195,6 +195,27 @@ export function askLayout(module: WebAssembly.Module, ask: DungeonAsk): DungeonL
   return layout;
 }
 
+/** The names asked of each room module by seed and style, kept. */
+const namesOf = new WeakMap<WebAssembly.Module, Map<string, string>>();
+
+/** The name the rooms give the dungeon a seed lays in a style (`dungeon::named`), asked of the room module without
+ *  laying it; the style's own word where the module does not answer. */
+export function dungeonName(module: WebAssembly.Module, seed: number, style: StyleKey): string {
+  const names = namesOf.get(module) ?? new Map<string, string>();
+  namesOf.set(module, names);
+  const key = `${seed}:${style}`;
+  const known = names.get(key);
+  if (known !== undefined) return known;
+  const door = doors.get(module) ?? startRoomDoor(module);
+  doors.set(module, door);
+  const answer = JSON.parse(door.layout(JSON.stringify({ seed, style, name: '', nameOnly: true }))) as {
+    name?: unknown;
+  } | null;
+  const name = typeof answer?.name === 'string' ? answer.name : `The ${style[0]?.toUpperCase() ?? ''}${style.slice(1)}`;
+  names.set(key, name);
+  return name;
+}
+
 /** The dungeon `number` of the patrol `patrol` (its id) named `name`, laid by the room module's own rules; an ask it
  *  does not answer throws. */
 export function askDungeon(module: WebAssembly.Module, patrol: string, name: string, number: number): DungeonLayout {

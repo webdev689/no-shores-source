@@ -12,14 +12,18 @@ import { box, dot, glow, halo, line, makeSheet, patternOn, shape, type Sheet } f
 import { ship } from '../art/ships.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { seeded } from '../seeded.ts';
-import { boss, dungeon, mission, outpost, patrol } from './islandScenes.ts';
+import { depths } from './islandDepths.ts';
+import { dungeon, patrol } from './islandScenes.ts';
 
 /** A tile's scene: what kind of place it paints, its place's id (its seed), and its state. */
 export interface Scene {
-  readonly kind: 'island' | 'port' | 'playlist' | 'patrol' | 'dungeon' | 'mission' | 'boss' | 'outpost';
+  readonly kind: 'island' | 'port' | 'playlist' | 'patrol' | 'dungeon' | 'depths';
   readonly id: string;
   /** An Elite Dungeon of the week's Abyss glows violet within. */
   readonly abyss?: boolean;
+  /** A region's dungeon's style (`islandDepths.ts`) and the tier it is met at, 0 Normal to 2 Abyss. */
+  readonly style?: string;
+  readonly tier?: number;
   /** The island's own: its coast, its harbour and where the ship lies. */
   readonly chart?: { readonly outline: readonly Point2[]; readonly harbour: Point2 | null; readonly ship: Point2 };
 }
@@ -249,9 +253,7 @@ export function sceneSheet(scene: Scene, width: number, height: number): Sheet {
   else if (scene.kind === 'playlist') playlist(sheet, random);
   else if (scene.kind === 'patrol') patrol(sheet, random);
   else if (scene.kind === 'dungeon') dungeon(sheet, random, scene.abyss ?? false);
-  else if (scene.kind === 'mission') mission(sheet, random);
-  else if (scene.kind === 'boss') boss(sheet, random);
-  else if (scene.kind === 'outpost') outpost(sheet, random);
+  else if (scene.kind === 'depths') depths(sheet, random, scene.style ?? 'crypt', scene.tier ?? 0);
   else island(sheet, random, scene.chart);
   foot(sheet);
   return sheet;

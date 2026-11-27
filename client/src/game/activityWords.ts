@@ -263,3 +263,25 @@ export function entranceCardOf(
     finds: which === 'elite' && shut === null ? nodeRoom(node, 'elite') : null,
   };
 }
+
+/** A region's dungeon's card, gone into from the sea: its name, its tier and levels in its island's band, its rules at
+ *  Abyss, that it is drawn for today, and what it pays. Never matched: a company goes in together. */
+export function regionCardOf(
+  dungeon: { readonly name: string; readonly island: string; readonly tier: number },
+  drawn: Activities,
+): EntranceCard {
+  const band = bandAt(drawn, dungeon.island, dungeon.tier);
+  const words = SEAS[dungeon.tier] ?? SEAS[0] ?? '';
+  return {
+    name: dungeon.name,
+    tier: band ? `${words} · ${levelWords(band)}` : words,
+    rules: [
+      'Drawn for today: tomorrow the region offers others.',
+      ...(dungeon.tier === 2 ? [revivesWords(drawn), NEVER_MATCHED] : []),
+    ],
+    modifiers: [],
+    pays: PLAIN_PAYS,
+    shut: null,
+    finds: null,
+  };
+}

@@ -1,10 +1,11 @@
 // What the island's tiles say, docked at its port or gone ashore on its coast, in place of marks on the map: its port
-// (a snapshot of the city, its counters and its moorings), the Playlist beside it, and its patrol zones, Elite
-// Dungeons, missions, world boss and outpost, each with its levels, its state and what a click on it does, in words
-// short enough for a tile. The day's and week's draws (`activities.ts`) add what is on there today and this week;
-// before they are read it says what the island holds alone.
+// (a snapshot of the city, its counters and its moorings), the Playlist beside it, its patrol zones and Elite
+// Dungeons, and the region's own dungeons of the day, each with its levels, its state and what a click on it does, in
+// words short enough for a tile. The day's and week's draws (`activities.ts`) add what is on there today and this
+// week; before they are read it says what the island holds alone.
 import type { Point2 } from '../overworld/ground.ts';
-import { type MapRegion, nearestRegion, regionHolds, regionWords } from '../overworld/regions.ts';
+import { nearestRegion, regionHolds, regionWords } from '../overworld/regions.ts';
+import { dayOf, drawnTier, openTiers, type RegionDungeon, regionDungeons } from '../../../server/regionDungeons.ts';
 import type { Activities, Gates } from './activities.ts';
 import { type IconName, modifierIcon } from './journalIcons.ts';
 import { levelWords } from './activityWords.ts';
@@ -14,9 +15,9 @@ import { LOCKED_WORDS, portOf, socialLater, socialLocked } from './nodes.ts';
 import type { PlaylistKind } from './playlistWords.ts';
 import { lockedWords, type NodeKind, type NodeInfo } from './worldData.ts';
 
-/** What choosing an entry does: lands at its node, opens its Elite Dungeon's card to go in from the sea, opens the
- *  Playlist beside the port, or opens the region's outpost slots. */
-export type IslandDoes = 'land' | 'dungeon' | 'playlist' | 'outposts';
+/** What choosing an entry does: lands at its node, opens its Elite Dungeon's card or a region's dungeon's to go in
+ *  from the sea, or opens the Playlist beside the port. */
+export type IslandDoes = 'land' | 'dungeon' | 'depths' | 'playlist';
 
 /** A detail a tile shows as a small icon in place of words: its icon, its colours where the icon takes others, what
  *  it says (read out, and the tile's label), and whether it stands dim. */
@@ -32,7 +33,7 @@ export interface IslandGlyph {
  *  it cannot, and its press. An Elite Dungeon that is the week's Abyss is `abyss`. */
 export interface IslandEntry {
   readonly id: string;
-  readonly kind: NodeKind | 'playlist' | 'outposts';
+  readonly kind: NodeKind | 'playlist' | 'depths';
   readonly name: string;
   readonly line: string;
   readonly levels: string | null;
@@ -41,6 +42,8 @@ export interface IslandEntry {
   readonly shut: string | null;
   readonly act: { readonly words: string; readonly does: IslandDoes };
   readonly abyss?: boolean;
+  /** The tier it is met at (0 Normal, 1 Elite, 2 Abyss), where it has one of its own: its edge and words wear it. */
+  readonly tier?: number;
 }
 
 /** The Playlist's banner: its entry, and its four crests, shut or open. */
@@ -48,19 +51,10 @@ export interface PlaylistBanner extends IslandEntry {
   readonly crests: readonly { readonly kind: PlaylistKind; readonly shut: boolean }[];
 }
 
-/** One outpost slot of a region: its node's id and name, where it stands, whether the player's guild holds an outpost
- *  there, and why it cannot be landed at if it cannot. */
-export interface OutpostSlot {
-  readonly id: string;
-  readonly name: string;
-  readonly at: Point2;
-  readonly ours: boolean;
-  readonly shut: string | null;
-}
-
-/** The region's Outposts tile, and its slots. */
-export interface OutpostsEntry extends IslandEntry {
-  readonly slots: readonly OutpostSlot[];
+/** A region's dungeon of the day: which it is, the tier the character meets it at, and its style's word. */
+export interface DepthsEntry extends IslandEntry {
+  readonly dungeon: RegionDungeon;
+  readonly tier: number;
 }
 
 /** Each kind of tile in a word or two, said after its levels ("Lv 1–5 · Patrol zone"). */
@@ -69,10 +63,10 @@ export const KIND_WORDS: Readonly<Record<IslandEntry['kind'], string>> = {
   playlist: 'Playlist',
   patrol: 'Patrol zone',
   dungeon: 'Elite Dungeon',
+  depths: 'Dungeon',
   mission: 'Mission',
   boss: 'World boss',
   outpost: 'Outpost',
-  outposts: 'Outposts',
 };
 
 /** A tile's line under its title: its levels and its kind, the kind left out where the title says it already. */
@@ -97,8 +91,8 @@ export interface IslandFacts {
   readonly activities: Activities | null;
   readonly gates: Gates | null;
   readonly named: (id: string) => string;
-  /** The sites the player's guild holds outposts at; none in no guild, or before the guild is read. */
-  readonly ours?: readonly string[];
+  /** A dungeon's name by its seed and its style's key, as the rooms name it (`dungeon::named`). */
+  readonly dungeonName?: (seed: number, style: string) => string;
 }
 
 /** The counters a social space keeps, as the panel names them, by the city crate's station kind. */
@@ -118,11 +112,9 @@ const COUNTERS: Readonly<Record<string, string>> = {
 };
 
 /** The places by kind, in the order the panel lists them after the port and the Playlist. */
-const GROUPS: readonly { readonly kind: NodeKind; readonly title: string; readonly line: string }[] = [
-  { kind: 'patrol', title: 'Patrol zones', line: 'Patrol zone' },
-  { kind: 'dungeon', title: 'Elite Dungeons', line: 'Elite Dungeon' },
-  { kind: 'mission', title: 'Missions', line: 'Mission' },
-  { kind: 'boss', title: 'World boss', line: 'World boss' },
+const GROUPS: readonly { readonly kind: NodeKind; readonly title: string }[] = [
+  { kind: 'patrol', title: 'Patrol zones' },
+  { kind: 'dungeon', title: 'Elite Dungeons' },
 ];
 
 const LAND = { words: 'Land here', does: 'land' } as const;
@@ -159,9 +151,8 @@ const DETAIL_ICONS: Readonly<Record<string, IconName>> = {
   Seals: 'seals',
   Company: 'company',
   Pays: 'cache',
-  Places: 'places',
-  Slots: 'slots',
-  "Your guild's": 'outpost',
+  Kind: 'dungeon',
+  Drawn: 'dawn',
   "Week's Elite": 'elite-dungeon',
   "Week's Abyss": 'abyss-dungeon',
   Rewards: 'cache',
@@ -205,16 +196,6 @@ function patrolEntry(node: NodeInfo, facts: IslandFacts, shut: string | null): I
   ];
   if (today && facts.activities) rows.push(['Today', modifierNames(facts, [facts.activities.dayModifier])]);
   return { ...base(node, 'Patrol zone', facts, shut), rows, glyphs, act: LAND };
-}
-
-/** A mission's or a world boss's details: its foes' sites and the places its layout names, where it has them. */
-function placeRows(node: NodeInfo): [string, string][] {
-  const rows: [string, string][] = [];
-  if (node.foes?.length) rows.push(['Foes', `${node.foes.length} sites`]);
-  const named = (node.places ?? []).map((place) => place.name);
-  if (named.length)
-    rows.push(['Places', named.length > 2 ? `${named.slice(0, 2).join(', ')} and more` : named.join(' and ')]);
-  return rows;
 }
 
 const ordinal = (number: number): string => ['first', 'second', 'third'][number] ?? `${number + 1}th`;
@@ -329,50 +310,59 @@ function playlistBanner(city: string, facts: IslandFacts): PlaylistBanner {
   };
 }
 
-/** The region's Outposts tile, one for all its outpost slots: their count and how many hold the player's guild's
- *  outposts, its levels the island's; none where the region holds no slot. Its press opens the slots to choose from. */
-function outpostsEntry(
-  landmass: Pick<Landmass, 'id' | 'nodes' | 'regions'>,
-  region: MapRegion | null,
-  named: string,
-  facts: IslandFacts,
-): OutpostsEntry | null {
-  const regions = landmass.regions ?? [];
-  const here = landmass.nodes.filter((node) => !region || regionHolds(regions, region, node.id));
-  const sites = here.filter((node) => node.kind === 'outpost');
-  const [first] = sites;
-  if (!first) return null;
-  const slots = sites.map((node): OutpostSlot => ({
-    id: node.id,
-    name: node.name,
-    at: node.centre,
-    ours: facts.ours?.includes(node.id) ?? false,
-    shut: shutOf(node),
-  }));
-  const held = slots.filter((slot) => slot.ours).length;
-  const rows: [string, string][] = [
-    ['Slots', `${slots.length}`],
-    ["Your guild's", held ? `${held}` : 'none'],
-  ];
-  const [stake, palisade] = detailGlyphs(rows, held ? [] : ["Your guild's"]) as [IslandGlyph, IslandGlyph];
-  const id = `outposts-${(region?.name ?? landmass.id).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-  // A shut tile only where every slot is shut, saying the first's reason.
-  const shut = slots.every((slot) => slot.shut !== null) ? (slots[0]?.shut ?? null) : null;
-  return {
-    ...base({ ...first, id, name: `Outposts of ${named}` }, 'Outposts', facts, shut),
-    kind: 'outposts',
-    rows,
-    // A stake for each slot and a palisade for each of the guild's outposts, so the tile shows its counts; one dim
-    // palisade at none.
-    glyphs: [...slots.map(() => stake), ...Array<IslandGlyph>(Math.max(1, held)).fill(palisade)],
-    act: { words: 'Choose a slot', does: 'outposts' },
-    slots,
-  };
+/** The tiers' words and their seas' icons, by the gear crate's numbers. */
+const TIER_WORDS = ['Normal', 'Elite', 'Abyss'] as const;
+const TIER_ICONS = ['seas-normal', 'seas-elite', 'seas-abyss'] as const;
+/** The styles' words, as a dungeon's kind reads them. */
+const STYLE_WORDS: Readonly<Record<string, string>> = {
+  crypt: 'crypt',
+  halls: 'halls',
+  cells: 'cells',
+  sanctum: 'sanctum',
+  caverns: 'caverns',
+  mines: 'mines',
+};
+
+/** The region's dungeons of the day, each at the tier the character meets it at, drawn among the tiers their level
+ *  opens; none before the day's draws are read, or on an island no region cuts. */
+function depthsEntries(island: string, region: number, facts: IslandFacts): DepthsEntry[] {
+  const drawn = facts.activities;
+  if (!drawn || region < 0) return [];
+  const day = dayOf(drawn.minute);
+  const open = openTiers(facts.gates?.seas);
+  return regionDungeons(island, region, day).map((dungeon): DepthsEntry => {
+    const id = `depths-${island}-r${region}-n${dungeon.slot}`;
+    const tier = drawnTier(id, day, open);
+    const band = drawn.bands[island]?.[tier];
+    const style = STYLE_WORDS[dungeon.style] ?? dungeon.style;
+    const rows: [string, string][] = [
+      ['Tier', `${TIER_WORDS[tier] ?? 'Normal'}, the seas your level opens`],
+      ['Kind', `A ${style} laid by the Forge`],
+      ['Company', 'Alone or with your company'],
+      ['Pays', 'Kills, chests and the cache'],
+      ['Drawn', 'A new one each day'],
+    ];
+    const glyphs: IslandGlyph[] = [
+      { icon: TIER_ICONS[tier] ?? 'seas-normal', says: `Tier: ${rows[0]?.[1] ?? ''}` },
+      ...detailGlyphs(rows.slice(1)),
+      ...(tier === 2 ? [{ icon: 'revive', says: 'Five revives shared; a wipe starts it over' } as const] : []),
+    ];
+    const name = facts.dungeonName?.(dungeon.seed, dungeon.style) ?? `The ${style}`;
+    const kind = `${TIER_WORDS[tier] ?? 'Normal'} dungeon`;
+    return {
+      ...{ id, kind: 'depths', name, rows, glyphs, shut: null, dungeon, tier },
+      line: band ? `${kind} · ${levelWords(band)}` : kind,
+      levels: band ? shortBand(band) : null,
+      act: { words: 'Go in from the sea', does: 'depths' },
+      abyss: tier === 2,
+    };
+  });
 }
 
 /** The panel over `landmass`, `docked` at its port or gone ashore on its coast. With the `ship`'s place, an island
- *  cut into regions shows the region it lies off (whose centre is nearest): its places, and the port and the Playlist
- *  only where it holds the port. A desolate city's social space is no landing and is listed nowhere. */
+ *  cut into regions shows the region it lies off (whose centre is nearest): its places and its dungeons of the day,
+ *  and the port and the Playlist only where it holds the port. A desolate city's social space is no landing and is
+ *  listed nowhere; missions, the world boss and outposts are listed nowhere yet. */
 export function islandPanelOf(
   landmass: Pick<Landmass, 'id' | 'plan' | 'nodes' | 'regions'>,
   docked: boolean,
@@ -387,21 +377,18 @@ export function islandPanelOf(
   const port = docked && portHere ? portEntry(landmass) : null;
   const city = docked && port && landmass.plan ? landmass.plan.id : null;
   const normal = facts.activities?.bands[landmass.nodes[0]?.continent ?? landmass.id]?.[0];
-  const groups = GROUPS.flatMap(({ kind, title, line }) => {
+  const groups = GROUPS.flatMap(({ kind, title }) => {
     const entries = landmass.nodes
       .filter((node) => node.kind === kind && (!region || regionHolds(regions, region, node.id)))
       .map((node): IslandEntry => {
         const shut = shutOf(node);
-        if (kind === 'patrol') return patrolEntry(node, facts, shut);
-        if (kind === 'dungeon') return dungeonEntry(node, facts, shut);
-        const rows = placeRows(node);
-        return { ...base(node, line, facts, shut), rows, glyphs: detailGlyphs(rows), act: LAND };
+        return kind === 'patrol' ? patrolEntry(node, facts, shut) : dungeonEntry(node, facts, shut);
       });
     return entries.length ? [{ title, entries }] : [];
   });
   const named = region ? regionWords(region.name) : null;
-  const outposts = outpostsEntry(landmass, region, named ?? island, facts);
-  if (outposts) groups.push({ title: 'Outposts', entries: [outposts] });
+  const depths = region ? depthsEntries(landmass.id, regions.indexOf(region), facts) : [];
+  if (depths.length) groups.push({ title: 'Dungeons', entries: depths });
   const ashore = named ? `Ashore on ${named}` : `Ashore on the coast of ${island}`;
   return {
     title: island,
