@@ -4,7 +4,10 @@ import { test } from 'node:test';
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
 import { climateArchive, DRESSING_ARCHIVE } from '../textures/climate.ts';
 import { dungeonBook, WATER_FLAG } from './dungeonBook.ts';
-import { dressingOf, passagePieceLights, passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
+import { dressingOf, kitPlane, passagePieceLights, passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
+import { rockOn } from './dungeonCells.ts';
+import { joinedOn } from './dungeonJoins.ts';
+import { STOREYED } from './dungeonStoreyMesh.test.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import { askDungeon, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
 import { COLOUR, dungeonMesh, IRON, lookAt, ROLE } from './dungeonMesh.ts';
@@ -312,4 +315,17 @@ test('under ground a lit lamp, a lit dead lamp and an open mouth each light the 
   assert.ok(!lamp.flames && !kindle.flames && !mouth.flames);
   // The open mouth faces east, into the room: its light stands behind its face, west of its foot, the way on.
   assert.ok(mouth.at[0] < 10 && Math.abs(mouth.at[1] - 20) < 1e-6);
+});
+
+test("a storey's kits read a flight as rock but across its landings, so a room beyond its foot or before its head is walled", () => {
+  // Room 0 reaches past the flight's foot on the top storey, and the hall before its head on the one under it.
+  const cells = [...STOREYED.cells];
+  [cells[13], cells[21 + 8]] = [0, 2];
+  const layout = { ...STOREYED, cells };
+  const joined = joinedOn(layout);
+  const [top, under] = storeyPlanes(layout).map((plane) => kitPlane(plane.layout, joined(plane.storey).landings));
+  assert.ok(rockOn(top!, 13, 2), "past the flight's foot, a wall");
+  assert.ok(!rockOn(top!, 8, 0), "the head's landing opens onto the flight");
+  assert.ok(rockOn(under!, 8, 0), "before the flight's head, a wall");
+  assert.ok(!rockOn(under!, 13, 2), "the foot's landing opens onto the flight");
 });

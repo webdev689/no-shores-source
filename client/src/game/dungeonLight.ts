@@ -264,9 +264,10 @@ struct Light {
   place: vec4f,
   // its colour, and its reach
   colour: vec4f,
-  // how deep it flickers, how deep it breathes, how much of a gleam still water shows of it, and the spaces it
-  // reaches, its bits as they are (0: everywhere)
-  shape: vec4f,
+  // how deep it flickers, how deep it breathes, and how much of a gleam still water shows of it
+  shape: vec3f,
+  // the spaces it reaches (0: everywhere), a lane of its own: a float's bits read back may flush a small mask to 0
+  space: u32,
 };
 
 ${LIGHT_MOTION_WGSL}

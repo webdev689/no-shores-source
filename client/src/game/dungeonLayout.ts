@@ -90,6 +90,8 @@ export interface DungeonLayout {
    *  wall has no solid among the boxes. */
   readonly props: readonly (readonly [number, number, number, number, number])[];
   readonly boxes: readonly Box[];
+  /** Each gallery's balustrades along its edges over the open air, as boxes; none from a module older than galleries. */
+  readonly balustrades?: readonly Box[];
   /** The set pieces its rooms are remembered by (content/dungeon/landmarks.json): each its module, the north-west
    *  corner of its turned footprint (x, y) and its quarter turns clockwise. */
   readonly landmarks: readonly (readonly [string, number, number, number])[];
@@ -324,20 +326,30 @@ export function ceilingAt(layout: DungeonLayout, x: number, y: number, z = 0): n
 
 /** A dungeon's ground and ceiling as the player feels them, the camera's line among them: at a point, from the height
  *  `z` stands at there (the feet's where unsaid), never under the feet's own (`feet`), so a line behind a body on a
- *  flight meets the treads and the sloped ceiling over it, and one under the floor never the storey under. */
+ *  flight meets the treads and the sloped ceiling over it, and one under the floor never the storey under. A shot's
+ *  `line` is felt from its own height, under the feet too, so one from a gallery falls on the hall's floor; the slabs
+ *  between storeys (`seenBlocks`) stop a line under a floor. */
 export function feltAt(layout: DungeonLayout, feet: () => number) {
   const from = (z: number | undefined) => Math.max(z ?? feet(), feet());
   return {
     ground: (x: number, y: number, z?: number) => groundAt(layout, x, y, from(z)),
     roof: (x: number, y: number, z?: number) => ceilingAt(layout, x, y, from(z)),
+    line: (x: number, y: number, z?: number) => groundAt(layout, x, y, z ?? feet()),
   };
 }
 
-/** The doorways' jambs, the pillars and the solids, and an Elite Dungeon's Ascents' pads, as blocks, each standing on
- *  its own floor. */
+/** The doorways' jambs, the pillars and the solids, the galleries' balustrades, and an Elite Dungeon's Ascents' pads,
+ *  as blocks, each standing on its own floor. */
 export function courseOf(layout: DungeonLayout): Block[] {
   const pads = (layout.encounters?.seals ?? []).flatMap((seal) => seal.pads);
-  const solids = layout.boxes.map(([minX, minY, maxX, maxY, bottom, top]) => ({ minX, minY, maxX, maxY, top, bottom }));
+  const solids = [...layout.boxes, ...(layout.balustrades ?? [])].map(([minX, minY, maxX, maxY, bottom, top]) => ({
+    minX,
+    minY,
+    maxX,
+    maxY,
+    top,
+    bottom,
+  }));
   return [
     ...solids,
     ...pads.map(([minX, minY, maxX, maxY, top, bottom = 0]) => ({ minX, minY, maxX, maxY, top, bottom })),
@@ -361,22 +373,22 @@ export function seenBlocks(layout: DungeonLayout): Block[] {
         blocks.push({ minX, minY, maxX: minX + layout.cell, maxY: minY + layout.cell, top, bottom });
       }
   }
-  // One storey has no slab.
+  // One storey has no slab. Over a column's top span below the top storey, its rock up to the floor of the next storey
+  // over its ceiling is capped, as the rules stop a line there.
   for (let row = 0; row < (storeysOf(layout) > 1 ? layout.rows : 0); row++)
     for (let column = 0; column < layout.columns; column++) {
       const spans = spansAt(layout, column, row);
       const [minX, minY] = [column * layout.cell, row * layout.cell];
-      for (let upper = 1; upper < spans.length; upper++) {
-        const [under, over] = [spans[upper - 1]!, spans[upper]!];
-        blocks.push({
-          minX,
-          minY,
-          maxX: minX + layout.cell,
-          maxY: minY + layout.cell,
-          top: over.floor,
-          bottom: under.ceiling,
-        });
-      }
+      const slab = (bottom: number, top: number) =>
+        blocks.push({ minX, minY, maxX: minX + layout.cell, maxY: minY + layout.cell, top, bottom });
+      for (let upper = 1; upper < spans.length; upper++) slab(spans[upper - 1]!.ceiling, spans[upper]!.floor);
+      const highest = spans.at(-1);
+      if (!highest) continue;
+      for (let over = highest.storey - 1; over >= 0; over--)
+        if (floorOf(layout, over) >= highest.ceiling) {
+          slab(highest.ceiling, floorOf(layout, over));
+          break;
+        }
     }
   return blocks;
 }

@@ -85,12 +85,15 @@ function placeOf(layout: DungeonLayout, [x, y, z]: Point) {
 }
 
 /** The joins of a storey with a cell within `distance` of a point on the plane. */
-function joinsNear(spaces: Spaces, storey: number, [x, y]: Point, distance: number): Join[] {
-  return spaces.joins.filter(
-    (join) =>
-      join.storeys.includes(storey) &&
-      join.middles.some(([east, south]) => Math.hypot(east - x, south - y) <= distance),
-  );
+function joinsNear(spaces: Spaces, storey: number, point: Point, distance: number): Join[] {
+  return spaces.joins.filter((join) => joinNear(join, storey, point, distance));
+}
+
+/** Whether a join is of a storey and has a cell within `distance` of a point on the plane. */
+function joinNear(join: Join, storey: number, [x, y]: Point, distance: number): boolean {
+  if (join.storeys[0] !== storey && join.storeys[1] !== storey) return false;
+  for (const [east, south] of join.middles) if (Math.hypot(east - x, south - y) <= distance) return true;
+  return false;
 }
 
 /** The space of a surface or a figure at a point: its storey, and its cell's joins. */
@@ -114,8 +117,9 @@ export function reachOf(layout: DungeonLayout, spaces: Spaces, where: Point, rea
 export function seenFrom(layout: DungeonLayout, spaces: Spaces, eye: Point): number {
   const place = placeOf(layout, eye);
   if (!place) return EVERY_SPACE;
-  return joinsNear(spaces, place.storey, eye, SEEN_M).reduce(
-    (space, join) => space | join.bit | (2 ** join.storeys[0]) | (2 ** join.storeys[1]),
-    2 ** place.storey,
-  );
+  // Asked every frame: a loop, so it makes no list.
+  let seen = 2 ** place.storey;
+  for (const join of spaces.joins)
+    if (joinNear(join, place.storey, eye, SEEN_M)) seen |= join.bit | (2 ** join.storeys[0]) | (2 ** join.storeys[1]);
+  return seen;
 }

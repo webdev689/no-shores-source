@@ -67,6 +67,13 @@ test("the shader's words carry each storey's looks, rock and joins, and a light 
   assert.equal(new Uint32Array(floats.buffer)[11], 2 ** 25 + 1, 'past what a float holds whole');
 });
 
+test("a light's spaces are written through the frame's one view of its buffer, bit for bit", () => {
+  const floats = new Float32Array(24);
+  const bits = new Uint32Array(floats.buffer);
+  lightFloats({ ...burningOf(STOREYED)[0]!, space: 5 }, floats, 12, bits);
+  assert.equal(bits[23], 5);
+});
+
 test("the shader's storey of a height is the page's", () => {
   const wgsl = /fn storey_at\([\s\S]*?\n\}/.exec(DUNGEON_SHADER)?.[0] ?? '';
   const script = wgsl

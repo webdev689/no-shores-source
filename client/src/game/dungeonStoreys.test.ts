@@ -2,6 +2,9 @@
 // slope, a Void's fall, the rooms' names by storey, and the solids and slabs standing on their own floors.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { surfaceAt } from '../combat/shotMarks.ts';
+import { Tracers } from '../combat/tracers.ts';
+import { crosshairPoint } from '../player/crosshair.ts';
 import { roomNameAt } from './footTrips.ts';
 import {
   ceilingAt,
@@ -84,4 +87,44 @@ test('a solid stands on its own floor, and the slab between two storeys is a blo
   assert.ok(seenBlocks(layout).some((block) => JSON.stringify(block) === JSON.stringify(slab)));
   const lowerRock = seenBlocks(layout).filter((block) => block.bottom === -8);
   assert.ok(lowerRock.length > 0 && lowerRock.every((block) => block.top === 0 || block.top === -7));
+});
+
+test('aimed level up the flight from its foot, the crosshair lies on the slope, not on ground the feet cannot feel', () => {
+  const felt = feltAt(layout, () => -8);
+  const west = { targetX: 16.6, targetY: 1.6, targetZ: -6.4, yaw: -Math.PI / 2, pitch: 0, distance: 1 };
+  const [x, y, z] = crosshairPoint(west, 1, [], [], felt.ground);
+  // The slope stands 1.6 m over the floor 2.56 m up the flight from its foot at x 16.
+  assert.ok(Math.abs(x - 13.44) < 0.01 && Math.abs(y - 1.6) < 1e-9 && Math.abs(z + 6.4) < 1e-9, `${x}, ${y}, ${z}`);
+});
+
+test("a gallery's balustrades stand in the page's course, from their own floor", () => {
+  const railed = { ...layout, balustrades: [[0, 2.95, 3.2, 3.2, 0, 1]] } as unknown as DungeonLayout;
+  const rail = { minX: 0, minY: 2.95, maxX: 3.2, maxY: 3.2, top: 1, bottom: 0 };
+  assert.ok(courseOf(railed).some((block) => JSON.stringify(block) === JSON.stringify(rail)));
+});
+
+test('a lower room under rock is capped up to the floor of the storey over it; open air over it is not', () => {
+  const caps = seenBlocks(layout).filter((block) => block.bottom === -4 && block.top === 0);
+  const columns = caps.map((block) => `${Math.round(block.minX / 3.2)},${Math.round(block.minY / 3.2)}`).sort();
+  assert.deepEqual(
+    columns,
+    ['1,1', '2,1', '3,1', '4,1', '5,0', '5,1'],
+    'the slab under room 0, and rock over the rest',
+  );
+});
+
+test("a shot down from the gallery falls on the hall's floor under the storey over it, never on that storey's", () => {
+  const felt = feltAt(layout, () => 0);
+  const tracers = new Tracers();
+  // Through the open air at (0, 1) and on under room 0's floor at (1, 1), down to the hall's floor at -8.
+  tracers.fired([{ ranged: 1, at: [1.6, 4.8, -5], velocity: [20, 0, -20] }], () => [1.6, 4.8, -5]);
+  tracers.update(1, seenBlocks(layout), [], felt.line, [], false);
+  const [struck] = tracers.struck;
+  assert.equal(struck?.surface, 'ground');
+  assert.ok(Math.abs((struck?.at[2] ?? 0) + 8) < 0.05 && (struck?.at[0] ?? 0) > 3.2, `${struck?.at}`);
+});
+
+test('a line stopped on the storey over the player is told as ground, felt from where it stopped', () => {
+  const below = feltAt(layout, () => -8);
+  assert.deepEqual(surfaceAt([4.8, 4.8, 0], [], [], below.line, false), { surface: 'ground' });
 });

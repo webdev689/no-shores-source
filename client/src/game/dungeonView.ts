@@ -97,6 +97,7 @@ export class DungeonView {
   /** What a frame writes, kept from frame to frame: the view's parts before its grid, the lights, the clusters. */
   private readonly frame = new Float32Array(VIEW_FLOATS.grid);
   private readonly burningFloats = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
+  private readonly burningBits = new Uint32Array(this.burningFloats.buffer);
   private readonly clusters = new LightClusters(MOST_LIGHTS);
   /** The flames its lights burn from, drawn as fires over the finished picture: one of the scene's drawers. */
   readonly flames: Flames;
@@ -374,12 +375,12 @@ export class DungeonView {
     if (!drawn) return;
     if (painting(drawn.painter)) standIn('dungeon pictures');
     const { device } = this.gpu;
-    const { frame, burningFloats, clusters } = this;
+    const { frame, burningFloats, burningBits, clusters } = this;
     const open = drawn.shown?.open === true;
     const nearest = drawn.picker.nearest(eye, open, MOST_LIGHTS, seenFrom(drawn.layout, drawn.spaces, eye));
     drawn.nearest = nearest;
     for (let index = 0; index < nearest.length; index++)
-      lightFloats(nearest[index], burningFloats, index * LIGHT_FLOATS);
+      lightFloats(nearest[index], burningFloats, index * LIGHT_FLOATS, burningBits);
     device.queue.writeBuffer(drawn.lights, 0, burningFloats);
     const listed = clusters.build(nearest, fromEye, eye);
     if (listed) device.queue.writeBuffer(drawn.clusters, 0, clusters.words, 0, CLUSTER_COUNT + clusters.listed);

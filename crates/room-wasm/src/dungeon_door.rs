@@ -66,12 +66,12 @@ pub fn dungeon_json(text: &[u8]) -> String {
 }
 
 /// A laid dungeon as JSON, as the page's `DungeonLayout` reads it, under its name: what a page draws a dungeon or a
-/// passage zone under ground from ([[Dungeons]] names each field). Points are x east, y south, z up from its
-/// north-west corner at its top storey's floor, every z absolute; `cells`, `ceilings` and `cellLooks` hold a plane for
-/// each storey, storey by storey. A cell is -2 rock, -1 a corridor, -3 a flight's, -4 open air over the storey under
-/// it, or its room's number; a side is 0 east, 1 south, 2 west, 3 north; a bearing is radians clockwise from north. A
-/// box is (min x, min y, max x, max y, bottom, top): the jambs, the pillars, then the props', the fixtures' and the
-/// landmarks' solids.
+/// passage zone under ground from. Points are x east, y south, z up from its north-west corner at its top storey's
+/// floor, every z absolute; `cells`, `ceilings` and `cellLooks` hold a plane for each storey, storey by storey. A cell
+/// is -2 rock, -1 a corridor, -3 a flight's, -4 open air over the storey under it, or its room's number; a side is 0
+/// east, 1 south, 2 west, 3 north; a bearing is radians clockwise from north. A box is (min x, min y, max x, max y,
+/// bottom, top): the jambs, the pillars, then the props', the fixtures' and the landmarks' solids; a balustrade, the
+/// rules' rail along a gallery's edge over the open air, is a box the same way.
 pub(crate) fn layout_json(laid: &Dungeon, name: &str) -> Value {
     let style = laid.style;
     let cells: Vec<i32> = laid
@@ -181,6 +181,7 @@ pub(crate) fn layout_json(laid: &Dungeon, name: &str) -> Value {
         "pillars": laid.pillars,
         "pillarHalf": dungeon::PILLAR_HALF_M,
         "boxes": laid.boxes(),
+        "balustrades": laid.balustrades,
         "props": props,
         "landmarks": landmarks,
         "glows": glows,
@@ -337,7 +338,7 @@ mod tests {
         br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
         br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0x79a7_2643_346b_4ba2;
+    const AGREED_HASH: u64 = 0x4e03_935e_b541_2eca;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
@@ -405,6 +406,7 @@ mod tests {
                 let laid: Value = serde_json::from_str(&dungeon_json(ask.as_bytes())).unwrap();
                 let mut want = vec![
                     "arrival",
+                    "balustrades",
                     "boxes",
                     "cell",
                     "cellLooks",
@@ -491,8 +493,10 @@ mod tests {
 
     #[test]
     fn a_storeyed_dungeon_answers_its_storeys_their_floors_and_its_flights() {
-        let laid = dungeon::hand_made::two_storeys();
+        let mut laid = dungeon::hand_made::two_storeys();
+        laid.balustrades.push([0.0, 2.95, 3.2, 3.2, 0.0, 1.0]);
         let layout = super::layout_json(&laid, "Two Storeys");
+        assert_eq!(layout["balustrades"], serde_json::json!(laid.balustrades), "the rails the rules stand");
         let plane = laid.plane();
         assert_eq!((layout["storeys"].as_u64(), layout["storeyM"].as_f64()), (Some(2), Some(8.0)));
         assert_eq!(layout["floors"], serde_json::json!([0.0, -8.0]));
