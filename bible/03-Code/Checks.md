@@ -22,6 +22,13 @@ the binary was built from another one. Its last line gives the verdict, the comm
 uncommitted changes: `passed: checked <commit>, nothing uncommitted`, or `FAILED (<steps>): checked <commit> ...`, with
 `; the tree changed during the check` when files changed while it ran.
 
+Most of a part's time before its tests is the game's own crates compiling: CI keeps the dependencies built, per part,
+with the Rust parts sharing theirs, and a fresh checkout rebuilds every crate of the workspace. Debug and test builds
+keep line tables only, not full debug info, which halves a clean build and leaves the tests as fast; a backtrace still
+names its files and lines. Linking is a small share of the time, and Rust's own default linker is kept
+([[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]). A session runs the
+repo checks and the tests of what it changed, and leaves the whole check to CI ([[Toolkit]]).
+
 1. **messages**: the Rust and the TypeScript for every network message, made from the schema with `flatc`
    (`npm run schema`), into `generated/`. Its first run on a machine installs the pinned `flatc`.
 2. **format**: rustfmt, then Prettier.
