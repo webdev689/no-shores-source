@@ -375,6 +375,10 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   Collector, A Cut Above, Bigger Fish and Deeper Still the second; Big Game, Sea Wolf and Deep Delver the third; of
   the passages', Down Below and Seam Worker the first, Errand Runner, Further In and Relic Hunter the second,
   Lamplighter the third (`Bounty.tier`, `bounty_pay`).
+- **A line of its tale.** Every bounty, the town's and the factions', carries one line of its tale (`Bounty.tale`,
+  80 characters at most, each its own), which its card shows under its task, as Destiny's bounties carry theirs
+  ([[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]). The town's
+  are Overlook's and name no island; a faction's speak as its keeper does, the Veiled's without a contraction.
 - **A faction's three** (`faction_board`): each faction draws three a day from four of its own, the one left out by
   the day, at its own places after the town's six (the Stormcallers' 6 to 8, the Lamplighters' 9 to 11, the Veiled's
   12 to 14; `faction_places`). The Stormcallers': Storm Front (40 foes), Thunderhead (8 of Elite rank or higher),
@@ -389,7 +393,8 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   in, to the faction that posted it.
 - **On the wire** the gear message carries the town's eight (its six, then the passages' two at their places), then
   the pledged faction's three, then any other faction's held that day, each with its place and the faction that posts
-  it (none for the town), and a first tier's XP and Aurem; the card shows each one's own pay.
+  it (none for the town) and the line of its tale, and a first tier's XP and Aurem; the card shows each one's own
+  pay.
 - **Taking and turning in** happen at the board alone (`Ask::TakeBounty`, `Ask::TurnInBounty`), each by its place
   and the day of the board the page showed. The room refuses a day not its own, and a room whose day is behind the
   record refuses both, so a page or a room on either side of 09:00 cannot take or pay yesterday's bounty as today's.

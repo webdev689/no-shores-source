@@ -261,7 +261,7 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   from a line as it widens and deepens, a lid swung about its hinge (an airship's nose, pitched), a module that does
   not open leaning about its own length as far as it is asked (an airship banking), its crystal glowing as strongly as
   it is asked. Each material is its own colour worked by code over the module's own frame (canvas oiled tan, the
-  Tithe's banner and its airship's canvas their unmarked grey, as its sails are); the crystal is lit as above, its
+  Tithe's banner and its airship's canvas their grey, as its sails' is); the crystal is lit as above, its
   brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`), an airship's
   thrusters each a fire's lamp as hard as it burns. A Breach's
   pieces light lamps from their own surfaces: each 3 m cell its crystal, glow or glass falls in is one lamp at their

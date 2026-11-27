@@ -271,7 +271,7 @@ fn material_colour(material: u32, local: vec3f, grey: bool) -> vec3f {
     }
     case ${id('canvas')}: {
       // Oiled canvas, tan (or the Tithe's grey), weathered darker in broad stains, and dirtier toward the ground.
-      // The Tithe's banner is its unmarked grey, as its sails are.
+      // The Tithe's banner is its grey, as its sails' canvas is.
       let cloth = select(
         mix(vec3f(0.5, 0.4, 0.26), vec3f(0.62, 0.52, 0.35), fine),
         mix(vec3f(0.42, 0.42, 0.41), vec3f(0.54, 0.54, 0.52), fine),

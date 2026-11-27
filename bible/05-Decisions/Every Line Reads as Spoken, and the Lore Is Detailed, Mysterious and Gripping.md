@@ -68,3 +68,7 @@ Each the owner's to change:
 
 How the lines are held: [[Dialogue]], [[Plain Text]], [[Speech]]. Where they are: [[Prologue]], [[Quests]],
 [[Factions]], [[Lore]], [[Each House's Lore Book Tells Its Art's Origin]], which this replaces in one call.
+
+Replaced in part by
+[[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]: Soundings names
+the Axis once, in "The Green", in the words of one it takes.

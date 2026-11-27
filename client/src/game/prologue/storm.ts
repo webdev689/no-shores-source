@@ -1,7 +1,7 @@
 // The owner's second beat: from the title the camera pulls away over the sea into a stormfront (the light failing,
 // rain driving, thunder), a strike's flash covers the leap far out to sea, and the camera rushes low over the swell
-// until the Brig comes out of the rain; it rises along its side, passes over its working crew from bow to stern, and
-// comes to rest at its helm, where the player stands.
+// until the Brig comes out of the rain, the captain's chart held over the view as it leaps; it rises along its side,
+// passes over its working crew from bow to stern, and comes to rest at its helm, where the player stands.
 import { Cues } from '../../cinema/cues.ts';
 import { type RailKey, railShot } from '../../cinema/rail.ts';
 import type { ShipPlace } from '../../ships/shipView.ts';
@@ -14,6 +14,8 @@ import { STORM } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import { CREATION_LENS, creationEye, helmDeck, youAtHelm } from './helm.ts';
+import { chartLines, drawChart } from './chart.ts';
+import { islandFrame } from './introShots.ts';
 
 const LENS = { fov: 0.9, near: 0.3, far: 30_000 } as const;
 /** The pull away from the title, then the leap, then the run to the Brig and over it. */
@@ -22,6 +24,8 @@ const RUN_S = 20;
 /** When the run comes over its deck, seconds into it: from there its frame eases from the sea's level to its deck's
  *  as the helm rides it. */
 const OVER_DECK_S = 12.5;
+/** The captain's chart, held over the run from just after the leap's flash until before the Brig comes close. */
+const CHART_S = [PULL_S + 0.5, PULL_S + 5.5] as const;
 
 /** The run in the Brig's own frame (metres to its bow, to its starboard, up from its waterline), so it keeps with
  *  it as it sails: low over the swell astern and to port, then well out from its port side, bow to quarter, its
@@ -68,6 +72,8 @@ export class StormDive implements Beat {
       [5, () => this.skipped || ambience.thunder(3.5)],
       [PULL_S - 0.6, () => this.skipped || ambience.whoosh()],
       [PULL_S, () => this.leap()],
+      [CHART_S[0], () => this.skipped || this.showChart()],
+      [CHART_S[1], () => this.story.stage.parts.screen.showInsert(null)],
       [PULL_S + 4, () => this.strikeNear(-300)],
       [PULL_S + 9, () => this.strikeNear(500)],
       [PULL_S + 14, () => (lightning.striking = true)],
@@ -84,6 +90,19 @@ export class StormDive implements Beat {
     if (this.skipped) return;
     stage.parts.screen.flash(0.9);
     this.strikeNear(0);
+  }
+
+  /** The captain's chart of the island the story set out from: its coast, and an old chart's beside it. */
+  private showChart(): void {
+    const { stage, places } = this.story;
+    const landmass = stage.parts.landmass();
+    const { town, anchorage } = islandFrame(landmass);
+    const lines = chartLines(landmass.outline, [town[0], town[1]], places.storm, anchorage);
+    stage.parts.screen.showInsert({
+      key: 'captain chart',
+      label: 'The captain’s chart',
+      draw: (context, width, height) => drawChart(lines, context, width, height),
+    });
   }
 
   private strikeNear(across: number): void {

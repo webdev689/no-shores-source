@@ -250,11 +250,11 @@
   ]
  },
  "pearl-tomb": {
-  "theme": "The tomb of the pearl divers' kings, its doors under the dunes.",
+  "theme": "The tomb of the pearl divers' kings, its doors cut into the cliffs.",
   "areas": [
    {
     "kind": "entrance",
-    "name": "Dune Path"
+    "name": "Cliff Path"
    },
    {
     "kind": "graveyard",
