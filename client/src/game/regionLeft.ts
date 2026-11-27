@@ -3,18 +3,17 @@
 // first, so the room is asked by that anchorage.
 import regions from '../../../content/world/regions.json' with { type: 'json' };
 import type { Point2 } from '../overworld/ground.ts';
+import { nearestRegion } from '../overworld/regions.ts';
 import type { Sea } from './sea.ts';
 
 const all = regions.flatMap((island) => island.regions);
 
 /** The anchorage of the region of node `id`, where the ship at `ship` lies off another region (the one whose centre
  *  is nearest it, as the room judges); null for a node of no region, or a ship off its own already. */
-export function anchorageLeft(id: string, [x, y]: Point2): Point2 | null {
+export function anchorageLeft(id: string, ship: Point2): Point2 | null {
   const region = all.find((each) => each.nodes.includes(id));
-  if (!region) return null;
-  const apart = (each: (typeof all)[number]) => Math.hypot(each.centre[0] - x, each.centre[1] - y);
-  const off = all.reduce((best, each) => (apart(each) < apart(best) ? each : best), region);
-  return off === region ? null : [region.anchorage[0], region.anchorage[1]];
+  if (!region || nearestRegion(all, ship) === region) return null;
+  return [region.anchorage[0], region.anchorage[1]];
 }
 
 /** Back at sea from node `left` (null from none), the ship laid at its region's anchorage where it lies off another,
