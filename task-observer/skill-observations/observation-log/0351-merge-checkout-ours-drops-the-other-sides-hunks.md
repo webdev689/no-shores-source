@@ -1,5 +1,5 @@
 ---
-id: 349
+id: 351
 title: "Resolving a conflicted file with git checkout --ours dropped the other branch's non-conflicting hunks in it"
 status: open
 type: open-source
