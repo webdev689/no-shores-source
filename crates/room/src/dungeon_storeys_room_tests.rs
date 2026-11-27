@@ -132,3 +132,19 @@ fn a_vault_is_guarded_once_the_main_ways_bands_are_stood_where_foes_remain() {
     }
     assert!(guarded > 0, "some vaults guarded");
 }
+
+#[test]
+fn dusk_daggers_ring_the_ground_of_the_casters_own_storey() {
+    let (_, room) = laid((REEVE, Miniboss));
+    let middle = |column: usize, row: usize| [(column as f64 + 0.5) * CELL_M, (row as f64 + 0.5) * CELL_M];
+    // From the lower room, at a column open on both storeys: room 2's floor, not room 0's over it.
+    let ([x, y], [aim_x, aim_y]) = (middle(3, 5), middle(3, 4));
+    assert_eq!(room.daggers_at([x, y, -8.0], Some([aim_x, aim_y, 0.0]), 10.0)[2], -8.0);
+    // From room 0 over it, its own floor.
+    let [over_x, over_y] = middle(3, 3);
+    assert_eq!(room.daggers_at([over_x, over_y, 0.0], Some([aim_x, aim_y, -8.0]), 10.0)[2], 0.0);
+    // From the flight's foot, up it: on its slope, 5 m under the top storey's floor at that row.
+    let ([foot_x, foot_y], [up_x, up_y]) = (middle(9, 10), middle(9, 8));
+    let ring = room.daggers_at([foot_x, foot_y, -8.0], Some([up_x, up_y, -5.0]), 10.0);
+    assert!((ring[2] + 5.0).abs() < 1e-9, "{ring:?}");
+}

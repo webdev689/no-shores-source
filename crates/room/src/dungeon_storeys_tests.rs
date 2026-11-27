@@ -132,3 +132,61 @@ fn a_body_leaping_high_in_a_tall_lower_room_keeps_to_its_storey() {
     assert_eq!(ground.storey_of_feet(x, y, -3.6), 1);
     assert!(!ground.walled_at((x, y), (x, y + 0.1), -3.6), "the top storey's rock is not its wall");
 }
+
+#[test]
+fn a_flight_walls_a_body_beside_it_or_past_its_ends_its_half_width_off_as_the_page_draws_it() {
+    let mut laid = two_storeys();
+    let (plane, columns) = (laid.plane(), laid.columns);
+    let at = |storey: usize, x: usize, y: usize| storey * plane + y * columns + x;
+    // Corridors beside the flight on the top storey, past its foot on the top storey and before its head on the lower.
+    for cell in [at(0, 10, 6), at(0, 9, 10), at(1, 9, 5)] {
+        laid.cells[cell] = dungeon::Cell::Corridor;
+        laid.ceilings[cell] = dungeon::CORRIDOR_HEIGHT_M;
+    }
+    let ground = DungeonGround::of(&laid).unwrap();
+    let (beside, _) = run(&ground, middle(10, 6), 0.0, Side::West, 120);
+    assert!((beside.x - (10.0 * CELL_M + TUNING.radius)).abs() < TICK_RUN, "beside it: {}", beside.x);
+    assert_eq!(beside.z, 0.0);
+    let (past_foot, _) = run(&ground, middle(9, 10), 0.0, Side::North, 120);
+    assert!((past_foot.y - (10.0 * CELL_M + TUNING.radius)).abs() < TICK_RUN, "past its foot: {}", past_foot.y);
+    let (before_head, _) = run(&ground, middle(9, 5), -8.0, Side::South, 120);
+    assert!((before_head.y - (6.0 * CELL_M - TUNING.radius)).abs() < TICK_RUN, "before its head: {}", before_head.y);
+    // And from the flight, its side is rock to a body on it.
+    let (on_flight, _) = run(&ground, middle(9, 6), -1.0, Side::East, 120);
+    assert!((on_flight.x - (10.0 * CELL_M - TUNING.radius)).abs() < TICK_RUN, "on it: {}", on_flight.x);
+    let [x, y] = middle(10, 6);
+    assert!(!ground.clear_between(middle(10, 6), middle(9, 6), 0.0, 0), "a line from beside it onto it");
+    assert!(!ground.clear_between([x, y], [10.0 * CELL_M + 0.1, y], TUNING.radius, 0), "a line beside its side");
+    // From its own landings a flight is open still.
+    assert!(ground.clear_between(middle(9, 5), middle(9, 6), TUNING.radius, 0));
+    assert!(ground.clear_between(middle(9, 10), middle(9, 9), TUNING.radius, 1));
+}
+
+#[test]
+fn a_column_open_only_on_a_lower_storey_is_capped_from_its_ceiling_to_a_walls_height_over_the_top_storey() {
+    let ground = ground();
+    let slabs = ground.slabs();
+    let over = |column: usize, row: usize| {
+        let [x, y] = middle(column, row);
+        let holds = |slab: &&movement::Block| slab.min_x < x && x < slab.max_x && slab.min_y < y && y < slab.max_y;
+        slabs.iter().filter(holds).map(|slab| (slab.bottom, slab.top)).collect::<Vec<_>>()
+    };
+    let wall_top = dungeon::storey_floor(0) + WALL_RISE_M;
+    assert_eq!(over(3, 6), vec![(-4.0, wall_top)], "rock over room 2 alone");
+    assert_eq!(over(3, 4), vec![(-4.0, 0.0)], "the slab under room 0 and nothing over it");
+    assert_eq!(over(3, 2), Vec::<(f64, f64)>::new(), "room 0 alone, open over it as a line is");
+    let flight = over(9, 7);
+    assert_eq!(flight.len(), 1);
+    assert_eq!(flight[0].1, wall_top, "over the flight's ceiling");
+}
+
+#[test]
+fn a_line_high_in_a_tall_lower_room_is_walled_by_its_own_storeys_rock_alone() {
+    let mut laid = two_storeys();
+    let lower: Vec<usize> = laid.rooms[2].cells.clone();
+    lower.iter().for_each(|&cell| laid.ceilings[cell] = 5.6);
+    let ground = DungeonGround::of(&laid).unwrap();
+    // 4.4 m over the lower floor, nearer the top storey's floor, under the top storey's rock.
+    let ([x, from_y], [_, to_y]) = (middle(3, 5), middle(3, 7));
+    assert!(!ground.line_walled([x, from_y, -3.6], [x, to_y, -3.6]), "open across the lower room");
+}
