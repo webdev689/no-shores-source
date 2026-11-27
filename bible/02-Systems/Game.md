@@ -421,8 +421,9 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   says ("Encounters", "In the Game"), from the layout's plan and each snapshot's `encounter`, held with the cache
   (`heardRun`).
 - **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives left", "1
-  revive left", "No revives left"), and with "Darkness zone" while the darkness holds the player (lying in the Court
-  while its Boss stands, or no revive left; [[Revives]]). When the room says this player's company fell (`Wiped`,
+  revive left", "No revives left"), with "Darkness zone" while the darkness holds the player (lying in the Court
+  while its Boss stands, or no revive left; [[Revives]]), and last with the chests found of those the run stands
+  ("Chests 2 of 5", from the player's gear). When the room says this player's company fell (`Wiped`,
   `heardRun`), the page takes them out by the way they came in, even with the menu open, the veil saying "Your company
   fell. Leaving" the dungeon: before its entrance, or from a sea island's back to the sea.
 

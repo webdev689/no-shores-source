@@ -2,7 +2,9 @@
 // dungeon inked on parchment. It keeps the dungeon's reveal as the player walks, opened or not, and each dungeon's view
 // and reveal in the browser's storage. Its keys turn and tilt it, lay the plan, zoom and pan, and step the storey it is
 // cut over or show them all; a drag pans and a right drag turns, and the wheel zooms at the pointer.
+import { placedLandmarks } from '../dungeonLandmarks.ts';
 import { type DungeonLayout, SIDE_STEPS } from '../dungeonLayout.ts';
+import { landmarkStoreys } from '../dungeonStoreyPlanes.ts';
 import {
   dragTurn,
   eased,
@@ -16,9 +18,9 @@ import {
   turned,
   zoomedAt,
 } from './mapCamera.ts';
-import { readKept, writeKept } from './mapKept.ts';
+import { layoutPrint, readKept, writeKept } from './mapKept.ts';
 import { Reveal } from './mapReveal.ts';
-import { cellIndex, kindAt, storeyOfHeight, type Storeys, readStoreys } from './mapStoreys.ts';
+import { cellIndex, kindAt, readStoreys, storeyOfFeet, type Storeys } from './mapStoreys.ts';
 
 type Point = readonly [number, number, number];
 type Size = { readonly width: number; readonly height: number };
@@ -30,6 +32,8 @@ const KEEP_EVERY_S = 3;
 const NAME_PX = 14;
 /** How far into its room the portal's mark stands from the wall it is on (m), so it reads as in the room. */
 const PORTAL_IN_M = 1;
+/** How many times any dungeon's words for the ink have been laid: each laying's version. */
+let wordsLaid = 0;
 
 /** Someone on the map: where they stand, which way they face (radians clockwise from north) and their name. */
 export interface MapBody {
@@ -64,43 +68,53 @@ export interface MapShown {
 /** One dungeon's map, from going in to coming out. */
 class Walked {
   readonly key: string;
+  readonly print: string;
   readonly layout: DungeonLayout;
   readonly storeys: Storeys;
   readonly reveal: Reveal;
   view: MapView | null;
   words: Uint32Array;
+  version = 0;
+  /** Each landmark's cells, by their storey-major index. */
+  private readonly landmarks = new Set<number>();
   /** Cells found since the ink's words were last laid, and since the reveal was last kept. */
   changed = true;
   unkept = false;
   sinceKept = 0;
 
   constructor(key: string, layout: DungeonLayout) {
-    const kept = readKept(key);
+    this.print = layoutPrint(layout);
+    const kept = readKept(key, this.print);
     this.key = key;
     this.layout = layout;
     this.storeys = readStoreys(layout);
+    const storeyOf = landmarkStoreys(layout);
+    placedLandmarks(layout).forEach((landmark, index) => {
+      for (const cell of landmark.cells) this.landmarks.add((storeyOf[index] ?? 0) * this.storeys.plane + cell);
+    });
     this.reveal = new Reveal(layout, this.storeys, kept?.cells ?? []);
     this.view = kept?.view ?? null;
     this.words = new Uint32Array(this.storeys.count * this.storeys.plane);
   }
 
-  /** Each cell's word for the ink: 1 walked or seen, 2 a flight's. */
+  /** Each cell's word for the ink: 1 walked or seen, 2 a flight's, 4 a landmark's; laid again, a new version. */
   wordsNow(): Uint32Array {
     if (!this.changed) return this.words;
-    this.changed = false;
+    [this.changed, this.version] = [false, ++wordsLaid];
     const { layout, storeys } = this;
     for (let storey = 0; storey < storeys.count; storey++)
       for (let row = 0; row < layout.rows; row++)
         for (let column = 0; column < layout.columns; column++) {
           const index = cellIndex(layout, storey, column, row);
           const flight = kindAt(layout, storeys, storey, column, row) === 'stair' ? 2 : 0;
-          this.words[index] = (this.reveal.cells.has(index) ? 1 : 0) | flight;
+          const landmark = this.landmarks.has(index) ? 4 : 0;
+          this.words[index] = (this.reveal.cells.has(index) ? 1 : 0) | flight | landmark;
         }
     return this.words;
   }
 
   keep(): void {
-    writeKept(this.key, { view: this.view, cells: [...this.reveal.cells] });
+    writeKept(this.key, { view: this.view, cells: [...this.reveal.cells], print: this.print });
     this.sinceKept = 0;
     this.unkept = false;
   }
@@ -123,10 +137,17 @@ export class DungeonMap {
     return this.up && this.walked !== null;
   }
 
-  /** The dungeon being walked, for the ink. */
-  get dungeon(): { readonly layout: DungeonLayout; readonly words: Uint32Array; readonly storeys: Storeys } | null {
+  /** The dungeon being walked, for the ink: its words and the version they were laid at. */
+  get dungeon(): {
+    readonly layout: DungeonLayout;
+    readonly words: Uint32Array;
+    readonly version: number;
+    readonly storeys: Storeys;
+  } | null {
     const walked = this.walked;
-    return walked && { layout: walked.layout, words: walked.wordsNow(), storeys: walked.storeys };
+    if (!walked) return null;
+    const words = walked.wordsNow();
+    return { layout: walked.layout, words, version: walked.version, storeys: walked.storeys };
   }
 
   /** Walks the dungeon `key` from now on; another dungeon's map is kept and let go. */
@@ -162,9 +183,11 @@ export class DungeonMap {
     [this.up, this.beforePlan] = [true, null];
     this.pointerUp();
     const feet = this.player?.feet ?? [0, 0, 0];
-    this.storey = storeyOfHeight(walked.storeys, feet[2]);
+    this.storey = storeyOfFeet(walked.layout, walked.storeys, feet);
     const floor = walked.storeys.floors[this.storey] ?? 0;
-    const explored = [...walked.reveal.cells].map((index) => this.middleOf(index));
+    // What the cut shows: the storey looked at and those under it, or every storey.
+    const shows = (index: number) => this.every || Math.floor(index / walked.storeys.plane) >= this.storey;
+    const explored = [...walked.reveal.cells].filter(shows).map((index) => this.middleOf(index));
     const rest = restView(explored, [feet[0], feet[1], floor], this.paper, {
       yaw: ORBIT.yawRest,
       pitch: ORBIT.pitchRest,
@@ -206,7 +229,7 @@ export class DungeonMap {
     const walked = this.walked;
     const feet = this.player?.feet;
     if (!walked || !feet || !this.goal) return;
-    this.storey = storeyOfHeight(walked.storeys, feet[2]);
+    this.storey = storeyOfFeet(walked.layout, walked.storeys, feet);
     this.goal = { ...this.goal, centre: [feet[0], feet[1], walked.storeys.floors[this.storey] ?? 0] };
   }
 
@@ -271,15 +294,15 @@ export class DungeonMap {
     this.shown = eased(this.shown, this.goal, seconds);
     const view = this.shown;
     const { layout, storeys } = walked;
-    const playerStorey = storeyOfHeight(storeys, this.player?.feet[2] ?? 0);
+    const playerStorey = storeyOfFeet(layout, storeys, this.player?.feet ?? [0, 0, 0]);
     const marks: PaperMark[] = [];
     const seen = (point: Point) => {
-      const storey = storeyOfHeight(storeys, point[2]);
+      const storey = storeyOfFeet(layout, storeys, point);
       const [column, row] = [Math.floor(point[0] / layout.cell), Math.floor(point[1] / layout.cell)];
       return walked.reveal.cells.has(cellIndex(layout, storey, column, row));
     };
     const place = (kind: PaperMark['kind'], point: Point, facing: number, name: string) => {
-      const storey = storeyOfHeight(storeys, point[2]);
+      const storey = storeyOfFeet(layout, storeys, point);
       const [across, down] = toPaper(view, point);
       const [aheadU, aheadV] = toPaper(view, [point[0] + Math.sin(facing), point[1] - Math.cos(facing), point[2]]);
       const [x, y] = [across + paper.width / 2, down + paper.height / 2];
@@ -298,9 +321,10 @@ export class DungeonMap {
     ];
     if (seen(portal)) place('portal', portal, 0, 'The return portal');
     for (const stair of storeys.stairs) {
-      const middle = this.middleOf(stair.upper * storeys.plane + (stair.cells[1] ?? 0));
-      const point: Point = [middle[0], middle[1], floorOf(stair.upper)];
+      // Marked on the storey looked at: from over, near its head on the upper floor; from under, near its foot.
       const down = this.storey <= stair.upper;
+      const [storey, cell] = down ? [stair.upper, stair.cells[1]] : [stair.upper + 1, stair.cells[2]];
+      const point = this.middleOf(storey * storeys.plane + (cell ?? 0));
       const words = down ? `Stairs down to storey ${stair.upper + 2}` : `Stairs up to storey ${stair.upper + 1}`;
       if (seen(point)) place('stairs', point, 0, words);
     }

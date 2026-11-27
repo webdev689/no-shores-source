@@ -56,7 +56,7 @@ function onStorey<T>(layout: DungeonLayout, list: readonly T[], storey: number, 
 }
 
 /** Each landmark's storey: its first solid's, the landmarks' solids ending the boxes in the landmarks' order. */
-function landmarkStoreys(layout: DungeonLayout): number[] {
+export function landmarkStoreys(layout: DungeonLayout): number[] {
   const counts = placedLandmarks(layout).map((landmark) => landmark.solids.length);
   let first = layout.boxes.length - counts.reduce((sum, count) => sum + count, 0);
   return counts.map((count) => {
