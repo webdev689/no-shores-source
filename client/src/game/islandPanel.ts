@@ -338,11 +338,11 @@ function drawSlotChart(
     // its coast.
     const extent = (values: readonly number[]) => Math.max(...values) - Math.min(...values);
     const middleOf = (values: readonly number[]) => (Math.max(...values) + Math.min(...values)) / 2;
-    const [xs, ys] = [entry.slots.map((slot) => slot.at[0]), entry.slots.map((slot) => slot.at[1])];
-    const middle = [middleOf(xs), middleOf(ys)] as const;
-    const span = Math.max(20_000, extent(xs) * 4, (extent(ys) * 4 * width) / height);
+    const [eastings, southings] = [entry.slots.map((slot) => slot.at[0]), entry.slots.map((slot) => slot.at[1])];
+    const middle = [middleOf(eastings), middleOf(southings)] as const;
+    const span = Math.max(20_000, extent(eastings) * 4, (extent(southings) * 4 * width) / height);
     const scale = width / span;
-    const at = ([x, y]: Point2): [number, number] => [
+    const onChart = ([x, y]: Point2): [number, number] => [
       width / 2 + (x - middle[0]) * scale,
       height / 2 + (y - middle[1]) * scale,
     ];
@@ -350,7 +350,7 @@ function drawSlotChart(
     context.fillRect(0, 0, width, height);
     if (outline.length > 2) {
       context.beginPath();
-      outline.forEach((point, place) => context[place ? 'lineTo' : 'moveTo'](...at(point)));
+      outline.forEach((point, place) => context[place ? 'lineTo' : 'moveTo'](...onChart(point)));
       context.closePath();
       context.fillStyle = CHART.land;
       context.fill();
@@ -359,7 +359,7 @@ function drawSlotChart(
       context.stroke();
     }
     for (const slot of entry.slots) {
-      const [x, y] = at(slot.at);
+      const [x, y] = onChart(slot.at);
       context.beginPath();
       context.arc(x, y, slot === lit ? 5 : 3.5, 0, Math.PI * 2);
       context.fillStyle = slot.ours ? CHART.ours : slot === lit ? CHART.lit : CHART.slot;

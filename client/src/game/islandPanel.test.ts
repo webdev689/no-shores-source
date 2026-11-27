@@ -647,11 +647,11 @@ test('the Outposts tile opens its region’s slots, each a card with its name, i
   assert.equal(new Set(charts.map((each) => each.node.picture?.key)).size, 3, 'each its own slot lit');
   const card = ui.boxOf('outposts:salt-hythe');
   assert.ok(card);
-  const on = { x: card.x + 8, y: card.y + 8 };
+  const inside = { x: card.x + 8, y: card.y + 8 };
   step(root, [
-    { kind: 'pointer', ...on },
-    { kind: 'down', ...on, button: 0 },
-    { kind: 'up', ...on, button: 0 },
+    { kind: 'pointer', ...inside },
+    { kind: 'down', ...inside, button: 0 },
+    { kind: 'up', ...inside, button: 0 },
   ]);
   assert.deepEqual(done, ['land salt-hythe'], 'choosing one lands there');
 });
