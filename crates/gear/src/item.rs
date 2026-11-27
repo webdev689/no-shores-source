@@ -252,6 +252,13 @@ impl Item {
         Some(self.stepped(start, most))
     }
 
+    /// Whether it is a Forged weapon, a Breach's Legendary won at Hard: its Attack climbs a level's past a Normal
+    /// one's, and its reach may pass the foe's level by that level (`power::by_weapon`).
+    #[must_use]
+    pub fn forged_weapon(&self) -> bool {
+        self.kind.weapon_grid() && self.rarity == Rarity::Legendary && self.breach && self.hard
+    }
+
     /// Its Prestige, if it is armour or a ship's module of level 20: a Rare 13 to 15, a Legendary 18 to 27 (a
     /// Breach's at Normal 19 to 28, at Hard 21 to 30), an Atheric 21 to 30, climbing by equal steps over its upgrades,
     /// however many its grid holds, so a module on a weapon's grid (the guns, five upgrades) carries no more than one

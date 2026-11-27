@@ -382,6 +382,35 @@ fn falling_back_a_fighting_group_runs_to_its_new_places_and_fights_on() {
 }
 
 #[test]
+fn a_foe_whose_group_gives_ground_to_a_place_off_its_ground_keeps_its_own_and_fights_on() {
+    // Dungeon "glade": its second group fights, its fallback laid far off the navmesh, where no route reaches.
+    let mut room = node(NodeKind::Dungeon, "glade");
+    let player = room.join().unwrap();
+    let at = room.garrison[1].at;
+    room.garrison[1].fallback = [at[0] + 500.0, at[1] + 500.0, at[2]];
+    provoke(&mut room, 1, player);
+    let homes: Vec<(FighterId, [f64; 3])> =
+        living(&room, 1).iter().map(|id| (*id, room.foes[id].brain.home().unwrap().at)).collect();
+    let stood: usize = room.garrison.iter().map(|post| post.standing.len()).sum();
+    let others: Vec<FighterId> = room.garrison.iter().skip(2).flat_map(|post| post.standing.clone()).collect();
+    let mut fallen = 0;
+    while (stood - fallen) * 4 > stood * 3 {
+        kill(&mut room, others[fallen]);
+        fallen += 1;
+    }
+    for _ in 0..120 {
+        whole(&mut room, player);
+        run(&mut room, 1);
+    }
+    assert_eq!(room.encounter.as_ref().unwrap().stage, Stage::Fallback);
+    for (id, home) in homes {
+        let brain = &room.foes[&id].brain;
+        assert_eq!(brain.home().unwrap().at, home, "its own place kept");
+        assert_eq!(brain.fights(), Some(player), "and it fights on");
+    }
+}
+
+#[test]
 fn a_mission_falling_straight_to_its_last_stand_calls_both_its_waves() {
     let mut room = node(NodeKind::Mission, "keep");
     let player = room.join().unwrap();

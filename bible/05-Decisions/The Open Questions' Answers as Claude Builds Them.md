@@ -46,7 +46,7 @@ From [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]
 | Going over from an angled hang | Square to the lip's face | Lands as from a square hold |
 | An old save's Ranged weapon | Owed free at the Weaponsmith's counter, once | As her gift is given |
 | House pieces | May drop from every source but a faction's | "Dungeons too", all four kinds |
-| A Forged weapon's climb | 263 to 315 Attack, a level's more at each end than Normal's | As Hard's armour reaches the level past Normal's |
+| A Forged weapon's climb | 263 to 315 Attack, a level's more at each end than Normal's; its reach may stand that level past the foe's, so it strikes a level harder than a Normal one even on Hard's level 30 foes | As Hard's armour reaches the level past Normal's; asked whether it should out-hit a Normal one there: "Yes, make it count" |
 
 ## The patrol zones' folk and the arrivals' sounds
 

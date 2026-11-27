@@ -358,11 +358,12 @@ impl Captain {
         }
     }
 
-    /// A chase marked: it gives it up, sparing its quarry, after `CHASE_GIVE_UP_S` in which it neither fired (`aim`)
-    /// nor, out of the fight's range, closed by a tenth: so a ship that sails away gets clear, by its way or by keeping
-    /// its stern to the captain.
+    /// A chase marked: it gives it up, sparing its quarry, after `CHASE_GIVE_UP_S` in which it neither fired (`aim`),
+    /// was struck by its quarry within `PROVOKED_S` nor, out of the fight's range, closed by a tenth: so a ship that
+    /// sails away gets clear, by its way or by keeping its stern to the captain, but never one that strikes and runs.
     fn chase_on(&mut self, apart: f64, quarry: ShipId) -> bool {
         let clock = self.clock;
+        let struck = self.provoked_by(quarry);
         let chase = self.chase.get_or_insert_with(|| Chase { since: clock, marks: Vec::new() });
         if chase.marks.last().is_none_or(|mark| clock - mark[0] >= CHASE_MARK_S) {
             chase.marks.push([clock, apart]);
@@ -372,7 +373,7 @@ impl Captain {
         }
         let far = chase.marks.iter().fold(apart, |most, mark| most.max(mark[1]));
         // Close by, a ship weaving at its stern opens and closes the range by more than a tenth: only a volley counts.
-        if apart < far * (1.0 - CHASE_GAIN) && apart > self.build.range_m * CLOSE_FROM {
+        if struck || (apart < far * (1.0 - CHASE_GAIN) && apart > self.build.range_m * CLOSE_FROM) {
             chase.since = clock;
         }
         if clock - chase.since > CHASE_GIVE_UP_S {

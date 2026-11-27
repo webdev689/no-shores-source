@@ -155,6 +155,21 @@ fn a_chase_close_by_that_brings_no_side_to_bear_for_150_seconds_is_given_up_till
 }
 
 #[test]
+fn a_chase_of_a_player_that_struck_it_is_kept_while_it_is_provoked_and_given_up_150_seconds_on() {
+    let deck = Deck::new();
+    let mut mind = captain(Temper::Bold);
+    let astern = player_at(0.0, 60.0);
+    mind.provoke(0);
+    let mut ticks = 0;
+    while mind.mode == Mode::Engage || ticks == 0 {
+        steer_against(&mut mind, &deck, &astern, 0.5);
+        ticks += 1;
+        assert!(ticks < 1000, "it never gave up");
+    }
+    assert!((900..=904).contains(&ticks), "struck, it chases until 150 s after its blow is forgotten: {ticks}");
+}
+
+#[test]
 fn a_chase_whose_guns_fire_is_kept_however_long_it_gains_nothing() {
     let mut deck = Deck::new();
     let mut mind = captain(Temper::Bold);

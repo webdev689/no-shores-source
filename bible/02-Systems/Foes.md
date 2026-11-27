@@ -207,7 +207,7 @@ strikes ([[Public Events]]).
   - **Falling back**, as its group's places move to where it gives ground, a foe fighting gives its turn up and runs
     there by the room's routes, its target and its awareness kept, striking nothing on the way (a wind-up of its own
     it finishes first), and fights again once within 1 m of its place. A place its routes do not reach from where it
-    stands it never runs for: it fights on where it is.
+    stands it is never given: it keeps the one it had, so it fights on where it is and is leashed to that.
   - **Screened**, a leader waits a ring farther out than its place in the line, right behind the shield-bearer of its
     screen its group names, if any, taking no turn, waiting in no line for one and never flanking, so the first of its
     followers to have waited goes in; walked in on, it fights back where it stands. **Going in**, its screen gone, it

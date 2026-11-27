@@ -54,18 +54,21 @@ fn go_over<B: Near + ?Sized>(
     let (direction_x, direction_y) = (libm::sin(bearing), -libm::cos(bearing));
     let rise = ahead.block.top - body.z;
     let onto = TUNING.radius + 0.3;
-    if !room_to_stand(blocks, body.x + direction_x * onto, body.y + direction_y * onto, ahead.block.top) {
+    let (onto_x, onto_y) = (body.x + direction_x * onto, body.y + direction_y * onto);
+    let (onto_x, onto_y) =
+        if vault { (onto_x, onto_y) } else { on_top(blocks, terrain, body, &ahead.block, onto_x, onto_y) };
+    if !room_to_stand(blocks, onto_x, onto_y, ahead.block.top) {
         return None;
     }
     let reach_over = if vault { clearing(&ahead.block, body, direction_x, direction_y) + 0.2 } else { onto };
     if vault && !room_to_stand(blocks, body.x + direction_x * reach_over, body.y + direction_y * reach_over, body.z) {
         return None;
     }
-    let to = [
-        body.x + direction_x * reach_over,
-        body.y + direction_y * reach_over,
-        if vault { body.z } else { ahead.block.top },
-    ];
+    let to = if vault {
+        [body.x + direction_x * reach_over, body.y + direction_y * reach_over, body.z]
+    } else {
+        [onto_x, onto_y, ahead.block.top]
+    };
     if terrain.walled_at((body.x, body.y), (to[0], to[1]), body.z) {
         return None;
     }
@@ -81,6 +84,20 @@ fn go_over<B: Near + ?Sized>(
         facing: bearing,
         ..*body
     })
+}
+
+/// Where a mantle over `lip` lands: at (`x`, `y`), or, where no top within a step of the lip lies under that point but
+/// one does at the nearest point of the lip's run along its face, as past the lip's end for a hold taken slantwise
+/// there, at that point.
+fn on_top<B: Near + ?Sized>(blocks: &B, terrain: &dyn Terrain, body: &Body, lip: &Block, x: f64, y: f64) -> (f64, f64) {
+    let on = |(x, y): (f64, f64)| ground_at(blocks, terrain, x, y, lip.top) >= lip.top - TUNING.step;
+    let square = square_into(lip, body);
+    let along = if square == 0.0 || square == PI {
+        (x.clamp(lip.min_x, lip.max_x), y)
+    } else {
+        (x, y.clamp(lip.min_y, lip.max_y))
+    };
+    if on((x, y)) || !on(along) { (x, y) } else { along }
 }
 
 /// How far a body goes along (`direction_x`, `direction_y`) before its radius clears the block's far side, head on or
@@ -218,9 +235,11 @@ fn on_wall<B: Near + ?Sized>(
     let pace = if climbing { TUNING.climb } else { TUNING.shimmy };
     let along = controls.sideways * pace * seconds;
     let moved = Body { x: body.x + along_x * along, y: body.y + along_y * along, ..*body };
-    // Off the end of the block there is nothing to hold, into a block beside it no room, and past the terrain's wall (a
-    // rim round a course laid over the sea) nowhere to be.
+    // Off the end of the block there is nothing to hold, square to it or as caught, so a shimmy never rounds its
+    // corner; into a block beside it no room, and past the terrain's wall (a rim round a course laid over the sea)
+    // nowhere to be.
     let holds = wall_ahead(blocks, &moved, body.facing).is_some()
+        && wall_ahead(blocks, &moved, square).is_some()
         && room_at(blocks, moved.x, moved.y, body.z, body.height())
         && !terrain.walled_at((body.x, body.y), (moved.x, moved.y), body.z);
     let (x, y) = if holds { (moved.x, moved.y) } else { (body.x, body.y) };

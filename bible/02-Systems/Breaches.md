@@ -150,7 +150,9 @@ alone:
   ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]; [[Gear]], "The Breaches' perks"). Normal's weapons
   never carry an element and the Forged always do
   ([[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]). The Forged climb further too, as
-  Hard's armour does: a Normal weapon's Attack 248 to 300 as any Legendary's, a Forged one's 263 to 315 ([[Gear]]).
+  Hard's armour does: a Normal weapon's Attack 248 to 300 as any Legendary's, a Forged one's 263 to 315, and a
+  Forged one's blow is a level harder than a Normal one's even on Hard's level 30 foes, whose level caps a Normal
+  one's reach ([[Gear]]).
 - **The Steward's first clear ever** keeps the banner, the emblem The Drowned Vale; by chance the dye Drowned Vale
   (1 in 5 at Normal, 1 in 3 at Hard) and the horse barding Drowned (1 in 20, 1 in 8), each once.
 - **Hidden chests** pay Essence once a week; every find keeps its lore chapter of the book *Soundings* ([[Lore]]).

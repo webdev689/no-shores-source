@@ -442,14 +442,14 @@ will take it, by the room's own tick.
 - **Travelling aboard a company member's ship** (`room::sea::passengers`, `aboard.ts`). A join to the sea naming a
   username (`?aboard=<username>`) asks the room, as the player joins and before their character comes, to let them
   travel aboard that player's ship (`room_ask_aboard`): the sea's gate then takes them with no ship of their own
-  (`Sea::shut_to`), and their own, if they keep one, is not put to sea, staying where it was kept. Once the accounts
-  say whose character it is, the room asks them the player's company (`companions`) and boards them on the ship of the
-  player of that username whose account is of it, at sea here and aboard no one else's (`room_board`); with none, the
-  player is sent away saying "Their ship is not at sea.". Aboard, they set no course (refused as off the helm) and
-  take no helm. Each snapshot sends them what their captain is sent: the ships and hostile ships within their
-  captain's sight, the captain's ship under the passenger's own number with its looks, and no plate over it; their
-  own flotsam, word and gear stay theirs. A passenger gets off by leaving the sea, and is let off as their captain
-  leaves it, told so (`LET_OFF`, 25).
+  (`Sea::shut_to`), and their own, if they keep one, is not put to sea, staying where it was kept, parked or not. Once
+  the accounts say whose character it is, the room asks them the player's company (`companions`) and boards them on the
+  ship of the player of that username whose account is of it, at sea here and aboard no one else's (`room_board`); with
+  none, the player is sent away saying "Their ship is not at sea.". Aboard, they set no course (refused as off the helm)
+  and take no helm. Each snapshot sends them what their captain is sent: the ships and hostile ships within their
+  captain's sight, the captain's ship under the passenger's own number with its looks, and no plate over it; their own
+  flotsam, word and gear stay theirs. A passenger gets off by leaving the sea, and is let off as their captain leaves
+  it, told so (`LET_OFF`, 25); let off, they still set no course and put no ship to sea until they leave.
 
 ## A fleet
 

@@ -60,3 +60,18 @@ fn the_gate_takes_one_who_travels_aboard_with_no_ship_and_leaves_their_own_where
     sea.tick();
     assert!(sea.ships().all(|(each, _)| each != ann), "her own ship stays where it lies");
 }
+
+#[test]
+fn a_passenger_let_off_sets_no_course_and_puts_no_ship_of_theirs_to_sea() {
+    let mut sea = sea();
+    let ann = sailing(&mut sea, "ann", "Ann");
+    let bea = sea.join();
+    assert!(sea.ask_aboard(bea) && sea.own(bea, "bea"));
+    assert_eq!(sea.go_aboard(bea, "Ann", &["ann", "bea"]), Ok(ann));
+    sea.leave(ann);
+    sea.tick();
+    let course = sea.course_anywhere(bea, &[[80_000.0, 150_000.0]], 10);
+    assert_eq!(course, Err(CourseRefused::OffTheHelm), "let off, she still sails no ship of her own here");
+    sea.tick();
+    assert!(sea.ships().all(|(each, _)| each != bea), "no ship of hers put to sea");
+}

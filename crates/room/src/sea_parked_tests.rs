@@ -144,6 +144,22 @@ fn a_player_back_at_sea_has_their_ship_again_and_it_lies_parked_no_more() {
 }
 
 #[test]
+fn a_ship_lies_parked_through_its_players_trip_aboard_anothers() {
+    let mut sea = sea();
+    left_at(&mut sea, "bea", OFF_COAST);
+    let ann = sea.join();
+    assert!(sea.own(ann, "ann") && sea.name_player(ann, "Ann"));
+    sea.course_anywhere(ann, &[FAR_OUT], 10).unwrap();
+    sea.tick();
+    let bea = sea.join();
+    assert!(sea.ask_aboard(bea) && sea.own(bea, "bea"));
+    assert_eq!(sea.go_aboard(bea, "Ann", &["ann", "bea"]), Ok(ann));
+    assert!(sea.parked.by_account.contains_key("bea"), "her own ship lies where she left it");
+    sea.leave(bea);
+    assert!(sea.parked.by_account.contains_key("bea"), "and lies parked still once she leaves");
+}
+
+#[test]
 fn a_sea_islands_room_holds_it_and_is_answered_with_the_ships_lying_off_it() {
     let text = r#"{ "continents": [{ "id": "continent-4", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);

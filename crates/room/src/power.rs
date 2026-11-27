@@ -185,7 +185,8 @@ impl Room {
     pub(crate) fn empower_as(&self, blow: Blow, defender: FighterId, held: Option<Loosed>) -> Blow {
         let times = match (held, self.players.get(&blow.striker), self.foes.get(&defender)) {
             (Some(held), Some(striker), Some(foe)) => {
-                gear::power::by_player(held.attack, striker.character.level(), foe.level)
+                let forged = held.item.and_then(|id| striker.character.item(id)).is_some_and(gear::Item::forged_weapon);
+                gear::power::by_weapon(held.attack, forged, striker.character.level(), foe.level)
                     * PLAYER_HARM
                     * self.test_harm()
             }

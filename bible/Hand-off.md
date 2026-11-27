@@ -116,6 +116,9 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   Overlook; a Breach checkpoint moved less than a second before its last player leaves may not be stored. Its new
   questions for the owner are in [[Open Questions]]. Not yet seen in a running game, on a real GPU or in a deployed
   room: all of it, the sign-in limit's Cloudflare binding and a run's storage alarm among it.
+- **A Breach space's paths after its seal opens**: a space's navmesh is baked as it is first reached and never again,
+  so no foe paths through a seal opened since, in a run restored or not (found by #234's audit, as it was before it).
+  Baking a space again as its seal opens would change how foes move: the owner's to say.
 - **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
   third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
   a walk through a three-storey dungeon and its vault. Headless pictures of three (`dungeon-plan.ts`) were taken before
