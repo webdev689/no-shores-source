@@ -16,15 +16,8 @@ import type { ArrivalSeen } from '../network/arrivalMessages.ts';
 import type { PublicEvent } from '../network/publicMessages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { CombatRules, Fired, Glanced } from '../rules/combatRules.ts';
-import {
-  BODY_FLOATS,
-  type Body,
-  type Controls,
-  type MovementRules,
-  bodyOf,
-  floatsOfControls,
-} from '../rules/movementRules.ts';
-import { type FighterView, fighterView, glanceFrom, glanceView, trimmed } from '../rules/fighters.ts';
+import { BODY_FLOATS, type Body, type Controls, type MovementRules, bodyOf } from '../rules/movementRules.ts';
+import { type FighterView, fighterView, glanceFrom, glanceView, intentOf, trimmed } from '../rules/fighters.ts';
 import type { AbilityState } from './abilityBar.ts';
 import { type AimRing, abilitiesAt } from './casting.ts';
 import { EVENT } from './cues.ts';
@@ -99,8 +92,6 @@ export interface FightButtons {
   readonly guardPressed?: boolean;
 }
 
-/** The fight's numbers of an intent that fights not at all: no stroke, guard, dodge, shot, pitch or aim, no mark. */
-const STILL_FIGHT = [0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN] as const;
 const NO_BUTTONS: FightButtons = { swing: false, shoot: false, guard: false, dodge: false, pitch: 0 };
 
 /**
@@ -385,17 +376,16 @@ export class Fighting {
     const swing = this.latches.swing.tick(this.buttons.swing);
     // A swing asked takes the chain's next stroke that reaches from here, its first after a rest.
     if (swing) this.stroke = this.next();
-    const intent = new Float64Array([
-      ...floatsOfControls(controls),
-      swing ? this.stroke : 0,
-      this.latches.guard.tick(this.buttons.guard) ? 1 : 0,
-      this.latches.dodge.tick(false) ? 1 : 0,
-      this.latches.shoot.tick(this.buttons.shoot) ? 1 : 0,
+    const intent = intentOf(controls, {
+      stroke: swing ? this.stroke : 0,
+      guard: this.latches.guard.tick(this.buttons.guard),
+      dodge: this.latches.dodge.tick(false),
+      shoot: this.latches.shoot.tick(this.buttons.shoot),
       pitch,
-      this.buttons.aim ? 1 : 0,
-      ...(this.buttons.mark ?? [Number.NaN, Number.NaN, Number.NaN]),
-      this.latches.heal.tick(false) ? 1 : 0,
-    ]);
+      aim: this.buttons.aim,
+      mark: this.buttons.mark,
+      heal: this.latches.heal.tick(false),
+    });
     const dress = this.dressToSend();
     const view = this.view;
     // Arms the room would not let the player take up are bare hands, as the room makes them.
@@ -470,7 +460,7 @@ export class Fighting {
     const body = bodyOf(Array.from(fighter.subarray(0, BODY_FLOATS)));
     const holding = body.mode === 'hang' || body.mode === 'climb';
     const controls = { forward: 0, sideways: 0, yaw: body.facing, run: false, jump: false, crouch: holding };
-    const intent = new Float64Array([...floatsOfControls({ ...controls, mounted: false }), ...STILL_FIGHT]);
+    const intent = intentOf({ ...controls, mounted: false });
     return this.rules.predict(fighter, intent, this.player, fighter[ARMS_AT] ?? 0, view).fighter;
   }
 
