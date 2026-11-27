@@ -412,6 +412,14 @@ function storeyMesh(mesh: MeshBuilder, layout: DungeonLayout, kitted: Kitted, { 
   const arched = new Set([portalCell * 4 + layout.portal.side, layout.wayIn.cell * 4 + layout.wayIn.side]);
   const arch: FlatSpan = { from: cell / 2 - ARCH_M.half, to: cell / 2 + ARCH_M.half, top: ARCH_M.top };
   const flatsOf = (key: number) => [...(kitted.flats.get(key) ?? []), ...(arched.has(key) ? [arch] : [])];
+  // Each doorway's frame top by its edge, from either side (`cell * 4 + side`): over a curved ceiling the edge is
+  // closed from there, so a frame between two caves meets the rock over it.
+  const frameTops = new Map<number, number>();
+  for (const [frameCell, side, top] of layout.frames) {
+    const [east, south] = SIDE_STEPS[side] ?? [0, 0];
+    frameTops.set(frameCell * 4 + side, top);
+    frameTops.set((frameCell + south * columns + east) * 4 + ((side + 2) % 4), top);
+  }
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
       const index = row * columns + column;
@@ -455,7 +463,9 @@ function storeyMesh(mesh: MeshBuilder, layout: DungeonLayout, kitted: Kitted, { 
           if (lower < ceiling) wall(mesh, look, where, [lower, ceiling], { ...trims, foot: false });
           return;
         }
-        closeEdge(mesh, [look.set, look.wall], { ...edge, top: ceiling }, heightOf(next), height);
+        const framed = frameTops.get(index * 4 + side);
+        const low = framed === undefined ? heightOf(next) : () => framed;
+        closeEdge(mesh, [look.set, look.wall], { ...edge, top: ceiling }, low, height);
       });
     }
   layout.frames.forEach(([frameCell, , height], index) => {

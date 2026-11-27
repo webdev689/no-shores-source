@@ -244,3 +244,37 @@ test("where its kit pieces stand, the mesh leaves out the pillars, the brackets 
   assert.equal(jambs(dressed).length, jambs(plain).length, 'the jambs');
   assert.equal(count(dressed, '123.2'), count(plain, '123.2') - 2, "a landmark's cell lays no code-built floor");
 });
+
+test("a cave's doorway is closed over its frame up to the rough rock on both sides, leaving no gap to the roof", () => {
+  const caverns = { style: 'caverns', pictures: [120, 119] } as const;
+  const cave: DungeonLayout = {
+    ...layout,
+    style: 'caverns',
+    pictures: [120, 119],
+    looks: [caverns],
+    ceilings: [4.4, 3.2, 0],
+    rooms: layout.rooms.map((room) => ({ ...room, height: 4.4, ceiling: 'cave' })),
+  };
+  const shown = trianglesOf(dungeonMesh(cave, [56, 2]));
+  // Whether a face on the doorway's edge (x = 3.2), facing west into the room or east into the corridor, covers a
+  // point of it.
+  const covered = (y: number, z: number, facing: number) =>
+    shown.some(({ corners, normal }) => {
+      if (Math.sign(normal[0]) !== facing || !corners.every(([x]) => near(x, 3.2))) return false;
+      const [one, two, three] = corners.map(([, along, up]) => [along, up] as const) as [
+        readonly [number, number],
+        readonly [number, number],
+        readonly [number, number],
+      ];
+      const side = (from: readonly [number, number], to: readonly [number, number]) =>
+        (to[0] - from[0]) * (z - from[1]) - (to[1] - from[1]) * (y - from[0]);
+      const [first, second, third] = [side(one, two), side(two, three), side(three, one)];
+      return (first >= -EPS && second >= -EPS && third >= -EPS) || (first <= EPS && second <= EPS && third <= EPS);
+    });
+  // Over the frame's top (3.2 m) and under the corridor's lowest rough rock (3.45 m), over the opening and a jamb.
+  for (const y of [0.35, 1.6, 2.85])
+    for (const z of [3.25, 3.4]) {
+      assert.ok(covered(y, z, -1), `the room's side at ${y}, ${z}`);
+      assert.ok(covered(y, z, 1), `the corridor's side at ${y}, ${z}`);
+    }
+});
