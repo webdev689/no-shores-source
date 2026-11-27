@@ -117,3 +117,20 @@ test("the browser's password store keeps a sign-in and gives it back, and a brow
   await BROWSERS_SIGN_INS.keep({ id: 'Wren', password: 'hunter22' });
   assert.equal(await BROWSERS_SIGN_INS.kept(), null);
 });
+
+test('a sign-in the browser refuses as it makes it is not kept, and keeping it ends rather than failing', async () => {
+  class PasswordCredential {
+    constructor({ id }: { id: string }) {
+      if (!id) throw new TypeError('an empty id');
+    }
+  }
+  const credentials = { store: async () => undefined, get: async () => null };
+  Object.defineProperty(globalThis.navigator, 'credentials', { value: credentials, configurable: true });
+  Object.assign(globalThis, { PasswordCredential });
+  try {
+    await BROWSERS_SIGN_INS.keep({ id: '', password: 'hunter22' });
+  } finally {
+    delete (globalThis as { PasswordCredential?: unknown }).PasswordCredential;
+    Object.defineProperty(globalThis.navigator, 'credentials', { value: undefined, configurable: true });
+  }
+});

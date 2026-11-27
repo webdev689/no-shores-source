@@ -3,7 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { LocalRoom } from '../network/localRoom.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
-import { startCombatRules } from '../rules/combatRules.ts';
+import { type CombatRules, startCombatRules } from '../rules/combatRules.ts';
+import { INTENT_FLOATS } from '../rules/fighters.ts';
 import type { Body, MovementRules } from '../rules/movementRules.ts';
 import { Fighting } from './fighting.ts';
 
@@ -57,8 +58,18 @@ test('a body run off a ledge in a social space dies 6 m down, and the page predi
   const window = ground();
   let fight: Fighting | null = null;
   const room = LocalRoom.openNode(compiled, socialNode(window), (snapshot: Snapshot) => fight?.receive(snapshot));
-  const rules = startCombatRules(compiled);
-  assert.equal(rules.setGround(window), true);
+  const real = startCombatRules(compiled);
+  assert.equal(real.setGround(window), true);
+  // The length of each intent the page predicts by, alive and lying: the rules read INTENT_FLOATS numbers, and one
+  // short leaves its last numbers to whatever the call's buffer holds there.
+  const lengths = { alive: new Set<number>(), lying: new Set<number>() };
+  const rules: CombatRules = {
+    ...real,
+    predict: (fighter, intent, player, arms, view) => {
+      lengths[fight?.standing.kind === 'dead' ? 'lying' : 'alive'].add(intent.length);
+      return real.predict(fighter, intent, player, arms, view);
+    },
+  };
   const fighting = new Fighting(rules, room);
   fight = fighting;
   room.pump(TICK);
@@ -89,4 +100,6 @@ test('a body run off a ledge in a social space dies 6 m down, and the page predi
   assert.equal(fighting.standing.kind === 'dead' && fighting.standing.fell, true, 'still dead, by the fall');
   assert.ok(body.z < 1 && body.mode === 'ground', `it lies on the land below: ${body.z}`);
   assert.ok(body.y > 11, `run on past the edge as it fell, not held at it: ${body.y}`);
+  assert.deepEqual([...lengths.alive], [INTENT_FLOATS], 'each intent running has the numbers the rules read');
+  assert.deepEqual([...lengths.lying], [INTENT_FLOATS], 'and each intent lying');
 });

@@ -323,7 +323,11 @@ export function pageAway(start: Start, send: Send): Away {
           return;
         case 'qa': {
           const hook = global[message.hook] as ((...args: unknown[]) => unknown) | undefined;
-          void Promise.resolve(hook?.(...message.args)).then((answer) => send({ kind: 'qa', id: message.id, answer }));
+          const answered = (answer: unknown) => send({ kind: 'qa', id: message.id, answer });
+          // A hook that throws answers why, so the picture driver's step ends rather than waiting.
+          void new Promise((resolve) => resolve(hook?.(...message.args))).then(answered, (why: unknown) =>
+            answered(String(why)),
+          );
           return;
         }
         default:

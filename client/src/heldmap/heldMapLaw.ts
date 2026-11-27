@@ -136,6 +136,17 @@ export function toInk(view: View, x: number, y: number): readonly [number, numbe
   return [(x - view.left) * view.scale, (y - view.top) * view.scale];
 }
 
+/** The ship's arrow on the map `ink` wide and high, pixels from its top-left, heading as it does; null off the map. */
+export function shipOnSheet(
+  view: View,
+  ink: { readonly width: number; readonly height: number },
+  [east, south]: readonly [number, number],
+  heading: number,
+): { readonly x: number; readonly y: number; readonly heading: number } | null {
+  const [x, y] = toInk(view, east, south);
+  return x >= 0 && y >= 0 && x <= ink.width && y <= ink.height ? { x, y, heading } : null;
+}
+
 /** The world point under a point on the map, screen pixels from its top-left. */
 export function toWorld(view: View, inkX: number, inkY: number): readonly [number, number] {
   return [view.left + inkX / view.scale, view.top + inkY / view.scale];

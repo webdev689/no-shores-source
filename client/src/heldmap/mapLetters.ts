@@ -82,6 +82,22 @@ export interface IsleInk {
 export const COVE_HALF = 2.5;
 export const ISLE_HALF = 4;
 
+/** The found islands' marks on the map `ink` wide and high (`inkOf` the ink point of a world point), whole marks
+ *  only, `scale` times their units, to the quarter pixel. */
+export function isleInks(
+  isles: readonly { readonly at: readonly [number, number]; readonly isle: boolean }[],
+  inkOf: (x: number, y: number) => readonly [number, number],
+  ink: { readonly width: number; readonly height: number },
+  scale: number,
+): IsleInk[] {
+  const half = ISLE_HALF * scale;
+  return isles.flatMap((mark) => {
+    const [x, y] = inkOf(mark.at[0], mark.at[1]);
+    if (x < half || y < half || x > ink.width - half || y > ink.height - half) return [];
+    return [{ x: Math.round(x * 4) / 4, y: Math.round(y * 4) / 4, isle: mark.isle }];
+  });
+}
+
 /** A found island's mark at the origin, units, in the lighter ink: a cove a small ring; an isle a wider ring with a
  *  tower standing in it, crenellated at its top. */
 export function paintIsle(painter: Painter, isle: boolean): void {
@@ -293,20 +309,6 @@ export function dotInks(
     const [x, y] = inkOf(at[0], at[1]);
     const onSheet = x >= half && y >= half && x <= ink.width - half && y <= ink.height - half;
     return onSheet ? [{ x: Math.round(x * 4) / 4, y: Math.round(y * 4) / 4, company }] : [];
-  });
-}
-
-/** The found islands' marks on the sheet `ink` (`inkOf`), whole marks only, to the quarter pixel. */
-export function isleInks(
-  marks: readonly { readonly at: Point2; readonly isle: IsleInk['isle'] }[],
-  inkOf: (x: number, y: number) => readonly [number, number],
-  ink: { readonly width: number; readonly height: number },
-  half: number,
-): IsleInk[] {
-  return marks.flatMap(({ at, isle }) => {
-    const [x, y] = inkOf(at[0], at[1]);
-    const whole = x >= half && y >= half && x <= ink.width - half && y <= ink.height - half;
-    return whole ? [{ x: Math.round(x * 4) / 4, y: Math.round(y * 4) / 4, isle }] : [];
   });
 }
 
