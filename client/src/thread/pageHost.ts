@@ -23,6 +23,9 @@ import {
 const browsersOwn = (event: KeyboardEvent) =>
   event.ctrlKey || event.metaKey || event.altKey || /^F\d+$/.test(event.key);
 
+/** Whether `event` is a press or release of the mouse's back or forward side button. */
+const sideButton = (event: Event) => event instanceof MouseEvent && (event.button === 3 || event.button === 4);
+
 /** The desktop app's bridge, which its shell puts on the page before the page's own script; none in a browser. */
 const bridgeOf = (): DesktopBridge | null =>
   ((globalThis as unknown as Record<string, unknown>)[BRIDGE_NAME] as DesktopBridge | undefined) ?? null;
@@ -170,7 +173,8 @@ export class PageHost {
       // No key of the game's does the browser's own work (scroll, find, move the focus) unless words are typed.
       if (event.type === 'keydown' && !this.events.typingHere && !browsersOwn(event)) event.preventDefault();
     } else if (event.type === 'contextmenu' || event.type === 'wheel') event.preventDefault();
-    else if (locked && /^(mousedown|mouseup|auxclick)$/.test(event.type)) event.preventDefault();
+    // A side button is the game's with the pointer free too (`binds.ts`), so it never takes the page back or forward.
+    else if (/^(mousedown|mouseup|auxclick)$/.test(event.type) && (locked || sideButton(event))) event.preventDefault();
     this.flush();
     const fields = Object.fromEntries(
       EVENT_FIELDS.filter((field) => field in event).map((field) => [

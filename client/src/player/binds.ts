@@ -1,11 +1,10 @@
 // Every control the player binds: the keys and the pad's buttons each is on until the player binds it otherwise, and
 // where in the game it acts, so binding a key that another control there holds swaps the two. A key is
-// `KeyboardEvent.key` in lower case (a digit or a sign by its place on the row, so Shift's 2 is still 2 and its ','
-// still ','; a key that types a letter is that letter on any layout), the mouse's buttons
-// `mouse0` (left) to `mouse4` (the forward side button), bound only to a control that hears the mouse. The pad's are
-// the standard pad's, named as printed; a stick's ways ('LS up') are fixed, never bound; a button held is `B hold`, and
-// two pressed together `LB+RB`. What the player changed is kept with their account (`readOverrides`), and the accounts
-// check it against this table.
+// `KeyboardEvent.key` in lower case (a digit or a sign by its place on the row; a letter is that letter on any
+// layout), the mouse's buttons `mouse0` (left) to `mouse4` (the forward side button): the left, middle and right only
+// to a control that hears the mouse, the two side buttons to any. The pad's are the standard pad's, named as printed; a
+// stick's ways ('LS up') are fixed, never bound; a button held is `B hold`, and two pressed together `LB+RB`. What the
+// player changed is kept with their account (`readOverrides`), and the accounts check it against this table.
 
 /** Where a control acts: on foot (on land or a deck), dead, in a window, at the helm, or in a fight at sea. */
 export type Context = 'foot' | 'dead' | 'menu' | 'helm' | 'fight';
@@ -84,7 +83,7 @@ export const CONTROLS = {
   perspective: control(['mouse3'], ['RS'], FOOT),
   // Held, it takes the player back to their ship from wherever they stand on foot (`leaveHold.ts`); fallen, it says
   // why not, so the pad tells its View held from a tap there too.
-  leave: control(['m'], ['View hold'], ['foot', 'dead']),
+  leave: control(['n'], ['View hold'], ['foot', 'dead']),
   character: control(['i'], ['Start'], EVERYWHERE),
   inventory: control(['o'], [], EVERYWHERE),
   details: control(['x'], [], ['menu']),
@@ -100,9 +99,11 @@ export const CONTROLS = {
   voyage: control([' '], ['X'], HELM),
   // Between the Oversea view and the Sealevel view; the wheel never changes it.
   seaView: control(['v'], ['Left'], HELM),
-  map: control(['n'], ['Up'], HELM),
+  map: control(['m'], ['Up'], HELM),
   // The held map of the land on foot; the pad's D-pad up mounts there, so it has no pad button until one is bound.
-  landMap: control(['n'], [], FOOT),
+  landMap: control(['m'], [], FOOT),
+  // With a map up, on land or at sea, its legend hidden or shown again: heard while the map is up wherever it is.
+  legend: control(['l'], [], FOOT),
   confirm: control(['enter'], ['A'], HELM),
   ashore: control(['l'], [], HELM),
   manage: control(['b'], ['Y'], HELM),
@@ -135,20 +136,36 @@ export const DEFAULTS: Binds = Object.fromEntries(
   BIND_IDS.map((id) => [id, { keys: CONTROLS[id].keys, pad: CONTROLS[id].pad }]),
 ) as Binds;
 
-/** The controls that act on a key going down or the pad's press, or at the helm, whose pointer is free: none hears a
- *  mouse button. */
+/** The controls that act on a key going down or the pad's press, or at the helm, whose pointer is free: none hears the
+ *  left, middle or right button, which press the interface while the pointer is free. */
 const KEYS_ONLY: ReadonlySet<BindId> = new Set<BindId>([
-  ...(['use', 'leave', 'landMap', 'map', 'respawn', 'confirm', 'voyage', 'manage', 'leaveHelm', 'repair'] as const),
+  ...([
+    'use',
+    'leave',
+    'landMap',
+    'legend',
+    'map',
+    'respawn',
+    'confirm',
+    'voyage',
+    'manage',
+    'leaveHelm',
+    'repair',
+  ] as const),
   ...(['ashore', 'seaView', 'character', 'inventory', 'details', 'compare', 'controls', 'chat'] as const),
   ...(['steerLeft', 'steerRight', 'sailOn', 'heaveTo'] as const),
 ]);
-/** Whether a mouse button bound to `id` is heard. */
+/** Whether the left, middle or right button bound to `id` is heard. */
 export const hearsMouse = (id: BindId): boolean => !KEYS_ONLY.has(id);
+/** Whether `name` is one of the mouse's two side buttons, which press nothing of the interface and so bind to any
+ *  control. */
+export const isSideButton = (name: string): boolean => name === 'mouse3' || name === 'mouse4';
 
-/** Keys known by name; a key that types one character is named by it. Escape and Tab are the windows' own, the
- *  function keys the browser's. */
+/** Keys known by name; a key that types one character is named by it. Escape is the windows' own, the function keys
+ *  the browser's. Tab walks a window's focus too, but a control bound to it acts first. */
 const NAMED_KEYS = new Set([
   ' ',
+  'tab',
   'shift',
   'control',
   'alt',
@@ -185,9 +202,12 @@ export function isPadName(name: string): boolean {
 /** Whether `name` is one of a stick's ways, which walk, steer and look and are never bound. */
 export const isStickWay = (name: string): boolean => /^[LR]S (up|down|left|right)$/.test(name);
 
-/** Whether `name` may be bound to `id` on `device`: a key, or a mouse button where `id` hears one; or a pad's button. */
+/** Whether `name` may be bound to `id` on `device`: a key, a side button, or another mouse button where `id` hears
+ *  one; or a pad's button. */
 export const fits = (id: BindId, device: Device, name: string): boolean =>
-  device === 'keys' ? isKeyName(name) && (!name.startsWith('mouse') || hearsMouse(id)) : isPadName(name);
+  device === 'keys'
+    ? isKeyName(name) && (!name.startsWith('mouse') || isSideButton(name) || hearsMouse(id))
+    : isPadName(name);
 
 /** The buttons of two pressed together, in the pad's order, so `RB+LB` is `LB+RB`. */
 export function chordOf(first: string, second: string): string {

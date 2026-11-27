@@ -296,6 +296,20 @@ export function dotInks(
   });
 }
 
+/** The found islands' marks on the sheet `ink` (`inkOf`), whole marks only, to the quarter pixel. */
+export function isleInks(
+  marks: readonly { readonly at: Point2; readonly isle: IsleInk['isle'] }[],
+  inkOf: (x: number, y: number) => readonly [number, number],
+  ink: { readonly width: number; readonly height: number },
+  half: number,
+): IsleInk[] {
+  return marks.flatMap(({ at, isle }) => {
+    const [x, y] = inkOf(at[0], at[1]);
+    const whole = x >= half && y >= half && x <= ink.width - half && y <= ink.height - half;
+    return whole ? [{ x: Math.round(x * 4) / 4, y: Math.round(y * 4) / 4, isle }] : [];
+  });
+}
+
 /** The ship's red-brown arrow, or the player's on land, along its heading (radians clockwise from north), ringed in
  *  the parchment. */
 export function paintArrow(painter: Painter, heading: number): void {

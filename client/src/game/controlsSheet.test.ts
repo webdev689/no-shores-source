@@ -6,7 +6,7 @@ import type { UiEvent } from '../ui/ui.ts';
 import { FAKE_FACE, fakeInterface, laidWith, wordsOf } from '../ui/uiForTests.ts';
 import { type BindId, DEFAULTS, overridesOf, readOverrides } from '../player/binds.ts';
 import { BINDS } from '../player/input.ts';
-import { CONTROL_GROUPS, cellsOf, doesFor } from './controls.ts';
+import { CONTROL_GROUPS, cellsOf, controlWords, doesFor } from './controls.ts';
 import { ControlsSheet, columnsOf, slotId, spokenKeys } from './controlsSheet.ts';
 import { Rebinding } from './rebinding.ts';
 import { FakeEvent, fakeWindow } from './pageForTests.ts';
@@ -270,6 +270,32 @@ test('with the pad played last, the sheet says what the pad does, and its B step
   step(root, [{ kind: 'pad', button: 'back' }]);
   assert.ok(!sheet.open);
   BINDS.device = 'keys';
+});
+
+test('each row reads as a line, as a player asked: its words first, its keys and buttons beside them', () => {
+  const { root } = openIn(1280, 720);
+  const laid = layout(root(), { x: 0, y: 0, width: 1280, height: 720 }, { face: FAKE_FACE, scrollOf: () => 0 });
+  for (const id of ['jump', 'landMap', 'inventory'] as const) {
+    const words = laid.find((each) => each.node.text?.words === controlWords(id));
+    const key = laidWith(laid, `controls:${id}:keys:0`);
+    assert.ok(words && key, id);
+    assert.ok(words.box.x + words.box.width <= key.box.x, `${id}: its words before its key`);
+  }
+});
+
+test('a side button binds any control, the sheet itself among them, and opens it as its key does', () => {
+  const { sheet } = bindingSheet();
+  sheet.rebinding.start({ id: 'use', device: 'keys', place: 0 }, new Set());
+  sheet.rebinding.mouse(3);
+  assert.deepEqual(BINDS.now.use.keys, ['mouse3']);
+  BINDS.set(DEFAULTS);
+  const { sheet: shut, press } = listening();
+  BINDS.set({ ...DEFAULTS, controls: { keys: ['mouse4'], pad: [] } });
+  press(4);
+  assert.ok(shut.open);
+  press(4);
+  assert.ok(!shut.open);
+  BINDS.set(DEFAULTS);
 });
 
 test('a mouse button binds only a control that hears one, and only one the accounts would keep', () => {

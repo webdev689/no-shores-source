@@ -300,6 +300,32 @@ test('the island’s own tile names its levels at Normal; a shut tile’s label 
   assert.equal(label.split('The Burned Mill is locked').length - 1, 1, label);
 });
 
+test('the pointer on a glyph says what it means in a card over it, as a player asked, and still lights its tile', () => {
+  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const { ui, step } = fakeInterface(1280, 720);
+  const chosen: string[] = [];
+  const acts = { choose: (entry: string) => void chosen.push(entry), act: () => undefined, back: () => undefined };
+  let node = islandPanelNode(ui, panel, null, null, acts);
+  const root = () => (node = islandPanelNode(ui, panel, null, null, acts));
+  step(root);
+  step(root, [], 1);
+  const entry = entriesOf(panel).find((each) => each.id === 'saltgrass-downs');
+  const glyph = 'island:saltgrass-downs:glyph:0';
+  const box = ui.boxOf(glyph);
+  assert.ok(entry && box, glyph);
+  assert.ok(!wordsIn(node).includes(entry.glyphs[0]?.says ?? ''), 'no card before the pointer comes');
+  step(root, [{ kind: 'pointer', x: box.x + box.width / 2, y: box.y + box.height / 2 }]);
+  step(root);
+  assert.ok(wordsIn(byId(node, glyph) ?? node).includes(entry.glyphs[0]?.says ?? ''), 'its words in the card');
+  assert.ok(chosen.includes('saltgrass-downs'), 'the tile under it lit');
+  const shut = entriesOf(panel).find((each) => each.shut !== null);
+  const lock = shut && ui.boxOf(`island:${shut.id}:glyph:locked`);
+  assert.ok(shut && lock, 'a shut tile has its padlock');
+  step(root, [{ kind: 'pointer', x: lock.x + lock.width / 2, y: lock.y + lock.height / 2 }]);
+  step(root);
+  assert.ok(wordsIn(node).includes(`Shut: ${shut.shut}`), 'the padlock says why');
+});
+
 test('a shut tile does nothing; the pointer on a tile lights it for Enter', () => {
   assert.deepEqual(
     clicked('island:burned-mill').heard.filter((said) => said.startsWith('act')),

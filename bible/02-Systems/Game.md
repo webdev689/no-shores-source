@@ -145,7 +145,7 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | From | Happening | To |
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
-| On foot | The leave held (M, or the pad's View held, 1.5 s; [[Interface]], "The leave held") | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and no yes while the room joins again or has not sent the gear (a room lost for good is played on alone, and the page goes); else the veil, "Returning to your ship", then at sea |
+| On foot | The leave held (N, or the pad's View held, 1.5 s; [[Interface]], "The leave held") | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and no yes while the room joins again or has not sent the gear (a room lost for good is played on alone, and the page goes); else the veil, "Returning to your ship", then at sea |
 | On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
 | At sea | A click on a port's icon or its island, or L off a coast, then the confirmation's yes, once the ship lies within reach | Over the island, its tiles up |
 | Over the island | A tile clicked, or Enter on the tile lit ([[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]) | The veil, "Landing at" the node, then on foot there; an Elite Dungeon's card; or the Playlist |
@@ -244,7 +244,10 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   0.3 m over the ground, with the Test Ground's 50-degree view. The player's own Anima pushes it in as it is
   released, with a frame of its element round the screen ([[Arts]]).
 - **The world goes on.** The body is stepped every frame, with the pointer locked or not; while a menu is open,
-  with nothing pressed. Click the view to look round with the mouse.
+  with nothing pressed. Click the view to look round with the mouse; the last window over the game shut where the
+  mouse looks round (on foot, walking a deck, a scene of the story that wants it) takes the mouse back at once, the
+  keys and mouse played last (`Input.onShut`). A browser may still refuse it where the player freed the mouse with
+  Escape first; the [[Desktop App]] takes it for the page.
 - **The room.** The node's room is the authority, always. Alone, the room crate runs in the game's worker, ticked by its clock,
   on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
 - **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
@@ -559,7 +562,7 @@ sails out from its berth ("Landings").
   or held near a hostile ship the room's; its speed in m/s at it; where it is bound when it makes for a landing; a bar
   of the way sailed; its line); and the ship
   (hull, canvas and crew as bars of whole, and the water it is in). Its foot holds the view's own presses: in the
-  Oversea view Plan a voyage (Map, N), which takes the view down to the helm and raises the [[Held Map]], and Stop or
+  Oversea view Plan a voyage (Map, M), which takes the view down to the helm and raises the [[Held Map]], and Stop or
   Resume voyage (Space); at sea level Sail on (W), Heave to (S), Manage (B) and Leave the helm (H)
   ([[The Ship Is Managed and Walked From the Sea's Panel]]), whose keys act at sea level alone, as the console offers
   them. Narrower than 840 pixels the ship stands under the

@@ -11,7 +11,7 @@ import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
-import { uiScale } from '../ui/uiRenderer.ts';
+import { interfaceScale } from '../ui/interfaceSize.ts';
 import type { Cards } from '../player/cards.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { fromEyeMatrix, type Shot, shifted, shiftedExactly } from './camera.ts';
@@ -150,8 +150,8 @@ export class FootView {
         ...fight,
         matrix,
         // In the drawn interface's own pixels, where it lays the display out.
-        width: size.width / uiScale(devicePixelRatio),
-        height: size.height / uiScale(devicePixelRatio),
+        width: size.width / interfaceScale(devicePixelRatio),
+        height: size.height / interfaceScale(devicePixelRatio),
         lost: null,
         rejoining: foot.rejoining,
         groundAt,

@@ -47,7 +47,7 @@ import { nodeCardsAt } from './nodeCards.ts';
 import { keeperLit } from './overheadMarks.ts';
 import { HULLS } from '../water/hullMask.ts';
 import { chatAtSea, chatInRun, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
-import { uiScale } from '../ui/uiRenderer.ts';
+import { interfaceScale } from '../ui/interfaceSize.ts';
 import { drawnWhole, frameDrawn, setBehindVeil, standIns } from '../standIns.ts';
 
 /** What the frames read and change as the game goes: the flow, the mode's own pieces, the open landmass and its
@@ -254,7 +254,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
     holdOnPlayer(footView.playerPlates, offered, heard.held('use'), clock, {
-      width: size.width / uiScale(devicePixelRatio),
+      width: size.width / interfaceScale(devicePixelRatio),
     });
     // The fight's crosshair, plates and compass give way to the map while it is up.
     if (looking) footView.hideDisplay();

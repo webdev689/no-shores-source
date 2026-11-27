@@ -106,6 +106,7 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
     name: 'Menus',
     controls: [
       row('Map', 'landMap'),
+      row('Show or hide the legend', 'legend'),
       row('Character', 'character'),
       row('Inventory', 'inventory'),
       row('Details', 'details'),

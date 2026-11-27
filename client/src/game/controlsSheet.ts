@@ -1,12 +1,12 @@
 // The sheet of every control, which K (or the pad's View) opens and closes: a window of the Enhanced Plus kit over
-// everything the game draws but the screen's keyboard, its controls in their groups (`controls.ts`), each row its keys
-// and the pad's buttons drawn as the key strip draws them and a few words on what it does. Each key or button chosen
+// everything the game draws but the screen's keyboard, its controls in their groups (`controls.ts`), each row a few
+// words on what it does and beside them its keys and the pad's buttons, drawn as the key strip draws them. Each key or button chosen
 // (a click, Enter or the pad's A) waits for its new one (`rebinding.ts`); Reset to defaults binds them all as they
 // came. While it is open the game hears no key, its scrim takes the pointer, and the keys and the pad move among its
 // keys, a screen reader hearing each as it takes focus. Settings' Controls tab lays the same list (`bindingColumns`).
 import { edged } from '../combat/barDraw.ts';
 import type { Device, Slot } from '../player/binds.ts';
-import { BINDS, keyNameOf } from '../player/input.ts';
+import { BINDS, keyNameOf, sideButtonOf } from '../player/input.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -161,9 +161,17 @@ export class ControlsSheet {
     addEventListener(
       'mousedown',
       (event) => {
-        if (!this.rebinding.slot) return;
+        if (this.rebinding.slot) {
+          event.stopImmediatePropagation();
+          this.rebinding.mouse(event.button);
+          return;
+        }
+        // A side button bound to the sheet opens and closes it as its key does.
+        const button = sideButtonOf(event);
+        if (!button || !BINDS.now.controls.keys.includes(button) || this.ui?.typing || !(this.shown || may())) return;
         event.stopImmediatePropagation();
-        this.rebinding.mouse(event.button);
+        this.toggle();
+        if (this.shown) document.exitPointerLock();
       },
       { capture: true },
     );
@@ -289,8 +297,8 @@ function groupNode(sheet: SheetNow, group: ControlGroup): Node {
   };
 }
 
-/** One row: its keys, then the pad's buttons, each that can be bound a press lit in brass while focused, beside its
- *  words; the device not in use faint. */
+/** One row: its words, then its keys and the pad's buttons beside them, each that can be bound a press lit in brass
+ *  while focused; the device not in use faint. The words come first, read as a line is, so each stands by its keys. */
 function rowNode(sheet: SheetNow, control: Row): Node {
   const { size, width, device } = sheet;
   const column = (shownFor: Device, share: number, least: number): Node => ({
@@ -307,10 +315,10 @@ function rowNode(sheet: SheetNow, control: Row): Node {
     alignY: 'center',
     padding: [3 * size, 4 * size],
     children: [
+      { width: 'grow', text: { words: doesFor(control, device), size, colour: TONES.word } },
       column('keys', KEYS_SHARE, 0),
       // Room for two of the pad's buttons together, whatever the column.
       column('pad', PAD_SHARE, 68),
-      { width: 'grow', text: { words: doesFor(control, device), size, colour: TONES.wordDim } },
     ],
   };
 }

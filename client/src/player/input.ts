@@ -1,4 +1,13 @@
-import { BIND_IDS, type BindId, type Binds, CONTROLS, type Context, DEFAULTS, type Device } from './binds.ts';
+import {
+  BIND_IDS,
+  type BindId,
+  type Binds,
+  CONTROLS,
+  type Context,
+  DEFAULTS,
+  type Device,
+  isSideButton,
+} from './binds.ts';
 import { NO_PAD, PadReader, type PadFrame, type PadState, type Waits, padInputs, padOf } from './pad.ts';
 
 /** A control the player binds (`binds.ts`). */
@@ -42,6 +51,13 @@ export class LiveBinds {
 
 /** The binds of the page: one game, one player. */
 export const BINDS = new LiveBinds();
+
+/** The side button `event` pressed, by its name as bound (`mouse3`, `mouse4`), or null for another button: a control
+ *  that acts as its key goes down hears it as that key, with the pointer free or held. */
+export function sideButtonOf(event: Pick<MouseEvent, 'button'>): string | null {
+  const name = `mouse${event.button}`;
+  return isSideButton(name) ? name : null;
+}
 
 /** Whether the player's hands fight this frame: with the pointer locked, or with the pad last used and nothing paused,
  *  since a pad button cannot lock the pointer again; a click on a free pointer only locks it. */
@@ -102,6 +118,7 @@ export class Input {
   /** What the pad's buttons acted as when a window took them, let go at the next frame. */
   private letGo = new Set<string>();
   private readonly padHeard = new Set<(pressed: ReadonlySet<Action>, buttons: ReadonlySet<string>) => void>();
+  private readonly shutHeard = new Set<() => void>();
   /** Where the player is, whose binds say which of the pad's buttons wait to be told a tap from a hold. */
   context: Context = 'foot';
   /** The pad's part of the last frame alone, for what hears the keys as they come and the pad each frame. */
@@ -132,18 +149,21 @@ export class Input {
       wentDown.clear();
     });
     canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+    // A side button presses nothing of the interface, so it is heard with the pointer free too (a control that hears
+    // only keys and acts as one goes down hears it as its key: `sideButtonOf`).
     canvas.addEventListener('mousedown', (event) => {
-      if (!this.locked) return;
+      const name = `mouse${event.button}`;
+      if (!this.locked && !isSideButton(name)) return;
       event.preventDefault();
-      press(`mouse${event.button}`);
+      press(name);
     });
     // A side button's own work (back, forward) is done on its release and its click, so those are kept too.
     addEventListener('mouseup', (event) => {
-      if (this.locked) event.preventDefault();
+      if (this.locked || isSideButton(`mouse${event.button}`)) event.preventDefault();
       release(`mouse${event.button}`);
     });
     addEventListener('auxclick', (event) => {
-      if (this.locked) event.preventDefault();
+      if (this.locked || isSideButton(`mouse${event.button}`)) event.preventDefault();
     });
     addEventListener('mousemove', (event) => {
       if (!this.locked) return;
@@ -175,9 +195,16 @@ export class Input {
    *  is let go at once. */
   window(top: string | null): void {
     if (top === this.windowUp) return;
+    const shut = top === null;
     this.windowUp = top;
     for (const name of this.pad.staleNow()) this.letGo.add(name);
     this.running = false;
+    if (shut) for (const listener of this.shutHeard) listener();
+  }
+
+  /** Hears the last window over the game close. */
+  onShut(listener: () => void): void {
+    this.shutHeard.add(listener);
   }
 
   /** Hears the controls the pad pressed each frame, a window's own among them while one is up, and the names of

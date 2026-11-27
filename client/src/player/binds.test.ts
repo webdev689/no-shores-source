@@ -36,9 +36,11 @@ test("the keys are DFO's as they were, each control on its own where they act al
   assert.deepEqual([keys('melee'), keys('ranged'), keys('heal')], [['1'], ['2'], ['3']], 'a drink beside the loadouts');
   assert.deepEqual(
     [keys('leave'), keys('character'), keys('inventory'), keys('controls')],
-    [['m'], ['i'], ['o'], ['k']],
+    [['n'], ['i'], ['o'], ['k']],
   );
-  assert.deepEqual([keys('use'), keys('respawn'), keys('voyage'), keys('map')], [['e'], ['enter'], [' '], ['n']]);
+  // The owner's: "M forever map and N for leave".
+  assert.deepEqual([keys('use'), keys('respawn'), keys('voyage'), keys('map')], [['e'], ['enter'], [' '], ['m']]);
+  assert.deepEqual(keys('landMap'), ['m'], 'the map on M on foot as at the helm');
   for (const one of BIND_IDS)
     for (const other of BIND_IDS) {
       if (one >= other || !meet(one, other)) continue;
@@ -142,7 +144,8 @@ test('binds read from outside are checked strictly: known controls, known keys a
   ])
     assert.deepEqual(readOverrides(dropped), {}, JSON.stringify(dropped));
   assert.ok(isPadName('B hold') && isPadName('LB+RB') && !isPadName('LB+RB+A') && !isPadName('LS up'));
-  assert.ok(isKeyName('é') && isKeyName(';') && !isKeyName('A') && !isKeyName('tab') && !isKeyName('mouse5'));
+  assert.ok(isKeyName('é') && isKeyName(';') && !isKeyName('A') && !isKeyName('escape') && !isKeyName('mouse5'));
+  assert.ok(isKeyName('tab'), 'Tab binds, as a player asked');
 });
 
 test('every control acts somewhere, the menus and the sheet everywhere, and the leave on foot alone', () => {
@@ -207,7 +210,7 @@ test("a stick's ways are never bound, nor swapped into another control", () => {
   assert.deepEqual(rebind(DEFAULTS, { id: 'sailOn', device: 'pad', place: 0 }, 'X').binds, DEFAULTS);
 });
 
-test('a control that hears no mouse button takes none, bound or given in a swap', () => {
+test('a control that hears no mouse button takes no left, middle or right button, bound or given in a swap', () => {
   for (const id of ['use', 'leave', 'confirm', 'repair', 'controls', 'sailOn'] as const) assert.ok(!hearsMouse(id), id);
   for (const id of ['swing', 'guard', 'dodge', 'perspective', 'aim', 'jump'] as const) assert.ok(hearsMouse(id), id);
   assert.ok(!fits('use', 'keys', 'mouse0') && fits('jump', 'keys', 'mouse0') && !fits('jump', 'keys', 'mouse5'));
@@ -216,6 +219,16 @@ test('a control that hears no mouse button takes none, bound or given in a swap'
   assert.deepEqual(readOverrides({ use: { keys: ['mouse0'] }, jump: { keys: ['mouse1'] } }), {
     jump: { keys: ['mouse1'] },
   });
+});
+
+test('the two side buttons bind to any control, as a player asked: the map, the leave, the menus, Use', () => {
+  for (const id of ['landMap', 'map', 'leave', 'inventory', 'character', 'use', 'controls'] as const)
+    for (const name of ['mouse3', 'mouse4']) assert.ok(fits(id, 'keys', name), `${id} ${name}`);
+  assert.ok(!fits('inventory', 'keys', 'mouse2') && !fits('map', 'keys', 'mouse1'));
+  const swapped = rebind(DEFAULTS, { id: 'landMap', device: 'keys', place: 0 }, 'mouse4');
+  // The dodge, on foot as the map is, gives the forward button up for the map's M.
+  assert.deepEqual([swapped.binds?.landMap.keys, swapped.binds?.dodge.keys], [['mouse4'], ['v', 'm']]);
+  assert.deepEqual(readOverrides({ leave: { keys: ['mouse3'] } }), { leave: { keys: ['mouse3'] } });
 });
 
 test('binds kept by another build keep what still reads; a kept key a default now holds leaves no clash', () => {
@@ -240,9 +253,9 @@ test('binds kept by another build keep what still reads; a kept key a default no
 });
 
 test('a bind kept under the menu that M opened is read as the leave held, so a key swapped with it stays swapped', () => {
-  const kept = readOverrides({ inventory: { keys: ['m'] }, menu: { keys: ['o'] } });
-  assert.deepEqual(kept, { inventory: { keys: ['m'] }, leave: { keys: ['o'] } });
+  const kept = readOverrides({ inventory: { keys: ['n'] }, menu: { keys: ['o'] } });
+  assert.deepEqual(kept, { inventory: { keys: ['n'] }, leave: { keys: ['o'] } });
   const binds = withOverrides(kept ?? {});
-  assert.deepEqual([binds.inventory.keys, binds.leave.keys], [['m'], ['o']], 'neither lost to a clash');
+  assert.deepEqual([binds.inventory.keys, binds.leave.keys], [['n'], ['o']], 'neither lost to a clash');
   assert.deepEqual(readOverrides({ menu: { keys: ['o'] }, leave: { keys: ['p'] } }), { leave: { keys: ['p'] } });
 });

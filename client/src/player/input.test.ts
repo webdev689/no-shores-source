@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HOLD_S } from './binds.ts';
+import { DEFAULTS, HOLD_S } from './binds.ts';
 import { BINDS, handsFree, IDLE, Input, type InputFrame, axis, keyNameOf } from './input.ts';
 import type { PadState } from './pad.ts';
 
@@ -234,4 +234,45 @@ test('the pad fights with the pointer free once the menu is shut; the keys and m
   } finally {
     BINDS.device = device;
   }
+});
+
+test('a side button is heard with the pointer free, as a key is; the others only with it locked', () => {
+  const page = globalThis as unknown as Record<string, unknown>;
+  const [heard, onCanvas] = [new Map<string, (event: unknown) => void>(), new Map<string, (event: unknown) => void>()];
+  Object.assign(page, {
+    addEventListener: (kind: string, run: (event: unknown) => void) => heard.set(kind, run),
+    document: { pointerLockElement: null },
+  });
+  const canvas = {
+    addEventListener: (kind: string, run: (event: unknown) => void) => onCanvas.set(kind, run),
+  } as unknown as HTMLCanvasElement;
+  const input = new Input(canvas);
+  let kept = 0;
+  const mouse = (kind: string, button: number) =>
+    (kind === 'mousedown' ? onCanvas : heard).get(kind)?.({ button, preventDefault: () => (kept += 1) });
+  BINDS.set({ ...BINDS.now, leave: { keys: ['mouse3'], pad: [] } });
+  mouse('mousedown', 0);
+  mouse('mousedown', 3);
+  const frame = input.frame();
+  assert.deepEqual([frame.pressed('guard'), frame.held('leave')], [false, true]);
+  // Its own work, the page back, is kept from it.
+  mouse('mouseup', 3);
+  assert.equal(kept, 2);
+  assert.equal(input.frame().held('leave'), false);
+  BINDS.set(DEFAULTS);
+  delete page['addEventListener'];
+  delete page['document'];
+});
+
+test('the last window over the game shutting is heard, so the mouse can look round again at once', () => {
+  const { input, done } = padPage();
+  let shut = 0;
+  input.onShut(() => (shut += 1));
+  input.window('gear');
+  input.window('sheet');
+  assert.equal(shut, 0, 'one window giving way to another');
+  input.window(null);
+  input.window(null);
+  assert.equal(shut, 1);
+  done();
 });
