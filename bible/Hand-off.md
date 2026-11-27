@@ -100,10 +100,6 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 - **Reports**: a screenshot of the thin black vertical line across the world (the canvas fills the page); the
   browser's console (F12) the next time a frame throws (`FrameGuard` logs each error once) or a public event is not
   drawn (it names the meshes that failed); when walking or sprinting fails to happen on demand.
-- **CI after #237** (deploys, the owner's named yes): a merge whose pull request's check passed skips the check's
-  parts on `main`, and `rooms` and `desktop` (`needs: check`, no `!cancelled()` in their `if`) are skipped with them,
-  so `pages` and `site` deploy nothing; #241 went out only through a run by hand. The fix: `!cancelled() &&
-  needs.check.result == 'success' &&` in both jobs' `if` (`.github/workflows/ci.yml`).
 - **The DFO Pick rows** for heraldry and for halls, works and decor: `proposed` until the owner approves them.
 - **Writes to R2 that need the owner's named yes**: a test upload for R2's own `Cache-Control`; the Lattice's armour,
   on hold, whose 48,000 renders publish with the repository's Cloudflare key.
