@@ -114,10 +114,10 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 |---|---|
 | Ground | Walks, runs, crouches or rides where the controls point. A jump, once the feet have stood 0.1 s, lifts it into the air, or goes over a lip within reach (1.8 m). Pressed into a wall too high to grab, stopped across its face however it slides along it and looking within 45° of square, it takes hold square to the wall and climbs. Off an edge higher than a step, it falls |
 | Air | Falls under gravity. Pressed into a wall with the lip within reach (1.95 m in the air), it hangs, facing the way it looked as it caught the lip, square or not, or goes over a low lip |
-| Hang | Hung as it was caught, never turned square. Sideways shimmies along the lip's face; forward goes over, square to the face, so it lands on the top as from a square hold; crouch lets go |
+| Hang | Hung as it was caught, never turned square. Sideways shimmies along the lip's face, only while the lip is still held both as caught and square to it, so a shimmy never rounds its end; forward goes over, square to the face, so it lands on the top as from a square hold; crouch lets go |
 | Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs. The
 lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past, and a hold caught at a seam climbs on. A block on the wall's top is stacked on it only where its face is as near as the wall's, it reaches back over the wall's face, and it runs along the wall where the body holds it: one set back on the top, one standing wholly out past the face, or a post beside the hold, is not |
-| Mantle | Rises first, then goes over onto the lip |
+| Mantle | Rises first, then goes over onto the lip. Where it would land past the lip's end, as from a hold caught slantwise there, it lands on the nearest point of the top along the face |
 | Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing 0.2 m past it, met head on or slantwise |
 
 ## Tuning
