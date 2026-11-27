@@ -69,4 +69,6 @@ forge in `tools/forge/` ([[DFO's Sprite Forge Comes Over Exactly]]).
 
 A check earns its place by catching something review keeps missing. It needs the owner's agreement, a test on
 made-up input, and must hold everywhere the day it lands: if the code does not pass it yet, fix the code in the same
-change. No baselines.
+change. No baselines. Before it is added or tightened, prototype it over the whole repo: count its false alarms on
+real cases and its misses on a generated bad set, then prove the xtask version by planting one bad case for each new
+rule.
