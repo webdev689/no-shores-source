@@ -29,7 +29,8 @@ Asked whether armour that drops as itself should lie on the ground as weapons do
 
 - **A weapon or a piece of armour that drops as itself lies on the ground** for its player, its own picture hovering
   in its rarity's light, and is taken by walking over it, as a Vestige is ([[Gear]], "Drops").
-- **A Vestige, a weapon and a piece of armour on the ground are twice their size**; an Ammo box or crate is 0.6 of its size.
+- **A Vestige, a weapon and a piece of armour on the ground are twice their size**; an Ammo box or crate is 0.6
+  of its size.
 - **Each drop has a tall pillar of light in its rarity's colour**, seen from far off, a Legendary's and an Atheric's
   the tallest.
 - **Each drop bursts as it lands**: a flash and a ring on the ground, with a sound in its rarity's weight.
