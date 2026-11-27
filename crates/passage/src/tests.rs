@@ -503,8 +503,8 @@ fn under_ground_the_lamp_and_the_deals_pieces_stand_clear_of_the_forges_solids_a
 #[test]
 fn every_under_ground_lamp_of_ten_years_stands_under_a_ceiling_tall_enough() {
     let mut low = Vec::new();
-    // A low ceiling over a lamp is rare, not a kind: the sample is every tenth week of the ten years, the whole on a
-    // full sweep.
+    // A low ceiling over a lamp is rare, not a kind: the sample is 52 weeks spread evenly over the ten years, the whole
+    // on a full sweep.
     for (what, plan, dungeon) in under_plans(sweep::sample(2_900..3_420, 52), Zone::has_lamp) {
         let Some(lamp) = plan.sites.lamp else { continue };
         // The lamp never stands in the way in's room.

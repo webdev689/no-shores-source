@@ -72,8 +72,9 @@ sample wherever the check runs, and every case once a night on `main`
 ([[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]).
 The sample is the same on every run, so a failure reproduces: the first zone of each kind, by its ground with its
 size and by its ground with its deal, so it holds every kind the whole sweep does; where what a sweep looks for is
-rare rather than a kind, every tenth week. The `sweep` crate reads `NO_SHORES_FULL_SWEEP`: set to anything but
-`0`, every sweep checks every case, as `NO_SHORES_FULL_SWEEP=1 cargo test -p passage` does by hand.
+rare rather than a kind, a tenth of its weeks spread evenly over them. The `sweep` crate reads
+`NO_SHORES_FULL_SWEEP`: set to anything but `0`, every sweep checks every case, as
+`NO_SHORES_FULL_SWEEP=1 cargo test -p passage` does by hand.
 
 The workflow `nightly.yml` runs the check's Rust part (`cargo xtask check rust`) with it set, at 10:00 UTC and by
 hand, on `main` only. It reads the repository and nothing else: no secret, no deploy. A failure there is a sweep's
