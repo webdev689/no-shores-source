@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 # commit-guard: refuse archives and C2PA-stamped PNGs before they reach a commit (the shared mount stamps PNGs on disk),
-# plus graphify-out/ changes and files whose line endings flipped (CRLF <-> LF).
+# plus graphify-out/ changes, files whose line endings flipped (CRLF <-> LF), symbolic links (a worktree's link to the
+# main checkout's build folder, once merged, replaced that folder) and staged files Prettier would rewrite.
 # install-all.sh copies this to the local clone's .git/hooks/pre-commit; every worktree of that clone shares it.
-bad=0
+bad=0; staged=()
+cd "$(git rev-parse --show-toplevel)" || exit 1
 while IFS= read -r -d '' f; do
   case "$f" in
     *.zip) echo "pre-commit: refusing $f (archive: never commit build outputs)" >&2; bad=1; continue ;;
     graphify-out/*) [ "${GRAPHIFY_COMMIT:-}" = 1 ] || { echo "pre-commit: refusing $f (graphify output: \`git checkout -- graphify-out\` first; GRAPHIFY_COMMIT=1 git commit ... only for a deliberate graph refresh)" >&2; bad=1; continue; } ;;
   esac
+  if [ "$(git ls-files -s -- "$f" | cut -d' ' -f1)" = 120000 ]; then
+    echo "pre-commit: refusing $f (a symbolic link: stage files by path, never \`git add -A\`, in a worktree with linked folders)" >&2; bad=1; continue
+  fi
   # A scripted rewrite (Python open().read()/write()) silently turns CRLF into LF and the whole file into a diff.
   if [ "${EOL_CHANGE:-}" != 1 ] && git cat-file -e "HEAD:$f" 2>/dev/null && ! git diff --cached --numstat -- "$f" | grep -q $'^-\t-'; then
     h=$(git cat-file -p "HEAD:$f" | grep -c $'\r$'); n=$(git cat-file -p ":$f" | grep -c $'\r$')
@@ -20,5 +25,12 @@ while IFS= read -r -d '' f; do
         echo "pre-commit: refusing $f (C2PA/JUMBF metadata stamped by the shared mount; take the PNG from a clean clone)" >&2; bad=1
       fi ;;
   esac
+  staged+=("$f")
 done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+# CI runs `prettier --check .`; the staged files are checked here, before a format failure costs a CI run.
+# A tree without node_modules (the toolkit-data branch's) has no Prettier to ask.
+if [ ${#staged[@]} -gt 0 ] && [ -x node_modules/.bin/prettier ]; then
+  node_modules/.bin/prettier --check --ignore-unknown --log-level warn -- "${staged[@]}" >&2 ||
+    { echo "pre-commit: refusing: Prettier would rewrite the files above (npx prettier --write <file>, then git add it)" >&2; bad=1; }
+fi
 exit $bad

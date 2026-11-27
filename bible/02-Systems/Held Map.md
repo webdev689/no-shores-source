@@ -42,7 +42,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
 ## How it works
 
-- **Opening.** At sea, Plan a voyage on the ship's console in the Oversea view, or N, takes the view down from the [[Overworld]]'s raised camera
+- **Opening.** At sea, Plan a voyage on the ship's console in the Oversea view, or M, takes the view down from the [[Overworld]]'s raised camera
   to the helm behind the Sloop's wheel on its quarterdeck in first person, over 1.1 s, the eye riding the swell with it.
   On the way down every ship shrinks from the Overworld's scale to its own, so at the wheel the Sloop is its true size
   ([[The Ship Is Managed and Walked From the Sea's Panel]]). There the
@@ -94,6 +94,10 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   ink (`paintLock`). A lock is never dropped for a name, and names keep clear of it. A locked sea is not sailed or
   travelled into: a course whose end lies in one is refused ("That sea is locked."), and the route planner keeps a
   4.8 km cell clear of every one (`SeaLock`, `lockedOut`; [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]).
+- **The legend** (the sea's key, the land's table) hides and shows again with its key (`legend`, L, heard while any
+  map is up, at the helm too, where the map takes every key; the strip says "L Legend"), as a player asked ([[M Is the Map, N the Leave, and the Players' First Asks Are Built]]).
+  Hidden, it is not painted, nothing keeps clear of it, and it stays hidden for the next map in this browser
+  (`MapLegend`).
 - **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the three
   holders' swatches (Home, Grey Tithe, The Lattice) and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
   its wash as the map shows it, over the map's parchment (`washedOver`), with the Tithe's and the Lattice's
@@ -126,8 +130,12 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
   over the picture, a node of the game's interface. They are laid out again only when something the layout reads has changed
   (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the waters set, the ship's point
-  and heading, the places and islands shown, the place chosen); a still frame lays out nothing (at 1920 × 1080,
-  0.02 ms against 8 ms). How it reads:
+  on the map to 4 px (`SHIP_STEP`), the places and islands shown, the place chosen); the arrow is painted where the
+  ship is now, to a quarter pixel and a degree, so a ship under way lays nothing out until it has moved 4 px, and a
+  still frame lays out nothing. A layout asks each water's name's spots whether they stand on its own sea some 18,000
+  times, each four reads of a table summed once a grid (`CellSums`, `onOwnSea`): measured natively on the real world,
+  a layout takes some 13 ms at 1920 × 1080 and 18 ms at 2560 × 1440, where asking every 4 px took 250 and 650 ms; a
+  drag or the wheel still lays out each frame it moves the view. How it reads:
   - *Sizes.* In the game's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
     mark and line grows with the map on a larger screen (`letterScale`: the map's height over its height at
     1280 × 720, never below 1), so at 1920 × 1080 the words are 20 px and 23 px.
@@ -210,10 +218,10 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 The map on land speaks in icon glyphs, with little text, and a table on it says what each glyph is
 ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
-- **Raising.** On foot, N anywhere but in a dungeon (where it opens the [[Dungeon Map]]; a passage zone's under ground among the places it rises, the web its sheet: [[Passages]], "The passages' map"), under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
+- **Raising.** On foot, M anywhere but in a dungeon (where it opens the [[Dungeon Map]]; a passage zone's under ground among the places it rises, the web its sheet: [[Passages]], "The passages' map"), under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
   person too), and there the same painting rises in their gauntlets as it does at the helm. The pointer is let go to
   pan it. The world goes on: the player stands still and hears it, and a fall lowers the map. While it rises every key
-  waits; N or Escape turns back. Up, N or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
+  waits; M or Escape turns back. Up, M or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
   plates and compass, and a gate's offer, give way while it is up.
 - **The view** opens centred on the player, 400 m across (in a passage zone, the whole web), held to the land's sheet: its ring and 40 m past it. A drag
   pans and the wheel zooms, to 8 px a metre at most. A click does nothing: the map is only to look at.

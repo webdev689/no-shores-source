@@ -9,7 +9,8 @@ import { gauntletOver } from '../ui/gauntlet.ts';
 import type { Stack } from '../ui/stack.ts';
 import { seen } from '../ui/seen.ts';
 import { Interface } from '../ui/ui.ts';
-import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
+import { UiRenderer } from '../ui/uiRenderer.ts';
+import { interfaceScale } from '../ui/interfaceSize.ts';
 import { FrameGuard } from '../frameGuard.ts';
 import { drawnPress, drawnReach } from './uiSounds.ts';
 
@@ -92,6 +93,6 @@ export class DrawnInterface {
 
   private get view() {
     const ratio = devicePixelRatio;
-    return { width: this.canvas.width, height: this.canvas.height, scale: uiScale(ratio), ratio };
+    return { width: this.canvas.width, height: this.canvas.height, scale: interfaceScale(ratio), ratio };
   }
 }

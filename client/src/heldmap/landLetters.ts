@@ -26,6 +26,8 @@ export interface LandPainting {
   readonly player: { readonly at: Point2; readonly heading: number } | null;
   /** What moves on the land, in the world: the other players and the public event running. */
   readonly moving?: MapMarks;
+  /** Whether the table shows; hidden, the names and marks take its corner too. */
+  readonly legend?: boolean;
 }
 
 /** The washes and inks of the land, as a surveyor colours a plan: the sea, each ground, the walks, what stands and
@@ -240,13 +242,15 @@ export function paintLand(
   const named = (clear: readonly Rect[]) =>
     nameSpots(sheet, ink, scale, onMap, painter, [...clear, ...painting.covers]);
   const tableBox = { width: size.width * scale, height: size.height * scale };
-  const first = named(glyphs).map((spot) => spot.box);
+  const spots = named(glyphs);
+  const first = spots.map((spot) => spot.box);
   const place = tablePlace(ink, tableBox, scale, [...glyphs, ...first], painting.covers, painting.table);
-  for (const spot of named([...glyphs, place.box]))
+  const shown = painting.legend !== false;
+  for (const spot of shown ? named([...glyphs, place.box]) : spots)
     local([spot.box.x + spot.box.width / 2, spot.middle], () =>
       word(painter, spot.name, 0, 0, spot.loss ? ROUTE : INK),
     );
-  paintTable(painter, place, scale, { name: sheet.name, rows, bar: barOf(view, scale) });
+  if (shown) paintTable(painter, place, scale, { name: sheet.name, rows, bar: barOf(view, scale) });
   painter.restore();
   return place;
 }
@@ -287,7 +291,7 @@ function paintMarks(
   painter.save();
   painter.beginPath();
   painter.rect(0, 0, ink.width, ink.height);
-  painter.rect(table.box.x, table.box.y, table.box.width, table.box.height);
+  if (painting.legend !== false) painter.rect(table.box.x, table.box.y, table.box.width, table.box.height);
   painter.clip('evenodd');
   painter.textBaseline = 'middle';
   painter.lineJoin = 'round';
@@ -355,7 +359,7 @@ export class LandLettering {
   ): boolean {
     const marks = marksOf(painting);
     const rows = tableRows(painting.sheet, marks.others).map((row) => row.glyph);
-    const sheetShape = JSON.stringify([picture.width, picture.height, inkAt, dpr, reads, rows]);
+    const sheetShape = JSON.stringify([picture.width, picture.height, inkAt, dpr, reads, rows, painting.legend]);
     if (sheetShape !== this.sheetShape || !this.table) {
       [this.canvas.width, this.canvas.height] = [picture.width, picture.height];
       this.table = paintLand(this.cache, picture, inkAt, dpr, { ...painting, table: this.table });
