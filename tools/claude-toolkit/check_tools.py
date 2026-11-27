@@ -5,7 +5,7 @@ usage: bash check-tools.sh [--worker] [--quiet]
               plus the conflict checks (hooks, MCP names/scopes, exact output, Caveman scope, Headroom path,
               Context7 key on disk, Serena pin, worker kit wiring). About 1-2 minutes.
   --worker  : also one combined headless worker (run-worker.sh) that calls every tool in one session, then audit.py
-              and transcript checks. About 5-8 minutes and some tokens; run after any kit change.
+              and transcript checks. About 10 minutes and some tokens; run after any kit change.
 Prints one line per check: PASS / WARN / FAIL <tool>: detail. Exit 1 if any FAIL.
 Drop-in checks: tools/checks.d/*.sh print lines in the same format (for tools other threads add)."""
 import glob, json, os, re, select, shutil, ssl, subprocess, sys, tempfile, time, urllib.request
@@ -16,7 +16,9 @@ SHARED = os.environ.get('SHARED_DIR') or HOME + '/toolkit-data'      # persisten
 _url = os.environ.get('REPO_URL', '')
 REPO = os.environ.get('REPO_DIR') or (HOME + '/' + os.path.basename(_url.rstrip('/'))[:-4 if _url.endswith('.git') else None] if _url else '')
 PINNED = bool(REPO)                      # install-all.sh pins Serena to REPO_DIR; without one it follows the session cwd
-REPO = REPO or os.getcwd()               # unpinned: check the repo you run this from
+# Unpinned: check the repository this kit sits in (its main checkout), not the home folder check-tools.sh runs from.
+_git = subprocess.run(['git', '-C', KIT, 'rev-parse', '--path-format=absolute', '--git-common-dir'], capture_output=True, text=True)
+REPO = REPO or os.path.dirname(_git.stdout.strip()) or os.getcwd()
 WT_ROOT = HOME + '/wt'
 SET = HOME + '/.claude/settings.json'
 CLAUDE_JSON = HOME + '/.claude.json'

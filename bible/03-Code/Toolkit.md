@@ -98,7 +98,7 @@ controller runs the one full check after merging.
   `client/public/` from the main checkout instead.
 - run-worker.sh refuses a start while 2 workers run (the owner's cap; `WORKERS_MAX`), with under 15 GB free, or with a
   brief naming vitest or a single `tsc -p`. As a worker exits it is audited, resumed once if its reply lacks the INBOX
-  or OBSERVATIONS line, and what it left running in its session is stopped.
+  or OBSERVATIONS line, and what it left running in its worktree is stopped.
 - After a merge, `bash tools/claude-toolkit/workers/clear-target.sh <name>` deletes that worktree's `target/` once its
   head is on origin/main; the worktree and its scratch stay. Delete an Agent sub-agent's own `CARGO_TARGET_DIR` too.
 - An Agent-tool isolation worktree starts from main: its brief gives the base, makes its first command
