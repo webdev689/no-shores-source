@@ -5,6 +5,23 @@ import collections, glob, json, os, re, subprocess, sys
 for wt in sys.argv[1:]:
     d = os.path.expanduser('~/.claude/projects/' + re.sub(r'[^A-Za-z0-9]', '-', os.path.abspath(wt)))
     fs = sorted(glob.glob(d + '/*.jsonl'), key=os.path.getmtime)
+    # Serena's replace_symbol_body takes a symbol's doc comment and attributes with it: a hunk that drops `///` or `#[`
+    # lines but keeps its item (every `fn`, `struct` ... it removes comes back) is a slip until the report says
+    # otherwise.
+    diff = subprocess.run(['git', '-C', wt, 'diff', '-U0', 'origin/main...HEAD'], capture_output=True, text=True).stdout
+    hunks, f = [], ''
+    for l in diff.splitlines():
+        if l.startswith('+++ '):
+            f = l[6:] if l.startswith('+++ b/') else ''
+        elif l.startswith('@@'):
+            hunks.append((f, []))
+        elif hunks and l[:1] in ('+', '-') and not l.startswith('--- '):
+            hunks[-1][1].append(l)
+    fns = lambda h, sign: set(re.findall(r'\b(?:fn|function|struct|enum|impl|trait|mod|class|interface|const|static|type)\s+(\w+)', '\n'.join(l for l in h if l[0] == sign)))
+    for f, h in hunks:
+        gone = [l for l in h if re.match(r'-\s*(///|#\[)', l)]
+        if f and len(gone) > sum(1 for l in h if re.match(r'\+\s*(///|#\[)', l)) and not fns(h, '-') - fns(h, '+'):
+            print(f'  DROPPED DOCS (check) {os.path.basename(wt.rstrip("/"))}: {f}: ' + '; '.join(l[1:].strip()[:40] for l in gone[:3]))
     if not fs: print(wt, 'no transcript'); continue
     c = collections.Counter(); first3_ok = None
     for l in open(fs[-1]):
