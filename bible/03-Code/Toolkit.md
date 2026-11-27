@@ -53,14 +53,14 @@ when to install it and what each session does at its start and end; this note sa
 | Tool | How to use it |
 |---|---|
 | graphify | The code map. `graphify explain <symbol or file>` or `graphify path <A> <B>` for known names; `graphify query` only with a pointed question naming a function or file. Ask it before grepping or opening big files; update it after every merge or commit. Its `graphify-out/` is ignored by git. |
-| Serena | MCP, tools interface: `find_symbol`, `find_referencing_symbols`, `get_symbols_overview`, `replace_symbol_body`. graphify finds the file or system, Serena the exact symbol. Plain Edit only for small in-line changes and files Serena cannot parse. If only `serena_repl` shows, the install is broken: fix it first. Its project lists both `typescript` and `rust`. |
+| Serena | MCP, tools interface: `find_symbol`, `find_referencing_symbols`, `get_symbols_overview`, `replace_symbol_body`. graphify finds the file or system, Serena the exact symbol. Plain Edit only for small in-line changes and files Serena cannot parse. A symbol's range takes in its doc comment and attributes: a new body carries them, and after `replace_symbol_body` re-read the lines above the symbol. The kit's Serena guard undoes a `replace_symbol_body` or `insert_before_symbol` that lowers the file's count of `///`, `/**` or `#[` lines. If only `serena_repl` shows, the install is broken: fix it first. Its project lists both `typescript` and `rust`. |
 | claude-mem | Search it before re-investigating anything. Its `smart_search` and `smart_outline` are not for code: use Serena. |
 | Headroom | Compress big outputs with `headroom_compress` and `headroom_retrieve`. MCP only, never in the API path. |
 | Context7 | MCP: a library's current docs before guessing its API. |
 | superpowers | brainstorming, writing-plans, using-git-worktrees, subagent-driven-development, test-driven-development, verification-before-completion, systematic-debugging; requesting-code-review for the final review. |
 | ponytail | The smallest complete change; a ponytail review before each merge and on the final diff. |
 | Caveman | Through the kit's SubagentStart hook only: sub-agents and workers are terse; replies to the owner stay in full sentences. |
-| rtk | Compacts `git status`, `git log` and `ls` only; reads, greps, diffs and test runs stay exact. If an output looks cut, run it again as `rtk bypass <command>`; write `git --no-pager log ...` for an exact log. |
+| rtk | Compacts `git status`, `git log` and `ls` only; reads, greps, diffs, test runs and `git push` stay exact. If an output looks cut, run it again as `rtk bypass <command>`; write `git --no-pager log ...` for an exact log. |
 | MarkItDown | Convert uploaded files (PDF, Word, Excel, PowerPoint) with `markitdown <file>` before reading them. |
 | impeccable | The web and UI layer only. `install-all.sh` turns its design hook on in each session, so UI edits are reviewed as they land; `impeccable doctor` says what has drifted. |
 | SkillsMP | Find a skill for a new kind of job. |
@@ -68,7 +68,9 @@ when to install it and what each session does at its start and end; this note sa
 | claude-code-setup | Run "recommend Claude Code automations for this project" when the setup is reviewed or a new stack arrives; adopt only what the other tools do not already cover. |
 | task-observer | Log each correction, tool clash or slow rule with its `new-observation.sh` into `$SHARED_DIR/task-observer`, never the repo. Workers never log; they end with an "OBSERVATIONS:" line and the controller logs it. The owner approves every rule change at a review. |
 | Syntax hook | "syntax check failed" after an Edit or Write means fix it now. |
-| Commit guard | The clone's pre-commit hook refuses archives and C2PA-stamped PNGs. Never bypass it with `--no-verify`. |
+| Commit guard | The clone's pre-commit hook refuses archives, C2PA-stamped PNGs, `graphify-out/`, line-ending flips, symbolic links and staged files Prettier would rewrite; its commit-msg hook refuses a first line over 100 characters or holding a trailer, and in a cloud session a commit without its `Claude-Session:` trailer. Write a body with `git commit -F - <<'EOF'`. Never bypass a hook with `--no-verify`. |
+| Push guard | The clone's pre-push hook runs the quick checks on the worktree pushed (`cargo xtask repo`; `npm run -s schema` when `generated/` is older than the schema; `npm run -s types` and eslint on the changed files when TypeScript changed; `cargo check --workspace --all-targets` when Rust changed) and refuses the push at the first that fails, naming it; run the push with a Bash timeout of 600000 ms. It also refuses a push from a branch other than `main` that would start a publishing workflow (one with push paths and no branch filter), naming it; `ALLOW_PUBLISH=1 git push ...` only with the owner's yes. A branch that merged `main` where `main` changed such a path is refused too: the push would start that workflow. |
+| Bash guard | `hooks/rtk-guard.py` refuses three commands and says what to do instead. `pkill -f`: stop a process by its pid (TaskStop, or `stop-worker.sh <name>` for a worker), since the pattern also matches the shell that typed it. Polling CI with `gh` in a cloud session: to wait on CI, subscribe to the pull request's activity and end the turn, or read its check runs once with the GitHub MCP tools. `git stash` while a merge is in progress: commit the merge first. |
 | Browser QA | Tests in a browser and pictures of the game headless: the picture driver (`tools/claude-toolkit/webgpu-shot.cjs`), the QA hooks, the way into each place, staging and reading a picture. All in [[Browser QA]]. |
 | Interface pictures | `node tools/uiShot.mjs <shots.json> [--port 5173]` starts Vite on the port (the next free one where it is taken) and draws each shot's interface headless through the real renderer to a PNG; its header says the fields. R2 answers CORS for port 5173 alone, so uiShot fetches R2's reads for the page as from 5173. A shot's `build` is called every frame, so it keeps its state across them, as `menuShot` (`journalShots.ts`) keeps its layer. An event is heard on the shot's frame `at`, or its own `at`; with `on`, at the middle of the node of that id. To picture a one-off menu state, write a scratch module under `target/` that imports `menuShot` from `/src/game/journalShots.ts`, and name it in the shot as `"module": "/@fs/<absolute path>"`. A copy of uiShot itself under `target/` cannot find its modules, since Vite's root is `client/`. |
 | Desktop app QA | Playwright's keys and mouse reach the page but never Electron's `before-input-event`, so the shell's own keys (F11, Alt+Enter, F12) need real X input: `xdotool windowfocus --sync <window>` (not `windowactivate`: xvfb has no window manager), then `xdotool key F11`. A packed app with the inspect fuse off cannot be attached by Playwright's `_electron`: run the binary and read its `app.log`. The app loads at once, so a driver reloads the page after `context.route(...)`. |
@@ -99,14 +101,14 @@ Work that fans out goes to headless workers, each in its own git worktree.
   worktree ready to test: the main checkout's `node_modules` linked, `npm run -s fixtures` run, and
   `CARGO_TARGET_DIR` unset, so it builds into its own `target/`.
   A read-only reviewer sub-agent in a worktree of its own links `node_modules`, `generated/`, `target/` and
-  `client/public/` from the main checkout instead.
+  `client/public/` from the main checkout instead. Only a read-only reviewer links `target/`: a worktree that builds
+  gets its own `CARGO_TARGET_DIR`, since builds keep the path of the checkout that made them.
 - Every brief starts from `tools/claude-toolkit/workers/brief-common-template.md`.
 - A run that ends with tracked work left uncommitted, or with its report (`~/wt/reports/<name>.md`) older than its last
   commit, is resumed once with the finish steps; its log says `WORKER <name> UNCOMMITTED` or `REPORT STALE`. A worker
   waits on its own sub-agents (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`), so a reviewer it ends its turn on wakes it.
 - A late change goes in the worker's inbox (`~/wt/reports/inbox-<name>.md`, under a `## <short heading>` line), not a
   stop and `--resume`. A fresh run of a worker's name starts an empty inbox, keeping an earlier worker's aside.
-- Stop one with `bash tools/claude-toolkit/workers/stop-worker.sh <name>`, never `pkill -f <pattern>`.
 - A worker's first three actions: one claude-mem search; `graphify update .` and one `graphify explain` or `path`;
   Serena `get_symbols_overview` on each source file it will change.
 - Every worker ends with superpowers:verification-before-completion, one reviewer sub-agent, then
