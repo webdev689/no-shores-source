@@ -10,6 +10,7 @@ import {
   SHUT,
   type Snapshot as RoomSnapshot,
   UNHEARD_MOST,
+  WELCOME_WAIT_MS,
   rejoinWait,
 } from './roomConnection.ts';
 
@@ -303,4 +304,31 @@ test('a room out of reach is told in words, its address kept for the console', a
   const opening = RoomConnection.open('wss://rooms.example/room/passage-z7', () => undefined, undefined, null, connect);
   socket.dispatchEvent(new Event('error'));
   await assert.rejects(opening, { message: 'the room could not be reached' });
+});
+
+test('a room whose socket opens and never welcomes the player fails the join after a bounded wait, its socket closed', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const socket = new FakeSocket();
+  let settled: unknown = null;
+  const opening = RoomConnection.open(
+    'ws://test/room/node-gullwing-vale',
+    () => undefined,
+    undefined,
+    null,
+    () => {
+      return socket as unknown as WebSocket;
+    },
+  );
+  void opening.then(
+    () => (settled = 'joined'),
+    (error: unknown) => (settled = error),
+  );
+  socket.opens();
+  context.mock.timers.tick(WELCOME_WAIT_MS - 1);
+  await Promise.resolve();
+  assert.equal(settled, null, 'still waiting for the welcome');
+  context.mock.timers.tick(1);
+  await Promise.resolve();
+  assert.ok(settled instanceof Error && settled.message.includes('did not answer'), String(settled));
+  assert.equal(socket.readyState, WebSocket.CLOSED);
 });
