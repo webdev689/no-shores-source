@@ -55,6 +55,7 @@ code:
   - client/src/city/pictures.ts#pictureBook
   - client/src/city/windowCuts.ts#cutAtWindows
   - client/src/city/painter.ts#CityPainter
+  - client/src/city/keptLayers.ts#keptLayers
   - client/src/city/cityShaders.ts#PULL_SHARE
   - client/src/city/ruins.ts#buildingRuin
   - client/src/city/overtaken.ts#buildingGrowth
@@ -289,7 +290,8 @@ alpha: an open building's windows draw them as nothing (`CLEAR_GLASS`), so they 
 cut away behind each (`cutAtWindows`), while a closed building's windows are drawn whole. Daggerfall's stone is dark,
 so a solid's picture may be painted lighter or warmer, a factor a channel, as its own layer. The ground's tiles and
 the solids' pictures come first, then the forged models' by how much the city wears them. Up to four workers paint
-them; a layer shows its guessed colour until painted, and what is painted is kept for the next city. Gold, iron,
+them; a layer shows its guessed colour until painted, and what is painted is kept for the next city, up to two
+cities' whole arrays (504 layers, some 44 MB), the least lately worn let go first (`keptLayers.ts`). Gold, iron,
 bone, cloth and water are painted in the shader on the texels a picture would have, 24 a metre
 ([[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]): wrought iron's hammer marks, pits and rust, most on what faces up;
 gilding burnished and worn through to the bronze; bone's grain and yellowing; cloth's dye under a weave of uneven
