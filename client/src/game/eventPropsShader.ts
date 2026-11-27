@@ -236,7 +236,11 @@ fn prop_lamps(from_eye: vec3f, normal: vec3f) -> vec3f {
 
 // The lamps on a prop: underground (key_light.w, a Breach's run) its own pooled lamps, else the land's as the land.
 fn lamps_on(from_eye: vec3f, normal: vec3f) -> vec3f {
-  return select(sky_lamps(from_eye, normal), prop_lamps(from_eye, normal), sky_state.key_light.w > 0.0);
+  // A branch, not a select, which would work out both lists of lamps for every pixel.
+  if (sky_state.key_light.w > 0.0) {
+    return prop_lamps(from_eye, normal);
+  }
+  return sky_lamps(from_eye, normal);
 }
 
 // The lights a wet face mirrors toward the eye: the key light's glint, and each lamp's.

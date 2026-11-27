@@ -136,4 +136,5 @@ one that did nothing says why on the console, which the driver prints.
 
 Read each picture twice: once for the change, and once as a player would see it. List every fault in the frame
 (light, weather, clipping, missing or floating pieces), whether or not the change caused it, and say which ones the
-change predates.
+change predates. A UI change is judged beside its target (the owner's reference picture or the approved twin
+surface), in a picture made with the real code, assets and container.

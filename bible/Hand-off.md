@@ -21,6 +21,9 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   - #243: the game's test hooks and the picture tools work everywhere or say why not (review 10).
   - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
   - #245: new repo checks, each landing with what it refuses fixed (review 8).
+- **Merging on the owner's yes ("Merge and deploy") once CI passes on its head**: #248 (the page's lying-still intent
+  has the 18 numbers the rules read, every intent it predicts by built by `intentOf`; players saw no difference, as
+  the rules' buffer read the missing drink as none).
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
 - **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
@@ -71,6 +74,9 @@ yet played by hand or with other players in a deployed room.
   grass); the curved wake; the loading screen; everything the performance pass changed ([[Game]], "Limits").
 - **Seen on a real GPU**: Overlook's walks where they meet and the paving's seams beside the plaza, and a ship's
   stern on the water, the Frigate's under way (pictured headless only, #227).
+- **#232's**: the held map at sea on a real GPU (its frame time with a voyage inked, the route's tiles, the arrow's
+  repaint leaving no trace); a ship's flag flying on a settled rig and coming down its mast when struck; the far
+  shadow map with traffic offshore; the bot panel's sign-in in a real browser with its new cookie.
 - **Heard**: the music, the ambience, the world's, sea's and menu's sounds and their levels; the prologue's music and
   voices; the seams between a long recording's chunks; whether a browser drops an MP3's 25 to 40 ms of padding, as
   ffmpeg does, so each hoofbeat plays to its cut.
@@ -113,6 +119,25 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   Developer role appears once the layout is built again.
 - **Branches**: delete `ccr-9e470c58-pm6nyz` (#211, merged) and `ccr-c7c30290-wwnvc5` (#221, merged); a session
   cannot.
+- **Security and deploys found by the tooling audit** (each needs the owner's named approval, as a rule on keys,
+  security or deploys does): any branch's push runs the asset workflows (`modules.yml`, flora, ships, wreck, freesound,
+  dungeon-modules, island-modules; lattice on every branch but main) with `CLOUDFLARE_TOKEN`, which writes the bucket
+  the desktop app's update feed (`desktop/latest*.yml`) is read from, so a branch could replace the feed: the feed
+  wants a bucket of its own whose token is a `desktop` environment's secret, main only. `lattice.yml`'s publish job
+  runs pip-installed code holding the token, and `server/r2Token.test.ts` checks only workflows naming
+  `tools/r2.py upload`. The hash-named builds install unpinned Pillow and NumPy and keep checkout credentials. Workflow
+  paths missing inputs: `forge.yml` (most of `tools/forge/tools/sprite-forge/`, `forge_publish.py`, `r2.py`) and
+  `desktop.yml` (root `package.json`, `package-lock.json`, `.github/deploy-ready.sh`); `server:bundle` dry-runs
+  neither the bot's nor the site's Worker before a merge. Eight workflows' header comments still say "the
+  repository's R2 token".
+- **Limits that are the owner's trade-off** (the server audit): any 64-hex string counts as a signed socket before the
+  keeper answers, so the per-address cap on unsigned sockets stops applying, and each check is a D1 write (`liveAccount`
+  is an `UPDATE`), unthrottled, in the rooms, the chat and Find a Company; guests are capped at 500 an hour game-wide
+  (50 addresses use it up) and a username's password sign-in at 100 tries in 10 minutes from all addresses, so both
+  can be locked out on purpose. The sea room takes any number of players (`Sea::join`), where a node's takes
+  `PLAYERS_MOST`: a cap is a number for the owner.
+- **A decision names a deleted file**: [[Chests and Searchable Containers as Claude Builds Them]] names
+  `tools/modules/chest.py`, gone; the owner's to reword.
 - **Reports**: a screenshot of the thin black vertical line across the world (the canvas fills the page); the
   browser's console (F12) the next time a frame throws (`FrameGuard` logs each error once) or a public event is not
   drawn (it names the meshes that failed); when walking or sprinting fails to happen on demand.
@@ -122,6 +147,9 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
+  and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
+  the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
 - **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
   browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
   2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
@@ -215,7 +243,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute, the seal
   and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600, 390x844
   and 844x390. Pictured and still wrong: a store's bar shows through a house's wall (the bars are interface marks with
-  no depth), and the banner reads "Stores 100%" with a store at 99% (the sum rounds up). Headless frames took 11 to
+  no depth). Headless frames took 11 to
   30 s, so a pass needs several runs under the 2-hour limit (observation 0095). Dev play: `&public=`, `&speed=`,
   `&bots=`. #97's one clock can replace the events' own schedule.
 - **The boxing's cost**: a leaning spire of the cities keeps within 13 m only, as boxes square to the world stack up a
@@ -231,23 +259,22 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   its room joined leaving the socket open; one throw every foot frame keeping the veil up; a site's first stand
   baking its navmesh a slice a tick; room memory with every site stood; a cavern over 4 m below the surface unchecked
   for followers' places; the page's bots failing about 10 of 12 heroic raids.
-- **Hitching in the prologue**: the aim's view (`AimView`) is made again for every sea fight; the shore's return to
-  Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by the room's
-  standing orders while their page keeps counting.
+- **Hitching in the prologue**: the shore's return to Saltmere rebuilds its city, unmeasured. A fleet room's lagging
+  player has their held lay begun again by the room's standing orders while their page keeps counting.
 - **Hitching, after DFO's performance work** ([[DFO's Performance Work Comes Over, Measured First]]): a landmass
   cannot be prepared before it opens, as the land's worker holds one; the main city and the layouts' city may build at
   once, up to 48 ms a frame behind the veil; a layouts rebuild re-scatters every tile. Every deploy waits on R2
   answering, as `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`. Memory to measure: the figure
-  cards' 4000-texture budget (`player/cards.ts`) and the item pictures' cache, uncapped (`player/itemPictures.ts`).
+  cards' 4000-texture budget (`player/cards.ts`).
 - **After the performance pass**: a node's room opens in 0.7 to 0.9 s natively on the roads' nodes, about 95% of it
   navmesh bakes (the node's own square 370 to 510 ms). Baking a node's meshes with `npm run bake` would open a room at
   once but ship larger node files: the owner's call, not asked yet. The bake's whole-field slices (some 15 ms each
   natively) could be cut finer; their cost in WebAssembly is unmeasured. The GPU audit's other ideas wait on a real
   GPU's timing. A 10 s window at the hub 30 s after loading still allocated some 400 MB while the hub streamed in:
   measure later after loading before taking it on.
-- **Browser QA** ([[Toolkit]]): run `tools/claude-toolkit/webgpu-shot.cjs` on an idle machine, as beside a cargo
-  build the world may not draw for minutes; `?face=<degrees>` is not an address flag (patch a built copy's
-  `askedArrival` to face a way); `tools/uiShot.mjs` draws the menu whole through the real renderer.
+- **Browser QA** ([[Toolkit]]): run `tools/claude-toolkit/webgpu-shot.cjs` and `webgpu-perf.cjs` on an idle machine,
+  as beside a cargo build the world may not draw for minutes and R2's meshes fail to come (observation 312);
+  `tools/uiShot.mjs` draws the menu whole through the real renderer.
 - **A raised shield's walk**, which the owner asked for and chose to defer: walking with the guard up shows the still
   `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
   `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
@@ -302,9 +329,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   Causeway's claim 2 mm. Each wants its cause found before an area is added or moved there. The 7 x 4 x 11 m block once
   seen on a Chalk Adit beat has not shown since; its source is unfound.
 - **Attack visuals**: one particle system for `Sparks`, `Bits` and the shots' bits; the marks copied into new arrays
-  each frame (about 0.4 MB in a busy fight); emitters under the sea still lighting; `camera.ts` `shifted` keeping the
-  HUD matrix's translation in float32 (about 0.25 m off far out). A Grey Tithe figure's telegraphed blow snaps to idle
-  after its tell.
+  each frame (about 0.4 MB in a busy fight); emitters under the sea still lighting. A Grey Tithe figure's telegraphed
+  blow snaps to idle after its tell.
 - **The client audit's finding**: trees and water past 1 km stand on the uncarved 1 km ground, the middle ground being
   the terrain's only. A city built before its module meshes come draws none of them.
 - **Fight-life's voice blurb system**, which the owner named for [[Speech]], could not be read, so the likeness is
@@ -335,10 +361,37 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   - Binds: Use rebound to R is never heard walking the deck, where Repair keeps R; F held to dismantle can be taken by
     a rebound Details or Character. The clash finder sees neither.
   - A coward's flight is cancelled for good by a stagger (`foes/tactics.rs`).
-  - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), an island room's
-    hauls are kept and never told, and `RoomHost` (`server/worker.ts`) has no test.
+  - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), and `RoomHost`
+    (`server/worker.ts`) has no test.
   - Workflows: the wreck's and the ships' workflows miss inputs they import (`tools/ships`, `shipPictures.ts`); a
     failed accounts deploy still lets the rooms record a deploy and the page publish.
   - Repo checks that still let things through: the html check misses `.after(` and `.before(` (the game has methods
     of those names, so they need types to tell apart) and an element's style held under another name
     (`const look = canvas.style;`, where `.style` before `;`, `,` or `)` stands in game code: `hair.style`).
+- **#232's audits' findings left** (its description holds each with its evidence):
+  - Per frame (the client perf audit): every water pixel loops over up to 48 hulls twice (`water/hullMask.ts`
+    `hull_cover`, `water/wakes.ts` `wake_at`), the ships within the far plane, not the view: culling them on the CPU
+    must keep each one's wake trail; line-of-sight scans walk the node's whole box list several times a frame
+    (`playerCamera.ts` `rayHit`, `boom.ts`, `hudPlace.ts`, `tracers.ts`) and `plazaLife.ts` `floorOver` filters it
+    each call: one grid of boxes would serve all; new Dress objects each frame defeat `Cards`' caches (Lattice foes'
+    `withoutLayers`, `walker.ts`'s fight dress, `otherHand`, `spare`, quest looks); the city's lamps weighed every
+    frame at night; the rain shelter's grid rebuilt over every box each 16 m; passage pieces stringified twice a frame.
+  - The held map: a name the ship's arrow pushed off stays off after it sails on, until the view changes (the
+    owner's call whether it should come back).
+  - The rooms: the host should send an older socket of the same unkept session away before `Sea::own`, which now
+    refuses a second owner of one account, so a fast reload at sea while the accounts are down keeps its flotsam;
+    `power::aimed` tells an aimed shot from a quick one by comparing damage, so a bow loosed on the draw's first tick
+    counts as quick (carry the flag from `combat::step::draw`); a stop pressed before the ship is at sea is
+    ignored, as the course held for the keeper's answer keeps no empty one (`hold_course`). Test-only public items (`Room::set_lore`, `place_grounds`, `Sea::fight_mut`, `Brain::fights_for`,
+    `seen_coming`, `Board::tokens_out`, `Web::ways_in`, the navmesh's `find_path_ignoring` and `reachable_from`) and
+    most of `gear::band`, used by its tests alone: kept or cut is the owner's call.
+  - The server: room WebAssembly calls outside `guarded` in `RoomHost.openRoom` and `joined`, so a trap there leaves
+    the instance poisoned rather than the object reset.
+  - The client: three copies of keeping trim, arms and arts from a gear word (`roomConnection.ts`, `roomThread.ts`,
+    `localRoom.ts`); the console names a heading on sixteen winds and the ship's panel on eight, so 22 degrees reads
+    NNE on one and NE on the other.
+  - Repo checks: the vault check reads a call split over lines, or a struct literal's field, as a definition
+    (`checks/vault.rs`); the comments check loses track after a Python string assigned over several lines; the html
+    script check reads `.append(`'s receiver by its last name only; a bare package import that resolves to CSS
+    (`@fontsource-variable/pixelify-sans`) and `.pcss`, `.postcss`, `.sss`, `.stylus` pass as scripts.
+

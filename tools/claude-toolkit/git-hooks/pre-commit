@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # commit-guard: refuse archives and C2PA-stamped PNGs before they reach a commit (the shared mount stamps PNGs on disk),
-# plus graphify-out/ changes, files whose line endings flipped (CRLF <-> LF), symbolic links (a worktree's link to the
+# plus files whose line endings flipped (CRLF <-> LF), symbolic links (a worktree's link to the
 # main checkout's build folder, once merged, replaced that folder) and staged files Prettier would rewrite.
 # install-all.sh copies this to the local clone's .git/hooks/pre-commit; every worktree of that clone shares it.
 bad=0; staged=()
@@ -8,7 +8,6 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 while IFS= read -r -d '' f; do
   case "$f" in
     *.zip) echo "pre-commit: refusing $f (archive: never commit build outputs)" >&2; bad=1; continue ;;
-    graphify-out/*) [ "${GRAPHIFY_COMMIT:-}" = 1 ] || { echo "pre-commit: refusing $f (graphify output: \`git checkout -- graphify-out\` first; GRAPHIFY_COMMIT=1 git commit ... only for a deliberate graph refresh)" >&2; bad=1; continue; } ;;
   esac
   if [ "$(git ls-files -s -- "$f" | cut -d' ' -f1)" = 120000 ]; then
     echo "pre-commit: refusing $f (a symbolic link: stage files by path, never \`git add -A\`, in a worktree with linked folders)" >&2; bad=1; continue

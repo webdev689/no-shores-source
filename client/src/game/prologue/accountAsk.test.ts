@@ -79,11 +79,11 @@ test('a signed-in account goes on as itself, by its username or, linked by Disco
 });
 
 test('Discord is left for only while the accounts can be reached', async () => {
-  const offline = { session: async () => null, discord: async () => 'https://discord.example' };
+  const offline = { session: async () => null, discord: async () => ({ to: 'https://discord.example' }) };
   assert.equal(await discordAway(offline, 'https://game.example/'), OUT_OF_REACH);
   const online = {
     session: async () => guest,
-    discord: async (back: string) => `https://discord.example?back=${back}`,
+    discord: async (back: string) => ({ to: `https://discord.example?back=${back}` }),
   };
   assert.deepEqual(await discordAway(online, 'here'), { to: 'https://discord.example?back=here' });
 });

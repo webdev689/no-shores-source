@@ -11,6 +11,7 @@ import {
   nameBox,
   PORT_PX,
   SEA_PX,
+  shipRoomLost,
   WORD_PX,
 } from './mapLayout.ts';
 
@@ -257,4 +258,43 @@ test('a place the quest names keeps its ring through the layout', () => {
       ['Elsewhere', false],
     ],
   );
+});
+
+test('the layout stands while the ship’s arrow sails clear of every name and the key, and gives way once it meets one', () => {
+  const lettering = layOut({
+    ...ASK,
+    key: { width: 120, height: 80 },
+    ship: { x: 300, y: 200, heading: 0 },
+    waters: [water('Fen', [300, 140])],
+  });
+  const fen = lettering.letters.find((letter) => letter.text === 'Fen');
+  assert.ok(fen && lettering.key, 'the name and the key are laid');
+  assert.equal(shipRoomLost(lettering, { x: 306, y: 204 }), false, 'a few pixels on, clear of both');
+  assert.equal(shipRoomLost(lettering, null), false, 'off the map, it needs no room');
+  assert.equal(shipRoomLost(lettering, { x: fen.x, y: fen.y }), true, 'onto the sea’s name');
+  const key = lettering.key.box;
+  assert.equal(shipRoomLost(lettering, { x: key.x + key.width / 2, y: key.y + key.height / 2 }), true, 'onto the key');
+  assert.equal(shipRoomLost(layOut(ASK), { x: 300, y: 200 }), true, 'laid with the arrow off the map, it has none');
+});
+
+test('a layout asks whether a sea’s name lies on its sea once at each spot and size, however many places the key tries', () => {
+  const asked: string[] = [];
+  const lettering = layOut({
+    ...ASK,
+    ink: { width: 300, height: 200 },
+    key: { width: 120, height: 80 },
+    sea: (box) => {
+      asked.push(JSON.stringify(box));
+      return 2;
+    },
+    waters: [
+      water('Fen', [60, 160], [160, 100]),
+      water('Rime', [240, 160]),
+      water('Gilt', [60, 40]),
+      water('Cairn', [240, 40]),
+    ],
+  });
+  assert.equal(lettering.key?.corner, 'lower-left', 'every corner held a name, so the key tried its places');
+  assert.ok(asked.length > 0);
+  assert.equal(asked.length, new Set(asked).size, 'no box asked twice');
 });

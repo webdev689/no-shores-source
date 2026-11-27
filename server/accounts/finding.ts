@@ -311,6 +311,12 @@ export class Finder {
     return [...this.sockets.values()].filter((held) => held.heard).length >= FINDING_MOST;
   }
 
+  /** Whether it holds as many Launch sockets with a token as it takes: a full search queue never shuts out a Launch,
+   *  which is gone at the next look, but Launches alone are held to as many. */
+  get launchesFull(): boolean {
+    return [...this.sockets.values()].filter((held) => held.heard && held.alone).length >= FINDING_MOST;
+  }
+
   /** Closes a socket, taking it out of the queue first, once it is sent `last` if given. */
   private letGo(socket: number, code: number, reason: string, last?: string): void {
     const held = this.sockets.get(socket);

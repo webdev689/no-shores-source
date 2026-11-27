@@ -25,7 +25,7 @@ Nothing in here holds a key or a token. You supply your own through environment 
 | task-observer | Logs friction and tool clashes so rules can be improved at a review | github.com/rebelytics/one-skill-to-rule-them-all (pinned copy included, CC BY 4.0) |
 | MarkItDown | `markitdown file.pdf` turns PDF/Word/Excel/PowerPoint into Markdown | pip `markitdown` |
 | Context7 | MCP: current library docs | mcp.context7.com (key optional) |
-| Hooks | Syntax check after every Edit/Write (.py, .js); rtk guard; git pre-commit guard (refuses zips, C2PA-stamped PNGs, graphify-out/, line-ending flips) | this kit |
+| Hooks | Syntax check after every Edit/Write (.py, .js); rtk guard; git pre-commit guard (refuses zips, C2PA-stamped PNGs, line-ending flips) | this kit |
 
 ## Settings (environment variables)
 

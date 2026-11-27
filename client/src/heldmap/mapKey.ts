@@ -60,18 +60,54 @@ export function anyCellUnder(
   box: Rect,
   test: (cell: number) => boolean,
 ): boolean {
-  const step = 4;
-  const across = Math.max(1, Math.ceil(box.width / step));
-  const down = Math.max(1, Math.ceil(box.height / step));
-  for (let row = 0; row <= down; row++)
-    for (let column = 0; column <= across; column++) {
-      const x = view.left + (box.x + (box.width * column) / across) / view.scale;
-      const y = view.top + (box.y + (box.height * row) / down) / view.scale;
-      const [cellX, cellY] = [Math.floor(x / grid.cellM), Math.floor(y / grid.cellM)];
-      if (cellX < 0 || cellY < 0 || cellX >= grid.columns || cellY >= grid.rows) continue;
-      if (test(cellY * grid.columns + cellX)) return true;
-    }
+  const { columns, rows } = cellsUnder(grid, view, box);
+  for (let row = 0; row < rows.count; row++) {
+    const start = (rows.cells[row] ?? 0) * grid.columns;
+    for (let column = 0; column < columns.count; column++) if (test(start + (columns.cells[column] ?? 0))) return true;
+  }
   return false;
+}
+
+/** The cells `anyCellUnder` asks under `box`: the columns and the rows of the grid it samples, each in order and once,
+ *  every cell asked lying where a column meets a row. Kept in buffers the next call reuses. */
+export function cellsUnder(
+  grid: { readonly columns: number; readonly rows: number; readonly cellM: number },
+  view: { readonly left: number; readonly top: number; readonly scale: number },
+  box: Rect,
+): { readonly columns: SampledCells; readonly rows: SampledCells } {
+  const columns = cellsAlong(box.x, box.width, view.left, view.scale, grid.cellM, grid.columns, SAMPLED.columns);
+  const rows = cellsAlong(box.y, box.height, view.top, view.scale, grid.cellM, grid.rows, SAMPLED.rows);
+  SAMPLED.columns = columns.cells;
+  SAMPLED.rows = rows.cells;
+  return { columns, rows };
+}
+
+/** Cells along one side of a box: the first `count` of `cells`. */
+export type SampledCells = { readonly cells: Int32Array; readonly count: number };
+
+/** The sampled cells' indices along one side, kept between calls so the layout's many boxes make no garbage. */
+const SAMPLED: { columns: Int32Array; rows: Int32Array } = { columns: new Int32Array(64), rows: new Int32Array(64) };
+
+/** The grid's cells along one side of a box `size` ink pixels from `start`, asked every few pixels, its ends
+ *  included, the view's top-left `origin` metres at `scale` pixels a metre: each cell within the grid's `count`, in
+ *  `into` (grown when too short). A cell asked twice is kept once, which `anyCellUnder` cannot tell apart. */
+function cellsAlong(
+  start: number,
+  size: number,
+  origin: number,
+  scale: number,
+  cellM: number,
+  count: number,
+  into: Int32Array,
+): SampledCells {
+  const steps = Math.max(1, Math.ceil(size / 4));
+  const cells = into.length > steps ? into : new Int32Array(steps * 2 + 2);
+  let kept = 0;
+  for (let step = 0; step <= steps; step++) {
+    const cell = Math.floor((origin + (start + (size * step) / steps) / scale) / cellM);
+    if (cell >= 0 && cell < count && (kept === 0 || cells[kept - 1] !== cell)) cells[kept++] = cell;
+  }
+  return { cells, count: kept };
 }
 
 /** Whether any shown land lies under `box` (ink pixels), the map showing `view` (`anyCellUnder`). */
