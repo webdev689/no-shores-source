@@ -99,6 +99,14 @@ they play in holds it while they are there.
   networks can hold a name's sign-ins for the rest of its ten minutes, while a session already held and Discord still
   sign its owner in. A name no account could hold is refused before it is kept, and a request's body is read only up
   to 2 KB, however it is sent. States, tickets and codes past their time are let go.
+- **Sign-in is limited at Cloudflare too**
+  ([[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]). Before the database
+  or a password's hash is reached, a sign-in is counted by Cloudflare's rate limit (`SIGN_INS` in `wrangler.jsonc`),
+  by address as above: ten a minute in each of Cloudflare's locations, past which the page shows "Too many sign-ins
+  from here. Wait a minute." So a flood from one network spends neither the hash's CPU nor a limit's write. The count
+  is Cloudflare's, kept apart in each location, so the database's limits still hold a name against many networks. Its
+  namespace (`4401`) is a number of our own, unique in the Cloudflare account; nothing is set in the dashboard. A
+  test, or a Worker without the binding, keeps only the database's limits.
 - **Sessions lapse, and guests go unused.** A session of an account with a username or Discord lapses once it has
   gone unseen 30 days (each sight, or a room's claim, keeps it a month more); the page then says so and plays on as a
   guest until its player signs in again. A guest's session never lapses, its token the only way back to it, but a
@@ -388,5 +396,5 @@ The character screen reads and changes the four by the session's bearer token, 1
 ## Limits
 
 - There is no changing a password yet.
-- A sign-in derives PBKDF2 at 100,000 iterations, about 50 ms of CPU: on Cloudflare's Workers Free plan, whose
-  limit is 10 ms, it would fail. Untested live.
+- A sign-in derives PBKDF2 at 100,000 iterations, about 50 ms of CPU, which the paid Workers plan the accounts run
+  on allows; on the Free plan, whose limit is 10 ms, it would fail. Untested live.
