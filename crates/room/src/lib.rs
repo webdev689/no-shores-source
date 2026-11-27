@@ -418,6 +418,10 @@ impl Room {
         if self.story {
             story::wake_for_story(&mut joined);
         }
+        // A player joining a passage zone's room arrives, every way in: its foes leave them be a while (`hold`).
+        if self.place == Some(gear::gate::Place::Passage) {
+            joined.graced = self.clock + players::ARRIVAL_GRACE;
+        }
         self.players.insert(id, joined);
         self.arrived(id);
         // The test character comes in its gear, its perks' trims and its weapon taken at once.

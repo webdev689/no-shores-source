@@ -17,7 +17,7 @@ mod walk;
 
 pub use island::{Island, island};
 pub use plan::{Ground as Laid, Kind as PieceKind, Piece, Plan};
-pub use sites::{Door, Sites};
+pub use sites::{BAND_OFF_ARRIVAL_M, Door, Sites, bands_off_arrival};
 pub use walk::{BAND_SPREAD_M, Walk};
 pub use web::Web;
 pub use zone::{Current, Deal, Form, Ground, Mission, Size, Zone};

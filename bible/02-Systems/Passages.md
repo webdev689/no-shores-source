@@ -138,7 +138,9 @@ passages' own pieces standing in it with their solids.
   past their full rise, a wall of the ground no body climbs, the page drawing the land round the hollow there at its
   lip's height (`drawnHeights`); the section is the square the ground is laid in (`Hollow::bounds`), so a body is
   held by the ground and never killed for walking. Its posts are as many as its
-  room's most foes hold in bands of two (`Size::posts`: 3, 4 and 6), spread over the floor. It is dressed from the
+  room's most foes hold in bands of two (`Size::posts`: 3, 4 and 6), spread over the floor, none nearer the arrival
+  than 14 m, in a medium or large hollow 27.5 m (25 m and a band's spread, `passage::bands_off_arrival`); a small
+  hollow, and a zone under ground, lays fewer posts that far out, so theirs stand from 14 m ([[Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival]]). It is dressed from the
   islands' kit of its climate: cliffs along its walls, each 3 m out along its own wall's normal, facing in, boulders at
   their feet (the round and the split, never the small stacked one), trees, shrubs and grass by its form, a court's
   ruins, a strand's wrecks, each keeping its footprint (a plant's at least 2 m, as far as the page's plant for it
@@ -205,11 +207,19 @@ passages' own pieces standing in it with their solids.
   lamp's guard is an Elite band at the first lamp, the Reeve and an Elite band at the second, the Tithe-Mate and an
   Elite band at the third, and at the fourth one of the island's two Elite Dungeons' Bosses, the week's by turns, and
   two Elite bands. Above ground a band's places and its beat keep inside the hollow's floor, its beat a band's spread
-  in from the floor's edge, as under ground they keep inside the section. A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
+  in from the floor's edge, as under ground they keep inside the section. In a medium or large hollow no band's
+  member stands, and no beat (a Hunt's round included) walks, within 25 m of the arrival (the garrison's
+  `SPAWN_CLEAR`), a lamp's guard standing at the post nearest the lamp where beside it would be nearer.
+  A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
   Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
   A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find
   (`lamps::KILL_SHARE`), and so of the officer and boon XP that follow it; Bountiful's more Vestiges are paid whole
   ([[A Passage Kill's Share Scales the XP That Follows It, and the Passages Read Gear's Week]]).
+- **Arriving**: a player joining a zone's room, every way in (a dive begun at a patrol zone's mouth or at a lamp,
+  going on through an onward mouth, a reload), is left be by its foes from joining until 10 s after they arrive
+  (`ARRIVAL_GRACE`): no foe takes them for a target and no blow aimed at another strikes them, while the host holds
+  them for their character, however long, and 10 s from when it lets them play; striking first ends it, as after a
+  revive ([[Revives]], [[Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival]]).
 - **The most foes** a zone's bands stand is by its size (`Size::foes_most`): 7, 9 and 12 (small, medium, large), a
   hollow laying half as many posts (`Size::posts`); Crowded's extra foes are not counted, so it holds as many bands,
   and a band past it is held back. Its waves are held to the same most apart from the

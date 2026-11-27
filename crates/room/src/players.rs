@@ -27,6 +27,9 @@ pub const CATCH_UP: usize = 3;
 pub const SEEN_STEP: u64 = 4;
 /// How long after a player stands again the foes leave them be, unless they strike first.
 pub const GRACE: u64 = 180;
+/// How long after a player arrives in a passage zone its foes leave them be, unless they strike first: 10 s (the
+/// owner's decision "Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival").
+pub const ARRIVAL_GRACE: u64 = 600;
 /// How often a player's dress may change; a change sooner waits its turn.
 pub const DRESS_EVERY: u64 = 60;
 /// How many players a room holds.
@@ -472,9 +475,18 @@ impl Room {
     }
 
     /// Holds a player's inputs, or lets them play: held, each is taken in its order and played as standing still;
-    /// false for a player not in the room.
+    /// false for a player not in the room. In a passage zone a player held is still coming in, so its foes leave
+    /// them be until ARRIVAL_GRACE after they are let play.
     pub fn hold(&mut self, player: PlayerId, held: bool) -> bool {
-        self.players.get_mut(&player).map(|found| found.held = held).is_some()
+        let (passage, clock) = (self.place == Some(gear::gate::Place::Passage), self.clock);
+        let Some(found) = self.players.get_mut(&player) else { return false };
+        if passage && held {
+            found.graced = u64::MAX;
+        } else if passage && found.held {
+            found.graced = clock + ARRIVAL_GRACE;
+        }
+        found.held = held;
+        true
     }
 
     /// Notes the account that keeps a player's character: the nodes that account gathered in this room (in a patrol,

@@ -299,6 +299,9 @@ mod passage_holds;
 pub use passage_asks::{PassageAsk, PassageSeen};
 
 #[cfg(test)]
+#[path = "passage_arrival_tests.rs"]
+mod passage_arrival_tests;
+#[cfg(test)]
 #[path = "passage_play_tests.rs"]
 mod passage_play_tests;
 #[cfg(test)]
