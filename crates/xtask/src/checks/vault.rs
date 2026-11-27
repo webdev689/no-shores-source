@@ -1,3 +1,4 @@
+use super::comments::{overlong, too_wide};
 use super::{Problem, is_script};
 
 /// Where the Obsidian vault lives in the repository.
@@ -276,10 +277,35 @@ fn holds_symbol(path: &str, source: &str, symbol: &str) -> bool {
         .any(|line| after_keyword(line, symbol, language) || starts_defining(line, symbol, language))
 }
 
+/// A note's lines past the width limit, with their 1-based line and width. Front matter, fenced code and table rows
+/// cannot wrap, so they are never counted.
+fn wide_lines(text: &str) -> Vec<(usize, usize)> {
+    let mut wide = Vec::new();
+    let mut in_front_matter = text.starts_with("---");
+    let mut fence: Option<&str> = None;
+    for (index, line) in text.lines().enumerate() {
+        let trimmed = line.trim_start();
+        if in_front_matter {
+            in_front_matter = index == 0 || trimmed != "---";
+            continue;
+        }
+        let marker = ["```", "~~~"].into_iter().find(|marker| trimmed.starts_with(marker));
+        match (fence, marker) {
+            (None, Some(marker)) => fence = Some(marker),
+            (Some(open), Some(marker)) if open == marker => fence = None,
+            (None, None) if !trimmed.starts_with('|') => {
+                wide.extend(overlong(line).map(|width| (index + 1, width)));
+            }
+            _ => {}
+        }
+    }
+    wide
+}
+
 /// Every wikilink resolves, and every `code:` reference names a file that exists (and, with `#symbol`, defines it:
 /// an import, a `use` or a comment that names it is not where it lives).
 /// Obsidian resolves `[[Name]]` by file name anywhere in the vault, `[[folder/Name]]` by path, a picture by its
-/// full file name.
+/// full file name. No line that could wrap runs past `MAX_LINE_WIDTH`.
 pub fn check(notes: &[(String, String)], repo_files: &[String], read: impl Fn(&str) -> Option<String>) -> Vec<Problem> {
     let mut targets = std::collections::HashSet::new();
     for file in repo_files.iter().filter_map(|path| path.strip_prefix(VAULT_ROOT)) {
@@ -291,6 +317,9 @@ pub fn check(notes: &[(String, String)], repo_files: &[String], read: impl Fn(&s
     }
     let mut problems = Vec::new();
     for (path, text) in notes {
+        for (line, width) in wide_lines(text) {
+            problems.push(Problem::new("vault", path, Some(line), too_wide(width)));
+        }
         for link in wikilinks_of(text) {
             if link.split {
                 let words = format!("[[{}... breaks across lines: Obsidian resolves no such link", link.target);
