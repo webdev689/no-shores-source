@@ -128,6 +128,20 @@ test('the loading screen stands over the black: the logo and LOADING, told to a 
   }
 });
 
+test('an insert is told to a screen reader as it shows, as nothing focuses it', () => {
+  const said: string[] = [];
+  const page = globalThis as unknown as Record<string, unknown>;
+  page['document'] = { ariaNotify: (words: string) => said.push(words) };
+  try {
+    const { screen } = made();
+    screen.showInsert({ key: 'chart', label: 'The captain’s chart', draw: () => undefined });
+    screen.showInsert(null);
+    assert.deepEqual(said, ['The captain’s chart'], 'said once, as it shows');
+  } finally {
+    Object.assign(globalThis, { document: undefined });
+  }
+});
+
 test('an insert eases in over the view’s middle, under the white and the black, and goes as asked or cleared', () => {
   const { screen, laid, clock } = made();
   const insert = { key: 'chart', label: 'The captain’s chart', draw: () => undefined };
@@ -138,7 +152,7 @@ test('an insert eases in over the view’s middle, under the white and the black
   const box = shown()?.box;
   assert.ok(box, 'held over the view');
   assert.ok(Math.abs(box.x + box.width / 2 - 640) < 1 && Math.abs(box.y + box.height / 2 - 360) < 1, 'in its middle');
-  assert.equal(shown()?.node.label, 'The captain’s chart', 'a screen reader hears what it is');
+  assert.equal(shown()?.node.label, 'The captain’s chart', 'labelled with what it is');
   screen.flash(1);
   const ids = laid().map((each) => each.node);
   assert.ok(ids.findIndex((node) => node.id === 'cinema-insert') < ids.findIndex((node) => node.fill === '#f4f1ea'));

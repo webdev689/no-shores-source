@@ -1,7 +1,7 @@
 //! A patrol zone's foes hold its territories and its runs: on Saltmere's zones as the bake makes them, every area but
 //! where players arrive or pass, where folk live and work the land, where events are fought, a Breach's hollow and a
-//! guild's plot, and its runs' beats; each foes' site stands its group as a player comes near it, and a player walked into a territory
-//! or along a run meets the group there.
+//! guild's plot, and its runs' beats; each foes' site stands its group as a player comes near it, and a player walked
+//! into a territory or along a run meets the group there.
 
 use combat::Intent;
 use layout::brief::AreaKind;

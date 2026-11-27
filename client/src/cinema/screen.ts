@@ -108,8 +108,11 @@ export class Screen {
 
   /** An insert held over the middle of the view, as a film cuts to a chart or a letter, or none. */
   showInsert(insert: Insert | null): void {
-    if (insert) this.insert = insert;
     this.inserted.set(insert ? 1 : 0, 0.6, this.clock());
+    if (!insert) return;
+    this.insert = insert;
+    // Nothing focuses it, so a screen reader is told as it shows.
+    announce(insert.label);
   }
 
   /** A prompt that breathes under the title, or none. */

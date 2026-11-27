@@ -1,7 +1,8 @@
-// The regions of an island on the held map at sea: every island is cut into three, each point of its land (inside its outline) in the region of that island whose centre is nearest
-// (`content/world/regions.json`). The regions of the island whose waters the ship is in light as the pointer passes
-// over their land, named on a card of parchment, and a click on one sets a course to its anchorage. A port's name
-// shows on the same card as the pointer passes over its anchor.
+// The regions of an island on the held map at sea: every island is cut into three, each point of its land (inside its
+// outline) in the region of that island whose centre is nearest (`content/world/regions.json`). The regions of the
+// island whose waters the ship is in light as the pointer passes over their land, named on a card of parchment, and a
+// click on one sets a course to its anchorage. A port's name shows on the same card as the pointer passes over its
+// anchor.
 import type { Point2 } from '../overworld/ground.ts';
 import type { MapRegion } from '../overworld/regions.ts';
 import type { HoverSaid, WaterJudge } from './heldMapAsk.ts';

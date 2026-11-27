@@ -11,8 +11,8 @@ import { SIGHT_SKIN_M } from './plateSight.ts';
 
 /** How long the dead lie before standing again or asking to, in ticks (crates/combat/src/tuning.rs RESPAWN). */
 export const RESPAWN_TICKS = 240;
-/** How tall a Boss's figure stands, metres, a man-sized one's grown by its rank, for the span of the view the call keeps
- *  clear of. */
+/** How tall a Boss's figure stands, metres, a man-sized one's grown by its rank, for the span of the view the call
+ *  keeps clear of. */
 const BOSS_TALL_M = 2.6 * rankSize(BOSS_RANK);
 
 /** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */

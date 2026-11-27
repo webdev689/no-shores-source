@@ -69,3 +69,6 @@ to at least 30 s."
 | A Tithe ship left inside home waters by a clash | Takes only steps away from their coast | It sails out, never hunting deeper in |
 
 The owner's answers after its audit: [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]].
+
+Replaced in part by [[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]: a travel no
+longer holds the next hostile roll back.

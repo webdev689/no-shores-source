@@ -82,10 +82,10 @@ const PAIRS: Readonly<Record<PlaylistKind, PlaylistKind>> = {
 
 /** The Playlist screen over the world: "Playlist" and the port it was opened beside at its head, its entries as
  *  crests on the chart and the chosen one's card, the wait while Find a Company finds, and Find a Company or Stop
- *  finding (F), a Breach's Reset checkpoints (R), Launch (E) and Close (Esc, the pad's B) on its footer. The pointer over a crest only lights it; a click,
- *  Enter, Space or the pad's A on it chooses it, the arrows choose the next (up and down between a playlist and its
- *  week's dungeon), and the card follows the pad's focus over the crests. While it stands the pointer is free and the
- *  game's keys rest, as under the entrance's card. */
+ *  finding (F), a Breach's Reset checkpoints (R), Launch (E) and Close (Esc, the pad's B) on its footer. The pointer
+ *  over a crest only lights it; a click, Enter, Space or the pad's A on it chooses it, the arrows choose the next (up
+ *  and down between a playlist and its week's dungeon), and the card follows the pad's focus over the crests. While it
+ *  stands the pointer is free and the game's keys rest, as under the entrance's card. */
 export class PlaylistView {
   private screen: PlaylistScreenState | null = null;
   private search: PlaylistSearch = NO_SEARCH;

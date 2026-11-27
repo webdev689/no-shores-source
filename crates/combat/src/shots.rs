@@ -173,7 +173,8 @@ const GROUND_PROBES: f64 = 256.0;
 
 /// How far along the segment (0 to 1) it goes into the ground, if it does: at once when it starts inside it (loosed
 /// inside a cliff); else in the first stretch between probes where it sinks below the ground, sinking toward it, where
-/// it meets the ground's line across that stretch. On level ground that is where the segment crosses the ground's height.
+/// it meets the ground's line across that stretch. On level ground that is where the segment crosses the ground's
+/// height.
 fn into_ground(terrain: &dyn Terrain, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
     let (east, south) = (to[0] - from[0], to[1] - from[1]);
     let across = (east * east + south * south).sqrt();

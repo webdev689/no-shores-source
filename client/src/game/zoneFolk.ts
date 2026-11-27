@@ -1,8 +1,8 @@
-// A patrol zone's folk where no foe holds the ground (its layout's folk sites: its hamlets, farms and mills): Overlook's
-// guards and its townsfolk going about their own business, each walking a stretch of the zone's paths there and back
-// and stopping a while at each end. Their rounds are laid on the world clock from the sites and the paths, as a social
-// space's townsfolk's are (`life/routine.ts`), so every browser shows them in the same places doing the same things.
-// They are not foes: the room knows nothing of them, and the fight never takes them for targets.
+// A patrol zone's folk where no foe holds the ground (its layout's folk sites: its hamlets, farms and mills):
+// Overlook's guards and its townsfolk going about their own business, each walking a stretch of the zone's paths there
+// and back and stopping a while at each end. Their rounds are laid on the world clock from the sites and the paths, as
+// a social space's townsfolk's are (`life/routine.ts`), so every browser shows them in the same places doing the same
+// things. They are not foes: the room knows nothing of them, and the fight never takes them for targets.
 
 import type { Dress } from '../player/dressing.ts';
 import { type Path, alongPath, pathThrough } from './life/paths.ts';

@@ -2,10 +2,10 @@
  * Who stands ashore, told to the sea. Every room on an island (a node's room, its dungeons' and runs', a passage
  * zone's, a sea island's room and its dungeon's) names its players to every sea (`SEAS`), each with their ship, level,
  * username and guild tag as they have them now, as each one's account is known and every 15 seconds after, with the
- * host's time, as a sea room stops ticking while nobody sails it. The sea keeps each named player's parked ship seen while it lies
- * at that island (a run started at sea keeps it seen wherever it lies), holds a sea island named, and answers with
- * every ship parked there and every traffic ship it has taken off its route, which an island's own ground sends in its
- * snapshots (crates/room/src/sea_parked.rs, crates/room-wasm/src/parked_door.rs).
+ * host's time, as a sea room stops ticking while nobody sails it. The sea keeps each named player's parked ship seen
+ * while it lies at that island (a run started at sea keeps it seen wherever it lies), holds a sea island named, and
+ * answers with every ship parked there and every traffic ship it has taken off its route, which an island's own ground
+ * sends in its snapshots (crates/room/src/sea_parked.rs, crates/room-wasm/src/parked_door.rs).
  */
 
 import type { Reach } from './arrival.ts';

@@ -618,16 +618,18 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   their ball is in), and lays and pays nothing as it goes down ([[Quests]], "The lessons").
 
 - **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 30 to 70 s
-  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]); a roll that
-  falls due while they fight comes as the fight ends. Every travel, in the ship's own water or to another, waits the next roll at least half a
-  minute, never sooner than it would have come, so travelling on brings no more ships than sailing. While fewer than three hostile ships sail within their sight of
-  them, a roll brings a hostile ship by the band of the water the player is in, so their water sets how many come
-  (`hostile_chance`): 0.18 in the first island's band (1 to 4), rising evenly by 0.0225 a band to 0.36 in the last (26
-  to 30); a water with no band rolls as the first. (DFO's open sea brought one 0.24 of the time in every water.)
-  The water at the player's ship decides who comes ([[The Waters Come From the Islands]], [[World Map]], "Waters"):
-  none in Overlook's home waters, within 10 km of its coast (the roll is spent), a Tithe ship in every other, the
-  Lantern Sea past them and the Lattice's waters too
-  ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Its rank comes by the lowest level of its water's band:
+  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]); a
+  roll that falls due while they fight comes as the fight ends. A travel, in the ship's own water or to another, leaves
+  the roll's clock where it stood, so travelling on meets as many ships as sailing
+  ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]). While fewer than three hostile
+  ships sail within their sight of them, a roll brings a hostile ship by the band of the water the player is in, so
+  their water sets how many come (`hostile_chance`): 0.18 in the first island's band (1 to 4), rising evenly by 0.0225 a
+  band to 0.36 in the last (26 to 30); a water with no band rolls as the first. (DFO's open sea brought one 0.24 of the
+  time in every water.) The water at the player's ship decides who comes ([[The Waters Come From the Islands]],
+  [[World Map]], "Waters"): none in Overlook's home waters, within 10 km of its coast (the roll is spent), a Tithe ship
+  in every other, the Lantern Sea past them and the Lattice's waters too
+  ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Its rank comes by the lowest level
+  of its water's band:
 
   | Band starts at | Minor | Major | Elite | Miniboss |
   |---|---|---|---|---|

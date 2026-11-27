@@ -301,8 +301,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **Sounds.** The world sounds on foot ([[Interface]], "World sounds"): the fight's blows, shots, steps and spells,
   the drops landing and the player standing again, each where it happens, through the World volume once the first
   press or key has woken the interface's sound. A cue not yet picked is silent; nothing new plays while a menu is open.
-- **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
-  by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
+- **Foes to try.** Under `npm run dev` only, `?offline&spawn=` asks the room played alone for foes as the player lands:
+  types by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`, `life/`): its keepers stand behind their counters and at their stalls and
   work, and its townsfolk walk the plan's ways (the city crate's `life`) from post to post, looking out, browsing,
   drinking, talking or carrying, keeping to the right; each keeps a routine laid on the world clock from the plan and a
@@ -415,12 +415,13 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   ([[Shipyard]], "Limits"). Let off as the captain leaves the sea (`SeaRoom.letOff`), the page says "Your company
   member left the sea." and goes back to the player's own ship, or, keeping none, to Overlook (`getOff`).
 - **A sea island's dungeon** is entered by E at its door on the island ([[Islands]], "The door") by its room's name
-  (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`, with `--elite` or `--abyss` after it for
-  its tier), shared at Normal and a run above it. It is laid by its seed and style and named "The <Style> of the
-  Sea", the veil saying "Entering The Caverns of the Sea". Leaving it the veil says "Leaving" it and the player goes
-  back to the sea, at their ship. An island standing a player at its door would stand them 1.5 m before it
-  along its bearing out, facing that way (`back`, the door's point and the bearing out, as a patrol's entrance
-  stands a player out of it). A company member in one is not joined from the Roster: "They are across the sea.".
+  (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`), shared at Normal: its tier is its sea's,
+  and every sea sails at Normal ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]).
+  It is laid by its seed and style and named "The <Style> of the Sea", the veil saying "Entering The Caverns of the
+  Sea". Leaving it the veil says "Leaving" it and the player goes back to the sea, at their ship. An island standing a
+  player at its door would stand them 1.5 m before it along its bearing out, facing that way (`back`, the door's point
+  and the bearing out, as a patrol's entrance stands a player out of it). A company member in one is not joined from the
+  Roster: "They are across the sea.".
 - **On foot inside.** The player is predicted on the dungeon's own ground, as its room judges bodies: the fight's door
   is handed the dungeon's ask (`fighter_dungeon`), which keeps its rock, jambs and pillars as walls a body stays
   0.35 m off and cannot climb, and for a course an Elite Dungeon's Ascents' pads (none in any other); the movement
