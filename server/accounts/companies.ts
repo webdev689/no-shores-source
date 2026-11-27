@@ -116,12 +116,33 @@ async function resetCheckpoints(database: Db, own: string, base: unknown): Promi
   const prefix = `${base}--run-`;
   await database
     .prepare(
-      `DELETE FROM found_runs WHERE room IN (SELECT room FROM found_runs WHERE substr(room, 1, ?3) = ?2
-       AND (account_id = ?1 OR account_id IN (SELECT value FROM json_each(?4))))`,
+      `DELETE FROM found_runs WHERE substr(room, 1, ?3) = ?2
+       AND (account_id = ?1 OR account_id IN (SELECT value FROM json_each(?4)))`,
     )
     .bind(own, prefix, prefix.length, JSON.stringify(mine?.members ?? []))
     .run();
   return done;
+}
+
+/** A Breach's run as `found_runs` keeps it (`<base>--breach-<tier>--run-<instance>`). */
+const BREACH_RUN = '%--breach-%--run-%';
+
+/** Hands the Breach runs `account` was launched for to those `staying` in the company it leaves, and forgets them for
+ *  `account`: a run follows its company, never one who left it, so a company keeps its checkpoints and no other is
+ *  let in by one who came over. */
+async function handRunsOver(database: Db, account: string, staying: readonly string[]): Promise<void> {
+  await database
+    .prepare(
+      `INSERT OR IGNORE INTO found_runs (room, found_at, account_id)
+       SELECT found.room, found.found_at, staying.value FROM found_runs AS found, json_each(?2) AS staying
+       WHERE found.account_id = ?1 AND found.room LIKE ?3`,
+    )
+    .bind(account, JSON.stringify(staying), BREACH_RUN)
+    .run();
+  await database
+    .prepare('DELETE FROM found_runs WHERE account_id = ?1 AND room LIKE ?2')
+    .bind(account, BREACH_RUN)
+    .run();
 }
 
 /** Takes a player out of their company: a company left with one ends, and a leader who leaves hands the lead to the
@@ -130,6 +151,11 @@ async function leave(database: Db, account: string): Promise<void> {
   const company = await companyOf(database, account);
   if (!company) return;
   await database.prepare('DELETE FROM company_members WHERE account_id = ?1').bind(account).run();
+  await handRunsOver(
+    database,
+    account,
+    company.members.filter((member) => member !== account),
+  );
   await afterLeaving(database, company.id);
 }
 
@@ -144,6 +170,7 @@ async function kickFrom(database: Db, account: string, company: string, leader: 
     .bind(account, company, leader)
     .run();
   if (kicked.meta.changes !== 1) return false;
+  await handRunsOver(database, account, (await companyOf(database, leader))?.members ?? [leader]);
   await afterLeaving(database, company);
   return true;
 }
@@ -217,6 +244,8 @@ async function join(database: Db, joining: string, host: string, now: number): P
   // A full company is refused before the player leaves their own.
   if (((await companyOf(database, host))?.members.length ?? 1) >= COMPANY_MOST) return false;
   await leave(database, joining);
+  // A run of their own stays behind: the company's is the one it goes on with.
+  await handRunsOver(database, joining, []);
   if (!(await companyOf(database, host))) {
     const id = crypto.randomUUID();
     await database
