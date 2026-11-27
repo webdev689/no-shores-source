@@ -460,6 +460,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Island Textures as Claude Builds Them]]
 - [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
 - [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
+- [[The Slot Grid Opens on Hover, New Items Are Marked, and the Feed's Icon Has a Sheen]]
 
 ## Replaced
 

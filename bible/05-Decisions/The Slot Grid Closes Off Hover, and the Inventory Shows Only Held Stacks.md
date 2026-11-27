@@ -24,3 +24,6 @@ places shown. Told that a stack of none would be hidden, the owner added:
 - Each shelf, the consumables and the materials alike, is a grid as Destiny's is: what is held, then empty places to
   the end of its row.
 - Vestiges stay as [[The Inventory Keeps Vestiges, Holds Charge, Gains Show and the Menu Sounds]] lays them.
+
+Replaced in part by [[The Slot Grid Opens on Hover, New Items Are Marked, and the Feed's Icon Has a Sheen]]: the
+grid opens on hover too.
