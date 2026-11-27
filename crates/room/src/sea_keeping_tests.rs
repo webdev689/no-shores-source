@@ -483,92 +483,120 @@ fn a_ship_left_mid_fight_is_kept_turned_no_way_at_the_port_it_washes_up_at() {
     assert_eq!((character.ship_at, character.ship_heading), (Some([60_000, 50_000]), None));
 }
 
-/// The Beacon Shore's anchorage, off Overlook, and the Weirlands', off the Gullwing Vale (`content/world/regions.json`).
+/// The Beacon Shore's anchorage, off Overlook, the Weirlands', off the Gullwing Vale, and the Cairn Heights', off
+/// another island (`content/world/regions.json`).
 const BEACON_SHORE: [f64; 2] = [2_805_282.0, 1_196_621.0];
 const WEIRLANDS: [f64; 2] = [2_334_343.0, 1_824_977.0];
+const CAIRN_HEIGHTS: [f64; 2] = [942_003.0, 183_118.0];
 
-#[test]
-fn a_kept_character_back_from_a_zone_of_another_region_finds_their_ship_at_that_regions_anchorage() {
-    let mut sea = sea();
-    let lying = |sea: &Sea, player| sea.ships().find(|(each, _)| *each == player).map(|(_, ship)| (ship.x, ship.y));
-    let mut character = sailor();
-    character.ship_at = Some([2_809_000, 1_200_000]);
-    // Back from the Gullwing Vale, in the Weirlands, with the ship left off Overlook on the Beacon Shore.
-    let walked = sea.join();
-    sea.came_from(walked, "node-gullwing-vale");
-    assert!(sea.restore_character(walked, &character.to_json()));
-    assert_eq!(lying(&sea, walked), Some((WEIRLANDS[0], WEIRLANDS[1])), "off the Weirlands");
-    assert_eq!(
-        told(&sea, walked, crate::harbour::MOORED).map(|numbers| numbers[2..4].to_vec()),
-        Some(WEIRLANDS.to_vec())
-    );
-    assert_eq!(kept(&sea, walked).ship_at, Some([2_334_343, 1_824_977]), "and kept there");
-    // At a harder difficulty the zone's room is its own, in the same region.
-    let elite = sea.join();
-    sea.came_from(elite, "node-gullwing-vale--elite");
-    assert!(sea.restore_character(elite, &character.to_json()));
-    assert_eq!(lying(&sea, elite), Some((WEIRLANDS[0], WEIRLANDS[1])));
-    // Back from a zone of the region it lies off, from the sea itself, or from nowhere the regions name, it stays.
-    for from in ["node-saltgrass-downs", "sea", "node-overlook-social", "node-nowhere"] {
-        let player = sea.join();
-        sea.came_from(player, from);
-        assert!(sea.restore_character(player, &character.to_json()));
-        assert_eq!(lying(&sea, player), Some((2_809_000.0, 1_200_000.0)), "from {from}");
-    }
-    // What the sea was told of a room is used once: the next restore finds the ship as kept.
-    sea.came_from(walked, "node-gullwing-vale");
-    sea.leave(walked);
-    let again = sea.join();
-    assert!(sea.restore_character(again, &character.to_json()));
-    assert_eq!(lying(&sea, again), Some((2_809_000.0, 1_200_000.0)));
+/// The world's own sea, its waters telling which island a ship lies off, with Overlook's roadstead by the Beacon
+/// Shore's anchorage.
+fn world_sea() -> Sea {
+    let layout = world::layout::parse(include_str!("../../../content/world/layout.json")).unwrap();
+    let mut sea = Sea::new(&layout, crate::deck::test_deck(), 7, &[]);
+    sea.harbour.harbours.ports = vec![("overlook".into(), [BEACON_SHORE[0] + 1_000.0, BEACON_SHORE[1]])];
+    sea
+}
+
+fn lying(sea: &Sea, player: PlayerId) -> Option<(f64, f64, f64)> {
+    sea.ships().find(|(each, _)| *each == player).map(|(_, ship)| (ship.x, ship.y, ship.heading))
 }
 
 #[test]
-fn an_unkept_ship_asked_off_a_regions_anchorage_puts_in_there_rather_than_where_it_was_left_off_another() {
-    let mut sea = sea();
-    sea.harbour.harbours.ports.push(("overlook".into(), [2_809_000.0, 1_200_000.0]));
-    let lying = |sea: &Sea, player| sea.ships().find(|(each, _)| *each == player).map(|(_, ship)| (ship.x, ship.y));
-    // No ship left: a course asked by the Weirlands' anchorage puts in at it, where no port's roadstead is near.
-    let player = sea.join();
-    sea.course(player, &[[WEIRLANDS[0] + 500.0, WEIRLANDS[1] + 500.0]], 10).unwrap();
-    assert_eq!(lying(&sea, player), Some((WEIRLANDS[0], WEIRLANDS[1])));
-    // Left off the Beacon Shore and asked by the Weirlands' anchorage: the anchorage.
-    sea.harbour.left.insert("account-1".into(), [2_809_000.0, 1_200_000.0, 1.0, 0.0]);
-    let walked = sea.join();
-    assert!(sea.own(walked, "account-1"));
-    sea.course(walked, &[[WEIRLANDS[0] + 500.0, WEIRLANDS[1]]], 10).unwrap();
-    assert_eq!(lying(&sea, walked), Some((WEIRLANDS[0], WEIRLANDS[1])));
-    // Left off the Beacon Shore and asked by its own anchorage: where it was left.
-    sea.harbour.left.insert("account-2".into(), [2_809_000.0, 1_200_000.0, 1.0, 0.0]);
-    let stayed = sea.join();
-    assert!(sea.own(stayed, "account-2"));
-    sea.course(stayed, &[[BEACON_SHORE[0], BEACON_SHORE[1] - 500.0]], 10).unwrap();
-    assert_eq!(lying(&sea, stayed), Some((2_809_000.0, 1_200_000.0)));
-}
-
-#[test]
-fn moved_to_an_anchorage_the_ship_faces_as_kept_and_a_new_character_off_the_starting_ports_region_stays_there() {
-    let mut sea = sea();
-    sea.harbour.harbours.ports.push(("overlook".into(), [2_809_000.0, 1_200_000.0]));
+fn a_kept_character_back_from_a_patrol_zone_of_another_region_finds_their_ship_at_its_anchorage_facing_as_kept() {
+    let mut sea = world_sea();
     let mut character = sailor();
-    character.ship_at = Some([2_809_000, 1_200_000]);
+    character.ship_at = Some([2_805_282, 1_196_621]);
     character.ship_heading = Some(1_500);
-    let walked = sea.join();
-    sea.came_from(walked, "node-gullwing-vale");
-    assert!(sea.restore_character(walked, &character.to_json()));
-    let ship = sea.ships().find(|(each, _)| *each == walked).unwrap().1;
-    assert_eq!((ship.x, ship.y, ship.heading), (WEIRLANDS[0], WEIRLANDS[1], 1.5), "facing as it was kept");
+    for room in ["node-gullwing-vale", "node-gullwing-vale--elite", "node-gullwing-vale--abyss"] {
+        let walked = sea.join();
+        sea.came_from(walked, room);
+        assert!(sea.restore_character(walked, &character.to_json()));
+        assert_eq!(lying(&sea, walked), Some((WEIRLANDS[0], WEIRLANDS[1], 1.5)), "{room}");
+        let told = told(&sea, walked, crate::harbour::MOORED).map(|numbers| numbers[2..4].to_vec());
+        assert_eq!(told, Some(WEIRLANDS.to_vec()));
+        assert_eq!(kept(&sea, walked).ship_at, Some([2_334_343, 1_824_977]), "and kept there");
+    }
+}
+
+#[test]
+fn back_from_anything_but_a_patrol_zones_own_room_or_from_its_own_region_the_ship_stays_where_it_was_kept() {
+    let mut sea = world_sea();
+    let mut character = sailor();
+    character.ship_at = Some([2_805_282, 1_196_621]);
+    for room in [
+        // A Playlist's or the sea's run of the Weirlands' Elite Dungeon, the dungeon itself, a mission and a zone's
+        // dungeon: none is a patrol zone left.
+        "node-krakens-grotto--sea--run-abcd1234",
+        "node-krakens-grotto--elite--playlist-12--run-abcd1234",
+        "node-krakens-grotto",
+        "node-shrine-tides",
+        "node-gullwing-vale--dungeon-0",
+        "node-gullwing-vale--breach-normal--run-abcd1234",
+        // The zone of the region it lies off, the sea, a social space.
+        "node-saltgrass-downs",
+        "sea",
+        "node-overlook-social",
+    ] {
+        let player = sea.join();
+        sea.came_from(player, room);
+        assert!(sea.restore_character(player, &character.to_json()));
+        assert_eq!(lying(&sea, player).map(|(x, y, _)| (x, y)), Some((BEACON_SHORE[0], BEACON_SHORE[1])), "{room}");
+    }
+}
+
+#[test]
+fn a_ship_kept_off_another_island_stays_there_whatever_zone_its_player_left() {
+    let mut sea = world_sea();
+    let mut character = sailor();
+    character.ship_at = Some([942_003, 183_118]);
+    let player = sea.join();
+    sea.came_from(player, "node-gullwing-vale");
+    assert!(sea.restore_character(player, &character.to_json()));
+    assert_eq!(lying(&sea, player).map(|(x, y, _)| (x, y)), Some((CAIRN_HEIGHTS[0], CAIRN_HEIGHTS[1])));
+}
+
+#[test]
+fn the_room_left_is_used_once_and_a_new_character_from_its_starting_ports_region_stays_at_the_roadstead() {
+    let mut sea = world_sea();
+    let mut character = sailor();
+    character.ship_at = Some([2_805_282, 1_196_621]);
+    let player = sea.join();
+    sea.came_from(player, "node-gullwing-vale");
+    assert!(sea.restore_character(player, &character.to_json()));
+    assert_eq!(lying(&sea, player).map(|(x, y, _)| (x, y)), Some((WEIRLANDS[0], WEIRLANDS[1])), "moved once");
+    assert!(sea.restore_character(player, &character.to_json()), "given again, as a second claim does");
+    assert_eq!(lying(&sea, player).map(|(x, y, _)| (x, y)), Some((BEACON_SHORE[0], BEACON_SHORE[1])));
+    // Refused, the room left is used up all the same.
+    sea.came_from(player, "node-gullwing-vale");
+    assert!(!sea.restore_character(player, "not a character"));
+    assert!(sea.restore_character(player, &character.to_json()));
+    assert_eq!(lying(&sea, player).map(|(x, y, _)| (x, y)), Some((BEACON_SHORE[0], BEACON_SHORE[1])));
     // A new character, with nowhere kept, back from the Saltgrass Downs: Overlook's roadstead, on the Beacon Shore.
     let new = sea.join();
     sea.came_from(new, "node-saltgrass-downs");
     assert!(sea.restore_character(new, &sailor().to_json()));
-    let ship = sea.ships().find(|(each, _)| *each == new).unwrap().1;
-    assert_eq!((ship.x, ship.y), (2_809_000.0, 1_200_000.0));
-    // A restore refused leaves nothing of the room it came from for the next.
-    let refused = sea.join();
-    sea.came_from(refused, "node-gullwing-vale");
-    assert!(!sea.restore_character(refused, "not a character"));
-    assert!(sea.restore_character(refused, &character.to_json()));
-    let ship = sea.ships().find(|(each, _)| *each == refused).unwrap().1;
-    assert_eq!((ship.x, ship.y), (2_809_000.0, 1_200_000.0));
+    assert_eq!(lying(&sea, new).map(|(x, y, _)| (x, y)), Some((BEACON_SHORE[0] + 1_000.0, BEACON_SHORE[1])));
+}
+
+#[test]
+fn an_unkept_ship_puts_in_at_a_regions_anchorage_only_as_one_left_off_another_region_of_that_island() {
+    let mut sea = world_sea();
+    let by = |at: [f64; 2]| world::geometry::Point::new(at[0] as i64 + 500, at[1] as i64);
+    let whole = |at: [f64; 2]| world::geometry::Point::new(at[0] as i64, at[1] as i64);
+    // With no ship on record, only by a port city: never at an anchorage.
+    let first = sea.join();
+    assert_eq!(sea.puts_in(first, by(WEIRLANDS)), None, "far from every port city");
+    // Left off the Beacon Shore and asked by the Weirlands' anchorage: there.
+    for (owner, left) in [("account-1", BEACON_SHORE), ("account-2", CAIRN_HEIGHTS)] {
+        sea.harbour.left.insert(owner.into(), [left[0], left[1], 1.0, 0.0]);
+    }
+    let walked = sea.join();
+    assert!(sea.own(walked, "account-1"));
+    assert_eq!(sea.puts_in(walked, by(WEIRLANDS)), Some(whole(WEIRLANDS)));
+    assert_eq!(sea.puts_in(walked, by(BEACON_SHORE)), Some(whole(BEACON_SHORE)), "its own region's: as left");
+    // Left off another island: where it was left.
+    let elsewhere = sea.join();
+    assert!(sea.own(elsewhere, "account-2"));
+    assert_eq!(sea.puts_in(elsewhere, by(WEIRLANDS)), Some(whole(CAIRN_HEIGHTS)));
 }

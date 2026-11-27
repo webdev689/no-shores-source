@@ -280,9 +280,10 @@ A ship not yet at sea puts in only by a port city, its course's first point with
 that roadstead itself, never the page's own point, the page told so (`Sea::puts_in`; a sea opened with no port cities
 puts it to sea where the page asks); a ship its owner sailed before comes back where the sea last had it, however far
 the page puts it, as a ship sails nowhere while its player is away
-([[The Audit's Leftovers Are Fixed as Claude Suggested]]). A course whose first point lies within 3 km of a region's
-anchorage (`content/world/regions.json`) puts in at that anchorage, and does so too for a ship last had off another
-region of the same island: the page leaving a zone asks by its region's anchorage ([[Game]], "Landings"); one at sea starts the course from where it is, to the nearest
+([[The Audit's Leftovers Are Fixed as Claude Suggested]]). A ship last had off one region of an island (in its waters,
+off the region of it whose centre is nearest) whose course's first point lies within 3 km of another region's anchorage
+there (`content/world/regions.json`) puts in at that anchorage, as the page leaving a patrol zone asks by its region's
+anchorage ([[Game]], "Landings"); a ship with none on record never puts in at an anchorage; one at sea starts the course from where it is, to the nearest
 metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
 facing when it holds one: the helm turned while it lies still. A player sets one course, facings among them, each half
 second, and one sooner is dropped: judging a course against the coasts takes up to a few
@@ -342,10 +343,11 @@ will take it, by the room's own tick.
   (a fight met from the page's spot meanwhile is over for it), or as asked once the host says none is kept
   (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives it
   back where it was kept). A character given back with no place kept in it (a new one) puts to sea at Overlook's
-  roadstead, wherever the page put it or asks. One given back from a node's room (the room the accounts say it came
-  from, which the keeper hands the sea with it, `restoreJoined`'s `from`) lies at the anchorage of that node's region
-  when its ship lies off another region (the one whose centre is nearest it), facing as before (`Sea::came_from`,
-  `world::regions`). A new account's
+  roadstead, wherever the page put it or asks. One given back from a patrol zone's own room (`node-<id>`, at Elite or
+  Abyss `--elite` or `--abyss`; never its dungeon, a run, a passage or one started at sea), the room the accounts say
+  it came from, which the keeper hands the sea with it (`restoreJoined`'s `from`), lies at the anchorage of that zone's
+  region when its ship lies in the waters of the zone's island off another of its regions (the one whose centre is
+  nearest it), facing as before (`Sea::came_from`, `world::regions`). A new account's
   character is the one the room holds, given back to it. The account the
   keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
   they join once more. Whatever
@@ -695,7 +697,10 @@ so every decision is Rust and the shell only carries bytes and time.
   where a new character first stands, takes anyone. Any other node's room takes a character that rejoins it; that
   lands from the sea at the room's seas (a social space's from any), the ship the sea kept in it (`ship_at`) lying
   within the landfall's 30 km of the node's island's coast, and 2 km more, since the ship heaves to a moment after
-  the page offers it, but never on an island not yet named, whose sea is locked ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]); that comes through a gate from a node whose gate leads there, at the same seas (the bake's
+  the page offers it, but never on an island not yet named, whose sea is locked ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]),
+  and for a node a region lists, only with the ship off that region, the region of the island whose centre is nearest
+  it, the rule the island's tiles keep (`arrival.ts` `offRegionOf`, over `overworld/regions.ts` `nearestRegion` and
+  `regionHolds`); a social space and any node no region lists, anywhere in reach of the island; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
   takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
   from its node at any seas. A run started at sea (`startedAtSea`: a playlist's, or an Elite Dungeon's marked `--sea`,
