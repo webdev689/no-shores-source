@@ -53,7 +53,7 @@ fn a_playlist_run_opens_at_one_of_its_bands_levels_alone_with_the_days_modifiers
     assert!(playlist_run("krakens-grotto", Difficulty::Elite, 18).is_none(), "no band stands its foes at 18");
     assert!(playlist_run("krakens-grotto", Difficulty::Abyss, 17).is_none(), "17 is the Elite's, not the Abyss's");
     assert!(playlist_run("krakens-grotto", Difficulty::Normal, 12).is_none(), "no playlist at Normal");
-    assert!(playlist_run("gullwing-vale", Difficulty::Elite, 12).is_none(), "no Elite Dungeon");
+    assert!(playlist_run("saltgrass-downs", Difficulty::Elite, 12).is_none(), "no Elite Dungeon");
 }
 
 #[test]

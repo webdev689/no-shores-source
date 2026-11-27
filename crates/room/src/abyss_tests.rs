@@ -10,7 +10,7 @@ const FRIDAY_NINE: u64 = 29_919_420;
 
 /// The Abyss run of a patrol's dungeon that is not the dungeon of the day, so it carries no modifier.
 fn abyss_run() -> Room {
-    let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 1 };
+    let of = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 0 };
     Room::dungeon_run(&of, gear::Difficulty::Abyss, FRIDAY_NINE).expect("an Abyss run")
 }
 
@@ -39,7 +39,7 @@ fn an_abyss_company_shares_five_revives_and_its_fallen_stay_down_once_none_is_le
     room.tick();
     assert!(room.players[&first].fighter.dead(), "none left: down");
     assert!(wiped(&room.take_events()).is_empty(), "one still stands");
-    let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 1 };
+    let of = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 0 };
     let mut elite = Room::dungeon_run(&of, gear::Difficulty::Elite, FRIDAY_NINE).expect("an Elite run");
     let alone = elite.join().expect("in");
     for _ in 0..6 {

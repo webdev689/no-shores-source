@@ -22,10 +22,11 @@ fn patrol(blocks: Vec<Block>) -> Room {
     room
 }
 
-/// Where a player who fell at (x, y) and asked stands again.
+/// Where a player who fell at (x, y), lying on the ground there, and asked stands again.
 fn stands_again(room: &mut Room, player: PlayerId, [x, y]: [f64; 2]) -> movement::Body {
+    let lying = room.stand((x, y));
     let found = room.players.get_mut(&player).expect("in");
-    (found.fighter.body.x, found.fighter.body.y) = (x, y);
+    (found.fighter.body.x, found.fighter.body.y, found.fighter.body.z) = (x, y, lying.z);
     (found.fighter.health, found.fighter.action, found.respawn_asked) = (0.0, Action::Dead { elapsed: RESPAWN }, true);
     room.tick();
     assert!(!room.players[&player].fighter.dead(), "stood again");

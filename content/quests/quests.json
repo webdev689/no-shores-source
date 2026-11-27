@@ -635,13 +635,13 @@
               "kind": "race",
               "node": "saltgrass-downs",
               "checkpoints": [
-                "Shingle Landing",
                 "Saltgrass",
+                "Chalkpit Ruin",
                 "The Old Stones"
               ],
               "seconds": 270,
               "late": "stormSlow",
-              "text": "Run the Downs road from Shingle Landing"
+              "text": "Run the Downs road from Saltgrass"
             },
             {
               "kind": "kill",
@@ -691,22 +691,22 @@
                 {
                   "name": "The north rod",
                   "bearing": 0,
-                  "at": 10
+                  "at": 12
                 },
                 {
                   "name": "The east rod",
                   "bearing": 90,
-                  "at": 10
+                  "at": 12
                 },
                 {
                   "name": "The south rod",
                   "bearing": 180,
-                  "at": 10
+                  "at": 12
                 },
                 {
                   "name": "The west rod",
                   "bearing": 270,
-                  "at": 10
+                  "at": 5
                 }
               ],
               "order": [
@@ -1659,9 +1659,9 @@
             {
               "kind": "reach",
               "node": "saltgrass-downs",
-              "place": "Ewe Fold",
+              "place": "Moorhold",
               "scene": "veilOrchard",
-              "text": "Ewe Fold, on the way"
+              "text": "Moorhold, on the way"
             }
           ],
           "reward": {

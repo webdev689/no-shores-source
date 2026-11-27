@@ -1,8 +1,7 @@
 //! A zone's public events, run by its room on a clock as Destiny 1's are: each zone in ZONES (the Saltgrass Downs
-//! alone, Saltmere's one patrol zone) runs one every PERIOD_MINUTES of wall time, the Fissure and the raid in turn; a
-//! zone added to ZONES runs ZONE_APART_MINUTES after the one before it, the other kind first. Each has
-//! COUNTDOWN_MINUTES to win; won or failed, its result shows for
-//! RESULT_TICKS, and the next is shown from then. The Fissure (`fissure.rs`) is sealed with shards its foes drop; the
+//! alone) runs one every PERIOD_MINUTES of wall time, the Fissure and the raid in turn; a zone added to ZONES runs
+//! ZONE_APART_MINUTES after the one before it, the other kind first. Each has COUNTDOWN_MINUTES to win; won or failed,
+//! its result shows for RESULT_TICKS, and the next is shown from then. The Fissure (`fissure.rs`) is sealed with shards its foes drop; the
 //! Grey Tithe's raid (`raid.rs`) is held at a hamlet's stores. Every player who took part in a win gets a chest of
 //! their own (`chest.rs`). The room knows only the node's grounds, its minute and its zone; it keeps no event across
 //! its closing, and one opened during an event starts it with the time its start minute leaves.

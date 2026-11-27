@@ -250,6 +250,8 @@ fn saltmeres_grounds_keep_every_distance_the_bake_plans_them_by() {
         let stepped = |out: f64, asked: f64| (0..12).any(|step| (out - (asked - f64::from(step) * 3.0)).abs() < 1e-6);
         let out = distance(raid.approach, hamlet.at);
         assert!(stepped(out, APPROACH_M), "{id}: the approach {out} m out");
+        let hit = standing.iter().find(|print| overlaps(raid.approach, [0.5, 0.5], 0.5, **print));
+        assert!(hit.is_none(), "{id}: the raiders come in clear of everything standing, not through {hit:?}");
         let toward = [(raid.approach[0] - hamlet.at[0]) / out, (raid.approach[1] - hamlet.at[1]) / out];
         let aside = libm::hypot(BANNERS_M, BANNERS_APART);
         for banner in &raid.banners {
