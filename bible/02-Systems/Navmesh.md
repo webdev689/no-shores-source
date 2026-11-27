@@ -63,7 +63,10 @@ and their firing spots by it, and climb and drop where its links say.
    (0.5 m, two voxels). The floor is then eroded by the body's radius (0.35 m), so a path's centre keeps clear of
    every wall and drop.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
-   of corridor. Slivers under 2 m² join their largest neighbour. Only the largest part a walk or a link joins is
+   of corridor. Slivers under 2 m² join their largest neighbour. No region takes, by growing or merging, a cell
+   over, under or beside one of its own that no walk joins it to: where a way winds back over or beside itself, as a
+   dungeon's does up a flight and back over its own floor, the floor it comes back to is another region, so every
+   outline stays a plain loop and the two floors meet by an edge (`regions.rs`). Only the largest part a walk or a link joins is
    kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the water is
    no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are. An
    anchored bake keeps instead the part joined to the floor nearest a point it is given, the way in of a dungeon, whose
@@ -178,15 +181,11 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 - An underside between 1.75 and 1.8 m over a floor rounds up to 2 m, so the mesh may run a path under it that a body
   stoops for; within a voxel.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
-- Of the floor a body stands on within a metre of a dungeon's solids, the mesh finds a way to 98.5% (the patrols'
-  nine, the 18 Elite Dungeons and four passage dungeons of chalk and barrow, `dungeon_room_tests`): what is left are
+- Of the floor a body stands on within a metre of a dungeon's solids, the mesh finds a way to 98% or more in each
+  dungeon (the patrols' nine, the 18 Elite Dungeons and four passage dungeons of chalk and barrow,
+  `dungeon_room_tests`): what is left are
   rock-to-wall gaps of 0.7 to 0.95 m, which the 0.4 m cell cannot open, and pockets more than 0.8 m off the mesh,
   where a foe walks the last stretch straight.
-- In `brine-catacombs` the floor at the foot of the flight up from its third storey (x 4.8, y 8) is two polys either
-  side of a diagonal edge that never link, though they lie on one flat floor 0.2 m apart, so its rooms 14 to 17 have
-  mesh but no way from the way in: their foes cannot reach a player coming from it, nor follow one in. The cause is
-  in the outlines or the polys; an ignored test holds the case
-  (`brine_catacombs_flight_foot_is_one_floor_on_the_navmesh`).
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
 - The grid's cells stay 0.25 m however large the room, so a bake's time and memory grow with its area. Tested
   offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course, its 115 links among it, bakes in about
