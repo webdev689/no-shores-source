@@ -200,7 +200,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   does so at a landing and its flight, or at a doorway onto the next block. About a quarter of the rooms are dead ends.
 - **The vaults** (`vaults`): one in a dungeon of two or three blocks, two in one of four or five, each a room off the
   main way but the way in's and the end, on the deepest storey it can, a dead end first, then the farthest along the
-  walk.
+  walk. Before a vault is furnished, its first open cell away from its doorways with a rock wall no torch hangs on is
+  kept clear (`keep_chest_place`), so its gold chest always has a place.
 - **The way in** is in the first room of the way in's block that has a cell with rock beside it, at the cell nearest
   its middle, its quiet cells first: the exit door stands on that rock (never a stone), 1.4 m wide and 2.4 m high, and
   a body arrives 0.4 m past that cell's middle, about 2 m in from the door, facing into the room.
@@ -415,8 +416,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   prop, a fixture or a landmark, or under a torch (`against_walls`). It stands a chest for each storey of each block
   (`dungeon_chests`), each in a room of its own, the dead ends its generator names first (`chest_rooms`) and then
   rooms drawn on the room's loot seed, and where rooms run short a room holds a second, two cells from every other;
-  a vault's chest in each of its generator's vaults (no seal's room is a vault) that has a place against its wall
-  (`stand_vault`; a vault with none stands no chest), and no plain chest there. Each draw rolls on a lane of its own,
+  a vault's chest in each of its generator's vaults (no seal's room is a vault), against the wall its furnishing kept
+  clear (`stand_vault`), and no plain chest there. Each draw rolls on a lane of its own,
   wider than the most chests a dungeon stands. A dungeon's chest pays more than a patrol's, a vault's the most
   ([[Gear]], "A find"). Each player's gear counts the chests they have opened of all it stands, and the screen names
   them under the place's name ("Chests 2 of 5"). It makes one of its props of the holding families in four

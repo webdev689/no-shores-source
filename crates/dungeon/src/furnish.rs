@@ -100,6 +100,32 @@ impl Fitting {
         open && wall_free && clear
     }
 
+    /// Keeps a vault's chest a place before anything is laid: the first open cell away from its doorways with a rock
+    /// wall no torch hangs on stands nothing, so its chest always stands against that wall.
+    pub(crate) fn keep_chest_place(&mut self, dungeon: &Dungeon) {
+        let room = self.room;
+        let next_inner = |next: Cell| match next {
+            Cell::Rock => true,
+            Cell::Room(other) => usize::from(other) == room,
+            _ => false,
+        };
+        let inner = |cell: usize| {
+            SIDES.into_iter().all(|side| dungeon.beside(cell, side).is_none_or(|next| next_inner(dungeon.cells[next])))
+        };
+        let torch_on =
+            |cell, side| dungeon.torches.iter().any(|torch| torch.wall == side && dungeon.cell_at(torch.at) == cell);
+        let spot =
+            self.open.iter().copied().filter(|&cell| !self.taken.contains(&cell) && inner(cell)).find_map(|cell| {
+                SIDES
+                    .into_iter()
+                    .find(|&side| dungeon.rock_beside(cell, side) && !torch_on(cell, side))
+                    .map(|side| (cell, side))
+            });
+        if let Some((cell, side)) = spot {
+            self.take(cell, Some(side), false);
+        }
+    }
+
     /// Takes a cell, and a wall if one, for something that stands there.
     pub(crate) fn take(&mut self, cell: usize, wall: Option<Side>, solid: bool) {
         self.taken.push(cell);
@@ -392,6 +418,9 @@ impl Dungeon {
                 fitting.anchor = anchor;
             }
             let inside = !fitting.fixtures.is_empty();
+            if self.vaults.contains(&room) {
+                fitting.keep_chest_place(self);
+            }
             let purpose = self.rooms[room].purpose;
             let mut lane = Lane::named(&format!("props:{seed}:{room}"));
             for lay in purpose.lays {

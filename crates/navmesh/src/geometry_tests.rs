@@ -98,8 +98,9 @@ fn an_outline_with_two_bridged_holes_is_clipped_into_its_own_area_and_never_over
     // Each pillar's middle, inside its hole.
     for (x, y) in [(283.5, 220.5), (283.0, 211.5)] {
         let middle = Point { x, y, z: 0.0 };
-        let over =
-            triangles.iter().any(|&[a, b, c]| left_on(a, b, middle) && left_on(b, c, middle) && left_on(c, a, middle));
+        let over = triangles.iter().any(|&[first, second, third]| {
+            left_on(first, second, middle) && left_on(second, third, middle) && left_on(third, first, middle)
+        });
         assert!(!over, "a triangle over the pillar at {x}, {y}");
     }
 }

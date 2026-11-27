@@ -343,10 +343,8 @@ fn every_elite_dungeons_chests_keep_out_of_its_seals_rooms() {
             let cell = dungeon.cell_at([x, y, z]);
             assert!(!seals.contains(&dungeon.room_at(cell).expect("a room")), "{}: a chest in a seal's room", elite.id);
         }
-        // A vault with a place against its walls, seals or none, stands its gold chest.
-        let Floor::Dungeon(ground) = &room.floor else { panic!("a dungeon's ground") };
-        let placed = crate::finds::Finds::of_dungeon(&dungeon, ground, &[]).groups;
-        for &vault in dungeon.vaults.iter().filter(|vault| placed.contains(vault)) {
+        // Every vault stands its gold chest: its furnishing keeps it a place against a wall.
+        for &vault in &dungeon.vaults {
             let gold = room.finds.chests.iter().filter(|chest| chest.vault).any(|chest| {
                 let [x, y, z, _] = room.finds.places[chest.place];
                 dungeon.room_at(dungeon.cell_at([x, y, z])) == Some(vault)

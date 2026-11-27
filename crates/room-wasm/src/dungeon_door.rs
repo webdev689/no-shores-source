@@ -338,7 +338,7 @@ mod tests {
         br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
         br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0x4e03_935e_b541_2eca;
+    const AGREED_HASH: u64 = 0x28ae_b7f8_5045_e220;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
