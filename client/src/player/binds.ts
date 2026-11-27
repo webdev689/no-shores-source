@@ -91,8 +91,9 @@ export const CONTROLS = {
   // On an item's page, the piece worn in its slot set beside it.
   compare: control(['c'], [], ['menu']),
   controls: control(['k'], ['View'], EVERYWHERE),
-  // The chat's field opens on T wherever the player plays, the owner's choice: at the helm Enter sets sail.
-  chat: control(['t'], [], ['foot', 'dead', 'helm', 'fight']),
+  // The chat's field opens on T wherever the player plays, the owner's choice: at the helm Enter sets sail. On the
+  // pad View and Start together, the one pair no fight or helm hears, whose menus wait a moment for it.
+  chat: control(['t'], ['View+Start'], ['foot', 'dead', 'helm', 'fight']),
   steerLeft: control(['a'], ['LS left'], HELM),
   steerRight: control(['d'], ['LS right'], HELM),
   sailOn: control(['w'], ['LS up'], HELM),

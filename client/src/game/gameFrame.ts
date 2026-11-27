@@ -15,7 +15,7 @@ import type { Foot } from './foot.ts';
 import { type Fallen, ReviveNotices } from './footRevive.ts';
 import { contextOf, interfaceKeys, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
-import { stripOf, withFollow, withMapKey } from './hints.ts';
+import { stripOf, withFollow, withMapAndChat } from './hints.ts';
 import { runPlaceWords } from './breachWords.ts';
 import { ofRun, releaseRunModules } from '../city/modules.ts';
 import { FALLEN, refusedWords } from './toShip.ts';
@@ -314,7 +314,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const placing = placingStrip();
     // Fallen in a Breach, the camera follows the company: its key, naming whom, is shown while anyone may be followed.
     const strip = here.followable !== null ? withFollow(shown.hints, here.followable) : shown.hints;
-    hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? strip : withMapKey(strip))));
+    hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? strip : withMapAndChat(strip))));
     // The leave held through takes the player to their ship: not under a window, the sheet, the held map or the chat,
     // nor while she speaks; fallen, it says why not.
     const refused = here.fallen ? refusedWords(FALLEN) : null;
