@@ -31,11 +31,11 @@ impl Floor {
         DungeonGround::of(dungeon).map(|ground| Floor::Dungeon(Box::new(ground)))
     }
 
-    /// How deep a point lies inside a solid nobody may stand on, metres: a dungeon's, since its ground walls every
-    /// solid however low; 0 elsewhere, where a body climbs a low block.
-    pub(crate) fn depth_in_solid(&self, x: f64, y: f64) -> f64 {
+    /// How deep a point with feet at `z` lies inside a solid nobody may stand on, metres: a dungeon's, since its
+    /// ground walls every solid however low; 0 elsewhere, where a body climbs a low block.
+    pub(crate) fn depth_in_solid(&self, x: f64, y: f64, z: f64) -> f64 {
         match self {
-            Floor::Dungeon(ground) => ground.depth_in_solid(x, y),
+            Floor::Dungeon(ground) => ground.depth_in_solid(x, y, z),
             _ => 0.0,
         }
     }
@@ -87,6 +87,28 @@ impl Terrain for Floor {
                 self.height_at(x, y)
             }
             Floor::Dungeon(ground) => ground.floor_at(x, y),
+        }
+    }
+
+    /// Only a dungeon stands floors over one another: elsewhere the ground answers by (x, y) alone.
+    fn height_under(&self, x: f64, y: f64, z: f64) -> f64 {
+        match self {
+            Floor::Dungeon(ground) => ground.height_under(x, y, z),
+            _ => self.height_at(x, y),
+        }
+    }
+
+    fn walled_at(&self, from: (f64, f64), to: (f64, f64), z: f64) -> bool {
+        match self {
+            Floor::Dungeon(ground) => ground.walled_at(from, to, z),
+            _ => self.walled(from, to),
+        }
+    }
+
+    fn floor_under(&self, x: f64, y: f64, z: f64) -> f64 {
+        match self {
+            Floor::Dungeon(ground) => ground.floor_under(x, y, z),
+            _ => self.floor_at(x, y),
         }
     }
 

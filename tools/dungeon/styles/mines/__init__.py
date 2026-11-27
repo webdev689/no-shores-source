@@ -1,9 +1,10 @@
 """The mines: timber shoring, rails, ore and tools. A timber set stands on both walls of every cell (a post on its
 sill, stretched to the room's height, under a bolster wedged to the roof) with a cap beam laid across, lagged over;
 rails run along x the way a corridor runs. kit_pieces.py holds the sets, beams, pillars and doorways; fittings.py
-the features, rails, sconce, portal and exit; landmarks.py the Lift Shaft; workings.py the Ore Cart and the Collapse.
+the features, rails, sconce, portal and exit; stairs.py the sets over a flight's head and foot, the stringer down
+its walls and a gallery's fence; landmarks.py the Lift Shaft; workings.py the Ore Cart and the Collapse.
 """
-from . import fittings, kit_pieces, landmarks, workings
+from . import fittings, kit_pieces, landmarks, stairs, workings
 
 
 def build(kit):
@@ -19,6 +20,8 @@ def build(kit):
         'ceiling.c': kit_pieces.ceiling_c(kit),
         'floor.a': fittings.floor_a(kit), 'floor.b': fittings.floor_b(kit),
         'sconce': fittings.sconce(kit), 'portal': fittings.portal(kit), 'exit': fittings.exit_frame(kit),
+        'stair.head': stairs.stair_head(kit), 'stair.side': stairs.stair_side(kit),
+        'balustrade': stairs.balustrade(kit),
         'mines.lift-shaft': landmarks.lift_shaft(kit), 'mines.ore-cart': workings.ore_cart(kit),
         'mines.collapse': workings.collapse(kit),
     }

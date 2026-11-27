@@ -220,7 +220,7 @@ The numbers are an Art's at level 5.
 | Mend | Heals the caster | 40 | Mercy: players within 8 m heal 20. Resolve: Crit |
 | Dawnflare | A bird flies from 3 m behind the chest along the aim, burning each foe within 3 m of it once a pass | 24 m in 1.6 s, 14 damage | Wings: a second pass back. Searing: Exposes |
 | Duskraven | A raven at the right shoulder. On its first tick and every 0.8 s it fires a bolt at the foe nearest it within reach. The bolt flies at its foe, strikes, Exposes and heals the caster half the health it took, or fizzles if its foe falls first | 12 s, 22 m, 30 m/s, 16 damage | Hunger: heals all it took. Dread: see above |
-| Dusk Daggers | Aimed while held, then a ring where it was aimed, drawn in to the reach, always on the ground there. Every 0.5 s from its first tick, each foe inside is struck and Exposed | 16 m, 4 m ring, 5 s, 3 damage | Blades: 5.5 m ring, 7 s |
+| Dusk Daggers | Aimed while held, then a ring where it was aimed, drawn in to the reach, always on the ground there under the caster's own height, so in a dungeon on the caster's storey. Every 0.5 s from its first tick, each foe inside is struck and Exposed | 16 m, 4 m ring, 5 s, 3 damage | Blades: 5.5 m ring, 7 s |
 | Vanish | On the ground, where a dodge could start, a dodge's hop the way the body moves, or back when still, landing the roll away, blows passing through it as a dodge's do. Then Veiled; out of what a dodge cannot leave (a dodge, a flinch's first 8 ticks, the tick before a blow lands, a reload, an overreach), the veil without the hop, and what the player was doing runs on | 3 m, the veil's 4 s | Night: 6 s. Hunt: see above |
 
 - **Seen by all.** Each spell that lasts or moves is an entity every player is sent: an orb, the Sunwell, the

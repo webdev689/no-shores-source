@@ -4,7 +4,7 @@
 // click on one sets a course to its anchorage. A port's name shows on the same card as the pointer passes over its
 // anchor.
 import type { Point2 } from '../overworld/ground.ts';
-import type { MapRegion } from '../overworld/regions.ts';
+import { type MapRegion, nearestRegion } from '../overworld/regions.ts';
 import type { HoverSaid, WaterJudge } from './heldMapAsk.ts';
 import { LIGHT_INK, PARCHMENT, type Painter, word } from './mapLetters.ts';
 import { FACE, INK } from './mapKey.ts';
@@ -14,17 +14,6 @@ import { difficultyColour, type MapWaters } from './watersWash.ts';
 /** The card a hovered name shows on, units at the lettering's scale 1: its title's and caption's sizes, the room
  *  round its words, its inner rule's inset, its corner diamonds' half width, and how far over the point it stands. */
 const CARD = { title: PORT_PX, caption: 11, pad: 8, inset: 2.5, diamond: 1.8, above: 12 } as const;
-
-/** The region whose centre is nearest a point, of those given. */
-function nearest(regions: readonly MapRegion[], [x, y]: Point2): MapRegion | null {
-  let best: MapRegion | null = null;
-  let bestApart = Number.POSITIVE_INFINITY;
-  for (const region of regions) {
-    const apart = Math.hypot(region.centre[0] - x, region.centre[1] - y);
-    if (apart < bestApart) [best, bestApart] = [region, apart];
-  }
-  return best;
-}
 
 /** The cells of the waters' grid whose middles lie inside `outline`, a byte each (1 inside), laid a row at a time by
  *  where the outline crosses it (even-odd); kept for each outline while the grid is the same. */
@@ -69,7 +58,7 @@ export function regionAt(
   const cell = cellOf(waters, point);
   if (island === null || cell === null || (waters.water[cell] ?? -1) >= 0) return null;
   const own = regions.filter((region) => region.island === island);
-  return own[0] && insideCells(waters, own[0].outline)[cell] ? nearest(own, point) : null;
+  return own[0] && insideCells(waters, own[0].outline)[cell] ? nearestRegion(own, point) : null;
 }
 
 /** A byte a cell of the waters' grid, 255 over the land of `region`; all 0 for none. */
@@ -83,7 +72,7 @@ export function regionCells(waters: MapWaters, regions: readonly MapRegion[], re
     for (let column = 0; column < columns; column++) {
       const cell = row * columns + column;
       if (!inside[cell] || (water[cell] ?? -1) >= 0) continue;
-      if (nearest(own, [(column + 0.5) * cellM, (row + 0.5) * cellM]) === region) lit[cell] = 255;
+      if (nearestRegion(own, [(column + 0.5) * cellM, (row + 0.5) * cellM]) === region) lit[cell] = 255;
     }
   return lit;
 }

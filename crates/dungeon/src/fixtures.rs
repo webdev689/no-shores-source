@@ -190,8 +190,17 @@ impl Fitting {
                     let (dx, dy) = (middle[0] - post[0], middle[1] - post[1]);
                     // Toward the room's middle along the nearer axis, so it hangs on the post's face to the room.
                     let toward = if dx.abs() >= dy.abs() { [dx.signum(), 0.0] } else { [0.0, dy.signum()] };
-                    let at =
-                        [post[0] + toward[0] * LANTERN_OFF_POST_M, post[1] + toward[1] * LANTERN_OFF_POST_M, LANTERN_M];
+                    let hung = |sign: f64| {
+                        let along = sign * LANTERN_OFF_POST_M;
+                        [post[0] + toward[0] * along, post[1] + toward[1] * along, LANTERN_M]
+                    };
+                    // On the far face where the room's middle lies past the post's own cell's wall.
+                    let cell_of = |x: f64, y: f64| ((x / CELL_M) as usize, (y / CELL_M) as usize);
+                    let at = if cell_of(hung(1.0)[0], hung(1.0)[1]) == cell_of(post[0], post[1]) {
+                        hung(1.0)
+                    } else {
+                        hung(-1.0)
+                    };
                     self.fixtures.push(Fixture { at, kind: Kind::Lantern, solid: None });
                 }
             }
@@ -203,3 +212,51 @@ impl Fitting {
 fn front_of(yaw: f64) -> Side {
     SIDES.into_iter().find(|side| (side.bearing() - yaw).abs() < 1e-9).unwrap_or(Side::North)
 }
+
+impl Dungeon {
+    /// Braziers flanking a doorway from the corridor side, where the room's own wall beside it holds none: in the
+    /// corridor's cell past the jambs, either side of the opening, so the way through stays its full width. None where
+    /// that cell opens either side of the way onto a room, which its jambs would meet, a flight, whose mouth it would
+    /// stand in, or a gallery's open air, whose balustrade it would meet; or where a torch burns within half a metre.
+    pub(crate) fn flank_outside(&mut self, cell: usize, side: Side) -> bool {
+        let Some(next) = self.beside(cell, side).filter(|&next| self.cells[next] == crate::Cell::Corridor) else {
+            return false;
+        };
+        let across = [side.clockwise(), side.clockwise().opposite()];
+        let open = |at: usize| !matches!(self.cells[at], crate::Cell::Rock | crate::Cell::Corridor);
+        if across.iter().any(|&way| self.beside(next, way).is_some_and(open)) {
+            return false;
+        }
+        let [x, y] = self.centre(cell);
+        let ([dx, dy], half) = (side.unit(), CELL_M / 2.0);
+        let deep = half + crate::JAMB_DEPTH_M + OUTSIDE_GAP_M + BRAZIER_HALF_M;
+        let floor = self.floor_of(cell);
+        let braziers: Vec<Fixture> = across
+            .iter()
+            .map(|way| {
+                let [ax, ay] = way.unit();
+                let along = crate::DOORWAY_HALF_M + OUTSIDE_GAP_M + BRAZIER_HALF_M;
+                let centre = [x + dx * deep + ax * along, y + dy * deep + ay * along];
+                let solid = square(centre, BRAZIER_HALF_M, BRAZIER_HALF_M, floor + BRAZIER_TOP_M);
+                Fixture { at: [centre[0], centre[1], floor + BRAZIER_FLAME_M], kind: Kind::Brazier, solid: Some(solid) }
+            })
+            .collect();
+        let near_flame = |solid: &[f64; 5]| {
+            self.torches.iter().filter(|torch| self.cell_at(torch.at) == next).any(|torch| {
+                let gap_x = (solid[0] - torch.at[0]).max(torch.at[0] - solid[2]).max(0.0);
+                let gap_y = (solid[1] - torch.at[1]).max(torch.at[1] - solid[3]).max(0.0);
+                gap_x * gap_x + gap_y * gap_y < OUTSIDE_FLAME_M * OUTSIDE_FLAME_M
+            })
+        };
+        let taken = self.fixtures.iter().any(|fixture| fixture.solid.is_some() && self.cell_at(fixture.at) == next);
+        if taken || braziers.iter().any(|brazier| brazier.solid.as_ref().is_some_and(near_flame)) {
+            return false;
+        }
+        self.fixtures.extend(braziers);
+        true
+    }
+}
+
+/// How far a brazier outside a doorway keeps past the jambs and the opening, and from a torch's flame (m).
+const OUTSIDE_GAP_M: f64 = 0.05;
+const OUTSIDE_FLAME_M: f64 = 0.5;

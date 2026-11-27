@@ -51,3 +51,31 @@ fn an_anchored_bake_lays_no_links_where_an_ordinary_one_climbs_a_block() {
     let anchored = NavMesh::bake_anchored(&[block], &movement::Flat, FIELD, &AGENT, [-10.0, 0.0, 0.0]);
     assert_eq!(anchored.links().count(), 0, "an anchored bake, a dungeon's, lays none");
 }
+
+/// A way 3.2 m wide at 0 m along x, walled by a plateau, crossing a room 8 m under it on a slab of rock from that
+/// room's ceiling up to the way's floor, as a dungeon's way crosses a room of the storey under it.
+struct OverARoom;
+
+impl Terrain for OverARoom {
+    fn height_at(&self, x: f64, y: f64) -> f64 {
+        if y.abs() >= 1.6 {
+            10.0
+        } else if x.abs() < 1.6 {
+            -8.0
+        } else {
+            0.0
+        }
+    }
+}
+
+#[test]
+fn a_way_over_a_room_on_a_slab_is_walked_where_its_floor_meets_the_drop_beside_it() {
+    let slab = movement::Block { min_x: -1.6, min_y: -1.6, max_x: 1.6, max_y: 1.6, top: 0.0, bottom: -4.0 };
+    let (from, to) = ([-10.0, 0.0, 0.0], [10.0, 0.0, 0.0]);
+    let cliffs = NavMesh::bake_anchored(&[slab], &OverARoom, FIELD, &AGENT, from);
+    assert!(cliffs.find_path(from, to).is_none(), "an edge over a drop is no floor to an ordinary bake");
+    let agent = navmesh::Agent { walks_to_drops: true, ..AGENT };
+    let walked = NavMesh::bake_anchored(&[slab], &OverARoom, FIELD, &agent, from);
+    let route = walked.find_path(from, to).expect("across the slab");
+    assert!(route.iter().all(|point| point[2].abs() < 0.3), "on the way's floor: {route:?}");
+}

@@ -1,18 +1,40 @@
 /**
  * Where a kept character may arrive, judged by the room that held it before (the accounts' word, `characters.ts`),
  * never by its page. Overlook's social space, where every session begins, takes anyone. Any other node's room takes a
- * character that rejoins it, lands from the sea with its ship lying off the node's island, comes through a gate from
- * a node whose gate leads there, or comes out of the node's own dungeon; a dungeon's room or a run takes one from its
- * node's room, and a guild dungeon's run from its guild's outpost alone. A join to one of the company playing in the
- * room is the keeper's to judge (`keeping.ts`). A passage zone's room takes a character on the dive its kept body
- * holds, by the ways the dive allows (`intoPassage`), and an island's patrol zone one that lit a lamp in the zone it
- * comes from.
+ * character that rejoins it, lands from the sea with its ship lying off the node's island and region, comes through a
+ * gate from a node whose gate leads there, or comes out of the node's own dungeon; a dungeon's room or a run takes one
+ * from its node's room, and a guild dungeon's run from its guild's outpost alone. A join to one of the company playing
+ * in the room is the keeper's to judge (`keeping.ts`). A passage zone's room takes a character on the dive its kept
+ * body holds, by the ways the dive allows (`intoPassage`), and an island's patrol zone one that lit a lamp in the zone
+ * it comes from.
  */
 
 import islands from '../content/world/islands.json' with { type: 'json' };
+import regionsTable from '../content/world/regions.json' with { type: 'json' };
+import { nearestRegion, regionHolds } from '../client/src/overworld/regions.ts';
 import { nodeRoom, passageRoom, seaRoom, startedAtSea } from './roomNames.ts';
 
 type Point = readonly [number, number];
+
+/** Every island's regions (`content/world/regions.json`), their points as pairs, for the rule the island's tiles keep. */
+export const REGIONS = regionsTable.flatMap(({ island, regions }) =>
+  regions.map(({ name, centre: [x = 0, y = 0], anchorage: [east = 0, south = 0], nodes }) => ({
+    island,
+    name,
+    centre: [x, y] as Point,
+    anchorage: [east, south] as Point,
+    nodes,
+  })),
+);
+
+/** Whether a ship at `ship` lies off the region of `island` that holds node `id`, the one whose centre is nearest it,
+ *  as the island's tiles show that region's places alone (`nearestRegion`, `regionHolds`); any node of an island with
+ *  no regions, or one no region lists, as every region's tiles show it. */
+export function offRegionOf(id: string, island: string, ship: Point): boolean {
+  const own = REGIONS.filter((region) => region.island === island);
+  const region = nearestRegion(own, ship);
+  return region === null || regionHolds(own, region, id);
+}
 
 /** Where every session begins: Overlook's social space, one room at every tier. */
 export const FIRST_ROOM = 'node-overlook-social';
@@ -137,9 +159,10 @@ export function arrives(
   if (inside(to)) return false;
   // Through a gate, from a node whose gate leads here, at the same seas.
   if (was && !inside(was) && was.seas === to.seas && reach?.gatedFrom.includes(was.id)) return true;
-  // Ashore from the sea, which sails at Normal whatever tier the voyage set out at, the ship off its island's coast.
+  // Ashore from the sea, which sails at Normal whatever tier the voyage set out at, the ship off its island's coast and
+  // off the node's region where one lists it.
   if (from === null || seaRoom(from) === null || !reach || !ship || reach.locked) return false;
-  return toCoast(ship, reach.coast) <= LANDFALL_M;
+  return toCoast(ship, reach.coast) <= LANDFALL_M && offRegionOf(to.id, reach.continent, ship);
 }
 
 /** How far a point lies from a ring's nearest edge, metres, as the page measures a ship off a coast. */

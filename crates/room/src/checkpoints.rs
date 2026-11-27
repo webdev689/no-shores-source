@@ -20,11 +20,11 @@ pub(crate) enum Won {
     Court,
 }
 
-/// One checkpoint: where a fallen player stands at it, the way they face, how far along the activity it lies (a
+/// One checkpoint: where a fallen player stands at it (x, y, z), the way they face, how far along the activity it lies (a
 /// dungeon room's walk from the way in, or a mission post's distance from its first spawn), and what wins it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Checkpoint {
-    pub at: [f64; 2],
+    pub at: [f64; 3],
     pub facing: f64,
     pub along: f64,
     pub won: Won,
@@ -32,7 +32,7 @@ pub(crate) struct Checkpoint {
 
 /// Where a body stands at a dungeon room's checkpoint, and the way it faces: at the middle of the doorway cell the walk
 /// from the way in reaches first, facing in from the cell before it; none for a room no doorway opens.
-pub(crate) fn doorway_of(dungeon: &Dungeon, walks: &[u32], room: usize) -> Option<([f64; 2], f64)> {
+pub(crate) fn doorway_of(dungeon: &Dungeon, walks: &[u32], room: usize) -> Option<([f64; 3], f64)> {
     let doorways: Vec<usize> = dungeon.frames.iter().map(|frame| frame.cell).collect();
     let cells = dungeon.rooms.get(room)?.cells.iter().copied();
     let entered = cells.filter(|cell| doorways.contains(cell)).min_by_key(|&cell| (walks[cell], cell))?;
@@ -41,8 +41,8 @@ pub(crate) fn doorway_of(dungeon: &Dungeon, walks: &[u32], room: usize) -> Optio
         .filter_map(|side| dungeon.beside(entered, side))
         .filter(|&cell| dungeon.cells[cell] != Cell::Rock && dungeon.room_at(cell) != Some(room))
         .min_by_key(|&cell| (walks[cell], cell))?;
-    let at = dungeon.centre(entered);
-    Some((at, bearing(dungeon.centre(before), at)))
+    let at = dungeon.standing_point(entered);
+    Some((at, bearing(dungeon.centre(before), [at[0], at[1]])))
 }
 
 impl Room {
@@ -51,8 +51,12 @@ impl Room {
     pub(crate) fn lay_dungeon_checkpoints(&mut self, dungeon: &Dungeon, bands: &[(usize, usize)]) {
         let walks = crate::encounter_plan::walks(dungeon);
         let mut laid = Vec::new();
+        // The Court is the last checkpoint, though a seal's room may lie farther by walk than the end's.
+        let farthest = dungeon.rooms.iter().map(|found| found.walk).max().unwrap_or(0);
         let mut lay = |room: usize, won: Won| {
-            let along = f64::from(dungeon.rooms.get(room).map_or(0, |found| found.walk));
+            let walk =
+                if won == Won::Court { farthest + 1 } else { dungeon.rooms.get(room).map_or(0, |found| found.walk) };
+            let along = f64::from(walk);
             if let Some((at, facing)) = doorway_of(dungeon, &walks, room) {
                 laid.push(Checkpoint { at, facing, along, won });
             }
@@ -81,7 +85,7 @@ impl Room {
             let at = [post.at[0], post.at[1]];
             // The last stand's own post faces the room's way: it has nowhere further on to face.
             let facing = last.filter(|last| apart(at, *last) > 0.5).map_or(self.facing, |last| bearing(at, last));
-            Checkpoint { at, facing, along: apart(at, [first.0, first.1]), won: Won::Post(number) }
+            Checkpoint { at: post.at, facing, along: apart(at, [first.0, first.1]), won: Won::Post(number) }
         });
         self.respawning.checkpoints = laid.collect();
     }
@@ -114,7 +118,14 @@ impl Room {
     /// A body standing at the checkpoint, facing in; none before any is won.
     pub(crate) fn at_checkpoint(&self) -> Option<Body> {
         let checkpoint = self.respawning.checkpoints.get(self.checkpoint()?)?;
-        Some(Body { facing: checkpoint.facing, ..self.stand((checkpoint.at[0], checkpoint.at[1])) })
+        let [x, y, z] = checkpoint.at;
+        let body = self.stand((x, y));
+        // A dungeon's storeys stand over one another: the fallen stand on the checkpoint's own.
+        let z = match self.floor {
+            crate::Floor::Dungeon(_) => movement::blocks::ground_at(&self.blocks, &self.floor, x, y, z),
+            _ => body.z,
+        };
+        Some(Body { facing: checkpoint.facing, z, ..body })
     }
 
     /// Whether a post's group holds the ground its fall won: in a run's room, kept to one company, while someone is in

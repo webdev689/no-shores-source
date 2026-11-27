@@ -45,8 +45,7 @@ fn strike(room: &mut Room, player: PlayerId, foe: FighterId, damage: f64) {
 /// A point in the end room, by its first cell's middle.
 fn in_court(room: &Room) -> [f64; 3] {
     let cell = room.encounters.as_ref().expect("encounters").court_cells[0];
-    let [x, y] = crate::encounters::encounters_tests::middle_of(room, cell);
-    [x, y, 0.0]
+    crate::encounters::encounters_tests::middle_of(room, cell)
 }
 
 /// Raises the first ward and breaks it.
@@ -69,6 +68,21 @@ fn stand_anchors(room: &mut Room, player: PlayerId) {
             room.tick();
         }
     }
+}
+
+#[test]
+fn an_anchor_is_stood_on_in_the_court_alone_never_from_the_storey_over_it() {
+    let (mut room, player, boss) = court();
+    let most = room.foes[&boss].fighter.health_max;
+    strike(&mut room, player, boss, most);
+    room.tick();
+    for [x, y, z] in anchors(&room) {
+        for _ in 0..ANCHOR_TICKS {
+            put(&mut room, player, [x, y, z + dungeon::STOREY_M]);
+            room.tick();
+        }
+    }
+    assert_eq!(room.encounter_seen().expect("seen").wards_broken, 0, "the ward stands");
 }
 
 #[test]
@@ -292,9 +306,16 @@ fn the_warded_boss_slams_round_it_every_eight_seconds_shown_two_seconds_first() 
     let mut shown = Vec::new();
     room.take_events();
     let mut before = 0.0;
+    // A cell of the Court beside the Boss's, within the slam's reach.
+    let post = room.foes[&boss].fighter.body;
+    let cells = room.encounters.as_ref().expect("encounters").court_cells.clone();
+    let beside = cells.into_iter().map(|cell| crate::encounters::encounters_tests::middle_of(&room, cell)).find(|at| {
+        let apart = libm::hypot(at[0] - post.x, at[1] - post.y);
+        apart > 1.0 && apart < SLAM_M - 0.3
+    });
+    let beside = beside.expect("a cell of the Court beside the Boss");
     while room.clock < raised + SLAM_EVERY {
-        let at = room.foes[&boss].fighter.body;
-        put(&mut room, player, [at.x + SLAM_M - 0.5, at.y, at.z]);
+        put(&mut room, player, beside);
         before = room.players[&player].fighter.health;
         room.tick();
         shown.push(room.encounter_seen().expect("seen").slam_ticks);
@@ -310,8 +331,15 @@ fn the_warded_boss_slams_round_it_every_eight_seconds_shown_two_seconds_first() 
 fn the_warded_boss_runs_back_to_its_post_and_stands_there() {
     let (mut room, player, boss) = court();
     let post = room.garrison[0].at;
+    // A cell of the Court about a cell from its post.
+    let off = room.encounters.as_ref().expect("encounters").court_cells.clone().into_iter().find_map(|cell| {
+        let at = crate::encounters::encounters_tests::middle_of(&room, cell);
+        let apart = libm::hypot(at[0] - post[0], at[1] - post[1]);
+        (apart > 3.0 && apart < 3.4).then_some(at)
+    });
+    let at = off.expect("a cell of the Court beside its post's");
     let body = &mut room.foes.get_mut(&boss).expect("it").fighter.body;
-    (body.x, body.y) = (post[0] + 3.0, post[1]);
+    (body.x, body.y, body.z) = (at[0], at[1], at[2]);
     let most = room.foes[&boss].fighter.health_max;
     strike(&mut room, player, boss, most);
     // Once the blow it was winding up has landed.
@@ -348,13 +376,13 @@ fn the_reckoning_reaches_the_end_room_and_the_rooms_sharing_a_doorway_with_it_an
         .find(|&other| other != laid.end() && reach.contains(&laid.rooms[other].cells[0]))
         .expect("a room sharing a doorway with the end room");
     let away = room.encounters.as_ref().expect("encounters").plan.seals[0].pieces[0];
-    let cell = room.encounters.as_ref().expect("encounters").plan.cell_at([away[0], away[1]]).expect("its cell");
+    let cell = room.encounters.as_ref().expect("encounters").plan.cell_at(away).expect("its cell");
     assert!(!reach.contains(&cell), "the first seal's room lies beyond its reach");
-    let [x, y] = laid.centre(laid.rooms[beside].cells[0]);
+    let [x, y, z] = laid.standing_point(laid.rooms[beside].cells[0]);
     let before = [room.players[&near].fighter.health, room.players[&far].fighter.health];
     for _ in 0..RECKONING_WARNING {
         put(&mut room, player, light);
-        put(&mut room, near, [x, y, 0.0]);
+        put(&mut room, near, [x, y, z]);
         put(&mut room, far, away);
         room.tick();
     }
@@ -389,4 +417,42 @@ fn the_ward_rises_at_exactly_two_thirds_of_the_bosss_health_and_not_above() {
     let at = room.warded(boss, Fighter { health: held, ..fighter });
     assert!(room.encounters.as_ref().expect("encounters").court.ward_up, "at two thirds exactly: warded");
     assert_eq!(at.health, held);
+}
+
+#[test]
+fn the_foes_storeys_lie_half_a_dungeon_storey_apart() {
+    assert_eq!(::foes::tuning::STOREYS_APART_M, dungeon::STOREY_M / 2.0);
+}
+
+#[test]
+fn a_foe_hunts_the_nearest_player_on_its_own_storey_never_one_over_or_under_it() {
+    let (mut room, player, boss) = court();
+    let other = hardy(&mut room);
+    let body = room.foes[&boss].fighter.body;
+    // The player on the Boss's storey stands farther across than the one a storey under it.
+    let far = room.encounters.as_ref().expect("encounters").court_cells.clone().into_iter().rev().find_map(|cell| {
+        let at = crate::encounters::encounters_tests::middle_of(&room, cell);
+        (libm::hypot(at[0] - body.x, at[1] - body.y) > 3.0).then_some(at)
+    });
+    put(&mut room, player, far.expect("a cell of the Court away from the Boss"));
+    put(&mut room, other, [body.x + 1.0, body.y, body.z - dungeon::STOREY_M]);
+    room.hunt_nearest(&[boss]);
+    assert_eq!(room.foes[&boss].brain.fights(), Some(player), "the player on its own storey");
+}
+
+#[test]
+fn the_warded_boss_a_storey_off_its_post_makes_back_for_it() {
+    let (mut room, player, boss) = court();
+    let most = room.foes[&boss].fighter.health_max;
+    strike(&mut room, player, boss, most);
+    room.tick();
+    assert!(room.encounters.as_ref().is_some_and(|found| found.court.ward_up), "warded");
+    let post = room.garrison[0].at;
+    let body = &mut room.foes.get_mut(&boss).expect("it").fighter.body;
+    // Straight over its post, a storey up: as near as can be across, yet nowhere near it.
+    (body.x, body.y, body.z) = (post[0], post[1], post[2] + dungeon::STOREY_M);
+    let noticed: Vec<(FighterId, combat::Fighter)> = room.fighters();
+    let intents = room.think_foes(&noticed);
+    let (_, (_, intent)) = intents.iter().find(|(id, _)| *id == boss).expect("the Boss thinks");
+    assert_eq!(intent.controls.forward, 1.0, "it runs, never stands off its post");
 }

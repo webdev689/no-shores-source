@@ -291,8 +291,9 @@ through WebAssembly, so names, factions and weapons are read in one place.
   lattice: the Reeve, a Miniboss, alone in the end room, facing the way in; in each other room past the way in's, a
   band drawn from the dungeon's foes above, one for each ten of the room's cells, rounded, two to four, each on one of
   the room's free cells nearest its middle, those its props leave, its quiet cells first, facing out from the middle.
-  When the bands and the Reeve would pass the room's 24, the rooms that stand one are the most that fit, spread evenly
-  along the walk from the way in to the end. A dungeon has no lattice to draw beats from, so its bands hold their
+  When the bands and the Reeve would pass the room's 24, the rooms of the main way stand theirs first, the most that
+  fit spread evenly along it; then each vault while foes remain; then the other rooms, the most that fit spread evenly
+  along the walk ([[Dungeons]], "In the rooms"). A dungeon has no lattice to draw beats from, so its bands hold their
   posts. Its levels, shields, leash and standing again are any garrison's, at its patrol's island band.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
   place in its group or, farther than 14 m from the foe, stands on the ground off the room's navmesh

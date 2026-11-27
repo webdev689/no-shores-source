@@ -556,3 +556,12 @@ fn a_public_round_begun_again_stands_only_the_bands_the_players_there_now_make_r
     run(&mut room, 2);
     assert_eq!(guards(&room), raised, "the company back, its bands stand again");
 }
+
+#[test]
+fn a_lamps_guard_stands_beside_it_where_the_rock_closes_one_side() {
+    let (_, plan, room) = zone_room(Deal::Lamp, Some(true), Route::Public);
+    let lamp = plan.sites.lamp.expect("a lamp");
+    let guard = room.zone().and_then(|zone| zone.round.guards.first().copied()).expect("a guard stands");
+    let at = room.garrison[guard].at;
+    assert!(combat::sight::apart([at[0], at[1]], lamp) < 8.0, "beside the lamp, at {at:?}");
+}

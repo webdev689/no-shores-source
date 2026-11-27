@@ -197,25 +197,27 @@ export function stepsBetween(before: number, after: number, stepM = STEP_M): num
 /** Feet within this height of a block's top stand on it. */
 const ON_BLOCK_M = 0.15;
 
-/** A footstep's ground: a wooden block's top, any other block's (the city's stone), water (land below the sea at 0 m),
- *  else earth and grass. */
+/** A footstep's ground: a wooden block's top, any other block's (the city's stone), water (land below the sea at 0 m,
+ *  where the place has a sea), else earth and grass. */
 export function stepCue(
   feet: Point,
-  { blocks, wooden = [], groundAt }: StepGround,
+  { blocks, wooden = [], groundAt, sea = true }: StepGround,
 ): 'step.wood' | 'step.stone' | 'step.water' | 'step.ground' {
   const [x, y, z] = feet;
   const under = (block: Block) =>
     x >= block.minX && x <= block.maxX && y >= block.minY && y <= block.maxY && Math.abs(z - block.top) < ON_BLOCK_M;
   if (wooden.some(under)) return 'step.wood';
   if (blocks.some(under)) return 'step.stone';
-  return (groundAt?.(x, y) ?? 0) < 0 ? 'step.water' : 'step.ground';
+  return sea && (groundAt?.(x, y) ?? 0) < 0 ? 'step.water' : 'step.ground';
 }
 
-/** What the ground under a footstep is made of: the place's blocks, those of wood among them, and its land's height. */
+/** What the ground under a footstep is made of: the place's blocks, those of wood among them, its land's height, and
+ *  whether land below 0 m lies under a sea (not in a dungeon, whose lower storeys stand under 0 m). */
 export interface StepGround {
   readonly blocks: readonly Block[];
   readonly wooden?: readonly Block[];
   readonly groundAt?: (x: number, y: number) => number | null;
+  readonly sea?: boolean;
 }
 
 // Exposed, Charged and Haste make no sound.

@@ -5,7 +5,8 @@ import { HOLD_MS, characters } from './characters.ts';
 import { SESSION_IDLE_MS } from './database.ts';
 import { backTo } from './discord.ts';
 import { NO_ONES_PASSWORD, hashPassword, passwordMatches } from './secrets.ts';
-import { PAGE, accounts } from './accountsForTests.ts';
+import { handle } from './accounts.ts';
+import { API, PAGE, accounts } from './accountsForTests.ts';
 
 test('a password is kept salted and matches only itself; the password kept for no one matches nothing', async () => {
   const kept = await hashPassword('correct horse');
@@ -98,8 +99,14 @@ test('the API answers any page, and nothing it does not know', async () => {
   assert.equal(preflight.status, 204);
   assert.equal(preflight.response.headers.get('Access-Control-Allow-Origin'), '*');
   assert.equal((await ask('GET', '/v1/nothing')).status, 404);
-  assert.deepEqual((await ask('GET', '/v1/health')).body, { ok: true, discord: false });
+  assert.deepEqual((await ask('GET', '/v1/health')).body, { ok: true, discord: false, commit: '' });
   assert.equal((await ask('GET', `/v1/discord/start?back=${PAGE}/`)).status, 503, 'no keys, no Discord');
+});
+
+test('health names the commit the deploy stamped, so the deploy can tell its own code answers', async () => {
+  const { deps } = accounts();
+  const answer = await handle(new Request(`${API}/v1/health`), { ...deps, commit: 'abc123' });
+  assert.equal(((await answer.json()) as { commit: string }).commit, 'abc123');
 });
 
 test('one room at a time holds a character; a claim waits for another to let go, takes it, and says from where', async () => {

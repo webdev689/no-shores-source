@@ -86,12 +86,21 @@ function nearest<Find>(finds: readonly Find[], off: (find: Find) => number): { f
   return best;
 }
 
-/** A chest as drawn: where it stands, the way it faces, and the seconds since the player opened it (null shut). */
+/** A chest as drawn: where it stands, the way it faces, the seconds since the player opened it (null shut), and
+ *  whether it is a vault's. */
 export interface ChestDrawn {
   readonly number: number;
   readonly at: readonly [number, number, number];
   readonly facing: number;
   readonly opened: number | null;
+  readonly vault: boolean;
+}
+
+/** How many of a dungeon's chests the player has opened of all it stands, as the place's words say it:
+ *  "Chests 2 of 5"; null where none are counted (a patrol, the sea). */
+export function chestsCounted(gear: Pick<GearState, 'chestsOpened' | 'chestsTotal'> | null | undefined): string | null {
+  const total = gear?.chestsTotal ?? 0;
+  return total > 0 ? `Chests ${gear?.chestsOpened ?? 0} of ${total}` : null;
 }
 
 /** The chests a player sees, from each word on their gear: those standing, and each the room says it paid them for

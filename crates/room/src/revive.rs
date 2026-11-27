@@ -92,14 +92,17 @@ impl Room {
     /// Whether the darkness holds a player where they are now (`dark_at`): none for one not in the room.
     #[must_use]
     pub fn darkness_for(&self, player: PlayerId) -> bool {
-        self.players.get(&player).is_some_and(|found| self.dark_at(found.fighter.body.x, found.fighter.body.y))
+        self.players
+            .get(&player)
+            .is_some_and(|found| self.dark_at([found.fighter.body.x, found.fighter.body.y, found.fighter.body.z]))
     }
 
-    /// Whether a body at (x, y) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell of an
-    /// Elite Dungeon's Court while it is dark (`court_dark`), so one come back down at the way in may still respawn.
-    fn dark_at(&self, x: f64, y: f64) -> bool {
+    /// Whether a body at (x, y, z) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell
+    /// of an Elite Dungeon's Court while it is dark (`court_dark`), so one come back down at the way in may still
+    /// respawn.
+    fn dark_at(&self, at: [f64; 3]) -> bool {
         let in_court = self.encounters.as_ref().is_some_and(|encounters| {
-            encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.court_cells.contains(&cell))
+            encounters.plan.cell_at(at).is_some_and(|cell| encounters.court_cells.contains(&cell))
         });
         self.revives() == Some(0) || (in_court && self.court_dark()) || self.gloomy()
     }
@@ -260,7 +263,7 @@ impl Room {
     /// A fallen player stands again by their own respawn, however they fell: not in a darkness, taking a run's
     /// revive where it counts them, and in a passage zone with its haul lost.
     fn respawn(&mut self, id: PlayerId, lain: Body) {
-        if self.dark_at(lain.x, lain.y) || !self.revive() {
+        if self.dark_at([lain.x, lain.y, lain.z]) || !self.revive() {
             return;
         }
         let body = self.stand_again(id, lain.x, lain.y);

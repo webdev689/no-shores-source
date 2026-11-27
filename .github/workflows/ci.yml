@@ -86,28 +86,43 @@ jobs:
             "https://github.com/nextest-rs/nextest/releases/download/$release/$release-x86_64-unknown-linux-gnu.tar.gz"
           echo "d039b43c3e0958441b6ad0a39c8884d018b3d2e8fb9928f209074b1100b5e17a  $RUNNER_TEMP/nextest.tar.gz" | sha256sum -c --quiet -
           tar -xzf "$RUNNER_TEMP/nextest.tar.gz" -C "$HOME/.cargo/bin"
-      # The island packs the committed manifest names, for the test that reads every kit's: each is checked against
-      # the hash its key is named by.
-      - name: Fetch the island packs
+      # What the page's tests read from R2, kept between runs by the manifest that names it, and fetched with retries
+      # on a 429 or a 5xx: a rate-limited r2.dev answer then cannot fail main's check and skip its deploys.
+      - name: Keep the island packs
         if: matrix.part == 'page'
-        run: |
-          set -euo pipefail
-          packs="$RUNNER_TEMP/island-modules"
-          mkdir -p "$packs"
-          base=$(jq -r .base content/islands/modules.json)
-          jq -r '.kits | to_entries[] | "\(.key) \(.value)"' content/islands/modules.json | while read -r kit key; do
-            curl -sSfo "$packs/$kit.modules" "$base$key"
-            echo "$(basename "$key" .modules)  $packs/$kit.modules" | sha256sum -c --quiet -
-          done
-          echo "ISLAND_MODULES=$packs" >> "$GITHUB_ENV"
-      # `shipTags.test.ts` fetches the ship meshes it reads from R2 once into the runner's temporary folder, each named
-      # by its content: they are kept between runs while the ships' manifest, which names them, stays as it is.
-      - name: Keep the ship meshes between runs
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/island-modules
+          key: island-modules-${{ hashFiles('content/islands/modules.json') }}
+      # Where shipTags.test.ts keeps the meshes it fetches: the runner's temporary folder, /tmp.
+      - name: Keep the ship meshes
         if: matrix.part == 'page'
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: /tmp/overlook-ships
           key: ship-meshes-${{ hashFiles('content/ships/ships.json') }}
+      # The island packs the committed manifest names, for the test that reads every kit's: each is checked against
+      # the hash its key is named by. Then the ship meshes, where the test looks for them before fetching.
+      - name: Fetch the island packs and the ship meshes
+        if: matrix.part == 'page'
+        run: |
+          set -euo pipefail
+          packs="$RUNNER_TEMP/island-modules"
+          mkdir -p "$packs" /tmp/overlook-ships
+          base=$(jq -r .base content/islands/modules.json)
+          jq -r '.kits | to_entries[] | "\(.key) \(.value)"' content/islands/modules.json | while read -r kit key; do
+            sum="$(basename "$key" .modules)  $packs/$kit.modules"
+            if ! echo "$sum" | sha256sum -c --quiet - 2>/dev/null; then
+              curl -sSf --retry 5 -o "$packs/$kit.modules" "$base$key"
+              echo "$sum" | sha256sum -c --quiet -
+            fi
+          done
+          echo "ISLAND_MODULES=$packs" >> "$GITHUB_ENV"
+          base=$(jq -r .base content/ships/ships.json)
+          jq -r '.ships[].mesh' content/ships/ships.json | sort -u | while read -r key; do
+            kept="/tmp/overlook-ships/${key//\//-}"
+            [ -s "$kept" ] || curl -sSf --retry 5 -o "$kept" "$base$key"
+          done
       - name: cargo xtask check ${{ matrix.part }}
         run: cargo xtask check ${{ matrix.part }}
       # How the Lattice's renders lay into the forge's tables, on the runner's own Python: the wave's frame-cutting
@@ -173,7 +188,11 @@ jobs:
   # commit run by hand passed.
   rooms:
     needs: check
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    # The parts are skipped where main's merge is code its pull request's check passed: without a status function
+    # here, a skipped job before it would skip this one too.
+    if: >-
+      !cancelled() && needs.check.result == 'success' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
       deployments: read
@@ -185,7 +204,11 @@ jobs:
   # from changed: the owner's yes to a merge covers it. Reading the deployments tells it what was released last.
   desktop:
     needs: check
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    # The parts are skipped where main's merge is code its pull request's check passed: without a status function
+    # here, a skipped job before it would skip this one too.
+    if: >-
+      !cancelled() && needs.check.result == 'success' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
       deployments: read

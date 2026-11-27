@@ -66,7 +66,7 @@ fn go_over<B: Near + ?Sized>(
         body.y + direction_y * reach_over,
         if vault { body.z } else { ahead.block.top },
     ];
-    if terrain.walled((body.x, body.y), (to[0], to[1])) {
+    if terrain.walled_at((body.x, body.y), (to[0], to[1]), body.z) {
         return None;
     }
     // DFO's mantle time at middling skill: (0.25 + 0.22 rise)(1.3 - 0.5 skill).
@@ -222,7 +222,7 @@ fn on_wall<B: Near + ?Sized>(
     // rim round a course laid over the sea) nowhere to be.
     let holds = wall_ahead(blocks, &moved, body.facing).is_some()
         && room_at(blocks, moved.x, moved.y, body.z, body.height())
-        && !terrain.walled((body.x, body.y), (moved.x, moved.y));
+        && !terrain.walled_at((body.x, body.y), (moved.x, moved.y), body.z);
     let (x, y) = if holds { (moved.x, moved.y) } else { (body.x, body.y) };
     let mut z = body.z;
     if climbing {

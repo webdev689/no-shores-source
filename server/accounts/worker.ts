@@ -25,6 +25,8 @@ interface Env {
   readonly BOT?: Developers;
   /** Cloudflare's count of sign-ins by address (`wrangler.jsonc`'s `ratelimits`). */
   readonly SIGN_INS?: RateLimit;
+  /** The commit the deploy came from, which `/v1/health` names. */
+  readonly ACCOUNTS_COMMIT?: string;
 }
 
 const wait = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
@@ -126,5 +128,7 @@ export default {
     const pages = env.PAGES.split(/\s+/).filter(Boolean);
     const signIns = env.SIGN_INS ?? null;
     return handle(request, { database: env.DB, now: Date.now, discord, pages, bot: env.BOT ?? null, signIns });
+    const commit = env.ACCOUNTS_COMMIT ?? '';
+    return handle(request, { database: env.DB, now: Date.now, discord, pages, bot: env.BOT ?? null, commit });
   },
 } satisfies ExportedHandler<Env>;

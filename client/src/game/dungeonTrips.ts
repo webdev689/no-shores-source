@@ -101,7 +101,8 @@ export function dungeonTrips(
    *  the door; a name that is none goes nowhere. */
   enterSeaDungeon(door: DungeonDoor): void;
   /** Into a run of the Elite Dungeon `node` by its room's name, from the sea, as the Playlist launches or finds one;
-   *  out of it back onto the sea. */
+   *  out of it back onto the sea. A patrol's dungeon's run (`--dungeon-<n>`, the address's `&run=` under `npm run
+   *  dev`) is gone into as its entrance goes, and out to its patrol. */
   intoRun(node: NodeInfo, run: string): void;
   /** Into the Elite Dungeon `node` at Normal from the sea, from the island's panel: the company's run of it started at
    *  sea where one plays it, else a new one (`node-<id>--sea--run-<instance>`); out of it back onto the sea. */
@@ -239,12 +240,19 @@ export function dungeonTrips(
     },
     intoRun: (node, run) => {
       const where = nodeOfRoom(run);
-      if (!where || where.id !== node.id || where.run === null || where.dungeon !== null) return;
-      const ask = { place: node.id, name: node.name };
+      if (!where || where.id !== node.id || where.run === null) return;
+      const number = where.dungeon ?? 0;
+      const patrol = where.dungeon !== null;
+      const ask: DungeonAsk = patrol
+        ? { patrol: node.id, name: node.name, number }
+        : { place: node.id, name: node.name };
+      // A patrol's dungeon's run, played alone, reads of its patrol's file whose it is alone.
+      const text = patrol ? JSON.stringify({ id: node.id, kind: node.kind, name: node.name }) : '';
       void game.module.then((module) => {
         const { name } = askLayout(module, ask);
-        const work = into({ node, text: '' }, { number: 0, ask }, where.seas, async () => run, toSea);
-        game.travel({ kind: 'enter', node: `${node.id}--dungeon`, name }, work);
+        const away = patrol ? toNode(node, where.seas, number) : toSea;
+        const work = into({ node, text }, { number, ask }, where.seas, async () => run, away);
+        game.travel({ kind: 'enter', node: `${node.id}--dungeon${patrol ? `-${number}` : ''}`, name }, work);
       });
     },
     fromSea: (node) => {

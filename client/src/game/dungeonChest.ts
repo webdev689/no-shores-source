@@ -1,13 +1,14 @@
 // The dungeon's cache: the chest (models/chest.ts) in the dungeon's wood and iron, lit by its torches, its lid
 // shut or swung open, where the room says it stands and the way it faces; and the chests the dungeon stands for the
-// player to find (finds.ts), the same chest, each lid as far open as it has swung.
+// player to find (finds.ts), the same chest, each lid as far open as it has swung, a vault's in gold.
 import { CHEST_OPEN_RAD, chestFaces, chestScale, chestTall } from '../models/chest.ts';
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
-import { IRON } from './dungeonMesh.ts';
+import { COLOUR, IRON } from './dungeonMesh.ts';
 import { uvOf } from './dungeonUv.ts';
 
 /** The cache as a room's snapshot gives it: where it stands, the way it faces (radians clockwise from north), and
- *  whether it stands open; or how far its lid has swung back (radians), for a chest opening. */
+ *  whether it stands open; or how far its lid has swung back (radians), for a chest opening; and whether it is a
+ *  vault's chest, its hinge and latch gold. */
 export interface Cache {
   readonly x: number;
   readonly y: number;
@@ -15,6 +16,7 @@ export interface Cache {
   readonly bearing: number;
   readonly open: boolean;
   readonly lid?: number;
+  readonly vault?: boolean;
 }
 
 /** How long a found chest's lid takes to swing open, seconds. Open, it is short of upright, so standing off its wall as
@@ -25,6 +27,7 @@ const LID_OPEN_S = 0.6;
 const SCALE = chestScale(0.9, 0.5);
 const HALF_DEEP = 0.25;
 const TALL = chestTall(SCALE);
+const GOLD = [COLOUR.gold, 0] as const;
 
 /** A chest the dungeon stands for the player to find (finds.ts) as the cache's chest is built: from its front's
  *  middle, half its depth before the middle the room stands it at, its lid swung back as far as it has opened. */
@@ -32,11 +35,12 @@ export function foundChest(chest: {
   readonly at: readonly [number, number, number];
   readonly facing: number;
   readonly opened: number | null;
+  readonly vault?: boolean;
 }): Cache {
   const lid = chest.opened === null ? 0 : Math.min(1, chest.opened / LID_OPEN_S) * CHEST_OPEN_RAD;
   const [x, y, z] = chest.at;
   const front = { x: x + Math.sin(chest.facing) * HALF_DEEP, y: y - Math.cos(chest.facing) * HALF_DEEP };
-  return { ...front, z, bearing: chest.facing, open: chest.opened !== null, lid };
+  return { ...front, z, bearing: chest.facing, open: chest.opened !== null, lid, vault: chest.vault === true };
 }
 
 /** The cache read from a snapshot's numbers (x, y, z, bearing, 1 open or 0 shut); null where it holds none. */
@@ -58,8 +62,8 @@ export function chestsMesh(chests: readonly Cache[], wood: readonly [number, num
   return joined.model();
 }
 
-/** Adds one chest to `joined`: its wood in `wood`, its hinge and latch in iron, its front's middle where the cache
- *  stands, facing its bearing. */
+/** Adds one chest to `joined`: its wood in `wood`, its hinge and latch in iron (a vault's in gold, as the heroic
+ *  chest's), its front's middle where the cache stands, facing its bearing. */
 function addChest(joined: ReturnType<typeof meshBuilder>, cache: Cache, wood: readonly [number, number]): void {
   const [cosine, sine] = [Math.cos(cache.bearing), Math.sin(cache.bearing)];
   const middle = [cache.x - sine * HALF_DEEP, cache.y + cosine * HALF_DEEP] as const;
@@ -72,7 +76,8 @@ function addChest(joined: ReturnType<typeof meshBuilder>, cache: Cache, wood: re
   for (const face of chestFaces(SCALE, cache.lid ?? (cache.open ? CHEST_OPEN_RAD : 0))) {
     const corners = face.corners.map((corner) => turned(corner, true));
     const normal = turned(face.normal, false);
-    const picture = face.part === 'hinge' || face.part === 'latch' ? IRON : wood;
+    const metal = cache.vault ? GOLD : IRON;
+    const picture = face.part === 'hinge' || face.part === 'latch' ? metal : wood;
     joined.tri([picture[0], picture[1]], corners, normal, corners.map(uvOf(normal, TALL)));
   }
 }

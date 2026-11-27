@@ -24,8 +24,11 @@ pub mod crew;
 pub mod deck;
 mod deck_fight;
 mod drops;
+mod dungeon_bake;
 pub mod dungeon_ground;
+mod dungeon_lines;
 mod dungeon_room;
+pub use dungeon_room::balustrade_blocks;
 pub mod encounter_plan;
 pub mod encounters;
 mod entrances;
@@ -246,7 +249,7 @@ pub struct Room {
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
     /// A dungeon's ways out: its exit door's middle and its return portal's, at their feet; none in any other room.
-    pub(crate) ways_out: Option<([f64; 2], [f64; 2])>,
+    pub(crate) ways_out: Option<([f64; 3], [f64; 3])>,
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,

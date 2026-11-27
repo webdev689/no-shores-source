@@ -6,6 +6,7 @@
 import { type BindId, CONTROLS, type Context } from '../player/binds.ts';
 import { type Action, BINDS, type Input, type InputFrame, keyNameOf } from '../player/input.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
+import { DUNGEON_MAP } from './dungeonMap/dungeonMap.ts';
 import type { Flow, Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
 import { openGearWindow } from './gearScreen.ts';
@@ -39,6 +40,8 @@ export interface Controlled {
   readonly goThrough: () => void;
   /** Does what the island's panel's chosen entry does (`islandPanel.ts`), its first's with none chosen. */
   readonly landAt: (id: string | null) => void;
+  /** Closes a panel standing in the island's tiles' place (an Outposts tile's slots); whether one stood. */
+  readonly islandBack: () => boolean;
 }
 
 /** Where the player's controls act now: in a window, dead (past the edge, or fallen in a fight), at the helm, in a fight
@@ -109,6 +112,7 @@ export function listenForControls(game: Controlled): void {
     if (escape && placingNow() && !overGame()) return letGo();
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();
     else if (acts('chat') && !gearScreenOpen() && !socialUp()) openChat();
+    else if (escape && flow.mode === 'landing' && game.islandBack()) return;
     else if (escape && flow.mode === 'landing') {
       sea?.view.backToSea();
       change({ kind: 'back' });
@@ -143,7 +147,11 @@ export function listenForControls(game: Controlled): void {
   };
   addEventListener('keydown', (event) => {
     const key = keyNameOf(event);
-    if (event.repeat || ui.typing) return;
+    if (ui.typing) return;
+    // The dungeon's map, while it is up, takes every key: its own, and the land map's or Escape to shut it. A key held
+    // goes on turning or panning it, but never shuts it again.
+    if (DUNGEON_MAP.key(key, event.repeat ? [] : BINDS.now.landMap.keys)) return;
+    if (event.repeat) return;
     const continues = BINDS.now.continue.keys.includes(key);
     if (continues && dialogueWaits()) return;
     if (playing.flow.mode === 'story') return void story?.key(key, true);

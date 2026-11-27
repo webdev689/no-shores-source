@@ -407,8 +407,12 @@ impl Sea {
     /// it, turned as it lay there, wherever the page first put it to sea: a fight they met from the page's spawn is
     /// over for them. With nowhere kept (a new character) it puts to sea by the starting port alone
     /// (`Harbours::starting`): where the page put it, or the course held for them, within reach of its roadstead, else
-    /// at that roadstead. In a sea with no port cities the course held for them sails.
+    /// at that roadstead. In a sea with no port cities the course held for them sails. Come back from a patrol zone of
+    /// a region of the island the ship lies off, not its own (`came_from`), it lies at that region's anchorage instead,
+    /// facing as before.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
+        // Taken first, so a restore refused never leaves it for a later one.
+        let came_from = self.harbour.came_from.remove(&player);
         let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
             return false;
         };
@@ -419,14 +423,17 @@ impl Sea {
         let kept_at =
             character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
         let kept_at = kept_at.and_then(|at| self.open_at(at));
+        let lying = kept_at.or(self.harbour.harbours.starting());
+        let anchorage = came_from.and_then(|room| self.anchorage_left(&room, lying));
         // One who travels aboard another's ship leaves their own where it lies.
-        let at = kept_at.or(self.harbour.harbours.starting()).filter(|_| !self.travels_aboard(player));
+        let at = anchorage.or(lying).filter(|_| !self.travels_aboard(player));
         if at.is_some() && self.fights.fighting(player) {
             self.leave_decks(player);
             self.fights.leave(player);
         }
         if let (Some([x, y]), Some(berth)) = (at, self.berths.get_mut(&player)) {
-            // The heading kept belongs to the place kept: a ship put at the starting port instead faces as a new one.
+            // The heading kept belongs to the ship kept somewhere, an anchorage it is moved to included: one put at the
+            // starting port instead faces as a new one.
             let kept = character.ship_heading.filter(|_| kept_at.is_some()).map(|turned| turned as f64 / 1000.0);
             let heading = kept.unwrap_or_else(|| berth.sailing.as_ref().map_or(0.0, |sailing| sailing.ship.heading));
             berth.sailing =
@@ -447,6 +454,28 @@ impl Sea {
         self.harbour.characters.insert(player, character);
         self.harbour.changed.insert(player);
         true
+    }
+
+    /// Notes the room a kept player came to the sea from, as the keeper knew it, for their character's restore.
+    pub fn came_from(&mut self, player: PlayerId, room: &str) {
+        self.harbour.came_from.insert(player, room.to_owned());
+    }
+
+    /// The anchorage of the region of the patrol zone whose own room a player came from (`world::regions::zone_left`),
+    /// where their ship lies at `at` off another region of that zone's island: leaving a zone finds the ship off its
+    /// side of the island. None for any other room, a ship off the zone's region already, or off another island.
+    fn anchorage_left(&self, room: &str, at: Option<[f64; 2]>) -> Option<[f64; 2]> {
+        let region = world::regions::zone_left(room)?;
+        at.is_some_and(|at| self.off_another_region(region, at))
+            .then_some(region.anchorage)
+            .and_then(|at| self.open_at(at))
+    }
+
+    /// Whether a ship at `at` lies in the waters of `region`'s island, off another of its regions (the one whose
+    /// centre is nearest, within the island).
+    pub(super) fn off_another_region(&self, region: &world::regions::Region, at: [f64; 2]) -> bool {
+        self.chart.water_id(at) == Some(region.island.as_str())
+            && world::regions::off(&region.island, at).is_some_and(|off| off.name != region.name)
     }
 }
 

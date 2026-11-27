@@ -10,7 +10,7 @@ use crate::awareness::{Awareness, look};
 use crate::board::Board;
 use crate::brain::{Brain, Home, Homeward, Plan};
 use crate::react::Reactions;
-use crate::senses::Here;
+use crate::senses::{Here, storeys_apart};
 use crate::shoot::Bow;
 use crate::steer::{Ask, way_to};
 use crate::tuning::{ALERT_OFF, ENGAGE_RANGE, FALLEN_BACK, HOME_FACED, HOME_REACHED, KEEP_UP, SQUARING_PACE};
@@ -53,7 +53,7 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
     let left = apart(here.at(), [home.at[0], home.at[1]]);
     // The routes walk straight at a place they do not reach, so a foe would run into what stands between for good.
     let reached = || here.world.routes.walkable(here.feet(), home.at);
-    let way = (left > FALLEN_BACK && fighting && reached()).then(|| way_to(here, home.at)).flatten();
+    let way = (away(here, home, left, FALLEN_BACK) && fighting && reached()).then(|| way_to(here, home.at)).flatten();
     let Some(way) = way else {
         brain.returning = None;
         return None;
@@ -66,13 +66,20 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
 
 /// Whether a foe may fight a fighter where it stands: a garrison foe only within its leash (LEASH, or its own) of its
 /// place, and, while that fighter stands on the ground, only on ground the room's routes cover from that place, unless
-/// it stands close to the foe itself, within the range it engages a target it sees: a foe never gives up on one close
-/// by. A body in the air, on a wall or over a lip is judged by its distance alone: the navmesh lies on the floor, and its
-/// leap or climb lands back on it.
+/// it stands close to the foe itself, within the range it engages a target it sees and on its storey: a foe never gives
+/// up on one close by. A body in the air, on a wall or over a lip is judged by its distance alone: the navmesh lies on
+/// the floor, and its leap or climb lands back on it.
 pub fn within(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
     let feet = [other.body.x, other.body.y];
     let near = |home: Home| apart([home.at[0], home.at[1]], feet) <= brain.leash;
-    brain.home.is_none_or(near) && (apart(here.at(), feet) <= ENGAGE_RANGE || reachable(brain, here, other))
+    let close = apart(here.at(), feet) <= ENGAGE_RANGE && !crate::senses::on_another_storey(here, other);
+    brain.home.is_none_or(near) && (close || reachable(brain, here, other))
+}
+
+/// Whether a foe stands farther than `reach` across from its place, `left`, or on another storey than its place,
+/// however close across.
+fn away(here: &Here<'_, '_>, home: Home, left: f64, reach: f64) -> bool {
+    left > reach || storeys_apart(here.feet(), home.at)
 }
 
 /// Whether a garrison foe's routes reach where a fighter stands from its place, however far: always for a body off the
@@ -145,10 +152,10 @@ fn walk_home(brain: &mut Brain, here: &Here<'_, '_>, home: Home) -> Ask {
     let left = apart(here.at(), [home.at[0], home.at[1]]);
     if home.marching && brain.returning.is_none() && brain.heel.is_none() {
         brain.calls.heal = missing;
-        let way = (left > HOME_REACHED).then(|| way_to(here, home.at)).flatten();
+        let way = away(here, home, left, HOME_REACHED).then(|| way_to(here, home.at)).flatten();
         return way.map_or_else(|| Ask::facing(home.facing), |way| Ask::walking(way, (left / KEEP_UP).min(1.0), false));
     }
-    if left > brain.heel.unwrap_or(HOME_REACHED)
+    if away(here, home, left, brain.heel.unwrap_or(HOME_REACHED))
         && let Some(way) = way_to(here, home.at)
     {
         if brain.heel.is_none() {

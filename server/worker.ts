@@ -262,8 +262,8 @@ export class RoomHost extends DurableObject<Env> {
     const room = toldBreach(() => this.breach, {
       keptApart: (player: number) => this.guarded(() => this.room.keptApart(player), null),
       judgedMoved: (player: number) => this.guarded(() => this.room.judgedMoved(player), false),
-      restoreJoined: (player: number, body: string, vault: string | null) =>
-        this.guarded(() => this.room.restoreJoined(player, body, vault), false),
+      restoreJoined: (player: number, body: string, vault: string | null, from?: string | null) =>
+        this.guarded(() => this.room.restoreJoined(player, body, vault, from), false),
       own: (player: number, account: string) => {
         const owned = this.guarded(() => this.room.own(player, account), false);
         // Kept, a run's player plays; a sea island's dungeon's waits on the sea's word that they are landed.

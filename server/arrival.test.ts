@@ -19,6 +19,9 @@ import {
   toCoast,
 } from './arrival.ts';
 import { Keeper, type KeptRoom } from './keeping.ts';
+import layout from '../content/world/layout.json' with { type: 'json' };
+import regions from '../content/world/regions.json' with { type: 'json' };
+import saltmere from '../content/world/land/continent-1.json' with { type: 'json' };
 
 /** An island 100 km square, its coast at x and y from 1,000 km to 1,100 km. */
 const COAST: [number, number][] = [
@@ -414,4 +417,55 @@ test('a player crossing from a patrol zone joins the next at the gate toward the
   assert.equal(cameOutOf('node-saltgrass-downs', 'sea', 'gullwing-vale'), false, 'landed from the sea');
   assert.equal(cameOutOf('node-saltgrass-downs', 'node-tidewall', 'gullwing-vale'), false, 'from elsewhere');
   assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale--dungeon-0', 'gullwing-vale'), false);
+});
+
+test('from the anchorage leaving a Saltmere patrol zone puts the ship at, that zone is landed on again', () => {
+  // The sea room puts the ship at the zone's region's anchorage (`came_from`): it lies off that region, and in landfall
+  // reach of the island's coast. Saltmere's zones alone: every other island's sea is locked and lands no one from the
+  // sea.
+  const zones = saltmere.nodes.filter((node) => node.kind === 'patrol');
+  assert.deepEqual(
+    zones.map((zone) => zone.id),
+    ['saltgrass-downs', 'gullwing-vale', 'driftwood-moors'],
+  );
+  const own = regions.find((each) => each.island === 'continent-1')?.regions ?? [];
+  for (const { id, kind } of zones) {
+    const region = own.find((each) => each.nodes.includes(id));
+    assert.ok(region, id);
+    const lying: [number, number] = [region.anchorage[0] ?? 0, region.anchorage[1] ?? 0];
+    const there = reachOf([{ id, kind, continent: 'continent-1' }], layout.continents, id);
+    assert.ok(there && toCoast(lying, there.coast) <= LANDFALL_M, `${id}: within ${LANDFALL_M} m of the coast`);
+    assert.equal(arrives(`node-${id}`, 'sea', lying, there), true, id);
+  }
+});
+
+test("from the sea a node a region lists is landed on only with the ship off that region; any other as the island's", () => {
+  const anchorage = (name: string): [number, number] => {
+    const [x = 0, y = 0] = regions[0]?.regions.find((region) => region.name === name)?.anchorage ?? [];
+    return [x, y];
+  };
+  const [weirlands, beacon] = [anchorage('The Weirlands'), anchorage('The Beacon Shore')];
+  const reachOfNode = (id: string, kind: string) =>
+    reachOf([{ id, kind, continent: 'continent-1' }, ...gates], layout.continents, id);
+  const gates = [{ id: 'saltgrass-downs', kind: 'patrol', continent: 'continent-1', gates: ['gullwing-vale'] }];
+  const vale = reachOfNode('gullwing-vale', 'patrol');
+  assert.ok(vale && toCoast(beacon, vale.coast) <= LANDFALL_M, 'off the Beacon Shore, in reach of the island');
+  assert.equal(arrives('node-gullwing-vale', 'sea', weirlands, vale), true, 'off the Weirlands');
+  assert.equal(arrives('node-gullwing-vale', 'sea', beacon, vale), false, 'off the Beacon Shore');
+  assert.equal(arrives('node-gullwing-vale--elite', 'sea', beacon, vale), false, 'at any tier');
+  assert.equal(
+    arrives('node-gullwing-vale', 'node-saltgrass-downs', beacon, vale),
+    true,
+    'through a gate, from anywhere',
+  );
+  const mission = reachOfNode('shrine-tides', 'mission');
+  assert.equal(arrives('node-shrine-tides', 'sea', beacon, mission), false, 'a mission of the Weirlands');
+  assert.equal(arrives('node-shrine-tides', 'sea', weirlands, mission), true);
+  // An outpost, landed on as a social space is, still holds to the region that lists it.
+  const outpost = reachOfNode('tern-strand-outpost', 'outpost');
+  assert.equal(arrives('node-tern-strand-outpost', 'sea', weirlands, outpost), false, 'off the Weirlands');
+  assert.equal(arrives('node-tern-strand-outpost', 'sea', beacon, outpost), true, 'off the Beacon Shore');
+  // A city's social space no region lists is landed on from anywhere in reach of its island, as before.
+  const social = reachOfNode('overlook-social', 'social');
+  assert.equal(arrives('node-overlook-social', 'sea', weirlands, social), true);
 });

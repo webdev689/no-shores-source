@@ -25,7 +25,7 @@ import {
 import { CHEST_LIES_S, bannerOf, chestQuestOf, compassOf, inEvent, questOf, ringOf } from './publicLaw.ts';
 import { type Moments, PublicMoments } from './publicMoments.ts';
 import { SpireCourse } from './fissureSpires.ts';
-import type { DungeonLayout } from './dungeonLayout.ts';
+import { ceilingAt, type DungeonLayout } from './dungeonLayout.ts';
 import { EncounterCues, type EncounterHeard } from './encounterCues.ts';
 import {
   encounterBanner,
@@ -148,7 +148,8 @@ function encounterFrame(
   const plan = layout?.encounters;
   if (!layout || !plan || !seen) return null;
   const heard = cues.frame(plan, seen, events, { ...bodies, seconds: clock });
-  marks.push(...encounterMarks(plan, seen, clock, bodies.where, heard.flash, bodies.shot.eye));
+  const roof = ([x, y, z]: Point) => ceilingAt(layout, x, y, z);
+  marks.push(...encounterMarks(plan, seen, clock, bodies.where, heard.flash, bodies.shot.eye, roof));
   const banner = encounterBanner(layout, seen, bodies.feet);
   const beat = encounterBeat(events);
   const running = seen.seals.some((seal) => seal.state === SEAL_STATE.running);

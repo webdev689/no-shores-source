@@ -157,21 +157,31 @@ pub fn kept(player: PlayerId) -> Vec<u8> {
     serde_json::json!({ "body": character.to_json(), "vault": vault }).to_string().into_bytes()
 }
 
-/// A kept character and the account's shared part, as the keeper gives them.
+/// A kept character and the account's shared part, as the keeper gives them, and the room it came from, if any.
 #[derive(Deserialize)]
 struct Joined {
     body: String,
     vault: Option<String>,
+    #[serde(default)]
+    from: Option<String>,
 }
 
 /// Gives a player their kept character with the account's shared part joined into it, from JSON's bytes as `kept`
-/// answers them (`vault` null for none kept yet); false if either is not one, or as `restore_character` is.
+/// answers them (`vault` null for none kept yet); false if either is not one, or as `restore_character` is. At sea the
+/// room it came from (`from`) places the ship off that node's region (`Sea::came_from`).
 pub fn restore_joined(player: PlayerId, bytes: &[u8]) -> bool {
     let Ok(joined) = serde_json::from_slice::<Joined>(bytes) else { return false };
     let Some(mut character) = gear::Character::from_json(&joined.body) else { return false };
     if let Some(vault) = joined.vault {
         let Some(shared) = gear::shared::Shared::from_json(&vault) else { return false };
         character.join_shared(shared);
+    }
+    if let Some(from) = joined.from {
+        with_open(|opened| {
+            if let Opened::Sea(sea) = opened {
+                sea.came_from(player, &from);
+            }
+        });
     }
     restore_character(player, character.to_json().as_bytes())
 }

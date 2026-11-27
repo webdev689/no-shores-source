@@ -113,7 +113,7 @@ impl Room {
             self.finds.opened.entry(owner.clone()).or_default().push(number);
         }
         let kind = match standing {
-            Standing::Chest(_) => Find::Chest,
+            Standing::Chest(_) => self.finds.chest_find(number),
             Standing::Holder(_) => Find::Search,
         };
         let paid = found.character.find(kind, (level, difficulty), resource, source, &dice);

@@ -109,12 +109,16 @@ from the centre that leaves the island's outline soonest, walked out in whole ki
 hold the table to these rules. Each point of an island's land lies in the region of that island whose centre is
 nearest. Saltmere's three are the Beacon Shore (Overlook and the Saltgrass Downs), the Weirlands (the Gullwing
 Vale) and the Grey Reach (the Driftwood Moors), a patrol zone in each; every other island keeps one patrol zone, the
-one by its port city, in its first region, and its other two regions hold nodes alone. An instance's gate leads only
+one by its port city, in its first region, and its other two regions hold nodes alone. Each region holds three
+outpost sites, its outpost slots ([[Outposts]], "The slots"). An instance's gate leads only
 from a patrol zone of its own region ([[Layouts]], "How a layout is planned"); one in a region with no patrol zone is
 landed at from the sea.
 Each patrol zone of an island holds a gate toward each other one: Saltmere's three link each to both others
 ([[Layouts]], "Gates"). At sea the held map lights the regions of the island whose waters the ship is in and sails
-for their anchorages ([[Held Map]], "Choosing").
+for their anchorages ([[Held Map]], "Choosing"). Each region has its own view over the island: docked or ashore, the
+island's tiles and the view's framing are the places of the region the ship lies off, whose centre is nearest it, and
+a click on a region's land asks to dock only in the port's region, elsewhere to go ashore on that region ([[Interface]],
+"The island's tiles"; [[Game]], "Landings"; [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]).
 
 ## Waters
 

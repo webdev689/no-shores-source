@@ -55,6 +55,8 @@ const WAVE_MORE_MOST: usize = 3;
 const HEALTH_PER_PLAYER: f64 = 0.5;
 /// No held band stands, and no wave, nearer a player than this (m).
 pub(crate) const CLEAR_M: f64 = 12.0;
+/// How far from the lamp its first band stands (m).
+const LAMP_GUARD_M: f64 = 4.5;
 /// How far from a deal's foe's place the mesh is looked for where none lies within 4 m of it (m): a wave's place, a
 /// band's spread round a spot in a dungeon's nook the mesh leaves out, can lie 6 m past it.
 const OFF_MESH_M: f64 = 8.0;
@@ -99,6 +101,18 @@ fn lamp_guard(lamp: u8, island: &str, week: u64) -> Option<(u8, Rank)> {
         }
         _ => None,
     }
+}
+
+/// Where a lamp's first band is tried, in turn: LAMP_GUARD_M east of the lamp, then north, west and south of it, where
+/// rock closes a side under ground; last the post nearest the lamp.
+fn beside_lamp(lamp: [f64; 2], posts: &[[f64; 2]]) -> Vec<[f64; 2]> {
+    let sides = [[1.0, 0.0], [0.0, -1.0], [-1.0, 0.0], [0.0, 1.0]];
+    let nearest = posts.iter().copied().min_by(|first, second| apart(*first, lamp).total_cmp(&apart(*second, lamp)));
+    sides
+        .into_iter()
+        .map(|[east, south]| [lamp[0] + east * LAMP_GUARD_M, lamp[1] + south * LAMP_GUARD_M])
+        .chain(nearest)
+        .collect()
 }
 
 /// A vault's Miniboss in its end room: the Reeve to depth 10, the Tithe-Mate past it.
@@ -168,18 +182,18 @@ impl Room {
         let most = self.counted_most();
         let (mut standing, mut stood) = (0, 0);
         for (nth, group) in groups.into_iter().enumerate() {
-            let at = match (nth, near_lamp) {
-                (0, Some(lamp)) if deal == Deal::Lamp => [lamp[0] + 4.5, lamp[1]],
-                _ => posts.get(nth).copied().unwrap_or(posts.first().copied().unwrap_or_default()),
+            let tries = match (nth, near_lamp) {
+                (0, Some(lamp)) if deal == Deal::Lamp => beside_lamp(lamp, &posts),
+                _ => vec![posts.get(nth).copied().unwrap_or(posts.first().copied().unwrap_or_default())],
             };
             // Crowded's extra foes do not count against the most: it holds as many bands.
             let counted = group.members.len().saturating_sub(crowding);
             if stood == 0 || standing + counted <= most {
-                if self.stand_band(&group, at, levels) {
+                if tries.iter().any(|&at| self.stand_band(&group, at, levels)) {
                     (standing, stood) = (standing + counted, stood + 1);
                 }
             } else if let Some(zone) = self.zone_mut() {
-                zone.held.push((group.members, group.farthest, at));
+                zone.held.push((group.members, group.farthest, tries[0]));
             }
         }
     }
