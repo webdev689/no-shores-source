@@ -5,7 +5,7 @@
 // Each lies in its rarity's light (dropLight.ts): a glow about it, a burst as it lands, then a pillar over it and motes
 // rising. Each is drawn as the marks are, the light added to what stands behind it. An Ammo box stepped onto with the
 // ammunition full, which the room leaves lying, is told of. An item found as itself flies and hovers as a Vestige does,
-// at a Vestige's size, its own picture turning as a flat thing turns (`itemDrops.ts`).
+// its own picture level and facing the eye, never narrowed by a turn, so a long gun keeps its proportions.
 
 import { DROPPED, type GearDrop, type GearItem } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
@@ -349,8 +349,7 @@ function put(
 }
 
 /** A picture standing on `base`, turned to the eye, each rectangle of one colour two triangles, as marks' vertices
- *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat), `across` of its
- *  width showing (a flat thing turning: none edge on, below none its other face, mirrored). */
+ *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat). */
 export function markPicture(
   out: number[],
   picture: PixelPicture,
@@ -358,7 +357,6 @@ export function markPicture(
   eye: Point,
   scale = 1,
   opacity = 1,
-  across = 1,
 ): void {
   const [right, ahead] = acrossFrom(eye, base);
   const runs = runsOf(picture, opacity >= 1);
@@ -371,8 +369,8 @@ export function markPicture(
     const x = base[0] + (nearX ?? 0) * layer;
     const y = base[1] + (nearY ?? 0) * layer;
     const z = base[2] + (nearZ ?? 0) * layer;
-    const left = (runs[start] ?? 0) * scale * across;
-    const end = (runs[start + 1] ?? 0) * scale * across;
+    const left = (runs[start] ?? 0) * scale;
+    const end = (runs[start + 1] ?? 0) * scale;
     const foot = z + (runs[start + 2] ?? 0) * scale;
     const top = z + (runs[start + 3] ?? 0) * scale;
     const red = runs[start + 4] ?? 0;
@@ -530,7 +528,7 @@ export class DropsShown {
       const tallM = body.rows.length * (body.pixelM ?? PIXEL_M) * scale;
       const { middle } = motion;
       const base: Point = [middle[0], middle[1], middle[2] - tallM / 2];
-      markPicture(marks, body, base, eye, scale, 1, item ? Math.cos(motion.turn) : 1);
+      markPicture(marks, body, base, eye, scale);
       if (halo) markPicture(marks, halo, base, eye, scale, ADDED);
       const colour = ammo ? PALE : (RARITY_COLOURS[drop.rarity] ?? WHITE);
       const floor = drop.at[2] + GLOW_FLOOR_M;

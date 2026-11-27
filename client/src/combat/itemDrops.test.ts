@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { DROPPED, type GearDrop, type GearItem } from '../network/gearMessages.ts';
 import type { PixelPicture } from './dropPictures.ts';
 import { PILLAR_M } from './dropLight.ts';
-import { DropsShown, PIXEL_M, markPicture } from './drops.ts';
+import { DropsShown, PIXEL_M } from './drops.ts';
 import { KINDS } from '../player/gear.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import { VESTIGE_M, lyingPicture, lyingPixelM } from './itemDrops.ts';
@@ -114,22 +114,37 @@ test("an item's glow leads the eye to it far off, and is no larger than its pict
   assert.ok(far.glow > far.picture + 0.1, `far off: glow ${far.glow} m past its picture ${far.picture} m`);
 });
 
-test('an item turns as it hovers: its picture narrows edge on, and shows its other face mirrored', () => {
-  const laid = lyingPicture(picture(20, 6, 0));
-  const span = (across: number) => {
-    const out: number[] = [];
-    markPicture(out, laid, [0, 0, 0], [0, -5, 0], 1, 1, across);
-    const eastings = out.filter((unused, index) => index % MARK_FLOATS === 0);
-    return [Math.min(...eastings), Math.max(...eastings)];
-  };
-  const [left, right] = span(1);
-  const [edgeLeft, edgeRight] = span(0);
-  assert.ok(Math.abs(edgeRight - edgeLeft) < 1e-9 && right - left > 0.5, 'edge on, no width; face on, its length');
-  const facing = (across: number) => {
-    const out: number[] = [];
-    markPicture(out, laid, [0, 0, 0], [0, -5, 0], 1, 1, across);
-    // The first colour, red, laid first: which side it stands on.
-    return out[0] ?? 0;
-  };
-  assert.ok(Math.sign(facing(1)) === -Math.sign(facing(-1)), 'turned round, mirrored');
+test('an item keeps its own proportions as it lies and at every turn of its hover, its business end right', () => {
+  // A weapon's large picture is long and low, as a gun, a sword, a bow or a staff is drawn level.
+  for (const [width, height] of [
+    [106, 55],
+    [289, 42],
+    [338, 38],
+    [511, 26],
+  ] as const) {
+    const laid = lyingPicture(picture(width, height, 0));
+    const [across, tall] = [laid.rows[0]?.length ?? 0, laid.rows.length];
+    assert.ok(Math.abs(across / tall - width / height) <= 1 / tall, `${width}x${height} laid ${across}x${tall}`);
+    const drops = new DropsShown(
+      () => laid,
+      () => true,
+    );
+    // Its middle and the eye level with each other, so its drawn size is the picture's.
+    const eye = [0, -10, REST[2] + 0.84] as const;
+    const faces = new Set<number>();
+    for (const seconds of [10, 10.4, 10.9, 11.6, 12.3]) {
+      const out = drops.frame([lying({ id: 11 })], seconds, eye).marks;
+      const solid = Array.from({ length: out.length / MARK_FLOATS }, (unused, vertex) => vertex * MARK_FLOATS).filter(
+        (start) => (out[start + 6] ?? 0) === 1,
+      );
+      const spread = (axis: number) =>
+        Math.max(...solid.map((start) => out[start + axis] ?? 0)) -
+        Math.min(...solid.map((start) => out[start + axis] ?? 0));
+      const drawn = spread(0) / spread(2);
+      assert.ok(Math.abs(drawn / (width / height) - 1) < 0.05, `${width}x${height} at ${seconds} s: drawn ${drawn}`);
+      // The first colour laid, red, stands on the same side at every turn: never its other face, mirrored.
+      faces.add(Math.sign(out[solid[0] ?? 0] ?? 0));
+    }
+    assert.equal(faces.size, 1, 'its own face at every turn');
+  }
 });
