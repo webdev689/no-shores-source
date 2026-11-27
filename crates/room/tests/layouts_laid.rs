@@ -548,9 +548,8 @@ fn each_of_saltmeres_patrol_zones_crosses_to_the_other_two_at_a_gate_and_the_dow
 
 /// A patrol zone's ways across ([[The Ways Across Stand at the Runs' Ends, Not on the Landing]]): each in a run's end
 /// arena, as far out as its door, one run a zone, none on the landing (which run, by its bearing, crossings.rs's tests
-/// say). On the Downs each
-/// stands a second arch in its end arena, clear of the run's way and of its door's reach; elsewhere the run's door is
-/// the way across, a step in from it.
+/// say). On the Downs each stands a second arch in its end arena, clear of the run's way and of its door's reach;
+/// elsewhere the run's door is the way across, a step in from it.
 fn ways_across_stand_at_the_runs_ends(layout: &Layout) {
     let zone = layout.id.as_str();
     let landing = layout.areas.first().filter(|area| area.kind == AreaKind::Landing).expect("a landing");

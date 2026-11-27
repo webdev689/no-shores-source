@@ -16,11 +16,11 @@ pub const REPAIR_REACH_M: f64 = 3_000.0;
 /// What a repair costs for each whole percent the ship is missing, Aurem.
 pub const REPAIR_AUREM_PER_PERCENT: u32 = 2;
 
-/// What making a ship whole from `kept` costs, Aurem: `REPAIR_AUREM_PER_PERCENT` for each percent missing of the most
-/// missing of hull, canvas and men, a part of a percent counted whole; nothing for a whole ship.
+/// What making a ship whole from `kept` costs, Aurem: `REPAIR_AUREM_PER_PERCENT` for each percent missing of hull,
+/// canvas and men added, a part of a percent counted whole; nothing for a whole ship.
 #[must_use]
 pub fn repair_price(kept: [f64; 3]) -> u32 {
-    let missing = kept.iter().map(|share| 1.0 - share.clamp(0.0, 1.0)).fold(0.0, f64::max);
+    let missing: f64 = kept.iter().map(|share| 1.0 - share.clamp(0.0, 1.0)).sum();
     // A share read back from the character's ten-thousandths lands a hair past its percent, never a whole millionth.
     let percent = (missing * 100.0 - 1e-6).ceil().max(0.0) as u32;
     percent * REPAIR_AUREM_PER_PERCENT

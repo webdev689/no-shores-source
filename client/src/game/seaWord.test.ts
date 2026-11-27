@@ -51,8 +51,9 @@ test('a piece gathered that held anything is left to the feed, which tells it fr
     assert.deepEqual(linesOf([held], [], words), [], `${held.join(',')}`);
 });
 
-test('a repair costs the rules’ Aurem for each whole percent missing of the most missing, a part counted whole', () => {
-  assert.equal(repairPrice({ hull: 0.9, sail: 1, crew: 0.95 }, 2), 20);
+test('a repair costs the rules’ Aurem for each whole percent missing of hull, canvas and men added, a part counted whole', () => {
+  assert.equal(repairPrice({ hull: 0.9, sail: 1, crew: 0.95 }, 2), 30);
+  assert.equal(repairPrice({ hull: 0.4, sail: 0.4, crew: 0.4 }, 2), 360, 'each hurt counted, not only the worst');
   assert.equal(repairPrice({ hull: 0.7, sail: 1, crew: 1 }, 2), 60, 'a share a hair off its percent is that percent');
   assert.equal(repairPrice({ hull: 1, sail: 0.995, crew: 1 }, 2), 2, 'half a percent costs a whole one');
   assert.equal(repairPrice({ hull: 1, sail: 1, crew: 1 }, 2), 0);

@@ -104,9 +104,12 @@ export interface RepairOffer {
 type Shares = { readonly hull: number; readonly sail: number; readonly crew: number };
 
 /** What making a ship whole costs, as the room charges it (crates/room/src/harbour.rs `repair_price`): `perPercent`
- *  Aurem for each percent missing of the most missing of hull, canvas and men, a part of a percent counted whole. */
+ *  Aurem for each percent missing of hull, canvas and men added, a part of a percent counted whole. */
 export function repairPrice(kept: Shares, perPercent: number): number {
-  const missing = Math.max(...[kept.hull, kept.sail, kept.crew].map((share) => 1 - Math.min(Math.max(share, 0), 1)));
+  const missing = [kept.hull, kept.sail, kept.crew].reduce(
+    (sum, share) => sum + 1 - Math.min(Math.max(share, 0), 1),
+    0,
+  );
   // A share read back from the character's ten-thousandths lands a hair past its percent, never a whole millionth.
   return Math.max(0, Math.ceil(missing * 100 - 1e-6)) * perPercent;
 }

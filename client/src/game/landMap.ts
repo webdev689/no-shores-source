@@ -43,11 +43,11 @@ const SHRUBS: ReadonlySet<string> = new Set([
   'understory',
 ]);
 /** What the table calls each site's glyph, and a stall's whose keeper deals with no one. */
-const SITE_WORDS: Readonly<Record<Exclude<LandGlyph, KeeperGlyph | MissionGlyph | 'resource'>, string>> = {
+// A way across is called by its zone where it is marked, so it has no word here.
+const SITE_WORDS: Readonly<Record<Exclude<LandGlyph, KeeperGlyph | MissionGlyph | 'resource' | 'crossing'>, string>> = {
   landing: 'Landing',
   event: 'Public event',
   gate: 'Gate',
-  crossing: 'To another zone',
   door: 'Sealed door',
   passage: 'Passage gate',
   objective: 'Objective',

@@ -425,8 +425,8 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
   What changes the player's character at sea (a piece gathered, a fight's hurts, a repair, washing up) is sent
   to the player as their gear, five times a second at most, and so saved within 2 s ([[Accounts]]).
 - **Repair** (`harbour.rs`, `sea_ports.rs`; [[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]]). Lying at rest within 3 km of an open port city's
-  roadstead, out of a fight, the ship is made whole at once for 2 Aurem for each percent it is missing (the most
-  missing of hull, canvas and men, a part of a percent counted whole: `repair_price`), taken from the character's
+  roadstead, out of a fight, the ship is made whole at once for 2 Aurem for each percent it is missing (hull,
+  canvas and men added, a part of a percent counted whole: `repair_price`), taken from the character's
   Aurem and saved with it. The room refuses it not at sea, in a fight, under way or out of reach, whole, or with too
   little Aurem (or no character held). It is asked by Manage's R, its line naming the price ("Repair: 40 Aurem, lying
   at rest within 3 km of a port city", the reach and the price per percent the rules', from the waters' table), and

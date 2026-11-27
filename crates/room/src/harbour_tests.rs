@@ -1,12 +1,13 @@
 use super::*;
 
 #[test]
-fn a_repair_costs_two_aurem_for_each_whole_percent_missing_of_the_most_missing_a_part_counted_whole() {
-    assert_eq!(repair_price([0.9, 1.0, 0.95]), 20);
+fn a_repair_costs_two_aurem_for_each_whole_percent_missing_of_hull_canvas_and_men_added_a_part_counted_whole() {
+    assert_eq!(repair_price([0.9, 1.0, 0.95]), 30);
+    assert_eq!(repair_price([0.4, 0.4, 0.4]), 360, "each hurt counted, not only the worst");
     assert_eq!(repair_price([0.7, 1.0, 1.0]), 60, "a share a hair off its percent counts as that percent");
     assert_eq!(repair_price([0.995, 1.0, 1.0]), 2, "half a percent costs a whole one");
-    assert_eq!(repair_price(SUNK_KEPT), 180);
-    assert_eq!(repair_price([0.0; 3]), 200);
+    assert_eq!(repair_price(SUNK_KEPT), 430);
+    assert_eq!(repair_price([0.0; 3]), 600);
     assert_eq!(repair_price([1.0; 3]), 0, "whole, free");
 }
 
