@@ -31,7 +31,8 @@ fn fingerprint(word: &str, rust: bool) -> Option<String> {
 /// Every fingerprint in a file's text, with the line it is on.
 fn fingerprints(text: &str, rust: bool) -> impl Iterator<Item = (usize, String)> + '_ {
     text.lines().enumerate().flat_map(move |(index, line)| {
-        line.split(|mark: char| !(mark.is_ascii_alphanumeric() || mark == '_'))
+        // A hyphen joins a word: an id's tail (`run-abcd1234`) is a name, never a fingerprint.
+        line.split(|mark: char| !(mark.is_ascii_alphanumeric() || mark == '_' || mark == '-'))
             .filter_map(move |word| fingerprint(word, rust))
             .map(move |print| (index + 1, print))
     })
@@ -118,6 +119,8 @@ mod tests {
         let rust = format!("{rust}sea.reseed(0x1234_5678_9abc_def0);\n");
         let rust = rust.as_str();
         assert!(found(&[("crates/world/src/weather_tests.rs", rust), ("client/src/sky/hash.ts", page)]).is_empty());
+        let ids = ("\"node-krakens-grotto--sea--run-abcd1234\",\n", "const room = `${ROOM}--run-abcd1234`;\n");
+        assert!(found(&[("crates/world/src/regions.rs", ids.0), ("server/keeping.test.ts", ids.1)]).is_empty());
         let pinned = "const RUN_HASH = pinned('movement.run');\n";
         assert!(found(&[("crates/movement/tests/agree.rs", rust), ("client/src/rules/m.test.ts", pinned)]).is_empty());
     }
