@@ -303,8 +303,9 @@ will take it, by the room's own tick.
   is off the helm, or is any hostile ship's quarry, when it would leave the ship where it lies, and as any course is
   refused; its last leg and the place it would lie are judged besides against every standing island, told
   to the player or not, and judged before anything is set, so a refusal there leaves the ship, its course and its turn as they were. Taken, the ship lies on the course's last leg 400 m short of its end (at the leg's start where the
-  leg is shorter), heading along it, its course the end alone at the pace asked, and the player's next roll for a
-  hostile ship waits its first 30 s again; the hostile ships no player past home waters keeps go as ever. Either way the player is told
+  leg is shorter), heading along it, its course the end alone at the pace asked; the player's roll for a hostile
+  ship keeps its clock through it, so one who keeps travelling meets them as often as one who sails, and travel has
+  no wait of its own; the hostile ships no player past home waters keeps go as ever. Either way the player is told
   (code 24: taken, or the reason's number), and a refused travel leaves the ship as it was.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
 - The Grey Tithe's ships sail among the players', each with its rank, and a bold one that meets a player fights them
