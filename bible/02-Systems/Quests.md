@@ -28,7 +28,6 @@ code:
   - crates/room/src/sea_lessons.rs#moor_hulk
   - crates/room/src/sea_lessons.rs#charted
   - client/src/game/quests/lessons.ts#lessonKeys
-  - client/src/game/quests/questNews.ts#lessonsBetween
   - crates/gear/src/quest_defs.rs#speaker_place
   - crates/room/src/steps.rs#Step
   - crates/room/src/steps.rs#way_between
@@ -181,8 +180,7 @@ A `use` goal names the counter its act is done at, and a dye none; the file is r
 the task begins is met as it begins and after every ask (`tell_held`): a Vestige opened while none is held, sealed,
 carried or vaulted; a letter taken while the mail is empty; a cloak held out of the vault, carried or worn; a dye worn
 other than the one every player starts in. So no step is done twice, and a save kept before the gifts, with nothing to
-open or take, is never stuck. The page announces
-each step as the room ticks it, under its keeper's mark ("Your gifts", "Wear a dye"), as the lessons' are. The task
+open or take, is never stuck. Each step ticks in the tracker alone, as the lessons' do. The task
 pays no clear: it is done at the keepers'. A save on the round or on **Put them on** walks on into it; one on the houses
 or later is not sent back.
 
@@ -192,8 +190,8 @@ Riding and sailing are taught as the wreck teaches ([[Prologue]], "The teaching"
 [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]): each step
 a goal the rooms tick from what the body, the horse or the ship did, so any input serves; a step done early stays
 done; the tracker names each step's keys as bound now on the keys or the pad played last (`lessonKeys`), the defaults
-on the keys below; and the page announces each step as the room ticks it, a notice at the foot under the Tack's or the
-Harbourmaster's mark, through the quest's news (`lessonsBetween`: "Riding", "Gallop"; "Sailing", "Steer").
+on the keys below; and each step ticks in the tracker alone, with no notice at the foot, as the steps come seconds
+apart ([[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]); the task's "Step done" is announced.
 
 - **Ride the Bay**, wherever the room lets a rider ride, the last step at Overlook's counters: Get up on your horse (`,`), Ride at
   a walk (W), Gallop (Shift), Spur it on (Space: a rider's jump is the boost), Get down (`,`), and Ride to the

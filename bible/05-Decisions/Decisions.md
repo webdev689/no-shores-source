@@ -406,6 +406,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Dialogue Waits for a Click by Default, With Auto as a Setting]]
 - [[Overlook's City Below Is Lit at Night, in Detail]]
 - [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
+- [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
 
 ## Claude's calls
 
