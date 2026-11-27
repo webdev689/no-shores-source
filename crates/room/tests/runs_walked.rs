@@ -25,6 +25,8 @@ struct Zone {
     spokes: Vec<[f64; 7]>,
     climbs: Vec<[f64; 7]>,
     bridges: Vec<Bridge>,
+    /// Each way across's spot, where a player stands to use it and arrives through it (crossings.rs).
+    across: Vec<[f64; 2]>,
 }
 
 /// A bridge over a path's or a gorge's river: its deck's top at its middle, its two ends a few metres onto the banks,
@@ -137,6 +139,12 @@ fn zones_of(id: &str) -> Vec<Zone> {
                 spokes: spokes_of(laid),
                 climbs: laid.sculpt.climbs.clone(),
                 bridges: bridges_of(laid),
+                across: laid
+                    .areas
+                    .iter()
+                    .filter(|area| layout::crossings::is_crossing(area))
+                    .map(|area| area.at)
+                    .collect(),
             }
         })
         .collect()
@@ -240,6 +248,30 @@ fn every_run_is_walked_to_its_door_and_no_further() {
             }
         }
     }
+    assert!(failed.is_empty(), "{failed:#?}");
+}
+
+#[test]
+fn every_way_across_is_walked_to_from_its_end_arenas_middle() {
+    let zones = zones();
+    let (mut seen, mut failed) = (0, Vec::new());
+    for zone in &zones {
+        for &spot in &zone.across {
+            seen += 1;
+            let ends = zone.runs.iter().filter_map(|run| run.beats.last());
+            let Some(end) = ends.min_by(|first, second| distance(first.at, spot).total_cmp(&distance(second.at, spot)))
+            else {
+                failed.push(format!("{}: a way across at {spot:?} with no run", zone.id));
+                continue;
+            };
+            let (body, _) = walked(zone, end.at, &[spot], (60.0 / TICK_SECONDS) as usize);
+            let short = distance([body.x, body.y], spot);
+            if short > THERE_M {
+                failed.push(format!("{}: the way across at {spot:?} stops {short:.1} m short", zone.id));
+            }
+        }
+    }
+    assert_eq!(seen, 6, "Saltmere's three patrol zones cross to each other");
     assert!(failed.is_empty(), "{failed:#?}");
 }
 

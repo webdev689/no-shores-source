@@ -369,8 +369,15 @@ pub fn plan(
     // What comes after keeps off the ways, a run's on past its end beat's middle to its door too.
     let ways = ways_of(&paths, &runs);
     works::retaining_walls(&mut kit, &areas, &ways, &sculpt.outcrops, &carved);
-    for run in &runs {
-        run_kits::build(&mut kit, run, &carved);
+    // The ways across to the island's other patrol zones stand at the runs' ends, a second arch where a run's door is
+    // a passage's mouth (crossings.rs).
+    let mut across = if patrol { crossings::plan(&node.id, middle_of(node), links, &runs) } else { Vec::new() };
+    for (number, run) in runs.iter().enumerate() {
+        let way = across.iter_mut().find(|way| way.run == number);
+        let arches = way.as_ref().map_or(&[][..], |way| way.arches.as_slice());
+        if let (Some(chosen), Some(way)) = (run_kits::build(&mut kit, run, &carved, arches), way) {
+            way.at = way.arches[chosen].spot;
+        }
     }
     // Where a gorge out of the claim meets a river, a footbridge carries its way over.
     for &(from, way) in &exits {
@@ -421,9 +428,9 @@ pub fn plan(
             chests::Standing { boxes, buildings, props, plantings: &plantings, paths: &ways, spawns: &spawns };
         sites.extend(chests::mark(&rounds, &field, &ring, standing, (&sites, &carved_height), seed));
     }
-    let mut ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
+    let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
     let mut basins = basins;
-    crossings::add(links, (&mut areas, &mut basins), (&mut sites, &mut ways));
+    crossings::add(&across, (&mut areas, &mut basins), &mut sites);
     let raise = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
     let land = spaces::Land {
         floor: &|at| ground.height_at(at[0], at[1]) + raise(at),

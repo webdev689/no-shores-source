@@ -14,9 +14,16 @@ test('a gate leads into its instance at its way in, and the way in back out to t
   ];
   const nodes = [node('downs', 'The Downs'), node('mill', 'The Burned Mill')];
   const into = passageAt(layouts, nodes, 'downs', [110, 10]);
-  assert.deepEqual(into, { to: 'mill', name: 'The Burned Mill', into: true, across: false, arrive: [500, 0] });
+  assert.deepEqual(into, {
+    to: 'mill',
+    name: 'The Burned Mill',
+    into: true,
+    across: false,
+    arrive: [500, 0],
+    face: [0, 0],
+  });
   const out = passageAt(layouts, nodes, 'mill', [505, 0]);
-  assert.deepEqual(out, { to: 'downs', name: 'The Downs', into: false, across: false, arrive: [100, 0] });
+  assert.deepEqual(out, { to: 'downs', name: 'The Downs', into: false, across: false, arrive: [100, 0], face: [0, 0] });
   assert.equal(passageAt(layouts, nodes, 'downs', [300, 0]), null, 'away from the gate');
 });
 
@@ -28,7 +35,14 @@ test('a gate between two patrol areas crosses to the other, arriving at its gate
   ];
   const nodes = [patrol('downs', 'The Downs'), patrol('vale', 'The Vale')];
   const across = passageAt(layouts, nodes, 'downs', [105, 5]);
-  assert.deepEqual(across, { to: 'vale', name: 'The Vale', into: false, across: true, arrive: [-700, 0] });
+  assert.deepEqual(across, {
+    to: 'vale',
+    name: 'The Vale',
+    into: false,
+    across: true,
+    arrive: [-700, 0],
+    face: [0, 0],
+  });
   // Only the layout's mark makes a gate a crossing, never its reach.
   const unmarked = [
     layout('downs', [{ kind: 'gate', name: '', at: [100, 0], radius: 10, leads_to: 'vale' }]),

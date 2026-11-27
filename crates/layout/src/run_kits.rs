@@ -4,6 +4,7 @@
 //! carved, and clear of the run's line, so the way through is never blocked short of the door.
 
 use crate::brief::RunKind;
+use crate::crossings::Arch;
 use crate::field::distance;
 use crate::halls::WALL_M;
 use crate::paths::off_line;
@@ -40,8 +41,9 @@ const WALL_LENGTH_M: f64 = 5.0;
 
 /// Builds a run's mouth, beats, dressing and door, then leaves out any of its pieces whose box would stand within
 /// `WAY_CLEAR_M` of its line under head height: a body meets a solid's box, which for a piece turned or leaning reaches
-/// further than the piece.
-pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
+/// further than the piece. `arches` are where a second arch in its end arena, a way across (crossings.rs), may stand,
+/// the best first; which of them it stands at, or None with none.
+pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts, arches: &[Arch]) -> Option<usize> {
     let first = kit.into.solids.len();
     let climb = crate::run_climbs::climb(run).map(|climb| climb.print);
     mouth(kit, run, carved);
@@ -67,10 +69,12 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
         !built || !blocks(run, solid, floor)
     });
     crate::run_climbs::build(kit, run, carved);
+    let chosen = second_arch(kit, first, run, arches, carved);
     // Its own loose rock (cover's boulders, a stump's fallen courses) keeps off the rest of what it built.
     let boxes: Vec<[f64; 6]> =
         kit.into.solids[first..].iter().filter(|solid| !loose(solid)).map(Solid::bounds).collect();
     keep_off(kit.into, first, &Kept { boxes, ways: Vec::new() });
+    chosen
 }
 
 /// Whether a solid's box stands within `WAY_CLEAR_M` of a run's way (its line and on to its door) under head height
@@ -93,12 +97,15 @@ fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     near_way(run, [west, north, east, south])
 }
 
-/// Whether a footprint comes within `WAY_CLEAR_M` of a run's way (its line and on to its door).
-fn near_way(run: &Run, [west, north, east, south]: [f64; 4]) -> bool {
-    let keep = WAY_CLEAR_M;
+fn near_way(run: &Run, bounds: [f64; 4]) -> bool {
+    near_line(&run.way(), WAY_CLEAR_M, bounds)
+}
+
+/// Whether a footprint comes within `keep` of a line, looked at every half metre along it.
+fn near_line(line: &[[f64; 2]], keep: f64, [west, north, east, south]: [f64; 4]) -> bool {
     let near =
         |at: [f64; 2]| at[0] >= west - keep && at[0] <= east + keep && at[1] >= north - keep && at[1] <= south + keep;
-    run.way().windows(2).any(|pair| {
+    line.windows(2).any(|pair| {
         let length = distance(pair[0], pair[1]);
         let steps = (length / 0.5).ceil().max(1.0) as usize;
         (0..=steps).any(|step| {
@@ -474,4 +481,80 @@ fn door(kit: &mut Kit, run: &Run, carved: &Sculpts) {
             }
         }
     }
+}
+
+/// How far a second arch keeps the run's own pieces (built from `first` on) from its frame and from the way up to it,
+/// metres: a body's reach past its box.
+const ARCH_KEEP_M: f64 = 1.0;
+/// A body's head over its feet, metres: what stands higher a body walks under.
+const HEAD_M: f64 = 2.2;
+/// The tallest a body steps over, metres.
+const STEP_OVER_M: f64 = 0.45;
+
+/// A second arch in a run's end arena, of the make of the run's door, never on its climb (run_climbs.rs) nor behind
+/// it from the arena's middle: at the first of `arches` whose frame, and the walk up to it from the arena's middle,
+/// the run's own pieces (built from `first` on) leave clear between a step and head height; where none is, at the
+/// first off its climb (else the first), the pieces standing so where its frame stands, and what is stacked on them,
+/// left out. Which of `arches` it stands at, or None with none.
+fn second_arch(kit: &mut Kit, first: usize, run: &Run, arches: &[Arch], carved: &Sculpts) -> Option<usize> {
+    let half = crate::crossings::frame_width(run) / 2.0;
+    let middle = run.beats.last().map_or(run.door, |end| end.at);
+    let frame_of = |arch: &Arch| {
+        let (frame, across) = (ahead(arch.door, arch.facing, 1.0), [-arch.facing[1], arch.facing[0]]);
+        (frame, [ahead(frame, across, -half), ahead(frame, across, half)])
+    };
+    // What stands over a body's head (a hall's roof, a mine's ceiling) a body never meets.
+    let floors: Vec<f64> = arches.iter().map(|arch| carved_at(kit, carved, arch.door)).collect();
+    // Nor what a body steps over or walks on (a floor's slab, a step).
+    let in_way = |arch: &Arch, floor: f64, [west, north, east, south, bottom, top]: [f64; 6], walked: bool| {
+        let ((frame, span), footprint) = (frame_of(arch), [west, north, east, south]);
+        let near =
+            near_line(&span, ARCH_KEEP_M, footprint) || (walked && near_line(&[middle, frame], ARCH_KEEP_M, footprint));
+        near && bottom < floor + HEAD_M && top > floor + STEP_OVER_M
+    };
+    let climb = crate::run_climbs::climb(run);
+    let off_climb = |arch: &Arch| {
+        let (frame, [one, other]) = frame_of(arch);
+        let span = [one[0].min(other[0]), one[1].min(other[1]), one[0].max(other[0]), one[1].max(other[1])];
+        climb.as_ref().is_none_or(|climb| {
+            !near_line(&climb.walk, ARCH_KEEP_M + WAY_CLEAR_M, span)
+                && !near_line(&[one, other], ARCH_KEEP_M, climb.print)
+                && !near_line(&[middle, frame], ARCH_KEEP_M, climb.print)
+        })
+    };
+    let clear = |number: usize| {
+        let (arch, floor) = (&arches[number], floors[number]);
+        off_climb(arch) && kit.into.solids[first..].iter().all(|solid| !in_way(arch, floor, solid.bounds(), true))
+    };
+    let chosen = (0..arches.len())
+        .find(|&number| clear(number))
+        .or_else(|| arches.iter().position(off_climb))
+        .or_else(|| (!arches.is_empty()).then_some(0))?;
+    let (arch, floor) = (arches[chosen], floors[chosen]);
+    let mut gone: Vec<[f64; 6]> = Vec::new();
+    loop {
+        let (before, mut index) = (kit.into.solids.len(), 0);
+        kit.into.solids.retain(|solid| {
+            index += 1;
+            let bounds = solid.bounds();
+            // Stacked on a piece left out: standing within its footprint, from its foot up.
+            let on = |under: &[f64; 6]| {
+                let within = bounds[0] >= under[0] - 0.5
+                    && bounds[2] <= under[2] + 0.5
+                    && bounds[1] >= under[1] - 0.5
+                    && bounds[3] <= under[3] + 0.5;
+                within && bounds[4] >= under[4] - 0.1
+            };
+            let out = index > first && (in_way(&arch, floor, bounds, false) || gone.iter().any(on));
+            if out {
+                gone.push(bounds);
+            }
+            !out
+        });
+        if kit.into.solids.len() == before {
+            break;
+        }
+    }
+    door(kit, &Run { door: arch.door, facing: arch.facing, ..run.clone() }, carved);
+    Some(chosen)
 }
