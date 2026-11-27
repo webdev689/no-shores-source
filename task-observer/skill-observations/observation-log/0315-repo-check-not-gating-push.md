@@ -1,5 +1,5 @@
 ---
-id: 296
+id: 315
 title: "A chained command ran cargo xtask repo with ';' so a failing check still committed and pushed"
 status: open
 type: internal

@@ -1,5 +1,5 @@
 ---
-id: 297
+id: 316
 title: "The worker brief template says graphify-out is tracked and to check it out before commits; in this repo it is ignored, so the step errors"
 status: open
 type: internal

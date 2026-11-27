@@ -1,5 +1,5 @@
 ---
-id: 295
+id: 314
 title: "graphify update runs once per worker and contends when several workers start together; a query by plain words misses symbols"
 status: open
 type: internal
