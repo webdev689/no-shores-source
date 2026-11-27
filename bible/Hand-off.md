@@ -98,6 +98,10 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 - **Reports**: a screenshot of the thin black vertical line across the world (the canvas fills the page); the
   browser's console (F12) the next time a frame throws (`FrameGuard` logs each error once) or a public event is not
   drawn (it names the meshes that failed); when walking or sprinting fails to happen on demand.
+- **CI after #237** (deploys, the owner's named yes): a merge whose pull request's check passed skips the check's
+  parts on `main`, and `rooms` and `desktop` (`needs: check`, no `!cancelled()` in their `if`) are skipped with them,
+  so `pages` and `site` deploy nothing; #241 went out only through a run by hand. The fix: `!cancelled() &&
+  needs.check.result == 'success' &&` in both jobs' `if` (`.github/workflows/ci.yml`).
 - **The DFO Pick rows** for heraldry and for halls, works and decor: `proposed` until the owner approves them.
 - **Writes to R2 that need the owner's named yes**: a test upload for R2's own `Cache-Control`; the Lattice's armour,
   on hold, whose 48,000 renders publish with the repository's Cloudflare key.
@@ -122,6 +126,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   hub's city does not draw in the headless QA page, so Overlook's lights after the fold are unpictured; each lit ship
   lights up to four lamps, which may crowd the nearest sixteen in a big night fight; the pad's Continue is untested;
   a keeper's screen says its lines on its own 1.6 s.
+
+- **The lights under ground and on land, the islands' textures, the passages' polish** (#233, #241): not seen on a
+  real GPU or played by hand; not pictured: a dungeon with many torches (`dungeon-plan.ts`'s steps still drive the
+  page, but evals run in the game's worker), a ship's lantern (no offline way into a sea fight at night); not
+  measured: a night sea fight's frame (the probe dies on the battle beat) and the fires' GPU cost. Known: the
+  passages' lamp glass shows two dark marks like a face; a hollow's sky is pale at 1 a.m.; map labels can sit over
+  route lines; a strand's hull stands tilted; an open mouth's daylight is a flat pale sheet; islands' modules sample
+  the rock texture on every fragment; f32 time in the shaders drifts from the CPU's flicker after hours.
 
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
