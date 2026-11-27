@@ -20,6 +20,15 @@ when to install it and what each session does at its start and end; this note sa
   any work: the repository's `.claude/settings.json` runs `hooks/kit-check.sh` at each start, where nothing the
   install adds exists yet.
 - After any change to the kit, run `bash tools/claude-toolkit/check-tools.sh --worker` and expect no FAIL line.
+- After editing a file, run its own lint, types or clippy (`npx eslint <file>`, `npm run -s types`,
+  `cargo clippy -p <crate> --all-targets`) before the full check.
+- The install sets `NODE_USE_ENV_PROXY=1` in the settings' `env`, and `cargo xtask check` sets it for its steps:
+  Node's fetch ignores `HTTPS_PROXY` without it, and the page's tests fetch ship meshes from R2. check-tools fetches
+  one; its FAIL means the environment's network rule refuses R2, so start the session in `no-shores-source`.
+- After each push, and before rewriting the hand-off, run `bash tools/claude-toolkit/pr-state.sh`. For each local
+  branch with commits not on `origin/main` it prints them, whether the branch merges cleanly (a pull request that
+  conflicts starts no CI run, and the script fails) and whether origin holds its head. Then read that head's CI
+  state with the GitHub tools.
 - Everything the install fetches is pinned: a commit's full hash, a version, or rtk's archive by its SHA-256. A
   session holds the owner's keys, so what it runs is what was read when it was pinned. Bump a pin on purpose, after
   reading what changed. Git trusts only `REPO_DIR` when another user owns it, never every repository.
@@ -87,8 +96,8 @@ Work that fans out goes to headless workers, each in its own git worktree.
   waiter answers `DONE` at the log's last line, `WORKER <name> DONE`, written after any resume, and `GONE` for a worker
   whose process died without it. Each
   gets Serena pinned to its worktree, Context7, Headroom, claude-mem and SkillsMP, and a
-  worktree ready to test: the main checkout's `node_modules` linked, and its generated messages, WebAssembly and the
-  message fixtures `cargo test -p protocol` writes built.
+  worktree ready to test: the main checkout's `node_modules` linked, `npm run -s fixtures` run, and
+  `CARGO_TARGET_DIR` unset, so it builds into its own `target/`.
   A read-only reviewer sub-agent in a worktree of its own links `node_modules`, `generated/`, `target/` and
   `client/public/` from the main checkout instead.
 - Every brief starts from `tools/claude-toolkit/workers/brief-common-template.md`.

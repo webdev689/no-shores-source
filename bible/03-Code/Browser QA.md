@@ -119,7 +119,10 @@ one that did nothing says why on the console, which the driver prints.
   modules named so and rewrites only their manifest entries; CI's whole bake stays the check. Its folder then holds
   only those meshes, so `publish.py` cannot publish from it.
 - **A dungeon.** `dungeon-qa-build.sh` builds a scratch room module that joins before an entrance and moves the
-  player, and `dungeon-plan.ts` writes the plan that pictures each of its rooms ([[Toolkit]], Encounter pictures).
+  player, and `dungeon-plan.ts` writes the plan that pictures a patrol's dungeon storey by storey: it goes in by the
+  address's `&run=` (a page of this checkout's Vite, `npm run dev`), stands each view on its storey's floor with
+  `__qaEye`, and pictures each room, each flight from its head and foot, a gallery and its hall, and the map on each
+  storey ([[Toolkit]], Encounter pictures).
 
 ## Staging a picture
 
