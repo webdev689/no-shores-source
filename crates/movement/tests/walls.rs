@@ -215,10 +215,12 @@ fn a_wall_caught_off_square_at_a_seam_is_climbed_along_and_up_as_caught_and_gone
     assert!((along.x - climbing.x - TUNING.climb).abs() < 0.05, "along the wall: x {}", along.x);
     // Forward held until it stands on the top, and no longer, so it does not walk on off the far side.
     let held = Controls { forward: 1.0, yaw: 0.6, ..Controls::default() };
-    let up = (0..600).try_fold(along, |body, _| {
-        let next = step_body(&body, &held, &blocks, &Flat, TICK_SECONDS);
-        if next.mode == Mode::Ground { Err(next) } else { Ok(next) }
-    });
-    let stood = up.expect_err("on the ground within ten seconds");
-    assert_eq!(stood.z, 6.0, "up the wall and over its top");
+    let mut stood = along;
+    for _ in 0..600 {
+        stood = step_body(&stood, &held, &blocks, &Flat, TICK_SECONDS);
+        if stood.mode == Mode::Ground {
+            break;
+        }
+    }
+    assert_eq!((stood.mode, stood.z), (Mode::Ground, 6.0), "up the wall and over its top");
 }
