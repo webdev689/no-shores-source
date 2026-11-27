@@ -1,7 +1,8 @@
 ---
 id: 251
 title: "A comment-rule sweep was briefed to workers without counting its instances: 7 of 158 'the owner's' phrases stripped, then restored"
-status: open
+parked_until: "PR #244 merge"
+status: parked
 type: internal
 skill: ["superpowers:dispatching-parallel-agents"]
 proposes_skill: []

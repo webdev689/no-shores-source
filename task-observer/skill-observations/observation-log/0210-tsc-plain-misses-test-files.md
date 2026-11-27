@@ -1,7 +1,7 @@
 ---
 id: 210
 title: "A bare `npx tsc --noEmit -p .` misses the test files; `npm run -s types` (three tsconfigs) is the check xtask runs"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a project note, not a skill"
 area: "type-checking the client before a full check"
 date: 2026-11-24
 session_context: "Chests and searchable containers: I type-checked edits with `npx tsc --noEmit -p .`, which passed, but `cargo xtask check` failed in its types step on a test file (`client/src/layout/layouts.test.ts`, an optional field read without a guard), because the tests are only in `tsconfig.node.json`. Also: after a `.fbs` edit, the message fixtures that `cargo test -p protocol` writes went stale and `client/src/network/messages.test.ts` failed with a protocol-hash mismatch until `npm run schema && cargo test -p protocol` ran again."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

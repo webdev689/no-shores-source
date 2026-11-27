@@ -1,7 +1,7 @@
 ---
 id: 18
 title: "A colour feature passed its tests while drawing nothing on most armour: the tests checked the data path, not the pixels"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the targets are the project's brief template and instru
 area: "verification of drawn features"
 date: 2026-11-20
 session_context: "Overlook factions round: faction gear colours and worn dyes were tested by asserting which ramp each layer got; rendering the figures from the published strips showed the ramps landed on greys only, so 9 of 17 armour sets took no colour at all; the owner then reviewed the renders and asked twice for brightness changes"
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/audit-looks.md; /tmp scratch renders are session-local"

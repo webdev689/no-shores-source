@@ -1,7 +1,7 @@
 ---
 id: 205
 title: "A full module bake took over 2 hours on shared cores; baking only the changed modules with bake.py's own baked() and splicing took 2 minutes, and 'before' renders raced the edits"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: modules.yml re-bakes everything twice in CI and diff
 area: "re-baking a few Blender modules locally while other workers share the cores"
 date: 2026-11-24
 session_context: "PR #179's third audit, fix3-look: changed outpost_*.py (slits, windows, braziers, Delve Gate). The brief said a full bake takes ~20 min; with four workers on 4 cores it ran over 2 h. The worker baked only the 12 outpost modules through bake.py's baked() with a scratch script and spliced them into content/modules/modules.json, twice, byte-identical. Its background Blender 'before' renders read module files after later edits, so they showed the new shapes; it re-rendered 'before' from a git archive copy of HEAD."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

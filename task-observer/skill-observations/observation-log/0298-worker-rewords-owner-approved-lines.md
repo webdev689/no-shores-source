@@ -1,7 +1,7 @@
 ---
 id: 298
 title: "A worker reworded three house leaders' lines from the owner's writing pass to fit Dialogue's two lines a turn"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the brief named Dialogue's rules but not that existi
 area: "workers changing dialogue to satisfy a check"
 date: 2026-11-26
 session_context: "gift-steps worker: to tell the pledged house's gift without a third line in a row, it opened each road's begin with 'Wear our colours.', losing Maren's 'Someone has stolen...'. The controller restored them; the notice tells of the gift."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "0d6e50cf"

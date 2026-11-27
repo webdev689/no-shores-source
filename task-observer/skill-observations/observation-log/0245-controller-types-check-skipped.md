@@ -1,7 +1,7 @@
 ---
 id: 245
 title: "The controller type-checked only the page's tsconfig, so test type errors and a timed-out tsc passed as clean"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0063 (actioned for workers' briefs: npm run -s types); the co
 area: "the controller's focused checks before a push"
 date: 2026-11-24
 session_context: "#200: the controller ran `npx tsc -p tsconfig.json | head` after its own fixes and a merge; tsconfig.node.json (the tests) had 7 errors, one from the controller's own change, found only when a later merge made the controller run each project with its exit code."
-parked_until:
+parked_until: "PR #239 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,7 @@
 ---
 id: 181
 title: "World pictures of new models before merge need their meshes routed from the local bake, a clock shift and a wait for the HUD: none of it is written down"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the island and dungeon module workers would meet the
 area: "pictures of the game world with content not yet published"
 date: 2026-11-23
 session_context: "Foe arrivals session (2026-11-25): the plan's `routes` for the airship's and crown's six new meshes were passed over again and the game's worker fetched R2 (404); worked round as before, by an `init` wrapping `self.fetch` to a copy under `dist/local-modules/`, and a clock slowed 60 times from a set hour. Earlier, guild outposts session: the outpost-page worker's OBSERVATIONS said its world shots needed an init clock shift (for the world's hour) and `waitFor 'All controls'` (else black frames), which it worked out itself; and that the outposts' meshes answered 404 on R2, so no structure drew. The modules workflow publishes meshes on any push that touches tools/modules, which had not run yet; the controller then routed each new mesh to /root/wt/bake-out through webgpu-shot.cjs's `routes`."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/outpost-page.log (OBSERVATIONS line); /tmp/claude-0/-root-wt-outpost-page/fb21aed2-69f5-4cd3-b0e7-b463f15a1e45/scratchpad/makeplan.mjs"

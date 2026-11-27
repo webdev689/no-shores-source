@@ -1,7 +1,7 @@
 ---
 id: 66
 title: "The controller passed new HUD pictures against the port source's code, never against the game's own approved look"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0018 (staged pictures mislead) is about what a picture stages
 area: "browser QA: judging UI pictures before a merge"
 date: 2026-11-20
 session_context: "Sea fight readout (dfo-mount, plus rounds) merged into #75; the owner, shown plus-shots/v2_fight_aiming.png: 'The readout at the top and the bottom right are not enhanced plus design'."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

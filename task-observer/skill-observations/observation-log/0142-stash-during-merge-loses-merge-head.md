@@ -1,7 +1,7 @@
 ---
 id: 142
 title: "git stash during a merge in progress drops MERGE_HEAD: a commit then would lose the merge's second parent"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: one git habit"
 area: "merging main into a long branch"
 date: 2026-11-23
 session_context: "Overlook #155: while a 30-file merge of main sat resolved but uncommitted in a worktree, a fingerprint trace ran `git stash && git stash apply` to restore files after a test. The stash reset the merge: MERGE_HEAD was gone and the resolved files came back as plain changes. Recovered by staging the tree, checking every one-sided file against its side (0 differences), and writing the merge with `git commit-tree <tree> -p HEAD -p origin/main`."
-parked_until:
+parked_until: "PR #239 merge"
 resolved:
 resolution:
 reference:

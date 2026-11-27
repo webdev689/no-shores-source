@@ -1,7 +1,7 @@
 ---
 id: 29
 title: "A bible timing stayed quoted after the code under it changed, and an ignored measurement test's bound never ran"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked — applies to every measured number in the bible and
 area: "measured numbers in documentation"
 date: 2026-11-20
 session_context: "Filling the room-open timing after merging main into overlook-source#63 (Navmesh.md, Server.md, Movement.md; crates/room/tests/near_blocks.rs)"
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

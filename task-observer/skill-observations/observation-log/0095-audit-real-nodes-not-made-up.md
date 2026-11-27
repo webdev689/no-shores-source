@@ -1,7 +1,7 @@
 ---
 id: 95
 title: "Room tests on made-up nodes missed a road that could not be finished; a test over the real baked nodes caught it"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is the workers' brief template"
 area: "testing data-driven content against the real world it names"
 date: 2026-11-21
 session_context: "The quest builders' room tests used made-up nodes; an auditor loading the real baked nodes found one road's foe group never stood (its place's middle off the mesh), so that road could not be finished."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

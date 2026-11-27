@@ -1,7 +1,7 @@
 ---
 id: 15
 title: "A worker brief that lists `tsc -p tsconfig.json` lets test files' type errors through to the full check"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a kit template, not a skill"
 area: "worker pre-commit checks"
 date: 2026-11-20
 session_context: "Overlook factions round: the controller's brief told four workers to run `npx tsc --noEmit -p tsconfig.json`; a test file's type error passed every worker and failed `cargo xtask check` (its `npm run types` also runs tsconfig.node.json, which holds the tests)"
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,7 @@
 ---
 id: 98
 title: "Two cargo runs on one target/ (a worktree linking it, or a background suite beside a foreground run in the same checkout) overwrite each other's crates; seen four times, needs a barrier"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the lesson is the repo's worker and bisect setup, not a
 area: "worktrees, cargo target directory"
 date: 2026-11-21
 session_context: "Bisecting a headless WebGPU start failure across five commits of main, each built in a worktree whose target/ was a symlink to the main checkout's."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

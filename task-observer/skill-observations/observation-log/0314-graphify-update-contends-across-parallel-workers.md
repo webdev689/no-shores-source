@@ -1,7 +1,7 @@
 ---
 id: 314
 title: "graphify update runs once per worker and contends when several workers start together; a query by plain words misses symbols"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a project file, not a skill"
 area: "worker first actions under parallel load"
 date: 2026-11-26
 session_context: "Deeper dungeons session: three workers started at once (storey-engine, dungeon-chests, dungeon-map); the chests worker reported graphify update taking over 2 minutes with about 14 graphify copies running, and graphify query on 'place line' missing placeWords, which grep found."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "/home/user/wt/reports/dungeon-chests.log (ephemeral)"

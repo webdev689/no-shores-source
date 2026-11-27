@@ -1,7 +1,7 @@
 ---
 id: 148
 title: "A worktree sharing the main checkout's target/ made `cargo xtask repo` check the other tree's files"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "run-worker.sh links node_modules only, never target/, so work
 area: "running the full check in a clean worktree to keep it from reading edits"
 date: 2026-11-23
 session_context: "Overlook Playlist session: after observation 140 the controller ran cargo xtask check in a detached worktree /root/wt/check with target/ symlinked to the main checkout's, to save 15 GB of disk. xtask finds the repository by env!(\"CARGO_MANIFEST_DIR\"), baked in at build time, and both trees build the same target/debug/xtask. In the main checkout `cargo xtask repo` then reported a layer problem in a line the main tree no longer had, and earlier 'no problems' readings had been of the check worktree."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

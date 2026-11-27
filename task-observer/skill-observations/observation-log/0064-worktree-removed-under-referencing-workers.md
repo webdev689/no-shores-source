@@ -1,7 +1,7 @@
 ---
 id: 64
 title: "The controller removed finished worktrees whose scratch folders running workers' briefs still named"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0013 (remove merged worktrees) is the rule this sharpens: it 
 area: "fanning out: cleaning up after merges"
 date: 2026-11-20
 session_context: "Sea audit and fix rounds: four read-only audit worktrees removed while three fix workers' briefs pointed at their scratch."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

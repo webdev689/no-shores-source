@@ -1,7 +1,7 @@
 ---
 id: 130
 title: "Editing a path-filtered publishing workflow, or any tools/ path one watches, on a session branch would run it and publish to R2"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: a repository workflow fact, no skill family"
 area: "audits that touch .github/workflows"
 date: 2026-11-22
 session_context: "Overlook third audit: adding tools/r2.py to the flora, modules, freesound and dungeon-modules path filters. Those four have 'on: push: paths:' with no branch filter and list their own yml, so pushing the edit to the session branch would have run them with R2_TOKEN. Caught before commit and reverted; the change went to the owner instead. Again in the cleanup-audit session (2026-11-23): dead-code and docstring fixes under tools/wreck, tools/dungeon, tools/islands, tools/freesound and tools/r2.py, plus the modules.yml upload-path fix, were made and reverted before the first push once the triggers were read; the wreck workflow would also have re-rendered a scene the owner is holding back."
-parked_until:
+parked_until: "PR #239 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,7 @@
 ---
 id: 111
 title: "On a busy main, waiting for a PR's own CI before merging is a race that is never won; and a network-fetching test blocked a deploy"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: concerns the project's merge procedure and CI, not a
 area: "merging under the owner's yes while main moves; CI tests that fetch from R2"
 date: 2026-11-22
 session_context: "Overlook #131 (houses' roads): after the owner's 'merge and deploy', main merged five other PRs while #131 waited; main was merged into the branch three times (each a 12 to 25 minute full check plus a 25 minute CI run). The merge's own main run then failed on shipTags.test.ts fetching hull meshes from R2 (HTTP 500); #134's run deployed the roads."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

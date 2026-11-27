@@ -1,7 +1,7 @@
 ---
 id: 228
 title: "A worktree sharing CARGO_TARGET_DIR leaves its paths compiled into the main checkout's build scripts and tests"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked — instance-specific to Rust workspaces whose build 
 area: "measuring main beside a branch"
 date: 2026-11-24
 session_context: "PR #186: to see what the branch added to CI's time, main was checked out as a git worktree under the scratchpad with CARGO_TARGET_DIR pointed at the branch's target, so registry crates were reused. Workspace crates got the same hashes in both checkouts, so every crate whose source matched main's (the dungeon build script, test binaries that find files through env!(\"CARGO_MANIFEST_DIR\")) was reused with the worktree's path compiled in. After the worktree was removed, the dungeon build script panicked on content/dungeon/landmarks.json; strings on the binary showed the worktree path. Fixed with cargo clean -p for every workspace member (21 GiB), then a rebuild."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

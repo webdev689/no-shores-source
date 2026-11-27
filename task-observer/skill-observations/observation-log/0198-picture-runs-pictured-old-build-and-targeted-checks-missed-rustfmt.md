@@ -1,7 +1,7 @@
 ---
 id: 198
 title: "A busy port's vite preview failed silently, so pictures showed the old build; a worker's targeted checks skipped rustfmt"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "the controller's resume brief (~/wt/briefs/resume.md) listed 
 area: "worker checks and before/after pictures"
 date: 2026-11-24
 session_context: "Town worker (Harbourmaster, rain, patrol nodes). A second `vite preview --strictPort` on a port still held by the first failed under nohup with no sign, so some 'after' runs pictured the old build. Overlook hub's buildings never drew in any headless run. A 'sealed' wall test passed while bodies could still climb the block wall, so the test had to check the way's floor. After the resume brief (no full check), the branch's first full check failed in seconds on `cargo fmt --check` in crates/city."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

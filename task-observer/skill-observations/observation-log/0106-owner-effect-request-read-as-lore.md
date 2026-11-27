@@ -1,7 +1,7 @@
 ---
 id: 106
 title: "An effect asked 'how it fits in lore' was answered with lore options; the owner meant Destiny's transmat look"
-status: open
+status: parked
 type: open-source
 skill: [task-observer]
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "CLAUDE.md's 'When a choice is the owner's, ask' covers asking
 area: "turning an owner's feature idea into questions"
 date: 2026-11-22
 session_context: "The owner said they wanted spawn/respawn effects but were unsure how they fit in lore; Claude offered three lore framings, then asked how much of the prologue's wake to replay."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference: "PR #144"

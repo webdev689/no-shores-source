@@ -1,7 +1,7 @@
 ---
 id: 254
 title: "Auditing a branch that merged main: its own change is HEAD^2..HEAD, and path loops need a real parser"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0248 (a read-only audit needs a pinned commit): same section;
 area: "Audits (read-only audit agents)"
 date: 2026-11-25
 session_context: "The desktop app's five-lane audit at a pinned worktree (16d6063a, a merge of origin/main): the notes lane reported these in its OBSERVATIONS line."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,7 @@
 ---
 id: 155
 title: "A test setup that gave a character more Aurem than the 25,000 cap was clamped without a word, so the test failed far from its cause"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked — instance-specific to the gear crate's capped mate
 area: "test fixtures that set capped game values"
 date: 2026-11-23
 session_context: "Worker fperks (the factions' nine perks), OBSERVATIONS line: buying several faction wares in one test needed more Aurem than the 25,000 cap; the setup's grant was silently clamped, so a later purchase was refused (Short) with nothing pointing at the setup."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/fperks.md (session-local; the finding is in the body)"

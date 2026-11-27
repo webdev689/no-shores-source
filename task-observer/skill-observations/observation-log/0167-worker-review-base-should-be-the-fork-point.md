@@ -1,7 +1,7 @@
 ---
 id: 167
 title: "The worker brief tells the reviewer to diff against origin/main, which for a worker forked from a session branch with unpushed commits shows other work as the worker's"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: brief-common-template.md is the only brief source; r
 area: "worker review diffs"
 date: 2026-11-23
 session_context: "bible-dungeon-matchmaking pickup: workers fperks and fblade were forked from the controller's session branch, which held commits not yet on origin; the template says '<base> is origin/main'. fperks's report noted the controller's commits in its base; fblade's reviewer fell back to HEAD~1...HEAD, which reviews only the last commit."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

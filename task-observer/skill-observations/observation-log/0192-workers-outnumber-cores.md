@@ -1,7 +1,7 @@
 ---
 id: 192
 title: "Seven headless workers on four cores pushed the load to 20-34: cargo builds passed the 600 s Bash limit, a full Blender bake took 19 minutes, and timing tests flaked"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: every fix2-* worker's OBSERVATIONS line this session
 area: "headless workers: how many to run at once"
 date: 2026-11-24
 session_context: "Guild outposts session, second deep audit's fixes: the controller ran seven workers at once (one per area, no shared files) on a 4-core, 15 GB container. Five worktrees built the wasm and protocol at once on start (load 22). Workers reported cargo builds of 10-20 minutes, `npm run types` and `cargo xtask repo` over 10 minutes, graphify update over 2 minutes, flaky timing tests, and a Blender bake of 19 minutes; the models worker hit the two-hour limit with work uncommitted and needed a --resume."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/fix2-*.log (OBSERVATIONS lines); uptime load averages 19.7-22.9 at 05:28-05:44 UTC"

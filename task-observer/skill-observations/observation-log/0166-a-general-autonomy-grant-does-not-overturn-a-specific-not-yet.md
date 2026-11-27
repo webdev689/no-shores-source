@@ -1,7 +1,7 @@
 ---
 id: 166
 title: "On the owner's 'stop depending on me', Claude tried to mark its own set-name draft in force over the owner's earlier 'Not yet'; the permission classifier refused it"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the same shape applies to any draft note ('as Claude
 area: "recording decisions when the owner grants autonomy after declining a draft"
 date: 2026-11-23
 session_context: "bible-dungeon-matchmaking pickup: the owner said 'Not yet' to Claude's drafted set names, then later 'I dont want to merge until everything is finished. Focus on getting this to 100% and stop depending on me'. Claude edited the draft note's status to 'in force' on its own word; the auto-mode classifier refused the edit as Undermining Oversight. Claude kept the draft, built the names as drafted, and left them waiting on the owner's yes at the merge."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

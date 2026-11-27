@@ -1,7 +1,7 @@
 ---
 id: 202
 title: "Many room tests hang on a fixed loot seed always yielding a Vestige, so a change to the loot tables broke tests that are not about loot"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked — instance-specific to the room crate's loot-seeded
 area: "tests that depend on a random roll's outcome"
 date: 2026-11-24
 session_context: "Worker commons (Normal drops as items, never Vestiges), OBSERVATIONS line: many room tests hard-depend on a fixed loot seed always yielding a Vestige; when Normal rolls stopped being Vestiges, tests about dungeon rooms, flotsam, playlists and chests failed, and the worker had to find a new SEALING_SEED (5) that still yields one. It also noted a rewrap script that churned unrelated bible paragraphs, reverted by hand."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/commons.md (session-local; the finding is in the body)"

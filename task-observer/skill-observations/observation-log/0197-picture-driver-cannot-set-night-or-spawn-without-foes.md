@@ -1,7 +1,7 @@
 ---
 id: 197
 title: "The picture driver cannot set night where the room keeps its own clock, and `&spawn=` also asks for foes"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "lattice worker's report only (webgpu-shot.cjs not read by the
 area: "before/after pictures of the game"
 date: 2026-11-24
 session_context: "Lattice worker picturing its shading change at day and night. The `init` Date shift set no night once the room ran in its own thread or a server, because the room's word resets the clock. `foesAsked.ts` and `gates.ts` read the same `&spawn=` key, so a picture could not place the arrival without asking for foes too. graphify's first `update` took about 5 minutes with four workers building."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

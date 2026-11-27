@@ -1,7 +1,7 @@
 ---
 id: 68
 title: "A sea island's game-only drawing (Flora's plants) has no picture route: the World Editor draws modules, and the game needs a voyage"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0015 (picture runs that break) and 0014 (two-hour limit) are 
 area: "browser QA: picturing islands headless"
 date: 2026-11-20
 session_context: "Sea islands session: #111 merged with 'Not looked at on screen' because staging a picture at sea headless outran its budget. Checked here by patching isleEditor.ts locally to draw IslesNature with GROWTH_ROLES, building, and shooting ?mode=islands&isleSeed=7&isleClimate=<c> for five climates (about 1.5 min each), then reverting the patch."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

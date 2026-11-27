@@ -1,7 +1,7 @@
 ---
 id: 182
 title: "Parallel workers' build folders filled the shared disk mid-run (7 to 20 GB a worktree; seen twice), and a brief changing shared words left out the server test that pins them"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: every worktree of the session (sites, room, delve, p
 area: "headless workers: disk headroom and cross-scope checks"
 date: 2026-11-24
 session_context: "Guild outposts session: two of three parallel fix workers reported in their OBSERVATIONS that the shared volume reached 0 MB mid-run, which lost command output until each deleted its own incremental cache. The controller then found the disk at 100% (561 MB free) and freed 26 GB by deleting the target/ folders of five already-merged worktrees. The fix-page worker also changed bannerLaw.ts's words, which server/accounts/guildFace.test.ts pins, a file its brief forbade it to touch."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/fix-rules.log and fix-page.log (OBSERVATIONS lines)"

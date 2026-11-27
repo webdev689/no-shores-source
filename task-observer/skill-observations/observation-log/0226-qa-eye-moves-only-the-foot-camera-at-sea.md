@@ -1,7 +1,7 @@
 ---
 id: 226
 title: "At sea, __qaEye does not move the camera (only the camera on foot reads QA_EYE); a dressed ship was pictured by setting __qaGame.sea.view.camera's yaw, a wheel step in, and patching sea.drawn.ownSeen for the hull and dress"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a project note, not a skill"
 area: "headless pictures of the sea"
 date: 2026-11-24
 session_context: "Ships at the Harbourmaster: to picture a Brig in Harbour Blue, Gold Leaf and Harbour Cloths at sea offline, two eval steps of self.__qaEye([...]) left the sea view's camera where it was (two identical pictures, about 2 minutes each). What worked: an eval setting sea.view.camera = { ...camera, yaw: yaw + PI/2 }, a { wheel: [640, 330, -100, 30] } step to bring the view in close, and sea.drawn.ownSeen = () => ({ ...sea.room.ownShip, hull: 2, dress: [2, 17, 25, 37], emblem: 4 }), since the offline page holds no gear; a click on the water sets sail to show the canvas."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

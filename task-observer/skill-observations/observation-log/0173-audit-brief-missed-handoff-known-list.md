@@ -1,7 +1,7 @@
 ---
 id: 173
 title: "Audit briefs listed only a few known-left items, so auditors re-found findings the hand-off already records as left for the owner"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: no installed skill owns the repo's audit brief; Toolkit
 area: "briefing read-only audit agents"
 date: 2026-11-24
 session_context: "Whole-codebase audit with 12 read-only auditors. The common brief's 'Known, left on purpose' list was written from the hand-off's top sections only; bible/Hand-off.md 'The audit's findings left' (under Next) already lists content/forged missing from ROOMS_CODE, the binds clash (F held taken by a rebound Details), shaders.mjs reading only `code:` first and the html check missing .after/.before. The tools and UI auditors re-reported all four."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

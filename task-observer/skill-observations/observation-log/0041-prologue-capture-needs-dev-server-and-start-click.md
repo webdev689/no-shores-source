@@ -1,7 +1,8 @@
 ---
 id: 41
 title: "A ?prologue= capture needs the dev server and a start click; the Toolkit's recipe forbids the first and omits the second"
-status: open
+parked_until: "PR #243 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

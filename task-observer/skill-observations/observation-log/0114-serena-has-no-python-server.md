@@ -1,7 +1,7 @@
 ---
 id: 114
 title: "Serena has no Python language server, so a worker brief's Serena steps fail on tools/*.py"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "assumed: header rebuilt from the body at repair on 2026-11-26
 area: "worker briefs and Serena's languages"
 date: 2026-11-21
 session_context: "Public events' second audit; again on fpforge and #211's airship worker"
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

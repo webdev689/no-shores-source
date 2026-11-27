@@ -1,7 +1,7 @@
 ---
 id: 235
 title: "A long session changed a behaviour many tests lean on (a place's mesh baked over ticks, not in one) and found main's new tests leaning on the old one only at the final merge, 232 commits later"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the targets are project files, not skills"
 area: "keeping a long branch in step with main"
 date: 2026-11-24
 session_context: "The owner's extreme performance pass, one session on ccr-e8a0a01b-x0c5vj from 761e5937. Slicing the navmesh bake (f5e564f6) changed when anything standing on a place's mesh stands; the branch's own tests were fixed as found (room, protocol, room-wasm fingerprint, server/quests.test.ts). Only at the end did `git fetch origin main` show 232 new commits: one conflict (foot.ts), waterCommon.ts pushed over 600 lines, and main's new War Horn tests (outpost_boss_tests.rs) expecting the horn's foe in three ticks, each found by a further 35-minute full check. `cargo test --workspace` stops at the first failing binary, so each check found one more."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

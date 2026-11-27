@@ -1,7 +1,8 @@
 ---
 id: 67
 title: "Check-before-push leaks: the Stop hook asks for a push mid-check, and a push chained after reading the log went out on a failed check"
-status: open
+parked_until: "PR #239 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

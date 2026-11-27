@@ -81,5 +81,17 @@ fixes go in under the owner's standing order; deploys and workflows need the own
 > Whether `headroom learn` keeps writing lessons by itself: "Suggest only (Recommended)"
 
 Closed at once: the 80 already done or dropped (status `actioned` or `declined`, each with its evidence or reason).
-Renumbered: #151b → #321, #225b → #322, #227b → #323, #271b → #324, #272b → #325 (the `a` of each pair keeps its id).
+Renumbered: #151b → #330, #225b → #331, #227b → #332, #271b → #333, #272b → #334 (after two clashes with notes written at the same time) (the `a` of each pair keeps its id).
 0318 and 0319 given headers as #318 and #319. The malformed claim marker `0125-` removed.
+
+> Line width for the bible and code comments: "Check it, rewrap all (Recommended)"
+
+## Applied (2026-11-27)
+
+Every approved decision is in a pull request, each waiting on the owner's merge yes; its observations are `parked`
+until it merges: #239 (decisions 1 and 6), #240 (2, 3, 7, 9), #242 (4, 5, 13), #243 (10), #244 (11, 12), #245 (8,
+without the line check). Left: the 120-character line check and the rewrap of every longer line (#53, still open),
+landed after the others merge so it clashes with none. Found on the way and offered as its own task: the page's
+intent for a body lying still is one number short (`client/src/combat/fighting.ts`).
+
+Arrived during this run, left open for the next review: 0321 to 0328 (helpers' and this session's notes).

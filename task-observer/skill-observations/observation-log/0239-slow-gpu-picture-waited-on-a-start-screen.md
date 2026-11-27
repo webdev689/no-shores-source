@@ -1,7 +1,7 @@
 ---
 id: 239
 title: "A slow GPU picture run waited 15 minutes on a start screen a no-GPU probe found in 100 seconds"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a project file, not a skill"
 area: "headless pictures through the picture driver"
 date: 2026-11-25
 session_context: "Picturing the stranger's face-to-face shot with webgpu-shot.cjs and ?arrival=1 on a development build. The first plan went straight to waitFor 'Grey Tithe' and timed out after 900 s: the page sat on 'CLICK OR PRESS ANY KEY TO START'. A noGpu plan dumping __ui() at 40 s and 100 s showed it at once; with a key press added the next GPU run reached the words. A second GPU run took its picture mid-flight: 12 frames at SwiftShader's pace were about 1.2 s of game time against the tour's 2.4 s camera flight; 36 frames settled it."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

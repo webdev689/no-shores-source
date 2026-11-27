@@ -1,7 +1,7 @@
 ---
 id: 193
 title: "A rules file sitting at exactly 600 lines (asks.rs) blocked a new refusal code, so two refusals were folded into an existing one's words"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the earlier session's garrison.rs at 599 lines block
 area: "the Small Files rule meeting a file already at its cap"
 date: 2026-11-24
 session_context: "Guild outposts session, second audit's fixes: the rooms worker needed two new refusals (a claim at the week's turn, a horn past the accounts' limit). crates/room/src/asks.rs sat at exactly 600 lines, so a new code would break the Small Files rule; under its two-hour limit the worker answered both as OutpostTrouble, and the controller then reworded that refusal so it fits all three causes."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/fix2-rooms.md (Concerns)"

@@ -1,7 +1,7 @@
 ---
 id: 122
 title: "Waiting on a PR's CI, the session reached for `gh api` where the session allows `gh` only for search"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: a cloud-session harness rule, not a skill"
 area: "waiting on CI from a cloud session"
 date: 2026-11-21
 session_context: "Merging #136 after its CI; the MCP check-run read cannot be looped in a shell, so a shell loop polled the run with gh api."
-parked_until:
+parked_until: "PR #239 merge"
 resolved:
 resolution:
 reference:

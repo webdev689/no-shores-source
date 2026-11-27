@@ -1,7 +1,7 @@
 ---
 id: 13
 title: "Client tests read the room's wasm from client/public, so a Rust rules change fails unrelated client tests until npm run wasm"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a project note, not a skill"
 area: "testing order after a change to the shared Rust rules"
 date: 2026-11-20
 session_context: "Overlook factions round: after changing crates/gear and crates/room, npm test failed 15 files (castRoom, duel, wreckRoom...) until npm run wasm rebuilt client/public/*.wasm; 2026-11-26: the server tests too (#318, folded in)"
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

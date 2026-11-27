@@ -1,7 +1,7 @@
 ---
 id: 247
 title: "A headless view taken before a zone's layouts' city is built shows none of its buildings, with no word that it is still building"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "Toolkit.md's Browser QA says a cargo build beside the driver 
 area: "picturing a layout's buildings headless"
 date: "2026-11-25"
 session_context: "The town fixes on #207 (claude/amazing-euler-gefw4k). Views inside the Saltgrass Downs' tavern after a 90 s wait showed open meadow where it stands; the same views after 240 s, or a few minutes later in the run, showed it whole. Mistaken first for walls seen through. The layouts' city is built in steps (landDrawers.ts standIn('city') while view.underWay)."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

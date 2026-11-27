@@ -1,7 +1,7 @@
 ---
 id: 279
 title: "A Freesound re-search drifted from the owner's own words through six clever queries, each try costing 40 minutes because every run re-reads all ~190 picks"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the targets are project files, not skills"
 area: "searching sounds for the owner's sheet"
 date: 2026-11-25
 session_context: "The owner asked for a new 'city chatter' and later 'Try again with the hum'. The hum's original query was 'distant city'. Claude searched 'town ambience distant', 'medieval town ambience', 'medieval city ambience', 'fantasy town ambience -park', 'medieval market ambience -park', 'harbor town ambience -park', 'old town ambience -park -klankbeeld': parks, ghost towns, nothing, and one recordist (klankbeeld) filling most results. The owner: 'Dude how hard can it be to get distant city sounds'. Each run took ~40 min: candidates.mjs reads every picked cue's page and preview on every run, and the workflow's ONLY input narrows the search but not that read. Four candidates a query (OFFERED = 4)."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

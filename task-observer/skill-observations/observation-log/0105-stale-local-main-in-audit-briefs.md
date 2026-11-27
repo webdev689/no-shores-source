@@ -1,7 +1,7 @@
 ---
 id: 105
 title: "A cloud clone's local main is stale, so an audit brief that says main...branch hands the auditor 1,350 files"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "Toolkit.md's Audits section names the brief's scope but not h
 area: "audits, git ranges"
 date: 2026-11-22
 session_context: "Auditing PR #143: the brief said `git diff main...ccr-e806aa9f-fngvgz`. Local main and origin/main were at #98 (4da959f5) while the branch started at #136 (011da6bf), so the range showed 1,350 files; a correction (`011da6bf..branch`) was sent mid-run. Main had also moved on to f8d220cc with seven conflicting files, found only by fetching."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

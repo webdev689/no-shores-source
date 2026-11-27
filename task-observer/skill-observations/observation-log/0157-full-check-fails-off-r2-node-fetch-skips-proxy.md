@@ -1,7 +1,7 @@
 ---
 id: 157
 title: "The full check fails in a container that cannot reach R2: the session started on Default, and Node's fetch ignores the proxy"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: every test that fetches R2 from Node (client/src/shi
 area: "session setup: the network a cloud session starts on, and Node's proxy use"
 date: 2026-11-23
 session_context: "Audit leftovers session: the first cargo xtask check on a branch failed 4 TypeScript tests in shipTags.test.ts with 'fetch failed'. The session had started on the Default environment, whose network allows no extra host, so the proxy refused pub-…r2.dev (403). After switch_environment onto the saved no-shores-source environment (which allows that host), curl reached R2 but Node's fetch still failed until NODE_USE_ENV_PROXY=1 (/root/.ccr/README.md). With both, the 4 tests passed and every branch's full check passed. About 25 minutes of a full check were spent before the cause was found."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

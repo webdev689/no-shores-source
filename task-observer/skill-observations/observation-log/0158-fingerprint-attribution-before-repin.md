@@ -1,7 +1,7 @@
 ---
 id: 158
 title: "A pinned fight fingerprint broke after several fixes at once: each fix was taken out alone to find which moved it, and the fight it pins measured, before re-pinning"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: a method for the project's audits (Toolkit.md, Audits),
 area: "re-pinning a golden fingerprint after a behaviour change"
 date: 2026-11-23
 session_context: "Patrol audit: four fixes to the foes' minds landed together (stale answers, the section's dead, a falling-back target, swings told only to the foe they are at). spread_tests::one_player_against_a_group_fights_as_it_always_did failed on its fingerprint. Taking out the swing filter alone brought the old fingerprint back, so the other three did not touch that fight; a throwaway test then measured blows landed on a lone swinging player a minute against 3, 6 and 12 foes with and without the filter (44.7/44.3/42.5 vs 45.2/44.2/43.0) before the pin was moved."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

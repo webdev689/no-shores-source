@@ -1,7 +1,7 @@
 ---
 id: 154
 title: "cargo xtask check cannot pass in a cloud session on the Default environment: shipTags.test.ts fetches meshes from R2, a host it refuses, and Node's fetch ignores HTTPS_PROXY"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the rest of the check (format, lints, types, shaders
 area: "running the required check in a cloud container"
 date: 2026-11-23
 session_context: "Picking up PR #168 after merging main: cargo xtask check failed only on shipTags.test.ts's four tests, 'fetch failed'. curl showed the proxy's CONNECT 403 for pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev; with NODE_USE_ENV_PROXY=1 Node got the same 403. The session was on the Default environment (no allowed hosts); overlook-source is unrestricted and a running session cannot move onto it. The owner approved a new personal environment no-shores-source allowing the R2 host, with npm ci as its setup script; then NODE_USE_ENV_PROXY=1 node --test shipTags.test.ts passed 4/4. Without the variable Node's fetch goes direct and fails even with the host allowed. xtask stops at the first failing step, so the build, bundle and repo checks had to be run by hand to see them.; #169 session (2026-11-24): every local full check stopped at the four R2 ship tests, so the repo checks (run last) never ran; a merge of main left crates/combat/src/step.rs at 601 lines, caught only by a separate cargo xtask repo, after the head was pushed"
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference: "environment no-shores-source (env_014htJmLMrHjN6D4NBU6APdR)"

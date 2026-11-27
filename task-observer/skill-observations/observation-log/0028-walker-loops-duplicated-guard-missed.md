@@ -1,7 +1,7 @@
 ---
 id: 28
 title: "A guard added to one test walker never reached a second, inline walker loop; its test passed for a round by climbing"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked — applies to any test helper duplicated inline acro
 area: "test helpers duplicated across files"
 date: 2026-11-20
 session_context: "Merging main into overlook-source#63: crates/room/tests/layouts_laid.rs's Saltgrass Downs gate walk against runs_walked.rs's walked()"
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

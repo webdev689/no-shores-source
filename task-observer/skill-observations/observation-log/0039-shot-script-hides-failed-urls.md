@@ -1,7 +1,8 @@
 ---
 id: 39
 title: "The headless capture printed 404s without their URL, and its preview server outlived the job"
-status: open
+parked_until: "PR #243 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

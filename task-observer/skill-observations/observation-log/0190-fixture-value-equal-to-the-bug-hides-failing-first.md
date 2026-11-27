@@ -1,7 +1,7 @@
 ---
 id: 190
 title: "A failing-first test passed without its fix because the fixture's value equalled the bug's output; only reverting the fix alone showed it"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked — no skill owns test-first practice here; the princ
 area: "failing-first tests of a fallback or default value"
 date: 2026-11-24
 session_context: "Revives, respawns and relogs branch (ccr-f5e78349-6zl21z), the audit fix for a mission's last-stand checkpoint facing: crates/room/src/checkpoints_tests.rs, the mission checkpoint test."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference: "crates/room/src/checkpoints_tests.rs (a_mission_lays_a_checkpoint_at_each_post...), crates/room/src/checkpoints.rs (lay_post_checkpoints)"

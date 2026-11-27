@@ -1,7 +1,7 @@
 ---
 id: 317
 title: "A pull request's 'tested offline' stood for weeks of pushes on which CI never reached the tests: the types step failed first on every head"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: CLAUDE.md's Done rule (cargo xtask check passes in C
 area: "reading CI's result before calling a pull request tested"
 date: 2026-11-26
 session_context: "Audit of #221: its body said the suites passed offline and left the full check to CI; every check run on its four heads failed at 'types (TypeScript)' (heldMapAsk.test.ts:78, a strict assert narrowing to never), so cargo test and npm test never ran in CI. The previous session ran the suites but never tsc on the test config. The same session's re-pinned fingerprint was never run in CI either."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference: "CI job 139932413175 on 01c721ba; fix 1f846c5b on ccr-c7c30290-wwnvc5"

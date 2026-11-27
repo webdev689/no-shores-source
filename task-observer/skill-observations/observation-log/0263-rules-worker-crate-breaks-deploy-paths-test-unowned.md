@@ -1,7 +1,7 @@
 ---
 id: 263
 title: "A new rules crate broke the rooms' deploy-paths test no worker owned, and worker.ts sits at the 600-line limit"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "family: worker briefs splitting rules, server and client. che
 area: "no-shores-source, passages rules and server workers"
 date: 2026-11-25
 session_context: "The rules worker added crates/passage and content/passages to what the rooms are built from, but .github/workflows/rooms.yml's ROOMS_CODE did not list them, so server/roomsDeploy.test.ts failed after the rules merge; the server worker fixed it though it was outside its item. server/worker.ts was at 598 of 600 lines, so the server worker moved roomName and entranceOf out, and the controller chose a room-side stand for going home over a new join path partly for the same limit. The server worker used scripted replacements instead of Serena's symbol edits."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

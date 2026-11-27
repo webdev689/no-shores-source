@@ -1,7 +1,7 @@
 ---
 id: 310
 title: "Sub-agents each given a CARGO_TARGET_DIR of their own filled the disk, and the full check died on 'No space left on device'"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: Toolkit's Workers section links node_modules, genera
 area: "parallel Rust builds in worktrees"
 date: 2026-11-26
 session_context: "#216 docking: three agents built in their own target dirs (target-dockroom, target-dockfix, target-mergemain) for isolation; with the main target at 21 GB the volume filled and cargo xtask check on d70f8282 failed in the Rust tests with os error 28; deleting the three freed 35 GB."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "check6.log on d70f8282"

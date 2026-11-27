@@ -1,7 +1,8 @@
 ---
 id: 44
 title: "A wire change ran its own crate's tests and missed a dependent crate's: run every dependent's before the full check"
-status: open
+parked_until: "PR #244 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

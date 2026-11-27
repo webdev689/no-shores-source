@@ -1,7 +1,8 @@
 ---
 id: 92
 title: "A cloud session cannot publish forge renders: the Default environment holds no Cloudflare token, despite r2.py's word"
-status: open
+parked_until: "PR #244 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

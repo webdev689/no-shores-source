@@ -1,7 +1,7 @@
 ---
 id: 156
 title: "Tightening a repo check: prototype the new rule over the whole corpus and measure false alarms and leaks before writing it"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: applies to every check in crates/xtask/src/checks (v
 area: "changing a lint or repo check without breaking what it already passes"
 date: 2026-11-23
 session_context: "Audit leftovers session: the owner approved tightening the vault check (a code: #symbol passed if any word of its file named it, an import included) and the html check. A Python prototype of 'defined, not only named' was run over all 1,610 code: symbols (false alarms) and over 23,566 names files only import (leaks): first cut 0 false alarms but 2,666 leaks (calls at a line's start read as methods); second cut 1 false alarm (a parameter holding a function); third cut 0 false alarms, 572 leaks. The Rust port was then proven live by planting two bad refs and seeing exactly those two flagged."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

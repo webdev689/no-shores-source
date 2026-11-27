@@ -1,7 +1,7 @@
 ---
 id: 208
 title: "Feature workers' tests pass while the feature never runs on the real path; an independent per-area review found it"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "brief-common-template.md (asks for failing tests first and a 
 area: "feature workers' tests and the review before a pull request"
 date: 2026-11-24
 session_context: "Playtest notes built by four workers, each with unit tests that failed first and a review of its own diff, then three PRs green in CI. The owner asked for an audit; eight read-only reviewers by area found: the Lattice's blow details tested by feeding frame numbers straight to the drawing, while the real path (the rules' windup ending in idle) never reached the strike or landing; a patrol node's return counted in room ticks, which stop while a room is empty; far woods painted by the terrain still taking the sky's glare after the leaf fix; other riders' boost thought unsent when the body carried it; notes and older decisions left saying the old behaviour. The invisible public event's likely cause (512 module fetches burst at a rate-limited host with no retry) was found by reading the server-and-network path the offline runs never exercised."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,7 @@
 ---
 id: 238
 title: "A camera-framing test passed with a lens the game never uses: its 57 degree stand-in hid crowns cut off at the top edge under the real 50 degree lens"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a project file, not a skill"
 area: "testing what a camera frames"
 date: 2026-11-25
 session_context: "The owner reported the camera sitting too low while the stranger speaks in Overlook. framing.test.ts built its shot from OWN with fov: 1 (57 degrees) and asserted only crown y > 0; the game's lens is WALK_LENS.fov (50 degrees), under which the old facesShot put the pair's crowns at y = -0.002 of the view, cut off, with two thirds of the frame pavement. Worked out on paper from onScreen's projection before any picture; the new test loops the real lens and two others and bounds each share (crown 0.1 to 0.2, feet 0.3 to 0.4)."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,7 @@
 ---
 id: 195
 title: "The offline shader check (naga) passed WGSL that Chrome's Tint refuses ('mixing * and ^ requires parenthesis'); the refused pipeline failed every frame's command buffer, land and all, and only a headless picture run caught it"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: no skill owns the shader checks; the gap is the repo's 
 area: "validating WGSL offline against what the browser compiles"
 date: 2026-11-24
 session_context: "No Shores, the meadow grass port: meadowShader.ts hashed with `a * K1 ^ b * K2 ^ salt`. `cargo xtask shaders` (naga over every shader) passed; in headless Chromium the module failed to parse, its pipelines were invalid, and every frame's command encoder that set them failed, so the whole scene went unrendered."
-parked_until:
+parked_until: "PR #245 merge"
 resolved:
 resolution:
 reference:

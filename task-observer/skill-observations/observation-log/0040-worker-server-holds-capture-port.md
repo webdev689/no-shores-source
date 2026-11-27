@@ -1,7 +1,8 @@
 ---
 id: 40
 title: "A finished worker's preview server held port 5173, so every capture showed the worker's old build"
-status: open
+parked_until: "PR #242 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

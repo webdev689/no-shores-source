@@ -1,7 +1,7 @@
 ---
 id: 306
 title: "A worker stopping its preview servers by a command-line match killed a sibling worker's claude process"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the template says stop by pid, never pkill -f; it do
 area: "workers running side by side"
 date: 2026-11-26
 session_context: "hub-ground stopped its vite preview servers with a pid filter on the command line; the ship-stern worker's claude process held the port numbers in its own command line and got SIGTERM (WORKER ship-stern EXIT 143, uncommitted work); run-worker.sh resumed it once to commit."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "session 01AQ3N4ngdqNdXFFNT7JJmBM, ~/wt/reports/hub-ground.log, ship-stern.log"

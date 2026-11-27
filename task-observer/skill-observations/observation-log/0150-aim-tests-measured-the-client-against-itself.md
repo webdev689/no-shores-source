@@ -1,7 +1,7 @@
 ---
 id: 150
 title: "The ship aim's tests checked the camera against its own target, never against where the rules' balls fall, so an offset survived several iterations"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the same shape could hide in any client view that mu
 area: "testing a client view that must line up with the authoritative rules"
 date: 2026-11-23
 session_context: "Ship aim session: the owner said the aim UI was still off the camera's middle after many iterations. aimCamera.test.ts asserted that the view's middle meets the sea at the range the camera itself chose. A Node probe that drove SeaCombat on the real land_wasm rules and projected the lay's landing zone with camera.ts onScreen found it 90-100 px above the crosshair at 1080p: the rules laid for a flat sea at the ship's heave while the camera aimed at sea level and the balls fell on the swell. The same probe, holding every third answer a frame, showed the eye 0 to 13 cm off its station on the drawn ship frame to frame (the jitter)."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference: "session scratchpad aimProbe.ts (session-local; the method is in the body)"

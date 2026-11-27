@@ -1,7 +1,7 @@
 ---
 id: 65
 title: "Staged pictures mislead when each staged input is set on its own, and the picture budget is overrun"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0015 (actioned) covers picture runs that break; this is runs 
 area: "browser QA: staging a scene for headless WebGPU pictures"
 date: 2026-11-20
 session_context: "dfo-mount worker's sea-fight readout pictures (reports/dfo-mount-shots, steps_v3.json), reviewed by the controller before merging into #75; plus worker (reports/plus.md, plus-shots): v1 staged the lay off the target again, and 1 of 6 pictures fit its 60-minute aim."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

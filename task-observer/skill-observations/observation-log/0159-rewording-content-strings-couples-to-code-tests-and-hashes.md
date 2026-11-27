@@ -1,7 +1,7 @@
 ---
 id: 159
 title: "A writing pass over game content couples to code: camera cues on a line's speaker, tests pinning exact lines, and hashed content that changes the protocol version"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: [content-writing-pass]
@@ -10,7 +10,7 @@ siblings_checked: "none: no installed skill covers rewriting a game's dialogue o
 area: "rewriting dialogue and lore that code and tests read"
 date: 2026-11-23
 session_context: "The owner asked for a writing pass over every line of dialogue and lore in the game. Before rewriting, grep showed: calm.ts turns the camera on the lookout's line and back on the next (so speaker order per scene is load-bearing); the welcome tour plays scenes back to back, so the two-lines-a-speaker rule holds across scene seams; two Journal tests pin the opening scenes' first lines; the shore's lines must name neither sea nor shore because a fallback plays them on the plaza; lore.json, quests.json and items.json are hashed into the protocol version, so the rewrite redeploys the rooms. Each was found by reading code before writing, not by a failing check."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference: "branch ccr-c249af15-iwfmsb, content/story/*.json, client/src/game/prologue/calm.ts, tools/numbered.json"

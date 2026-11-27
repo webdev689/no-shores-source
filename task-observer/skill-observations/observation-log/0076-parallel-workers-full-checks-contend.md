@@ -1,7 +1,8 @@
 ---
 id: 76
 title: "Three workers' full checks on one machine each ran past 10 minutes, and groundPaint's timing test failed under the load"
-status: open
+parked_until: "PR #242 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

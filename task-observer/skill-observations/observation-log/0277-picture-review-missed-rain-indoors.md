@@ -1,7 +1,7 @@
 ---
 id: 277
 title: "A headless picture checked only for the change in hand passed over a plain fault in the same frame"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked — a review practice for pictures; Toolkit.md's Brow
 area: "reading headless pictures"
 date: "2026-11-25"
 session_context: "#207 audit: the tavern's upper room was pictured to show its windows seen through; rain streaks fell across the room in the same picture, and the report called it fine. The owner saw it: an open building's ceiling was drawn but never a collider, so the shelter grid (built from colliders) left its top storey open to the rain. The same streaks, fainter, were in a picture taken before any of the PR's changes."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

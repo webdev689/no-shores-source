@@ -1,7 +1,8 @@
 ---
 id: 284
 title: "Options put to the owner promised outcomes not checked against standing rules or the code path (drop-rate rank order; islands in a climate no contract dressed)"
-status: open
+parked_until: "PR #244 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

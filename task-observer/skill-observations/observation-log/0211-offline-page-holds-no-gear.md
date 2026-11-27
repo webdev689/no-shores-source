@@ -1,7 +1,7 @@
 ---
 id: 211
 title: "Offline the page holds no gear (`foot.gear` is null without a socket; drops were drawn only from it), `__qaView` stands the body clear of what stands and re-arrives it as a fresh character, and a GPU run cannot finish a timed hold"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the targets are project notes, not skills"
 area: "building a feature that must work playing alone, and picturing it headless"
 date: 2026-11-24
 session_context: "Chests and searchable containers: the offline room stood chests, but the page drew and offered none, because `Foot.gear` (`gearInRoom`) is null unless the link is a RoomConnection; only `held.alone` carries the offline room's word (the public event's chests already read it). Found only by reading code before picturing. Then a no-GPU picture plan stood the body 1 m from a crate with `__qaView`, but the arrival put it 2.3 m off (moved clear of a tent's box), so the prompt never showed; checking `__qaWhere`/the body against the target and trying each side fixed the plan."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

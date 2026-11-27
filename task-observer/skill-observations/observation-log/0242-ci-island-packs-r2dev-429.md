@@ -1,7 +1,7 @@
 ---
 id: 242
 title: "Main's CI fetches the island packs from an r2.dev address Cloudflare rate-limits, so a 429 blocks a merge's deploy"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: instance-specific to this repository's CI and its pu
 area: "CI's island packs step, and every deploy behind it"
 date: 2026-11-25
 session_context: "#205 merged as 9e690992 on the owner's 'Deploy'. Main's run 45542496190 failed 80 s in at 'Fetch the island packs': curl got 429 from pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev, so the check and every deploy job (rooms, accounts, pages, site, bot) were skipped and nothing deployed. The PR's own run on the same tree had passed 1 minute earlier. Its failed jobs were re-run once."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference: "run 45542496190; bible/02-Systems/Sprite Forge.md ('Cloudflare limits how often an r2.dev address answers')"

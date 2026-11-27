@@ -1,7 +1,7 @@
 ---
 id: 178
 title: "A noGpu waitFor on words the arrival veil also holds (the key strip's, or the node's name) passes behind the veil, so the steps after it act before the game is up"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none"
 area: "driving the game headless"
 date: 2026-11-24
 session_context: "A plan waited for 'On foot' (the strip's head), then held M to leave: nothing happened. The HUD lays the strip under the veil ('Arriving at Overlook'), and leaving is not offered behind it. Waiting for 'Map', which shows only once the veil lifts, worked. Again 2026-11-24 (revives branch, #184): a plan waited for 'Saltgrass', matched by the veil's 'ARRIVING AT THE SALTGRASS DOWNS', and its next eval found self.__qaGame undefined, the game not yet started past bootGame; 1500 frames later every __qa hook was there."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

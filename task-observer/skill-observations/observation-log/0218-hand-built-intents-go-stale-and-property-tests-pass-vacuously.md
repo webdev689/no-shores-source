@@ -1,7 +1,7 @@
 ---
 id: 218
 title: "A test's hand-built 17-number intent went one short when main's controls grew a boost; the room read no ask, one test failed, and the random-run test passed doing nothing"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: only server/outpostReload.test.ts and server/snapsho
 area: "tests that write wire inputs by hand, and property runs that only compare totals"
 date: 2026-11-24
 session_context: "PR #179, merging main at 761e5937 before the owner's merge: main's 'A body is 24 numbers and its controls 8' grew INTENT_FLOATS from 17 to 18. The guild branch's outpostReload.test.ts wrote its still intent as a 17-number literal. After the merge the room read no deposit: the reload test failed on 1000 !== 500, while the sail-off test and the 12-seed random run passed, because start and end totals match when nothing happens. Fixed with an 18-number intent and an assert that the run's errands reached the accounts (outpost_errands rows > 0), watched failing on the old intent."
-parked_until:
+parked_until: "PR #245 merge"
 resolved:
 resolution:
 reference:

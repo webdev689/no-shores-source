@@ -1,7 +1,7 @@
 ---
 id: 227
 title: "CI was polled with gh api in a session whose environment allows gh only for search"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked — instance-specific to cloud sessions with the gh-f
 area: "waiting on CI"
 date: 2026-11-24
 session_context: "Merging PR #186 on the owner's 'Merge and deploy when ready'. After a push I started a Monitor that looped gh api repos/.../check-runs every 60 s. The environment's system text says gh is for search only, and subscribe_pr_activity delivers check results as events. Stopped it within a minute, read the check runs once with the GitHub MCP tool instead. Also: the stop hook asks for a push on every turn while CLAUDE.md wants cargo xtask check first (see 0209)."
-parked_until:
+parked_until: "PR #239 merge"
 resolved:
 resolution:
 reference:

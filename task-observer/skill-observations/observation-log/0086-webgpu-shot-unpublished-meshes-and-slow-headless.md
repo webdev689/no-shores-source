@@ -1,7 +1,8 @@
 ---
 id: 86
 title: "webgpu-shot has no way to show meshes not yet on R2, and headless WebGPU is too slow to play a timed event"
-status: open
+parked_until: "PR #243 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

@@ -1,7 +1,8 @@
 ---
 id: 77
 title: "Serena replace_symbol_body dropped a Rust test's #[test] attribute"
-status: open
+parked_until: "PR #239 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

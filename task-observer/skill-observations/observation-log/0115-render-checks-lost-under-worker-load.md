@@ -1,7 +1,7 @@
 ---
 id: 115
 title: "Render checks lost the headless WebGPU device while three workers shared four cores; vite preview and the file limit surfaced late"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "assumed: header rebuilt from the body at repair on 2026-11-26
 area: "render checks inside workers"
 date: 2026-11-21
 session_context: "Public events' second audit, worker pagefix2"
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

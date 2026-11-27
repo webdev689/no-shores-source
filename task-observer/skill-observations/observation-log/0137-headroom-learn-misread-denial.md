@@ -1,7 +1,7 @@
 ---
 id: 137
 title: "headroom learn wrote a wrong lesson from a safety refusal, which would steer later sessions round it"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a project note, not a skill"
 area: "end-of-session learning from transcripts"
 date: 2026-11-22
 session_context: "No Shores rename and logo. The auto-mode classifier refused a Python step that would have stripped the owner's logo PNG of its C2PA credentials (it named OpenAI/ChatGPT). headroom learn --apply then wrote to the project memory that 'an inline heredoc doing the same write was denied', advising to put the script in a repo file instead; it also wrote that the repo kept the Overlook name, when the owner had it renamed.; No Shores bible-dungeon-matchmaking pickup (2026-11-23): learn wrote three wrong lessons, corrected by hand: steward/babysit 'listed in Toolkit.md' (they exist nowhere), ReadNotifications 'only once' (the tool says until 0 remain), and 'never end a turn with unpushed commits' (against check-before-push)"
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

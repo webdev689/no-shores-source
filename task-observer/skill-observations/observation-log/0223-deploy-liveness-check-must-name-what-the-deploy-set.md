@@ -1,7 +1,7 @@
 ---
 id: 223
 title: "A deploy's liveness check compared /health against a hand-set version constant, so after the first deploy it passed with the old code still serving"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: rooms.yml's accounts check reads /v1/health for ok o
 area: "post-deploy health checks in CI workflows"
 date: 2026-11-24
 session_context: "PR #194: bot.yml first checked that /health answered BOT_VERSION ('core1'), a constant nobody bumps. A read-only review caught it; fixed by stamping GITHUB_SHA on the Worker as BOT_COMMIT and requiring /health to answer it. The accounts' check in rooms.yml asks only for ok."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,7 @@
 ---
 id: 196
 title: "Four headless workers at once on a 16 GB, 4-core container ran out of memory and all hit the two-hour stop"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "run-worker.sh header (says start with timeout 7200000 and --r
 area: "running several workers in parallel"
 date: 2026-11-24
 session_context: "Playtest notes split over four workers (town, sea, horse, lattice), each started at once with run_in_background and the 2 h cap. Each built its own wasm, ran cargo and node tests, vite builds, a WebGPU browser for before/after pictures, and one or two ran `cargo xtask check`. Browsers kept dying (out of memory), workers retried, and all four were killed at 2 h with the pictures unfinished, two with edits uncommitted. Resumed two at a time with no full check and at most three picture runs."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,8 @@
 ---
 id: 187
 title: "An Agent isolation worktree starts from the default branch, not the controller's branch; a brief naming a base commit must say how to get onto it"
-status: open
+parked_until: "PR #242 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

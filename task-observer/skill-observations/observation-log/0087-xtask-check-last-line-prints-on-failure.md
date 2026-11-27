@@ -1,7 +1,8 @@
 ---
 id: 87
 title: "cargo xtask check prints 'checked <sha>, nothing uncommitted' last even when a step failed: read as a pass, a push went out"
-status: open
+parked_until: "PR #240 merge"
+status: parked
 type: internal
 skill: []
 proposes_skill: []

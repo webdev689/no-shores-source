@@ -1,7 +1,7 @@
 ---
 id: 147
 title: "A full check run in the working checkout tested edits made while it ran, then said 'nothing uncommitted'"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: cargo xtask check is the only full check; its final lin
 area: "running the 45-minute cargo xtask check while continuing to work"
 date: 2026-11-23
 session_context: "Overlook Playlist session: the controller started cargo xtask check in the main checkout at commit 6e916478 and kept fixing audit findings in the same tree. The TypeScript tests ran 30 minutes in, over uncommitted look changes, and modelsWorn.test.ts failed; by the end the edits were committed, so the check printed 'checked 6e916478, nothing uncommitted'. The failure was blamed on the commit until a revert showed the commit passed."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

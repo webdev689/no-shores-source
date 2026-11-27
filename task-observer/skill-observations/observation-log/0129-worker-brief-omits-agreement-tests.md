@@ -1,7 +1,7 @@
 ---
 id: 129
 title: "Rule-changing workers ran their crates' tests but not the door and server agreement tests, so fingerprint drift surfaced only at merge"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the worker brief only"
 area: "worker briefs for changes to the Rust rules"
 date: 2026-11-22
 session_context: "Overlook third audit: the body worker (movement, combat) and the foes worker ran cargo test -p movement/-p combat/-p foes/-p room, all green; after merging, cargo test -p room-wasm failed three pinned fingerprints (garrison, garrison pair, climb), which the server's WebAssembly tests also pin. The controller bisected by reverting each change in the tree and repinned."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

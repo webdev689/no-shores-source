@@ -1,7 +1,7 @@
 ---
 id: 189
 title: "Web research for a game's rules found the main wiki (destinypedia.com) and pcgamer.com unreachable at DNS from the cloud session; the Toolkit's list of sites to skip names neither, so the research agent spent fetches learning it"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the Toolkit's Web research row lists reddit, GameSpo
 area: "web research from a cloud session"
 date: 2026-11-24
 session_context: "Revive, respawn and relog session: a background research agent asked for Destiny's death and revive rules could not WebFetch destinypedia.com or pcgamer.com (DNS failure under the session's network allowlist) and fell back to WebSearch snippets, so several numbers stayed unconfirmed."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

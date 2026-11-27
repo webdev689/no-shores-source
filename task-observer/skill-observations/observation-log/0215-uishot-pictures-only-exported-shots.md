@@ -1,7 +1,7 @@
 ---
 id: 215
 title: "uiShot draws only shots a module exports, so measuring a one-off menu state (a layout risk an audit estimated) means editing a tracked shots file and reverting it"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the targets are the project's tool and its note, not sk
 area: "headless interface pictures"
 date: 2026-11-24
 session_context: "Bounty board overhaul: an audit estimated the Journal's bounty count chip ran past its column at 1280x720 for counts like 13/15. journalShots.ts keeps menuShot private and its gear fixed, so the only way to picture a 15-slot state was to append a temporary export to journalShots.ts, run uiShot, and copy the file back."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

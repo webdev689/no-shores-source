@@ -1,7 +1,7 @@
 ---
 id: 165
 title: "A hand-off said the work waited in 'its pull request', but the branch had none: its only one (#155) had merged before the work"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the other items in Waiting on the owner name their p
 area: "handing off work waiting on the owner"
 date: 2026-11-23
 session_context: "Session pickup of ccr-06efd4d0-ffd79v: its Hand-off.md listed the prologue rework 'branch ccr-06efd4d0-ffd79v, its pull request' for the owner's yes; list_pull_requests for that head showed only #155, merged at 02:38 before the 161 commits of the rework. The work had no pull request and main had moved 202 commits on."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference: "PR #172"

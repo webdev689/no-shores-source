@@ -1,7 +1,7 @@
 ---
 id: 236
 title: "Agent-tool worktrees start from main, not the working branch, and a fixer sub-agent has no Agent tool for the reviewer its rules require"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: run-worker.sh workers get a worktree from the branch
 area: "parallel fixers in Agent-tool worktrees"
 date: 2026-11-24
 session_context: "PR #194 audit fixes: six general-purpose agents with isolation worktree. Every one found its worktree at main 6251cad3, without server/bot, and had to reset to the working branch's head before starting; two were refused the reset by the auto-mode classifier and branched instead. None had the Agent tool, so the brief's 'spawn one reviewer' step became a code-review skill run or a self-review. Their worktrees also lacked node_modules and generated/, linked by hand."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

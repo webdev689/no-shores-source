@@ -1,7 +1,7 @@
 ---
 id: 255
 title: "A pinned fingerprint that moves with a wire change is re-pinned only once switching the change off restores the old one"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "Testing.md names the pinned fingerprints (SEA_CLASH_HASH in d
 area: "re-pinning snapshot fingerprints after a protocol change"
 date: "2026-11-25"
 session_context: "The sea's chart on #207 (claude/amazing-euler-gefw4k): adding `charted` to the sea snapshot moved SEA_CLASH_HASH from b83a9706368fa925 to 0462cf65304bcb00. With the chart switched off for one run (chart = false), the old hash held, so the chart was its only cause; both copies (door_tests.rs, server/roomDoor.test.ts) were re-pinned and the server test, through the built WebAssembly, passed on the new one."
-parked_until:
+parked_until: "PR #245 merge"
 resolved:
 resolution:
 reference:

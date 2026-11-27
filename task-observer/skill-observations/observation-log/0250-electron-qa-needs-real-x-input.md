@@ -1,7 +1,7 @@
 ---
 id: 250
 title: "Driving the desktop app headless: Playwright's keys never reach Electron's shell, and a packed app cannot be attached"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0246 (a place with no offline way in): the same family, QA re
 area: "Browser QA of the desktop app (desktop/)"
 date: 2026-11-25
 session_context: "The desktop app session, branch ccr-42a55a97-wkid9r, PR #210. Playwright's _electron.launch drove the unpacked shell under xvfb; F11, Alt+Enter and F12 went unanswered until sent as real X keys."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,7 @@
 ---
 id: 287
 title: "A commit message built inline with $(printf '\\n') lost its blank line twice in one session; one went out on a shared branch"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a project file, not a skill"
 area: "writing commit messages from the shell"
 date: 2026-11-26
 session_context: "No Shores #211's last audit: `git commit -m \"subject$(printf '\\n\\n')body\"` joined subject and body (caught before the push, amended); later `git commit -m \"subject$(printf '\\n')\\nCo-Authored-By...\"` put the trailers in the subject's paragraph and was pushed to the PR's branch, where history is not rewritten. Every other commit that session used `git commit -F - <<'EOF'` and came out right."
-parked_until:
+parked_until: "PR #239 merge"
 resolved:
 resolution:
 reference:

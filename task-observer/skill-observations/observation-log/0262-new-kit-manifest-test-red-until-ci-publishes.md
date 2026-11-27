@@ -1,7 +1,7 @@
 ---
 id: 262
 title: "A new island kit or dungeon pack leaves the committed-manifest test red until CI publishes it and its line is committed"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "family: the module pipelines (tools/dungeon, tools/islands, t
 area: "no-shores-source, passages pieces worker"
 date: 2026-11-25
 session_context: "The pieces worker added the passage kit to content/islands/kits.json; tools/islands/test_envelope.py test_the_committed_manifest_names_the_contracts_kits_and_parts fails until the island-modules workflow publishes after a push and the controller commits its manifest line, so the branch is red between the push and that commit. A container restart killed a nine-style preview build (exit 137); the worker then built one style at a time. The preview sheet's camera sees the passage pieces' north fronts from behind, so a scratch rotate-180 render was needed. A stale untracked room.wasm needed npm run wasm before the client's island tests."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

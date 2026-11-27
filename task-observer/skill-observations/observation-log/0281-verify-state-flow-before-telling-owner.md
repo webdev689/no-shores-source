@@ -1,7 +1,8 @@
 ---
 id: 281
 title: "Told the owner every arrival puts the weapon away, from reading newPlayer alone; the walker takes drawn from the dress, so it was wrong"
-status: open
+parked_until: "PR #244 merge"
+status: parked
 type: internal
 skill: ["superpowers:systematic-debugging"]
 proposes_skill: []

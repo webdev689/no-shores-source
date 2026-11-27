@@ -1,7 +1,7 @@
 ---
 id: 311
 title: "check-tools.sh --worker run as the Toolkit says, without REPO_DIR, checks /root and FAILs serena, the pre-commit guard and the combined worker"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: Toolkit's 'Running the kit' says 'After any change t
 area: "the kit's checker"
 date: 2026-11-26
 session_context: "Audit and cleanup session: a docstring fix in check_tools.py; the checker run as written reported 4 FAIL (no REPO_DIR, so /root taken as the repo); rerun with KIT_DIR=$PWD/tools/claude-toolkit REPO_DIR=$PWD."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "scratchpad check-tools.log"

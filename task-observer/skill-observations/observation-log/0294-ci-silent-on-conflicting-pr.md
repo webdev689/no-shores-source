@@ -1,7 +1,7 @@
 ---
 id: 294
 title: "A pull request that conflicts with main gets no CI run at all, and main moved three times while the passages PR waited on CI"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: ci.yml runs on pull_request; GitHub builds no merge 
 area: "waiting on CI for a long-lived PR while main moves"
 date: 2026-11-26
 session_context: "Passages sessions (#218, twice): after each push, get_check_runs returned no runs; git merge-tree HEAD origin/main showed conflicts with main's #217, #220 and the held map's lettering, each merged in turn. #220 also changed loot rates, so the band's test needed a retune after the merge, not only a text resolution."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference: "merges 32c4fd5a, 9cee20e6, ebeba3fd on ccr-1c146825-lrjepv"

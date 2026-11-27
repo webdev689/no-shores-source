@@ -1,7 +1,7 @@
 ---
 id: 185
 title: "Crate dependencies and zone briefs were changed without the fast checks that guard them, so the faults surfaced sessions of work later"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked 0170 (fast steps before the full check): same princip
 area: "running the repo's own fast guards right after the edit they guard"
 date: 2026-11-24
 session_context: "Revive, respawn and relog session too (clippy on new tests); First Breach session (branch claude/first-breach-design-959rog). The room crate gained city, serde and serde_json as dependencies early on; `cargo xtask repo` (crates rule: room may not depend on them) was first run many commits later and forced the plan reading into a build script. Separately, adding the Breach area to Gullwing Vale's brief (content/world/briefs.json) removed the vale's ledge; only the one new walk test was run, and crates/room/tests/modules_walked.rs's ledge test failed unnoticed until the art pass ran the whole file."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference: "commits b2654ad5 (build.rs tables) and 11a37e64 (brief reorder)"

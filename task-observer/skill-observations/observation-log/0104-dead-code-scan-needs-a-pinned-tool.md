@@ -1,7 +1,7 @@
 ---
 id: 104
 title: "A codebase audit has no pinned dead-code finder: an unpinned npx tool was refused, and a text scan stood in"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: no skill in the kit finds unused exports or items; Sere
 area: "audits, dead code"
 date: 2026-11-21
 session_context: "The owner asked for a deep audit with dead code cleaned up. `npx -y ts-unused-exports` was refused by the auto-mode classifier (an unpinned package fetched and run); a Python scan of each export's name across the repo found 13 TS and 4 Rust candidates, and the area auditors found the rest by grep."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

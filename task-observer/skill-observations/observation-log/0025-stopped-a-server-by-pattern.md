@@ -1,7 +1,7 @@
 ---
 id: 25
 title: "The controller stopped background servers by pattern (pkill -P on a pgrep -f match; pkill -f) instead of by pid, twice"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is the project's toolkit note, not a skill"
 area: "stopping processes"
 date: 2026-11-20
 session_context: "Overlook factions round, final audit: after a live headless check, the controller stopped the local room server with pkill -P $(pgrep -f 'wrangler dev ...') before reaching for TaskStop on its background task. Again on 2026-11-24, PR #194 site fixes: a timeout-wrapped wrangler dev for a 404 and caching check, stopped with pkill -f 'wrangler dev --config site/wrangler.jsonc'."
-parked_until:
+parked_until: "PR #239 merge"
 resolved:
 resolution:
 reference: "this session's transcript, the live check after the regression fixes"

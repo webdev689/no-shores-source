@@ -1,7 +1,7 @@
 ---
 id: 152
 title: "A session pushed fixes to its branch after the branch's PR had merged, with no new PR and no hand-off line, so the work sat unseen"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the step belongs to the project's session-end list in C
 area: "ending a session whose pull request merged while it kept working"
 date: 2026-11-23
 session_context: "Picking up session claude/zen-ritchie-u40hax: #163 merged, then the session pushed b20f8c15 (landing leave after a stand again, a cast as a strike) and 3cfc2199 (interface quads cleared each frame, the death-veil stack) to the same branch. No PR was opened for them and bible/Hand-off.md still listed the veil stack as unexplained. The next session found them only by fetching the branch the owner named and diffing it against main."
-parked_until:
+parked_until: "PR #240 merge"
 resolved:
 resolution:
 reference:

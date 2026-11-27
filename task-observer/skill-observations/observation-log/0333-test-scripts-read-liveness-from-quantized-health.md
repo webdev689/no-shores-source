@@ -1,7 +1,7 @@
 ---
 id: 333
 title: "A scripted test player judged a foe standing by health above 0 as it crosses the wire, so a foe alive with a sliver read as fallen"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0249 (a test's stand-in drifting from the real thing) is the 
 area: "scripted players in agreement tests (crates/room-wasm/src/public_door_tests.rs, client/src/network/publicBots.ts)"
 date: 2026-11-25
 session_context: "Foe arrivals branch (ccr-9e470c58-pm6nyz): the raid's scripted pair stood idle while a Collector plundered every store. Its health crossed packed in thousandths as 0.000 while it was alive (guarding, health a sliver over 0); the script filtered foes by glance[10] > 0. Fixed by reading its action (dead or not) through Fighter::from_glance / glanceView."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference: "crates/room-wasm/src/public_door_tests.rs read(); client/src/network/publicBots.ts readOf()"

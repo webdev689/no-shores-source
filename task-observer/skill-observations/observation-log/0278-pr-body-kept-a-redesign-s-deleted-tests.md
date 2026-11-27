@@ -1,7 +1,7 @@
 ---
 id: 278
 title: "After the owner turned a design down mid-PR, the redrafted PR body still listed the deleted design's tests as new tests"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked the other places the old design's words lived (the ha
 area: "Pull request descriptions after a design is reversed mid-PR"
 date: 2026-11-25
 session_context: "PR #211 (foe arrivals): the owner replaced the timed airships with territories; the PR body's 'New tests' bullet still listed eight reinforcements tests deleted with reinforcements_tests.rs, caught on re-reading the whole draft before posting."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

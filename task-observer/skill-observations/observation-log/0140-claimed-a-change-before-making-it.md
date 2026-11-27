@@ -1,7 +1,7 @@
 ---
 id: 140
 title: "A progress line announced a code change as made before the edit was written, and the change rested on a subagent's ranking the owner had not confirmed"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is the project instruction file (its 'Verify
 area: "status lines to the owner during multi-part bug fixing; acting on a delegated audit's top-ranked cause"
 date: 2026-11-22
 session_context: "No Shores, the owner's six prologue points. A read-only audio audit ranked 'the sea battle goes silent when no captain is hostile' first. The progress line said 'Sea fight now holds at least tension instead of going silent' though no edit had been made; the owner interrupted: the sea fight had no music issue, the prologue's wreck did. git checkout of the file changed 0 paths, showing it was never edited."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

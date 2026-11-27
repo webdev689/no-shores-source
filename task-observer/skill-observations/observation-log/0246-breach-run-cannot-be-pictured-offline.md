@@ -1,7 +1,7 @@
 ---
 id: 246
 title: "A Breach's run cannot be pictured offline, so its look was judged on a scratch harness"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0068 (island plants pictured without a voyage): the same fami
 area: "picturing a place's look headless (Browser QA)"
 date: 2026-11-24
 session_context: "#200, wk-breach-look: enterBreachRun needs the rooms, and the &run= dev hook opens dungeons only, so the worker drew the run's props through a scratch runShot.ts on a vite URL; vite's HMR reloaded the page mid-capture when the harness changed."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:

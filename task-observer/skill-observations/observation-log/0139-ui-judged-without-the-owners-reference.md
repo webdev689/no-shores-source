@@ -1,7 +1,7 @@
 ---
 id: 139
 title: "A new screen was judged on legibility alone, not against the owner's reference picture; the owner called it really bad"
-status: open
+status: parked
 type: open-source
 skill: [impeccable]
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: impeccable is the only UI review skill in the kit; the 
 area: "reviewing a new interface screen before calling it done"
 date: 2026-11-22
 session_context: "Overlook Playlist session: the owner gave a Destiny 2 Vanguard-screen picture (playlist nodes on a map, one tooltip card) as the reference. The worker built four tiles of words side by side, pictured it headless four times and judged each version on fit and legibility; the controller looked at v4 and called it readable. The owner: 'The playlist UI is really bad'. Rebuilt as crests on a chart with one card, compared side by side with the reference."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

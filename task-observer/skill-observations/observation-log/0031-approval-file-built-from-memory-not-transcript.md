@@ -1,7 +1,7 @@
 ---
 id: 31
 title: "The fidelity review's approval file paraphrased what the owner was shown, so the review measured a correct note against wrong words"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0003 (approved design drifts in scope and wording): the same 
 area: "Toolkit, Audits: the owner's words an audit brief is given (the fidelity reviewer itself was taken out at the owner's word, #105)"
 date: 2026-11-20
 session_context: "#102's fourth fidelity review, after the comprehensive audit"
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

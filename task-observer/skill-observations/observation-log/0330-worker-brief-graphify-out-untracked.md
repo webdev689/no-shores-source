@@ -1,7 +1,7 @@
 ---
 id: 330
 title: "A worker's brief told it to `git checkout -- graphify-out`, which fails in a worktree where graphify-out is not tracked; a stale wasm's error never says it is stale"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the same template line is in every brief cut from br
 area: "headless workers: the common brief's graphify and wasm steps"
 date: 2026-11-23
 session_context: "Guild outposts session: the outpost-sites worker reported in its OBSERVATIONS line that graphify-out is not tracked in its worktree, so the brief's `git checkout -- graphify-out` failed; that a client test failed with \"unknown variant `outpost`\" until `npm run wasm` was rerun, the error not saying the wasm was stale; that garrison.rs sat at 599 lines so a one-line comment hit the 600-line rule; and that context7 and skillsmp were refused by the proxy (403)."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/outpost-sites.log (OBSERVATIONS line)"

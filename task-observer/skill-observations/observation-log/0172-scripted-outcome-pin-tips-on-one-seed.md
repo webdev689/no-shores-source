@@ -1,7 +1,7 @@
 ---
 id: 172
 title: "A rules fix tipped a scripted bot run's pinned outcome at its one minute; only a sweep over many minutes told chance from a harder event"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0097 (stop hook asks for a push mid-check): related only by t
 area: "re-pinning scripted outcomes after a rules change"
 date: 2026-11-24
 session_context: "Patrol audit 'Fix everything': server/public.test.ts's page-bot raid at RAID_MINUTE went from held to stores lost after the off-mesh return to the navmesh (abbfc470). Bisected in a worktree (c0249eab passes, abbfc470 fails), then each change of abbfc470 taken out alone. A sweep of 12 raid minutes, heroic and plain, with and without the change: heroic held 3 to 2, plain 11 both ways; only the pinned minute differed."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

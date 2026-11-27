@@ -1,7 +1,7 @@
 ---
 id: 305
 title: "Starting workers in parallel on a fresh container races rustup's toolchain install and corrupts it"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: run-worker.sh builds generated/, the WebAssembly and
 area: "starting several workers at once"
 date: 2026-11-26
 session_context: "Three workers started seconds apart on a container that had only stable; each worktree's first cargo call made rustup install 1.97.0 at once. Two setups failed 'component download failed ... No such file or directory', and the third's build then failed 'can't find crate for std' on the half-installed toolchain. Fixed by stopping two workers, rustup toolchain uninstall 1.97.0, reinstalling, rebuilding the third's setup by hand and restarting the two."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "session 01AQ3N4ngdqNdXFFNT7JJmBM, worktrees hub-ground, ship-stern, music-pass"

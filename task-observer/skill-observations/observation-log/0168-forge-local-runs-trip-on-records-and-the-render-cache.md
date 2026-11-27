@@ -1,7 +1,7 @@
 ---
 id: 168
 title: "Forge local runs: fplayers.py fails 'past the canvas' with two records at once, layers.py skips its index before a pull, and the render cache needs re-recording after layers.py or stage.py change"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked — forge-specific: fplayers.py, layers.py and render
 area: "rendering the sprite forge locally"
 date: 2026-11-23
 session_context: "Worker fblade (faction blades' colour), OBSERVATIONS line: `fplayers.py --records 0,1` fails 'past the canvas', already at HEAD, so it ran one record per call; layers.py only writes its index after the published tables are pulled (strips still render); `rendercache.py --record` must be re-run after any change to layers.py or stage.py. Also: no workflow runs fplayers.py, so first-person frames are published only by a local run and forge_publish.py add."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/fblade.md (session-local; the findings are in the body)"

@@ -1,7 +1,7 @@
 ---
 id: 22
 title: "A worker brief's one-line file ownership forced a test into a file of its own"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is the project's worker brief template, not 
 area: "worker briefs"
 date: 2026-11-20
 session_context: "Overlook factions round, final audit's fix pass: fix3-rules was told to touch only one ware in npcWares.ts, which another worker owned, so its test went into a new shapeWares.test.ts"
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "/root/wt/reports/fix3-rules.md OBSERVATIONS"

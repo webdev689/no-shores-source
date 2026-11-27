@@ -1,7 +1,7 @@
 ---
 id: 82
 title: "Porting workers' brief: type-check the tests, delete with rm, and the kit's tools under three parallel workers"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0015 (picture runs that break) covers headless shots failing;
 area: "worker briefs: running several porting workers in parallel on 4 CPUs"
 date: 2026-11-21
 session_context: "The no-HTML port's round one: three workers (hud, gearshell, fighthud) in parallel on the drawn interface's foundation"
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference: "~/wt/reports/{hud,gearshell,fighthud}.md and their logs' OBSERVATIONS lines"

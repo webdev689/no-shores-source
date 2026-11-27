@@ -1,7 +1,7 @@
 ---
 id: 128
 title: "Worker briefs named vitest for client tests (twice, two sessions); the project runs Node's own runner"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the brief template only"
 area: "filling a worker brief's test commands"
 date: 2026-11-22
 session_context: "Overlook third audit: the controller filled the template's test-suite line from memory (npx vitest run); the client's tests run as node --import ./tools/testStyles.mjs --test (package.json). Fixed through each worker's inbox after a local run said 'no tests'. Again on 2026-11-22 (Playlist and encounters session): the controller's brief for two workers said npx vitest run; caught when the controller's own vitest run failed every file, fixed through both inboxes."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

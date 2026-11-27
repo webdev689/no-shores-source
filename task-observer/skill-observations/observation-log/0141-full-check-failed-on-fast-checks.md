@@ -1,7 +1,7 @@
 ---
 id: 141
 title: "The full check failed three runs in a row on checks that take seconds: Prettier, ESLint's id-length and the 600-line size rule"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is the toolkit note's working practice, not 
 area: "running cargo xtask check before a push"
 date: 2026-11-23
 session_context: "No Shores, a smith's ware drawn by the id it takes once bought (#164). Each full `cargo xtask check` takes minutes; run 1 failed on Prettier in the new test, run 2 on ESLint id-length (`at`), run 3 on gear_wire.rs at 601 lines. Each would have shown in seconds with `npx prettier --check <changed files>`, `npx eslint <changed files>` and `cargo xtask repo`."
-parked_until:
+parked_until: "PR #239 merge"
 resolved:
 resolution:
 reference:

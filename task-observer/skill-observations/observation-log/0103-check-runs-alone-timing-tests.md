@@ -1,7 +1,7 @@
 ---
 id: 103
 title: "A full check run beside other heavy work fails its timing tests; an unquoted heredoc ran a second check"
-status: open
+status: parked
 type: open-source
 skill: [task-observer]
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "task-observer: its How to Log already says to write bodies wi
 area: "running cargo xtask check; writing an observation's body"
 date: 2026-11-21
 session_context: "The full check on the leak fixes ran while a second worktree ran the whole TypeScript suite; later an observation's body was written while the audio branch's check ran."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

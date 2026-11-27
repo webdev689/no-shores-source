@@ -1,7 +1,7 @@
 ---
 id: 124
 title: "A catch-up brief that names main's merges but not their architecture leaves the merger to find a rewrite"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the controller's own brief"
 area: "catching a stacked PR up with main"
 date: 2026-11-22
 session_context: "Merging the five-PR stack after about 15 of main's merges. The brief listed the merges; it did not say main's #127 bans HTML in the interface, so #97's merger found its HTML screens refused and rebuilt the Journal, the board and an entrance card in the drawn interface (half the layer), and #123's the Postmaster's. Main also moved under every layer while it merged."
-parked_until:
+parked_until: "PR #244 merge"
 resolved:
 resolution:
 reference:

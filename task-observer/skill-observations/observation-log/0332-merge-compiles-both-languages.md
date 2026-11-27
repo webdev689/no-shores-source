@@ -1,7 +1,7 @@
 ---
 id: 332
 title: "A clean auto-merge broke Rust the controller never compiled before pushing"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "0224 (types checked on one tsconfig only): same family, check
 area: "merging main into a long branch"
 date: 2026-11-25
 session_context: "#200: main's #202 split room/src/perks.rs trim_of into trim_by; git auto-merged the branch's Forged lines into the new function, where they named variables no longer in scope. The controller resolved the three page conflicts, ran the page's types and tests, and pushed; the full check found the Rust failing at 'lints (Rust)'."
-parked_until:
+parked_until: "PR #239 merge"
 resolved:
 resolution:
 reference:

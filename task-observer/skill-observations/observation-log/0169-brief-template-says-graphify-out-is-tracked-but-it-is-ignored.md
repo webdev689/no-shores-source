@@ -1,7 +1,7 @@
 ---
 id: 169
 title: "The worker brief template says graphify-out/ is tracked and to `git checkout -- graphify-out`, but .gitignore ignores it, so the step errors"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: the template's lines 17, 18 and 32 all assume graphi
 area: "worker brief template accuracy"
 date: 2026-11-23
 session_context: "Worker sets (set names and drops), OBSERVATIONS line: 'graphify-out is gitignored in this worktree, so `git checkout -- graphify-out` errors and the brief's step doesn't apply'. .gitignore line 20 ignores graphify-out/. The same worker: the first `graphify update .` took over 120 s, and stdout-only redirects (`> log` without `2>&1`) hid cargo's failures from grep."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

@@ -1,7 +1,7 @@
 ---
 id: 212
 title: "claude-mem recorded nothing in a whole session (0 sessions, 0 observations), and claude-mem-save.sh only writes inside the container, so the end-of-session save carries nothing forward"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the targets are the project's toolkit scripts and notes
 area: "the end-of-session steps in a cloud container"
 date: 2026-11-24
 session_context: "Chests and searchable containers (#192). At the end, `bash tools/claude-toolkit/claude-mem-save.sh` printed 'claude-mem saved' with a 422-byte tarball. ~/.claude-mem/claude-mem.db had sdk_sessions 0, observations 0, user_prompts 0, tool_uses 0; today's claude-mem log began at the save's own stop/start (14:09), so its worker had not been capturing during the session. The save writes $SHARED_DIR/claude-mem/claude-mem.tgz with SHARED_DIR defaulting to ~/toolkit-data, inside the container, and toolkit-data.sh says 'The claude-mem store stays out', so nothing reaches the next container either way."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

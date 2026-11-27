@@ -1,7 +1,7 @@
 ---
 id: 316
 title: "The worker brief template says graphify-out is tracked and to check it out before commits; in this repo it is ignored, so the step errors"
-status: open
+status: parked
 type: internal
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "none: the target is a project file, not a skill"
 area: "worker brief template, graphify step"
 date: 2026-11-26
 session_context: "Deeper dungeons session: the storey-engine worker reported 'graphify-out is not tracked in this worktree, so git checkout -- graphify-out errors'. The Toolkit note says graphify-out/ is ignored by git; the template says it is tracked. The same worker also hit a stale incremental build after a stopped background cargo test (undefined hidden symbol at link; cargo clean -p room -p room-wasm fixed it), and builds over 2 minutes needing run_in_background."
-parked_until:
+parked_until: "PR #242 merge"
 resolved:
 resolution:
 reference:

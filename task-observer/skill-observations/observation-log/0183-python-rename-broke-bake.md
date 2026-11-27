@@ -1,7 +1,7 @@
 ---
 id: 183
 title: "A names-only rename in a Blender script left an undefined name; no repo check runs the Python, so only the modules workflow's bake on push caught it"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "checked: every tools/modules/outpost_*.py after the fix with 
 area: "checks: Python tool scripts"
 date: 2026-11-24
 session_context: "Guild outposts session: the fix-page worker was told to spell out short Python names with no shape change, so no bake. It renamed `hx, hy = half` to `half_x, half_y` in outpost_standards.py but missed one later `hx`. cargo xtask check passed (it does not run or lint Python), and the PR's modules workflow failed with NameError in scaffold(). The controller fixed the one line and proved no shape changed by re-baking the 38 outpost modules against content/modules/modules.json."
-parked_until:
+parked_until: "PR #245 merge"
 resolved:
 resolution:
 reference: "modules workflow job 138158084959 on PR #179; fix ef6a2a67"

@@ -1,7 +1,7 @@
 ---
 id: 200
 title: "Sea picture plans: one __qaSea() can leave the page on foot, and a grep for 'Error' matches the plan's own text"
-status: open
+status: parked
 type: open-source
 skill: []
 proposes_skill: []
@@ -10,7 +10,7 @@ siblings_checked: "sea worker's report only"
 area: "picturing the sea"
 date: 2026-11-24
 session_context: "Sea worker picturing other ships' marks and the fogless map. A single `__qaSea()` sometimes left the page on foot, so plans had to ask again until `flow.mode` was 'sea'. Ships injected north of the sea camera fell behind it. A monitor grepping the run's log for 'Error' matched the plan's own eval text and woke early."
-parked_until:
+parked_until: "PR #243 merge"
 resolved:
 resolution:
 reference:
