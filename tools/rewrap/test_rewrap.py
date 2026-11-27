@@ -4,10 +4,11 @@
 """
 import os
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from rewrap import WIDTH, comparable_words, rewrap  # noqa: E402
+from rewrap import WIDTH, comparable_words, rewrap, rewrap_file  # noqa: E402
 
 WORDS = 'the quick brown fox jumps over the lazy dog and sails on past the harbour wall at dusk '
 
@@ -58,8 +59,36 @@ class Notes(unittest.TestCase):
         for line in wrapped(text, 0, True).split('\n')[1:]:
             self.assertFalse(line.startswith(('- ', '# ')), line)
 
+    def test_a_rule_or_underline_after_a_paragraph_is_left(self):
+        text = (WORDS * 2).strip() + '\n---'
+        self.assertEqual(wrapped(text, 0, True).split('\n')[-1], '---')
+
+    def test_no_new_line_starts_with_a_quote_mark(self):
+        text = 'y' * 117 + ' >50% of it'
+        for line in wrapped(text, 0, True).split('\n')[1:]:
+            self.assertFalse(line.startswith('>'), line)
+
+
+def file_rewrapped(name, text, number=1):
+    """A file holding `text`, its line `number` rewrapped by rewrap_file: what it became, and the lines it left."""
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder, name)
+        with open(path, 'w', encoding='utf-8') as file:
+            file.write(text)
+        _, left = rewrap_file(path, [number])
+        with open(path, encoding='utf-8') as file:
+            return file.read(), left
+
 
 class Comments(unittest.TestCase):
+    def test_code_after_a_block_comment_is_left_for_a_hand(self):
+        text = '/** ' + (WORDS * 2).strip() + ' */ export const alpha = 1;\n'
+        self.assertEqual(file_rewrapped('a.ts', text), (text, [1]))
+
+    def test_a_docstring_bullet_is_not_read_as_a_comment_mark(self):
+        text = '"""Head.\n\n* ' + (WORDS * 2).strip() + '\n"""\n'
+        self.assertEqual(file_rewrapped('a.py', text, 3), (text, [3]))
+
     def test_a_line_comment_keeps_its_mark_and_indent(self):
         text = '    /// ' + (WORDS * 2).strip() + '\n    fn sail() {}'
         after = wrapped(text, 0, False).split('\n')

@@ -277,8 +277,8 @@ fn holds_symbol(path: &str, source: &str, symbol: &str) -> bool {
         .any(|line| after_keyword(line, symbol, language) || starts_defining(line, symbol, language))
 }
 
-/// A note's lines past the width limit, with their 1-based line and width. Front matter, fenced code and table rows
-/// cannot wrap, so they are never counted.
+/// A note's lines past the width limit, with their 1-based line and width. Front matter, fenced code, table rows and
+/// headings cannot wrap, so they are never counted.
 fn wide_lines(text: &str) -> Vec<(usize, usize)> {
     let mut wide = Vec::new();
     let mut in_front_matter = text.starts_with("---");
@@ -293,7 +293,7 @@ fn wide_lines(text: &str) -> Vec<(usize, usize)> {
         match (fence, marker) {
             (None, Some(marker)) => fence = Some(marker),
             (Some(open), Some(marker)) if open == marker => fence = None,
-            (None, None) if !trimmed.starts_with('|') => {
+            (None, None) if !trimmed.starts_with(['|', '#']) => {
                 wide.extend(overlong(line).map(|width| (index + 1, width)));
             }
             _ => {}

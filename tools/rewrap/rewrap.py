@@ -15,9 +15,9 @@ REFUSED = re.compile(r'^\s*(.+?):(\d+)  \[(?:comments|vault)\] a \d+-character l
 CODE_LEAD = re.compile(r'^(\s*)(//!|///|//|#|/\*\*|/\*|\*(?!/)|"""|\'\'\')?([ \t]*)((?:[-*+]|\d+[.)])[ \t]+)?')
 NOTE_LEAD = re.compile(r'^(\s*)((?:>[ \t]?)*)([ \t]*)((?:[-*+]|\d+[.)])[ \t]+)?')
 # A word Markdown (and so rustdoc) would read as a block's start if a line began with it.
-BLOCK_START = re.compile(r'^([-+*>|=#]+|\d+[.)])$|^(```|~~~|\||\*/|"""|\'\'\')')
+BLOCK_START = re.compile(r'^([-+*>|=#]+|\d+[.)])$|^(>|```|~~~|\||\*/|"""|\'\'\')')
 NUMBER = re.compile(r'^[~±≈<>−+-]?\d[\d.,:]*$')
-STOP_BODY = re.compile(r'^(#|\||```|~~~|<|@|\*/)')
+STOP_BODY = re.compile(r'^(#|\||```|~~~|<|@|\*/)|^[-=*_]{3,}$')
 CLOSERS = ('"""', "'''", '*/')
 
 
@@ -125,7 +125,10 @@ def rewrap_file(path, numbers):
     for number in sorted(set(numbers), reverse=True):
         at = number - 1
         mark = CODE_LEAD.match(lines[at]).group(2)
-        if not note and mark is None and not (path.endswith('.py') and inside_docstring(lines, at)):
+        in_docstring = path.endswith('.py') and inside_docstring(lines, at)
+        # Code after a block comment's close, or a docstring line read as a comment mark, is no comment to wrap.
+        code_after = '*/' in lines[at] and not lines[at].rstrip().endswith('*/')
+        if not note and (code_after or (mark is None) != in_docstring):
             left.append(number)
             continue
         rewrap(lines, at, note)
