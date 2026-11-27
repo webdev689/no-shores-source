@@ -4,6 +4,7 @@
 
 pub mod check;
 pub mod geometry;
+pub mod islands;
 pub mod layout;
 pub mod ports;
 pub mod traffic;

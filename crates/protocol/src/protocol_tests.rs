@@ -595,8 +595,10 @@ fn the_bytes_for_the_clients_test_are_written() {
     let looks = vec![(SHIPS[0].0, look)];
     // The sea's chart: a named captain's ship, and a guest's, whose name is none.
     let charted = vec![(4, [4_000_000.5, 90_000.25], "Wren".to_owned()), (9, [-5.0, 7.0], String::new())];
-    let harbour =
-        SeaHarbour { taken: vec![2_605, 777], friendlies: vec![friend], looks, charted, ..SeaHarbour::default() };
+    // The player's water's marks: a hostile ship and a ruin.
+    let chart_marks = vec![([12_000.5, 34_000.25], 0), ([-3.0, 8.0], 2)];
+    let (taken, friendlies) = (vec![2_605, 777], vec![friend]);
+    let harbour = SeaHarbour { taken, friendlies, looks, charted, chart_marks, ..SeaHarbour::default() };
     let sea = sea_snapshot_bytes(77, &SHIPS, &HOSTILES, &fights_seen(), &aboard_seen(), &harbour);
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }

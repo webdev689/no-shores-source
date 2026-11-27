@@ -10,12 +10,14 @@ import { type DotInk, type IsleInk, type Painter, paintLettering } from './mapLe
 /** How far the ship's arrow reaches from its middle, units at the lettering's scale 1, with its parchment ring. */
 const ARROW_REACH = 12;
 
-/** What the sea's lettering shows: the layout and the ship's arrow where it is now, the found islands' and other
- *  ships' marks, the pointer's words, the prompt's lines (`askLines`), and the face's loading they were measured in. */
+/** What the sea's lettering shows: the layout and the ship's arrow where it is now, the islands', other players'
+ *  ships' and hostile ships' marks, the pointer's words, the prompt's lines (`askLines`), and the face's loading they
+ *  were measured in. */
 export interface SeaPainting {
   readonly lettering: Lettering;
   readonly isles: readonly IsleInk[];
   readonly others: readonly DotInk[];
+  readonly hostiles?: readonly DotInk[];
   readonly said: HoverSaid | null;
   readonly asked: ReturnType<typeof askLines> | null;
   readonly fonts: string;
@@ -44,9 +46,10 @@ export class SeaLettering {
     dpr: number,
     painting: SeaPainting,
   ): Painted {
-    const { lettering, isles, others, said, asked, fonts, ink } = painting;
+    const { lettering, isles, others, hostiles = [], said, asked, fonts, ink } = painting;
     const still = { ...lettering, ship: null };
-    const shape = JSON.stringify([picture.width, picture.height, inkAt, dpr, fonts, still, isles, others, said, asked]);
+    const shown = [fonts, still, isles, others, hostiles, said, asked];
+    const shape = JSON.stringify([picture.width, picture.height, inkAt, dpr, shown]);
     const arrow = lettering.ship;
     const sameArrow = JSON.stringify(arrow) === JSON.stringify(this.arrow);
     if (shape === this.shape && sameArrow) return null;
@@ -59,7 +62,7 @@ export class SeaLettering {
       painter.rect(part.x, part.y, part.width, part.height);
       painter.clip();
     }
-    paintLettering(painter, picture, inkAt, dpr, lettering, isles, others);
+    paintLettering(painter, picture, inkAt, dpr, lettering, isles, others, hostiles);
     // While the prompt asks, it says what the pointer's words would.
     if (said?.card && !asked) paintCard(painter, said, [said.x, said.y], ink, lettering.scale);
     else if (said && !asked) paintHover(painter, said.line, said.x, said.y, ink, lettering.scale);

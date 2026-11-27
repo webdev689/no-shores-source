@@ -220,7 +220,7 @@ pub fn read_course(bytes: &[u8]) -> Result<(Vec<[f64; 2]>, u16), String> {
 #[derive(Clone, Debug, PartialEq)]
 pub enum SeaInput {
     Course(Vec<[f64; 2]>, u16),
-    /// A course into other waters, travelled by the held map.
+    /// A course anywhere at sea, travelled by the held map.
     Travel(Vec<[f64; 2]>, u16),
     /// No points and one heading: the ship comes to rest turned to it.
     Face(f64),

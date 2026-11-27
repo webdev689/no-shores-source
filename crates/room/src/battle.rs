@@ -588,6 +588,8 @@ impl Fights {
     }
 }
 
+#[path = "battle_at_sea.rs"]
+mod at_sea;
 #[path = "battle_views.rs"]
 mod views;
 

@@ -8,14 +8,18 @@ use world::layout::Layout;
 use world::traffic::{Port, Traffic};
 use world::waters::{Holder, Waters};
 
-/// The sea's waters, each continent's id and band, the lanes' legs, end to end, and the traffic that sails them.
+/// The sea's waters, each continent's id and band, the lanes' legs, end to end, every leg the traffic sails (its
+/// lanes', and its ways' from berth to berth), and the traffic that sails them.
 #[derive(Debug)]
 pub struct Charted {
     waters: Waters,
     ids: Vec<String>,
     bands: Vec<Option<(u8, u8)>>,
     lanes: Vec<[[f64; 2]; 2]>,
+    pub(crate) sailed: Vec<[[f64; 2]; 2]>,
     pub traffic: Option<Traffic>,
+    /// Whether each continent's sea is locked, by its index; none is with none listed.
+    locked: Vec<bool>,
 }
 
 impl Charted {
@@ -27,9 +31,12 @@ impl Charted {
         let bands = ids.iter().map(|id| gear::world::island_levels(id)).collect();
         let traffic = (!ports.is_empty()).then(|| Traffic::new(layout, &waters, ports));
         let corner = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
-        let legs = traffic.iter().flat_map(|traffic| traffic.routes.iter()).flat_map(|route| route.path.windows(2));
-        let lanes = legs.map(|leg| [corner(&leg[0]), corner(&leg[1])]).collect();
-        Charted { waters, ids, bands, lanes, traffic }
+        let routes = || traffic.iter().flat_map(|traffic| traffic.routes.iter());
+        let leg = |leg: &[world::geometry::Point]| [corner(&leg[0]), corner(&leg[1])];
+        let lanes: Vec<_> = routes().flat_map(|route| route.path.windows(2)).map(leg).collect();
+        let ways = routes().flat_map(|route| route.ways.iter()).flat_map(|way| way.path.windows(2)).map(leg);
+        let sailed = lanes.iter().copied().chain(ways).collect();
+        Charted { waters, ids, bands, lanes, sailed, traffic, locked: Vec::new() }
     }
 
     /// How far a point of sea lies from the nearest coast, metres; 0 on land.
@@ -51,6 +58,18 @@ impl Charted {
         self.water(at).is_some_and(|(water, _)| water.holder == Holder::Home)
     }
 
+    /// Locks the sea of every island `named` does not name.
+    pub fn lock(&mut self, named: impl Fn(&str) -> bool) {
+        self.locked = self.ids.iter().map(|id| !named(id)).collect();
+    }
+
+    /// Whether a point of sea lies in a locked sea, which no ship sails or travels into; none on land.
+    #[must_use]
+    pub fn locked(&self, at: [f64; 2]) -> bool {
+        !self.locked.is_empty()
+            && self.waters.water_at(at).is_some_and(|water| self.locked.get(water.continent).copied().unwrap_or(false))
+    }
+
     /// The id of the continent whose water a point of sea lies in, as the bounties name a water; none on land.
     #[must_use]
     pub fn water_id(&self, at: [f64; 2]) -> Option<&str> {
@@ -67,9 +86,11 @@ pub(crate) struct SeaChart<'sea> {
 
 impl Chart for SeaChart<'_> {
     fn open(&self, from: [f64; 2], to: [f64; 2]) -> bool {
-        // Only a step into home waters is refused: one a fight among captains left inside them sails out.
-        let home = self.charted.home(to) && !self.charted.home(from);
-        !home && self.clear(from, to)
+        // No step leads into home waters, nor within them unless away from their coast: one a fight among captains
+        // left inside them sails out.
+        let inward = self.charted.home(to)
+            && (!self.charted.home(from) || self.charted.clearance(to) <= self.charted.clearance(from));
+        !inward && self.clear(from, to)
     }
 
     fn clear(&self, from: [f64; 2], to: [f64; 2]) -> bool {

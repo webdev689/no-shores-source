@@ -4,10 +4,10 @@
 import { ruinedName } from '../ruinedName.ts';
 import type { CoastField } from './coastField.ts';
 import type { MapPlace } from './heldMapScene.ts';
-import type { WaterJudge } from './heldMapAsk.ts';
+import type { AskWaters, WaterJudge } from './heldMapAsk.ts';
 import type { Rect } from './heldMapLaw.ts';
 import { anyCellUnder, cellsUnder } from './mapKey.ts';
-import { labelPoints, type MapWaters, washOf, type WatersWash } from './watersWash.ts';
+import { type HomeReach, labelPoints, type MapWaters, washOf, type WatersWash } from './watersWash.ts';
 
 /** The places the map names, a city that is no port named and marked as the ruins it is; before the waters are open,
  *  as they come. */
@@ -25,20 +25,23 @@ export function ruinedPlaces(places: readonly MapPlace[], mainPorts: readonly st
 /** How far apart the points a water's name is tried at are, ink pixels. */
 const SPOT_PX = 10;
 
-export class HeldMapWaters {
+export class HeldMapWaters implements AskWaters {
   readonly waters: MapWaters;
-  /** The water at a point by the exact rule, the room's. */
+  /** The water at a point by the exact rule, the room's, and who holds the sea there. */
   readonly judge: WaterJudge;
+  readonly travelShortM: number;
+  /** How far home waters reach on the grid's cells, past which their open sea is the Grey Tithe's. */
+  readonly reach?: HomeReach;
   private readonly points: Map<number, readonly [number, number]>;
 
-  constructor(waters: MapWaters, judge: WaterJudge) {
-    [this.waters, this.judge] = [waters, judge];
+  constructor(waters: MapWaters, judge: WaterJudge, travelShortM: number, reach?: HomeReach) {
+    [this.waters, this.judge, this.travelShortM, this.reach] = [waters, judge, travelShortM, reach];
     this.points = labelPoints(waters);
   }
 
-  /** The wash over every water. */
+  /** The wash over every water, home waters' open sea past their reach the Grey Tithe's. */
   wash(): WatersWash {
-    return washOf(this.waters);
+    return washOf(this.waters, this.reach);
   }
 
   /** The waters in view on a map `ink` wide and high (`toWorld` the world point at a point of it, `toInk`
