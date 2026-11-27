@@ -9,28 +9,11 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **Merging on the owner's yes once CI passes on its head**: #236 (a player's feedback: M the map and N the leave,
-  Tab and the side buttons bound anywhere, the controls sheet's words first, a master volume and an interface size, the
-  held map's legend hidden on L, a landing icon's card on hover, the mouse back as a window shuts, and the sea map's
-  names laid out far less often and faster; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]];
-  `main` taken in). A merge deploys the page, the site, the rooms and the bot, and releases the
-  desktop app.
-- **Merging on the owner's yes ("merge and deploy all") as CI passes**:
-  - #235: hostile ships come out 1 km off at the helm, still seen and kept from 5 km.
-  - #242: helpers capped at two, their briefs corrected, `headroom learn` suggesting only (review 4, 5, 13).
-  - #243: the game's test hooks and the picture tools work everywhere or say why not (review 10).
-  - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
-  - #245: new repo checks, each landing with what it refuses fixed (review 8).
-- **Merging on the owner's yes ("Merge and deploy") once CI passes on its head**: #248 (the page's lying-still intent
-  has the 18 numbers the rules read, every intent it predicts by built by `intentOf`; players saw no difference, as
-  the rules' buffer read the missing drink as none).
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
-- **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
-  longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
-- **Merge order**: #235 and #245 both move the sea clash pin: whichever merges second moves its line in
-  `content/fingerprints.txt`. #242 and #244 share lines in `install-all.sh`, `check_tools.py`, CLAUDE.md
-  and the Toolkit.
+- **To come**: the owner's 120-character line check for the bible and code comments, with every longer line
+  rewrapped (observation #53), now that the observations review's pull requests (#239, #240, #242 to #245) have
+  merged; the review's record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -172,8 +155,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   checkout's server.
 - **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
   deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
-- **A body lying still**: the page's intent for it is one number short (`client/src/combat/fighting.ts`, `lying`,
-  17 where `INTENT_FLOATS` is 18), found by the review's checks and offered as its own task.
+
 - **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
