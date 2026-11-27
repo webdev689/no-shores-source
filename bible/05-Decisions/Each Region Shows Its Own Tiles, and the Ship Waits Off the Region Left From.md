@@ -23,6 +23,9 @@ The owner's answers to the questions that followed:
 
 > Asked how opaque the tiles should be, from 74%: "90%"
 
+> Told that the server judged a landing from the sea by the whole island's coast, so a changed page could land in a
+> region the ship does not lie off: "We need to fix that also"
+
 ## What it settles
 
 - **The patrol zones are entered from one another on foot**, as the crossing gates on each zone's landing already
@@ -32,5 +35,7 @@ The owner's answers to the questions that followed:
 - **Each region has its own view over the island**: docked or ashore in a region, the island's tiles are that
   region's places ([[Interface]], "The island's tiles"; [[World Map]], "Regions").
 - **The tiles are 90% opaque**, from 74%.
+- **The server lands a place from the sea only while the ship lies off its region**, as the tiles offer it
+  ([[Server]]).
 
 Links: [[Interface]], [[Game]], [[World Map]], [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].
