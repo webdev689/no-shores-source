@@ -25,11 +25,15 @@ The owner's answers to the questions that followed:
 > Asked whether Manage's R, which repaired free over time within 3 km of a port, keeps its own rule: "Same rule:
 > paid, instant"
 
+> Asked whether "1% missing" counts the most damaged of hull, canvas and crew, all three added, or their average:
+> "All three added"
+
 ## What it settles
 
 - **Clicking a port at sea** offers three choices: Dock, Repair Ship and Leave.
 - **Repair Ship** sails the ship for that port and repairs it there.
-- **A repair costs 2 Aurem for each 1% the ship is missing, and is done at once.** Manage's R repairs by the same rule.
+- **A repair costs 2 Aurem for each 1% the ship is missing, its hull's, canvas's and crew's added, and is done at
+  once.** Manage's R repairs by the same rule.
 
 It replaces the repair of [[The Sea as Claude Shapes It]] (free, a second for each hundredth missing) and builds on
 [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]'s ask to dock.
