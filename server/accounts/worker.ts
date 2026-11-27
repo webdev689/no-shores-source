@@ -23,6 +23,8 @@ interface Env {
   readonly DISCORD_CLIENT_SECRET?: string;
   /** The bot's Members (`bot/main.ts`), which says who is a developer; without it, no one is. */
   readonly BOT?: Developers;
+  /** The commit the deploy came from, which `/v1/health` names. */
+  readonly ACCOUNTS_COMMIT?: string;
 }
 
 const wait = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
@@ -114,6 +116,7 @@ export default {
           }
         : null;
     const pages = env.PAGES.split(/\s+/).filter(Boolean);
-    return handle(request, { database: env.DB, now: Date.now, discord, pages, bot: env.BOT ?? null });
+    const commit = env.ACCOUNTS_COMMIT ?? '';
+    return handle(request, { database: env.DB, now: Date.now, discord, pages, bot: env.BOT ?? null, commit });
   },
 } satisfies ExportedHandler<Env>;
