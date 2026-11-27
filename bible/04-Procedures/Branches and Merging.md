@@ -17,5 +17,9 @@ type: procedure
   open, finished with `git commit -F - <<'EOF'` and the trailers.
 - **Merge a pull request with a merge commit** once the owner says yes ([[Ask Before Deploying]]), so `main` reads as
   one merge per change, and delete the branch ([[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]).
+- **Bring it up to date first.** Just before the merge, merge `main` into the pull request's branch, and merge once
+  CI is green on that head with `main` unmoved: `main` then deploys the code its pull request's check passed without
+  checking it again. If `main` moved meanwhile, catch up again
+  ([[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]).
 - **No integration branches.** Two changes that depend on each other go in order, the first merged before the second.
 - **No branches of generated output.** Renders and bakes live outside git ([[Generated Files Stay Out of Git]]).
