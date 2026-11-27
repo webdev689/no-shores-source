@@ -7,6 +7,7 @@ import {
   boxMass,
   hullOf,
   keptMasses,
+  MASS_BUILDING,
   MASS_FLOATS,
   MASS_RUIN,
   MASS_TIER_HULLS,
@@ -141,7 +142,8 @@ export function* buildingMassesOf(
     for (const [mass, piece] of list) {
       const shape = massShape(mass, placeOf(piece), plan.centre);
       tops[chunk] = Math.max(tops[chunk], shape.base + shape.wall + shape.rise);
-      writeMass(floats, whole, next++, shape, shapesOf(piece.row[0]), piece.cell, tier | scorched);
+      const windowed = piece.key.startsWith('prop:') ? 0 : MASS_BUILDING;
+      writeMass(floats, whole, next++, shape, shapesOf(piece.row[0]), piece.cell, tier | scorched | windowed);
     }
     return { first, count: next - first };
   };

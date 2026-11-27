@@ -67,6 +67,9 @@ pub struct Light {
     pub lit: Lit,
 }
 
+/// The braziers flanking the doorway the main way leaves a room by, whatever its purpose.
+pub(crate) const WAY_ON: Light = Light { kind: Kind::Brazier, lit: Lit::Flank };
+
 /// A room's purpose: its key on the wire, its name, the shapes it suits (any where none are named), its props and its
 /// lights.
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -389,7 +389,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     assert_eq!(nodes.len(), 12 * 4, "every one of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
     let gear = messages::root_as_from_room(&sent).unwrap().gear().unwrap();
-    assert_eq!(gear.chests().unwrap().len(), 2 * 5, "a chest for each five places, five numbers each");
+    assert_eq!(gear.chests().unwrap().len(), 2 * 6, "a chest for each five places, six numbers each");
     assert_eq!(
         gear.searchables().unwrap().len(),
         3 * 8,

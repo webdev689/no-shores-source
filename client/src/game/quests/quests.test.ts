@@ -51,16 +51,21 @@ function gear(
  *  a forge whose every figure has a card named for its move, warming each dress it is asked to. */
 function roads() {
   const said: string[] = [];
+  /** Whether each scene said moves on by itself. */
+  const paced: boolean[] = [];
   const kept = new Map<string, string>();
   const warmed: string[][] = [];
   let finish: () => void = () => undefined;
   let now = 0;
+  let fightsBegun = 0;
   const voice = {
-    play: (lines: readonly Line[]) => {
+    play: (lines: readonly Line[], _cast: unknown, options: { auto: boolean }) => {
       said.push(lines[0]?.say ?? '');
+      paced.push(options.auto);
       return new Promise<void>((resolve) => (finish = resolve));
     },
     frame: () => undefined,
+    fightBegins: () => void (fightsBegun += 1),
   };
   const keeping = { getItem: (key: string) => kept.get(key) ?? null, setItem: kept.set.bind(kept) };
   const forge = {
@@ -82,13 +87,15 @@ function roads() {
     () => now,
   );
   /** A frame, past the story and the welcome unless said, its scenes' ends let through. */
-  const frame = async (past = true, held = false) => {
-    quests.frame(0.1, past, held);
+  const frame = async (past = true, held = false, fighting = false) => {
+    quests.frame(0.1, past, held, fighting);
     await Promise.resolve();
   };
   return {
     quests,
     said,
+    paced,
+    fightsBegun: () => fightsBegun,
     kept,
     warmed,
     noticed,
@@ -254,6 +261,29 @@ test("a moment's line is said once while it waits or is said: a step failed twic
   seen(3);
   await frame();
   assert.deepEqual(said, [opening(goal.seen), opening(goal.seen)], 'a third, later, is its own moment');
+});
+
+test("a road's scene waits for a press in the box, but one said while the player is in a fight moves on by itself", async () => {
+  const { quests, paced, frame, finish } = roads();
+  const { task } = stepOf(VEIL, 'unseen');
+  quests.hear(gear(VEIL, task, { pledge: 3, fails: [0] }));
+  await frame();
+  quests.hear(gear(VEIL, task, { pledge: 3, fails: [1] }));
+  await frame();
+  finish();
+  await frame();
+  quests.hear(gear(VEIL, task, { pledge: 3, fails: [2] }));
+  await frame(true, false, true);
+  assert.deepEqual(paced, [false, true]);
+});
+
+test("a road's scene begun out of a fight moves on by itself once one begins, so the player's presses are the fight's", async () => {
+  const { quests, frame, fightsBegun } = roads();
+  quests.hear(gear(1, 0));
+  await frame();
+  assert.equal(fightsBegun(), 0, 'out of a fight its lines wait');
+  await frame(true, false, true);
+  assert.equal(fightsBegun(), 1);
 });
 
 test('no scene starts while a screen holds the view; a begin said is kept in the browser for the account', async () => {

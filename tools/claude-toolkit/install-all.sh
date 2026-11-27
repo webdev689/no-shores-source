@@ -196,7 +196,8 @@ for ev, cmd, matcher in (('SubagentStart', 'python3 ~/.claude/hooks/caveman-suba
 # MCP_TIMEOUT: Serena/Headroom need over the 30 s default to connect; the cloud env var was missing once and Serena timed
 # out . RTK_SUPPRESS_HOOK_WARNING: rtk-guard replaces rtk's own hook, and rtk otherwise prints
 # "No hook installed, run rtk init" into command output . 
-for k, v in (('MCP_TIMEOUT', '120000'), ('RTK_SUPPRESS_HOOK_WARNING', '1')):
+# NODE_USE_ENV_PROXY: Node's fetch ignores HTTPS_PROXY without it, so the page's tests could not fetch R2 via a proxy.
+for k, v in (('MCP_TIMEOUT', '120000'), ('RTK_SUPPRESS_HOOK_WARNING', '1'), ('NODE_USE_ENV_PROXY', '1')):
     s.setdefault('env', {}).setdefault(k, v)
 json.dump(s, open(p, 'w'), indent=2)
 EOF

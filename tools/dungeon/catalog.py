@@ -50,13 +50,15 @@ def landmark(module):
 
 
 def required(style):
-    """Every module name a style's pack holds, in the pack's order: `<style>.<piece>` for each kit piece, then the
-    style's landmarks' `module` names; the passages' pack holds its modules in kits.json's order."""
+    """Every module name a style's pack holds, in the pack's order: `<style>.<piece>` for each kit piece but those it
+    `leaves` (a passage's style, one storey deep, builds no flight or balustrade), then the style's landmarks'
+    `module` names; the passages' pack holds its modules in kits.json's order."""
     if style == PASSAGE:
         return list(PASSAGE_MODULES)
     if style not in STYLES:
         raise KeyError(f'{style!r} is no style in kits.json: {", ".join(STYLES)}')
-    return [f'{style}.{piece}' for piece in PIECES] + [landmark['module'] for landmark in landmarks_of(style)]
+    pieces = [piece for piece in PIECES if piece not in STYLES[style].get('leaves', ())]
+    return [f'{style}.{piece}' for piece in pieces] + [landmark['module'] for landmark in landmarks_of(style)]
 
 
 def piece_of(module):

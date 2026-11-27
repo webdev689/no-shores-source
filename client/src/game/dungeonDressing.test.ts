@@ -4,11 +4,15 @@ import { test } from 'node:test';
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
 import { climateArchive, DRESSING_ARCHIVE } from '../textures/climate.ts';
 import { dungeonBook, WATER_FLAG } from './dungeonBook.ts';
-import { dressingOf, passagePieceLights, passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
+import { dressingOf, kitPlane, passagePieceLights, passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
+import { rockOn } from './dungeonCells.ts';
+import { joinedOn } from './dungeonJoins.ts';
+import { STOREYED } from './dungeonStoreyMesh.test.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import { askDungeon, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
 import { COLOUR, dungeonMesh, IRON, lookAt, ROLE } from './dungeonMesh.ts';
 import { type ModulePack, PARTS, readModulePack } from './dungeonModules.ts';
+import { storeyPlanes } from './dungeonStoreyPlanes.ts';
 import { FULL_PACKS, packOf, propPlansOf, type Written } from './dungeonPacks.test.ts';
 import manifest from '../../../content/dungeon/modules.json' with { type: 'json' };
 import { MATERIALS } from '../city/pictures.ts';
@@ -16,12 +20,15 @@ import type { PassagePiece } from '../rules/passageRules.ts';
 import { UNTOUCHED } from './passages/passagePieces.ts';
 
 const module = await WebAssembly.compile(new Uint8Array(readFileSync('client/public/room.wasm')));
-/** Real dungeons that stand landmarks, of every style. */
-const LAYOUTS: readonly DungeonLayout[] = Array.from({ length: 12 }, (_unused, patrol) =>
+/** Real dungeons of every style, each storey that stands landmarks as the dressing draws it: one storey's dungeon. */
+const PLANES = Array.from({ length: 12 }, (_unused, patrol) =>
   [0, 1, 2].map((number) => askDungeon(module, `patrol-${patrol}`, 'The Patrol', number)),
 )
   .flat()
-  .filter((layout) => layout.landmarks.length > 0);
+  .flatMap((layout) => storeyPlanes(layout))
+  .filter((plane) => plane.layout.landmarks.length > 0);
+const LAYOUTS: readonly DungeonLayout[] = PLANES.map((plane) => plane.layout);
+const PORTAL_ON = new Set(PLANES.flatMap((plane) => (plane.portal ? [plane.layout] : [])));
 const DOOR = [56, 2] as const;
 const EPS = 1e-5;
 
@@ -172,7 +179,7 @@ test('the mesh leaves out only the pillars, brackets and portal arch whose kit p
   assert.ok(pillared.length > 2);
   for (const layout of pillared) {
     const full = dressingOf(layout, FULL_PACKS, 'temperate', propPlansOf(layout));
-    assert.ok(full.pillars.size > 0 && full.torches.size > 0 && full.portal);
+    assert.ok(full.pillars.size > 0 && full.torches.size > 0 && full.portal === PORTAL_ON.has(layout));
     const bare = dungeonMesh(layout, DOOR, undefined, full);
     layout.pillars.forEach((pillar, index) =>
       assert.equal(pillarAt(bare, pillar, layout.pillarHalf), !full.pillars.has(index), `pillar ${index}`),
@@ -308,4 +315,17 @@ test('under ground a lit lamp, a lit dead lamp and an open mouth each light the 
   assert.ok(!lamp.flames && !kindle.flames && !mouth.flames);
   // The open mouth faces east, into the room: its light stands behind its face, west of its foot, the way on.
   assert.ok(mouth.at[0] < 10 && Math.abs(mouth.at[1] - 20) < 1e-6);
+});
+
+test("a storey's kits read a flight as rock but across its landings, so a room beyond its foot or before its head is walled", () => {
+  // Room 0 reaches past the flight's foot on the top storey, and the hall before its head on the one under it.
+  const cells = [...STOREYED.cells];
+  [cells[13], cells[21 + 8]] = [0, 2];
+  const layout = { ...STOREYED, cells };
+  const joined = joinedOn(layout);
+  const [top, under] = storeyPlanes(layout).map((plane) => kitPlane(plane.layout, joined(plane.storey).landings));
+  assert.ok(rockOn(top!, 13, 2), "past the flight's foot, a wall");
+  assert.ok(!rockOn(top!, 8, 0), "the head's landing opens onto the flight");
+  assert.ok(rockOn(under!, 8, 0), "before the flight's head, a wall");
+  assert.ok(!rockOn(under!, 13, 2), "the foot's landing opens onto the flight");
 });

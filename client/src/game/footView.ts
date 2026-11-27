@@ -13,6 +13,7 @@ import type { Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
 import type { Cards } from '../player/cards.ts';
+import type { GroundAt } from '../player/crosshair.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { fromEyeMatrix, type Shot, shifted, shiftedExactly } from './camera.ts';
 import { times } from './deckFight.ts';
@@ -87,14 +88,14 @@ export class FootView {
   }
 
   /** The node's blood, kept from its first spawn so its marks keep their centimetres; made again in a new node. */
-  private bloodOf(foot: FootShown, groundAt: (x: number, y: number) => number | null) {
+  private bloodOf(foot: FootShown, groundAt: GroundAt) {
     if (this.blood?.foot === foot) return this.blood;
     this.blood?.drawn.destroy();
     // A new room numbers its foes from 1 again: the display forgets the last room's.
     this.hud.forget();
     const [x, y] = foot.node.spawns[0] ?? foot.node.centre;
     const origin: Point = [x, y, 0];
-    const surfaces = surfacesOf(foot.boxes, (east, south) => groundAt(east, south) ?? 0);
+    const surfaces = surfacesOf(foot.boxes, (east, south, up) => groundAt(east, south, up) ?? 0);
     this.blood = { foot, drawn: new FightBlood(this.gpu, surfaces, location.search, origin, SAMPLES), origin };
     return this.blood;
   }
@@ -117,7 +118,7 @@ export class FootView {
     }: {
       size: { readonly width: number; readonly height: number };
       viewport: { readonly width: number; readonly height: number };
-      groundAt: (x: number, y: number) => number | null;
+      groundAt: GroundAt;
       onBoarded?: { readonly shot: Shot; readonly turn: Float32Array };
     },
   ): { under: Drawer; over: Drawer } {

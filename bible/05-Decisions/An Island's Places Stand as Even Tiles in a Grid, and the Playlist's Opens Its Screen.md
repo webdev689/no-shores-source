@@ -34,4 +34,7 @@ island's nodes stand as these rectangles, not as one panel down the left of the 
 | The order | The island's own, the port, the Playlist, then the patrol zones, Elite Dungeons, missions, world boss and outpost | As the panel listed them |
 | The details | Shortened so each holds its tile's width: a patrol zone's dungeons ("Three; today's is second"), the harder seas, today's modifier; an Elite Dungeon's blocks, seals, company, pay and its week; the Playlist's week and rewards; a mission's, world boss's and outpost's foes' sites and named places where it has them, an outpost what it is for | A tile of one size holds less than a list that grows |
 
+Its tiles' 74% is replaced by [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]: 90%, and
+each region's own places.
+
 How it works: [[Interface]], "The island's tiles"; [[Game]], "Landings".
