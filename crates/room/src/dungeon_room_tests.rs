@@ -597,8 +597,7 @@ fn foes_find_a_way_to_the_floor_beside_a_dungeons_rocks_pillars_and_jambs() {
     for (place, room, laid) in &rooms {
         let (here, found) = reached_beside_solids(room, laid);
         let share = found as f64 / here.max(1) as f64;
-        // Brine Catacombs' rooms past its third storey's flight are cut off for another cause (the test below).
-        if share < worst.0 && place != "brine-catacombs" {
+        if share < worst.0 {
             worst = (share, place.clone());
         }
         (stood, reached) = (stood + here, reached + found);
@@ -610,11 +609,14 @@ fn foes_find_a_way_to_the_floor_beside_a_dungeons_rocks_pillars_and_jambs() {
 }
 
 #[test]
-#[ignore = "open: the foot of Brine Catacombs' flight from its third storey is two polys that never link"]
 fn brine_catacombs_flight_foot_is_one_floor_on_the_navmesh() {
-    // At the foot of the flight up from the third storey (x 4.8, y 8 to 24), the floor west of a diagonal edge and the
-    // floor east of it, 0.2 m apart on the same flat floor, have no way between them: rooms 14 to 17 are cut off.
+    // At the foot of the flight up from the third storey (x 4.8, y 8 to 24), the floor either side of a diagonal edge,
+    // 0.2 m apart on one flat floor, is one floor, and rooms 14 to 17 past it are reached: there the watershed would
+    // grow one region up the flight and back over the storey's own corridor, whose outline then crosses itself.
     let room = crate::encounters::encounters_tests::elite_room("brine-catacombs");
     let (west, east) = ([4.3, 8.4, -16.0], [4.5, 8.4, -16.0]);
     assert!(room.nav.find_path(west, east).is_some(), "the foot's two sides joined");
+    let (x, y) = room.spawn_points[0];
+    let way_in = [x, y, room.floor.height_at(x, y)];
+    assert!(room.nav.find_path(way_in, [24.0, 11.2, 0.0]).is_some(), "the way in joined to room 14");
 }
