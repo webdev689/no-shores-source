@@ -5,7 +5,7 @@ usage: bash check-tools.sh [--worker] [--quiet]
               plus the conflict checks (hooks, MCP names/scopes, exact output, Caveman scope, Headroom path,
               Context7 key on disk, Serena pin, worker kit wiring). About 1-2 minutes.
   --worker  : also one combined headless worker (run-worker.sh) that calls every tool in one session, then audit.py
-              and transcript checks. About 5-8 minutes and some tokens; run after any kit change.
+              and transcript checks. About 10 minutes and some tokens; run after any kit change.
 Prints one line per check: PASS / WARN / FAIL <tool>: detail. Exit 1 if any FAIL.
 Drop-in checks: tools/claude-toolkit/checks.d/*.sh print lines in the same format (for tools other threads add)."""
 import glob, json, os, re, select, shutil, ssl, subprocess, sys, tempfile, time, urllib.request
@@ -254,6 +254,15 @@ def _():
     m = re.search(r'Found (\d+) result', t)
     if not m and 'no results' not in t.lower():
         return out('FAIL', 'claude-mem', 'search answered without results: ' + t[:120].replace('\n', ' '))
+    # With chroma down a search still answers, by keyword only, and finds little: ask the worker whether chroma is up.
+    port = (jload(HOME + '/.claude-mem/worker.pid', {}) or {}).get('port')
+    try:
+        ch = json.load(urllib.request.build_opener(urllib.request.ProxyHandler({})).open(
+            f'http://127.0.0.1:{port}/api/chroma/status', timeout=10)) if port else {}
+    except (OSError, ValueError):
+        ch = {}
+    if ch and not ch.get('connected'):
+        return out('FAIL', 'claude-mem', f'chroma is down, so search is keyword only: {str(ch)[:120]}')
     out('PASS', 'claude-mem', f'MCP search answered ({m.group(1) if m else 0} results for "setup")')
 
 
@@ -297,7 +306,7 @@ def _():
     Google answers even a keyless call with a JSON error; a proxy block gives no body at all."""
     rc, o = sh('curl -s --max-time 10 https://generativelanguage.googleapis.com/v1beta/models')
     if '"error"' in o or '"models"' in o:
-        return out('PASS', 'headroom learn', 'Gemini reachable: end-of-thread `headroom learn --project . --apply` can run here')
+        return out('PASS', 'headroom learn', 'Gemini reachable: end-of-thread `headroom learn --project .` can run here')
     out('WARN', 'headroom learn', 'Gemini blocked here (a thread linked to the PC?): skip `headroom learn` at thread end, say so, '
         'and run it from a thread that is not linked')
 
@@ -478,15 +487,10 @@ def _():
         rc_png, _ = sh('git add p.png && git commit -qm png', cwd=tmp)
         sh('git rm -q --cached p.png', cwd=tmp)
         open(tmp + '/w.js', 'wb').write(b'a\r\nb\r\n')
-        os.makedirs(tmp + '/graphify-out')
-        open(tmp + '/graphify-out/g.json', 'w').write('1')
-        sh('git add w.js graphify-out && GRAPHIFY_COMMIT=1 git commit -qm base', cwd=tmp)
+        sh('git add w.js && git commit -qm base', cwd=tmp)
         open(tmp + '/w.js', 'wb').write(b'a\nb\nc\n')
         rc_eol, _ = sh('git add w.js && git commit -qm eol', cwd=tmp)
         sh('git checkout -q HEAD -- w.js', cwd=tmp)
-        open(tmp + '/graphify-out/g.json', 'w').write('2')
-        rc_gr, _ = sh('git add graphify-out && git commit -qm g', cwd=tmp)
-        sh('git checkout -q HEAD -- graphify-out', cwd=tmp)
         os.symlink('/tmp', tmp + '/link')
         rc_ln, _ = sh('git add link && git commit -qm link', cwd=tmp)
         sh('git rm -q --cached link', cwd=tmp)
@@ -497,10 +501,10 @@ def _():
         rc_fmt, o_fmt = sh('git add u.ts && git commit -qm fmt', cwd=tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-    ok = rc_ok == 0 and rc_rom != 0 and rc_png != 0 and rc_eol != 0 and rc_gr != 0 and rc_ln != 0 and rc_fmt != 0 and 'u.ts' in o_fmt
-    out('PASS' if ok else 'FAIL', 'pre-commit guard', 'blocks a staged .zip, a C2PA-stamped PNG, a CRLF->LF flip, graphify-out/, a symbolic link and a file '
+    ok = rc_ok == 0 and rc_rom != 0 and rc_png != 0 and rc_eol != 0 and rc_ln != 0 and rc_fmt != 0 and 'u.ts' in o_fmt
+    out('PASS' if ok else 'FAIL', 'pre-commit guard', 'blocks a staged .zip, a C2PA-stamped PNG, a CRLF->LF flip, a symbolic link and a file '
         'Prettier would rewrite, lets normal files through' if ok
-        else f'guard results wrong (normal rc {rc_ok}, rom rc {rc_rom}, c2pa png rc {rc_png}, eol rc {rc_eol}, graphify rc {rc_gr}, link rc {rc_ln}, prettier rc {rc_fmt})')
+        else f'guard results wrong (normal rc {rc_ok}, rom rc {rc_rom}, c2pa png rc {rc_png}, eol rc {rc_eol}, link rc {rc_ln}, prettier rc {rc_fmt})')
 
 
 def scratch_repo(hooks):
@@ -831,6 +835,12 @@ def _():
         'refusals and foe types, and none of a merged one (numbers-in-flight-test.sh)' if rc == 0 else o.strip()[-300:])
 
 
+@check('task-observer patch')
+def _():
+    rc, o = sh(['bash', KIT + '/task-observer/new-observation-test.sh'], timeout=60)
+    out('PASS' if rc == 0 else 'FAIL', 'task-observer patch', o.strip()[-300:] + ('' if rc == 0 else ' (install-all.sh patches it)'))
+
+
 @check('pr-state')
 def _():
     rc, o = sh(['bash', KIT + '/pr-state-test.sh'], timeout=120)
@@ -876,11 +886,28 @@ def _():
         probs.append('brief template lacks the OBSERVATIONS: line')
     if 'MCP_TIMEOUT' not in rw or 'serena_up' not in rw or 'still has:' not in rw:
         probs.append('run-worker.sh: Serena warm-up, MCP_TIMEOUT or the unfilled-brief refusal missing')
+    # run-worker.sh's refusals, run where they stop before any work: a brief naming vitest, and a start past the cap.
+    tmp = tempfile.mkdtemp()
+    try:
+        os.makedirs(tmp + '/w'); os.makedirs(tmp + '/reports')
+        open(tmp + '/vitest.md', 'w').write('Run `npx vitest run` before committing.\n')
+        open(tmp + '/ok.md', 'w').write('A task.\n')
+        for n in ('a', 'b'):   # two live workers: this check's own pid stands for both
+            open(f'{tmp}/reports/{n}.pid', 'w').write(str(os.getpid()))
+        rc_v, o_v = sh(['bash', KIT + '/workers/run-worker.sh', tmp + '/w', tmp + '/vitest.md'], timeout=30)
+        rc_c, o_c = sh(['bash', KIT + '/workers/run-worker.sh', tmp + '/w', tmp + '/ok.md'], timeout=30)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    if rc_v != 2 or 'vitest' not in o_v:
+        probs.append(f'run-worker.sh did not refuse a brief naming vitest (rc {rc_v}): {o_v[-120:]}')
+    if rc_c != 3 or 'cap is 2' not in o_c:
+        probs.append(f'run-worker.sh did not refuse a start past the 2-worker cap (rc {rc_c}): {o_c[-120:]}')
     if 'INBOX NOT ACKED' not in open(KIT + '/workers/audit.py').read():
         probs.append('audit.py no longer flags unanswered inbox items')
     if 'INBOX=' not in rw or 'WORKER_INBOX' not in rw or '.pid' not in rw:
         probs.append('run-worker.sh: worker inbox ($WORKER_INBOX) or pid file missing')
-    for k, why in (('WORKER_INBOX', 'inbox re-read before each commit'), ('stop-worker.sh', 'stop rule (never pkill -f)'), ('graphify-out', 'graphify pull rule'),
+    for k, why in (('WORKER_INBOX', 'inbox re-read before each commit'), ('stop-worker.sh', 'stop rule (never pkill -f)'), ('graphify-out', 'never-commit-graphify-out rule'),
+                   ('$WORKER_BASE', 'reviewer base'), ('npm run -s types', 'fixed check list'),
                    ('replace_content', 'Serena nested-edit rule'),
                    ("newline=''", 'line-ending rule for scripted edits'), ('rtk bypass', 'raw test-log rule'),
                    ('Scope:', 'finish-the-briefed-scope rule'), ('no diff', 'no-diff verification rule'), ('Image checks', 'image self-check rule'),
@@ -918,6 +945,7 @@ if '--worker' in sys.argv:
         if os.path.exists(wt):
             sh(['git', 'worktree', 'remove', '--force', wt], cwd=REPO)
             shutil.rmtree(wt, ignore_errors=True)
+        sh(['git', 'worktree', 'prune'], cwd=REPO)   # a toolcheck folder deleted under git leaves its registration
         rc, o = sh(['git', 'worktree', 'add', '-q', '--detach', wt, 'HEAD'], cwd=REPO, timeout=300)
         if rc:
             return out('FAIL', 'combined worker', 'git worktree add failed: ' + o[:150])
@@ -927,14 +955,15 @@ if '--worker' in sys.argv:
         os.makedirs('/tmp/claude-0/logs', exist_ok=True)
         open(brief, 'w').write(open(KIT + '/workers/toolcheck-brief.md').read().replace('{TARGET}', TARGET).replace('{KIT}', KIT))
         t0 = time.time()
-        rc, o = sh(['bash', KIT + '/workers/run-worker.sh', wt, brief], timeout=1500, cwd=wt)
+        # The tool check is a short third worker, run by a worker after a kit change: let it past the cap of 2.
+        rc, o = sh(['bash', KIT + '/workers/run-worker.sh', wt, brief], timeout=1500, cwd=wt, env={'WORKERS_MAX': '3'})
         log = open(WT_ROOT + '/reports/toolcheck.log', errors='ignore').read()
         tr = sorted(glob.glob(os.path.expanduser('~/.claude/projects/' + re.sub(r'[^A-Za-z0-9]', '-', wt)) + '/*.jsonl'), key=os.path.getmtime)
         if not tr:
             return out('FAIL', 'combined worker', 'no transcript; log tail: ' + log[-300:])
         raw = open(tr[-1], errors='ignore').read()
         sub = ''.join(open(f, errors='ignore').read() for f in glob.glob(os.path.dirname(tr[-1]) + '/*/subagents/*.jsonl'))
-        rc, aud = sh(['python3', KIT + '/workers/audit.py', wt], timeout=60)
+        rc, aud = sh(['python3', KIT + '/workers/audit.py', wt], timeout=2000)   # it runs the full type check
         print('     audit: ' + aud.strip().replace('\n', '\n     audit: '), flush=True)
         calls, results_txt, final = [], {}, ''
         for l in raw.splitlines():
