@@ -17,6 +17,8 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - **To come**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
+- #265 (Saltmere keeps only the Saltgrass Downs, and everything folds into it): for the owner's yes once CI passes on
+  its head.
 
 ## Built
 
@@ -132,20 +134,11 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
-- **The Saltgrass fold-in** (branch `ccr-0567dd6d-1v0ppa-saltgrass`, no pull request yet;
-  [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]], [[The Saltgrass Fold-In as Claude Builds It]]).
-  Built and tested offline, the Downs never seen in a running game: the Vale and the Moors cut, the Downs' six new
-  places, the houses' twelve tasks, the Breach, the events' one clock; the layout's fixes the grown Downs exposed (a
-  place stands only where a way reaches it, ways stopped at a piece join round it in a patrol area, the raiders' way
-  in turns off a house, a sea-landed instance's way in faces the sea, the hulks ring an open middle); the content
-  audit's lines. Left:
-  - Four layout defects the grown Downs expose, each failing its room integration test (tested offline): a great
-    work's wall strip 1.9 m over Hollow Coven's cavern hollow and ten merlons of the Tithe Barns' corner turret with
-    no turret under them (`held_planned`; the turret also fails `runs_planned`); the ways up to Moorhold ramped 0.23
-    to 0.46 in some 4 m, steeper than a track (`map_planned`, `no_way_of_saltmeres_is_carved_steeper_...`); three of
-    Saltgrass's buildings across a step of 1.0 to 1.2 m (`map_planned`, `no_hamlet_or_ruin_building_...`). The
-    ignored shot-list writer meets a great wall's buttress past the top of Hollow Coven's cliff stair. Each wants its
-    cause fixed in `crates/layout`, not the content changed.
+- **The Saltgrass fold-in** (#265; [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]],
+  [[The Saltgrass Fold-In as Claude Builds It]]). Built and tested offline, the Downs never seen in a running game;
+  the pull request says what changed. Not yet seen: the great wall's new canyon between the Old Beacon and the
+  Saltbreaker Hulks; the ways up to Moorhold climbing their last stretch as a ramp at 0.25, steeper than a track; the
+  Tithe Barns' corner turret. Left:
   - The owner's asks still to come: the Downs' design pass and patrol zone design pass, its enemy placements, the held
     map's polish and legend, and the three landing zones with their map and fast travel.
   - `tools/modules/breach_gate.py` and `catalogue.py` still say the gate is the Vale's: their next edit sets off the
