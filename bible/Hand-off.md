@@ -151,6 +151,13 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   place stands only where a way reaches it, ways stopped at a piece join round it in a patrol area, the raiders' way
   in turns off a house, a sea-landed instance's way in faces the sea, the hulks ring an open middle); the content
   audit's lines. Left:
+  - Four layout defects the grown Downs expose, each failing its room integration test (tested offline): a great
+    work's wall strip 1.9 m over Hollow Coven's cavern hollow and ten merlons of the Tithe Barns' corner turret with
+    no turret under them (`held_planned`; the turret also fails `runs_planned`); the ways up to Moorhold ramped 0.23
+    to 0.46 in some 4 m, steeper than a track (`map_planned`, `no_way_of_saltmeres_is_carved_steeper_...`); three of
+    Saltgrass's buildings across a step of 1.0 to 1.2 m (`map_planned`, `no_hamlet_or_ruin_building_...`). The
+    ignored shot-list writer meets a great wall's buttress past the top of Hollow Coven's cliff stair. Each wants its
+    cause fixed in `crates/layout`, not the content changed.
   - The owner's asks still to come: the Downs' design pass and patrol zone design pass, its enemy placements, the held
     map's polish and legend, and the three landing zones with their map and fast travel.
   - `tools/modules/breach_gate.py` and `catalogue.py` still say the gate is the Vale's: their next edit sets off the
