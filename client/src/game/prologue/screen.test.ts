@@ -128,7 +128,7 @@ test('the loading screen stands over the black: the logo and LOADING, told to a 
   }
 });
 
-test('an insert eases in over the middle of the view, under the white and the black, and goes as asked or cleared', () => {
+test('an insert eases in over the view’s middle, under the white and the black, and goes as asked or cleared', () => {
   const { screen, laid, clock } = made();
   const insert = { key: 'chart', label: 'The captain’s chart', draw: () => undefined };
   const shown = () => laid().find((each) => each.node.id === 'cinema-insert');
