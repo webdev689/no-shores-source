@@ -1,4 +1,4 @@
-"""The Lattice's crown (`lattice-crown`): the crystallized structure the owner has the Lattice arrive under, "a
+"""The Lattice's crown (`lattice-crown`): the crystallized structure the Lattice arrives under, "a
 crystallized structure that appears, as the enemies spawn below". It hangs in the air over where they form: a heart
 of the crystal's light, held in a cage of great spars reaching down from it like a claw, shorter ones between them
 splayed out level, a dense cluster pointing down at the ground under it, a lesser crown of points standing up off its

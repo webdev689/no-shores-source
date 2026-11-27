@@ -1,8 +1,8 @@
-"""Puts one of DFO's own sounds the owner picked on R2 and into the game's list, beside the Freesound picks.
+"""Puts one of DFO's own picked sounds on R2 and into the game's list, beside the Freesound picks.
 
     python3 -I tools/freesound/own.py <cue> <name> <licence> <from> <file>...
 
-DFO's own sounds are those its synthesiser made, and the CC0 or public-domain recordings the owner chose there. Each file is a variant of the cue, played in turn: footsteps
+DFO's own sounds are those its synthesiser made, and the CC0 or public-domain recordings chosen there. Each file is a variant of the cue, played in turn: footsteps
 have several. Each is put on R2 under the SHA-256 of its bytes, unchanged; `licence` is `Ours` or `CC0`, and `from`
 says where the sound came from. They owe no credit, so Settings does not list them; publish.py keeps them.
 """

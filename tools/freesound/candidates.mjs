@@ -1,6 +1,6 @@
 // Finds candidates on Freesound for each cue in content/audio/freesound.json, with no key: it reads Freesound's
 // public search page for the cue's words and length, then each result's own page for its title, author and licence,
-// keeping only CC0 and Attribution (the licences the owner allows; never a non-commercial one), and saves the first
+// keeping only CC0 and Attribution (the licences allowed; never a non-commercial one), and saves the first
 // few's public previews with a report of who made them. Freesound refuses Claude's cloud machines, so this runs on
 // GitHub's (.github/workflows/freesound.yml). Each cue's first search page is kept beside the report, so a change to
 // Freesound's pages can be read and this reader fixed.
@@ -105,13 +105,13 @@ const save = () => {
   writeFileSync(join(out, 'picks.json'), `${JSON.stringify(picks, null, 2)}\n`);
 };
 for (const cue of wanted.cues) {
-  // A cue the owner picked a sound for is searched no more: its pick is read for its credit and its preview kept.
+  // A cue with a picked sound is searched no more: its pick is read for its credit and its preview kept.
   if (cue.picked) {
     for (const picked of [cue.picked].flat()) picks.push(await pickOf(cue, picked));
     save();
     continue;
   }
-  // One kept or made by the game, or whose sound comes from DFO's own, is searched no more; what the owner already
+  // One kept or made by the game, or whose sound comes from DFO's own, is searched no more; what was already
   // heard is passed over.
   if (cue.keep || cue.made || cue.dfo) continue;
   if (only.length > 0 && !only.some((name) => cue.id.startsWith(name))) continue;

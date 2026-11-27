@@ -1,4 +1,4 @@
-"""The Flicker's own moves for the Sprite Forge. After the owner's own in project-final: it never walks, it blinks; it
+"""The Flicker's own moves for the Sprite Forge. After their design in project-final: it never walks, it blinks; it
 holds with the Husk's uncanny life (breath, weight shift, the twitch); it lands from a blink and winds up, the wind-up
 its tell; its strikes are a kinetic chain, the hips first and the blade whipping last, and never the same twice
 running: a left slash, a right slash, and both blades brought down overhead a beat apart, since both swiping the same

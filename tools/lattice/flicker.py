@@ -1,5 +1,5 @@
-"""The Flicker, "the displaced": a port's person the crystal has nearly eaten, gaunt and tall, purple. After the owner's
-own in project-final: the head gone, a spray of small shards from the neck's stump in its place; both arms gone, each
+"""The Flicker, "the displaced": a port's person the crystal has nearly eaten, gaunt and tall, purple. After its
+design in project-final: the head gone, a spray of small shards from the neck's stump in its place; both arms gone, each
 a faceted crystal limb ending in a long angled blade past where the hand was, barbed down its back edge; the torso and
 legs peppered, the flesh losing to the crystal, its back broken open between the shoulder blades and down the spine.
 Each blade is a layer of its own, so the game can take one away when it is shot off. In its breeches. Drawn by

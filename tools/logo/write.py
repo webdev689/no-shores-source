@@ -1,6 +1,6 @@
-"""Writes the owner's No Shores logo into the client as a pixel picture: `python3 -I tools/logo/write.py <logo.png>`.
+"""Writes the No Shores logo into the client as a pixel picture: `python3 -I tools/logo/write.py <logo.png>`.
 
-The PNG is the owner's (its C2PA credentials say it was made with ChatGPT); it stays out of git, and what the game
+The PNG (its C2PA credentials say it was made with ChatGPT) stays out of git, and what the game
 draws is this file's output, `client/src/cinema/logoPicture.ts`. Each cell is the mean of 8 by 8 of its pixels,
 weighted by their cover, and kept where it is half covered; its colours are cut to 12 by median cut, the same each
 run, and lettered light to dark. Prettier then lays the file out.
@@ -49,7 +49,7 @@ def main():
         sys.exit('usage: write.py <logo.png>')
     rows, colours = picture(sys.argv[1])
     lines = [
-        "// The owner's No Shores logo as a pixel picture, written by `tools/logo/write.py` from the owner's PNG: "
+        '// The No Shores logo as a pixel picture, written by `tools/logo/write.py` from its PNG: '
         f'{len(rows[0])} by',
         f'// {len(rows)} cells, each 8 by 8 of its pixels, in {len(colours)} colours light to dark. Write it again '
         'rather than editing it.',

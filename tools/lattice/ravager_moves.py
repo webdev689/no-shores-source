@@ -1,4 +1,4 @@
-"""The Ravager's own moves for the Sprite Forge. After the owner's own in project-final: it walks the Husk's twitching
+"""The Ravager's own moves for the Sprite Forge. After their design in project-final: it walks the Husk's twitching
 walk with its blades held up and ready, its arms' tremor faint while it aims; its throw winds up with its arms drawn
 back, the tell, then looses its shards in a burst, the hands in turn, each one aimed again, the game taking its
 ammunition's layer away as it throws; cornered, it mauls with its blades as the Husk does. Each wrist is laid by the
