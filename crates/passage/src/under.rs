@@ -13,7 +13,10 @@ use dungeon::{CELL_M, Cell, Dungeon, SIDES, Side};
 const PASSES: [(f64, f64, bool); 4] = [(16.0, 9.0, true), (16.0, 9.0, false), (12.0, 6.0, false), (9.0, 4.0, false)];
 /// How far a mouth keeps from a torch, a prop, a fixture or a landmark, metres.
 const MOUTH_CLEAR_M: f64 = 2.4;
-/// How far a mouth stands off its wall, as the exit door does, metres.
+/// How far a mouth's piece reaches back from its foot, metres: its frame and the rough back round its way on's
+/// daylight (tools/dungeon/styles/passage/pieces.py `mouth`).
+pub(crate) const MOUTH_BACK_M: f64 = 0.45;
+/// How far a mouth's place on its wall stands off it, as the exit door does, metres.
 const OFF_WALL_M: f64 = CELL_M / 2.0 - 0.02;
 /// How many seeds a lamp's zone is tried from for a room tall enough to stand it in.
 const LAMP_TRIES: u32 = 32;
@@ -138,8 +141,7 @@ fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 5]], at: [f64; 2], arrive: [f64;
     };
     let on_room_floor =
         |point: [f64; 2]| cell_at(point).is_some_and(|cell| matches!(dungeon.cells[cell], Cell::Room(_)));
-    let facing = libm::atan2(arrive[0] - at[0], -(arrive[1] - at[1]));
-    let solids = Kind::Lamp.solids_at([at[0], at[1], dungeon::FLOOR_M], facing);
+    let solids = Kind::Lamp.solids_at([at[0], at[1], dungeon::FLOOR_M], crate::plan::lamp_facing(at, arrive));
     let whole = |&[west, north, east, south, _]: &[f64; 5]| {
         [[west, north], [east, north], [east, south], [west, south]].into_iter().all(on_room_floor)
     };
@@ -245,6 +247,18 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
         floor.insert(0, ring);
     }
     let spots = spots_of(&floor, crate::plan::spots_wanted(zone.deal));
+    // Each onward mouth, kept clear of the rest from its place on its wall, stands its whole piece in front of the
+    // wall's face, so its way on's daylight shows through its arch rather than the wall.
+    let onward = onward
+        .into_iter()
+        .map(|door| Door {
+            at: [
+                door.at[0] + libm::sin(door.facing) * MOUTH_BACK_M,
+                door.at[1] - libm::cos(door.facing) * MOUTH_BACK_M,
+            ],
+            ..door
+        })
+        .collect();
     Sites { arrive, facing, way_in, onward, lamp, posts, spots }
 }
 

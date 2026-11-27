@@ -70,7 +70,7 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "thread", may_import: &["ui"] },
     Layer { name: "islands", may_import: &["rules", "water", "textures", "models", "sky"] },
     Layer { name: "speech", may_import: &["plus", "ui"] },
-    Layer { name: "cinema", may_import: &["water", "combat", "plus", "ui"] },
+    Layer { name: "cinema", may_import: &["water", "combat", "plus", "sky", "ui"] },
 ];
 
 /// The files a page or a worker starts from: the game's page, the game's worker the page starts, the World Editor's

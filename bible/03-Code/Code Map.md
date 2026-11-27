@@ -47,7 +47,7 @@ decision, made in the same change as its entry here.
 | `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
-| `client/src/sky/` | The sky layer, which imports nothing: the world's clock set right by the rooms, the [[Sky]] and [[Weather]] read from the sky crate through its own WebAssembly, and what the scene draws by them |
+| `client/src/sky/` | The sky layer, which imports nothing: the world's clock set right by the rooms, the [[Sky]] and [[Weather]] read from the sky crate through its own WebAssembly, what the scene draws by them, and the one flicker and breath every light moves by |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving; the sea by weather round the view (`seaWeather.ts`), and every ship's wake, bow wave and spray (`wakes.ts`) |
 | `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display as nodes of the interface the game draws, the ground's marks for telegraphed blows and shots, the shots' tracers, the drops lying for the player ([[Gear]], "Drops"), the plates over other players ([[Interface]], "Players"), and [[Blood]]; the [[Arts]]' casting keys, ability bar and every spell's view; and a Sloop's session in a fleet room ([[Naval Combat]]), its orders sent and its ship predicted |
 | `client/src/nature/` | The nature layer: each biome's trees, plants and rocks, made in code, scattered over the ground round the eye and drawn on WebGPU ([[Nature]]), and the owner's meadow over the grass ([[Meadow]]). Imports `rules`, `water` and `sky` |
@@ -85,7 +85,7 @@ decision, made in the same change as its entry here.
 | `client/src/city/` | The city layer: a city's plan drawn on WebGPU with the forged models and the procedural textures, whole near the eye, as masses and hulls further out, its solids and ground plates at every distance; a ruin's buildings broken (`ruins.ts`) ([[Cities]]) |
 | `client/src/layout/` | The layouts in the browser: drawn with the city layer near the eye, the nodes' laid sections, and the ways through gates ([[Layouts]]) |
 | `client/src/speech/` | The speech layer, which imports `plus` and `ui`: the voice made in the browser for every line, the dialogue box, barks over heads and emotes ([[Speech]]) |
-| `client/src/cinema/` | The cinema layer, which imports `water`, `combat`, `plus` and `ui`: the camera on rails, the screen's fades and bars, the weather pass, birds, fire and smoke, and the storm's sounds ([[Cinema]]) |
+| `client/src/cinema/` | The cinema layer, which imports `water`, `combat`, `plus`, `sky` and `ui`: the camera on rails, the screen's fades and bars, the weather pass, birds, fire and smoke, and the storm's sounds ([[Cinema]]) |
 | `client/src/game/launcher/` | The [[Desktop App]]'s launcher: its window, the patch notes it reads and marks new, and the servers it asks |
 | `client/src/game/prologue/` | The [[Prologue]]: the tap to start, the intro and title, character creation and the story mission's beats, run by its director |
 | `client/src/game/npc/` | The keepers' screen every counter of a social space opens, and Shape's: the keeper drawn in their dress with their words and band, the rows of wares each keeper sells, a faction's rows (`factionRows.ts`), the stock's clock ([[Interface]], [[Factions]]) |
@@ -216,9 +216,9 @@ nodes its display builds), `player` (imports `rules`, `network`, `forge`, `first
 the fight's display there), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules`, `water`
 and `sky`), `layout` (imports `city`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture
 drawer and `ui`), `ui` (imports `plus`), `thread` (imports `ui`), `islands` (imports `rules`, `water`, `textures`,
-`models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus` and `ui`) and
-`game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;
-[[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
+`models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus`, `sky` and `ui`;
+[[The Cinema May Import the Sky Layer]]) and `game` (imports the layers it wires, `combat`, `cinema` and `speech`
+among them; [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
 import.
 
 ## The Rust crates

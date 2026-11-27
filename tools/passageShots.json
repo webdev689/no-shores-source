@@ -289,7 +289,8 @@
           "week": 2900,
           "ground": "strand",
           "own": {
-            "near": "common.wreck"
+            "near": "common.wreck.stern",
+            "back": 7
           }
         }
       ],

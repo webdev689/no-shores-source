@@ -479,9 +479,13 @@ added unlit; splinters, shreds and planks are solid and lit. The puffs are drawn
 where the scene stands nearer (`puffView.ts`), at most 2,048 a frame, the nearest kept, and fading softly to nothing
 over the last 2.5 to 0.3 m to the eye (`nearFade.ts`), as the fires' smoke does; their floats are written each frame
 into arrays the view keeps (`PuffScratch`), so laying them makes nothing new. Each glow gives its stepped halo through
-the light layer, as the land's bright things do. DFO's lights on the hulls round a flash (26 m for 0.12 s) or a burning ship (16 m, three at
-most) are kept as the effects' `light` marks but not drawn: the ships' shader takes no point lights yet, and the
-light layer drew their whole reach as a disc over the sky and sea. At most 900 puffs
+the light layer, as the land's bright things do. DFO's lights round a flash (26 m for 0.12 s), a magazine's blast
+(52 m for 0.6 s) and a burning ship (16 m, three at most, flickering from 0.6 of its full to its full with the
+lamps' `flicker`, seeded by its ship) are the effects' `light` marks, cast as the sky's lamps for as long as each
+lasts, steady as lamps, their marks' brightness moving them (`FightLamps`,
+taken up by the ships' lanterns' list a frame later, and by the story's fight on its own, [[Sky]], "Lamps"): they light the hulls, the sea round them and
+the people on deck, and are never drawn as puffs, whose halo of their whole reach would band the sky and sea
+([[Every Light Is Redesigned and Animated, and Each Casts Light]]). At most 900 puffs
 live at once; past that, spray, foam and glints go first, then splinters, shreds and embers, then flashes and planks,
 and smoke last.
 The view's own numbers stand in where no event says more: a ship's canvas's share left holes its sails, a ship `struck`

@@ -220,7 +220,8 @@ fn shaded(in: Out) -> vec4f {
 
 // Over the finished picture: hidden where the scene's depth (reversed, nearer is more) stands nearer.
 @fragment fn over_fragment(in: Out) -> @location(0) vec4f {
-  if (in.position.z < textureLoad(depths, vec2i(in.position.xy), 0).r) { discard; }
+  let scene = textureLoad(depths, vec2i(in.position.xy), 0).r;
+  if (in.position.z < scene) { discard; }
   let colour = shaded(in);
   if (colour.a <= 0.0) { discard; }
   return colour;

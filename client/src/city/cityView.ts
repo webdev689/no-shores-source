@@ -28,7 +28,8 @@ import { CityPainter, type PaintProgress, painting } from './painter.ts';
 import type { ModelEntry } from './cityModels.ts';
 import { standIn } from '../standIns.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
-import { type CityClimate, type CityPlan, glowLamps } from './plan.ts';
+import { glowLights } from './cityLights.ts';
+import { type CityClimate, type CityPlan } from './plan.ts';
 import { stepWithin } from './steps.ts';
 import { CitySelector, type Modelled, sameCells, type Seen, solidsOf } from './citySelect.ts';
 
@@ -91,12 +92,12 @@ type Drawn = {
   readonly wreckCrust: { readonly buffer: GPUBuffer; readonly crust: WreckCrust } | null;
 };
 
-/** A city being built a few steps a frame: its steps, what of the GPU's they have made so far, its lamps, the time
+/** A city being built a few steps a frame: its steps, what of the GPU's they have made so far, its plan, the time
  *  its steps have taken, and who is told once it stands. */
 type Building = {
   readonly steps: Generator<void, Drawn>;
   readonly owned: Owned[];
-  readonly lamps: ReturnType<typeof glowLamps>;
+  readonly plan: CityPlan;
   spentMs: number;
   readonly whole: () => void;
 };
@@ -159,7 +160,7 @@ export class CityView implements CityDrawer {
     this.dropBuilding();
     const owned: Owned[] = [];
     const steps = this.drawnSteps(cityBuildSteps(plan, climate, blocks, tables), owned);
-    this.building = { steps, owned, lamps: glowLamps(plan), spentMs: 0, whole };
+    this.building = { steps, owned, plan, spentMs: 0, whole };
   }
 
   /** Whether a city is being built and is not yet whole. */
@@ -196,7 +197,9 @@ export class CityView implements CityDrawer {
     this.building = null;
     this.clear();
     this.drawn = built.made;
-    CITY_LAMPS.set(this, [...building.lamps, ...built.made.data.lamps]);
+    // Its lights once whole, when its modules' meshes have come: a lamp post's lights stand at its lanterns.
+    const lights = glowLights(building.plan);
+    CITY_LAMPS.set(this, [...lights.lamps, ...built.made.data.lamps], lights.fires);
     this.frame.buildMs = building.spentMs;
     building.whole();
   }
