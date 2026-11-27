@@ -110,6 +110,10 @@ one plays it in a room of its own, `node-<site>--guild-<key>`, apart from every 
   tells the outpost's room, when the player stands in it, and says so on the window. The plan is one stop for Tab, its
   arrows moving a cursor. The Treasury page reads the ledger in the world's words (placed, took up) under its column
   heads, and lets a member at an outpost put Aurem in, saying why when the treasury cannot hold it ([[Interface]]).
+- **Reaching a site.** Over an island, each region's view among the island's tiles holds one Outposts tile, which
+  opens that region's sites to choose from, each saying whether the player's guild holds an outpost there; choosing one
+  lands there ([[Interface]], "The island's tiles";
+  [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]).
 - **The room.** Each guild plays its outpost at a site in a room of its own, `node-<site>--guild-<key>`, the key its
   whole id; the bare site is nobody's ([[Server]], "An outpost's room"). Its members come in, and anyone in a company
   with a member there; a guest so let in stays until they leave. Only one whose own guild changed away from it (they

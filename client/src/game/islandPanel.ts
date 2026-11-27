@@ -15,9 +15,13 @@ import {
   type IslandEntry,
   type IslandFacts,
   type IslandPanel,
+  type OutpostSlot,
+  type OutpostsEntry,
   type PlaylistBanner,
   entriesOf,
   islandPanelOf,
+  KIND_WORDS,
+  tagOf,
 } from './islandWords.ts';
 import { iconNode } from './journalIcons.ts';
 import { CREST_SPOTS, type Scene, sceneSheet, TEXEL } from './islandArt.ts';
@@ -74,6 +78,7 @@ const SCENES: Readonly<Record<IslandEntry['kind'], Scene['kind']>> = {
   mission: 'mission',
   boss: 'boss',
   outpost: 'outpost',
+  outposts: 'outpost',
 };
 
 /** How far tile `place` has risen into place `opened` seconds after the view opened, 0 to 1, eased to a stop. */
@@ -170,6 +175,7 @@ function entryTile(
   const banner = 'crests' in entry ? (entry as PlaylistBanner) : null;
   const scene: Scene = { kind: SCENES[entry.kind], id: entry.id, abyss: entry.abyss ?? false };
   const look = `${entry.abyss === true}`;
+  const tag = tagOf(entry.name, entry.levels, KIND_WORDS[entry.kind]);
   const details = [
     ...entry.glyphs.map((glyph) => glyph.says),
     ...entry.rows.map(([label, value]) => `${label}: ${value}`),
@@ -199,7 +205,7 @@ function entryTile(
                 gap: 3,
                 children: [
                   said(entry.name, { size: 2, colour: entry.shut === null ? BRASS : DIM }),
-                  entry.levels !== null && said(entry.levels, { colour: DIM }),
+                  tag !== '' && said(tag, { colour: DIM }),
                 ],
               },
               entry.shut === null && { ...iconNode('next', 24), opacity: state.lit ? 1 : 0.45 },
@@ -234,7 +240,7 @@ function islandTile(
         children: [
           { height: 'grow' },
           said(panel.title, { size: 2, colour: BRASS }),
-          panel.levels !== null && said(panel.levels, { colour: DIM }),
+          said(tagOf(panel.title, panel.levels, 'Island'), { colour: DIM }),
           {
             width: 'grow',
             gap: 8,
@@ -312,6 +318,157 @@ export function islandPanelNode(
   };
 }
 
+/** A slot's card: its name, its chart and whether it is the guild's, as wide as this; its chart as tall as this. */
+const CARD = { width: 260, chart: 140, padding: 10 } as const;
+const PANEL_GROUND = 'rgba(10,14,22,0.94)';
+const CARD_GROUND = 'rgba(22,28,40,0.92)';
+/** The chart's sea and land, the coast's ink, and the slots' marks. */
+const CHART = { sea: '#0c1724', land: '#2a3527', coast: '#8a6a3a', slot: '#7d8794', lit: BRASS, ours: '#9fd08a' };
+
+/** Draws a small chart of the region on a card: the coast round its slots, every slot of the region a dot,
+ *  the card's own brass in a ring, and one holding the player's guild's outpost green. */
+function drawSlotChart(
+  outline: readonly Point2[],
+  entry: OutpostsEntry,
+  lit: OutpostSlot,
+): (context: OffscreenCanvasRenderingContext2D, width: number, height: number) => void {
+  return (context, width, height) => {
+    // Framed on the region's slots with a wide margin, so they stand apart on their stretch of coast (an island is
+    // hundreds of kilometres across, its slots a few apart); never closer than 20 km across, so a lone slot sits in
+    // its coast.
+    const extent = (values: readonly number[]) => Math.max(...values) - Math.min(...values);
+    const middleOf = (values: readonly number[]) => (Math.max(...values) + Math.min(...values)) / 2;
+    const [xs, ys] = [entry.slots.map((slot) => slot.at[0]), entry.slots.map((slot) => slot.at[1])];
+    const middle = [middleOf(xs), middleOf(ys)] as const;
+    const span = Math.max(20_000, extent(xs) * 4, (extent(ys) * 4 * width) / height);
+    const scale = width / span;
+    const at = ([x, y]: Point2): [number, number] => [
+      width / 2 + (x - middle[0]) * scale,
+      height / 2 + (y - middle[1]) * scale,
+    ];
+    context.fillStyle = CHART.sea;
+    context.fillRect(0, 0, width, height);
+    if (outline.length > 2) {
+      context.beginPath();
+      outline.forEach((point, place) => context[place ? 'lineTo' : 'moveTo'](...at(point)));
+      context.closePath();
+      context.fillStyle = CHART.land;
+      context.fill();
+      context.strokeStyle = CHART.coast;
+      context.lineWidth = 1.5;
+      context.stroke();
+    }
+    for (const slot of entry.slots) {
+      const [x, y] = at(slot.at);
+      context.beginPath();
+      context.arc(x, y, slot === lit ? 5 : 3.5, 0, Math.PI * 2);
+      context.fillStyle = slot.ours ? CHART.ours : slot === lit ? CHART.lit : CHART.slot;
+      context.fill();
+      if (slot !== lit) continue;
+      context.beginPath();
+      context.arc(x, y, 10, 0, Math.PI * 2);
+      context.strokeStyle = CHART.lit;
+      context.lineWidth = 2;
+      context.stroke();
+    }
+  };
+}
+
+/** What the slots' panel does: light a slot for Enter, land at one, and close it back to the tiles. */
+export interface SlotActs {
+  readonly choose: (id: string) => void;
+  readonly land: (slot: OutpostSlot) => void;
+  readonly close: () => void;
+}
+
+/** One slot's card: its name, its place on the region's chart and whether the player's guild holds an outpost there;
+ *  a click lands there, and the pointer or the focus on it lights it for Enter. */
+function slotCard(
+  ui: Interface,
+  [entry, slot]: readonly [OutpostsEntry, OutpostSlot],
+  [lit, keyed]: readonly [boolean, boolean],
+  chart: IslandChart | null,
+  acts: SlotActs,
+): Node {
+  const id = `outposts:${slot.id}`;
+  if (ui.clicked(id) || (ui.focused(id) && !ui.keyFocused)) ui.focusOn(null);
+  if (ui.clicked(id) && slot.shut === null) acts.land(slot);
+  if ((keyed ? ui.focused(id) : ui.hovered(id)) && !lit) acts.choose(slot.id);
+  const held = slot.ours ? "Your guild's outpost" : "No outpost of your guild's";
+  const [width, height] = [CARD.width - 2 * CARD.padding, CARD.chart];
+  return {
+    id,
+    press: true,
+    label: [slot.name, held, slot.shut ?? 'Land here'].join('. '),
+    width: CARD.width,
+    direction: 'column',
+    gap: 8,
+    padding: CARD.padding,
+    fill: CARD_GROUND,
+    outline: { width: lit ? 2 : 1, colour: lit ? TONES.brass : EDGE },
+    ...(lit && { offset: [0, -LIT_STEP] as const }),
+    children: [
+      said(slot.name, { size: 2, colour: slot.shut === null ? BRASS : DIM }),
+      {
+        width,
+        height,
+        picture: {
+          key: `outpost chart ${entry.id} ${slot.id} ${slot.ours} ${chart?.id ?? ''} ${width}x${height}`,
+          source: { draw: drawSlotChart(chart?.outline ?? [], entry, slot) },
+        },
+      },
+      {
+        gap: 6,
+        alignY: 'center',
+        children: [iconNode(slot.ours ? 'outpost' : 'slots', 24), said(held, { colour: DIM })],
+      },
+      slot.shut !== null && said(slot.shut, { colour: DIM }),
+    ],
+  };
+}
+
+/** The region's outpost slots over the view, in the tiles' place, as the Playlist's screen opens from its tile: its
+ *  name and levels, a card for each slot, `chosen` the one Enter lands at (the first open one while none is), and
+ *  the way back to the tiles. */
+export function outpostsNode(
+  ui: Interface,
+  entry: OutpostsEntry,
+  chosen: string | null,
+  chart: IslandChart | null,
+  acts: SlotActs,
+): Node {
+  const lit = litSlot(entry, chosen)?.id ?? null;
+  const keyed = ui.keyFocused && entry.slots.some((slot) => ui.focused(`outposts:${slot.id}`));
+  return {
+    id: 'outposts-panel',
+    solid: true,
+    modal: true,
+    label: `${entry.name}. ${entry.line}`,
+    float: { to: 'screen', at: [0.5, 0], anchor: [0.5, 0], y: GRID.top },
+    maxWidth: ui.size.width - 2 * GRID.side,
+    direction: 'column',
+    gap: 14,
+    padding: 20,
+    fill: PANEL_GROUND,
+    outline: { width: 1, colour: EDGE },
+    children: [
+      said(entry.name, { size: 2, colour: BRASS }),
+      said(`${tagOf(entry.name, entry.levels, KIND_WORDS.outposts)} · Choose a slot to land at`, { colour: DIM }),
+      {
+        gap: GRID.gap,
+        wrap: true,
+        padding: [LIT_STEP, 0, 0, 0],
+        children: entry.slots.map((slot) => slotCard(ui, [entry, slot], [slot.id === lit, keyed], chart, acts)),
+      },
+      { width: 'grow', alignX: 'end', children: [hudPress(ui, 'outposts-back', `Back  ${noKey()}`, acts.close)] },
+    ],
+  };
+}
+
+/** The slot Enter lands at: the one chosen, else the first open one. */
+const litSlot = (entry: OutpostsEntry, chosen: string | null): OutpostSlot | undefined =>
+  entry.slots.find((slot) => slot.id === chosen) ?? entry.slots.find((slot) => slot.shut === null);
+
 /** What the island's panel reads off the game, and what its entries do. */
 export interface IslandGame {
   readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'nodes' | 'outline' | 'regions'>;
@@ -319,6 +476,8 @@ export interface IslandGame {
   readonly chosen: () => string | null;
   readonly facts: () => Omit<IslandFacts, 'named'> | null;
   readonly named: (id: string) => string;
+  /** The sites the player's guild holds outposts at. */
+  readonly ours: () => readonly string[];
   readonly choose: (id: string) => void;
   readonly back: () => void;
   readonly does: {
@@ -333,19 +492,39 @@ export interface IslandGame {
 export function islandScreen(game: IslandGame): {
   readonly node: (ui: Interface) => Node | null;
   readonly act: (id: string | null) => void;
+  readonly back: () => boolean;
 } {
+  /** The Outposts tile whose slots stand open, by its id; none while the tiles show. */
+  let picking: string | null = null;
   const panelNow = (): IslandPanel | null => {
     const sea = game.sea();
     if (!sea) return null;
     const facts = game.facts();
-    const read = { activities: facts?.activities ?? null, gates: facts?.gates ?? null, named: game.named };
+    const read = {
+      ...{ activities: facts?.activities ?? null, gates: facts?.gates ?? null },
+      ...{ named: game.named, ours: game.ours() },
+    };
     return islandPanelOf(game.landmass(), sea.view.docked, read, sea.position);
   };
+  // The open slots' tile as the panel is now: none once the ship lies off another region.
+  const pickedOf = (panel: IslandPanel | null): OutpostsEntry | undefined =>
+    picking === null
+      ? undefined
+      : (panel?.groups.flatMap((group) => group.entries).find((entry) => entry.id === picking) as
+          OutpostsEntry | undefined);
+  // The flow lands only at the node chosen, so a landing chooses its node first.
+  const landAt = (id: string) => ((picking = null), game.choose(id), game.does.land(id));
+  // Closing the slots lights their tile again, so Enter on the tiles never holds a slot's id no tile has.
+  const close = () => {
+    if (picking !== null) game.choose(picking);
+    picking = null;
+  };
+  const land = (slot: OutpostSlot) => void (slot.shut === null && landAt(slot.id));
   const act = (entry: IslandEntry) => {
     if (entry.shut !== null) return;
     const landmass = game.landmass();
-    // The flow lands only at the node chosen, so a landing chooses its node first.
-    if (entry.act.does === 'land') return (game.choose(entry.id), game.does.land(entry.id));
+    if (entry.act.does === 'land') return landAt(entry.id);
+    if (entry.act.does === 'outposts') return void (picking = entry.id);
     if (entry.act.does === 'playlist') return landmass.plan && game.does.playlist(landmass.plan.id);
     const node = landmass.nodes.find((each) => each.id === entry.id);
     if (node) game.does.dungeon(node);
@@ -357,6 +536,10 @@ export function islandScreen(game: IslandGame): {
       const landmass = game.landmass();
       const harbour = landmass.plan && !landmass.plan.ruined ? landmass.plan.harbour : null;
       const chart = { id: landmass.id, outline: landmass.outline, harbour, ship: sea.position };
+      const picked = pickedOf(panel);
+      if (picked) {
+        return outpostsNode(ui, picked, game.chosen(), chart, { choose: game.choose, land, close });
+      }
       return islandPanelNode(ui, panel, game.chosen(), chart, {
         choose: game.choose,
         act,
@@ -365,9 +548,20 @@ export function islandScreen(game: IslandGame): {
     },
     act: (id) => {
       const panel = panelNow();
+      const picked = pickedOf(panel);
+      if (picked) {
+        const slot = litSlot(picked, id);
+        return void (slot && land(slot));
+      }
       const entries = panel ? entriesOf(panel) : [];
       const entry = entries.find((each) => each.id === id) ?? (id === null ? entries[0] : undefined);
       if (entry) act(entry);
+    },
+    // Escape and the pad's B close the slots first, back to the tiles.
+    back: () => {
+      const open = pickedOf(panelNow()) !== undefined;
+      close();
+      return open;
     },
   };
 }

@@ -36,6 +36,7 @@ import { islesDrawing } from './islesDrawing.ts';
 import { SeaLandings } from './seaLandings.ts';
 import { seaLayer } from './seaScreen.ts';
 import { islandScreen } from './islandPanel.ts';
+import { guildLanded } from './guild/guildHeld.ts';
 import { ashoreOn, ashoreWords } from './isleVisit.ts';
 import { isleMarksOf } from './mapMarks.ts';
 import { FootView } from './footView.ts';
@@ -213,10 +214,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   );
 
   /** Leaves wherever the player was: death's grey and the story's last moment go with them. */
-  const leaveHere = () => {
-    drain.toward(false);
-    playing.after.leave();
-  };
+  const leaveHere = () => (drain.toward(false), playing.after.leave());
   /** Leaves wherever the player was for the place `entering` stands them in. */
   const goInto = async (entering: () => Promise<Foot>) => {
     leaveHere();
@@ -536,6 +534,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const island = islandScreen({
     ...{ landmass: () => playing.landmass, sea: () => playing.sea, facts: screens.facts },
     named: (id) => world.nodes.find((node) => node.id === id)?.name ?? id,
+    ours: () => guildLanded()?.sites ?? [],
     chosen: () => (playing.flow.mode === 'landing' ? playing.flow.chosen : null),
     choose: (node) => change({ kind: 'choose', node }),
     back: () => (playing.sea?.view.backToSea(), change({ kind: 'back' })),
@@ -555,7 +554,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
     ...{ playing, input, ui, hud, story, retry, change, respawn, landings, stopOrResume, openMap },
-    ...{ manage, leaveHelm, takeHelm, goThrough, landAt: island.act },
+    ...{ manage, leaveHelm, takeHelm, goThrough, landAt: island.act, islandBack: island.back },
   });
   canvas.addEventListener('click', () => {
     // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open

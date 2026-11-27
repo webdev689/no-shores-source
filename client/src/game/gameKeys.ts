@@ -37,6 +37,8 @@ export interface Controlled {
   readonly goThrough: () => void;
   /** Does what the island's panel's chosen entry does (`islandPanel.ts`), its first's with none chosen. */
   readonly landAt: (id: string | null) => void;
+  /** Closes a panel standing in the island's tiles' place (an Outposts tile's slots); whether one stood. */
+  readonly islandBack: () => boolean;
 }
 
 /** Where the player's controls act now: in a window, dead (past the edge, or fallen in a fight), at the helm, in a fight
@@ -98,6 +100,7 @@ export function listenForControls(game: Controlled): void {
     if (escape && placingNow() && !overGame()) return letGo();
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();
     else if (acts('chat') && !gearScreenOpen() && !socialUp()) openChat();
+    else if (escape && flow.mode === 'landing' && game.islandBack()) return;
     else if (escape && flow.mode === 'landing') {
       sea?.view.backToSea();
       change({ kind: 'back' });

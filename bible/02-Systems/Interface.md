@@ -9,6 +9,7 @@ code:
   - client/src/game/seaScreen.ts#seaLayer
   - client/src/game/seaLandings.ts#landingAskNode
   - client/src/game/islandPanel.ts#islandPanelNode
+  - client/src/game/islandPanel.ts#outpostsNode
   - client/src/game/playlistParts.ts#crestOf
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
@@ -1370,17 +1371,22 @@ stand:
   or a windmill with its sails broken, in mist, at first light or at a fiery dusk; a lantern on a post. A click lands
   there.
 - **The world boss**: a horned shadow rising from an ember sea, its edges facing the fire lit, its eyes and its maw
-  burning, tentacles breaking the water and a ship burning beside it. **The outpost**: its palisade and watchtower on a
-  strand at dawn, a ship off it.
+  burning, tentacles breaking the water and a ship burning beside it.
+- **The Outposts tile**, one in a region's view for all the region's outpost sites, named for its region ("Outposts of
+  the Beacon Shore"), its levels the island's: an outpost's palisade and watchtower on a strand at dawn, a ship off
+  it. A click opens its sites (below).
 
-A tile's words are its name in brass at the larger size and its levels in short ("Lv 1–5"); every other detail is a
+A tile's words are its name in brass at the larger size and under it its levels in short and its kind ("Lv 1–5 ·
+Patrol zone"; the island's own "Island", then Port, Playlist, Patrol zone, Elite Dungeon, Mission, World boss and
+Outposts), the kind left out where the name says it already, as the Playlist's does; every other detail is a
 glyph at its head, each saying its words in the tile's label, in the Journal's icons (`journalIcons.ts`) and the
 tiles' own in their style (`islandIconMaps.ts`): the port's counters (a stall under its awning) and its moorings (an
 anchor); a patrol zone's dungeons (its door), its resources (a rock veined with ore), its foes (two blades crossed),
 its Elite and Abyss seas (dim while shut) and today's modifier; an Elite Dungeon's blocks (courses of stone), seals (a
 wax seal), company (two of it), pay (the cache's chest), its week, the Elite's or the Abyss's, and its modifiers; the
-Playlist's today, its week's two and its rewards; a mission's, a world boss's and an outpost's foes and named places (a
-pin), an outpost's what it is for (a palisade); a padlock on a place that is shut. Nine fit a tile at its narrowest;
+Playlist's today, its week's two and its rewards; a mission's and a world boss's foes and named places (a pin); the
+Outposts tile's sites (a stake flying a grey pennant over a roped plot, one a site) and how many hold the player's
+guild's outposts (a palisade each, one dim at none); a padlock on a place that is shut. Nine fit a tile at its narrowest;
 more wrap onto a second row. Its label reads all of it out: its name, its line, every glyph's meaning and its
 details. The tile the keys or the pad have focused is lit, else the one under the pointer, else the first place's: a
 brass edge two pixels wide, raised 2 px, its chevron bright. Over the tiles the interface takes the keys and the pad:
@@ -1388,6 +1394,16 @@ Tab, the arrows and the pad's cross walk them, and Enter or A presses the one fo
 yielding to it; with none focused, Enter does what the lit tile does. A tile still rising takes no click. A shut
 tile's name is dim and a click on it does nothing. A landing chooses its node before it lands, as the flow lands
 only at the node chosen. A desolate city's social space is listed nowhere.
+
+The Outposts tile's sites stand in the tiles' place as the Playlist's screen opens from its tile (`outpostsNode` in
+`islandPanel.ts`): a panel 104 px down, dark and nearly opaque, its region's name in brass, its levels and kind with
+"Choose a slot to land at", and a card for each site in a row that wraps, each 260 px wide: its name in brass, a small
+chart of the region (the coast round its sites, four times as wide as they lie apart, every site a dot, its own brass in a ring, one
+holding the player's guild's outpost green), and a palisade with "Your guild's outpost" or a stake with "No outpost of
+your guild's" (the guild read as the map's marks read it, [[Guilds]]); a shut one says why. The card the keys or the
+pad have focused is lit, else the one under the pointer, else the first open one, a brass edge raised 2 px. A click on
+a card, or Enter or A, lands at its site as a place's tile does; the arrows, Tab and the pad's cross walk the cards,
+the keys and the pad held to the panel while it stands. Back, Escape or the pad's B close it, back to the tiles.
 
 ## The character screen
 
