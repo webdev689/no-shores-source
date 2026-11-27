@@ -1,7 +1,7 @@
 // The opening's riding and sailing lessons on the page, and the steps that teach the keepers' gifts (`use`): each
 // step's keys as bound now on the keys or the pad played last, as the wreck's teaching names them; which steps are done
-// anywhere, so the compass points past them; and the notice each step is announced by as the room ticks it. The rooms
-// judge every step; this only shows.
+// anywhere, so the compass points past them. A step is ticked in the tracker alone, never announced at the foot: the
+// lessons' steps come seconds apart. The rooms judge every step; this only shows.
 import type { Binds, Device } from '../../player/binds.ts';
 import { keysOf } from '../hints.ts';
 import type { Goal } from './questBook.ts';
@@ -23,14 +23,8 @@ const LESSON_KEYS: Readonly<Record<string, string>> = {
   'use:dye': 'character',
 };
 
-/** The kinds whose steps are a lesson's, by the notice's title. */
-const LESSONS: Readonly<Record<string, string>> = { ride: 'Riding', sail: 'Sailing', use: 'Your gifts' };
-
-/** Whether a goal is a lesson's step: a riding, a sailing or a gift's. */
-export const isLesson = (goal: Goal): boolean => goal.kind in LESSONS;
-
-/** The lesson's act a goal asks, `ride:gallop` and so on; none for any other goal. */
-const actOf = (goal: Goal): string | null => (isLesson(goal) && goal.act ? `${goal.kind}:${goal.act}` : null);
+/** The lesson's act a goal asks, `ride:gallop` and so on; none for a goal with no act. */
+const actOf = (goal: Goal): string | null => (goal.act ? `${goal.kind}:${goal.act}` : null);
 
 /** The keys a lesson's step is done with on `device` under `binds`, every key of each; none for any other goal. */
 export function lessonKeys(goal: Goal, device: Device, binds: Binds): string[] {
@@ -44,9 +38,4 @@ export function lessonKeys(goal: Goal, device: Device, binds: Binds): string[] {
 export function doneAnywhere(goal: Goal, atSea: boolean): boolean {
   if (goal.kind === 'ride' || goal.kind === 'use') return goal.to === undefined;
   return goal.kind === 'sail' && atSea && goal.act !== 'fire';
-}
-
-/** The notice a lesson's step is announced by as the room ticks it: the lesson, then the step. */
-export function lessonNotice(goal: Goal): { readonly title: string; readonly line: string } {
-  return { title: LESSONS[goal.kind] ?? '', line: goal.text };
 }

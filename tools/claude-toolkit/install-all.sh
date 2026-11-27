@@ -213,6 +213,12 @@ EOF
 # Its log outlives a container on the repository's orphan branch toolkit-data: taken back here (toolkit-data.sh).
 [ -z "${REPO_DIR:-}" ] || bash "$KIT_DIR/toolkit-data.sh" restore
 bash "$KIT_DIR/task-observer/install.sh"
+# The repository's Rust toolchain (rust-toolchain.toml), installed once here: parallel workers each installing it raced.
+[ -z "${REPO_DIR:-}" ] || [ ! -f "$REPO_DIR/rust-toolchain.toml" ] || (cd "$REPO_DIR" && rustup toolchain install)
+# knip, the dead-code finder for the audits (unused files, exports and dependencies): its tarball checked by SHA-256.
+tmp=$(mktemp -d) && (cd "$tmp" && npm pack -q knip@6.45.1 >/dev/null) \
+  && echo "499f07ae7839508f05affe2d5870f069ab5164a873b45145c3d22670bb5b8c18  $tmp/knip-6.45.1.tgz" | sha256sum -c --quiet - \
+  && npm install -g -q "$tmp/knip-6.45.1.tgz" && rm -rf "$tmp"
 # MarkItDown: turn uploaded PDF/Word/Excel/PowerPoint files into Markdown: `markitdown file.xlsx > file.md`
 pip install --break-system-packages -q "markitdown[pdf,docx,xlsx,pptx]==0.1.7"
 # Context7 (Upstash): current docs for libraries/tools (Playwright, npm packages). Needs mcp.context7.com allowed in the
@@ -236,8 +242,8 @@ fi
 
 # --- Commit guard, then the check ---
 # OmniRoute (AI gateway) is opt-in and NOT installed here: never in the API path without the owner's yes.
-# Git hooks in the local clone (worktrees share them): pre-commit refuses zips, C2PA-stamped PNGs, graphify-out/,
-# line-ending flips, symbolic links and unformatted files; commit-msg a joined first line or a missing session trailer;
+# Git hooks in the local clone (worktrees share them): pre-commit refuses zips, C2PA-stamped PNGs, line-ending
+# flips, symbolic links and unformatted files; commit-msg a joined first line or a missing session trailer;
 # pre-push a failed quick check or a publishing workflow started from a branch.
 if [ -d "${serena_proj:-/nonexistent}/.git" ]; then
   for h in pre-commit commit-msg pre-push; do

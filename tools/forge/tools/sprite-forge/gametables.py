@@ -1,27 +1,19 @@
-"""The game's own tables the forge's wardrobe follows, read from its modules (node): each clothing template's equip
-slot (`src/characters/equipRules.js`), its garments by variant and the armour pieces
-(`src/systems/studioArt/forgeWardrobe.js`). What can be worn together is what the game lets a character wear."""
+"""The game's own tables the forge's wardrobe follows: each clothing template's equip slot (DFO's
+`src/characters/equipRules.js`), its garments by variant and the armour pieces (DFO's
+`src/systems/studioArt/forgeWardrobe.js`), saved from those modules into `specs/game-tables.json`, as DFO's game code is
+not here. What can be worn together is what the game lets a character wear."""
 import functools
 import json
 import os
-import subprocess
 
-ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
-JS = """
-const rules = await import('./src/characters/equipRules.js');
-const w = await import('./src/systems/studioArt/forgeWardrobe.js');
-const slot = {};
-for (const g of ['MensClothing', 'WomensClothing'])
-  for (const [t, r] of Object.entries(rules.SLOT_RULES[g] ?? {})) slot[t] = typeof r === 'string' ? r : (r.slot ?? 'Cloak');
-console.log(JSON.stringify({ slot, garments: w.GARMENTS_OF_TEMPLATE, pieces: w.ARMOUR_PIECE, full: [...w.FULL_SKIRT] }));
-"""
+TABLES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs', 'game-tables.json')
 
 
 @functools.lru_cache(maxsize=1)
 def tables():
     """{slot: template -> slot, garments: template -> variants, pieces: template -> piece, full: [garment]}"""
-    out = subprocess.run(['node', '--input-type=module', '-e', JS], cwd=ROOT, capture_output=True, text=True, check=True)
-    return json.loads(out.stdout)
+    with open(TABLES) as file:
+        return json.load(file)
 
 
 @functools.lru_cache(maxsize=1)

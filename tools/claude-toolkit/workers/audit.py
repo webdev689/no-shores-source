@@ -54,15 +54,19 @@ for wt in sys.argv[1:]:
     print('  MISSING (defect):', ', '.join(missing) or 'none', '| unused, needs a "not needed, because" line:', ', '.join(optional) or 'none')
     print('  FIRST3 before first edit:', 'ok' if first3_ok or first3_ok is None and all(list(need.values())[:4]) else 'NO (claude-mem, graphify update+ask and serena must come before any Edit/Write)')
     # task-observer: workers report OBSERVATIONS: lines, only the controller logs them.
-    last_text = ''
+    last_text, all_text = '', ''
     for l in open(fs[-1]):
         try: m = json.loads(l).get('message') or {}
         except ValueError: continue
         if m.get('role') == 'assistant' and isinstance(m.get('content'), list):
             t = ''.join(b.get('text', '') for b in m['content'] if b.get('type') == 'text')
-            if t: last_text = t
-    if 'OBSERVATIONS:' not in last_text: print('  MISSING (defect): OBSERVATIONS: line in final reply')
-    w = os.path.abspath(wt.rstrip('/'))   # late owner changes: each inbox item must be answered in the final reply
+            if t: last_text = t; all_text += t
+    # A finish spread over several turns, or a line kept only in the report, still counts.
+    w = os.path.abspath(wt.rstrip('/'))
+    report = os.path.join(os.path.dirname(w), 'reports', os.path.basename(w) + '.md')
+    if 'OBSERVATIONS:' not in all_text + (open(report).read() if os.path.exists(report) else ''):
+        print('  MISSING (defect): OBSERVATIONS: line in final reply')
+    # late owner changes: each inbox item must be answered in the final reply
     inbox = os.path.join(os.path.dirname(w), 'reports', 'inbox-' + os.path.basename(w) + '.md')
     lines = open(inbox).read().splitlines() if os.path.exists(inbox) else []
     heads = [l[3:].strip() for l in lines if l.startswith('## ')] or [l.strip() for l in lines if l.strip() and not l.startswith('#')]
@@ -73,3 +77,10 @@ for wt in sys.argv[1:]:
     # The branch is the deliverable: a run that ends with its edits uncommitted has handed back nothing.
     dirty = [l for l in subprocess.run(['git', '-C', wt, 'status', '--porcelain'], capture_output=True, text=True).stdout.splitlines() if 'graphify-out/' not in l]
     if dirty: print(f'  UNCOMMITTED (defect): {len(dirty)} file(s) changed and not committed in the worktree')
+    # The type check CI runs, over every config: workers checked one `tsc -p` and missed the tests' type errors.
+    if os.path.exists(os.path.join(wt, 'package.json')):
+        try:
+            t = subprocess.run(['npm', 'run', '-s', 'types'], cwd=wt, capture_output=True, text=True, timeout=1800)
+            if t.returncode: print('  TYPES FAIL (defect): npm run -s types: ' + (t.stdout + t.stderr).strip()[-400:])
+        except subprocess.TimeoutExpired:
+            print('  TYPES FAIL (defect): npm run -s types took over 30 min')

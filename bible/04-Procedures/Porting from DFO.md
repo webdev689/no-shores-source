@@ -20,7 +20,9 @@ read-only, beside this one.
 3. **Read DFO's version as a specification**: what it does, its data and tuning, the cases its tests pinned. Leave
    behind any seam the pick list names (Daggerfall data, lore, another author's work).
 4. **Bring it over** as above, to the [[Rules]]. Carry over the behaviour DFO's tests checked as our own tests; drop
-   its pins, mutant records and cites.
+   its pins, mutant records and cites. For each DFO path the pick lists but the port leaves out, the Pick note names
+   what it did and where our version does it, or that it is dropped. Grep the ported code's comments for parts they
+   name that have no code behind them.
 5. **Write its system note** in `02-Systems`, and link it from the Pick note.
 6. **Mark the Pick note ported** in the same pull request.
 

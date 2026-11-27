@@ -373,3 +373,39 @@ test("a figure placed in the world keeps its card between the frames its scene p
   for (frame = 0; frame < 4; frame++) unplaced.push(shown(3, 0));
   assert.deepEqual(unplaced, [0, 1, 2, 3], 'one not placed in the world: every frame');
 });
+
+test('a dress draws a move whole only where every layer it wears at rest is drawn in it too', () => {
+  const quaffLooks: ForgeLooks = {
+    bodies: {
+      male: {
+        anims: { idle: cell, quaff: cell },
+        layers: { body: ['idle', 'quaff'], cuirass_iron: ['idle'], sheath_sword: ['idle'], prop_flask: ['quaff'] },
+      },
+    },
+  };
+  const forge = new Cards(
+    maker,
+    store,
+    quaffLooks,
+    { skins: { bodies: {} }, hair: { bodies: {} } },
+    { palette: [], clothing: {}, armour: {} },
+  );
+  const plated = { ...bare, outfit: { ...bare.outfit, armour: { cuirass: 'iron' } } };
+  assert.equal(forge.drawsWhole(bare, 'quaff'), true, 'the body alone, and the flask carried in it');
+  assert.equal(forge.drawsWhole(plated, 'quaff'), false, 'a cuirass the move does not draw');
+  assert.equal(forge.drawsWhole(bare, 'roll'), false, 'a move not drawn at all');
+  // A weapon put away for the drink hangs in its sheath, which the quaff must draw too.
+  const sheathed = { ...armed, outfit: { ...armed.outfit, drawn: false } };
+  assert.equal(forge.drawsWhole(sheathed, 'quaff'), false, 'a sheath the move does not draw');
+  const sheathLooks: ForgeLooks = {
+    bodies: {
+      male: {
+        anims: { idle: cell, quaff: cell },
+        layers: { body: ['idle', 'quaff'], sheath_sword: ['idle', 'quaff'] },
+      },
+    },
+  };
+  const skins = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const sheathing = new Cards(maker, store, sheathLooks, skins, { palette: [], clothing: {}, armour: {} });
+  assert.equal(sheathing.drawsWhole(sheathed, 'quaff'), true, 'a sheath the move draws');
+});

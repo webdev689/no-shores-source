@@ -37,6 +37,19 @@ impl Repo {
         std::fs::metadata(self.root.join(path)).map(|meta| meta.len()).unwrap_or(0)
     }
 
+    /// A file's text as it stands at `commit` (`origin/main`), or `None` where the clone lacks that commit or the file.
+    pub fn at(&self, commit: &str, path: &str) -> Option<String> {
+        let output = Command::new("git").args(["show", &format!("{commit}:{path}")]).current_dir(&self.root).output();
+        output.ok().filter(|output| output.status.success()).and_then(|output| String::from_utf8(output.stdout).ok())
+    }
+
+    /// The commit where `HEAD` and `other` (`origin/main`) parted, or `None` where the clone cannot say.
+    pub fn merge_base(&self, other: &str) -> Option<String> {
+        let output = Command::new("git").args(["merge-base", "HEAD", other]).current_dir(&self.root).output();
+        let output = output.ok().filter(|output| output.status.success())?;
+        Some(String::from_utf8_lossy(&output.stdout).trim().to_owned())
+    }
+
     /// The text of every file whose path passes `keep`, and apart the paths of those that are not UTF-8, so a check
     /// can report them rather than pass over them.
     pub fn sources(&self, keep: impl Fn(&str) -> bool) -> (Vec<(String, String)>, Vec<String>) {

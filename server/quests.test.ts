@@ -9,6 +9,7 @@ import { ASKS, type GearAsk } from '../client/src/network/gearMessages.ts';
 import { SnapshotKeeper } from '../client/src/network/snapshots.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 import book from '../content/quests/quests.json' with { type: 'json' };
+import { intentOf } from './intentForTests.ts';
 
 const compiled = new WebAssembly.Module(
   await readFile(new URL('../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)).catch(() => {
@@ -137,7 +138,7 @@ class Walker {
     for (let tick = 0; tick < count; tick += 1) {
       this.sequence += 1;
       const swing = swingEvery > 0 && this.sequence % swingEvery === 0 ? 1 : 0;
-      const intent = new Float64Array([0, 0, yaw, 0, 0, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
+      const intent = intentOf({ yaw }, swing);
       // The hands hold the loadout their gear allows, as a page takes it up: the kitted character's sword.
       const arms = this.quests?.arms.find((code) => code !== 0) ?? 0;
       const parts = { intent, look: { anim: '', frame: 0, facing: 0 }, arms, seen: BigInt(this.sequence - 1) };

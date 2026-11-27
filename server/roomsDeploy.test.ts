@@ -77,9 +77,14 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
   // What the protocol's version hashes: the content numbered on the wire, and the list that names it.
   const numbered = [...numberedContent.paths, 'tools/numbered.json'];
   // What the Workers import from beyond their own folder, and what that imports in turn, but the room's WebAssembly
-  // built from the crates; the bot is its own Worker, deployed by its own workflow.
+  // built from the crates; the bot is its own Worker, deployed by its own workflow, and a `*ForTests.ts` helper only
+  // the tests import.
   const workers = filesUnder('server').filter(
-    (path) => path.endsWith('.ts') && !path.endsWith('.test.ts') && !path.startsWith('server/bot/'),
+    (path) =>
+      path.endsWith('.ts') &&
+      !path.endsWith('.test.ts') &&
+      !path.endsWith('ForTests.ts') &&
+      !path.startsWith('server/bot/'),
   );
   const imported = importedFrom(workers).filter((path) => !path.startsWith('server/') && !path.startsWith('target/'));
   for (const [what, paths] of Object.entries({ included, baked, numbered, imported })) {
