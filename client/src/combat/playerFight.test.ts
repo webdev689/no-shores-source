@@ -147,6 +147,15 @@ test('a swing pressed reaches the fight, and the first person swings as the rule
   assert.equal(fighting.dress, walker.lookDress);
 });
 
+test('the dress the room is told carries the element the weapon glows in, for other players to see', () => {
+  const { walker, frame } = fightingPlayer();
+  frame(controls());
+  assert.equal(JSON.parse(walker.lookDress).glow, undefined, 'a plain weapon says none');
+  walker.glow = [2, 0];
+  frame(controls());
+  assert.deepEqual(JSON.parse(walker.lookDress).glow, [2, 0]);
+});
+
 test('a weapon changed mid-swing is shown as the rules take it up, once the swing is over', () => {
   const { fighting, walker, shown, frame } = fightingPlayer();
   frame(controls());

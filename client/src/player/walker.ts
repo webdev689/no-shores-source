@@ -416,7 +416,8 @@ export class Walker {
     this.look = { anim: this.shown.anim, frame: index, facing: you.facing };
     this.dress = dress;
     this.worn = worn;
-    this.lookDress = JSON.stringify(dress);
+    // Sent with the element the weapon glows in, so other players' pages draw it glowing too.
+    this.lookDress = JSON.stringify(this.shownGlow.some(Boolean) ? { ...dress, glow: this.shownGlow } : dress);
   }
 
   /** The first person's weapon button: the swing's own while it may swing; in a fight, a swing as the rules begin one,

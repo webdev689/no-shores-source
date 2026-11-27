@@ -1,3 +1,4 @@
+import type { GlowLook } from '../elementGlow.ts';
 import { CLOTHING_DYES, type DyeTable, type Rgb, metalOfLayer } from '../forge/dyes.ts';
 import { type CosmeticKind, bardingLayer, cosmeticOf, cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 import { type Figure, type ForgeBody, type ForgeLooks, HORSE_LAYER, type IndexLook } from '../forge/looks.ts';
@@ -65,6 +66,17 @@ export interface Dress {
   readonly race: Race;
   readonly tone: number;
   readonly outfit: Outfit;
+  /** The element each hand's weapon glows in, the right then the left, as the wearer's page sends it with their dress:
+   *  another player's figure glows in it while their weapon is drawn (`weaponGlow`). None glows in nothing. */
+  readonly glow?: readonly [GlowLook, GlowLook];
+}
+
+/** An element a dress's weapon may glow in: none, Blaze, Volt or Cosmic. */
+const isGlowLook = (value: unknown): value is GlowLook => value === 0 || value === 1 || value === 2 || value === 3;
+
+/** The element a figure in `dress` glows in: its right hand's while its weapon is drawn, else none. */
+export function weaponGlow(dress: Dress): GlowLook {
+  return dress.outfit.drawn ? (dress.glow?.[0] ?? 0) : 0;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -103,6 +115,8 @@ export function dressFrom(text: string): Dress | null {
   if (!(hair === null || (isRecord(hair) && isName(hair['style']) && isName(hair['colour'])))) return null;
   if (!isWorn(outfit['dye'], 'dye') || !isWorn(outfit['coat'], 'coat') || !isWorn(outfit['barding'], 'barding'))
     return null;
+  const glow = value['glow'];
+  if (!(glow === undefined || (Array.isArray(glow) && glow.length === 2 && glow.every(isGlowLook)))) return null;
   return value as unknown as Dress;
 }
 
