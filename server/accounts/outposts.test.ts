@@ -437,7 +437,7 @@ test("a guild at level 7 holds three outposts, one at each of a region's three s
     await standAt('Ada', site);
     return ask('Ada', 'outpost/raise', { site, turn: 0 });
   };
-  // The Beacon Shore's three slots (content/world/regions.json), and one of the Weirlands'.
+  // The accounts take any site the player stands at; these are the Beacon Shore's three slots and one of the Weirlands'.
   for (const site of ['tern-strand-outpost', 'ternwing-hythe-outpost', 'driftweed-strand-outpost'])
     assert.equal((await raiseAt(site)).status, 200, site);
   const sites = ((await read('Ada'))['outposts'] as { site: string }[]).map((outpost) => outpost.site);

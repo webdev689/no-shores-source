@@ -8,7 +8,7 @@
 use land::exact::{hash32, seed_of, sin_cos};
 use land::places::distance_to_ring;
 use land::sites::{Node, NodeKind, check_sites};
-use layout::areas::{PLOT_FROM_LANDING_M, PLOT_HALF_M};
+use layout::areas::PLOT_FROM_LANDING_M;
 use serde_json::Value;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
@@ -145,7 +145,7 @@ fn slot_at(at: [f64; 2], coast: &[Point]) -> Node {
     let shore = nearest_on(coast, at);
     let way = apart(shore, at).max(1.0);
     let spawn = [at[0] + (shore[0] - at[0]) / way * RADIUS_M * 0.8, at[1] + (shore[1] - at[1]) / way * RADIUS_M * 0.8];
-    // Named once drawn and laid (`name_of`); the placeholder only passes the sites' check.
+    // Its id and name are given from the names drawn before it (`slots_of`); the placeholder only passes the check.
     Node { id: "slot".to_owned(), kind: NodeKind::Outpost, name: "Slot".to_owned(), ring, spawns: vec![point(spawn)] }
 }
 
@@ -212,14 +212,7 @@ fn unlaid(
             let [west, north, east, south] = bake::bounds_of(&layout.ring);
             let window = landmass.surface.window(west, north, east, south);
             let Some(outpost) = bake::outpost_of(layout, &window) else { return true };
-            let steps = (-16..=16).flat_map(|row| (-16..=16).map(move |column| (column, row)));
-            let off = steps
-                .map(|(column, row): (i32, i32)| {
-                    let x = outpost.plot[0] + PLOT_HALF_M * f64::from(column) / 16.0;
-                    (window.height_at(x, outpost.plot[1] + PLOT_HALF_M * f64::from(row) / 16.0) - outpost.level).abs()
-                })
-                .fold(0.0, f64::max);
-            off > LEVEL_WITHIN_M
+            bake::plot_off(&outpost, &window) > LEVEL_WITHIN_M
                 || apart(outpost.plot, outpost.landing) > PLOT_FROM_LANDING_M
                 || !bake::on_plot(layout).is_empty()
         })

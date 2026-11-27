@@ -36,6 +36,20 @@ pub fn outpost_of(layout: &layout::Layout, window: &Ground) -> Option<OutpostGro
     Some(OutpostGround { plot, level: window.height_at(plot[0], plot[1]), muster, landing })
 }
 
+/// How far an outpost site's plot's ground stands off its level at most, read every 2 m across its square on the
+/// node's window, metres.
+#[must_use]
+pub fn plot_off(outpost: &OutpostGround, window: &Ground) -> f64 {
+    use layout::areas::PLOT_HALF_M;
+    let steps = (-16..=16).flat_map(|row| (-16..=16).map(move |column| (column, row)));
+    steps
+        .map(|(column, row): (i32, i32)| {
+            let x = outpost.plot[0] + PLOT_HALF_M * f64::from(column) / 16.0;
+            (window.height_at(x, outpost.plot[1] + PLOT_HALF_M * f64::from(row) / 16.0) - outpost.level).abs()
+        })
+        .fold(0.0, f64::max)
+}
+
 /// What stands on an outpost site's plot but its four corner stones, one line each: a model, a solid, a path, a
 /// planting, an outcrop or a site; empty for a bare plot, or a layout with none.
 #[must_use]

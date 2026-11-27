@@ -3,7 +3,7 @@
 
 use land::sites::NodeKind;
 use layout::Layout;
-use layout::areas::{PLOT_FROM_LANDING_M, PLOT_HALF_M};
+use layout::areas::PLOT_FROM_LANDING_M;
 use layout::field::distance;
 use std::path::Path;
 use std::sync::OnceLock;
@@ -15,8 +15,8 @@ struct Site {
     continent: String,
     layout: Layout,
     outpost: Option<bake::OutpostGround>,
-    /// The ground's height every 2 m across the plot's square, read on the node's baked window.
-    heights: Vec<f64>,
+    /// How far the plot's ground stands off its level at most on the node's baked window (`bake::plot_off`).
+    off: f64,
 }
 
 fn sites() -> &'static [Site] {
@@ -48,15 +48,8 @@ fn sites() -> &'static [Site] {
                                 let [west, north, east, south] = bake::bounds_of(&layout.ring);
                                 let window = landmass.surface.window(west, north, east, south);
                                 let outpost = bake::outpost_of(&layout, &window);
-                                let plot = outpost.map_or([0.0, 0.0], |outpost| outpost.plot);
-                                let steps = (-16..=16).flat_map(|row| (-16..=16).map(move |column| (column, row)));
-                                let heights = steps
-                                    .map(|(column, row)| {
-                                        let x = plot[0] + PLOT_HALF_M * f64::from(column) / 16.0;
-                                        window.height_at(x, plot[1] + PLOT_HALF_M * f64::from(row) / 16.0)
-                                    })
-                                    .collect();
-                                Site { continent: continent.id.clone(), layout, outpost, heights }
+                                let off = outpost.map_or(f64::INFINITY, |outpost| bake::plot_off(&outpost, &window));
+                                Site { continent: continent.id.clone(), layout, outpost, off }
                             })
                             .collect::<Vec<_>>()
                     })
@@ -74,7 +67,7 @@ fn every_outpost_slot_s_plot_is_level_across_its_square_near_its_landing() {
     for site in sites {
         let id = format!("{} {}", site.continent, site.layout.id);
         let outpost = site.outpost.unwrap_or_else(|| panic!("{id}: no plot, muster ground or landing"));
-        let off = site.heights.iter().map(|height| (height - outpost.level).abs()).fold(0.0, f64::max);
+        let off = site.off;
         assert!(off <= LEVEL_WITHIN_M, "{id}: its plot stands {off:.3} m off its level {:.2}", outpost.level);
         let from_landing = distance(outpost.plot, outpost.landing);
         assert!(from_landing <= PLOT_FROM_LANDING_M, "{id}: its plot lies {from_landing:.0} m from its landing");
