@@ -11,7 +11,6 @@ import { keeperMarkSvg } from '../npc/npcMarks.ts';
 import type { Notice } from '../obtained.ts';
 import { FIGURE_STATES } from '../../network/questMessages.ts';
 import { type Goal, QUESTS, type Reward, type Task, type Walked, failLine } from './questBook.ts';
-import { isLesson, lessonNotice } from './lessons.ts';
 
 /** What the page keeps of a character to tell what is new: where they walk, the task's counts and each goal's
  *  failures, the states of the figures walking for it, their pledge and Aurem, what each Art's road has earned and
@@ -98,23 +97,6 @@ export function metBetween(before: Kept, after: Kept): string[] {
       : [],
   );
   return scenes;
-}
-
-/** The keeper each lesson's steps are announced under: the Tack's riding, the Harbourmaster's sailing; a gift's step
- *  its counter's keeper, the Tailor's for the dye. */
-const lessonKeeper = (goal: Goal): string =>
-  goal.kind === 'ride' ? 'tack' : goal.kind === 'sail' ? 'harbourmaster' : (goal.to ?? 'tailor');
-
-/** The notices of the riding, sailing and gifts' lessons' steps the room ticked between `before` and `after`, in
- *  the task's order: those met in the task still walked, or every one left of a task the word saw done. */
-export function lessonsBetween(before: Kept, after: Kept): Notice[] {
-  const same = before.quest === after.quest && before.task === after.task;
-  const task = same ? QUESTS[after.quest - 1]?.tasks[after.task] : tasksDone(before, after)[0];
-  return (task?.goals ?? []).flatMap((goal, index) =>
-    isLesson(goal) && !met(goal, before.counts[index]) && (!same || met(goal, after.counts[index]))
-      ? [{ ...lessonNotice(goal), icon: keeperIcon(lessonKeeper(goal)) }]
-      : [],
-  );
 }
 
 /** The lines of a moment in the task walked between `before` and `after`: each goal's own line as its failures rise,

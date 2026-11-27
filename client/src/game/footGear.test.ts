@@ -91,14 +91,13 @@ test('the bounty board is used where a player stands before it, though no keeper
 });
 
 test("the page's reach, hold and stock are the room's", async () => {
-  const read = (path: string) => readFile(new URL(`../../../${path}`, import.meta.url), 'utf8');
-  const [asks, character] = await Promise.all([read('crates/room/src/asks.rs'), read('crates/gear/src/character.rs')]);
-  const number = (text: string, name: string) =>
-    Number(new RegExp(`pub const ${name}: \\w+ = ([\\d.]+);`).exec(text)?.[1]);
-  assert.equal(number(asks, 'NODE_REACH'), NODE_REACH_M);
-  assert.equal(number(asks, 'GATHER_TICKS') / 60, GATHER_S);
-  assert.equal(number(asks, 'GATHER_STIR_M'), GATHER_STIR_M);
-  assert.equal(number(character, 'STOCK_MOST'), STOCK_MOST);
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs).
+  const written = await readFile(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  const room = JSON.parse(written) as Record<'nodeReach' | 'gatherTicks' | 'gatherStirM' | 'stockMost', number>;
+  assert.equal(room.nodeReach, NODE_REACH_M);
+  assert.equal(room.gatherTicks / 60, GATHER_S);
+  assert.equal(room.gatherStirM, GATHER_STIR_M);
+  assert.equal(room.stockMost, STOCK_MOST);
 });
 
 test("Shape's offer is within a counter's reach of his week's spot, marked there, and gone with him", () => {

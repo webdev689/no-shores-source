@@ -298,6 +298,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Foe Gives Up Only When the Player Is Far Away]]
 - [[The Asset Workflows Publish to R2 With the Cloudflare Token]]
 - [[One Loading Screen Covers Every Trip Until the Place Is Ready]]
+- [[The Healing Drink Is a Red Flask, Drunk in Both Views, and Heals in Red Light]]
+- [[The Heal Is a Subtle Swirl]]
+- [[Heavy Renders Run on the Owner's PC, Not on Actions]]
+- [[Heavy Forge Renders May Run on the Public Forge Mirror]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -409,6 +413,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
 - [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]
 - [[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]
+- [[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]
+- [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
 
 ## Claude's calls
 

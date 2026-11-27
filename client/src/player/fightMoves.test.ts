@@ -63,6 +63,7 @@ test('a fighter’s action holds its figure to the forge’s own moves', () => {
   const windup = lunge(10, false);
   assert.deepEqual(shown(windup), { anim: 'thrust', frame: 0, frameSeconds: 0 });
   assert.equal(fightOf(doing({ kind: 'idle' })), null);
+  assert.deepEqual(fightOf(doing({ kind: 'drink', elapsed: 30 })), { kind: 'drink', progress: 0.5 }, 'half a drink');
   const swinging = foeDoing(
     doing({ kind: 'attack', stroke: 6, elapsed: 30, strike: 24, end: 60, swing: 'plain', leftHand: false }),
     null,

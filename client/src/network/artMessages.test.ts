@@ -6,6 +6,7 @@ import { Gear, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { SPELLS, artsOf, spellNumber } from './artMessages.ts';
 import { ASKS } from './gearMessages.ts';
 import { inputBytes, readFromRoom } from './messages.ts';
+import { INTENT_FLOATS } from '../rules/fighters.ts';
 
 /** Bytes the Rust tests wrote (`cargo test -p protocol`). */
 const written = async (name: string) =>
@@ -71,7 +72,12 @@ test('every spell in the snapshot the server wrote reads back, a Dawnflare headi
 });
 
 test('a cast crosses in an input with its aim, and an Art’s asks with the fields the room reads', () => {
-  const parts = { intent: new Float64Array(18), look: { anim: 'cast', frame: 0, facing: 0 }, arms: 0, seen: 0n };
+  const parts = {
+    intent: new Float64Array(INTENT_FLOATS),
+    look: { anim: 'cast', frame: 0, facing: 0 },
+    arms: 0,
+    seen: 0n,
+  };
   const read = (bytes: Uint8Array) => Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes));
   const aimed = read(inputBytes(1, { ...parts, cast: { spell: SPELLS.duskDaggers, aim: [3, -12.5, 0.25] } }));
   assert.deepEqual([aimed.cast(), Array.from(aimed.castAimArray() ?? [])], [8, [3, -12.5, 0.25]]);

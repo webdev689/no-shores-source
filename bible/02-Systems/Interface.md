@@ -261,7 +261,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   band's row with an empty match at the left, so the middle stays centred where both fit and moves left of it, never
   under it, where they do not, at the band's top, clear of a window's footer presses in the screen's bottom 77 px (the
   menu's Close); under 900 px it is left out, the line naming the key already. They come for a keeper's
-  gift, a road's reward (an Art, a Tenet, a fragment to choose, or its Aurem), a quest acquired, a step done, a quest
+  gift, a road's reward (an Art, a Tenet, a fragment to choose, or its Aurem), a quest acquired, a step done (a
+  lesson's steps tick in the tracker alone: [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]), a quest
   done, and a Legendary or Atheric piece or Vestige found (the rest, a Legendary dye, barding or ship's dress bought
   among them, stand in the Acquired feed); the armour's gift tells the Character key, the horse's the Mount key. One
   stands at a time, in the order they came, a repeat merged with the one waiting, at most 12 waiting: 4.5 s each, 6.5 s
@@ -1842,7 +1843,8 @@ button's corner and screen, and the Tailor's wares.
 - The small words in capitals of the fight's display and the menu (a boss's faction and phase, the poise's word,
   the weapons' counts, the menu's headings and labels) keep the face's own spacing, not a wider one; the heads-up
   display's take theirs (`Text.tracking`).
-- The Anima's edge frame is drawn with the fight's display, under the game's own windows, not over them.
+- The Anima's edge frame, and a drink's red edge as its heal comes ([[Combat]], "Healing charges"), are drawn with
+  the fight's display, under the game's own windows, not over them.
 - The fight's display tells a screen reader nothing: its labels (each vital, status, ability and weapon) wait on the
   interface speaking what is not focused.
 - The drawn menu is not doubled past 1440p: the interface draws at one scale, so the menu there stands at 1280 by

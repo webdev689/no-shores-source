@@ -306,12 +306,14 @@ test("each keeper's gift on the round is announced as it is given, through the o
     giftNotice('dye'),
     giftNotice('horse'),
   ]);
-  // The last keeper heard ends the round: the next task begins with nothing counted. The ride's steps are noticed
-  // as the room ticks them, and the ship as its task is done.
+  // The last keeper heard ends the round: the next task begins with nothing counted. The ride's steps tick in the
+  // tracker alone, and the ship is noticed as its task is done.
   assert.deepEqual(gifts(watch.look(gear(1, round + 1, { counts: [0] }), true)), [giftNotice('letter')]);
   const ridden = watch.look(gear(1, round + 1, { counts: [1, 1, 1, 1, 1, 1] }), true).notices;
-  assert.equal(ridden.filter((notice) => notice.title === 'Riding').length, 6);
-  assert.deepEqual(gifts(watch.look(gear(1, round + 2, { counts: [0] }), true)), [], 'the ride done');
+  assert.deepEqual(ridden, [], "a lesson's steps: no notice");
+  const rode = watch.look(gear(1, round + 2, { counts: [0] }), true);
+  assert.deepEqual(gifts(rode), [], 'the ride done');
+  assert.deepEqual(noticed(rode), ['Step done: Ride the Bay'], "the task's own notice stays");
   assert.deepEqual(gifts(watch.look(gear(1, round + 3, { counts: [0] }), true)), [giftNotice('ship')]);
   assert.match(`${giftNotice('weapons').title} ${giftNotice('weapons').line}`, /Weaponsmith.*Melee.*Ranged/);
   assert.equal(giftNotice('armour').key, 'character', 'the armour: the key to put it on');
