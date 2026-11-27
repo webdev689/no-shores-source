@@ -1,4 +1,4 @@
-import { BODY_FLOATS, CONTROLS_FLOATS, type Mode } from './movementRules.ts';
+import { BODY_FLOATS, CONTROLS_FLOATS, type Controls, type Mode, floatsOfControls } from './movementRules.ts';
 
 /** The combat crate's strokes 1 to 6, as the way each swing goes. */
 export const STROKE_DIRECTIONS = ['down', 'downLeft', 'left', 'right', 'downRight', 'up'] as const;
@@ -97,12 +97,35 @@ const STATUSES_AT = AMMO_AT + 3;
 export const STATUS_FLOATS = 2 * STATUSES.length + 1;
 export const FIGHTER_FLOATS = STATUSES_AT + STATUS_FLOATS + TRIM_FLOATS;
 /** An intent: the controls, then the stroke held, guard, dodge, shoot, pitch, aim, the aim's mark (x, y, z) and a
- *  drink asked (`fighting.ts` writes them). */
+ *  drink asked (`intentOf` writes them). */
 export const INTENT_FLOATS = CONTROLS_FLOATS + 10;
 /** A fighter as a snapshot carries it: all but its trim, which only its own player has, in their gear. */
 export const UNTRIMMED_FLOATS = FIGHTER_FLOATS - TRIM_FLOATS;
 /** The trim of a fighter whose gear trims nothing (combat's `Trim::PLAIN`): every factor 1, nothing given back. */
 export const PLAIN_TRIM: readonly number[] = [...Array<number>(29).fill(1), 0, 0, 0, 0];
+
+/** What an intent asks of the fight after its controls; each left out asks nothing, and no mark aims along the look. */
+export interface FightAsked {
+  readonly stroke?: number;
+  readonly guard?: boolean;
+  readonly dodge?: boolean;
+  readonly shoot?: boolean;
+  readonly pitch?: number;
+  readonly aim?: boolean;
+  readonly mark?: readonly [number, number, number] | null;
+  readonly heal?: boolean;
+}
+
+/** An intent's INTENT_FLOATS numbers, in the order combat's `Intent::from_floats` reads them. */
+export function intentOf(controls: Controls, asked: FightAsked = {}): Float64Array {
+  const flag = (value: boolean | undefined) => (value ? 1 : 0);
+  const [x, y, z] = asked.mark ?? [Number.NaN, Number.NaN, Number.NaN];
+  const { stroke = 0, guard, dodge, shoot, pitch = 0, aim, heal } = asked;
+  const intent = new Float64Array(INTENT_FLOATS);
+  intent.set(floatsOfControls(controls));
+  intent.set([stroke, flag(guard), flag(dodge), flag(shoot), pitch, flag(aim), x, y, z, flag(heal)], CONTROLS_FLOATS);
+  return intent;
+}
 
 /** A whole fighter from a snapshot's, its trim put back. */
 export function trimmed(untrimmed: ArrayLike<number>, trim: readonly number[] | null | undefined): Float64Array {

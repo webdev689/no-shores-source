@@ -14,19 +14,17 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   rate limit, workflows and two new checks). A merge deploys the page, the site, the rooms and the bot, and releases
   the desktop app.
 - **Merging on the owner's yes ("merge and deploy all") as CI passes**:
-  - #242: helpers capped at two, their briefs corrected, `headroom learn` suggesting only (review 4, 5, 13).
   - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
   - #245: new repo checks, each landing with what it refuses fixed (review 8).
-- **Other sessions' pull requests**: #248 (the lying-still intent built by one helper), #249 (the welcome's steps
-  done early count), #250 (the kit runs only in cloud sessions), #251 (drops larger, weapons and armour as pickups)
-  and #252 (a newer merge on main cancels the older run's check).
+- **Other sessions' pull requests**: #249 (the welcome's steps done early count), #250 (the kit runs only in cloud
+  sessions) and #251 (drops larger, weapons and armour as pickups).
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
 - **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
 - **Merge order**: #245 moves the sea clash pin #235 moved: it takes main's line in `content/fingerprints.txt`
-  before it merges. #242 and #244 share lines in `install-all.sh`, `check_tools.py`, CLAUDE.md
-  and the Toolkit.
+  before it merges. #244 shares lines with #242, merged, in `install-all.sh`, `check_tools.py`, CLAUDE.md and the
+  Toolkit: it takes main's before it merges.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -152,6 +150,9 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 - **A Breach space's paths after its seal opens**: a space's navmesh is baked as it is first reached and never again,
   so no foe paths through a seal opened since, in a run restored or not (found by #234's audit, as it was before it).
   Baking a space again as its seal opens would change how foes move: the owner's to say.
+- **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
+  and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
+  the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
 - **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
   browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
   2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
