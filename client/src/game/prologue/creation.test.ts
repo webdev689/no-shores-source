@@ -28,7 +28,7 @@ function accounts(session: Account | null, said: string | null = null) {
     session: async () => session,
     register: async (username: string) => account({ username, guest: false }),
     login: async (username: string) => account({ username, guest: false }),
-    discord: async () => 'https://discord.test',
+    discord: async () => ({ to: 'https://discord.test' }),
   } as unknown as AccountLink;
 }
 
