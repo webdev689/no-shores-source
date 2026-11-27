@@ -24,7 +24,7 @@ code:
 
 What the world sounds like where the player is: the open sea, Saltmere's social space and its port, each of the nine
 islands by its climate, and a Breach ([[Breaches]], [[The Drowned Vale Has Its Own Music and Ambience From Freesound]]):
-each space of its run, and its gate's hollow in the vale. Each is its own: beds of wind, water and leaves under it, and
+each space of its run, and its gate's hollow in the Saltgrass Downs. Each is its own: beds of wind, water and leaves under it, and
 the calls of birds, beasts, insects, timbers and a city's work over it, placed round the listener. It is DFO's
 soundscape ([[Pick - Soundscape]]), grown to eleven places ([[Music and Ambience Come From DFO's Synthesiser]]), its
 every sound a Freesound recording the owner picked
@@ -43,7 +43,7 @@ every sound a Freesound recording the owner picked
   same at every hour, and no rain, wind, thunder or birds. The Breach's view tells the ambience its plan each frame
   (`BREACH_HEARD`).
 - **A Breach's gate.** Within 60 m of the Sunken Gate (as near as its banner stands first) the hollow's air stands at
-  the gate over the vale's own, fading in and out as a place does; while the listener's company holds the Waking the
+  the gate over the zone's own, fading in and out as a place does; while the listener's company holds the Waking the
   Spire's hum stands at the Spire, its gain the Spire's fill, so it rises as the Spire fills.
 - **The story.** While the [[Prologue]] plays, its beats at sea and on the wreck are heard as the open sea round the
   Brig or the wreck, and its shore at dawn as Saltmere's coast, under the sky the story tells ([[Sky]]): its rain,
@@ -124,7 +124,7 @@ every sound a Freesound recording the owner picked
 | Steppe | Wide wind, grass, crickets at dusk | Larks, marmots, buzzard, gusts, raven | Wolves, crickets |
 | Swamp | Marsh drone, frog chorus, still water | Gas bubbles, frogs, bullfrogs, mosquitoes, flies, a fish, reed warbler, raven, a heron | The full frog chorus, peepers, owl |
 | Tundra | Gale, whistling gusts, blown snow | Gusts, rock whistles, ice groaning, cracking and singing, ravens, a far wolf | Wolves, an owl |
-| A Breach's gate | The hollow's air at the gate; the Spire's hum as it fills, for its company | None of its own: the vale's | The same |
+| A Breach's gate | The hollow's air at the gate; the Spire's hum as it fills, for its company | None of its own: the zone's | The same |
 | The Descent | The mill race, the cave's air, the drone; a stone channel's echoes | Drips, stones, creaks, far whispers, the rock's groan | The same at every hour |
 | The Mending | The drowned green's still water, the cave, the drone; a cavern | Bubbles, drips, the crystal's ring, whispers, the rock's groan | The same |
 | The Choir | The drowned chapel's air, the drone, the cave; a long stone tail | A far bell, whispers, the crystal, drips, creaks | The same |

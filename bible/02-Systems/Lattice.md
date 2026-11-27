@@ -86,7 +86,7 @@ rendered and published the five foes the [[Public Events]] use and the death wav
   what an event leaves (a fissure, a crater). `python -I ../lattice/props.py --out <folder> [--props spire,crate]
   [--strain red]` draws a picture of each.
 - **Its public event**, the Fissure ([[Public Events Run on a Clock, After Destiny 1]], [[Public Events]]): the
-  Lattice pours out of a crack in each of Saltmere's wilds on the clock.
+  Lattice pours out of a crack in the Saltgrass Downs' High Downs on the clock.
 - **Sizes.** The Bulwark is drawn at 1.2 times a man and the Heart at 3 times, each on a larger work frame. Every
   move has rows under the ground for what it brings down before its feet (a maul's head, an anchor's crown).
 

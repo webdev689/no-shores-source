@@ -257,8 +257,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   public event's ground, which the event's own foes hold. A site's group stands when a player comes within 150 m of
   it while it stands none, none is within 40 m, and the room's living foes leave room for all of it, on a navmesh
   baked round the site then, a slice a tick, as a quest's place's is ([[Navmesh]]): within a second or two, a
-  keep's walls and floors within three. So a room opens as quickly as before. Saltmere's three zones hold 15 territories (Saltgrass
-  Downs five, Gullwing Vale five, Driftwood Moors five) beside their runs' beats. It is drawn as a
+  keep's walls and floors within three. So a room opens as quickly as before. How many territories the Saltgrass
+  Downs holds over its fourteen areas, beside its runs' beats, is unchecked. It is drawn as a
   patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
   raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
   stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes

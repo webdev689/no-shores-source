@@ -156,7 +156,7 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
     fallen count (Claude's reading: the living alone). Hard's "no respawn" read as within a running encounter.
   - New mechanics the audits proposed, not built: Keepers warded at Hard (so the crossing rule binds), Hard's seams in
     a drawn order, the Steward taking into both shores, the Spire keeping each third, a pad way to call the Steward's
-    order without voice, a new danger sound; and sinking the Sunken Gate's area into the vale.
+    order without voice, a new danger sound; and sinking the Sunken Gate's area into the Saltgrass Downs.
   - Whether a Forged weapon should differ from its Normal one in more than its name, element and perk grades.
 - **The dungeons and activities**: whether the dungeons' taking DFO's moods, dressing and landmarks as law, which the
   Pick List had left behind, stands ([[Dungeons as Claude Builds Them]]); #97's three, in its description (dungeon

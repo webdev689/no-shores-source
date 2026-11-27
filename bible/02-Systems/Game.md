@@ -714,8 +714,8 @@ taken) and the player has the helm with nothing else holding them, a ship lying 
 ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen pulling away,
 and is the player's to sail from there. A course the player sets first, or the room placing the ship away from its
 berth, leaves it as it is; either way it is docked no more. Back at sea from a patrol zone's own land (at any tier;
-never its dungeon, a run, a Breach's gate copy, an Elite Dungeon or a run started at sea), walked to through the
-crossing gates or landed on, with the ship off another region of the zone's island (the region of that island whose
+never its dungeon, a run, a Breach's gate copy, an Elite Dungeon or a run started at sea), however it was come to,
+with the ship off another region of the zone's island (the region of that island whose
 centre is nearest the ship; [[World Map]], "Regions"), the ship lies at the zone's region's anchorage, 3 km off its
 coast, facing as it did, and the view stands over it there (`regionLeft.ts`); the room places it there too
 ([[Server]], "The sea"), and the player sails from there, in reach to land on that zone again. From a zone of the
