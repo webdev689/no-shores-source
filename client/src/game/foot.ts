@@ -1,7 +1,6 @@
 import { pushedIn } from '../combat/animaMoment.ts';
 import { Arrivals } from '../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
-import { DropsShown } from '../combat/drops.ts';
 import { litMarksSeen, marksHidden, marksSeen } from '../combat/marksOver.ts';
 import { FightEffects, quietEdges } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
@@ -30,7 +29,7 @@ import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import { CAMERA_CLEARANCE_M, WALK_LENS, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { type Use, dropsLaid, gearInRoom, questRings, tellPrologue } from './footGear.ts';
+import { type Use, gearInRoom, questRings, shownDrops, tellPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
 import { FootFinds, findUse } from './finds.ts';
 import { markedHere } from './overheadMarks.ts';
@@ -101,7 +100,7 @@ export class Foot {
   private readonly effects = new FightEffects();
   /** The attack feel as made: the blows' arcs, hit-stops, the camera's kick and the lunge. */
   private readonly feel: AttackFeel;
-  private readonly drops = new DropsShown();
+  private readonly drops = shownDrops(() => this.context);
   private readonly sounds = new WorldSounds(worldOutput);
   /** The player's fall in a social space, once the room says they fell: the held shot, the tumble, its sounds. */
   private readonly falling = new FallWatch();
@@ -418,7 +417,7 @@ export class Foot {
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
     const laid = (gearHeard?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
-    const dropped = dropsLaid(this.drops, laid, clock, shot.eye, [
+    const dropped = this.drops.frame(laid, clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),
       ...foes.overheads(shot.eye, clock),

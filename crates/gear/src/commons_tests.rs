@@ -172,3 +172,23 @@ fn a_normal_vestige_a_save_holds_still_opens() {
     assert!(item.rarity <= Rarity::Magic, "a Normal Vestige opens to Normal, or now and then Magic");
     assert!(!character.vestiges.contains_key(&id));
 }
+
+#[test]
+fn while_laying_each_common_is_set_aside_numbered_with_its_foes_level_and_a_gift_is_kept() {
+    let mut character = Character::starting();
+    let held = character.items.len();
+    let rolled = (Rarity::Normal, Slot::Head, 12);
+    let (sealed, laid) = character.laying(|character| {
+        let found =
+            [character.unsealed(rolled, Source::World, &dice(1)), character.unsealed(rolled, Source::World, &dice(1))];
+        // A gift paid on the way goes where a gift goes, not onto the ground.
+        character.keep_found(Item::new(0, Kind::Head, Rarity::Normal, 3, Slot::Head), 3);
+        found
+    });
+    assert_eq!(sealed, [None, None], "no Vestige is made of a common");
+    assert_eq!(laid.len(), 2, "both set aside to be laid");
+    assert!(laid.iter().all(|(item, level)| item.rarity == Rarity::Normal && *level == 12), "{laid:?}");
+    assert_ne!(laid[0].0.id, laid[1].0.id, "each numbered as it goes, so the next common's dice are its own");
+    assert_eq!(character.items.len(), held + 1, "the gift kept, the commons not");
+    assert_eq!(character.laid, None, "laying ends with its closure");
+}

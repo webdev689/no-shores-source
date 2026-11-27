@@ -12,6 +12,7 @@ import { pushedIn } from '../combat/animaMoment.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { DropsShown } from '../combat/drops.ts';
+import { itemDropPictures } from '../combat/itemDrops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
@@ -28,7 +29,7 @@ import { LocalRoom } from '../network/localRoom.ts';
 import { roomAddress } from '../network/roomAddress.ts';
 import { type GearMessage, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import type { ArtState } from '../network/artMessages.ts';
-import { ASKS, type GearAsk, type GearStanding, type GearState } from '../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearDrop, type GearStanding, type GearState } from '../network/gearMessages.ts';
 import { fetchRoomWasm, startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
@@ -42,6 +43,7 @@ import { STALL_REACH, gearMarked, nodesInReach } from './gearGround.ts';
 import { marksSeen } from '../combat/marksOver.ts';
 import { GearPanel, type GearView } from './gearPanel.ts';
 import { PanelAsks } from './panelAsks.ts';
+import { type QaDrop, qaDrops } from './qaDrops.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
@@ -49,7 +51,7 @@ import { CARD_NEAREST_M, type Placed, cardStand, eyeOf, frameAt, viewOf } from '
 import { type Orbit, cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
 import { type Player, newPlayer, playerCamera, shownBody } from '../player/player.ts';
-import { AIM, type AimPlace, handsZoom } from '../player/playerCamera.ts';
+import { AIM, type AimPlace, type ViewMode, handsZoom } from '../player/playerCamera.ts';
 import { OtherPlayers } from '../player/others.ts';
 import { Walker } from '../player/walker.ts';
 import { AimPanel } from './aimPanel.ts';
@@ -303,7 +305,24 @@ async function start(): Promise<void> {
   const playerFight = new PlayerFight(fighting, combatRules, player);
   const hud = new Hud(abilityPictures, forge);
   const effects = new FightEffects();
-  const dropsShown = new DropsShown();
+  const dropsShown = new DropsShown(
+    itemDropPictures(
+      () => forge,
+      () => player.you.dress,
+    ),
+  );
+  // A development page lays drops of every kind for its pictures, beside the room's, and stands the player's eye to
+  // see them (`qaDrops.ts`): `__qaDrops(laid, { yaw, pitch, view })`.
+  let qaLaid: GearDrop[] = [];
+  let qaNumbered = 90_000;
+  if (import.meta.env.DEV)
+    Object.assign(window, {
+      __qaDrops: (laid: readonly QaDrop[], look: { yaw?: number; pitch?: number; view?: ViewMode } = {}) => {
+        player.player = { ...player.player, ...look };
+        const { body, yaw } = player.player;
+        qaLaid = qaDrops(laid, [body.x, body.y, body.z], yaw, (qaNumbered += 100));
+      },
+    });
   // The foes' figures, apart from the panel's figures; they and other players are drawn gliding between the room's
   // snapshots.
   const foes = new FoeFigures(roster);
@@ -443,7 +462,11 @@ async function start(): Promise<void> {
     drawn.push(...foes.cards(fighting, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's gun as it faces.
     const fpMuzzle = inFirstPerson ? firstPerson.muzzle : null;
-    const dropped = dropsShown.frame(gear?.drops ?? [], clock, cameraOf(camera).eye);
+    const dropped = dropsShown.frame(
+      qaLaid.length > 0 ? [...(gear?.drops ?? []), ...qaLaid] : (gear?.drops ?? []),
+      clock,
+      cameraOf(camera).eye,
+    );
     const marks = effects.marks(fighting, running ? seconds : 0, {
       eye: cameraOf(camera).eye,
       blocks: STOOD,

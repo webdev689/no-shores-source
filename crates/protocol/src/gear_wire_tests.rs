@@ -79,8 +79,9 @@ fn the_gear_message_carries_the_quest_walked_its_counts_what_is_earned_and_where
 }
 
 /// A room whose first player holds a granted Legendary sword worn, a Vestige carried, two Ammo crates and half their
-/// ammunition, with a resource node spent, an Ammo box and a Magic Vestige lying for them, and two letters in their
-/// mail: a Rare Vestige for the arms at level 9 left lying, and a Magic hull at level 6 salvaged.
+/// ammunition, with a resource node spent, an Ammo box, a Magic Vestige and a Normal bow found as itself lying for
+/// them, and two letters in their mail: a Rare Vestige for the arms at level 9 left lying, and a Magic hull at level 6
+/// salvaged.
 fn furnished() -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.furnish(Some([0.0, 0.0]), vec![ResourceNode { x: 0.0, y: 1.0, resource: 4 }]);
@@ -117,6 +118,8 @@ fn furnished() -> (Room, PlayerId) {
     kept.post(Source::Salvage, Posted::Item(gear::Item::new(0, Kind::Hull, Rarity::Magic, 6, Slot::Hull)));
     assert!(room.restore_character(player, &kept.to_json()), "the character kept again");
     room.lay_drop(player, Dropped::Vestige(Vestige::new(90, Rarity::Magic, Slot::Head, 20)), [3.0, 2.0, 0.0]);
+    let bow = gear::Item::new(0, Kind::Bow, Rarity::Normal, 5, Slot::Ranged);
+    room.lay_drop(player, Dropped::Item(bow, 5), [5.0, 2.0, 0.0]);
     (room, player)
 }
 
@@ -206,6 +209,25 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     assert_eq!(drops[0].flying(), crystal, "a Vestige, a tick into its longer flight");
     let flying = u8::try_from(room::AMMO_REST_TICKS - 1).expect("a tick");
     assert_eq!((drops[1].kind(), drops[1].flying()), (2, flying), "a crate, a tick into its flight");
+}
+
+#[test]
+fn an_item_lying_as_itself_crosses_as_the_item_with_its_colour_and_slot() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let mut sword = gear::Item::new(0, gear::Kind::Sword, Rarity::Normal, 9, Slot::Melee);
+    sword.name = 3;
+    room.lay_drop(player, Dropped::Item(sword, 9), [4.0, -6.0, 0.5]);
+    room.lay_drop(player, Dropped::Crate, [1.0, 1.0, 0.0]);
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    let drops: Vec<_> = gear.drops().expect("drops").iter().collect();
+    assert_eq!((drops[0].kind(), drops[0].rarity(), drops[0].slot()), (4, Rarity::Normal as u8, Slot::Melee as u8));
+    let item = drops[0].item().expect("the item itself");
+    assert_eq!((item.kind(), item.name(), item.level()), (gear::Kind::Sword as u8, 3, 9), "its kind and look roll");
+    assert!(drops[1].item().is_none(), "a crate holds no item");
+    let flying = u8::try_from(room::VESTIGE_REST_TICKS).expect("a tick");
+    assert_eq!(drops[0].flying(), flying, "it flies as a Vestige does");
 }
 
 #[test]

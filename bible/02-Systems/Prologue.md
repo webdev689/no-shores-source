@@ -456,7 +456,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     past the step down from it ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]), drawn as the item itself
     (`LyingArms`): the forge's picture of it, as the Character page shows it, upright and turned to the eye at its true
     size, moving as a drop of loot does: popped up from its planks the first time it is drawn, as play begins, bouncing
-    to rest, then hovering and bobbing as a Vestige's crystal does, with no shade under it, its Normal drop's line of
+    to rest, then hovering and bobbing as a Vestige's crystal does, with no shade under it, its Normal drop's pillar of
     light rising over it once it rests.
     Walked over, the room puts them in the pack
     (`Room::story_take`). Should they leave the pack (dismantled), they lie on the deck again.
@@ -489,7 +489,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     Bring the boarder down.
   - "Arm yourself with the bow": the boarder brought down once both lessons are made drops a bow where it fell, the
     story's own Normal Bow of level 1, lying as the sword and shield lay (`LyingArms`: popped up, bouncing, hovering,
-    its line of light), drawn half again its true size so the thin bow reads where it fell until walked over, when the room puts it in the pack (`Room::story_take`); a boarder brought
+    its pillar of light), drawn half again its true size so the thin bow reads where it fell until walked over, when the room puts it in the pack (`Room::story_take`); a boarder brought
     down before then drops nothing, and none comes after. Steps: Take up the bow, Equip it (I, the Character page's
     Ranged slot), Switch to the bow (2), Loose an arrow (Left button or F, an arrow gone from the bow), Back to your sword (1).
   - The wisp ([[The Game Shows the Mystery and Explains Almost None of It]]): once the bow is taught, one of the

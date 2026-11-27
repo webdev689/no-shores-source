@@ -5,7 +5,10 @@
 // with, while a quest asks it), a puzzle's point used, a chapter of the lore lying there found, or a node within reach
 // gathered while E is held. The room judges every use; the rings and beams only show where.
 
-import type { DropsShown } from '../combat/drops.ts';
+import { DropsShown } from '../combat/drops.ts';
+import { itemDropPictures } from '../combat/itemDrops.ts';
+import type { Cards } from '../player/cards.ts';
+import type { Dress } from '../player/dressing.ts';
 import { markRing } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink } from '../network/roomConnection.ts';
@@ -15,7 +18,6 @@ import { SERVED_M, offerAt } from './plazaLife.ts';
 import { KEEPERS } from './keepers.ts';
 import { goalOf, puzzlePoints } from './quests/questBook.ts';
 import { shapeSpot } from './townsfolk.ts';
-import { chime } from './uiSounds.ts';
 import { chapterAt } from './compendium/loreBook.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -156,20 +158,17 @@ export function questRings(gear: GearState | null, floor: (x: number, y: number)
   return out;
 }
 
-/** The drops lying for the player (`lying`), flying and standing, seen from `eye`, laid after the marks in `out`, and
- *  where each came to rest this frame; a Rare or finer chimes as it comes to rest. */
-export function dropsLaid(
-  drops: DropsShown,
-  lying: Parameters<DropsShown['frame']>[0],
-  clock: number,
-  eye: readonly [number, number, number],
-  out: number[],
-) {
-  const shown = drops.frame(lying, clock, eye, out);
-  const rarest = Math.max(-1, ...shown.rested);
-  if (rarest >= 2) chime(rarest);
-  return shown;
-}
+/** The drops lying for the player as they are drawn, an item found as itself in its picture on their own body, as
+ *  `seen` holds the forge and the player when asked. */
+export const shownDrops = (
+  seen: () => { readonly forge: Cards; readonly walker: { readonly you: { dress: Dress } } },
+) =>
+  new DropsShown(
+    itemDropPictures(
+      () => seen().forge,
+      () => seen().walker.you.dress,
+    ),
+  );
 
 /** On foot the story is always behind the page: every way there comes after it, played through or passed over (Begin
  *  at the title, a `?at=` link, a story that could not start or go on). So no character is kept out of the patrols by

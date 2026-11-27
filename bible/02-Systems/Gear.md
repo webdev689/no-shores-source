@@ -195,9 +195,11 @@ number is one of [[Gear as Claude Shapes It]].
 - **Commons drop as themselves** ([[Commons Drop as Themselves, Never as Vestiges]]). A Vestige is Magic or finer:
   wherever a Vestige rolls Normal (a kill's, a Boss's or a Miniboss's, at sea too, a chest's, a first clear's, a
   playlist's, the [[Test Ground]]'s), the Normal item comes instead, made as that Vestige would have opened, at
-  Normal, of its slot, level and content (`unsealed`), at the same chance, the colours' weights as they stand. It is
-  kept as an item found as itself is: in its slot's nine, else the vault, else the mail ("Items as themselves", "The
-  mail"); the page shows it in the loot feed as every new item, never as a crystal on the ground. A Vestige still
+  Normal, of its slot, level and content (`unsealed`), at the same chance, the colours' weights as they stand. Where
+  the room lays its pieces on the ground (a kill's, a clear's, a cache's, a chest's or a container's), it lies there
+  as itself for its player, as its Vestige would have ("Drops"); elsewhere (at sea, a first clear, a playlist, the
+  Test Ground) it is kept as an item found as itself is: in its slot's nine, else the vault, else the mail ("Items as
+  themselves", "The mail"). The loot feed tells it as every new item, once it is the player's. A Vestige still
   opens below its colour as above, so a Magic one may open Normal. A Normal Vestige a save already holds is kept and
   opens as before. A package is Rare or Legendary and a week's clear Legendary or Atheric, so neither ever rolls one.
 - **Names** ([[Everything Carries a Set Name, and Perks Roll by Pool]]). Every rolled armour piece and weapon is named
@@ -237,9 +239,10 @@ number is one of [[Gear as Claude Shapes It]].
 - **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
-  slot, at the foe's level, and goes into its slot's nine, else the vault; with both full it is laid as a Vestige of
-  its colour and slot at the foe's level, whatever a named item's own, but a Normal one is posted as itself
-  (`keep_found`).
+  slot, at the foe's level, and lies on the ground for its player beside its Vestige, as a Vestige lies ("Drops").
+  Kept, as it is taken or as it is let go, it goes into its slot's nine, else the vault; with both full a finer one
+  comes as a Vestige of its colour and slot at the foe's level, whatever a named item's own, and a Normal one is posted
+  as itself (`keep_found`). At sea it is kept so as it is gathered.
 - **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
   once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
   player still in the room who shared a kill of a foe of its own groups, not a wave's or a quest's, since its last
@@ -478,8 +481,8 @@ shape.
 [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]], in [[Arts and Loadouts as Claude Shapes Them]]'s shape, after
 DFO's spoils ([[Pick - Loot Drops]]).
 
-- **What drops.** For each player who earned a kill: their Vestiges, if any dropped (by its rank, "Vestiges" above);
-  an Ammo box by the foe's rank (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always);
+- **What drops.** For each player who earned a kill: their Vestiges, if any dropped (by its rank, "Vestiges" above),
+  and their items as themselves ("Commons drop as themselves", "Items as themselves"); an Ammo box by the foe's rank (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always);
   and from a Miniboss or a Boss an Ammo crate, straight into their crates while they carry fewer than five, else
   lying with the rest (`room::drops`).
 - **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: a
@@ -500,10 +503,12 @@ DFO's spoils ([[Pick - Loot Drops]]).
   taken 122 ticks after (about 2 s: the lid's 0.22 s to open its mouth, and the longest the pour's higher pop
   bounces), and is otherwise as any drop. An event's chest that lapses unopened, or is opened as its player leaves,
   puts its Vestige in the ten, else the vault, else on the ground.
-- **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
-  the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
-  the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes
-  to the mail. A Vestige still lying as its player leaves the room goes there too ("The mail").
+- **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, an item
+  while its slot's nine or the vault has room, a box while the ammunition is not full, a crate while fewer than five
+  are carried. A piece not taken stays two minutes; then the room sends the player's gear again without it, so their
+  page stops showing it, a Vestige among them goes to the mail, and an item is kept as an item found as itself is
+  ("Items as themselves"), never lost. A Vestige or an item still lying as its player leaves the room goes the same
+  way ("The mail"). An item flies and settles as a Vestige does, thrown or poured (`Dropped::Item`).
 - **Ammo full.** A box walked onto at full ammunition stays where it lies. The share kept is the character's own, worn
   Ranged weapon or not: one with only Melee worn and a full share leaves the box, and one whose share is short takes it.
   The page works this out from what it holds (where the player stands, their drops and the share of ammunition kept) and
@@ -517,23 +522,48 @@ DFO's spoils ([[Pick - Loot Drops]]).
 
   | | A Vestige | Ammunition |
   |---|---|---|
-  | Leaves the body, its middle over the feet | 1.15 m | 1.01 m |
+  | Is drawn on the ground at, of its picture's size | twice (`VESTIGE_SCALE`) | 0.6 (`AMMO_SCALE`) |
+  | Leaves the body, its middle over the feet | 1.38 m | 0.886 m |
   | Pops up at | 4.4 to 5.4 m/s | 2.8 to 3.4 m/s |
   | Falls under | 16 m/s² | 16 m/s² |
   | Keeps of each bounce's speed, and of its way along the ground | 0.4, 0.55 | 0.3, 0.55 |
   | Settles once it lands slower than | 1.1 m/s | 1.6 m/s |
-  | Its middle over the ground bouncing, then hovering | 0.23 m, then 0.42 m | 0.31 m, then 0.5 m |
+  | Its middle over the ground bouncing, then hovering | 0.46 m, then 0.84 m | 0.186 m, then 0.3 m |
   | Rises to hover over | 0.35 s | 0.28 s |
   | Bobs | 5 cm | 6 cm |
   | Turns in the air, then at rest | 7, then 2.4 radians a second | 5, then 2.4 radians a second |
-  | Is drawn as | its crystal, 12 frames of 27 pixels for 0.7 m | its Blender model, 12 frames of 0.038 m a pixel |
+  | Is drawn as | its crystal, 12 frames of 27 pixels for 0.7 m, drawn 1.4 m | its Blender model, 12 frames of 0.038 m a pixel, drawn 0.0228 m |
 
-  The heights keep every frame's lowest pixel over the ground. A Vestige's crystal is a faceted gem crusted with
+  The heights keep every frame's lowest pixel over the ground at its size, and where it leaves the body moves with
+  where it lies, so its flight lasts as long whatever its size. A poured Vestige leaves 0.93 m over the chest's foot,
+  its middle at the mouth. A Vestige's crystal is a faceted gem crusted with
   shards, in its rarity's white, green, yellow, red or cyan blue, each frame baked as its turn first reaches it,
   cel-shaded in five bands, its outline darkened and a halo of its glow round it, added light. An Ammo box or crate is
-  its model ([[Item Pictures]]). A thin line rises from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m,
-  Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs it, a Legendary's and an Atheric's
-  pulse, and a Rare or finer chimes as it settles ([[Interface]]).
+  its model ([[Item Pictures]]). An item found as itself is its own picture as the gear screens draw it, a weapon the
+  forge's large picture dyed as they dye it, and an armour piece or a cloak as it is worn, each drawn at 1.7 times
+  (a little smaller than a Vestige's twice): a weapon as long as a Vestige's frame is tall, an armour piece its worn
+  size. It flies, hovers and bobs as a Vestige does, its picture level and facing the eye, never narrowed by a turn,
+  so it keeps its own proportions (`itemDrops.ts`). Each lies in its rarity's light, ammunition in a pale one, drawn
+  in cells as the spells are and as light added (`dropLight.ts`):
+
+  - **Glow.** A soft halo about its picture, its middle the brightest, reaching 0.45 of its height and never below
+    0.1 m over the ground, pulsing slowly (every 2 s), in flight and at rest. An item's is its own within 8 m;
+    farther off it grows, reaching its picture's ends by 20 m and a few pixels of the view past them, so a thin sword
+    or bow far off still shows where it lies.
+  - **Landing burst.** As it settles, a flash at it, a star of cells, and a ring spreading 1.5 m on the ground about
+    it (ammunition's 0.8 m, pale and half as bright), both gone in 0.7 s; a drop told of already at rest does not
+    burst. It lands with a sound in its rarity's weight, from the game's own recordings: ammunition's thud alone (`drop.land`), and with it a glass bell's tap for
+    a Normal or a Magic (`amb.breach.crystal`), a tubular bell for a Rare (`music.bell`), a deep bell for a Legendary
+    or an Atheric (`breach.toll`) ([[Interface]], "The rest").
+  - **Pillar.** Once settled, a pillar of light rises from its top over 0.4 s, a white heart in its colour's body
+    with a dim edge, its light stepping down to its tip as a glint climbs it: Normal 1.4 m, Magic 2 m, Rare 3 m,
+    Legendary and Atheric 4.5 m, pulsing; ammunition's 0.6 m, pale and half as bright. No end is flat: its foot fades
+    in out of the glow over its lowest quarter, and over its upper third it narrows cell by cell to a point as it
+    fades out. Its cells grow with distance, so it is seen from far off.
+  - **Motes.** At rest, motes drift up from it, 0.9 m in 1.6 s, fading in and out: a Normal's four, two more each
+    rarity up, ammunition's three.
+
+  A player who asks for reduced motion sees no ring and no motes, the glow and the pillar steady.
 
 ## The mail
 

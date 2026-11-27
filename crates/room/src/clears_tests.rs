@@ -24,13 +24,13 @@ fn fell_all(room: &mut Room, player: PlayerId) {
 #[test]
 fn a_dungeon_cleared_pays_who_fought_it_once_with_an_item_and_a_patrol_pays_none() {
     let (mut room, player) = cleared_room(NodeKind::Dungeon);
-    let items_before = room.players[&player].character.items.len();
     fell_all(&mut room, player);
     let after_kills = room.players[&player].character.xp;
     room.tick();
     let paid = room.players[&player].character.xp - after_kills;
     assert!(paid >= 2_000, "a dungeon's clear at its levels: {paid}");
-    assert!(room.players[&player].character.items.len() > items_before, "its Miniboss's item, and the clear's");
+    let lying = room.drops_for(player).filter(|drop| matches!(drop.what, crate::Dropped::Item(..))).count();
+    assert!(lying >= 1, "the clear's item, laid for the player: {lying}");
     room.tick();
     assert_eq!(room.players[&player].character.xp - after_kills, paid, "paid once until a group stands again");
     let (mut patrol, walker) = cleared_room(NodeKind::Patrol);

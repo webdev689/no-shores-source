@@ -79,6 +79,9 @@ one that did nothing says why on the console, which the driver prints.
 - `__qaEye([east, south, up, bearing, degrees down])` stands the camera anywhere, on foot, at sea and in the story;
   `__qaEye(null)` lets it go. At sea it takes the sea's own metres.
 - `__qaLook(view)` turns the camera to a view without arriving again (development).
+- `__qaDrops(laid, { yaw, pitch, view })`, on a development page of the Test Ground (`/testground/`), lays each kind of
+  drop (a Vestige, an Ammo box or crate, or an item as itself by its kind's name) where the player stands and faces,
+  flying or at rest (`testground/qaDrops.ts`).
 - `__qaSea()` sets out for the ship as "Return to ship" does, only from on foot: under the arrival's veil it answers
   false. A sea plan asks it again until `self.__qaGame.flow.mode === 'sea'`, and pictures only then.
 - `__qaShip({ hull, dress, emblem })` dresses the own ship as a page alone cannot, holding no gear; `null` lets go.

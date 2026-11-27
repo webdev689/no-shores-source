@@ -86,12 +86,25 @@ export interface WorldFrame {
   readonly others: ReadonlyMap<number, Placed>;
   readonly foes: ReadonlyMap<number, Placed>;
   readonly ground: StepGround;
-  readonly landed: readonly Point[];
+  readonly landed: readonly Landing[];
   readonly crates: number | null;
   /** Cues heard where something else happened (game/publicView.ts): a public event's beats, a Breach's moments. */
   readonly heard?: readonly HeardSound[];
   /** Riders who are no player: a road's escort on its horse (quests.ts `riders`). */
   readonly riders?: readonly Rider[];
+}
+
+/** A drop come to rest: where, and its rarity (none for ammunition). */
+export interface Landing {
+  readonly at: Point;
+  readonly rarity: number | null;
+}
+
+/** The cues a drop lands with, from the game's own recordings: its thud, and a chime in its rarity's weight, a glass
+ *  bell's tap for a Normal or a Magic, a tubular bell for a Rare, a deep bell for a Legendary or an Atheric. */
+export function landingCues(rarity: number | null): string[] {
+  if (rarity === null) return ['drop.land'];
+  return ['drop.land', rarity <= 1 ? 'amb.breach.crystal' : rarity === 2 ? 'music.bell' : 'breach.toll'];
 }
 
 type Play = (audio: AudioContext, out: AudioNode, id: string, rate: number) => AudioBufferSourceNode | null;
@@ -233,7 +246,7 @@ export class WorldSounds {
     }
     this.shots(frame, hear);
     this.spellsCast(fight, hear);
-    for (const place of frame.landed) hear('drop.land', place, null);
+    for (const { at, rarity } of frame.landed) for (const cue of landingCues(rarity)) hear(cue, at, null);
     for (const { cue, at, rate, whole } of frame.heard ?? [])
       heard.push(whole ? { cue, at, key: null, rate, whole } : { cue, at, key: null, short: true, rate });
     if (this.crates !== null && frame.crates !== null && frame.crates < this.crates)

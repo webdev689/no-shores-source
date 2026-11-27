@@ -254,6 +254,10 @@ pub struct Character {
     /// The Atheric bounties held and finished (`atheric_bounty.rs`).
     #[serde(default, skip_serializing_if = "crate::atheric_bounty::Bounties::is_empty")]
     pub atheric_bounties: crate::atheric_bounty::Bounties,
+    /// The items found as themselves while the room lays what is found on the ground (`laying`), each with its foe's
+    /// level: laid for their player, never kept here nor saved.
+    #[serde(skip)]
+    pub laid: Option<Vec<(crate::item::Item, u8)>>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -358,6 +362,7 @@ impl Character {
             last: None,
             passage: None,
             atheric_bounties: crate::atheric_bounty::Bounties::default(),
+            laid: None,
             unknown: UnknownKeys::new(),
         };
         let pieces = [

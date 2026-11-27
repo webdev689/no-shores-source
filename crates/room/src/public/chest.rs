@@ -47,17 +47,25 @@ impl Room {
 
     /// Pays a chest to its player: what it holds goes to their gear; its Vestige, poured out of it when they opened
     /// it, else to their ten, else to their vault, else onto the ground where the chest stood when both are full; a
-    /// leaver's into their vault however full. A Normal roll holds no Vestige: its item is kept as a found item is, in
-    /// its slot's nine, else the vault, else the mail.
+    /// leaver's into their vault however full. A Normal roll holds no Vestige but its item: poured out with it when
+    /// opened, else kept as a found item is, in its slot's nine, else the vault, else the mail.
     pub(crate) fn pay_chest(&mut self, player: PlayerId, (tier, level): (u8, u8), at: [f64; 3], paid_as: Paid) {
         let dice = self.dice(player);
         let resource = self.resource_nodes.first().map(|node| usize::from(node.resource));
         let (difficulty, day) = (self.difficulty, self.day());
         let Some(found) = self.players.get_mut(&player) else { return };
-        let Some(paid) = found.character.open_chest(tier, (level, difficulty, day), resource, &dice) else { return };
+        let open =
+            |character: &mut gear::Character| character.open_chest(tier, (level, difficulty, day), resource, &dice);
+        // Opened, its items as themselves pour out with its Vestige; else they are kept as found items are.
+        let (paid, items) = if paid_as == Paid::Opened {
+            found.character.laying(open)
+        } else {
+            (open(&mut found.character), Vec::new())
+        };
+        let Some(paid) = paid else { return };
         found.gear_changed = true;
         if paid_as == Paid::Opened {
-            self.pour(player, paid.vestige.into_iter().collect(), at, None);
+            self.pour(player, crate::drops::spoils(paid.vestige, items), at, None);
             self.tell(EventKind::ChestOpened, None, player, player, f64::from(tier));
             return;
         }
@@ -65,7 +73,7 @@ impl Room {
         // A leaver's chest is paid as they go, so the vault keeps what the ten cannot, over its limit if it must: the
         // ground they leave would lose it.
         let vaulted = paid_as == Paid::Leaving || character.vestiges_held(true) < gear::character::VAULT_MOST;
-        // A Normal roll held no Vestige: its item is kept already, as a found item is.
+        // A Normal roll held no Vestige: its item, the chest not opened, is kept already, as a found item is.
         if let Some(vestige) = paid.vestige.filter(|vestige| !character.pick_up(vestige.clone())) {
             if vaulted {
                 character.vestiges.insert(vestige.id, (vestige, true));
