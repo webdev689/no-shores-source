@@ -418,3 +418,41 @@ fn the_ward_rises_at_exactly_two_thirds_of_the_bosss_health_and_not_above() {
     assert!(room.encounters.as_ref().expect("encounters").court.ward_up, "at two thirds exactly: warded");
     assert_eq!(at.health, held);
 }
+
+#[test]
+fn the_foes_storeys_lie_half_a_dungeon_storey_apart() {
+    assert_eq!(::foes::tuning::STOREYS_APART_M, dungeon::STOREY_M / 2.0);
+}
+
+#[test]
+fn a_foe_hunts_the_nearest_player_on_its_own_storey_never_one_over_or_under_it() {
+    let (mut room, player, boss) = court();
+    let other = hardy(&mut room);
+    let body = room.foes[&boss].fighter.body;
+    // The player on the Boss's storey stands farther across than the one a storey under it.
+    let far = room.encounters.as_ref().expect("encounters").court_cells.clone().into_iter().rev().find_map(|cell| {
+        let at = crate::encounters::encounters_tests::middle_of(&room, cell);
+        (libm::hypot(at[0] - body.x, at[1] - body.y) > 3.0).then_some(at)
+    });
+    put(&mut room, player, far.expect("a cell of the Court away from the Boss"));
+    put(&mut room, other, [body.x + 1.0, body.y, body.z - dungeon::STOREY_M]);
+    room.hunt_nearest(&[boss]);
+    assert_eq!(room.foes[&boss].brain.fights(), Some(player), "the player on its own storey");
+}
+
+#[test]
+fn the_warded_boss_a_storey_off_its_post_makes_back_for_it() {
+    let (mut room, player, boss) = court();
+    let most = room.foes[&boss].fighter.health_max;
+    strike(&mut room, player, boss, most);
+    room.tick();
+    assert!(room.encounters.as_ref().is_some_and(|found| found.court.ward_up), "warded");
+    let post = room.garrison[0].at;
+    let body = &mut room.foes.get_mut(&boss).expect("it").fighter.body;
+    // Straight over its post, a storey up: as near as can be across, yet nowhere near it.
+    (body.x, body.y, body.z) = (post[0], post[1], post[2] + dungeon::STOREY_M);
+    let noticed: Vec<(FighterId, combat::Fighter)> = room.fighters();
+    let intents = room.think_foes(&noticed);
+    let (_, (_, intent)) = intents.iter().find(|(id, _)| *id == boss).expect("the Boss thinks");
+    assert_eq!(intent.controls.forward, 1.0, "it runs, never stands off its post");
+}

@@ -343,6 +343,16 @@ fn every_elite_dungeons_chests_keep_out_of_its_seals_rooms() {
             let cell = dungeon.cell_at([x, y, z]);
             assert!(!seals.contains(&dungeon.room_at(cell).expect("a room")), "{}: a chest in a seal's room", elite.id);
         }
+        // A vault with a place against its walls, seals or none, stands its gold chest.
+        let Floor::Dungeon(ground) = &room.floor else { panic!("a dungeon's ground") };
+        let placed = crate::finds::Finds::of_dungeon(&dungeon, ground, &[]).groups;
+        for &vault in dungeon.vaults.iter().filter(|vault| placed.contains(vault)) {
+            let gold = room.finds.chests.iter().filter(|chest| chest.vault).any(|chest| {
+                let [x, y, z, _] = room.finds.places[chest.place];
+                dungeon.room_at(dungeon.cell_at([x, y, z])) == Some(vault)
+            });
+            assert!(gold, "{}: vault {vault} stands its gold chest", elite.id);
+        }
         laid += 1;
     }
     assert_eq!(laid, 18, "the 18 Elite Dungeons");
@@ -447,4 +457,19 @@ fn a_dungeon_counts_the_chests_each_player_has_opened_of_all_it_stands_and_a_pat
     assert_eq!(room.chests_counted(player), (0, total), "drawn again, counted afresh");
     let (patrol, player) = patrol();
     assert_eq!(patrol.chests_counted(player), (0, 0), "a patrol's chests move on, uncounted");
+}
+
+#[test]
+fn a_dungeons_chest_draws_keep_lanes_of_their_own_for_every_chest_an_elite_dungeon_stands() {
+    let most = gear::activities::elite_dungeons()
+        .map(|elite| {
+            let (seed, style) = crate::elite_laid(elite.id).expect("its seed and style");
+            let dungeon = Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
+            (crate::finds::dungeon_chests(&dungeon), dungeon.vaults.len())
+        })
+        .fold((0, 0), |(chests, vaults), (each, vault)| (chests.max(each), vaults.max(vault)));
+    let (chests, vaults) = (u32::try_from(most.0).expect("few"), u32::try_from(most.1).expect("few"));
+    assert!(chests > 10, "an Elite Dungeon stands {chests} chests, past the old lanes' ten");
+    assert!(crate::finds::VAULT_LANE + vaults <= crate::finds::ROOM_LANE, "vaults' lane apart from rooms'");
+    assert!(crate::finds::ROOM_LANE + chests <= crate::finds::PLACE_LANE, "rooms' lane apart from places'");
 }

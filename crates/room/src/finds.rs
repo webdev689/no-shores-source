@@ -29,6 +29,11 @@ pub const SEARCHABLE_MOST: usize = 16;
 const OFF_WALL_M: f64 = 0.5;
 /// How far a second chest in a dungeon's room stands from every other, metres: two cells.
 const SECOND_APART_M: f64 = 2.0 * CELL_M;
+/// The dice lanes a dungeon's chest draws take, each its base plus the chest's (or vault's) count: a lane spans the
+/// most chests any dungeon stands, so no two draws roll alike.
+pub(crate) const VAULT_LANE: u32 = 90;
+pub(crate) const ROOM_LANE: u32 = 100;
+pub(crate) const PLACE_LANE: u32 = 200;
 pub const CHEST_HALF_DEEP_M: f64 = 0.25;
 pub const CHEST_HALF_WIDE_M: f64 = 0.45;
 /// The draws' own stream of the room's loot seed, apart from every roll of its players' loot.
@@ -143,7 +148,7 @@ impl Finds {
     /// Stands a vault's chest in a dungeon's room, against one of its walls, drawn with the rest; a room it has no
     /// place against a wall in stands none.
     pub(crate) fn stand_vault(&mut self, room: usize) {
-        if !self.vaults.contains(&room) {
+        if !self.vaults.contains(&room) && self.groups.contains(&room) {
             self.vaults.push(room);
         }
     }
@@ -328,7 +333,7 @@ impl Room {
         let vaults = self.finds.vaults.clone();
         for (nth, &room) in (0_u32..).zip(&vaults) {
             let places = in_room(&self.finds, room);
-            let Some(&place) = places.get(dice.pick(Purpose::Find, 90 + nth, places.len())) else { continue };
+            let Some(&place) = places.get(dice.pick(Purpose::Find, VAULT_LANE + nth, places.len())) else { continue };
             let number = self.take_number();
             self.finds.chests.push(Chest { place, number, until: u64::MAX, vault: true });
         }
@@ -348,13 +353,14 @@ impl Room {
                     far && !vaults.contains(&self.finds.groups[*at])
                 };
                 let free: Vec<usize> = (0..self.finds.places.len()).filter(apart).collect();
-                let Some(&place) = free.get(dice.pick(Purpose::Find, 20 + nth, free.len())) else { break };
+                let Some(&place) = free.get(dice.pick(Purpose::Find, PLACE_LANE + nth, free.len())) else { break };
                 place
             } else {
                 let first = self.finds.firsts.iter().find_map(|room| rooms.iter().position(|found| found == room));
-                let room = rooms.swap_remove(first.unwrap_or_else(|| dice.pick(Purpose::Find, 10 + nth, rooms.len())));
+                let room =
+                    rooms.swap_remove(first.unwrap_or_else(|| dice.pick(Purpose::Find, ROOM_LANE + nth, rooms.len())));
                 let places = in_room(&self.finds, room);
-                places[dice.pick(Purpose::Find, 20 + nth, places.len())]
+                places[dice.pick(Purpose::Find, PLACE_LANE + nth, places.len())]
             };
             let number = self.take_number();
             self.finds.chests.push(Chest { place, number, until: u64::MAX, vault: false });

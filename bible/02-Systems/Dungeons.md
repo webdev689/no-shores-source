@@ -407,8 +407,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   prop, a fixture or a landmark, or under a torch (`against_walls`). It stands a chest for each storey of each block
   (`dungeon_chests`), each in a room of its own, the dead ends its generator names first (`chest_rooms`) and then
   rooms drawn on the room's loot seed, and where rooms run short a room holds a second, two cells from every other;
-  a vault's chest in each of its generator's vaults but a seal's room (`stand_vault`), at a place against its wall,
-  and no plain chest there. A dungeon's chest pays more than a patrol's, a vault's the most
+  a vault's chest in each of its generator's vaults (no seal's room is a vault) that has a place against its wall
+  (`stand_vault`; a vault with none stands no chest), and no plain chest there. Each draw rolls on a lane of its own,
+  wider than the most chests a dungeon stands. A dungeon's chest pays more than a patrol's, a vault's the most
   ([[Gear]], "A find"). Each player's gear counts the chests they have opened of all it stands, and the screen names
   them under the place's name ("Chests 2 of 5"). It makes one of its props of the holding families in four
   searchable, 16 at most, none in a seal's room nor one that rock and solids leave no body room to stand beside. All
@@ -445,7 +446,7 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
 - **The plan** (`plan_encounters`) is laid from the dungeon alone, so the room and the page lay the same: its draws on
   a lane of its own, named for the dungeon's cells, its way in and its portal (`encounters:<hash>:<way in>:<portal>`),
   its maths + - * / and comparisons. A dungeon of four blocks holds two seals and one of five three, each in its own
-  room, never two of a kind. The rooms past the way in's, but the end and every landmark's, are taken in walk order
+  room, never two of a kind. The rooms past the way in's, but the end, every landmark's and every vault's (which stands its gold chest), are taken in walk order
   and split into as many stretches as there are seals. For each, while no Ascent is laid, an Ascent is tried first in
   every room of its stretch (never the first room of the walk where there are four or more), nearest the stretch's
   middle first; else each kind not yet laid, in an order drawn once, in the room nearest the middle, then outward, and
@@ -453,7 +454,9 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   of the 18 lays its full count; nine lay an Ascent, and a test holds it to nine or more.
 - **Where pieces stand.** A piece stands on a spot of its room: a cell's middle or one of its four quarters' (0.8 m
   each way toward a corner), never on the way in's or the portal's cell, nor a doorway's (but an anchor), each 0.9 m from
-  every solid and 1.4 m from every prop's and fixture's middle, so no brazier or candle stands on a piece. Runes stand 2 m apart at the least, plates 6.4 m (two cells).
+  every solid and 1.4 m from every prop's and fixture's middle, so no brazier or candle stands on a piece. Only the
+  solids, props and fixtures of its room's storey count, for a piece, a plate's line of sight and an Ascent's pads and
+  leaps alike: another storey's stand over or under its floor. Runes stand 2 m apart at the least, plates 6.4 m (two cells).
 - **Counted by the living in the room.** Every seal counts the living players standing in its room's cells: one down
   or away is not counted, for plates, waves or the stone.
 - **The Litany** (a puzzle): four to six runes, drawn, on its floor. While it runs they show in turn, each a second,
@@ -497,7 +500,7 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   garrison does (a wave's foes do not hold it), then runs until broken (`SealBroken`, told to every player with how
   many are broken). A wave is one of the dungeon's own Major or Elite foes for each living player in its room, two to
   four, drawn from its garrison's table at its foes' levels, standing at the room's doorways and hunting the nearest
-  living player; a seal's waves stand no more while eight of them live, nor past the room's most foes.
+  living player on its storey (one on another is never near, `seals::near`); a seal's waves stand no more while eight of them live, nor past the room's most foes.
 - **Spoilless.** Every foe an encounter stands (its waves, a wrong rune's, a ward's) drops nothing when killed, as a
   defence tried again stands foes that drop nothing (`quests.spoilless`): kills there pay their experience, and the
   seal's breaking and the cache stay the reward. An unfinished seal's waves keep coming, so they could otherwise be
@@ -507,7 +510,7 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   beyond the first, as a public event's great foes are (`toughen`). At two thirds of its health, and again at one
   third, a blow that would take it to that share or past is held there and the Boss is warded (`WardRaised`): a wave of the dungeon's
   foes for each living player, two to four, stands at its anchors, and another 15 s on while the ward still stands.
-  While warded the Boss runs back to its post and stands there (`hold_ward`), striking where it stands, and every 8 s
+  While warded the Boss runs back to its post, by the navmesh from off its floor (a flight or another storey), and stands there (`hold_ward`), striking where it stands, and every 8 s
   from the ward rising it slams: a ring 4 m round it shown 2 s, then 30% of their health from every living player
   inside it (`BossSlammed`). Its three anchors stand in the end room 2.4 m or more from its post, each the spot
   farthest from the post and those taken before. A living player within 1 m of an anchor fills it; each filled for
@@ -515,7 +518,8 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   player leaves unless all three are filled; with one or two it keeps what it holds. A fallen Boss never stands again
   in its run, though the other posts do, so its Court is fought once a run (`stands_again`).
 - **The Reckoning.** From the first ward broken, while the Boss stands, every 40 s: a ring of light 2.5 m wide at one
-  anchor, in turn, shown 10 s, then 70% of their health from every living player it reaches outside it, a blow from
+  anchor, in turn, shown 10 s, then 70% of their health from every living player it reaches outside it (one on
+  another storey, however close across, is outside), a blow from
   the Boss (`ReckoningLanded`). It reaches the end room and every corridor its doorways open onto and the rooms those
   reach, as far as the next room's doorway (`reckoning_reach`); a player farther off, as one standing again at the way
   in, is not reached.
