@@ -143,9 +143,31 @@ export function seaDungeonRoom(name: string): {
   };
 }
 
+/** A region's dungeon's run (`regionDungeons.ts`): its island's layout id, its region's number on it, the day it is
+ *  drawn for, its slot, then at Elite or Abyss its tier, then its run's instance. Always a run. */
+const REGION_DUNGEON = new RegExp(
+  '^region-dungeon-(continent-[1-9])-r([0-2])-d([1-9][0-9]{0,5})-n([0-2])(?:--(elite|abyss))?--run-([a-z0-9]{8})$',
+);
+
+/** A region's dungeon's room by its whole name (`region-dungeon-...`); null for any other spelling. */
+export function regionDungeonRoom(name: string): {
+  readonly island: string;
+  readonly region: number;
+  readonly day: number;
+  readonly slot: number;
+  readonly seas: number;
+  readonly run: string;
+} | null {
+  const [, island = '', region = '', day = '', slot = '', tier, run = ''] = REGION_DUNGEON.exec(name) ?? [];
+  if (island === '') return null;
+  const seas = tier === undefined ? 0 : SEAS.indexOf(tier);
+  return { island, region: Number(region), day: Number(day), slot: Number(slot), seas, run };
+}
+
 /** The ask `open_run` opens a dungeon's room from, by its name and the Unix minute it opens: null for a name that is
- *  no run or sea island's dungeon (a patrol's shared Normal dungeon opens from its patrol's file), and for a guild
- *  dungeon's run, whose ask needs its outpost read first (`delveHost.ts`). */
+ *  no run or sea island's dungeon (a patrol's shared Normal dungeon opens from its patrol's file), for a guild
+ *  dungeon's run, whose ask needs its outpost read first (`delveHost.ts`), and for a region's dungeon's
+ *  (`regionDungeons.ts`). */
 export function runAsk(room: string, minute: number): string | null {
   const sea = seaDungeonRoom(room);
   if (sea) {

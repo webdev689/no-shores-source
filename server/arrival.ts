@@ -6,13 +6,13 @@
  * from its node's room, and a guild dungeon's run from its guild's outpost alone. A join to one of the company playing
  * in the room is the keeper's to judge (`keeping.ts`). A passage zone's room takes a character on the dive its kept
  * body holds, by the ways the dive allows (`intoPassage`), and an island's patrol zone one that lit a lamp in the zone
- * it comes from.
+ * it comes from. A region's dungeon's run takes one from the sea with its ship lying off that region of its island.
  */
 
 import islands from '../content/world/islands.json' with { type: 'json' };
 import regionsTable from '../content/world/regions.json' with { type: 'json' };
 import { nearestRegion, regionHolds } from '../client/src/overworld/regions.ts';
-import { nodeRoom, passageRoom, seaRoom, startedAtSea } from './roomNames.ts';
+import { nodeRoom, passageRoom, regionDungeonRoom, seaRoom, startedAtSea } from './roomNames.ts';
 
 type Point = readonly [number, number];
 
@@ -116,6 +116,8 @@ export function arrives(
   passages: Passages | null = null,
 ): boolean {
   if (passageRoom(room)) return passages !== null && intoPassage(room, from, passages);
+  const region = room === from ? null : regionDungeonRoom(room);
+  if (region) return offRegion(region, from, ship, reach);
   if (!room.startsWith('node-') || room === from || room === FIRST_ROOM) return true;
   const [to, was] = [nodeOf(room), nodeOf(from)];
   if (!to) return false;
@@ -150,6 +152,30 @@ export function arrives(
   const seas = from ? seaRoom(from) : null;
   if (seas === null || !reach || !ship || reach.locked || (!reach.social && seas !== to.seas)) return false;
   return toCoast(ship, reach.coast) <= LANDFALL_M && offRegionOf(to.id, reach.continent, ship);
+}
+
+/** Whether a character comes into a region's dungeon from the sea, its ship lying off that region of its island: off
+ *  the island's coast (`reach`, its island's), and nearest that region's centre of the island's own. */
+function offRegion(
+  region: { readonly island: string; readonly region: number },
+  from: string | null,
+  ship: Point | null,
+  reach: Reach | null,
+): boolean {
+  if (from === null || seaRoom(from) === null || !ship || !reach || reach.locked) return false;
+  const own = REGIONS.filter((each) => each.island === region.island);
+  const lies = nearestRegion(own, ship);
+  return lies !== null && lies === own[region.region] && toCoast(ship, reach.coast) <= LANDFALL_M;
+}
+
+/** An island's reach for a room of no node there, a region's dungeon's: its coast and whether its sea is locked. */
+export function islandReach(
+  continents: readonly { readonly id: string; readonly outline: readonly (readonly number[])[] }[],
+  island: string,
+): Reach {
+  const outline = continents.find((each) => each.id === island)?.outline ?? [];
+  const coast = outline.map(([x = 0, y = 0]): Point => [x, y]);
+  return { social: false, continent: island, coast, gatedFrom: [], locked: !Object.hasOwn(islands, island) };
 }
 
 /** How far a point lies from a ring's nearest edge, metres, as the page measures a ship off a coast. */

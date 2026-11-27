@@ -17,7 +17,7 @@ export const DELVE_WORDS: readonly string[] = ['Normal', 'Elite', 'Abyss'];
 export const GATE = 'gate';
 
 /** A number for a name, the same every time: FNV-1a over its bytes, as `dungeon::lane::named` makes it. */
-function named(name: string): number {
+export function named(name: string): number {
   let hash = 0x811c_9dc5;
   for (const byte of new TextEncoder().encode(name)) hash = Math.imul(hash ^ byte, 0x0100_0193) >>> 0;
   return hash;

@@ -2,7 +2,16 @@
 // the hash a session's token is known by at sea.
 
 import { healthAnswer } from './health.ts';
-import { canonicalRoom, isleRoom, nodeRoom, passageRoom, seaDungeonRoom, seaRoom, TEST_GROUND } from './roomNames.ts';
+import {
+  canonicalRoom,
+  isleRoom,
+  nodeRoom,
+  passageRoom,
+  regionDungeonRoom,
+  seaDungeonRoom,
+  seaRoom,
+  TEST_GROUND,
+} from './roomNames.ts';
 
 /** A session token's SHA-256, in hex: what the sea knows a ship played unkept by, never the token itself. */
 export async function sessionHash(token: string): Promise<string> {
@@ -18,11 +27,12 @@ export function roomName(request: Request): string | null {
 }
 
 /** Whether a name is spelled as a room the host opens (`RoomHost.openRoom`): the sea, a node's, a sea island's or its
- *  dungeon's, a passage zone's, a fleet's or the Test Ground's. Each object holds a room's WebAssembly, so a name of
+ *  dungeon's, a region's dungeon's run, a passage zone's, a fleet's or the Test Ground's. Each object holds a room's WebAssembly, so a name of
  *  none is refused before an object is made for it. */
 function opens(name: string): boolean {
   if (name.startsWith('fleet-') || name.startsWith(TEST_GROUND)) return true;
   if (seaRoom(name) !== null || passageRoom(name) !== null || seaDungeonRoom(name) !== null) return true;
+  if (regionDungeonRoom(name) !== null) return true;
   if (name.startsWith('isle-')) return isleRoom(name.slice('isle-'.length)) !== null;
   return name.startsWith('node-') && nodeRoom(name.slice('node-'.length)) !== null;
 }

@@ -12,6 +12,7 @@ import {
   cameOutOf,
   crossingAsked,
   crossingsOf,
+  islandReach,
   reachOf,
   shipOf,
   toCoast,
@@ -411,4 +412,23 @@ test("from the sea a node a region lists is landed on only with the ship off tha
   // A city's social space no region lists is landed on from anywhere in reach of its island, as before.
   const social = reachOfNode('overlook-social', 'social');
   assert.equal(arrives('node-overlook-social', 'sea', weirlands, social), true);
+});
+
+test("a region's dungeon's run is entered from the sea alone, its ship off that region of its island", () => {
+  const anchorage = (name: string): [number, number] => {
+    const [x = 0, y = 0] = regions[0]?.regions.find((region) => region.name === name)?.anchorage ?? [];
+    return [x, y];
+  };
+  const [beacon, weirlands] = [anchorage('The Beacon Shore'), anchorage('The Weirlands')];
+  const island = islandReach(layout.continents, 'continent-1');
+  // The Beacon Shore is the island's first region, the Weirlands its second.
+  const run = 'region-dungeon-continent-1-r0-d20420-n1--elite--run-k3j4h5g6';
+  assert.equal(arrives(run, 'sea--elite', beacon, island), true, 'off the Beacon Shore');
+  assert.equal(arrives(run, 'sea', beacon, island), true, "from the sea at any tier: the run's is its own");
+  assert.equal(arrives(run, 'sea', weirlands, island), false, 'off another region');
+  assert.equal(arrives(run, 'sea', [beacon[0], beacon[1] - 200_000], island), false, 'out of reach of the island');
+  assert.equal(arrives(run, 'node-saltgrass-downs', beacon, island), false, 'from a node');
+  assert.equal(arrives(run, null, beacon, island), false, 'from nowhere');
+  assert.equal(arrives(run, run, null, island), true, 'back into it');
+  assert.equal(arrives(run, 'sea', beacon, { ...island, locked: true }), false, 'an island not yet named');
 });
