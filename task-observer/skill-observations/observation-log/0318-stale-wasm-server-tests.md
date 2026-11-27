@@ -1,7 +1,7 @@
 ---
 id: 318
 title: "Server tests failed on a stale room WebAssembly after a Rust change"
-status: open
+status: superseded
 type: methodology
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "testing"
 date: 2026-11-27
 session_context: ""
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "by #13 (the same finding for the server's tests; its body is copied there)"
 reference: ""
 commands_verified: ""
 ---

@@ -1,5 +1,5 @@
 ---
-id: 322
+id: 331
 title: "A test of a ship's swing ratio measured it one second after the wheel went over, while the swing was still limited by its acceleration, so it passed while the settled swing was wrong; a review found it, and a 6-fight paired table had been read as a balance defect"
 status: open
 type: open-source
@@ -22,3 +22,5 @@ commands_verified: "cargo test -p naval --lib held_at_the_same_way (fails on the
 **Suggested improvement:** In the Testing note: a test of a rate (speed, swing, reload) reads it settled, with what it depends on held equal (here the way), and at several points across its range; a transient reading needs its own named test. A measurement table that drives a tuning call states its sample size, and a surprising row is probed per trial (and with more trials) before any number moves.
 
 **Principle:** Test the quantity a player is shown, at the state it is shown for; a value read where another limit binds can only confirm that limit. Read a small sample's surprise as a question, not an answer.
+
+(Renumbered from #322 at the 2026-11-27 review: two observations held that id.)

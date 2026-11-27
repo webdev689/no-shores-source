@@ -1,5 +1,5 @@
-reviewed 2026-11-20
-tier project-instructions: present — /home/user/overlook-source/CLAUDE.md "Every session" step 3 names task-observer's session-start scan (probe and scan in one command; the skill load is not named in the same line)
-tier session-start-hook: present — the SessionStart hook's additional context says to invoke the task-observer skill before planning, then run the scan, with the workspace path
-tier scheduled-task: none — no scheduler can reach this container's /root/toolkit-data (cloud scheduler, ephemeral container): manual reviews only
+reviewed 2026-11-27
+tier project-instructions: present — /home/user/no-shores-source/CLAUDE.md "Every session" step 3 runs task-observer's session-start scan (the repository was renamed from overlook-source since the 2026-11-20 baseline; same block); the skill load is not named in that line
+tier session-start-hook: present — /root/.claude/settings.json's SessionStart hook says to invoke the task-observer skill before planning, then run the scan, with the workspace path
+tier scheduled-task: none — no scheduler can reach this container's /root/toolkit-data (cloud scheduler, ephemeral container): manual reviews only; the log carries over on the repository's toolkit-data branch
 restates: none (no scheduled prompt exists)

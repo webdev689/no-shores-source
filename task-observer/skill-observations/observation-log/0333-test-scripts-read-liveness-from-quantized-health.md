@@ -1,5 +1,5 @@
 ---
-id: 324
+id: 333
 title: "A scripted test player judged a foe standing by health above 0 as it crosses the wire, so a foe alive with a sliver read as fallen"
 status: open
 type: open-source
@@ -22,3 +22,5 @@ commands_verified: "run: cargo test -p room-wasm public_door with a per-600-tick
 **Suggested improvement:** In Testing.md, a line: a script or test that asks "is it alive / standing / done" reads the explicit state the system keeps (an action, a phase, a flag), never a number compared with zero after it has been rounded or packed.
 
 **Principle:** Never infer a discrete state from a quantized continuous value; read the state itself, or a rounding boundary will one day flip the answer.
+
+(Renumbered from #324 at the 2026-11-27 review: two observations held that id.)

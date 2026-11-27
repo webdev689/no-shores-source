@@ -1,5 +1,7 @@
 # Observations review — 2026-11-27
 
+> Ids moved after this review was written (two entries held each id): note 1 (push not gated on the check) is now 329; the newcomers saved at 321 to 325 are now 330 to 334. A second reading the same day, in parallel, is `second-reading.md` beside this file; it agrees on the decisions.
+
 289 open notes, read in four slices (A: the Toolkit note, B: the workers, C: testing and pictures, D: CLAUDE.md,
 procedures and the rest). Each slice's verdicts, one line per note, are in `result-A.md` to `result-D.md` beside this
 file. Two notes that arrived from a parallel session mid-review (0318, 0319) were read here and join decision 7.

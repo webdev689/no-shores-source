@@ -1,7 +1,7 @@
 ---
 id: 319
 title: "A bare tsc passed where CI's full type check failed on the server"
-status: open
+status: superseded
 type: methodology
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "testing"
 date: 2026-11-27
 session_context: ""
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "by #296 (the same finding; its body is copied there)"
 reference: ""
 commands_verified: ""
 ---

@@ -1,5 +1,5 @@
 ---
-id: 325
+id: 334
 title: "A priority rule over a one-at-a-time shared baker blocked the new consumer's own bake in flight"
 status: declined
 type: open-source
@@ -22,3 +22,5 @@ commands_verified: "run: cargo test -p room --lib reinforcements -> 3 failed (no
 **Suggested improvement:** Where a test plan adds a consumer to a single-slot resource, test both directions: the old consumers are not starved, and the new one completes its own in-flight work.
 
 **Principle:** A yield-to-others rule over a single slot must tell one's own in-flight work from another's, or it deadlocks on itself.
+
+(Renumbered from #325 at the 2026-11-27 review: two observations held that id.)

@@ -1,5 +1,5 @@
 ---
-id: 323
+id: 332
 title: "A clean auto-merge broke Rust the controller never compiled before pushing"
 status: open
 type: open-source
@@ -24,3 +24,5 @@ still break: one side moved a function's code, the other edited its old body.
 `npm run -s types`, whatever the conflicts touched.
 
 **Principle:** A merge is checked as a whole change, not as its conflicts.
+
+(Renumbered from #323 at the 2026-11-27 review: two observations held that id.)

@@ -1,5 +1,5 @@
 ---
-id: 0010
+id: 10
 title: "An audit claim's stated reach was wider than its real one; the fix sized to the claim broke four other tests"
 status: actioned
 type: open-source

@@ -1,5 +1,5 @@
 ---
-id: 0009
+id: 9
 title: "A read-only audit agent, briefed without the builder's conclusions, found ten real faults in a passing branch"
 status: actioned
 type: internal

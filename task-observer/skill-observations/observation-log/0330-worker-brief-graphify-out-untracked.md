@@ -1,5 +1,5 @@
 ---
-id: 321
+id: 330
 title: "A worker's brief told it to `git checkout -- graphify-out`, which fails in a worktree where graphify-out is not tracked; a stale wasm's error never says it is stale"
 status: open
 type: open-source
@@ -27,3 +27,5 @@ context7 and skillsmp were refused by the proxy for this worker, as for earlier 
 graphify-out` lists anything"), and add one line: "a client test failing with `unknown variant` after a Rust enum
 changed means the wasm is stale: `npm run wasm`". In `bible/03-Code/Toolkit.md`, note context7 and skillsmp are
 unreachable from cloud sessions behind the proxy, so briefs stop asking for them there.
+
+(Renumbered from #321 at the 2026-11-27 review: two observations held that id.)

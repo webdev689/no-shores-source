@@ -1,5 +1,5 @@
 ---
-id: 0012
+id: 12
 title: "A baseline worktree sharing the cargo target dir overwrote the current tree's test binary"
 status: actioned
 type: internal

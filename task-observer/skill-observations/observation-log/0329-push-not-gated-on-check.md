@@ -1,5 +1,5 @@
 ---
-id: 1
+id: 329
 title: "A push chained after cargo xtask check with ';' ran though the check failed"
 status: open
 type: internal
@@ -22,3 +22,5 @@ passes. Run it before every push."
 Fixed: the comment cut to eight lines, the check passing, the fix pushed with the push gated by `&&` on the check.
 Lesson for the kit: a push in a chained command is always `check && push`, never `check; push`. A pre-push git hook
 running the repo checks would catch it mechanically; that is a new check, so it needs the owner's agreement.
+
+(Renumbered from #1 at the 2026-11-27 review: two observations held that id.)

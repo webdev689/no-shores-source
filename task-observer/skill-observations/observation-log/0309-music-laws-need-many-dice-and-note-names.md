@@ -1,5 +1,5 @@
 ---
-id: 0309
+id: 309
 title: "Music laws hid defects: six fixed dice, a die of 0.5, exact pitches, and a 'new pieces' scope"
 status: open
 type: internal

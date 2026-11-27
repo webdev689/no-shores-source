@@ -1,5 +1,5 @@
 ---
-id: 0011
+id: 11
 title: "A full check run beside headless picture renders failed a wall-clock test on unchanged code"
 status: actioned
 type: internal

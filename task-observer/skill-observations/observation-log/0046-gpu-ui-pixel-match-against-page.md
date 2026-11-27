@@ -1,5 +1,5 @@
 ---
-id: 0046
+id: 46
 date: 2026-11-20
 project: overlook-source
 skill: browser-qa (webgpu probes)

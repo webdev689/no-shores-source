@@ -1,5 +1,5 @@
 ---
-id: 0129
+id: 129
 title: "Rule-changing workers ran their crates' tests but not the door and server agreement tests, so fingerprint drift surfaced only at merge"
 status: open
 type: internal

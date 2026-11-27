@@ -9,7 +9,7 @@ target_file: ["bible/03-Code/Testing.md"]
 siblings_checked: "none: the target is a project note, not a skill"
 area: "testing order after a change to the shared Rust rules"
 date: 2026-11-20
-session_context: "Overlook factions round: after changing crates/gear and crates/room, npm test failed 15 files (castRoom, duel, wreckRoom...) until npm run wasm rebuilt client/public/*.wasm"
+session_context: "Overlook factions round: after changing crates/gear and crates/room, npm test failed 15 files (castRoom, duel, wreckRoom...) until npm run wasm rebuilt client/public/*.wasm; 2026-11-26: the server tests too (#318, folded in)"
 parked_until:
 resolved:
 resolution:
@@ -28,3 +28,7 @@ rebuilds the wasm when a crate is newer than `client/public/room.wasm`.
 
 **Principle:** A test suite that reads a build output must either rebuild it itself or say so where the test command
 is documented; otherwise stale artefacts masquerade as regressions and bury the real one.
+
+**Another instance (#318, folded in at the 2026-11-27 review):** Server tests (roomDoor, island rooms) load client/public/*.wasm. After a merge that changes room/room-wasm, 5 server
+tests failed ("entry is not a function") until `npm run -s wasm` rebuilt it; then all 691 passed. Proposal: Toolkit.md
+says run `npm run -s wasm` before server tests whenever crates/room* changed.
