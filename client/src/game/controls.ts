@@ -29,6 +29,7 @@ const NAMES: Readonly<Record<string, string>> = {
   control: 'Ctrl',
   alt: 'Alt',
   enter: 'Enter',
+  tab: 'Tab',
   backspace: 'Backspace',
   capslock: 'Caps Lock',
   arrowleft: 'Left arrow',
@@ -106,6 +107,7 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
     name: 'Menus',
     controls: [
       row('Map', 'landMap'),
+      row('Show or hide the legend', 'legend'),
       row('Character', 'character'),
       row('Inventory', 'inventory'),
       row('Details', 'details'),

@@ -257,6 +257,42 @@ test('the pad fights with the pointer free once the menu is shut; the keys and m
   }
 });
 
+test('a side button comes to the game as a key of its name, heard with the pointer free but not while typing', () => {
+  // The page sends it as a key of its name ('Mouse3', `sideKey`), at the window, after the button itself.
+  const page = globalThis as unknown as Record<string, unknown>;
+  const heard = new Map<string, (event: unknown) => void>();
+  Object.assign(page, {
+    addEventListener: (kind: string, run: (event: unknown) => void) => heard.set(kind, run),
+    document: { pointerLockElement: null },
+  });
+  let typing = false;
+  const input = new Input({ addEventListener: () => undefined } as unknown as HTMLCanvasElement, () => typing);
+  const key = (kind: string) => heard.get(kind)?.({ key: 'Mouse3', code: '', preventDefault: () => undefined });
+  BINDS.set({ ...DEFAULTS, leave: { keys: ['mouse3'], pad: [] } });
+  key('keydown');
+  assert.equal(input.frame().held('leave'), true, 'the leave held on the back button, the pointer free');
+  key('keyup');
+  typing = true;
+  key('keydown');
+  assert.equal(input.frame().held('leave'), false, 'not while words are typed');
+  BINDS.set(DEFAULTS);
+  delete page['addEventListener'];
+  delete page['document'];
+});
+
+test('the last window over the game shutting is heard, so the mouse can look round again at once', () => {
+  const { input, done } = padPage();
+  let shut = 0;
+  input.onShut(() => (shut += 1));
+  input.window('gear');
+  input.window('sheet');
+  assert.equal(shut, 0, 'one window giving way to another');
+  input.window(null);
+  input.window(null);
+  assert.equal(shut, 1);
+  done();
+});
+
 test("a press a waiting line takes is no other control's: Space jumps not, E uses not, the left button guards not", () => {
   const down = new Set(['jump', 'use', 'guard', 'continue', 'forward']);
   const frame: InputFrame = { ...IDLE, pressed: (action) => down.has(action), held: (action) => down.has(action) };

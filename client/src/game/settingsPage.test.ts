@@ -7,6 +7,8 @@ import { Rebinding } from './rebinding.ts';
 import { GRASS, SHADOWS, grassShare, shadowsOn } from './graphicsChoices.ts';
 import { resolution, setResolution } from './renderScale.ts';
 import { SETTINGS_TABS, SWITCH, Settings, type SettingsTab, titleAddress } from './settingsPage.ts';
+import { masterVolume, setMasterVolume } from './uiSounds.ts';
+import { interfaceScale, interfaceSize, setInterfaceSize } from '../ui/interfaceSize.ts';
 
 /** Settings drawn at `tab`, its account `account` (none offline), leaving or closing `page`, in `room`. */
 function settingsAt(
@@ -43,8 +45,44 @@ test('Settings stands in tabs, Graphics, Audio, Controls and Account, each a pre
   }
   assert.match(page.shows(), /ACCOUNT \| Playing offline: there is no account\./);
   page.click('settings-audio');
-  assert.match(page.shows(), /VOLUME \| Interface sounds .* World sounds .* Music .* Ambience/);
+  assert.match(page.shows(), /VOLUME \| Master .* Interface sounds .* World sounds .* Music .* Ambience/);
   assert.ok(page.ui.boxOf('volume-music'), 'the music slider is laid');
+  assert.ok(page.ui.boxOf('volume-master'), 'the master slider over them all, as a player asked');
+});
+
+test('the master volume is kept, between none and whole', () => {
+  const before = masterVolume();
+  setMasterVolume(0.4);
+  assert.equal(masterVolume(), 0.4);
+  setMasterVolume(3);
+  assert.equal(masterVolume(), 1);
+  setMasterVolume(before);
+});
+
+test('the interface size chosen from its list is the one the game draws at, and shown', () => {
+  const screen = globalThis as unknown as Record<string, unknown>;
+  Object.assign(screen, { innerWidth: 1920, innerHeight: 1080 });
+  const page = settingsAt('graphics');
+  page.frame();
+  try {
+    assert.match(page.shows(), /Interface size \| Auto/);
+    page.click('interface-size');
+    assert.ok(
+      page.ui.boxOf('interface-size:2') && !page.ui.boxOf('interface-size:3'),
+      'as large as 1920 by 1080 holds',
+    );
+    page.click('interface-size');
+    assert.match(page.shows(), /Interface size \| Auto/);
+    page.click('interface-size');
+    page.click('interface-size:1');
+    assert.equal(interfaceSize(), '1');
+    assert.equal(interfaceScale(2), 1, 'smaller than a sharp screen would have it');
+    assert.match(page.shows(), /Interface size \| 1x/);
+  } finally {
+    setInterfaceSize('auto');
+    delete screen['innerWidth'];
+    delete screen['innerHeight'];
+  }
 });
 
 test('the resolution chosen from its list is the one drawn at, and shown', () => {

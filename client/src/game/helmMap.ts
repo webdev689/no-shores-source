@@ -130,13 +130,14 @@ export class HelmMap {
     [this.landWanted, this.onLand, this.wanted] = [sheet, true, false];
   }
 
-  /** A key pressed: the map's own while it is up (on land N lowers it as Escape does); Escape turns back on the way
-   *  down to the helm before it is raised, and on land Escape or N before it rises, every other key held meanwhile;
-   *  answers whether the key was taken. */
+  /** A key pressed: the map's own while it is up (on land its own key, `n` here, lowers it as Escape does; `legend`
+   *  hides or shows its legend); Escape turns back on the way down to the helm before it is raised, and on land
+   *  Escape or its key before it rises, every other key held meanwhile; answers whether the key was taken. */
   key(key: string): boolean {
     if (this.map?.shown) {
       if (key === 'escape' || (key === 'n' && this.onLand)) this.map.escape();
       else if (key === 'enter') this.map.setSail();
+      else if (key === 'legend') this.map.legend.toggle();
       return true;
     }
     if (this.landWanted) {

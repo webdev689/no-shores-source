@@ -10,6 +10,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
+- [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]
 - [[The Music Repeats Less, Patrol Zones First]]
 - [[TypeScript and Rust]]
 - [[Server-Authoritative Multiplayer]]
@@ -415,6 +416,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Dialogue Waits for a Click by Default, With Auto as a Setting]]
 - [[Overlook's City Below Is Lit at Night, in Detail]]
 - [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
+- [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]
 
 ## Claude's calls
 
