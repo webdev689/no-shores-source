@@ -371,7 +371,7 @@ fn the_court_is_dark_at_elite_and_abyss_and_at_normal_one_fallen_in_it_respawns_
     unseal(&mut room);
     let cell = room.encounters.as_ref().expect("encounters").court_cells[0];
     let court = crate::encounters::encounters_tests::middle_of(&room, cell);
-    put(&mut room, inside.player, court);
+    put_at(&mut room, inside.player, court);
     use gear::Difficulty::{Abyss, Elite, Normal};
     for (tier, dark) in [(Elite, true), (Abyss, true), (Normal, false)] {
         room.set_difficulty(tier);
