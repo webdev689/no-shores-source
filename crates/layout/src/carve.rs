@@ -233,7 +233,8 @@ pub fn carve(
     let heights = levels.iter().any(|&level| level > 0.0);
     let basins: Vec<Basin> = areas
         .iter()
-        .map(|area| {
+        .zip(levels)
+        .map(|(area, &level)| {
             // With heights, a gate stands in a cleft of the rock its palisade runs across, not a bowl it stands in.
             if heights && area.kind == AreaKind::Gate {
                 return Basin {
@@ -245,7 +246,7 @@ pub fn carve(
             let basin = basin(area, seating, paths, water, &mut draw);
             // With heights, a hamlet's blocks step up its hillside on terraces of their own.
             if heights && area.kind == AreaKind::Hamlet {
-                return Basin { terraces: crate::hamlets::steps(area, seating, paths), ..basin };
+                return Basin { terraces: crate::hamlets::steps(area, seating, paths, (level, rise, seed)), ..basin };
             }
             basin
         })
@@ -282,12 +283,18 @@ pub fn carve(
         let found = ways[number].points.iter().position(|&each| each == point);
         found.and_then(|index| grades.get(number).map(|levels| levels[index])).unwrap_or(0.0)
     };
+    let mut ramps: Vec<[f64; 7]> = Vec::new();
     for (number, path) in ways.iter().enumerate() {
         // Its points kept wherever it bends on the ground or in height, so each capsule runs one stretch of its grade.
         let levels = grades.get(number);
         let metres: Option<Vec<f64>> = levels.map(|levels| levels.iter().map(|level| level * rise).collect());
         let kept = crate::paths::kept(&path.points, metres.as_deref(), 3.0);
         let points: Vec<[f64; 2]> = kept.iter().map(|&at| path.points[at]).collect();
+        // Its stretches, as carved, graded steeper than a way climbs are its ramps up onto a floor too near it.
+        if let Some(levels) = levels {
+            let carved: Vec<f64> = kept.iter().map(|&at| levels[at]).collect();
+            ramps.extend(crate::heights::ramps(&points, &carved, rise));
+        }
         // With heights, a way between two areas near each other opens out into one wide floor, so they read as one
         // large place rather than two bowls and a lane.
         let open = joined.get(number).filter(|_| heights).and_then(|&[from, to]| {
@@ -337,6 +344,7 @@ pub fn carve(
             [x1, y1, x2, y2, half, foot, lifted(to)]
         }));
     }
+    terraces.extend(ramps);
     // A coven's or a cave's cavern is cut into the rock beside its floor, before the climbs, runs and dead rock are found.
     let caverns = if grades.is_empty() {
         Vec::new()

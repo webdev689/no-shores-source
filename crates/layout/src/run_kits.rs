@@ -93,19 +93,10 @@ fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     near_way(run, [west, north, east, south])
 }
 
-/// Whether a footprint comes within `WAY_CLEAR_M` of a run's way (its line and on to its door).
-fn near_way(run: &Run, [west, north, east, south]: [f64; 4]) -> bool {
-    let keep = WAY_CLEAR_M;
-    let near =
-        |at: [f64; 2]| at[0] >= west - keep && at[0] <= east + keep && at[1] >= north - keep && at[1] <= south + keep;
-    run.way().windows(2).any(|pair| {
-        let length = distance(pair[0], pair[1]);
-        let steps = (length / 0.5).ceil().max(1.0) as usize;
-        (0..=steps).any(|step| {
-            let share = step as f64 / steps as f64;
-            near([pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share])
-        })
-    })
+/// Whether a footprint comes within `WAY_CLEAR_M` of a run's way (its line and on to its door), as rocks.rs measures
+/// it: a box's corner is as far off the way as it lies, not as far as a square grown round the box would reach.
+pub(crate) fn near_way(run: &Run, print: [f64; 4]) -> bool {
+    run.way().windows(2).any(|pair| crate::paths::rect_off_line(print, pair[0], pair[1]) < WAY_CLEAR_M)
 }
 
 /// How far a point lies from a run's way, its line and on to its door, metres.

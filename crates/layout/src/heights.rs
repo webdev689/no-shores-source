@@ -3,7 +3,8 @@
 //! for what meets the sea, the river or a gorge out and for what lies sunk; higher for what is built to be looked up
 //! to. A way holds the lower of its two places' levels and ramps up near the higher, so a place up high stands on its
 //! platform over the ways, a way between two places up high runs along a causeway, and one between two places down
-//! low keeps down; no stretch of any way climbs steeper than a track may, and ways side by side stand at one level.
+//! low keeps down; no stretch of any way climbs steeper than a track may but where two floors stand too near along it
+//! (then a ramp's steepest), and ways side by side stand at one level.
 
 use crate::areas::Area;
 use crate::brief::{AreaKind, Brief};
@@ -155,7 +156,48 @@ pub fn graded(
     for point in (0..points.len()).filter(|&point| held[point].is_none()) {
         level[point] = level[point].min(ceiling[point]);
     }
+    // Where two floors stand too near along the ways for one to be climbed to from the other at `STEEPEST`, the
+    // lowering leaves a step at the higher one's edge: the way climbs the rest to it as a ramp, raised again to no less
+    // than each floor's level less a basin's ramp's steepest climb from it (`ramps` takes it as a ramp to carve).
+    let ramp_fall = crate::basins::RAMP_STEEPEST / rise.max(1.0);
+    let mut ramped: Vec<f64> = held.iter().map(|held| held.unwrap_or(f64::NEG_INFINITY)).collect();
+    let mut queue: std::collections::BinaryHeap<Raised> =
+        held.iter().enumerate().filter_map(|(point, held)| held.map(|share| Raised(share, point))).collect();
+    while let Some(Raised(share, point)) = queue.pop() {
+        if share < ramped[point] {
+            continue;
+        }
+        for &(other, apart) in &neighbours[point] {
+            let reached = share - ramp_fall * apart;
+            if held[other].is_none() && reached > ramped[other] + 1e-12 && reached > level[other] {
+                ramped[other] = reached;
+                queue.push(Raised(reached, other));
+            }
+        }
+    }
+    for point in (0..points.len()).filter(|&point| held[point].is_none()) {
+        level[point] = level[point].max(ramped[point]);
+    }
     paths.iter().zip(&starts).map(|(path, &start)| level[start..start + path.points.len()].to_vec()).collect()
+}
+
+/// The stretches of a graded way (its points and their levels, shares of a massif `rise` metres high) that climb
+/// steeper than `STEEPEST`, where two floors stand too near along it (`graded`), and the stretch either side where the
+/// climb eases into the way's own: each a ramp of a basin's, from one point to the next with its two levels.
+#[must_use]
+pub fn ramps(points: &[[f64; 2]], levels: &[f64], rise: f64) -> Vec<[f64; 7]> {
+    let steepest = STEEPEST / rise.max(1.0) * 1.01;
+    let steep = |at: usize| {
+        let (from, to) = (at, at + 1);
+        to < points.len() && (levels[to] - levels[from]).abs() > steepest * distance(points[from], points[to])
+    };
+    (0..points.len().saturating_sub(1))
+        .filter(|&at| steep(at) || (at > 0 && steep(at - 1)) || steep(at + 1))
+        .map(|at| {
+            let (from, to, half) = (points[at], points[at + 1], crate::basins::RAMP_HALF_M);
+            [from[0], from[1], to[0], to[1], half, levels[at], levels[at + 1]]
+        })
+        .collect()
 }
 
 /// How far along a capsule's line a point lies, 0 at its first end to 1 at its second, as the land reads a capsule's
@@ -392,6 +434,23 @@ mod tests {
             let grade = (pair[1] - pair[0]).abs() * 28.0 / 10.0;
             assert!(grade <= STEEPEST + 1e-9, "it ramps down and up no steeper than a track: {grade}");
         }
+    }
+
+    #[test]
+    fn a_way_between_floors_too_near_for_a_tracks_climb_ramps_up_to_the_higher_with_no_step() {
+        // 0.6 of 28 m is 16.8 m: 120 m at a track's steepest, and the floors' edges stand 100 m apart.
+        let basins = [basin_at([0.0, 0.0]), basin_at([140.0, 0.0])];
+        let held = held_by(&basins, &[0.0, 0.6]);
+        let points: Vec<[f64; 2]> = (0..=14).map(|step| [f64::from(step) * 10.0, 0.0]).collect();
+        let graded = graded(&[way(&points)], &[[0, 1]], &held, (&[0.0, 0.6], 28.0));
+        let levels = &graded[0];
+        for pair in levels.windows(2) {
+            let grade = (pair[1] - pair[0]).abs() * 28.0 / 10.0;
+            assert!(grade <= crate::basins::RAMP_STEEPEST + 1e-9, "no stretch climbs steeper than a ramp: {grade}");
+        }
+        let ramps = ramps(&points, levels, 28.0);
+        assert!(!ramps.is_empty(), "the stretch steeper than a track's is a ramp");
+        assert!(ramps.iter().all(|ramp| ramp[0] >= 60.0), "the ramp runs up to the higher floor: {ramps:?}");
     }
 
     #[test]

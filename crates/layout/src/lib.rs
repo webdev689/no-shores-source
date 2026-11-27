@@ -308,7 +308,9 @@ pub fn plan(
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     // The works keep off the climbs' ways as off every other, though those are walked only once the works stand.
     let kept: Vec<paths::Path> = paths.iter().cloned().chain(carve::climb_ways(&sculpt.climbs)).collect();
-    works::build(&mut kit, &areas, (&paths, &kept), &sculpt.outcrops, &carved);
+    let cuts: Vec<[f64; 5]> =
+        caverns.iter().flat_map(caverns::Cavern::floors).chain(ledges.iter().map(ledges::Ledge::cut)).collect();
+    works::build(&mut kit, &areas, (&paths, works::Kept { ways: &kept, cuts: &cuts }), &sculpt.outcrops, &carved);
     for cavern in &caverns {
         caverns::build(&mut kit, cavern, &carved);
     }

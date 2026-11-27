@@ -229,7 +229,9 @@ from the sea, fresh water and the claim's edge), then:
    floors it joins so it never cuts a raised floor down; else the climb that reaches most. How many climbs and
    valleys the Saltgrass Downs takes is unchecked.
 7. **The great works**, across and along the canyons, so they make the ways and the bounds, each where a work as wide
-   as the great wall would keep 12 m off every outcrop (the outcrops are placed first): a colossal
+   as the great wall would keep 12 m off every outcrop (the outcrops are placed first), its pieces' boxes off every
+   way's walked width and 2 m off each floor cut into the rock before them (a cavern's tunnel and hollow, a ledge's
+   slot up to its stair's top), so none stands in a cavern or over a stair: a colossal
    ruined wall of ashlar dammed across the longest track's straightest run (the next run's where its wall would
    cross another way but at its breach), as high as the lower of its canyon's two
    cliff tops (each the highest the carved land stands within its face) and 10 m over, its ends sunk in the cliffs, buttressed
@@ -373,7 +375,8 @@ keep, past its edge.
   are windowed (openings 1.0 m wide and 1.6 m tall over sills 1.2 m up, 6 m apart, none in the wall the ward's stair
   climbs) and battlemented (merlons 0.9 m wide and 1.2 m tall every 2 m on the walls' outer halves, behind the
   wall-walk), and a round turret 11 m tall, taller than the walls, stands at each corner of its ward that its way keeps
-  clear of.
+  clear of: 1.5 m off the turret's side, and 1.2 m off its box (as the run's clearing measures it, below), so no
+  turret is laid that the clearing would take away from under its merlons.
 - **What a body climbs** (`run_climbs`), square to the world so each box is its piece: in a keep's ward a stair of 0.2 m
   risers up the inside of the wall its way keeps furthest from to a wall-walk along it 8.4 m up, a parapet's height
   under the wall's top, and at its end a short stair onto a round turret's top at the corner, 11 m up and ringed with
@@ -382,7 +385,7 @@ keep, past its edge.
   (no point of the way stands on a step). The
   run's other pieces keep off them, and they are laid after the way is cleared.
 - **Kept clear**: a run's way is its line and on from its end beat's middle to its door. No box of a run's pieces
-  stands within 1.2 m of its way under head height, but for what a body climbs on it, and the rock and walls laid after
+  stands within 1.2 m of its way under head height (the way's least distance from the box, corners as far as they lie), but for what a body climbs on it, and the rock and walls laid after
   it keep off it; every ceiling over a building run's way stands 2.6 m or more over its floor. A body walks every run
   from its mouth to within 3 m of its door, and no further; up each keep's stair to its turret's top; and over each
   undercroft's chapel floor and down its stair (`crates/room/tests/runs_walked.rs`). Every patrol zone of every
@@ -448,11 +451,13 @@ dock, a wreck, a mill, a quarry, a graveyard, a coven, a cave); the wilds and an
 a camp 0.4, a ruin 0.45, a shrine 0.55, a tower and a lighthouse 0.6, a keep 0.7. Then every point of every way
 (`heights`): a point on an area's floor holds that area's level; every other holds the lower of its way's two areas'
 levels, raised wherever a higher point lies near enough along the ways that the way would climb steeper than 0.14
-from it, and lowered likewise toward a lower place's floor; points of different ways within 10 m count as one way,
+from it, and lowered likewise toward a lower place's floor; where two places' floors stand too near along their way
+for that, which would leave a step at the higher one's edge, the way climbs the rest to it as a ramp at a basin's
+ramp's steepest (0.25), carved as a ramp is; points of different ways within 10 m count as one way,
 each way graded on points no more than 5 m apart, so ways that cross or run side by side are always graded together.
 So a place up high stands on its platform over the ways with a ramp up to it, a way between two places up high runs
 along a causeway, one between two places down low keeps down, and no stretch of any way climbs steeper than a track
-may, nor two ways side by side stand further apart than such a slope. A ruin's floor is tiered: its bowl a plaza at
+may but such a ramp, nor two ways side by side stand further apart than such a slope. A ruin's floor is tiered: its bowl a plaza at
 its middle (0.55 of its reach at most), each of its spokes running on at the plaza's level to its edge, then a ramp up
 0.1, up 0.2 or down 0.1 of the massif's height in turn at the steepest a track takes (less where the spoke is too
 short for its ramp) onto a flat tier 4 m wider than the spoke, so a ruin lies on broken ground round a level plaza
@@ -460,7 +465,9 @@ and no building stands across a slope; a spoke a way runs through past the plaza
 crosses a tier's edge; the outcrops keep off its spokes and tiers. A hamlet's blocks step up its
 hillside. Its lanes are 44 m wide, some up to 10 m wider, so a ramp fits between its blocks. Each block but the
 lowest (by the ground its buildings were seated on) stands on a terrace over its tile and 5 m past it, 0.08 of the
-massif's height above the block before it, laid as level strips across the tile. A ramp 9 m wide runs straight up
+massif's height above the block before it, laid as level strips across the tile; as a level is a share of the
+massif's height, which rolls with its noise, a block steps up no higher than keeps that roll within 0.9 m across the
+land 4 m round each of its buildings, and stays on the plaza's floor where that leaves no step. A ramp 9 m wide runs straight up
 to it from the plaza, at a lower step where the lane is too short for its ramp. A block a way runs into, one holding
 the plaza, one whose ramp would run along a way and one whose terrace would stand across a building stay on the
 plaza's floor. No hamlet or ruin building on Saltmere stands on more than a metre of the massif's own roll, every
