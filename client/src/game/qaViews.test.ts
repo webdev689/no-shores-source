@@ -1,8 +1,11 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { type Player } from '../player/player.ts';
-import { shotOfOrbit } from './camera.ts';
-import { installQaViews, qaLook, type QaView } from './qaViews.ts';
+import type { SkyReading } from '../sky/skyLaw.ts';
+import { SKY_NOW, type ToldSky } from '../sky/skyDriver.ts';
+import { shotOfOrbit, withQaEye } from './camera.ts';
+import { QA_SHIP } from './qaShip.ts';
+import { installQaViews, qaEye, qaLook, type QaView } from './qaViews.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const ring = [
@@ -75,26 +78,82 @@ test('a QA eye stands the camera anywhere, off the node too (on the water), unti
 
 test('a development page lends the picture driver the way to sea and the game it plays; a production one never', () => {
   const lend = (dev: boolean) => {
-    const target: { __qaSea?: () => void; __qaGame?: object } = {};
-    const game = { flow: 'foot' };
+    const target: { __qaSea?: () => boolean; __qaGame?: object } = {};
+    const game = { flow: { mode: 'foot' } };
     let sailed = 0;
     const host = { node: () => node, arrive: async () => undefined, walker: { player: {} as Player } };
-    installQaViews(target, '?at=n&spawn=', true, { ...host, sea: () => void (sailed += 1), game }, dev);
-    target.__qaSea?.();
-    return { target, sailed, game };
+    const sea = () => void ((sailed += 1), (game.flow = { mode: 'loading' }));
+    const answer = (installQaViews(target, '?at=n&spawn=', true, { ...host, sea, game }, dev), target.__qaSea?.());
+    return { target, sailed, game, answer };
   };
   const dev = lend(true);
   assert.equal(dev.sailed, 1);
+  assert.equal(dev.answer, true);
   assert.equal(dev.target.__qaGame, dev.game);
   const production = lend(false);
   assert.equal(production.target.__qaSea, undefined);
   assert.equal(production.target.__qaGame, undefined);
 });
 
+test('the way to sea answers false, saying why, where the player is not on foot or the trip is not taken', () => {
+  const said: string[] = [];
+  const error = console.error;
+  console.error = (words: string) => void said.push(words);
+  try {
+    const target: { __qaSea?: () => boolean } = {};
+    const game = { flow: { mode: 'loading' } };
+    let sailed = 0;
+    const host = { node: () => node, arrive: async () => undefined, walker: { player: {} as Player } };
+    installQaViews(target, '?spawn=', true, { ...host, sea: () => void (sailed += 1), game }, true);
+    assert.equal(target.__qaSea?.(), false);
+    assert.equal(sailed, 0, 'no trip asked under the veil');
+    game.flow = { mode: 'foot' };
+    assert.equal(target.__qaSea?.(), false, 'a trip the travel did not take');
+    assert.deepEqual(said, [
+      '__qaSea: the player is loading, not on foot',
+      '__qaSea: the trip to the ship was not taken',
+    ]);
+  } finally {
+    console.error = error;
+  }
+});
+
+test('a QA eye stands the sea and the story cameras too, their lens kept', () => {
+  const shot = { eye: [1, 2, 3] as const, yaw: 0, pitch: 0, fov: 0.9, near: 2, far: 60_000 };
+  assert.equal(withQaEye(shot), shot);
+  qaEye([10, 20, 30, 90, 10]);
+  const stood = withQaEye(shot);
+  assert.deepEqual([stood.eye, stood.fov, stood.near, stood.far], [[10, 20, 30], 0.9, 2, 60_000]);
+  assert.ok(Math.abs(stood.yaw - Math.PI / 2) < 1e-12);
+  qaEye(null);
+  assert.equal(withQaEye(shot), shot);
+});
+
+test('a development page dresses the own ship as asked, and tells the sky, until let go', () => {
+  const target: { __qaShip?: (look: object | null) => boolean; __qaSky?: (weather: object | null) => boolean } = {};
+  const sky: { told: ToldSky | null } = { told: null };
+  const host = { node: () => node, arrive: async () => undefined, walker: { player: {} as Player }, sky };
+  installQaViews(target, '?spawn=', true, host, true);
+  assert.equal(target.__qaShip?.({ hull: 2, dress: [2, 17] }), true);
+  assert.deepEqual(QA_SHIP.look, { hull: 2, dress: [2, 17] });
+  target.__qaShip?.(null);
+  assert.equal(QA_SHIP.look, null);
+  const before = SKY_NOW.current;
+  SKY_NOW.current = { ...SKY_NOW.current, reading: { cloud: 0, falling: 0 } as unknown as SkyReading, worldS: 50 };
+  try {
+    assert.equal(target.__qaSky?.({ falling: 1 }), true);
+    assert.deepEqual([sky.told?.weather.cloud, sky.told?.weather.falling, sky.told?.hourS], [0, 1, 50]);
+    target.__qaSky?.(null);
+    assert.equal(sky.told, null);
+  } finally {
+    SKY_NOW.current = before;
+  }
+});
+
 test('a development page lends the picture driver the game it plays online too, as a live room plays it', () => {
   const lend = (dev: boolean) => {
     const target: { __qaGame?: object; __qaView?: unknown } = {};
-    const game = { flow: 'foot' };
+    const game = { flow: { mode: 'foot' } };
     const host = { node: () => node, arrive: async () => undefined, walker: { player: {} as Player } };
     installQaViews(target, '?room=ws://127.0.0.1:8787', false, { ...host, sea: () => undefined, game }, dev);
     return { target, game };

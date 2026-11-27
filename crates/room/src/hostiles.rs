@@ -1,18 +1,18 @@
 //! Hostile ships at sea, the Grey Tithe's, from DFO's director trimmed to them alone. Each player at sea rolls for a
-//! ship half a minute after reaching the water and then every half a minute to 70 s; the water at their ship
-//! decides whether a roll sends one, at which rank and level (`sighting`). It comes near its sight's distance ahead,
-//! clear of every player, nearest a lane and heading along it, else nearest a coast. Its commission is drawn as it
-//! comes and kept; its rank picks its hull and its way. It sails on the clock of the player it sails by (real time
-//! where another shares those waters), never into home waters, and goes once no player is within 1.1 times its sight.
-//! A bold one within `ENGAGE_RANGE` of a player takes them on, and of a friendly ship attacks it (`friendlies`). One
-//! stream, seeded as the sea opens, draws every chance in a fixed order.
+//! ship half a minute after reaching the water and then every half a minute to 70 s; the water at their ship decides
+//! whether a roll sends one, at which rank and level (`sighting`). It comes out ahead, at the helm 1 km off and farther
+//! the faster they sail, clear of every player, nearest a lane and heading along it, else nearest a coast. Its
+//! commission is drawn as it comes and kept; its rank picks its hull and its way. It sails on the clock of the player
+//! it sails by (real time where another shares those waters), never into home waters, and goes once no player is within
+//! 1.1 times its sight. A bold one within `ENGAGE_RANGE` of a player takes them on, and of a friendly ship attacks it
+//! (`friendlies`). One stream, seeded as the sea opens, draws every chance in a fixed order.
 
 use crate::PlayerId;
 use crate::sea::SHIP_SPEED_M_S;
 use crate::sighting::{
     AHEAD_ARC_RAD, COME_OUT, Chart, HELM_TURN_RAD_S, KEEP_SHARE, LANE_REACH_M, SIGHT_LEAST_M, SLOW_PACE, WaterHere,
-    along_lane, daylight_at, faction_of, hostile_chance, intercept_heading, level_in, meeting_arc, rank_for, sight_for,
-    turned_toward, way_of,
+    along_lane, come_out_for, daylight_at, faction_of, hostile_chance, intercept_heading, level_in, meeting_arc,
+    rank_for, sight_for, turned_toward, way_of,
 };
 use combat::sight::apart;
 use naval::captain::course::heading_to;
@@ -323,7 +323,8 @@ impl Hostiles {
             level => self.difficulty.raise(level),
         };
         let seed = self.draws.seed();
-        let sight_m = sight_for(f64::from(ship.pace), class_of(ship.hull_kind).way);
+        let (pace, way) = (f64::from(ship.pace), class_of(ship.hull_kind).way);
+        let (sight_m, out_m) = (sight_for(pace, way), come_out_for(pace, way));
         let bold = matches!(temper_for(commission, seed), Temper::Bold);
         // A bold ship comes where it can meet a voyage that holds its course; at the helm's slow paces, near and slow
         // under 5 km of sight, it comes anywhere ahead as a wary one does.
@@ -335,7 +336,7 @@ impl Hostiles {
             } else {
                 self.draws.draw() * TAU
             };
-            let out = self.draws.between(COME_OUT[0], COME_OUT[1]) * sight_m;
+            let out = self.draws.between(COME_OUT[0], COME_OUT[1]) * out_m;
             let at = [ship.at[0] + libm::sin(bearing) * out, ship.at[1] - libm::cos(bearing) * out];
             if nearest(at) >= SPAWN_CLEAR_M && chart.open(ship.at, at) {
                 fits.push(at);

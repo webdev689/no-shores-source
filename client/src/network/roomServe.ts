@@ -18,6 +18,7 @@ export type Opening =
   | { readonly how: 'run'; readonly ask: string; readonly patrolText: string }
   /** A passage zone's room from its ask (`open_passage`'s JSON: the island, the week, the zone, the route, the minute). */
   | { readonly how: 'passage'; readonly ask: string }
+  | { readonly how: 'breach'; readonly ask: string }
   | {
       readonly how: 'sea';
       readonly layoutText: string;
@@ -127,6 +128,7 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
       return LocalRoom.openDungeon(module, opening.patrolText, opening.number, snapshot, gear, opening.seas);
     if (opening.how === 'run') return LocalRoom.openRun(module, opening.ask, opening.patrolText, snapshot, gear);
     if (opening.how === 'passage') return LocalRoom.openPassage(module, opening.ask, snapshot, gear);
+    if (opening.how === 'breach') return LocalRoom.openBreach(module, opening.ask, snapshot, gear);
     if (opening.how === 'island') return LocalRoom.openIsland(module, opening.word, snapshot, opening.seas, gear);
     if (opening.how === 'overSea') return LocalRoom.openOverSea(module, opening.spawn, opening.blocks, snapshot, gear);
     const { layoutText, seed, ports, seas } = opening;

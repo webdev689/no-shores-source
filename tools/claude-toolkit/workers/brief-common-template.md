@@ -50,7 +50,10 @@ Tools (all are expected to be used; your final reply must say how):
 - Image checks (screenshots, art, layouts): every new image gets a new name (v2_, v3_ ...), never an overwrite. Your
   report says what is WRONG in each image, not only what is right. Any lost detail compared with the reference (holes,
   missing outline, something cut off or smaller than its siblings, two different things drawn the same) is a defect to
-  fix, never a concern or "should be fine".
+  fix, never a concern or "should be fine". Stage every input of a picture from one staged target and keep staging
+  files under `target/` (bible/03-Code/Browser QA.md). The picture budget is sized from the brief's time aim (a GPU
+  picture with its staging takes about five minutes); every retake counts against it, and once it is spent, stop
+  and report.
 - Browser check scripts you write: a navigation step that didn't land fails the step; a click that must do something
   is retried until the server's reply shows it; another page's view is compared against what it showed before the
   action; run a new script 3 times side by side before trusting it.

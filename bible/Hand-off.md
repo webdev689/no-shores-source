@@ -15,10 +15,19 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   names laid out far less often and faster; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]];
   `main` taken in). A merge deploys the page, the site, the rooms and the bot, and releases the
   desktop app.
-- **For the owner's yes**: #229 (the deeper dungeons: storeys and stairs, more ways, great rooms and galleries,
-  vaults, richer chests and DFO's 3D map; [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]],
-  its pieces published by the dungeon-modules workflow's run 53) and #159 (the rooms' worker tests wait for what they
-  check; it conflicts with `main` in `roomThread.test.ts`).
+- **Merging on the owner's yes ("merge and deploy all") as CI passes**:
+  - #235: hostile ships come out 1 km off at the helm, still seen and kept from 5 km.
+  - #242: helpers capped at two, their briefs corrected, `headroom learn` suggesting only (review 4, 5, 13).
+  - #243: the game's test hooks and the picture tools work everywhere or say why not (review 10).
+  - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
+  - #245: new repo checks, each landing with what it refuses fixed (review 8).
+- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
+  `roomThread.test.ts`).
+- **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
+  longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
+- **Merge order**: #235 and #245 both move the sea clash pin: whichever merges second moves its line in
+  `content/fingerprints.txt`. #242 and #244 share lines in `install-all.sh`, `check_tools.py`, CLAUDE.md
+  and the Toolkit.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -66,7 +75,8 @@ yet played by hand or with other players in a deployed room.
   voices; the seams between a long recording's chunks; whether a browser drops an MP3's 25 to 40 ms of padding, as
   ffmpeg does, so each hoofbeat plays to its cut.
 - **Played by hand**: the prologue in one run; an hour's day; a ranged weapon's fight on foot; the travel's fade
-  from the helm; a clash of a Tithe ship and a merchant, joined; the welcome's tour with its 400 Aurem and a starter
+  from the helm; a hostile ship coming out 1 km off at the helm (#235); a clash of a Tithe ship and a merchant, joined;
+  the welcome's tour with its 400 Aurem and a starter
   piece bought; the key strip, the leave held and a real pad's View held; the hit fixes; the Passages (every deal, a dive's way across zones, a public round, the held
   map's public way, the sea's new ranks and salvage, the week's Abyss Dungeon run again); the escort on its horse and
   the hulk at sea.
@@ -134,6 +144,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   checkout's server.
 - **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
   deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
+- **A body lying still**: the page's intent for it is one number short (`client/src/combat/fighting.ts`, `lying`,
+  17 where `INTENT_FLOATS` is 18), found by the review's checks and offered as its own task.
 - **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
