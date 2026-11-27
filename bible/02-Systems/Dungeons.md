@@ -777,16 +777,11 @@ as standing none (`readDungeon`).
   deepest block everywhere.
 - Nothing may stand under a flight: the navmesh bakes a flight's column as its lowest floor, so a column under a
   flight is rock.
-- The ground keeps a body off rock by cells, not by sides: on the lower storey, in a cell beside a flight's head (or on
-  the upper, beside its foot), a body's shoulder may reach its half-width into the flight's drawn end, though it
-  never steps onto the flight there.
 - A span holds a body whose crouched head (1 m) fits under its ceiling: a standing body's head may reach 0.8 m
   into a slab, since the ground knows the feet alone.
 - Lines across storeys take no corner of rock between two cells, as one storey's do, only the cells they cross.
 - A line across a flight's cell is held by that cell's lowest tread and its ceiling over the highest, so a sight line
   may pass up to 2 m under the slope within it; a shot stops at the slope itself.
-- The encounter plan keeps a seal's pieces, pads and leaps clear of every storey's solids and props over a cell, so a
-  room under a well-furnished one fits fewer seals than it could.
 - The page's camera keeps between the player's own storey's ground and ceiling, asked from the height its line passes
   (never under the feet). The crosshair, shots and blood ask the ground under the height they pass, under the feet
   too, so an aim up a flight meets its slope and a shot from a gallery falls on the hall's floor, the slabs between
