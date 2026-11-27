@@ -105,6 +105,10 @@ const nodeOf = (room: string | null) => (room?.startsWith('node-') ? nodeRoom(ro
 /** Whether a node's room is a dungeon's or a run's. */
 const inside = (place: NonNullable<ReturnType<typeof nodeRoom>>) => place.dungeon !== null || place.run !== null;
 
+/** Whether `dungeon` is a patrol's dungeon at a harder tier than the patrol's room `patrol`. */
+const harder = (dungeon: NonNullable<ReturnType<typeof nodeRoom>>, patrol: NonNullable<ReturnType<typeof nodeRoom>>) =>
+  dungeon.dungeon !== null && dungeon.seas > patrol.seas;
+
 /** Whether a kept character may arrive in `room` by a way that needs no one there: from `from`, the room that held it
  *  before (null for none), its ship lying at `ship` as the sea kept it; `reach` is the node's, null where unknown. A
  *  room that is no node's is not judged here. */
@@ -137,12 +141,14 @@ export function arrives(
     // An outpost site's wild ground and a guild's plot on it are one place at Normal: a player walks between them.
     const plot = to.guild !== null || was.guild !== null;
     if (plot && !inside(to) && !inside(was) && was.seas === to.seas) return true;
-    // Into a dungeon from its node's room at its seas, an Elite Dungeon's run (the week's at its own tier, or at
-    // Normal) from its node at any, as its tier is its own whatever the seas; out of the node's own dungeon or run at
-    // the seas it was gone into at.
-    if (inside(to)) return !inside(was) && (was.seas === to.seas || (to.dungeon === null && to.run !== null));
+    // Into a dungeon from its node's room at its seas or, a patrol's, at a harder tier drawn for the character; an
+    // Elite Dungeon's run (the week's at its own tier, or at Normal) from its node at any, as its tier is its own
+    // whatever the seas; out of the node's own dungeon or run at the seas it was gone into at, or a patrol's dungeon's
+    // to its patrol at the easier seas it was gone into from.
+    if (inside(to))
+      return !inside(was) && (was.seas === to.seas || harder(to, was) || (to.dungeon === null && to.run !== null));
     // A run started at sea is left back to the sea, never onto its dungeon's island.
-    if (inside(was)) return was.seas === to.seas && !startedAtSea(from ?? '');
+    if (inside(was)) return (was.seas === to.seas || harder(was, to)) && !startedAtSea(from ?? '');
   }
   if (inside(to)) return false;
   // Through a gate, from a node whose gate leads here, at the same seas.
@@ -193,8 +199,8 @@ export function toCoast([x, y]: Point, ring: readonly Point[]): number {
 }
 
 /** Whether a character that came from `from` comes out of the dungeon behind entrance `number` of the node's room
- *  `room`: that patrol's dungeon of the number or a run of it, or by its one entrance an Elite Dungeon's run, at the
- *  room's seas; or by the Delve Gate, its guild dungeon's run at any tier. A crossing gate, named for the node it
+ *  `room`: that patrol's dungeon of the number or a run of it (at the room's seas or a harder tier), or by its one
+ *  entrance an Elite Dungeon's run, at the room's seas; or by the Delve Gate, its guild dungeon's run at any tier. A crossing gate, named for the node it
  *  leads to, is come through from that node's own room at the room's seas. */
 export function cameOutOf(room: string, from: string | null, number: number | string): boolean {
   const [to, was] = [nodeOf(room), nodeOf(from)];
@@ -203,7 +209,7 @@ export function cameOutOf(room: string, from: string | null, number: number | st
   if (!to || !was || inside(to) || was.id !== to.id || startedAtSea(from ?? '')) return false;
   // Out of a guild dungeon's run, at any tier, before its outpost's Delve Gate, entrance 0.
   if (to.guild !== null || was.guild !== null) return was.guild === to.guild && was.run !== null && number === 0;
-  if (was.seas !== to.seas) return false;
+  if (was.seas !== to.seas && !harder(was, to)) return false;
   return was.dungeon === number || (was.dungeon === null && was.run !== null && number === 0);
 }
 

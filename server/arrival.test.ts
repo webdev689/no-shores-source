@@ -88,7 +88,10 @@ test('a dungeon or a run is entered from its node’s room, and left back into i
   assert.equal(arrives('node-gullwing-vale--dungeon-1', 'sea', OFF_COAST, reach()), false);
   const run = 'node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6';
   assert.equal(arrives(run, 'node-gullwing-vale--elite', null, null), true);
-  assert.equal(arrives(run, 'node-gullwing-vale', null, null), false);
+  // A patrol's dungeon at a harder tier than its patrol, as its card draws one for the character; never an easier.
+  assert.equal(arrives(run, 'node-gullwing-vale', null, null), true, 'from Normal seas into its Elite run');
+  assert.equal(arrives(run, 'node-gullwing-vale--abyss', null, null), false, 'never under the seas');
+  assert.equal(arrives('node-gullwing-vale--dungeon-1', 'node-gullwing-vale--elite', null, null), false);
   // An Elite Dungeon's run, at Normal or the week's at its own tier, from its node at any seas: its tier is its own.
   assert.equal(arrives('node-krakens-grotto--run-k3j4h5g6', 'node-krakens-grotto--abyss', null, null), true);
   assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-krakens-grotto--abyss', null, null), true);
@@ -97,7 +100,8 @@ test('a dungeon or a run is entered from its node’s room, and left back into i
   // Out again, at the seas the dungeon was gone into at.
   assert.equal(arrives('node-gullwing-vale', 'node-gullwing-vale--dungeon-1', null, reach()), true);
   assert.equal(arrives('node-gullwing-vale--elite', run, null, reach()), true);
-  assert.equal(arrives('node-gullwing-vale', run, null, reach()), false);
+  assert.equal(arrives('node-gullwing-vale', run, null, reach()), true, 'to the easier seas it came from');
+  assert.equal(arrives('node-gullwing-vale--abyss', run, null, reach()), false, 'never to harder seas');
   assert.equal(arrives('node-krakens-grotto', 'node-krakens-grotto--run-k3j4h5g6', null, reach()), true);
   assert.equal(arrives('node-tidewall', 'node-gullwing-vale--dungeon-1', null, reach(['gullwing-vale'])), false);
 });
@@ -147,7 +151,8 @@ test('a player stands out of an entrance only as they come out of its dungeon or
   const patrol = 'node-gullwing-vale--elite';
   assert.equal(cameOutOf(patrol, 'node-gullwing-vale--elite--dungeon-2--run-k3j4h5g6', 2), true);
   assert.equal(cameOutOf(patrol, 'node-gullwing-vale--elite--dungeon-2--run-k3j4h5g6', 1), false, 'another door');
-  assert.equal(cameOutOf(patrol, 'node-gullwing-vale--abyss--dungeon-2--run-k3j4h5g6', 2), false, 'another tier');
+  assert.equal(cameOutOf(patrol, 'node-gullwing-vale--abyss--dungeon-2--run-k3j4h5g6', 2), true, 'a harder tier');
+  assert.equal(cameOutOf(patrol, 'node-gullwing-vale--dungeon-2', 2), false, 'an easier one');
   assert.equal(cameOutOf('node-gullwing-vale', 'node-gullwing-vale--dungeon-0', 0), true);
   assert.equal(cameOutOf('node-gullwing-vale', 'node-gullwing-vale', 0), false, 'a rejoin is an ordinary join');
   assert.equal(cameOutOf('node-gullwing-vale', 'sea', 0), false);

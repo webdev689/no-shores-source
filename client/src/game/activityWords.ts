@@ -6,6 +6,7 @@ import type { IslandLamps } from '../network/passageMessages.ts';
 import type { ActivityRecord } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { nodeRoom } from './rooms.ts';
+import { dayOf, drawnTier, openTiers } from '../../../server/regionDungeons.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** The tiers in the rules' order, as the gear's record numbers them. */
@@ -215,6 +216,8 @@ export interface EntranceCard {
   readonly shut: string | null;
   /** The run's base Find a Company matches (`nodeRoom`), or null where it matches none or is shut. */
   readonly finds: string | null;
+  /** The tier Enter goes in at, where it is not the room's own seas: a patrol's dungeon's, drawn for the character. */
+  readonly seas?: Difficulty;
 }
 
 /** An entrance's card: a patrol's dungeon at its seas, or an Elite Dungeon's run as `eliteRun` picks it. */
@@ -230,17 +233,21 @@ export function entranceCardOf(
     return band ? `${words} · ${levelWords(band)}` : words;
   };
   if (node.kind !== 'dungeon') {
-    const tier = Math.max(0, TIERS.indexOf(seas));
+    // Met at a tier drawn among those the character's level opens, each as likely, never under the patrol's seas.
+    const least = Math.max(0, TIERS.indexOf(seas));
+    const tier = drawnTier(`${node.id}--dungeon-${number}`, dayOf(drawn.minute), openTiers(gates?.seas), least);
+    const at = TIERS[tier] ?? seas;
     const ofTheDay = drawn.ofTheDay.some((one) => one.patrol === node.id && one.number === number);
     const dayPays = takenToday(drawn, record, tier) ? `Taken today. ${PLAIN_PAYS}` : DAY_PAYS;
     return {
       name,
       tier: tierWords(SEAS[tier] ?? '', tier),
-      rules: seas === 'abyss' ? [revivesWords(drawn)] : [],
+      rules: at === 'abyss' ? [revivesWords(drawn)] : [],
       modifiers: ofTheDay && tier > 0 ? shown(drawn, [drawn.dayModifier]) : [],
       pays: ofTheDay ? dayPays : PLAIN_PAYS,
       shut: gates?.day[tier] ?? null,
       finds: null,
+      seas: at,
     };
   }
   const run = eliteRun(node.id, seas, drawn);

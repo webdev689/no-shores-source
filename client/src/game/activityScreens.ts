@@ -90,7 +90,7 @@ export function startActivityScreens(
   nodes: readonly NodeInfo[],
   foot: () => ScreensFoot | null,
   trips: {
-    enter(number: number, name: string, run?: string): void;
+    enter(number: number, name: string, run?: string, seas?: Difficulty): void;
     intoRun?(node: NodeInfo, run: string): void;
     fromSea?(node: NodeInfo): void;
     fromRegion?(dungeon: RegionDungeon, tier: number): void;
@@ -174,11 +174,16 @@ export function startActivityScreens(
   };
   const view = new EntranceCardView({
     enter: () => {
-      const [entrance, atSea, region] = [opened?.entrance, opened?.atSea ?? false, opened?.region];
+      const [entrance, atSea, region, seas] = [
+        opened?.entrance,
+        opened?.atSea ?? false,
+        opened?.region,
+        opened?.card.seas,
+      ];
       close();
       if (region) trips.fromRegion?.(region.dungeon, region.tier);
       else if (entrance && atSea) trips.fromSea?.(entrance.node);
-      else if (entrance) trips.enter(entrance.number, entrance.name);
+      else if (entrance) trips.enter(entrance.number, entrance.name, undefined, seas);
     },
     close,
     find,

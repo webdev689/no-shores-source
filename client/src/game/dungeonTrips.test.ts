@@ -506,3 +506,19 @@ test("a region's dungeon of the day is gone into from the sea at its tier, the c
   );
   assert.equal(member.happenings[0]?.kind, 'join');
 });
+
+test("a patrol's dungeon gone into at the harder tier its card drew is a run at it, left to the patrol's own seas", async () => {
+  const onPatrol = { node: patrol, text: 'the node file', dungeon: null, seas: 'normal' as Difficulty };
+  const { trips, ways, settled } = recorded({ foot: { ...onPatrol, held: { entrances: { entrances: [] } } } });
+  trips.enter(1, 'Gloamford Bastion', undefined, 'abyss');
+  await settled();
+  assert.deepEqual(ways[0]?.slice(2), [
+    'node-saltgrass-downs--abyss--dungeon-1--run-k3j4h5g6',
+    'Gloamford Bastion',
+    'abyss',
+  ]);
+  trips.leave();
+  await settled();
+  assert.deepEqual(ways[1]?.slice(0, 2), ['onto', 'saltgrass-downs']);
+  assert.equal(ways[1]?.[3], 'normal', 'back on the seas the player went in from');
+});

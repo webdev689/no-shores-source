@@ -89,9 +89,10 @@ export function dungeonTrips(
   game: TripGame,
   chance: { readonly instance: () => string; readonly minute: () => number } = CHANCE,
 ): Omit<Trips, 'enter'> & {
-  /** In by entrance `number`, its dungeon named `name`; into `found`, a run Find a Company found, only where it is
-   *  one of this entrance's, else nowhere. */
-  enter(number: number, name: string, found?: string): void;
+  /** In by entrance `number`, its dungeon named `name`, a patrol's at `tier` where given (its card's draw) and else at
+   *  the room's seas; into `found`, a run Find a Company found, only where it is one of this entrance's, else
+   *  nowhere. */
+  enter(number: number, name: string, found?: string, tier?: Difficulty): void;
   /** Out by the way in, the veil saying the company fell: before the entrance, or back to the sea. */
   fell(): void;
   join(node: NodeInfo, place: string): void;
@@ -184,7 +185,7 @@ export function dungeonTrips(
   };
   return {
     props: () => game.drawers.props,
-    enter: (number, name, found) => {
+    enter: (number, name, found, tier) => {
       const from = game.foot();
       if (!from || from.dungeon) return;
       const { node, seas } = from;
@@ -195,11 +196,13 @@ export function dungeonTrips(
       const roomFor = (base: string, tier: Difficulty, always: boolean) =>
         found === undefined ? roomOf(base, tier, always) : async () => found;
       if (node.kind !== 'dungeon') {
+        // Gone into at its drawn tier, and out again to the patrol at the seas the player stands in.
+        const at = tier ?? seas;
         const ask = { patrol: node.id, name: node.name, number };
-        const base = dungeonRoom(node, seas, number);
+        const base = dungeonRoom(node, at, number);
         if (!fits(base)) return;
-        const room = roomFor(base, seas, false);
-        const work = into(outside, { number, ask }, seas, room, toNode(node, seas, number, entrance), entrance);
+        const room = roomFor(base, at, false);
+        const work = into(outside, { number, ask }, at, room, toNode(node, seas, number, entrance), entrance);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon-${number}`, name }, work);
         return;
       }
