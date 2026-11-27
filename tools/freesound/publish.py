@@ -77,16 +77,20 @@ def pick_file(cue, entry, sound):
     return f'picks/{cue}.{sound}.mp3' if isinstance(entry.get('picked'), list) else f'picks/{cue}.mp3'
 
 
+def cues_listed():
+    with open(WANTED) as file:
+        return {cue['id']: cue for cue in json.load(file)['cues']}
+
+
 def picks_read(download):
     """Each pick of the download, read and checked against the list: (cue, its pick, its bytes, its cue's entry)."""
     with open(os.path.join(download, 'picks.json')) as file:
         picks = json.load(file)
-    with open(WANTED) as file:
-        cues = {cue['id']: cue for cue in json.load(file)['cues']}
-    wanted = {cue: picked_of(each) for cue, each in cues.items()}
-    # Every pick the list names, and no other: an older download would drop one from the game unsaid.
+    cues = cues_listed()
+    read = {pick['id'] for pick in picks}
+    # Every pick the list names for each cue read, and no other: a run that searched only some cues read only theirs.
     held = sorted((pick['id'], pick['freesound']) for pick in picks)
-    listed = sorted((cue, sound) for cue, sounds in wanted.items() for sound in sounds)
+    listed = sorted((cue, sound) for cue, each in cues.items() if cue in read for sound in picked_of(each))
     if held != listed:
         sys.exit(f'the download holds {held}, the list picks {listed}')
     for pick in picks:
@@ -191,6 +195,15 @@ def main():
             sound['credits'].append(credit)
         else:
             sounds[cue] = {'key': key, **credit, 'changes': changes_of(cue, entry), **root_of(cue, entry)}
+    # A cue the download did not read keeps its sound as published, while the list picks the same: a cue neither read
+    # nor published stops the publish, as an older download would drop it from the game unsaid.
+    for cue, entry in cues_listed().items():
+        numbers = picked_of(entry)
+        if numbers and cue not in sounds:
+            sound = before.get(cue, {})
+            if ([each['freesound'] for each in sound.get('credits', [])] or [sound.get('freesound')]) != numbers:
+                sys.exit(f'{cue}: its picks {numbers} are neither in the download nor published')
+            sounds[cue] = sound
     # DFO's own sounds the owner picked are put in by own.py, not by a download: kept, unless the cue now has a pick.
     own = {cue: sound for cue, sound in before.items() if 'freesound' not in sound and 'credits' not in sound}
     sounds.update({cue: sound for cue, sound in own.items() if cue not in sounds})
