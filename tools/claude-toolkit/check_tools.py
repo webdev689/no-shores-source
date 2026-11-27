@@ -16,9 +16,7 @@ SHARED = os.environ.get('SHARED_DIR') or HOME + '/toolkit-data'      # persisten
 _url = os.environ.get('REPO_URL', '')
 REPO = os.environ.get('REPO_DIR') or (HOME + '/' + os.path.basename(_url.rstrip('/'))[:-4 if _url.endswith('.git') else None] if _url else '')
 PINNED = bool(REPO)                      # install-all.sh pins Serena to REPO_DIR; without one it follows the session cwd
-# Unpinned: check the repository this kit sits in (its main checkout), not the home folder check-tools.sh runs from.
-_git = subprocess.run(['git', '-C', KIT, 'rev-parse', '--path-format=absolute', '--git-common-dir'], capture_output=True, text=True)
-REPO = REPO or os.path.dirname(_git.stdout.strip()) or os.getcwd()
+REPO = REPO or os.getcwd()               # unpinned: check the repo you run this from
 WT_ROOT = HOME + '/wt'
 SET = HOME + '/.claude/settings.json'
 CLAUDE_JSON = HOME + '/.claude.json'
@@ -764,6 +762,7 @@ if '--worker' in sys.argv:
         if os.path.exists(wt):
             sh(['git', 'worktree', 'remove', '--force', wt], cwd=REPO)
             shutil.rmtree(wt, ignore_errors=True)
+        sh(['git', 'worktree', 'prune'], cwd=REPO)   # a toolcheck folder deleted under git leaves its registration
         rc, o = sh(['git', 'worktree', 'add', '-q', '--detach', wt, 'HEAD'], cwd=REPO, timeout=300)
         if rc:
             return out('FAIL', 'combined worker', 'git worktree add failed: ' + o[:150])
