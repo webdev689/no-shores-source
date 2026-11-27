@@ -1,8 +1,6 @@
 //! Where things stand in a zone, in its own frame (x east, y south, metres): where a body comes in, the mouth behind
 //! it and the mouths on, its lamp, its foes' posts, and the places its deal uses.
 
-use crate::zone::{Ground, Size, Zone};
-
 /// A mouth: its middle at its foot, (x, y), and the way its front faces, into the zone, in radians clockwise from
 /// north.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -51,21 +49,11 @@ pub const SPOT_APART_M: f64 = 7.0;
 /// How far from the way in its first post stands at least, metres: a body comes in before it is met.
 pub const POST_OFF_WAY_IN_M: f64 = 14.0;
 /// No band of foes stands within this of a zone's arrival, metres (the owner's decision "Foes Leave a Player
-/// Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival"), where its floor holds its posts that far.
+/// Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival"), where its floor has room; where it has
+/// not, every band is kept, as far out as the floor allows.
 pub const BAND_OFF_ARRIVAL_M: f64 = 25.0;
-
-/// Whether a zone's floor holds every post BAND_OFF_ARRIVAL_M and a band's spread from its arrival: a medium or
-/// large hollow does; a small hollow, and a zone under ground of any size, lays fewer posts that far out, so theirs
-/// stand from POST_OFF_WAY_IN_M.
-#[must_use]
-pub fn bands_off_arrival(zone: &Zone) -> bool {
-    matches!(zone.ground, Ground::Open { .. }) && zone.size != Size::Small
-}
-
-/// How far from a zone's arrival its posts stand at least, metres.
-pub(crate) fn posts_off_arrival(zone: &Zone) -> f64 {
-    if bands_off_arrival(zone) { BAND_OFF_ARRIVAL_M + crate::BAND_SPREAD_M } else { POST_OFF_WAY_IN_M }
-}
+/// How far from its arrival a zone's posts stand where its floor has room: BAND_OFF_ARRIVAL_M and a band's spread.
+pub const POST_OFF_ARRIVAL_M: f64 = BAND_OFF_ARRIVAL_M + crate::BAND_SPREAD_M;
 
 /// From `places` ordered as wanted, those at least `apart` from every one taken before.
 pub(crate) fn spread(places: impl IntoIterator<Item = [f64; 2]>, apart: f64) -> Vec<[f64; 2]> {

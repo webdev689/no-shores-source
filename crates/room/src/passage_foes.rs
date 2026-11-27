@@ -7,7 +7,7 @@
 //! and rises with its players as a public event's waves and great foes do (`Passages.md`, "A zone's room").
 
 use super::{BAND_STREAM, WAVE_STREAM};
-use crate::garrison::{Group, draws_of, index};
+use crate::garrison::{Group, SPAWN_CLEAR, SPREAD, draws_of, index};
 use crate::{PlayerId, Room};
 use ::foes::Rank::{self, Boss, Elite, Major, Miniboss, Minor};
 use ::foes::roster::{
@@ -203,20 +203,32 @@ impl Room {
     fn stand_band(&mut self, group: &Group, at: [f64; 2], levels: (u8, u8)) -> bool {
         let floor = self.zone().and_then(|zone| zone.floor.clone());
         let Some(section) = self.section.clone() else { return false };
-        // Where the zone's floor holds its posts BAND_OFF_ARRIVAL_M out, its arrival stays a spawn, so no member stands
-        // and no beat walks within SPAWN_CLEAR of it; elsewhere the posts stand nearer and none is kept clear.
-        let off = self.zone().is_some_and(|zone| passage::bands_off_arrival(&zone.zone));
-        let spawns = if off { section.spawns.clone() } else { Vec::new() };
-        let section = Section { ring: floor.unwrap_or(section.ring), spawns, ..section };
+        let ring = floor.unwrap_or_else(|| section.ring.clone());
         let spots: Vec<(f64, f64)> =
             self.zone().map(|zone| zone.sites.spots.iter().map(|at| (at[0], at[1])).collect()).unwrap_or_default();
         let nth = (self.garrison.len() as u64) << 8;
-        let mut draws = draws_of(self.world_seed ^ BAND_STREAM ^ nth);
-        let mut beats = draws_of(self.world_seed ^ BAND_STREAM ^ 1 ^ nth);
+        let (draws, beats) =
+            (draws_of(self.world_seed ^ BAND_STREAM ^ nth), draws_of(self.world_seed ^ BAND_STREAM ^ 1 ^ nth));
         let lattice: &[(f64, f64)] = if group.farthest { &[] } else { &spots };
-        let Some(mut post) = self.post_at(group, (at[0], at[1]), (&section, lattice), (&mut draws, &mut beats)) else {
-            return false;
+        // The arrival stays a spawn, so no member stands within SPAWN_CLEAR of it and no beat walks within SPAWN_CLEAR and
+        // SPREAD, where the post stands that far out. A nearer post's spawn is taken back from it by what it lacks, so
+        // its members and its beat keep as far off the arrival as the post allows, never nearer than it less SPREAD;
+        // and where the mesh stands a member nearer still, a metre more at a time, so every band stands.
+        let back = |spawn: [f64; 2], more: f64| {
+            let off = apart(spawn, at);
+            let short = (SPAWN_CLEAR + SPREAD - off).max(0.0) + more;
+            if off <= 0.0 {
+                return spawn;
+            }
+            [spawn[0] + (spawn[0] - at[0]) / off * short, spawn[1] + (spawn[1] - at[1]) / off * short]
         };
+        let stood = (0..=(SPAWN_CLEAR + SPREAD) as u32).find_map(|more| {
+            let spawns = section.spawns.iter().map(|&spawn| back(spawn, f64::from(more))).collect();
+            let section = Section { ring: ring.clone(), spawns, ..section.clone() };
+            let (mut draws, mut beats) = (draws, beats);
+            self.post_at(group, (at[0], at[1]), (&section, lattice), (&mut draws, &mut beats))
+        });
+        let Some(mut post) = stood else { return false };
         let (seed, shield_chance) = (self.world_seed, self.shield_chance());
         let girded: u32 = self.garrison.iter().map(|post| post.members.len() as u32).sum();
         for (nth, &(_, rank, _, _)) in (girded..).zip(&post.members) {

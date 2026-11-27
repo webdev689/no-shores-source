@@ -13,14 +13,18 @@ use protocol::wire::overlook::wire as messages;
 pub const PASSAGE_ASK: &str =
     r#"{ "island": "continent-1", "week": 2900, "zone": ZONE, "route": "public", "minute": 29230000 }"#;
 /// Both tests hold this value; a change to the passages' rooms, the foes or the fight changes it in both, on purpose.
-pub const PASSAGE_HASH: &str = "f711b19e";
+pub const PASSAGE_HASH: &str = "020ef283";
 /// The tick the deal was done at, in both.
-pub const PASSAGE_DONE: u32 = 6_183;
+pub const PASSAGE_DONE: u32 = 3_838;
 const RUN_TICKS: u32 = 7_000;
 const SWING_EVERY: u32 = 20;
 /// A glance's health's place among a foe's numbers, and how near a foe stands to be swung at (m).
 const HEALTH: usize = 10;
 const REACH_M: f64 = 2.6;
+/// The body's mode's place among a player's numbers, and the numbers of hanging and climbing on a wall.
+const MODE: usize = 7;
+const HANG: f64 = 2.0;
+const CLIMB: f64 = 3.0;
 
 /// The player's own fighter as a browser keeps it from its snapshots: whole, or the numbers changed, a bit each.
 fn keep_own(own: &mut Vec<f64>, seen: &messages::Snapshot<'_>, player: room::PlayerId) {
@@ -91,7 +95,10 @@ fn a_passage_zones_room_fights_its_deal_done_to_the_same_fingerprint_natively_as
             combat::sight::apart(at, [foe[0], foe[1]]) <= REACH_M && (foe[2] - height).abs() <= REACH_M
         });
         let forward = if nearest.is_some() && !near { 1.0 } else { 0.0 };
-        let controls = Controls { yaw, forward, run: true, ..Controls::default() };
+        // A body that ran into a tree or a wall holds on to it and cannot swing from there: near a foe it lets go
+        // (crouches off it), as a player would, rather than hang there under the foe's blows.
+        let holding = own.get(MODE).is_some_and(|mode| *mode == HANG || *mode == CLIMB);
+        let controls = Controls { yaw, forward, run: true, crouch: near && holding, ..Controls::default() };
         let swing = near && tick % SWING_EVERY == 0;
         let combat = CombatInput { attack: swing.then_some(Stroke::Down), ..CombatInput::default() };
         let input = room::Input {

@@ -32,6 +32,7 @@ const [PASSAGE_DONE, RUN_TICKS, SWING_EVERY, HEALTH, REACH_M] = [
   'HEALTH',
   'REACH_M',
 ].map(number);
+const [MODE, HANG, CLIMB] = ['MODE', 'HANG', 'CLIMB'].map(number);
 /** A sword in the main hand, by combat's arms code: the kitted character's. */
 const SWORD = 2;
 /** XP the rules' diver earns (`diver`), well past level 20. */
@@ -75,7 +76,10 @@ test('a passage zone’s room fights its deal done to the same fingerprint throu
       nearest !== null && apart(own, nearest) <= REACH_M && Math.abs((nearest[2] ?? 0) - (own[2] ?? 0)) <= REACH_M;
     const swing = near && tick % SWING_EVERY === 0 ? 1 : 0;
     const forward = nearest && !near ? 1 : 0;
-    const intent = new Float64Array([forward, 0, yaw, 1, 0, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
+    // A body holding on to a tree or a wall cannot swing from there: near a foe it lets go (crouches off it).
+    const mode = own[MODE] ?? 0;
+    const crouch = near && (mode === HANG || mode === CLIMB) ? 1 : 0;
+    const intent = new Float64Array([forward, 0, yaw, 1, 0, crouch, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
     const look = { anim: '', frame: 0, facing: 0 };
     const input = inputBytes(tick, { intent, look, arms: SWORD, seen: BigInt(tick - 1), respawn: true });
     assert.equal(room.input(player, input), 'taken');

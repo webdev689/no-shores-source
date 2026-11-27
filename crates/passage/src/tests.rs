@@ -1,5 +1,6 @@
 use super::*;
 use crate::plan::{KINDLES, Kind, NODES, POSTS};
+use crate::sites::{POST_OFF_WAY_IN_M, SPOT_APART_M, apart};
 
 /// Whether a point lies inside a ring (crossings counted along a line east of it).
 fn within(ring: &[[f64; 2]], [x, y]: [f64; 2]) -> bool {
@@ -500,4 +501,57 @@ fn every_under_ground_lamp_of_ten_years_stands_under_a_ceiling_tall_enough() {
         }
     }
     assert!(low.is_empty(), "{} lamps under a low ceiling: {low:#?}", low.len());
+}
+
+#[test]
+fn every_band_is_kept_as_far_from_the_arrival_as_its_floor_allows() {
+    let (mut hollows, mut nearer) = (0, 0);
+    for week in 2_900..2_906 {
+        let web = Web::of(saltmere(), week);
+        for zone in &web.zones {
+            let Some(plan) = Plan::of(&web, zone.number) else { continue };
+            let (sites, name) = (&plan.sites, format!("week {week} zone {} {:?}", zone.number, zone.size));
+            let off = |at: &[f64; 2]| apart(*at, sites.arrive);
+            for (nth, post) in sites.posts.iter().enumerate() {
+                assert!(off(post) >= POST_OFF_WAY_IN_M, "{name}: a post {:.1} m out", off(post));
+                let others = sites.posts.iter().enumerate().filter(|(other, _)| *other != nth);
+                assert!(others.clone().all(|(_, other)| apart(*other, *post) >= SPOT_APART_M - 1e-9), "{name}");
+                if off(post) >= POST_OFF_ARRIVAL_M {
+                    continue;
+                }
+                nearer += 1;
+                match &plan.ground {
+                    // A hollow lays fewer posts that far out only when small.
+                    Laid::Open(_) => assert_eq!(zone.size, Size::Small, "{name}: a post {:.1} m out", off(post)),
+                    // Under ground, no clear floor of the post's room stands farther out and apart from the others.
+                    Laid::Under(dungeon) => {
+                        let cell = cell_of(dungeon, *post);
+                        let room = dungeon.rooms.iter().find(|room| room.cells.contains(&cell)).expect("in a room");
+                        let cells = if room.quiet.is_empty() { &room.cells } else { &room.quiet };
+                        let clear = |at: &[f64; 2]| {
+                            sites.lamp.is_none_or(|lamp| apart(lamp, *at) >= under::LAMP_CLEAR_M)
+                                && sites
+                                    .onward
+                                    .iter()
+                                    .chain([&sites.way_in])
+                                    .all(|door| apart(door.at, *at) >= SPOT_APART_M / 2.0)
+                        };
+                        let farther = cells
+                            .iter()
+                            .filter(|&&cell| !dungeon.holds_solid(cell))
+                            .map(|&cell| dungeon.centre(cell))
+                            .filter(|at| off(at) > off(post) + 1e-9 && clear(at))
+                            .find(|at| others.clone().all(|(_, other)| apart(*other, *at) >= SPOT_APART_M));
+                        assert_eq!(farther, None, "{name}: a post {:.1} m out", off(post));
+                    }
+                }
+            }
+            if let Laid::Open(_) = plan.ground {
+                // Every band of the zone is kept.
+                assert_eq!(sites.posts.len(), zone.size.posts(), "{name}");
+                hollows += 1;
+            }
+        }
+    }
+    assert!(hollows > 100 && nearer > 50, "{hollows} hollows, {nearer} posts nearer");
 }

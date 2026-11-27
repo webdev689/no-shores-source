@@ -1,8 +1,9 @@
 //! A player arriving in a passage zone: its foes leave them be from joining until ARRIVAL_GRACE after they arrive,
-//! held or not, striking first ending it; and where the zone's floor holds its posts that far out, no band member
-//! stands or walks within BAND_OFF_ARRIVAL_M of the arrival.
+//! held or not, striking first ending it; and no band member stands or walks within BAND_OFF_ARRIVAL_M of the arrival,
+//! nor, where the floor holds a post nearer, nearer than its post less a band's spread.
 
 use super::passages_tests::{BAND, ISLAND, diver, web, zone_room};
+use crate::garrison::SPREAD;
 use crate::players::ARRIVAL_GRACE;
 use crate::{Input, PlayerId, Room};
 use combat::arms::Stroke;
@@ -10,6 +11,9 @@ use combat::sight::{apart, bearing};
 use combat::{CombatInput, Intent};
 use gear::dive::Route;
 use passage::{BAND_OFF_ARRIVAL_M, Deal, Mission, Plan};
+
+/// How far a post's place on the navmesh may lie from its site's place, metres.
+const MESH_SLACK_M: f64 = 1.0;
 
 /// The foe of the zone nearest its arrival, stood 2 m ahead of it facing it, so a player there who is not left be is fought.
 fn foe_beside_arrival(room: &mut Room, plan: &Plan) {
@@ -92,13 +96,17 @@ fn striking_first_ends_an_arrivals_grace() {
 }
 
 #[test]
-fn no_band_member_stands_or_walks_within_25_m_of_a_medium_or_large_hollows_arrival() {
+fn no_band_member_stands_or_walks_within_25_m_of_a_zones_arrival_or_nearer_than_its_post_allows() {
     assert_eq!(BAND_OFF_ARRIVAL_M, crate::garrison::SPAWN_CLEAR, "the garrison keeps its members that far off");
     let mut zones = 0;
     for week in 2_900..2_903 {
         let web = web(week);
-        for zone in web.zones.iter().filter(|zone| passage::bands_off_arrival(zone)) {
+        for zone in &web.zones {
             let Some(plan) = Plan::of(&web, zone.number) else { continue };
+            // An under-ground Vault stands its dungeon's own garrison (`stand_dungeon_garrison`), not bands on the posts.
+            if plan.zone.deal == Deal::Vault && matches!(plan.ground, passage::Laid::Under(_)) {
+                continue;
+            }
             let modifiers = gear::passages::week_modifiers(ISLAND, week);
             let mut room = Room::passage(&plan, BAND, modifiers, (ISLAND, week, Route::Public)).expect("a room");
             let posts: Vec<usize> = room.zone().map(|zone| zone.round.guards.clone()).unwrap_or_default();
@@ -107,7 +115,17 @@ fn no_band_member_stands_or_walks_within_25_m_of_a_medium_or_large_hollows_arriv
                 Deal::Mission(Mission::Kindle | Mission::Hold | Mission::Ambush) => {}
                 Deal::Lamp => assert!(!posts.is_empty(), "week {week} zone {}: its guard stood", zone.number),
                 // A band on each post, stood or held back for room: none lost to the arrival's clearance.
-                _ => assert_eq!(posts.len() + held, plan.sites.posts.len(), "week {week} zone {}", zone.number),
+                _ => assert_eq!(
+                    posts.len() + held,
+                    plan.sites.posts.len(),
+                    "week {week} zone {} {:?} {:?} {:?} posts {:?} arrive {:?}",
+                    zone.number,
+                    zone.ground,
+                    zone.size,
+                    zone.deal,
+                    plan.sites.posts,
+                    plan.sites.arrive
+                ),
             }
             zones += 1;
             // A Hunt's marked band walks its round the longest: a minute and a half sees it round.
@@ -117,15 +135,14 @@ fn no_band_member_stands_or_walks_within_25_m_of_a_medium_or_large_hollows_arriv
                     // Read each time, so a band held back and stood since is measured too.
                     let posts: Vec<usize> = room.zone().map(|zone| zone.round.guards.clone()).unwrap_or_default();
                     for &post in &posts {
+                        let at = room.garrison[post].at;
+                        // A post stands where the mesh holds it, a little off the site's place: so much is allowed.
+                        let least =
+                            (apart([at[0], at[1]], plan.sites.arrive) - SPREAD - MESH_SLACK_M).min(BAND_OFF_ARRIVAL_M);
                         for id in &room.garrison[post].standing {
                             let Some(foe) = room.foes.get(id) else { continue };
                             let off = apart([foe.fighter.body.x, foe.fighter.body.y], plan.sites.arrive);
-                            assert!(
-                                off >= BAND_OFF_ARRIVAL_M,
-                                "week {week} zone {} {:?}: {off:.1} m",
-                                zone.number,
-                                zone.deal
-                            );
+                            assert!(off >= least, "week {week} zone {} {:?}: {off:.1} m", zone.number, zone.deal);
                         }
                     }
                 }

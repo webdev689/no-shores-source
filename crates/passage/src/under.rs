@@ -4,7 +4,7 @@
 
 use crate::LAMP_CEILING_M;
 use crate::plan::Kind;
-use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of, spread};
+use crate::sites::{Door, POST_OFF_ARRIVAL_M, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of, spread};
 use crate::zone::{Deal, Mission, Zone};
 use dungeon::{CELL_M, Cell, Dungeon, SIDES, Side};
 
@@ -21,7 +21,7 @@ const OFF_WALL_M: f64 = CELL_M / 2.0 - 0.02;
 /// How many seeds a lamp's zone is tried from for a room tall enough to stand it in.
 const LAMP_TRIES: u32 = 32;
 /// How far the lamp keeps its ring from anything else's spot or post, metres.
-const LAMP_CLEAR_M: f64 = 5.0;
+pub(crate) const LAMP_CLEAR_M: f64 = 5.0;
 
 /// A wall of a room's cell that is rock on its side, as a door would stand on it: its cell, side and room's walk.
 struct Wall {
@@ -207,7 +207,7 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
         lamp.is_none_or(|lamp| apart(lamp, place) >= LAMP_CLEAR_M)
             && onward.iter().chain([&way_in]).all(|door| apart(door.at, place) >= SPOT_APART_M / 2.0)
     };
-    let mut middles: Vec<(u32, [f64; 2])> = dungeon
+    let mut middles: Vec<(u32, [f64; 2], Vec<[f64; 2]>)> = dungeon
         .rooms
         .iter()
         .enumerate()
@@ -226,12 +226,29 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
                 .filter(|&&cell| clear(dungeon.centre(cell)))
                 .max_by(|one, other| far(one).total_cmp(&far(other)));
             let pick = if dungeon.rooms.len() == 1 { farthest } else { cells.get(cells.len() / 2) };
-            Some((room.walk, dungeon.centre(*pick?)))
+            let floor = cells.iter().map(|&cell| dungeon.centre(cell)).filter(|at| clear(*at)).collect();
+            Some((room.walk, dungeon.centre(*pick?), floor))
         })
         .collect();
     middles.sort_by(|one, other| one.0.cmp(&other.0).then(one.1[0].total_cmp(&other.1[0])));
     let off_way_in = |place: &[f64; 2]| apart(*place, arrive) >= POST_OFF_WAY_IN_M;
-    let posts = spread(middles.into_iter().map(|(_, at)| at).filter(off_way_in).filter(|at| clear(*at)), SPOT_APART_M);
+    let mut posts = spread(middles.iter().map(|room| room.1).filter(off_way_in).filter(|at| clear(*at)), SPOT_APART_M);
+    // A post nearer the arrival than POST_OFF_ARRIVAL_M moves on its room's clear floor: to the place that far out
+    // nearest its middle, else to its farthest, kept SPOT_APART_M from every other post.
+    for nth in 0..posts.len() {
+        let (middle, off) = (posts[nth], |at: &[f64; 2]| apart(*at, arrive));
+        let near = off(&middle) < POST_OFF_ARRIVAL_M;
+        let Some((_, _, floor)) = middles.iter().find(|room| near && room.1 == middle) else { continue };
+        let fits = |at: &&[f64; 2]| {
+            posts.iter().enumerate().all(|(other, post)| other == nth || apart(*post, **at) >= SPOT_APART_M)
+        };
+        let beyond = floor.iter().filter(|at| off(at) >= POST_OFF_ARRIVAL_M).filter(fits);
+        let pick = beyond.min_by(|one, two| apart(**one, middle).total_cmp(&apart(**two, middle)));
+        let pick = pick.or_else(|| floor.iter().filter(fits).max_by(|one, two| off(one).total_cmp(&off(two))));
+        if let Some(&pick) = pick.filter(|at| off(at) > off(&middle)) {
+            posts[nth] = pick;
+        }
+    }
     let mut floor: Vec<[f64; 2]> = dungeon
         .rooms
         .iter()

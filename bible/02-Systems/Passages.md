@@ -130,7 +130,10 @@ passages' own pieces standing in it with their solids.
   lies whole on the room floor at its spot (no rock or corridor cell, nor the dungeon's edge, within 6 m of its middle), the spot
   where the ring lies whole, else where most of it does. A band's post is the
   middle of a room's cells that no prop, fixture or landmark fills, the way in's room's none but in a zone laid as one
-  great room, whose post is its clear floor farthest from the arrival; a room with no such floor stands no post; the deal's spots are quiet cells that hold none.
+  great room, whose post is its clear floor farthest from the arrival; a room with no such floor stands no post. A post
+  nearer the arrival than 27.5 m (25 m and a band's spread, `passage::POST_OFF_ARRIVAL_M`) moves on its room's clear
+  floor to the place that far out nearest its middle, else to its farthest, still 7 m from every other post, so every
+  band is kept as far out as the floor allows ([[Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival]]); the deal's spots are quiet cells that hold none.
 - **Above ground**: a hollow 38, 55 or 75 m across, its floor's outline of its form (round, a winding ravine with
   rounded ends, terraced shelves, a squared court, a long strand, a grove) on a grid of heights 2 m apart, rolling a
   little and stepping down in shelves, each easing into the next over an 8 m bank; its walls rise 12 to 25 m within
@@ -139,8 +142,9 @@ passages' own pieces standing in it with their solids.
   lip's height (`drawnHeights`); the section is the square the ground is laid in (`Hollow::bounds`), so a body is
   held by the ground and never killed for walking. Its posts are as many as its
   room's most foes hold in bands of two (`Size::posts`: 3, 4 and 6), spread over the floor, none nearer the arrival
-  than 14 m, in a medium or large hollow 27.5 m (25 m and a band's spread, `passage::bands_off_arrival`); a small
-  hollow, and a zone under ground, lays fewer posts that far out, so theirs stand from 14 m ([[Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival]]). It is dressed from the
+  than 14 m, and 27.5 m out (`passage::POST_OFF_ARRIVAL_M`) where the floor holds every one so far, as a medium or
+  large hollow does; where it does not (a small hollow) every post is kept, from as far out as the floor holds them all
+  ([[Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival]]). It is dressed from the
   islands' kit of its climate: cliffs along its walls, each 3 m out along its own wall's normal, facing in, boulders at
   their feet (the round and the split, never the small stacked one), trees, shrubs and grass by its form, a court's
   ruins, a strand's wrecks, each keeping its footprint (a plant's at least 2 m, as far as the page's plant for it
@@ -207,9 +211,11 @@ passages' own pieces standing in it with their solids.
   lamp's guard is an Elite band at the first lamp, the Reeve and an Elite band at the second, the Tithe-Mate and an
   Elite band at the third, and at the fourth one of the island's two Elite Dungeons' Bosses, the week's by turns, and
   two Elite bands. Above ground a band's places and its beat keep inside the hollow's floor, its beat a band's spread
-  in from the floor's edge, as under ground they keep inside the section. In a medium or large hollow no band's
-  member stands, and no beat (a Hunt's round included) walks, within 25 m of the arrival (the garrison's
-  `SPAWN_CLEAR`), a lamp's guard standing at the post nearest the lamp where beside it would be nearer.
+  in from the floor's edge, as under ground they keep inside the section. No band's member stands, and no beat (a
+  Hunt's round included) walks, within 25 m of the arrival (the garrison's `SPAWN_CLEAR`) where its post stands
+  27.5 m out, nor nearer than its post less a band's spread where the post stands nearer (the arrival's spawn taken
+  back from the post by what it lacks, and a metre more at a time where the navmesh stands a member nearer still, so
+  every band stands), a lamp's guard standing at the post nearest the lamp where beside it would be nearer.
   A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
   Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
   A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find
