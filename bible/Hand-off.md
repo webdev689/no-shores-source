@@ -11,11 +11,6 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
-- **Draft, after #233**: #228 (dialogue waits for a click; Overlook's city lit at night; ships' lanterns from DFO
-  with night sight at every sighting at sea, stern windows lit and the Schooner's, Brig's and Frigate's hulls
-  republished; a sea fight's flashes, fires and blasts lighting the ships). The owner chose #233 (lights redesigned
-  and animated) to merge first: then #228 takes `main` and moves its lanterns', fight lamps' and water's light onto
-  #233's lamps, flicker and water light, dropping its own, and the hulls are rebuilt with both changes.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -123,13 +118,10 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   a deployed room: docking and undocking, parked ships ashore and at sea, the tiles and their icons, the console, the
   Playlist's crests.
 
-- **#228's open ends**, each the owner's to judge or answer: hostile ships on the sea map still show at any range by
-  night (the owner's sea map decision) while other players' ships keep to night sight; a bold hostile still meets a
-  player, and a player joins other players' fight, from 750 m by night; the stern windows and the lanterns' glass burn
-  a flat lemon yellow, a dark ship's panes read pale; near lanterns light sails and walls a strong orange (DFO's 1.0 at
-  20 m); far facades from the sea read as a warm wash; by day a burning ship's flames and smoke read weakly; the World
-  Editor's fights show no flash light; dialogue's pace is kept in the browser, a keeper's screen still says its lines
-  on its own 1.6 s, the pad's Continue untested. None pictured on a real GPU or played by hand.
+- **The lights at sea and in the city** (#228 on #233's lights): not pictured on a real GPU or played by hand; the
+  hub's city does not draw in the headless QA page, so Overlook's lights after the fold are unpictured; each lit ship
+  lights up to four lamps, which may crowd the nearest sixteen in a big night fight; the pad's Continue is untested;
+  a keeper's screen says its lines on its own 1.6 s.
 
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
