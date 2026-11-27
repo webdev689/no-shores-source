@@ -70,6 +70,7 @@ pub fn foreign_build(root: &Path, target: Option<PathBuf>) -> Option<String> {
         return Some(format!("this xtask was built from {}, not {}", built.display(), root.display()));
     }
     let target = target?;
+    // shortcut: a cargo config file's `build.target-dir` is not seen; read `cargo metadata` once one is set.
     let target = std::env::current_dir().map_or_else(|_| target.clone(), |cwd| cwd.join(&target));
     let target = target.canonicalize().unwrap_or(target);
     (!target.starts_with(&root)).then(|| {

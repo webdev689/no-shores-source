@@ -67,23 +67,28 @@ fn main() -> ExitCode {
 /// line with the verdict and the commit, so a log's tail says both what failed and what it covered.
 fn check(part: Option<toolchain::Part>, slice: Option<&str>) -> ExitCode {
     let root = files::repo_root();
-    if let Some(reason) =
-        files::foreign_build(&root, std::env::var_os("CARGO_TARGET_DIR").map(std::path::PathBuf::from))
-    {
+    if let Some(reason) = files::foreign_build(
+        &root,
+        std::env::var_os("CARGO_TARGET_DIR")
+            .or_else(|| std::env::var_os("CARGO_BUILD_TARGET_DIR"))
+            .map(std::path::PathBuf::from),
+    ) {
         println!("FAILED: not checked, {reason}");
         return ExitCode::FAILURE;
     }
     println!("== checking {}", root.display());
     // Read before the check, which takes minutes: a commit or an edit made meanwhile was never checked.
     let checked = checked_commit();
-    let before = git(&["status", "--porcelain"]);
+    // The diff as well as the status: an edit to a file already changed leaves the status as it was.
+    let tree = || (git(&["status", "--porcelain"]), git(&["diff", "HEAD"]));
+    let before = tree();
     let mut failed = Vec::new();
     if matches!(part, None | Some(toolchain::Part::Rest)) && !repo_checks_pass() {
         failed.push("repo checks".to_owned());
     }
     let steps = part.map_or_else(toolchain::run_all, |part| toolchain::run_part(part, slice));
     failed.extend(steps.err());
-    let changed = if git(&["status", "--porcelain"]) == before { "" } else { "; the tree changed during the check" };
+    let changed = if tree() == before { "" } else { "; the tree changed during the check" };
     if failed.is_empty() {
         println!("passed: {checked}{changed}");
         ExitCode::SUCCESS

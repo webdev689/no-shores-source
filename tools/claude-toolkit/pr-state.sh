@@ -5,6 +5,7 @@
 # Git only: the pull request's own CI state comes from the GitHub tools, as the last line says.
 set -u
 git fetch -q origin main || echo "pr-state: could not fetch origin/main; comparing with the copy already here"
+git rev-parse -q --verify origin/main >/dev/null || { echo "pr-state: FAILED, no origin/main to compare with"; exit 1; }
 bad=0
 for branch in $(git for-each-ref --format='%(refname:short)' refs/heads); do
   ahead=$(git rev-list --count "origin/main..$branch") || continue
@@ -18,8 +19,9 @@ for branch in $(git for-each-ref --format='%(refname:short)' refs/heads); do
     *) echo "   could not test the merge with origin/main (git merge-tree --write-tree needs git 2.38)"; bad=1 ;;
   esac
   head=$(git rev-parse "$branch")
-  remote=$(git ls-remote origin "refs/heads/$branch" | cut -f1)
-  if [ -z "$remote" ]; then
+  if ! remote=$(git ls-remote origin "refs/heads/$branch"); then
+    echo "   origin: could not be read"; bad=1
+  elif remote=${remote%%$'\t'*}; [ -z "$remote" ]; then
     echo "   origin: no branch $branch (not pushed)"
   elif [ "$remote" = "$head" ]; then
     echo "   origin: holds its head ${head:0:12}"

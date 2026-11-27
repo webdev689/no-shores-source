@@ -25,6 +25,8 @@ INBOX="$OUT/inbox-$NAME.md"
 [ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
 echo $$ > "$OUT/$NAME.pid"; trap 'rm -f "$OUT/$NAME.pid"' EXIT
 pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped worker can leave a stale lock
+# Two checkouts sharing one build folder overwrite each other's binaries mid-run; cargo xtask check refuses one outside.
+unset CARGO_TARGET_DIR CARGO_BUILD_TARGET_DIR
 # A worktree holds only what git tracks. Link the main checkout's packages, and build here, once, what the client's
 # tests read and git ignores (the generated messages, the WebAssembly, and the message fixtures the protocol's Rust tests
 # write), so the worker's tests run as the main checkout's do, on its own Rust.
@@ -55,8 +57,6 @@ PY
 }
 serena_up || serena_up || echo "run-worker.sh: Serena did not answer twice; the worker starts without a warm Serena" >&2
 export MCP_TIMEOUT=120000
-# Two checkouts sharing one build folder overwrite each other's binaries mid-run; cargo xtask check refuses one outside.
-unset CARGO_TARGET_DIR
 python3 - "$WT" "$MEM" "$CFG" <<'PY'
 import json,sys
 wt,mem,cfg=sys.argv[1:4]
