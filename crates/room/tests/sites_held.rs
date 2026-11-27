@@ -1,6 +1,6 @@
 //! A patrol zone's foes hold its territories and its runs: on Saltmere's zones as the bake makes them, every area but
-//! where players arrive or pass, where folk live, where events are fought, a Breach's hollow and a guild's plot, and
-//! its runs' beats; each foes' site stands its group as a player comes near it, and a player walked into a territory
+//! where players arrive or pass, where folk live and work the land, where events are fought, a Breach's hollow and a
+//! guild's plot, and its runs' beats; each foes' site stands its group as a player comes near it, and a player walked into a territory
 //! or along a run meets the group there.
 
 use combat::Intent;
@@ -37,6 +37,8 @@ fn zones() -> Vec<(bake::NodeFile, Vec<layout::runs::Run>, Vec<[f64; 2]>)> {
                         | AreaKind::Entrance
                         | AreaKind::Gate
                         | AreaKind::Hamlet
+                        | AreaKind::Farm
+                        | AreaKind::Mill
                         | AreaKind::Wilds
                         | AreaKind::Breach
                         | AreaKind::Plot
@@ -220,5 +222,5 @@ fn a_player_walked_into_each_territory_and_along_each_run_of_saltmere_meets_the_
             assert!(met.iter().all(|met| *met), "{}: {} meets its beats' groups: {met:?}", node.id, run.name);
         }
     }
-    assert!(territories_met >= 15, "Saltmere's zones hold territories across them: {territories_met}");
+    assert!(territories_met >= 12, "Saltmere's zones hold territories across them: {territories_met}");
 }

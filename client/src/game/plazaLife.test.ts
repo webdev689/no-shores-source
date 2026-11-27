@@ -88,6 +88,23 @@ test('a ruin’s plaza, keeping no station, has no one in it', () => {
   assert.equal(offerAt([], 960.8, 1950), null, 'no counter offers anything');
 });
 
+test('a patrol zone’s folk walk where its folk sites are, and only there', () => {
+  let placed = 0;
+  const others = {
+    place: (dress: Placed['dress'], x: number, y: number, facing: number) => {
+      placed++;
+      return { id: placed, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false } as Placed;
+    },
+    remove: () => {},
+  };
+  const track = Array.from({ length: 21 }, (unused, step) => [800 + step * 20, 2000] as const);
+  const zone: NodeInfo = { ...PLAZA, id: 'saltgrass-downs', kind: 'patrol', stations: [], paths: [track] };
+  new PlazaLife(zone, others, () => 30).frame(0);
+  assert.equal(placed, 0, 'no folk site, no one');
+  new PlazaLife({ ...zone, folk: [{ at: [1000, 2000], radius: 100 }] }, others, () => 30).frame(0);
+  assert.ok(placed >= 3, `a hamlet's guard and townsfolk: ${placed}`);
+});
+
 test('a figure stands on a pier, a podium and the steps on it, never on a roof over its head', () => {
   const sea = () => -2;
   const box = (top: number, bottom: number, minX = 0, maxX = 10) => ({ minX, minY: 0, maxX, maxY: 10, top, bottom });

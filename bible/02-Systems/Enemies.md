@@ -250,15 +250,16 @@ WebAssembly, so names, factions and weapons are read in one place.
   [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]).
 - **Territories and runs** ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]): a patrol
   zone's layout marks foes' sites, and its room stands a group of the Grey Tithe at each: its territories across the
-  zone, every area but where players arrive or pass (its landing, gates and entrances), where folk live (a hamlet),
-  where public events are fought (wilds), a Breach's hollow and a guild's plot, at the area's middle ([[Layouts]],
+  zone, every area but where players arrive or pass (its landing, gates and entrances), where folk live and work the
+  land (a hamlet, a farm or a mill, which hold civilians only: [[Game]], "A patrol zone's folk"), where public events
+  are fought (wilds), a Breach's hollow and a guild's plot, at the area's middle ([[Layouts]],
   "How a layout is planned"); and its runs' beats short of their end arenas, which hold their objective's site ([[Layouts]], "Runs").
   One in the garrison's own square stands none, its ground held already, and none within 60 m of the edge of a
   public event's ground, which the event's own foes hold. A site's group stands when a player comes within 150 m of
   it while it stands none, none is within 40 m, and the room's living foes leave room for all of it, on a navmesh
   baked round the site then, a slice a tick, as a quest's place's is ([[Navmesh]]): within a second or two, a
-  keep's walls and floors within three. So a room opens as quickly as before. Saltmere's three zones hold 15 territories (Saltgrass
-  Downs five, Gullwing Vale five, Driftwood Moors five) beside their runs' beats. It is drawn as a
+  keep's walls and floors within three. So a room opens as quickly as before. Saltmere's three zones hold 12 territories (Saltgrass
+  Downs four, Gullwing Vale three, Driftwood Moors five) beside their runs' beats. It is drawn as a
   patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
   raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
   stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes
@@ -437,7 +438,9 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
   shards falling to the land under each and sinking. The page runs the room's ticks on between its snapshots, eased
   onto each and never stepped back (`foeArrivals.ts`), so a ship's flight and a foe's build run smoothly. Each is heard
   from recordings the owner picked, a beat it was long past when first seen not heard
-  ([[Foe Arrivals as Claude Builds Them]]).
+  ([[Foe Arrivals as Claude Builds Them]]); the airship's engines and hatch and the crown's forming borrow recordings
+  picked for other things until the owner picks their own on the sound sheet (`arrival.*` in
+  `content/audio/freesound.json`), each then heard in place of the ones it borrowed.
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
 - **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.
 

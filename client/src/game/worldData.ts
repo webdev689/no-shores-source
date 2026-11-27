@@ -38,6 +38,8 @@ export interface NodeInfo {
   readonly wrecks?: readonly Point[];
   /** A patrol area's foes' sites, its territories, where its room stands groups (`laidNodes`). */
   readonly foes?: readonly Point[];
+  /** A patrol area's folk sites, where no foe holds the ground and its guards and townsfolk walk (`zoneFolk`). */
+  readonly folk?: readonly { readonly at: Point; readonly radius: number }[];
   /** The places its layout names, which a quest's goals stand at (layouts.ts `placesOf`); none for a node not laid. */
   readonly places?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
   /** Its runs' sealed doors by name (layouts.ts `doorsOf`), where its room lays the passages' mouths. */

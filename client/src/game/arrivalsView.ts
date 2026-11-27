@@ -19,6 +19,7 @@ import { CROWN, crownState } from '../combat/crownLife.ts';
 import { RoomTicks } from '../combat/foeArrivals.ts';
 import { latticeWaves } from '../combat/latticeLooks.ts';
 import { type HeardSound, WHOLE_MOST_M } from '../combat/worldSounds.ts';
+import { recorded } from '../soundSamples.ts';
 import type { EventProp } from '../city/eventProps.ts';
 import { moduleNumber, moduleSocket, moduleSocketFacing } from '../city/modules.ts';
 import { type ArrivalSeen, BRINGER, type FoeArrival } from '../network/arrivalMessages.ts';
@@ -73,6 +74,9 @@ const STACKS = ['stack-1', 'stack-2'] as const;
 
 /** The airships and crowns of the room the player stands in, drawn and heard. */
 export class ArrivalsView {
+  /** Whether a cue's recording is picked: an arrival's own sound on the sound sheet (`arrival.*`) plays in place of
+   *  the ones it borrows once it is. */
+  private readonly picked: (cue: string) => boolean;
   private readonly ticks = new RoomTicks();
   /** Each ship's smoke, by its number, and when it last puffed; each ship's last roar. */
   private readonly smoke = new Map<number, { puffs: Puff[]; last: number; roared: number }>();
@@ -87,6 +91,15 @@ export class ArrivalsView {
   /** The numbers of the ships and crowns in this frame's word, kept from frame to frame; the room's last tick seen. */
   private readonly live = new Set<number>();
   private roomTick = -1;
+
+  constructor(picked: (cue: string) => boolean = recorded) {
+    this.picked = picked;
+  }
+
+  /** An arrival's own sound once its recording is picked, else those it borrows till then. */
+  private ownOr(own: string, borrowed: readonly string[]): readonly string[] {
+    return this.picked(own) ? [own] : borrowed;
+  }
 
   /** One frame at the page's `clock` (seconds): the props to draw and the sounds heard, the marks laid into `marks`
    *  as seen from `eye`; `ground` is the land's height, null off it. */
@@ -214,8 +227,8 @@ export class ArrivalsView {
   }
 
   /** A ship's sounds: its engines rumbling as it comes within a whole sound's reach of the eye on its way in, its fire
-   *  roaring as it drives, its timbers as it hangs, its engines opening up as it leaves. Each beat heard once, and none
-   *  it was long past when first seen. */
+   *  roaring as it drives, its hatch opening as it hangs (its timbers' creak till the hatch's own is picked), its
+   *  engines opening up as it leaves. Each beat heard once, and none it was long past when first seen. */
   private shipSounds(
     ship: ArrivalSeen,
     { tick, clock, eye }: { tick: number; clock: number; eye: Point },
@@ -227,16 +240,17 @@ export class ArrivalsView {
       ['creaks', ship.hangs],
       ['leaves', ship.leaves],
     ]);
-    const once = (beat: string, cue: string, where: Point, whole = false) => {
+    const once = (beat: string, cues: readonly string[], where: Point, whole = false) => {
       if (beats.has(beat)) return;
       beats.add(beat);
-      sounds.push(whole ? { cue, at: where, whole: true } : { cue, at: where });
+      for (const cue of cues) sounds.push(whole ? { cue, at: where, whole: true } : { cue, at: where });
     };
     const middle = socketAt('hatch');
     const near = Math.hypot(middle[0] - eye[0], middle[1] - eye[1], middle[2] - eye[2]) <= WHOLE_MOST_M;
-    if (tick < ship.hangs && near) once('rumbles', 'amb.thunder.roll', middle, true);
-    if (tick >= ship.hangs) once('creaks', 'amb.sea.hull.creak', middle);
-    if (tick >= ship.leaves) once('leaves', 'ship.blast', socketAt('thrust-1'), true);
+    const engine = 'arrival.airship.engine';
+    if (tick < ship.hangs && near) once('rumbles', this.ownOr(engine, ['amb.thunder.roll']), middle, true);
+    if (tick >= ship.hangs) once('creaks', this.ownOr('arrival.airship.hatch', ['amb.sea.hull.creak']), middle);
+    if (tick >= ship.leaves) once('leaves', this.ownOr(engine, ['ship.blast']), socketAt('thrust-1'), true);
     const kept = this.smoke.get(ship.id);
     if (kept && clock - kept.roared >= ROAR_EVERY_S) {
       kept.roared = clock;
@@ -264,7 +278,8 @@ export class ArrivalsView {
     ]);
     if (!beats.has('forms')) {
       beats.add('forms');
-      out.sounds.push({ cue: 'amb.ice.ping', at: heart }, { cue: 'element.cosmic', at: heart });
+      const forms = this.ownOr('arrival.crown.forms', ['amb.ice.ping', 'element.cosmic']);
+      out.sounds.push(...forms.map((cue) => ({ cue, at: heart })));
     }
     if (state.broken) {
       if (!beats.has('breaks')) {

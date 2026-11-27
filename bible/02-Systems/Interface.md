@@ -1168,7 +1168,9 @@ has picked its recording on the sound sheet ([[The World Sounds From the Sound P
 put in by `tools/freesound/publish.py` through the `freesound` workflow ([[Code Map]]), or one of DFO's own, by
 `tools/freesound/own.py` ([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have,
 plays any but the one it played last. The Duskraven plays its raven with a fire of its own under it
-([[The Duskraven Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules
+([[The Duskraven Sounds With Fire Under Its Raven]]). The foes' arrivals, the Tithe's airships and the Lattice's
+crowns, are heard through it too: their engines, hatch and forming (`arrival.*`) borrow other cues' recordings until
+the owner picks their own on the arrivals' sound sheet ([[Enemies]], "On screen"). Which cue a moment calls for is chosen by pure rules
 (`combat/worldCues.ts`):
 
 - **Blows.** A swing as its blade sweeps to its blow, started so its recording's loudest 20 ms meet the tick the blow

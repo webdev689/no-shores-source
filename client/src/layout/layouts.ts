@@ -46,7 +46,8 @@ export interface LayoutArea {
 /** A site a layout marks (the layout crate's `Site`): what it is for, where, how much ground it takes, and what it
  *  holds or leads to. */
 export interface LaidSite {
-  readonly kind: 'landing' | 'gate' | 'event' | 'beacon' | 'resource' | 'foes' | 'objective' | 'door' | 'chest';
+  readonly kind:
+    'landing' | 'gate' | 'event' | 'beacon' | 'resource' | 'foes' | 'objective' | 'door' | 'chest' | 'folk';
   readonly at: Point;
   readonly radius: number;
   readonly holds?: string;
@@ -130,6 +131,7 @@ interface Placed {
   readonly centre: Point;
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
   readonly foes?: readonly Point[];
+  readonly folk?: readonly { readonly at: Point; readonly radius: number }[];
   readonly places?: readonly NodePlace[];
   readonly doors?: readonly NodePlace[];
   readonly paths?: readonly (readonly Point[])[];
@@ -140,9 +142,9 @@ interface Placed {
 }
 
 /** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with, its
- *  resource places, where its room's nodes stand, and every foes' site it lays (its territories: its camps', ruins',
+ *  resource places, where its room's nodes stand, every foes' site it lays (its territories: its camps', ruins',
  *  keeps', wrecks', arenas', covens' and caves' areas and its runs' beats), where its room stands groups, each in the
- *  layout's order (as the bake writes them). */
+ *  layout's order (as the bake writes them), and its folk sites (its hamlets, farms and mills), where its folk walk. */
 export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: readonly NodeLayout[]): Node[] {
   const byId = new Map(layouts.map((layout) => [layout.id, layout]));
   return drawn.map((node) => {
@@ -156,10 +158,23 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
       kind === 'resource' && node ? [{ at: node, holds }] : [],
     );
     const foes = laid.sites.flatMap(({ kind, at }) => (kind === 'foes' ? [at] : []));
+    const folk = laid.sites.flatMap(({ kind, at, radius }) => (kind === 'folk' ? [{ at, radius }] : []));
     const paths = laid.paths.map((path) => path.points);
     const finds = laid.kind === 'patrol' ? findsOf(laid) : {};
     const [places, doors] = [placesOf(laid), doorsOf(laid)];
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places, doors, paths, ...finds };
+    return {
+      ...node,
+      ring: laid.ring,
+      spawns: laid.spawns,
+      centre,
+      resources,
+      foes,
+      folk,
+      places,
+      doors,
+      paths,
+      ...finds,
+    };
   });
 }
 

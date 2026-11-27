@@ -247,9 +247,11 @@ from the sea, fresh water and the claim's edge), then:
    paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
    5 m clear of every way's edge and a metre clear of every building and of every module's foot, whose floors level
    the land under it once the sites are marked, each resource 12 m from every other and from each beacon, and where
-   foes hold ground: a foes' site at the middle of every area but a landing, a gate, an entrance, a hamlet, a wilds, a
-   Breach's hollow and a guild's plot, its patrol's territories
-   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]; [[Enemies]], "Territories and runs"). Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
+   foes hold ground: a foes' site at the middle of every area but a landing, a gate, an entrance, a hamlet, a farm, a
+   mill, a wilds, a Breach's hollow and a guild's plot, its patrol's territories
+   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]; [[Enemies]], "Territories and runs");
+   and a folk site at the middle of each hamlet, farm and mill, reaching 0.8 of its radius, where civilians walk
+   instead ([[Game]], "A patrol zone's folk"). Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
    nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside
    the section's ring, on water, within a metre of a solid taller than a step or within 1.5 m of a planting, once all is
    laid), and a patrol stands its material nodes there, every one at once ([[Server]]). Each beacon and
