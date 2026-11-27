@@ -31,7 +31,8 @@ owner has said "later" or "not now", the owner's words follow the question.
   and where its props stand ([[The Lattice Has Props of Its Own, Made in Blender]]). The owner: "Talk it through
   later".
 - **The public events** ([[Public Events as Claude Builds Them]]): the Heart not yet rendered; the events at the top of
-  Saltmere's band; a leaver's vault past its 20; on the held map, the compass still marking an event's ground from
+  Saltmere's band; other players' numbers crowding an event; a leaver's vault past its
+  20; on the held map, the compass still marking an event's ground from
   anywhere in the zone, and the tracker still counting a chest left lying.
 - **The one mystery.** How long the Axis stays unseen, and what calls in the deep
   ([[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]); the owner's
@@ -70,6 +71,12 @@ owner has said "later" or "not now", the owner's words follow the question.
   - A click on an island the map marks but the room has not told of still asks to travel, and the room refuses it
     ("The way there crosses land.").
   - A gunnery lesson's hulk off Overlook is a captain in a player's fight, so every map in the Lantern Sea marks it.
+- **The ships** ([[The Ships as Claude Shapes Them]]): the Tithe Ram and the Fluyt. The owner: "Not yet".
+- **DFO's Travel Options encounter** on the Sloop. The owner: "Not now".
+- **The Drowned Vale at Hard**: the owner's "no respawn" read as within a running encounter, the fallen standing
+  again between encounters ([[The Drowned Vale as Claude Builds It]]).
+- **Chests**: DFO's chest model, `Low_Poly_Chest_Mimic.fbx`, is recorded there as the owner's supplied model: whether
+  it is.
 - **The first Breach's new mechanics**, proposed by the audits and not built: Keepers warded at Hard (so the crossing
   rule binds), Hard's seams in a drawn order, the Steward taking into both shores, the Spire keeping each third, a pad
   way to call the Steward's order without voice, a new danger sound; and sinking the Sunken Gate's area into the vale

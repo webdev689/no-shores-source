@@ -47,7 +47,7 @@ works is in [[Revives]] and [[Accounts]].
 
 | Choice | Chosen | Why |
 |---|---|---|
-| Where | A body lying on an Elite Dungeon's Court's cells while its Boss stands, and anywhere in an Abyss run with no revive left; one fallen outside the Court, come back down at the way in, may respawn | Destiny's dungeons and raids make their boss encounters darkness zones; its hardest Nightfalls leave the fallen to their allies once the revives are spent |
+| Where | A body lying on an Elite Dungeon's Court's cells at Elite or Abyss while its Boss stands (not at Normal: [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]), and anywhere in an Abyss run with no revive left; one fallen outside the Court, come back down at the way in, may respawn | Destiny's dungeons and raids make their boss encounters darkness zones; its hardest Nightfalls leave the fallen to their allies once the revives are spent |
 | What changes | No Respawn is offered; only an ally stands the fallen up | Destiny's darkness zone |
 | A company all down while the Court's Boss stands | Once the last of them has lain 4 s, falls back to the Court's checkpoint, every player whole there; the Court starts over, its waves gone, its ward, anchors and Fury as they first were, its Boss whole and awake; every seal stays broken | Destiny's wipe returns the fireteam to the last checkpoint, the encounter reset, after a moment that shows the wipe |
 | Told | "Darkness zone" on the place line, and "Darkness zone. Only an ally can raise you." on the death screen; "Your company fell. Back to the checkpoint" | D1's own name for it |

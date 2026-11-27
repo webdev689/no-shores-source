@@ -47,7 +47,8 @@ to Prestige 30), the owner chose:
 - **The gate's state outlives an eviction, a restart or a deploy.**
 - **The Unlit Ways wait on every living player of the company**; the fallen are not counted
   ([[The Drowned Vale as Claude Builds It]]).
-- **Forged weapons climb to the higher Prestige**, as Hard's armour does ([[Breach Weapons Come Normal and Forged]]).
+- **Forged weapons climb further**, as Hard's armour does: weapons carry no Prestige, so theirs is Attack, 263 to 315
+  against Normal's 248 to 300 ([[Breach Weapons Come Normal and Forged]]).
 
 Built ([[Breaches]], [[Gear]]; Claude's calls in [[The Open Questions' Answers as Claude Builds Them]]). Already so: the
 Unlit Ways waited on every living player, and a run let in its company's members as the company stood; only its relaunch

@@ -11,10 +11,10 @@ notes, linked from [[Decisions]]; those left for later stay in [[Open Questions]
 
 | The question | The owner's answer |
 |---|---|
-| A camp's gap, 9 m along the path grid's rows or columns ([[Layouts]]) | "Keep as built" |
+| A camp's gap, 9 m along the path grid's rows or columns ([[Layouts]]) | "Keep as built (Recommended)" |
 | Enemy factions' presence, what sets one apart, and where each is ([[Enemy Factions Start With the Grey Tithe]]) | "Keep fixed for now" |
-| Ship materials and their costs ([[Ship Power]]) | "Keep as built" |
-| The Lattice's emblem, its foes' numbers and the Heart's fight ([[The Lattice as Claude Shapes It]]) | "Keep as built" |
+| Ship materials and their costs ([[Ship Power]]) | "Keep as built (Recommended)" |
+| The Lattice's emblem, its foes' numbers and the Heart's fight ([[The Lattice as Claude Shapes It]]) | "Keep as built (Recommended)" |
 | The Grey Tithe's garrison joining the Fissure's fight ([[Public Events as Claude Builds Them]]) | "Yes, they join" |
 | Whether a pair may hold the heroic raid | "This opens the broader question of player scaling, which I am not sure if we have or if destiny 1 has"; told how the events scale: "Yes, pair can win (as built)" |
 | The end chest and the heroic task, Destiny 2's | "Keep Destiny 2's" |
@@ -22,14 +22,13 @@ notes, linked from [[Decisions]]; those left for later stay in [[Open Questions]
 | Who may revive | "Anyone in the room" |
 | A mission's and a shared dungeon's won groups | "Stand again (as built)" |
 | The islands that never change beside the small ones that fade ([[Islands]]) | "Keep as built" |
-| Reputation's sources ([[Factions]]) | "Keep as built" |
+| Reputation's sources ([[Factions]]) | "Keep as built (Recommended)" |
 | The faction bounties as built ([[The Bounty Board as Claude Shapes It]]) | "Yes, keep as built" |
 | Shape's hours, Friday 09:00 to Sunday 21:00 UTC | "Keep it" |
 | The Tack's wares | "Enough for now" |
 | The Lattice holding territories beyond the Fissure ([[Foe Arrivals as Claude Builds Them]]) | "Tithe only (as built)" |
 | How a cleared territory is retaken | "Keep as built" |
 | The ships at the Harbourmaster: prices, levels, class numbers, word lists ([[Shipyard]]) | "Keep as built" |
-| The Tithe Ram and the Fluyt ([[The Ships as Claude Shapes Them]]) | "Not yet" |
 | A Major's and higher's balls striking about half the time ([[Naval Combat]]) | "Keep ~50%" |
 | Claude's reading of "Plenty of sounds come from freesound" ([[The Drowned Vale as Claude Builds It]]) | "Yes, as built" |
 | A member kicked from the company forgotten by the run | "No, as built" |
@@ -62,7 +61,6 @@ notes, linked from [[Decisions]]; those left for later stay in [[Open Questions]
 | The crew's bars, and the welcome's "Follow" onto the tracker | "Crew bars fine" (the "Follow" stays where it is) |
 | The forge's blue gun puff | "Keep blue" |
 | The Sloop's keys, stand-ins, Manage's view, a walker overboard, another player's colour | "All fine" |
-| DFO's Travel Options encounter | "Not now" |
 | How many isles, how big and how placed | "This is old" |
 | The horde's size, its pay after a fall and its 36 m | "Keep as built" |
 | A house piece dismantling as Normal, the escort ship's ball, a bought Legendary noticed, the hint's place, the keeper screen, the duel's boarder, the townsfolk's dyes | "All fine" |

@@ -45,7 +45,7 @@ Claude's choices in building [[Pirates Are Replaced by the Grey Tithe]],
 |---|---|---|
 | The hover | The water under the pointer lit softly with an ink edge, its name, holder and level band by the pointer; the ship's own water lights nothing | "slightly hightlights the region" |
 | The prompt | "Travel to <water>?" with its holder and band, Yes or No (B on the pad); No keeps the course to sail the long way | The course is not lost |
-| The room's travel | Refused while fighting, on a deck, off the helm, chased, into the ship's own water, or as any course is (an island on the way included); taken, the ship is laid on the course's last leg 400 m short of its end, sailing on to it, and the hostile roll waits its first 30 s | The room is the authority; the arrival shows the ship sailing in |
+| The room's travel | Refused while fighting, on a deck, off the helm, chased, into the ship's own water, or as any course is (an island on the way included); taken, the ship is laid on the course's last leg 400 m short of its end, sailing on to it, and the hostile roll's clock runs on through it ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]) | The room is the authority; the arrival shows the ship sailing in |
 | The cinematic | Out from the helm to the aft starboard quarter 70 m off and 28 m up over 3 s; hold as the picture fades over 2 s, "Sailing for <water>"; black at least 1.5 s and until the new waters are ready; arrival from the bow quarter round to astern over 4 s; the usual view back over 1.5 s | "showing your ship dailing away as the game fades, loads, and shows you arriving" |
 | A fight met mid-travel | Ends the cinematic at once, the room told to forget the travel | The fight comes first |
 

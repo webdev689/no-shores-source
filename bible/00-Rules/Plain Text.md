@@ -11,9 +11,9 @@ showing an item's growth as a square filling round its locked nodes and a gauge 
 **Why.** The owner set it ([[Text Is Plain]]), the growth a square since
 [[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]].
 
-**Checked by.** The plain text check, on every string of the content: 40 words a string, 25 a sentence, no padding
-words and no em dash ([[Checks]]). Review for the rest.
+**Checked by.** The plain text check, on the content's strings but its lore books and the world's briefs and data:
+40 words a string, 25 a sentence, no padding words and no em dash ([[Checks]]). Review for the rest.
 
 The owner's answers on it:
 
-- [[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]
+- [[Sign-In Is Rate-Limited, Two Checks Join the Repo, and Comments Stop Saying Who Chose]]

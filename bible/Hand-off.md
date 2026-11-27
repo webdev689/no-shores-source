@@ -36,8 +36,8 @@ when its code changed ([[The Rooms Deploy When Their Code Changes]], [[The Disco
   section at a time, the [[Overworld]] ([[Cities]], [[Reach]], [[Layouts]], [[Modules]], [[Islands]], [[Held Map]]).
 - **The fight**: [[Combat]], [[Foes]], [[Enemies]] (the Grey Tithe and the [[Lattice]], territories and arrivals by
   airship and crown), [[Navmesh]], [[Arts]], [[Factions]], [[Revives]].
-- **Gear**: [[Gear]], Vestiges and [[Item Pictures]], house pieces dropping in the world, the keepers' screens after
-  Destiny 2's, the [[Shipyard]], [[Guilds]] and [[Outposts]].
+- **Gear**: [[Gear]], Vestiges and [[Item Pictures]], house pieces dropping in the world and its dungeons, the
+  keepers' screens after Destiny 2's, the [[Shipyard]], [[Guilds]] and [[Outposts]].
 - **The sea**: [[Sailing]], [[Naval Combat]], [[Hulls]], [[Ship Power]], [[Crew]].
 - **Story and activities**: the [[Prologue]], [[Quests]] with the houses' roads, the welcome's gifts, the hordes,
   the riding escort and the riding and sailing lessons, [[Dungeons]], [[Breaches]] (the
@@ -133,8 +133,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   lights up to four lamps, which may crowd the nearest sixteen in a big night fight; the pad's Continue is untested;
   a keeper's screen says its lines on its own 1.6 s.
 
-- **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
-  splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
+- **The five longest system notes**: Interface (1,881 lines), Server (1,003), Game, Gear and Naval Combat (905 to
+  978) want splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
   merge").
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.

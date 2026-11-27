@@ -100,7 +100,7 @@ they play in holds it while they are there.
   sign its owner in. A name no account could hold is refused before it is kept, and a request's body is read only up
   to 2 KB, however it is sent. States, tickets and codes past their time are let go.
 - **Sign-in is limited at Cloudflare too**
-  ([[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]). Before the database
+  ([[Sign-In Is Rate-Limited, Two Checks Join the Repo, and Comments Stop Saying Who Chose]]). Before the database
   or a password's hash is reached, a sign-in is counted by Cloudflare's rate limit (`SIGN_INS` in `wrangler.jsonc`),
   by address as above: ten a minute in each of Cloudflare's locations, past which the page shows "Too many sign-ins
   from here. Wait a minute." So a flood from one network spends neither the hash's CPU nor a limit's write. The count

@@ -10,11 +10,11 @@ Walking the [[Open Questions]] one at a time, the owner answered those on the in
 Asked whether the story, and the stranger's welcome at its end, should be marked played in the browser or kept with
 the character in its room, the owner chose:
 
-> "With the character"
+> "With the character (Recommended)"
 
 Asked whether the garments drawn on a player should stay each page's own word or be the room's, the owner chose:
 
-> "Room decides"
+> "Room decides (Recommended)"
 
 Asked whether Graphics should gain settings of its own, a grass setting among them, the owner chose:
 

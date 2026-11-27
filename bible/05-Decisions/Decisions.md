@@ -406,7 +406,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]
 - [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]
 - [[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]
-- [[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]
+- [[Sign-In Is Rate-Limited, Two Checks Join the Repo, and Comments Stop Saying Who Chose]]
 - [[What the Owner Kept, Walking the Open Questions]]
 - [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]
 - [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]

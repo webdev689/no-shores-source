@@ -34,7 +34,7 @@ Asked whether a foe's elemental shield, once broken, should come back after a wh
 
 > "Yes, regrows"
 
-Asked which foes beyond the patrols' carry shields, the owner chose:
+Asked which foes beyond the patrols' own carry shields, the owner chose:
 
 > "Dungeon foes,Patrols only,Breach foes"
 
@@ -58,8 +58,7 @@ Asked whether a death by a fall and a death in a fight should look the same, the
 - **An Elite Dungeon's Court is a darkness zone at Elite as at Abyss**; not at Normal
   ([[Revives, Respawns and Relogs as Claude Shapes Them]]).
 - **Some places in a patrol zone hold only civilians**: Overlook's guards and townsfolk going about their own business,
-  and no Tithe group. Which places is Claude's call, to be listed in
-  [[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]].
+  and no Tithe group. Which places is Claude's call, listed in [[The Open Questions' Answers as Claude Builds Them]].
 - **The arrivals' own sounds come from a sound sheet** the owner picks from ([[Foe Arrivals as Claude Builds Them]]).
 - **A broken shield regrows** after a while ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]).
 - **Patrol, dungeon and Breach foes carry shields.**

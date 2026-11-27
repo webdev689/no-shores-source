@@ -258,7 +258,8 @@ so they never tack.
   ship that outguns them. A chase in which they neither fire nor, out of their fighting range (1.8 times the range
   they keep), close by a tenth in 150 s is given up, and its quarry spared for 5 minutes, till it strikes them: so a
   ship that sails away gets clear, by its way or by keeping its stern to them. A Sloop sailing away from a Boss, which
-  runs it down a third faster, is not struck and is clear of the fight in 10 to 15 minutes in any wind; a lone Sloop
+  runs it down at 1.3 times its way, is not struck and is clear of the fight in 10 to 15 minutes in any wind; a lone
+  Sloop
   that stands and fights a Boss is sunk in 10 fights of 12 standing off and in all 12 closing to 150 m (measured by
   hand in the naval crate's open water, eight winds and twelve fights a row). They leave the fight when they have
   sunk, or, not fighting, lie past 1.9 km from every ship they may fight (each player's, and each afloat captain's of

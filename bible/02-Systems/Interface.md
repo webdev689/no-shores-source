@@ -1856,8 +1856,8 @@ button's corner and screen, and the Tailor's wares.
   over figures are laid apart. Two Boss ships' plates stand 56 px apart, as far as the first stands down.
 - Another player's details show their pieces' initials, not their pictures, and not their figure: the page draws
   pictures on the player's own figure, which is not theirs.
-- A join reaches a company member on foot, in a dungeon or in a run on any landmass; one at sea, in a sea island's
-  dungeon or in the passages is not reached, and the Roster says so.
+- A join reaches a company member on foot, in a dungeon or in a run on any landmass, and online one at sea aboard
+  their ship; one at sea offline, in a sea island's dungeon or in the passages is not reached, and the Roster says so.
 - A player's plate shows their username and guild's tag from the room their account last claimed their character in,
   read again when they take a username or their guild changes on the page they play from; a guild changed elsewhere
   shows from their next room.

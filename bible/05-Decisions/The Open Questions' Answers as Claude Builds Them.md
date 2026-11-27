@@ -6,8 +6,8 @@ status: in force
 # The Open Questions' Answers as Claude Builds Them
 
 The owner's answers to the [[Open Questions]], walked through one at a time, are recorded in their own notes, listed
-in [[Decisions]] after [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]. The owner then asked:
-"Let's tackle all of this, and ensure some of these haven't already been changed". These are Claude's choices in
+in [[Decisions]] under "In force". The owner then asked: "Let's tackle all of this, and ensure some of these haven't
+already been changed (Like faction members do get their own names)". These are Claude's choices in
 building them, each the owner's to change. Each was checked against the code first; what was already so is said in
 its decision.
 
@@ -46,6 +46,7 @@ From [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]
 | Going over from an angled hang | Square to the lip's face | Lands as from a square hold |
 | An old save's Ranged weapon | Owed free at the Weaponsmith's counter, once | As her gift is given |
 | House pieces | May drop from every source but a faction's | "Dungeons too", all four kinds |
+| A Forged weapon's climb | 263 to 315 Attack, a level's more at each end than Normal's | As Hard's armour reaches the level past Normal's |
 
 ## The patrol zones' folk and the arrivals' sounds
 
@@ -54,19 +55,13 @@ From [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]
 | Call | Chosen | Why |
 |---|---|---|
 | Which places hold only civilians | Hamlets, farms and mills; Saltmere then holds 12 Tithe territories | Where folk live and work the land |
-| Who stands there | Up to six townsfolk walking the place's paths and one guard in an iron helm and chain with a sword, drawn by the page alone; they keep their rounds in a raid | The townsfolk's own figures and walks |
+| Who stands there | Up to six people walking the place's paths, the farthest out a guard in an iron helm and chain with a sword, drawn by the page alone; they keep their rounds in a raid | The townsfolk's own figures and walks |
 | The arrivals' sound sheet | Four Freesound candidates each for the airship's engines and hatch and the crown's forming; the borrowed sounds play until the owner picks | As the earlier sound sheets were made |
 
 ## The Drowned Vale
 
-From [[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]].
-
-| Call | Chosen | Why |
-|---|---|---|
-| A checkpoint | The run's stages (the Descent's top, each encounter's start, the Broken Stair's), kept with the hidden chests its attempt earned | Each encounter's start was a stage already |
-| The reset | In the Playlist, by the company's leader or a player alone, pressed twice; the next Launch is a new run from the Waking | Destiny lets the fireteam leader's checkpoint stand |
-| How long it is kept | A day after the checkpoint last moved; a shut run two days | Storage stays bounded |
-| A Forged weapon's climb | 263 to 315 Attack, a level's more at each end than Normal's | As Hard's armour reaches the level past Normal's |
+Its checkpoints, their reset and what is kept: [[The Drowned Vale as Claude Builds It]], "Its checkpoints and what
+lasts".
 
 ## The page
 
@@ -81,7 +76,7 @@ From [[The Story's Mark Stays With the Character, the Page Plays Online, and a J
 
 ## The repo
 
-From [[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]].
+From [[Sign-In Is Rate-Limited, Two Checks Join the Repo, and Comments Stop Saying Who Chose]].
 
 | Call | Chosen | Why |
 |---|---|---|

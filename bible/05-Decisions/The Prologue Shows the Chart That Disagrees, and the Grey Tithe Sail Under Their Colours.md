@@ -25,8 +25,8 @@ goes, the owner answered:
 
 - **The opening voyage carries the chart that disagrees with the coast**
   ([[The Game Shows the Mystery and Explains Almost None of It]]).
-- **The Grey Tithe's ships fly their colours and flag**, and the lore changes to say so: its sails are no longer grey
-  and unmarked ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]], [[Pirates Are Replaced by the Grey Tithe]]).
+- **The Grey Tithe's ships fly their colours and flag**, and the lore changes to say so: its sails are no longer
+  unmarked ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]], [[Pirates Are Replaced by the Grey Tithe]]).
 - **The Grey Tithe's roster, its boss on land and its garrisons stand** as built
   ([[The Enemies as Claude Builds Them]]).
 - **The Covenant waits**: how deep it goes, and when the player learns it, is for later ([[Open Questions]]).

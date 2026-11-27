@@ -15,4 +15,4 @@ comment. Lines inside a doc comment's code example do not count toward the eight
 
 The owner's answers on it:
 
-- [[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]
+- [[Sign-In Is Rate-Limited, Two Checks Join the Repo, and Comments Stop Saying Who Chose]]

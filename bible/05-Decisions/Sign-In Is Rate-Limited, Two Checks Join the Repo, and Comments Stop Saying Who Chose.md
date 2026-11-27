@@ -3,7 +3,7 @@ type: decision
 date: 2026-11-26
 status: in force
 ---
-# Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose
+# Sign-In Is Rate-Limited, Two Checks Join the Repo, and Comments Stop Saying Who Chose
 
 Walking the [[Open Questions]] one at a time, the owner answered those on hosting, the workflows and the repo.
 
@@ -65,8 +65,8 @@ Asked whether the bake should read the dungeon crate's families too, the owner a
 - **The workflows' and that audit's seven points are fixed.**
 - **No comment says who asked for a value**: those that named the owner's or Claude's call (188, counted as they
   were stripped) say why instead ([[Comments Say Why]]).
-- **Three checks join the repo**: [[Plain Text]]'s word limits, as DFO's; a comment that names a note or links the
-  bible; a wiki link split over two lines ([[Rules]]).
+- **Two checks join the repo, and a third holds**: [[Plain Text]]'s word limits, as DFO's, and a comment that names
+  a note or links the bible; a wiki link split over two lines the vault check already refused ([[Rules]]).
 - **The ship meshes `shipTags.test.ts` fetches are cached between CI runs.** The other proposals were not chosen.
 - **The Overworld's rise and fall stays out** ([[Pick - Overworld]]).
 - **The bake reads the dungeon crate's families.**
