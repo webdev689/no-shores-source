@@ -323,7 +323,8 @@ letters, digits and hyphens, in any case, 59 at most, as the room judges ([[The 
 under `npm run server`, `?room=ws://127.0.0.1:8787/room/test-<name>`. The player plays as before, predicted here: each
 tick's controls and fight's buttons also go to the room, and the room's word on the player's fighter corrects it. Foes
 are the room's, the same for everyone in it, and fight whoever is near. Every other player in the
-room stands where the room last saw them, dressed as they dress themselves, showing the move and frame their own
+room stands where the room last saw them, dressed as they dress themselves but in no armour, garment or arms their gear
+could not be drawn in ([[Server]]), showing the move and frame their own
 screen shows: their weapon drawn or worn, their swings, their casts, the moves played from the panel, and their horse.
 Where the forge does not draw that move for their figure, it plays the move their body is in. The status line says
 which player this is, the room's name, and the link's lag (how much it strays) and the share of

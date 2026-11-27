@@ -94,7 +94,7 @@ turns every player away ([[Server]]). A pass opens a node by adding its id to th
 patrol and mission nodes of the edits files, each once. The rooms read the list from the node files, so a change
 reaches them at the next bake: a merge redeploys them, and locally `npm run bake` or `npm run server` bakes first.
 
-A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
+A page playing alone opens any node, locked or not: with `?offline`, `?at=<id>` arrives there, and `&spawn=` and
 `&view=` picture it ([[Toolkit]], "Browser QA").
 
 ## Regions

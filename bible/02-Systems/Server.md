@@ -558,10 +558,11 @@ field holds (an input's or orders' number, the arms, a foe's type, a load, a cal
 held within it.
 
 Looks and dresses are each player's own word, passed on and decided nothing about, but for the gear they show: the
-room keeps in a dress's armour and hands only the looks the page could draw the pieces worn in on the dress's body:
-each piece's own content's, written or faction's set or metal, the prologue's own armour's steel, or the one the page
-falls to where the forge does not draw it (`looks::shown`; [[Gear]], "Looks"; a light in the left hand is no piece,
-and stays), drops any other from what others see, puts the dye and barding the character wears and the coat of the
+room keeps in a dress's armour, garments and hands only the looks the page could draw the pieces worn in on the
+dress's body: each piece's own content's, written or faction's set or metal, the prologue's own armour's steel, or the
+one the page falls to where the forge does not draw it, and the clothes of a Normal or Magic torso or legs piece by its
+rarity, plain clothes' own and a cloak's (`looks::shown`, `content/gear/looks.json`; [[Gear]], "Looks"; a light in
+the left hand is no piece, and stays), drops any other from what others see, puts the dye and barding the character wears and the coat of the
 horse it wears into it, none for a start piece, and
 keeps a faction's colour or a dye only on the layers its pieces worn and dyes kept allow, so no page can show another
 a piece it does not wear or keep ([[Gear]], "Cosmetics"). It makes a dress again when the browser sends one or after

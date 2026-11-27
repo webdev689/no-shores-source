@@ -1,8 +1,9 @@
 // The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at,
-// and in the desktop app its graphics API and version), Audio (the volumes, and the recorded sounds' credits behind a
-// press of their own), Controls (every control, bound anew there as in the sheet K opens) and Account (the account and
-// the players blocked or muted), down a rail with Switch character (online), Exit to Menu and Exit to Desktop at its
-// foot, each held. The resolution and the volumes are kept in this browser, the binds with the account.
+// the grass and the shadows, and in the desktop app its graphics API and version), Audio (the volumes, and the
+// recorded sounds' credits behind a press of their own), Controls (every control, bound anew there as in the sheet K
+// opens) and Account (the account and the players blocked or muted), down a rail with Switch character (online), Exit
+// to Menu and Exit to Desktop at its foot, each held. The graphics and the volumes are kept in this browser, the binds
+// with the account.
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -18,7 +19,8 @@ import { INK, words } from './gearNodes.ts';
 import type { PlainContext } from './menuPage.ts';
 import { PRESS_PADDING, answerNode, headingNode, hintNode } from './menuPages.ts';
 import { REBINDING, type Rebinding } from './rebinding.ts';
-import { RESOLUTIONS, resolution, setResolution } from './renderScale.ts';
+import { GRASS, SHADOWS, type keptChoice } from './graphicsChoices.ts';
+import { RESOLUTION } from './renderScale.ts';
 import { soundCredits } from '../soundSamples.ts';
 import {
   ambienceVolume,
@@ -62,8 +64,8 @@ const PANEL_LEAST = 200;
 /** The tab's panel, which scrolls beside the rail. */
 const LIST = 'settings-list';
 /** The page's drop-down lists, each shut as the page is shown again. */
-const RESOLUTION_LIST = 'resolution';
-const LISTS = [RESOLUTION_LIST, API_LIST];
+const [RESOLUTION_LIST, GRASS_LIST, SHADOWS_LIST] = ['resolution', 'grass', 'shadows'];
+const LISTS = [RESOLUTION_LIST, GRASS_LIST, SHADOWS_LIST, API_LIST];
 /** Switch character's held press. */
 export const SWITCH = 'settings-switch-character';
 /** The credits' press in Audio and their way back. */
@@ -324,17 +326,25 @@ function held(
   };
 }
 
-/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, kept in this browser; and in the
- *  desktop app, the app's own graphics and version. The launcher shows the same. */
+/** A setting kept in this browser as a row: its name, and its list, whose choice is kept as it is made. */
+function keptRow(ui: Interface, name: string, id: string, setting: ReturnType<typeof keptChoice>): Node {
+  const { node, chosen } = choice(ui, id, setting.get(), setting.choices);
+  if (chosen !== setting.get()) setting.set(chosen);
+  const said = setting.choices.find((option) => option.value === chosen)?.words ?? chosen;
+  return settingRow(name, { ...node, label: `${name}, ${said}` });
+}
+
+/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, how much grass is drawn and
+ *  whether the sun casts shadows, each kept in this browser; and in the desktop app, the app's own graphics and
+ *  version. The launcher shows the same. */
 export function graphicsNode(ui: Interface): Node {
-  const { node, chosen } = choice(ui, RESOLUTION_LIST, resolution(), RESOLUTIONS);
-  if (chosen !== resolution()) setResolution(chosen);
-  const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
   return column([
     headingNode('Display'),
     { height: 4 },
-    settingRow('Resolution', { ...node, label: `Resolution, ${said}` }),
+    keptRow(ui, 'Resolution', RESOLUTION_LIST, RESOLUTION),
     hintNode('Auto lowers the resolution while the game runs slow. The interface stays sharp.'),
+    keptRow(ui, 'Grass', GRASS_LIST, GRASS),
+    keptRow(ui, 'Shadows', SHADOWS_LIST, SHADOWS),
     ...desktopNodes(ui, settingRow),
   ]);
 }

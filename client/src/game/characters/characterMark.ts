@@ -59,6 +59,16 @@ export function takeTestRun(tab: Kept): string | null {
 export const lookOf = (kept: unknown): Look | null =>
   kept === null || kept === undefined ? null : keptLook({ getItem: () => JSON.stringify(kept) });
 
+/** Whether the account's character in play has played the prologue, its slot then set in this browser as Play sets
+ *  it; false where the accounts do not say. */
+export async function inPlayPlayed(browser: Kept, link: Pick<AccountLink, 'characters' | 'place'>): Promise<boolean> {
+  const four = await link.characters().catch(() => null);
+  const slot = four && typeof four === 'object' ? (four.slots[four.playing] ?? null) : null;
+  if (!slot?.prologue) return false;
+  takeSlot(browser, slot, link);
+  return true;
+}
+
 /**
  * Sets this browser's state from the slot chosen (null: a new character): its look, or none so the helm starts
  * afresh; whether it has played the prologue; and where it logs back in, for the arrival after the title. A character

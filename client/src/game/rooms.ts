@@ -3,10 +3,18 @@ import { LIVE_ROOMS } from '../network/roomAddress.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { BREACH_TIERS, testRoom } from '../../../server/roomNames.ts';
 
+/** The rooms the game's page asks for: none with `?offline` (the game plays alone), else its `?room=`, the deployed
+ *  rooms where it names none. */
+export function roomAsked(search: string): string | null {
+  const asking = new URLSearchParams(search);
+  return asking.has('offline') ? null : (asking.get('room') ?? 'live');
+}
+
 /**
- * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, the rooms' worker
- * running each room); a whole `ws://` or `wss://` address names a server (`?room=ws://127.0.0.1:8787` under `npm run server`),
- * anything else the deployed rooms. The answer names each room's address: `node-<id>` for a node, `sea` for the sea.
+ * Where the game's rooms are, from what its page asks for (`roomAsked`): none (the game plays offline, the rooms'
+ * worker running each room); a whole `ws://` or `wss://` address names a server (`?room=ws://127.0.0.1:8787` under
+ * `npm run server`), anything else the deployed rooms. The answer names each room's address: `node-<id>` for a node,
+ * `sea` for the sea.
  */
 export function roomsFrom(given: string | null): ((name: string) => string) | null {
   if (given === null) return null;
@@ -17,8 +25,8 @@ export function roomsFrom(given: string | null): ((name: string) => string) | nu
 /** Whether an address is this machine's own, where only its player runs servers. */
 const LOOPBACK = /^(?:https?|wss?):\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?(?:\/|$)/;
 
-/** Where the game's accounts are, from its page's `?room=` and `?accounts=`. The deployed rooms keep characters on the
- *  deployed accounts; a room server on this machine keeps them on accounts named on this machine
+/** Where the game's accounts are, from the rooms its page asks for and its `?accounts=`. The deployed rooms keep
+ *  characters on the deployed accounts; a room server on this machine keeps them on accounts named on this machine
  *  (`?accounts=http://127.0.0.1:8788` under `npm run accounts`). A session goes nowhere else, so a crafted link
  *  cannot send it to another's room or accounts: offline, or with a room server or accounts elsewhere, none are kept. */
 export function accountsFrom(rooms: string | null, given: string | null): string | null {
@@ -29,7 +37,7 @@ export function accountsFrom(rooms: string | null, given: string | null): string
   return named ? null : LIVE_ACCOUNTS;
 }
 
-/** The page's account, from its address: the link to the accounts its `?room=` and `?accounts=` name (null for none),
+/** The page's account, from its address: the link to the accounts its rooms and `?accounts=` name (null offline),
  *  and a way to the session's token the rooms keep the player's character by, as it stands once the player is signed
  *  in or made a guest. A Discord sign-in comes back with a code in the address's fragment, which is taken and cleared
  *  at once; the tab's own nonce (in `passing`) redeems it. */
@@ -39,7 +47,7 @@ export function accountOf(
   passing: Kept,
 ): { link: AccountLink | null; session: () => Promise<string | null> } {
   const asking = new URLSearchParams(page.search);
-  const where = accountsFrom(asking.get('room'), asking.get('accounts'));
+  const where = accountsFrom(roomAsked(page.search), asking.get('accounts'));
   if (where === null) return { link: null, session: () => Promise.resolve(null) };
   const link = new AccountLink(where, kept, undefined, passing);
   if (link.takeFrom(page.hash)) history.replaceState(null, '', `${page.pathname}${page.search}`);

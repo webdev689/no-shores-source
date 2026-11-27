@@ -55,8 +55,8 @@ import { inspectAgainst } from './social/social.ts';
 import { rejoinOnGuild } from './footPlace.ts';
 import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
-import { companyPlaces, nodeOfRoom, seaRoomName, startedAtSea } from './rooms.ts';
-import { notYet } from './companyJoin.ts';
+import { companyPlaces, seaRoomName } from './rooms.ts';
+import { companyJoin } from './companyJoin.ts';
 import { PassageGame } from './passages/passageGame.ts';
 import { piecesDrawer } from './passages/pieceView.ts';
 import { Sea } from './sea.ts';
@@ -200,6 +200,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     scene.setLand(opened.view, terrainFor(opened), boot.biomeOf(opened.id));
     playing.sea?.setLandmass(opened);
   };
+  /** Opens the landmass `continent` in place of the one shown, where it is another. */
+  const landOf = async (continent: string | undefined) => {
+    if (continent && continent !== playing.landmass.id)
+      showLandmass(await openLandmass(land, world, landTexts, continent));
+  };
   const charting = new Charting(
     continents,
     (id) => openLandmass(land, world, landTexts, id),
@@ -307,11 +312,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ashore = held;
     },
     // Overlook's landmass, opened where the player was on another.
-    hubLand: async () => {
-      const continent = arrivalAt(world, FIRST_NODE)?.continent;
-      if (continent && continent !== playing.landmass.id)
-        showLandmass(await openLandmass(land, world, landTexts, continent));
-    },
+    hubLand: () => landOf(arrivalAt(world, FIRST_NODE)?.continent),
   });
   const passages: PassageGame = new PassageGame({
     ...{ module: roomModule, context: footContext, goInto, tell, now: roomNow },
@@ -376,21 +377,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     !playing.sea?.busy &&
     !charting.busy;
 
-  /** Joins a company member where they play, a node of this landmass or its dungeon, at their seas; the ship stays. */
-  const joinAt = (place: string): string | null => {
-    const { flow, sea, foot } = playing;
-    const fighting = flow.mode === 'sea' && !!sea?.fight;
-    const yet = notYet(place, { free: free(), fighting, fallen: flow.mode === 'foot' && !!foot?.fallen });
-    if (yet) return yet;
-    const where = nodeOfRoom(place);
-    const node = where && (startedAtSea(place) ? world : playing.landmass).nodes.find((each) => each.id === where.id);
-    if (!where || !node)
-      return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
-    const facing = arrivalFacing(node, playing.landmass.plan, null);
-    if (where.dungeon !== null || where.run !== null) trips.join(node, place);
-    else travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas, where.guild));
-    return null;
-  };
+  /** Joins a company member where they play, on any landmass, at their seas; the ship stays (`companyJoin.ts`). */
+  const joinAt = companyJoin({
+    ...{ landmass: () => playing.landmass, world, open: landOf, put: showLandmass, travel, intoDungeon: trips.join },
+    now: () => {
+      const { flow, sea, foot } = playing;
+      return {
+        free: free(),
+        fighting: flow.mode === 'sea' && !!sea?.fight,
+        fallen: flow.mode === 'foot' && !!foot?.fallen,
+      };
+    },
+    goFoot: (node, seas, guild) => goFoot(node, arrivalFacing(node, playing.landmass.plan, null), seas, guild),
+  });
 
   /** The leave held through: back to the ship on the room's yes, or told why not; a yes that comes once the player is
    *  on foot elsewhere (through a gate while the room answered) takes them nowhere. */

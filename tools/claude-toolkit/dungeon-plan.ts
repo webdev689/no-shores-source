@@ -306,6 +306,6 @@ function inward(side: number) {
 
 steps.push({ eval: 'JSON.stringify(window.__packs)' });
 const plan = `${out}/${patrol}-${number}.json`;
-writeFileSync(plan, JSON.stringify({ url: `http://localhost:5173/?at=${patrol}`, size: [1280, 800], init, routes: { 'room.wasm': wasm }, steps }, null, 1));
+writeFileSync(plan, JSON.stringify({ url: `http://localhost:5173/?at=${patrol}&offline`, size: [1280, 800], init, routes: { 'room.wasm': wasm }, steps }, null, 1));
 writeFileSync(`${plan}.labels.json`, JSON.stringify(labels, null, 1));
 console.log(`${plan}: ${layout.name}, ${layout.rooms.length} rooms, ${layout.looks.map((each) => each.style).join(' > ')}, ${shots} pictures`);

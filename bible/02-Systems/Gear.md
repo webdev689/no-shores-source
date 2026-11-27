@@ -717,7 +717,7 @@ the Tack in [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes
   one that arrives.
 - **Replaced, they go to the pack**, as any piece does; dismantled, they give nothing back. A goal to put armour on
   is not met by them (`tell_held`), so the opening's "Put them on" asks for the pieces bought.
-- **Others see them** as the page sends them: garments are never held back by the room.
+- **Others see them** as the room keeps them: plain pieces' garments, and no others ("Looks").
 
 ## Elements and shields
 
@@ -855,16 +855,20 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   hidden, and in the riding view its own published strip. Own Colours, Bay and Bare change nothing. The room puts the
   worn dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
   player's dress naming one that is not of its kind is refused as any broken dress is. A dress's armour and the things
-  in its hands keep only the looks the page could draw the pieces worn in on the dress's body (`looks::shown`,
+  in its hands, and its garments, keep only the looks the page could draw the pieces worn in on the dress's body
+  (`looks::shown`,
   [[The Room Keeps Only Looks of a Piece's Own Content]]): the prologue's own armour's steel, an armour piece's
   faction's set, the set written on a named piece, or else its content's by its rarity (a Magic piece's lightest, a world Rare piece's chain to steel, none for a
   Normal piece's clothes); a weapon and its shield in its faction's metal, its written metal and make, or else its
-  content's metals (a Normal one's iron or steel, a gun's plain or gilded) with any of its shield's or bow's makes; and
+  content's metals (a Normal one's iron or steel, a gun's plain or gilded) with any of its shield's or bow's makes; a
+  Normal torso or legs piece any of its rarity's clothes and a Magic one any of its own, plain clothes the shore's
+  shirt, breeches and boots, and a cloak the casual one, or the formal one from Rare or as its faction's cape (the
+  clothes listed in `content/gear/looks.json`, which the page dresses by too); and
   for each look the forge does not draw for the body, the one the page falls to, read from the forge's table of drawn
   layers (`content/gear/drawn.json`, which `forgeDrawn.test.ts` holds to the fitted bodies). The page picks one look by
   the piece's level, name and number; the room keeps any it could pick, and drops any other from what others see. A
   page test dresses every item the game can hold on each body and passes the dress through the room module
-  (`room_dressed`), which must keep every layer (`modelsWorn.test.ts`). A light in the left hand stays.
+  (`room_dressed`), which must keep every layer and garment (`modelsWorn.test.ts`). A light in the left hand stays.
   Of the colours a dress lays by
   layer, the room keeps a faction's only on the layers of that faction's pieces worn (a helm's, a cuirass's, its
   pauldrons' and padding, gauntlets', greaves', boots' and padding, a weapon's own), a faction's dye only on its cape

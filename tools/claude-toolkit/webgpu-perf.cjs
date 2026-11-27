@@ -5,9 +5,9 @@
 //     npx vite build --minify false --outDir <dist>        (NODE_ENV=development for the QA hooks, `&spawn=`)
 //     node tools/claude-toolkit/webgpu-perf.cjs <dist> <plan.json> <out folder>
 //
-// The plan: { "url": "/?at=overlook-social&spawn=", "size": [1280, 720], "gpu": false, "steps": [ ... ] }. Without
-// "gpu", nothing is submitted to the GPU (the picture driver's DROP_SUBMITS), so the worker's JavaScript runs every
-// frame at full speed; with it SwiftShader draws, seconds a frame, for a `shot`. Steps: { "wait": s },
+// The plan: { "url": "/?at=overlook-social&spawn=&offline", "size": [1280, 720], "gpu": false, "steps": [ ... ] }.
+// Without "gpu", nothing is submitted to the GPU (the picture driver's DROP_SUBMITS), so the worker's JavaScript runs
+// every frame at full speed; with it SwiftShader draws, seconds a frame, for a `shot`. Steps: { "wait": s },
 // { "until": "js, true once ready", "timeout": s }, { "waitFor": "words shown" }, { "key" | "down" | "up": "w" },
 // { "hold": ["w", s] }, { "clickText": "words" }, { "eval": "js" }, { "frames": n }, { "shot": "file.png" } and
 // { "measure": s, "name": "hub", "alloc": true, "profile": true }. A measure writes <name>.json (frame times, their

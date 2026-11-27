@@ -122,7 +122,8 @@ fn a_dress_is_passed_on_once_each_time_it_changes_and_to_everyone_who_joins_late
     let mut room = room();
     let (first, second) = (room.join().expect("a room with space"), room.join().expect("a room with space"));
     let dressed = |sequence, dress: &str| Input { dress: Some(dress.to_owned()), ..input(sequence, WALK) };
-    let (red, blue) = (r#"{"outfit":{"garments":["red"]}}"#, r#"{"outfit":{"garments":["blue"]}}"#);
+    // Hair is the player's own word, passed on as sent; garments are kept only of the gear worn.
+    let (red, blue) = (r#"{"outfit":{"hair":"red"}}"#, r#"{"outfit":{"hair":"blue"}}"#);
     room.input(first, dressed(1, red)).unwrap();
     room.input(first, dressed(2, red)).unwrap();
     room.tick();

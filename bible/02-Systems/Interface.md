@@ -173,8 +173,10 @@ code:
   - client/src/game/accountTab.ts#AccountPanel
   - client/src/game/menuPages.ts#shipPage
   - client/src/game/settingsPage.ts#Settings
+  - client/src/game/graphicsChoices.ts#keptChoice
   - client/src/game/menuPage.ts#PlainContext
   - client/src/game/rosterTab.ts#RosterPage
+  - client/src/game/companyJoin.ts#companyJoin
   - client/src/game/rosterPanel.ts#panelParts
   - client/src/game/rosterRows.ts#actionsFor
   - client/src/game/playerDetails.ts#detailsNode
@@ -706,7 +708,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and the Melee loadout; aiming, the fire and letting go; Dusk Daggers aimed, only letting go of the first Tenet;
   riding, getting down, the gallop, the boost and the leave held; hanging from a ledge, the climb and letting go, and on a wall
   the kick off too, whatever is drawn; the Arts' three while one is worn and the hands are free to cast, Shadow's
-  first Tenet apart as held to aim Dusk Daggers; the held map's key wherever it can be raised, before the leave's;
+  first Tenet apart as held to aim Dusk Daggers; the held map's key wherever it can be raised, before the leave's,
+  and where the leave's shows, the chat's last before All controls, so it is the first row to give way;
   the click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told and
   the room would take it, and nothing while the fall plays out; fallen in a fight, Respawn once it may be pressed,
   and nothing before it or in a darkness zone; Follow first in a Breach while a company member stands. The prompt for Use says what it does, with Use's key or button, so the strip
@@ -774,7 +777,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   jumps, B tapped dodges and held crouches, X uses, Y draws or sheathes, LB and RB cast the Tenets and both together the
   Anima, the cross's left and right draw the loadouts, its down drinks and its up mounts, the right stick's click
   changes the view, Start opens the menu at Character, View the sheet and View held leaves ("The leave held"); dead, A
-  respawns.
+  respawns. View and Start pressed together open the chat ([[Chat]]) on foot, dead, at the helm and in a sea fight,
+  so each waits 0.12 s for the other before it acts alone, the menu's own Start and View too.
   While the pad was played last and no menu is up, its presses fight on foot whether or not the pointer is locked
   (`handsFree`), as a pad cannot lock it; a click on a free pointer only locks it. At the helm A sets sail,
   lands or docks, X stops or resumes, the cross's left switches between the Oversea and Sealevel views, its up opens
@@ -1120,8 +1124,10 @@ never while a press is held. Each press is an ask the room answers.
   panel beside it, or over it near the page's foot: who and where, then all that may be done with them, what cannot
   be undone held and saying so ("Hold to …"), blocking and reporting apart under a rule. A member of the company
   playing elsewhere can be gone to. Details shows another player's nameplate, guild, power and
-  worn pieces, each under its slot's name (a horse under MOUNT, with its rarity and no power). A join goes to them if they are on foot on this landmass, unless the player is in a fight at sea or
-  has fallen; then they go to them once it is over. The Roster is asked for again every 15
+  worn pieces, each under its slot's name (a horse under MOUNT, with its rarity and no power). A join goes to them on any landmass, on foot or in a dungeon or run, at
+  their seas (`companyJoin.ts`): one not open is opened behind the join's veil first, as a trip to the hub opens
+  Overlook's, and the one left put back should the join fail; the ship stays where it lies. In a fight at sea or
+  fallen, the player goes to them once it is over. The Roster is asked for again every 15
   seconds while it is seen.
 - **The company on the heads-up display**: each other member's nameplate under the place's name, with where they are,
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
@@ -1143,7 +1149,10 @@ never while a press is held. Each press is an ask the room answers.
   not behind a veil, nor as the view goes down to the helm's map. While the credits show the footer says Back, and
   showing them or putting them away gives the focus to their way back or to their press, never an exit.
   - **Graphics**: under Display, the resolution the world is drawn at ("Resolution": Auto, the first, or 100%, 85%,
-    75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the interface staying at the screen's own. In the
+    75%, 67% or 50%; [[Game]], "Drawing"), the interface staying at the screen's own; the meadow's grass ("Grass":
+    Full, the first, Half, half the tufts of each patch, or Off, none drawn); and the sun's shadows ("Shadows": On,
+    the first, or Off, no shadow cast or drawn), each kept in this browser (`graphicsChoices.ts`) and drawn from the
+    next frame, each sparing the GPU its pass's work. In the
     [[Desktop App]] an App part follows: the graphics API where there is a choice, what the app draws with and on
     which card, the version and the update, with Restart now or Download (`desktopSettings.ts`).
   - **Audio**: under Volume, the volumes of the interface, the world ("World sounds"), the music ("Music") and the
@@ -1837,8 +1846,8 @@ button's corner and screen, and the Tailor's wares.
   over figures are laid apart. Two Boss ships' plates stand 56 px apart, as far as the first stands down.
 - Another player's details show their pieces' initials, not their pictures, and not their figure: the page draws
   pictures on the player's own figure, which is not theirs.
-- A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
-  or at sea, is not reached, and the Roster says so.
+- A join reaches a company member on foot, in a dungeon or in a run on any landmass; one at sea, in a sea island's
+  dungeon or in the passages is not reached, and the Roster says so.
 - A player's plate shows their username and guild's tag from the room their account last claimed their character in,
   read again when they take a username or their guild changes on the page they play from; a guild changed elsewhere
   shows from their next room.

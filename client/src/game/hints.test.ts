@@ -15,7 +15,7 @@ import {
   keysShown,
   seaStrip,
   stripOf,
-  withMapKey,
+  withMapAndChat,
   withFollow,
   withoutLeave,
 } from './hints.ts';
@@ -139,7 +139,7 @@ test('hanging or climbing shows only the climb’s keys, the weapon drawn or not
   }
 });
 
-test('the map’s N shows in every stance on foot, before the leave’s M, and K stays last', () => {
+test('the map’s N shows in every stance on foot, before the leave’s M; at rest the chat’s T, then K last', () => {
   const stances: Partial<OnFoot>[] = [
     {},
     { drawn: true },
@@ -150,12 +150,15 @@ test('the map’s N shows in every stance on foot, before the leave’s M, and K
     { mode: 'climb' },
   ];
   for (const foot of stances) {
-    const strip = words(withMapKey(footStrip({ ...AT_REST, ...foot })).hints);
+    const strip = words(withMapAndChat(footStrip({ ...AT_REST, ...foot })).hints);
     assert.ok(strip.includes('N Map'), strip.join(', '));
     assert.equal(strip.at(-1), 'K All controls');
     const leave = strip.indexOf('M Hold to leave');
-    if (leave >= 0) assert.equal(strip.indexOf('N Map'), leave - 1);
+    if (leave >= 0) assert.deepEqual([strip.indexOf('N Map'), strip.at(-2)], [leave - 1, 'T Chat']);
+    else assert.ok(!strip.includes('T Chat'), 'the chat waits for a moment at rest');
   }
+  const pad = hintsFor(withMapAndChat(footStrip(AT_REST)).hints, 'pad', DEFAULTS).map(([keys]) => keys);
+  assert.ok(pad.includes('pad:View+Start'), "the pad's chat, both buttons together");
 });
 
 test('riding shows how to get down, gallop and boost', () => {

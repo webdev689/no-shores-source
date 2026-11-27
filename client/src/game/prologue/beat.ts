@@ -43,6 +43,9 @@ export interface Beat {
   /** How long the director fades it in from black, seconds: SCENE.inS unless said; a beat that darkens itself awake
    *  takes none. */
   readonly fadeInS?: number;
+  /** Whether it ended by sending the player on past the story (a character that has played it chosen or signed in
+   *  to), so the story ends there as one played ends at the title; null where nothing said. */
+  readonly onward?: boolean | null;
 }
 
 /** A change of scene through black, seconds: the fade out a beat ends with, the least the black holds between, and

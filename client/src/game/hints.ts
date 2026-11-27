@@ -33,6 +33,7 @@ const LOOK: StripHint = ['Left button', 'Look round'];
 /** Held, the leave control takes the player back to their ship from wherever they stand on foot (`leaveHold.ts`). */
 const LEAVE: StripHint = ['leave', 'Hold to leave', 'Leave'];
 const MAP: StripHint = ['landMap', 'Map'];
+const CHAT: StripHint = ['chat', 'Chat'];
 
 /** The keys each moment shows, the strip's last entry with them. */
 export const HINTS = {
@@ -318,12 +319,14 @@ export const withoutLeave = (strip: Strip): Strip => ({
 });
 
 /** The strip on foot where the held map can be raised (not in the story, nor on a ship's deck, nor down): the map's
- *  before the leave's, or before the strip's last where the leave's is not shown. */
-export function withMapKey(strip: Strip): Strip {
+ *  before the leave's, or before the strip's last where the leave's is not shown; and at rest, where the leave's is,
+ *  the chat's just before the strip's last, so it is the first to give way where the strip has too little room. */
+export function withMapAndChat(strip: Strip): Strip {
   const { hints } = strip;
   const leave = hints.findIndex(([names]) => names === 'leave');
   const place = leave >= 0 ? leave : hints.length - 1;
-  return { ...strip, hints: [...hints.slice(0, place), MAP, ...hints.slice(place)] };
+  const chat = leave >= 0 ? [CHAT] : [];
+  return { ...strip, hints: [...hints.slice(0, place), MAP, ...hints.slice(place, -1), ...chat, ...hints.slice(-1)] };
 }
 
 /** What the player is doing at sea, for the keys shown: fighting and aiming the guns, choosing a landing, at the helm

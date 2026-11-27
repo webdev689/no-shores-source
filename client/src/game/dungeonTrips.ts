@@ -12,6 +12,7 @@ import { delveBase, delveLaid } from './guild/delveRoom.ts';
 import { gateOut } from './guild/outpostHere.ts';
 import { weekOf } from './guild/guildLaw.ts';
 import { type InDungeon, type Trips, seaPlace } from './footTrips.ts';
+import type { Opened } from './companyJoin.ts';
 import type { Happening } from './flow.ts';
 import type { DungeonDoor } from './isleLaw.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
@@ -93,7 +94,9 @@ export function dungeonTrips(
   enter(number: number, name: string, found?: string): void;
   /** Out by the way in, the veil saying the company fell: before the entrance, or back to the sea. */
   fell(): void;
-  join(node: NodeInfo, place: string): void;
+  /** Into a company member's dungeon or run by its room's name `place`, its node `node`; `opened` makes the work of
+   *  the node as its landmass lays it, once open (`companyJoin.ts`), the node as given where none is. */
+  join(node: NodeInfo, place: string, opened?: Opened): void;
   /** Into a sea island's dungeon by its door's room name (`sea-dungeon-...`, server/roomNames.ts), back out before
    *  the door; a name that is none goes nowhere. */
   enterSeaDungeon(door: DungeonDoor): void;
@@ -205,16 +208,19 @@ export function dungeonTrips(
     leave: () => leave(false),
     fell: () => leave(true),
     // A company joins online only, where a dungeon's room never asks for its node's file.
-    join: (node, place) => {
+    join: (node, place, opened = (onIt) => () => onIt(node)) => {
       const where = nodeOfRoom(place);
       if (!where) return;
       // A member's guild dungeon is joined by its name; its way out is before its gate as the accounts keep the plot,
       // else the outpost's spawn.
       if (where.guild !== null && where.run !== null) {
-        const [key, [x = 0, y = 0]] = [where.guild, node.spawns[0] ?? node.centre];
-        const away = toGate(node, key, async () => (await gateOut(node, key)) ?? { x, y, facing: 0 });
+        const key = where.guild;
         const ask = delveAsk(key, node.name, place);
-        const work = into({ node, text: '' }, { number: 0, ask }, where.seas, async () => place, away);
+        const work = opened((laid) => {
+          const [x = 0, y = 0] = laid.spawns[0] ?? laid.centre;
+          const away = toGate(laid, key, async () => (await gateOut(laid, key)) ?? { x, y, facing: 0 });
+          return into({ node: laid, text: '' }, { number: 0, ask }, where.seas, async () => place, away)();
+        });
         game.travel({ kind: 'join', node: `${node.id}--delve`, name: node.name }, work);
         return;
       }
@@ -224,8 +230,10 @@ export function dungeonTrips(
       void game.module.then((module) => {
         const { name } = askLayout(module, ask);
         const inside = where.dungeon === null ? `${node.id}--dungeon` : `${node.id}--dungeon-${number}`;
-        const away = startedAtSea(place) ? toSea : toNode(node, where.seas, number);
-        const work = into({ node, text: '' }, { number, ask }, where.seas, async () => place, away);
+        const work = opened((laid) => {
+          const away = startedAtSea(place) ? toSea : toNode(laid, where.seas, number);
+          return into({ node: laid, text: '' }, { number, ask }, where.seas, async () => place, away)();
+        });
         game.travel({ kind: 'join', node: inside, name }, work);
       });
     },

@@ -5,7 +5,9 @@
 import type { Tick, Beat } from './beat.ts';
 import { accountStep, lookStep } from './creation.ts';
 import { creationShot, helmDeck, youAtHelm } from './helm.ts';
-import { armouredDress, keepLook, type Look } from './look.ts';
+import type { AccountLink } from '../../network/accounts.ts';
+import { inPlayPlayed } from '../characters/characterMark.ts';
+import { armouredDress, keepLook, keptLook, type Look } from './look.ts';
 import type { Hearing } from '../audio/music/directorLaw.ts';
 import { sung } from './music.ts';
 import { STORM } from './skies.ts';
@@ -16,10 +18,12 @@ import type { Story } from './story.ts';
 const TURN_STEP = Math.PI / 4;
 const TURN_EASE = 6;
 
-/** The helm's two windows, as the creation makes them. */
+/** The helm's two windows, as the creation makes them, and whether the account signed in to there has its character
+ *  in play past the story (`inPlayPlayed`). */
 export interface MakingSteps {
   readonly account: typeof accountStep;
   readonly look: typeof lookStep;
+  readonly played?: (link: AccountLink) => Promise<boolean>;
 }
 
 export class Making implements Beat {
@@ -36,6 +40,9 @@ export class Making implements Beat {
   /** Ends the helm's windows when the story moves on from it, so none stays over the beats after or acts there. */
   private readonly left = new AbortController();
 
+  /** Whether the account signed in to here has its character in play past the story, which then ends here. */
+  onward = false;
+
   constructor(story: Story, steps: MakingSteps = { account: accountStep, look: lookStep }) {
     this.story = story;
     const { stage, lightning } = story;
@@ -50,7 +57,15 @@ export class Making implements Beat {
     const { stack } = story.stage.parts;
     story.stage.parts.screen.bars(false);
     const { signal } = this.left;
-    await steps.account(stack, story.link, signal);
+    const signedIn = await steps.account(stack, story.link, signal);
+    // A player signed in here to an account whose character in play has played the story goes on past it, as the
+    // character screen sends one: the story is the character's, not this browser's.
+    const played = steps.played ?? ((link: AccountLink) => inPlayPlayed(localStorage, link));
+    if (signedIn.kind === 'account' && story.link && (await played(story.link)) && !signal.aborted) {
+      story.look = keptLook(localStorage) ?? story.look;
+      this.onward = true;
+      return;
+    }
     const chosen = await steps.look(
       stack,
       story.look,
@@ -70,7 +85,7 @@ export class Making implements Beat {
   }
 
   get done(): boolean {
-    return this.chosen && Math.abs(this.turn) < 0.01;
+    return this.onward || (this.chosen && Math.abs(this.turn) < 0.01);
   }
 
   /** The story moves on from the helm: its windows go, and nothing pressed after redresses the player. */

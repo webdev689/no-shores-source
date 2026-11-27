@@ -412,7 +412,7 @@ acquired are kept by quest id (`acquired`). Claude's calls:
 
 ## Limits
 
-- **Online only.** A page playing alone (no `?room=`) keeps no character, so it walks no road, as it keeps no gear.
+- **Online only.** A page playing alone (`?offline`) keeps no character, so it walks no road, as it keeps no gear.
 - **Saves by id**: a road is kept by its quest's id and its place by its task's id; a task the file no longer holds
   reads as its quest's first.
 - **Steps**: a task holds one of the six varied kinds at most. An escort's figure rides at the player's gallop

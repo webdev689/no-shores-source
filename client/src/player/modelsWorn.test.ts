@@ -168,7 +168,7 @@ function dressedByRoom(dress: string, worn: object): string {
 }
 const RARITY_KEYS = ['normal', 'magic', 'rare', 'legendary', 'atheric'];
 
-test('the room keeps every armour and weapon layer the page dresses any item in, on either body', () => {
+test('the room keeps every armour, garment and weapon layer the page dresses any item in, on either body', () => {
   const refused: string[] = [];
   for (const [body, drawn] of Object.entries(BODIES)) {
     wardrobe = wardrobeOf(body, drawn);
@@ -176,7 +176,7 @@ test('the room keeps every armour and weapon layer the page dresses any item in,
     for (const fields of held()) {
       const slot = slotOf(fields.kind);
       const loadout = slot === RANGED_SLOT ? RANGED_SLOT : MELEE;
-      const { armour, right, left } = gearOutfit(
+      const { armour, garments, right, left } = gearOutfit(
         state({ items: [item({ ...fields, at: WORN + slot })] }),
         wardrobe,
         plain,
@@ -191,14 +191,15 @@ test('the room keeps every armour and weapon layer the page dresses any item in,
         named: 'named' in fields ? fields.named : null,
         story: 'story' in fields && fields.story,
       };
-      const shown = { armour, right, left };
+      const shown = { armour, garments, right, left };
       const key = JSON.stringify([worn, shown]);
       if (asked.has(key)) continue;
       asked.add(key);
       const kept = JSON.parse(dressedByRoom(JSON.stringify({ body, outfit: shown }), worn)).outfit;
       // The room writes the armour's pieces in its own order.
       const same = (armour: object) => JSON.stringify(Object.entries(armour).sort());
-      if (same(kept.armour) !== same(armour) || kept.right !== right || kept.left !== left)
+      const clothes = JSON.stringify(kept.garments) !== JSON.stringify(garments);
+      if (same(kept.armour) !== same(armour) || clothes || kept.right !== right || kept.left !== left)
         refused.push(`${body} ${key} kept as ${JSON.stringify(kept)}`);
     }
   }

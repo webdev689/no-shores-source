@@ -48,6 +48,7 @@ code:
   - client/src/combat/lightLayer.ts#LightLayer
   - client/src/game/depthCopy.ts#DepthCopy
   - client/src/game/renderScale.ts#sceneSize
+  - client/src/game/rooms.ts#roomAsked
   - client/src/game/autoScale.ts#AutoScale
   - client/src/game/upscale.ts#Upscale
   - client/src/perfMeter.ts#PerfMeter
@@ -218,7 +219,7 @@ name says "Ruins" (`placeWords`). Online, a node's room lets a kept character in
 ([[Server]], "Where a character comes from"; [[The Server Is the Authority Over Everything]]), so any other room than
 Overlook's sends it back to its ship, the veil saying "You cannot reach this place from where you were.". With
 `&spawn=<east>,<south>[,<bearing in degrees>]` too, the player stands at that point instead of the node's spawn,
-offline: a way to look at one place.
+offline (`&offline`): a way to look at one place.
 
 ## On foot
 
@@ -747,8 +748,10 @@ let it go. Anchored there, the player walks ashore on its beach, into its room (
 
 ## Rooms
 
-With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server
-(`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
+The game plays online, on the deployed rooms and accounts, unless its address asks otherwise (`roomAsked`,
+`roomsFrom`): `?room=` with a whole address names a server (`?room=ws://127.0.0.1:8787` under `npm run server`), any
+other value the deployed rooms; `?offline` plays alone, with no accounts, each room run in the page's own worker, as
+the pictures and probes of the [[Toolkit]] do.
 
 - **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder difficulty
   `node-<node id>--elite` or `--abyss` (a social space is one room at any difficulty), and stands at the spawn the room's
@@ -887,7 +890,7 @@ plants, the figures and the ships (the wrecks too) are then lit through both, so
 land's light thrown back onto its sides: the near map's sharp shadows hold inside its square and give way to the far
 map's toward its rim, and those fade out toward the far square's own, about 2 km ahead. So from the plaza the city below is
 shadowed as far as its masses stand. From more than 400 m over the ground, at sea or over an island's side, no
-shadows are drawn.
+shadows are drawn, nor anywhere with Settings' Shadows off ([[Interface]], "Graphics").
 
 **The far map is kept** from frame to frame (`shadowCache.ts`). Its square stays where it was drawn until where the eye
 would set it is 37.5 m off (32 of its texels: a walk of that far, or a turn of some 2.4 degrees), and its sun until the
