@@ -1,4 +1,4 @@
-// The owner's seventh beat: the lookout cuts into the calm, crying out that a larger ship comes out of the storm
+// The story's seventh beat: the lookout cuts into the calm, crying out that a larger ship comes out of the storm
 // straight for its side; the camera pulls sharply out to show it coming, the crew brace, and it strikes. Black.
 // The larger ship is Captain Brannoc Thule's Frigate, drawn at its own size under sail, the wrecks of the fight still
 // lying round them.

@@ -1,7 +1,7 @@
 // A Breach's moments as the page hears and tells them, from the room's events (judging.rs EventKind): which are the
 // player's (the room tells most to every player, so the page takes only its own player's copy); each heard once, at
 // its place where it names one (a bell, a mooring, a rift, a desk, a Keeper's shore, the player it marks), every bell
-// waking at its own note, each by its own recording (`breach.*`) once the owner has picked it and by the world's it
+// waking at its own note, each by its own recording (`breach.*`) once one is picked and by the world's it
 // borrowed until then; what the room tells by its state (a slab rising or sinking, a mooring held); the music's sting
 // and the banner's beat; and the company's moments in words, a wipe saying why where the page knows it. The room
 // judges every one.

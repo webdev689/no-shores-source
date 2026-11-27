@@ -48,8 +48,7 @@ export const PAD_BUTTONS = [
 /** A button held this long, seconds, is its hold (`B hold`), where one is bound; let go sooner, its tap. */
 export const HOLD_S = 0.3;
 
-/** DFO's keys, as the owner chose them ("same control scheme"), and Destiny's pad, as the owner chose it ("#1 but b
- *  to dodge/b hold to crouch"). */
+/** DFO's keys, and Destiny's pad (its first layout, but B to dodge and B held to crouch). */
 export const CONTROLS = {
   forward: control(['w'], ['LS up'], FOOT),
   back: control(['s'], ['LS down'], FOOT),
@@ -91,7 +90,7 @@ export const CONTROLS = {
   // On an item's page, the piece worn in its slot set beside it.
   compare: control(['c'], [], ['menu']),
   controls: control(['k'], ['View'], EVERYWHERE),
-  // The chat's field opens on T wherever the player plays, the owner's choice: at the helm Enter sets sail. On the
+  // The chat's field opens on T wherever the player plays, since at the helm Enter sets sail. On the
   // pad View and Start together, the one pair no fight or helm hears, whose menus wait a moment for it.
   chat: control(['t'], ['View+Start'], ['foot', 'dead', 'helm', 'fight']),
   steerLeft: control(['a'], ['LS left'], HELM),

@@ -1,4 +1,4 @@
-// The chest DFO Online stood in every chest, the owner's model: a base, a lid, a hinge and a latch, each its points in
+// The chest DFO Online stood in every chest: a base, a lid, a hinge and a latch, each its points in
 // the model's own units and the triangles over them, wound so (b - a) x (c - a) points out of it. The model's frame is
 // DFO's (x along it, y up, z out of its front, the latch's side, the origin on the floor under the base's middle); a
 // chest is laid in the game's, x across, y out of its front, z up. To open, the lid, the hinge and the latch turn

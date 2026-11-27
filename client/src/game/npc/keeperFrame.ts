@@ -1,5 +1,5 @@
-// The frame every keeper's screen stands in, after Destiny 2's vendor screen (the Gunsmith's, in the owner's
-// reference): the keeper large at the left, cut off below the waist, over a ground lit in their colour and darkened
+// The frame every keeper's screen stands in, after Destiny 2's vendor screen (the Gunsmith's):
+// the keeper large at the left, cut off below the waist, over a ground lit in their colour and darkened
 // toward its edges; at the foot of that side their role in small spaced capitals, their name in large bold capitals
 // over a thin white rule, and a line about them in small dim words; at the top right their crest (an emblem in a
 // diamond with a bar running from it, the bar's name over its far end) with the player's currencies under it; and the

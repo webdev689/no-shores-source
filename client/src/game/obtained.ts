@@ -1,4 +1,4 @@
-// What the player obtains, announced as Destiny 2's notice at the foot of the screen (the owner's reference): a band
+// What the player obtains, announced as Destiny 2's notice at the foot of the screen: a band
 // across the foot edged at its top by a thin cyan line, a round icon in a cyan ring, a title and a line (the key to
 // press on a keycap where there is one), and, dim at the far right, the key and what it opens. A keeper's gift, a
 // road's reward, a quest acquired, a step done, an Art, a Tenet or a fragment to choose, loot of the finest rarities

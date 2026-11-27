@@ -49,7 +49,7 @@ const DRESS_LIMIT = 4096;
 /** The most shots and events kept for the next frame to show. */
 const QUEUED_MOST = 256;
 const STROKES = [1, 2, 3, 4, 5, 6] as const;
-/** The player's strokes in the order their swings chain, at the owner's word, each drawn differently: the side cut,
+/** The player's strokes in the order their swings chain, each drawn differently: the side cut,
  *  the overhead and the thrust (the combat crate's left, down and up). */
 export const CHAIN = [3, 1, 6] as const;
 /** Ticks without a swing (a second, at the room's 60 a second) after which the chain starts over at its first. */

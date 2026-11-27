@@ -11,7 +11,7 @@ const MESSAGE_S = 3.5;
 const LOADS: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
 
 /**
- * The owner's Sloop in a fleet room, as the World Editor shows it: its session there (its orders and its predicted
+ * The editor's own Sloop in a fleet room, as the World Editor shows it: its session there (its orders and its predicted
  * ship), its wake as it moves, and what the panel says of it, the nearest captain and what happened.
  */
 export class FleetSloop extends Afloat {

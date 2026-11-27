@@ -1,4 +1,4 @@
-// The meadow's law: which of the owner's sprites a tuft wears, how tall it stands and how its colours are moved by
+// The meadow's law: which sprite a tuft wears, how tall it stands and how its colours are moved by
 // the ground under it. Flowers and taller grass gather where a patch is lush, dry tufts and short grass where it is
 // poor, a bush now and then, every tuft its own size and whole patches running taller. The shader runs the same law
 // from these numbers (meadowShader.ts); the tests hold the two together.
@@ -56,7 +56,7 @@ export function pick(draw: number, tint: number): { variant: number; scale: numb
   return { variant, scale: (VARIANTS[variant]?.scale ?? 1) * between(PATCH_SCALE), lush };
 }
 
-/** The green the art is anchored by: the tall tuft's mean. The owner's green is lighter and bluer than a grass ground,
+/** The green the art is anchored by: the tall tuft's mean. The art's green is lighter and bluer than a grass ground,
  *  so each texel is moved by the ratio of its ground to the ground this green would stand a shade darker over. */
 export const GREEN = spriteMean(MEADOW_SPRITES[0]?.picture ?? { rows: [], colours: [] });
 /** How a tuft's green stands against its ground, a channel each: a shade darker, as a green lighter than its ground

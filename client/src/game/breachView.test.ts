@@ -19,7 +19,7 @@ import { breachPlanOf, runPlace, sealOpen, slabStands, socketAt, spaceSocket } f
 import { type BreachOn, BreachView, bearing, breachFall, gateOf, withBreach } from './breachView.ts';
 import type { NodeInfo } from './worldData.ts';
 
-/** A moment as the page plays it: its own recording once the owner has picked it, else the world's it borrows. */
+/** A moment as the page plays it: its own recording once one is picked, else the world's it borrows. */
 function moment(event: number, place: readonly [number, number, number] | null) {
   assert.ok(place, 'the moment has its place');
   return heardOf(MOMENT_CUES[event]!, place);

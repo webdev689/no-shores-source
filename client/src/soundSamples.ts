@@ -1,4 +1,4 @@
-// The game's recorded sounds, the interface's and the world's: the owner's picks from Freesound and from DFO's own
+// The game's recorded sounds, the interface's and the world's: recordings picked from Freesound and from DFO's own
 // (content/audio/sounds.json), kept on R2 under the hash of their bytes, each levelled to one peak and one loudness
 // and played for its cue; silent until it has come. Each Freesound recording carries its credit, which Settings lists.
 // They come as they are wanted, long ones a chunk at a time, and are held within a budget, since all of them decoded
@@ -299,7 +299,7 @@ export class Samples {
 /** The game's one bank of recordings. */
 const samples = new Samples(bank);
 
-/** Whether a cue has a recording the owner picked. */
+/** Whether a cue has a picked recording. */
 export const recorded = (id: string): boolean => Object.hasOwn(bank.sounds, id);
 
 /** Starts fetching the recordings, once the page's sound has woken. */

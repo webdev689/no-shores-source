@@ -91,7 +91,7 @@ export const SLOTS = ['melee', 'ranged', 'head', 'torso', 'arms', 'legs', 'cloak
 export const MELEE = 0;
 export const RANGED_SLOT = 1;
 /** The rarities, by the gear crate's numbers: each one's name, its colour with the lit and shaded edges of a frame in it
- *  (Enhanced Plus's bevel), the channels its glow is drawn in, and the pips that mark it. The colours are the owner's:
+ *  (Enhanced Plus's bevel), the channels its glow is drawn in, and the pips that mark it. The colours are
  *  Normal white, Magic green, Rare yellow, Legendary red, Atheric cyan blue, as the Vestiges' crystals are. A Normal
  *  piece's frame and glow are the kit's plain stone, so it never outshines a finer one. */
 export const RARITIES = [

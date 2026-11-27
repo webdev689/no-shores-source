@@ -2,7 +2,7 @@
 // under the ground, and its gate's hollow over the vale's own near it), heard wherever the player is.
 // The game tells it each frame where the player stands and looks (`onFoot`, `atSea`) and steps it once (`frame`); it
 // plays the place's ambience through the Ambience volume, crossfading over a few seconds as the player moves on, and
-// lets every place fade to nothing while the game shows none, behind a loading veil. Its beds and calls are the owner's
+// lets every place fade to nothing while the game shows none, behind a loading veil. Its beds and calls are picked
 // Freesound recordings; until each has come it is silent. Each frame it reads the sky (SKY_NOW): the sun's
 // height gives the hour's phases, the weather the wind, rain, snow and sand, and every strike near its thunder.
 

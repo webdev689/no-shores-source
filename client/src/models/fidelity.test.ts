@@ -1,7 +1,7 @@
 // The forged models are DFO's, whole, so this layer must build DFO's shapes to the bit, and only bytes show that.
 // Each hash is what DFO's own Building Forge, Prop Forge or Room Kit builds from the same table: a building from
 // every stretch of the table and every kind of wing, a prop of every family, and pieces of the kit with doors,
-// slopes and the big rooms; but not a building's windows, which are the owner's own, 2 m wide and their frame alone,
+// slopes and the big rooms; but not a building's windows, which are the game's own, 2 m wide and their frame alone,
 // and left out where a lower wing's gable stands in the wall as where a door does. It covers the positions, normals,
 // UVs and indices as bytes, then the parts. A deliberate change to a shape re-pins its hash.
 import { strict as assert } from 'node:assert';

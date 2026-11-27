@@ -40,8 +40,8 @@ function placeOf(vessel: FleetVessel, view: LandView, shown: number): ShipPlace 
   return { x: x - view.leftM, y: y - view.topM, z: heave * shown, heading, pitch, roll };
 }
 
-/** The owner's Sloop in a fleet room, as the World Editor shows it: its session's orders and prediction (`FleetSloop`),
- *  every other ship the room shows, the balls aloft, its look's lay, and the fight's effects. */
+/** The editor's own Sloop in a fleet room, as the World Editor shows it: its session's orders and prediction
+ *  (`FleetSloop`), every other ship the room shows, the balls aloft, its look's lay, and the fight's effects. */
 export class FleetScene {
   readonly play: FleetSloop;
   private readonly marks: MarkDrawer;

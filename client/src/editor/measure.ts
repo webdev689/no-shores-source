@@ -1,6 +1,6 @@
 import type { WorldConstants } from '../rules/worldRules.ts';
 
-/** A shape of known size the owner lays on the map to judge scale. */
+/** A shape of known size laid on the map to judge scale. */
 export interface Reference {
   readonly key: string;
   readonly label: string;

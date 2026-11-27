@@ -1,6 +1,6 @@
 // The interface's sounds: a tick as the pointer or the keys reach a control, a press, a tab turned, the menu opened and
 // shut, a hold's build-up until it acts, an item dismantled or fed, a gain's chime by its rarity, and a refusal.
-// The owner picked each on the sound sheet: a recording from Freesound (soundSamples.ts), silent while it loads, or,
+// Each is picked on the sound sheet: a recording from Freesound (soundSamples.ts), silent while it loads, or,
 // for the refusal, the chimes and the hold, one the browser's own synthesiser makes here. One listener hears every
 // press, as DFO's click does, and plays the press only where no sound of its own already played. The volume is the
 // player's, kept in this browser, as are the world's, the music's and the ambience's, each playing through a bus of
@@ -26,7 +26,7 @@ const LEVEL = 0.35;
 const TICK_MS = 45;
 /** How far a tick's or a press's pitch strays, either way, as a share of it. */
 const STRAY = 0.06;
-/** The cues played from a recording the owner picked, by its place in content/audio/sounds.json. */
+/** The cues played from a picked recording, by its place in content/audio/sounds.json. */
 const RECORDED: Partial<Record<Cue, string>> = {
   hover: 'ui.hover',
   press: 'ui.press',
@@ -274,7 +274,7 @@ const BELL = 880;
 const fromBell = (steps: readonly number[]) => steps.map((semitones) => BELL * 2 ** (semitones / 12));
 /** A Legendary gain's glints, as dust catching the light: each a multiple of the bell an octave up. */
 const GLINTS = [2, 3, 2.5, 4, 3.5, 2, 3, 2.5];
-/** A gain's chime, the Brass bells the owner picked: one voice at three sizes, a single bell for a Normal or Magic gain,
+/** A gain's chime, the Brass bells: one voice at three sizes, a single bell for a Normal or Magic gain,
  *  a rising run for a Rare, and for a Legendary or Atheric a longer run over a held, shimmering chord and its glints. */
 export function chime(rarity: number): void {
   lastCueAt = performance.now();
@@ -288,7 +288,7 @@ export function chime(rarity: number): void {
   });
 }
 
-/** A hold's build-up, the Shimmer the owner picked: high, thin air swelling over `holdMs` as it is held, glinting
+/** A hold's build-up, the Shimmer: high, thin air swelling over `holdMs` as it is held, glinting
  *  faster as it nears its end, then gone; the stop it returns lets it fall away at once, let go early. */
 export function charge(holdMs: number): () => void {
   lastCueAt = performance.now();

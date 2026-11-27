@@ -1,6 +1,6 @@
 // The meadow's sprites side by side in one picture, top row first, each sprite's cell a power of two so every level
 // of its chain halves exactly: a 32-pixel tuft is laid at two texels a pixel, so the chain's second level is the
-// owner's picture again, texel for texel. The chain keeps each sprite's share of its cell drawn at every level, so a
+// sprite's picture again, texel for texel. The chain keeps each sprite's share of its cell drawn at every level, so a
 // far tuft of flowers is as sparse as a near one and a bush as full, never blurred to a block or thinned to nothing.
 import { MEADOW_SPRITES, type MeadowPicture, type MeadowSprite } from './meadowArt.ts';
 

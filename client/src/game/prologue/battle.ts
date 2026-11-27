@@ -1,4 +1,4 @@
-// The owner's fifth beat, played: the ships that came out of the dark are fought with the sea's own fight (its
+// The story's fifth beat, played: the ships that came out of the dark are fought with the sea's own fight (its
 // camera, its aim and its guns), the Brig drawn as the player's with its crew at work, the crew crying out as it is
 // struck, as its balls strike home and as each ship goes down; it ends once every one is beaten, sunk or struck. The
 // tracker says their crews are the mark, as the rules strike a ship whose men are gone, and counts the ships and men
