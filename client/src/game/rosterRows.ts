@@ -93,8 +93,9 @@ export function actionsFor(roster: Roster, person: Person): Action[] {
   const leading = !roster.company || roster.company.leader === own;
   if (roster.invites.some((each) => each.name === name))
     actions.push({ label: 'Accept company invite', path: 'company/accept', body: named, opens: 'join' });
-  // A member playing elsewhere is gone to without asking the Roster anything: they are in the company already.
-  if (inCompany && person.place !== null && person.place !== roster.me?.place)
+  // A member playing elsewhere is gone to without asking the Roster anything: they are in the company already. One
+  // at sea is boarded, from the sea too.
+  if (inCompany && person.place !== null && (person.place !== roster.me?.place || person.place === 'sea'))
     actions.push({ label: 'Go to them', opens: 'travel' });
   if (inCompany && leading) {
     actions.push({ label: 'Make company leader', path: 'company/lead', body: named });

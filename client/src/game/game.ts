@@ -221,6 +221,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
   /** Leaves wherever the player was for the place `entering` stands them in. */
   const goInto = async (entering: () => Promise<Foot>) => {
+    aboard = null;
     leaveHere();
     playing.foot?.leave();
     playing.foot = null;
@@ -448,6 +449,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     landings.frame(playing.flow.mode === 'sea');
     if (!sea || playing.flow.mode !== 'sea') return;
     if (sea.sighted?.letOff) return getOff('Your company member left the sea.');
+    if (aboard !== null && sea.roomLost) return getOff('Their ship could not be boarded.');
     // An island new in sight bends the voyage ahead round it.
     if (isles.update(sea.sighted?.islands ?? [])) sea.bendRound();
     // Marked only while the map is up, the only time they are drawn.
@@ -516,7 +518,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (sailed.shipless()) return shutOut(why);
     tell(why);
     playing.sea?.leaveRoom();
-    void enterSea();
+    void enterSea().catch(() => playing.sea?.sailAlone(playing.sea.position));
   };
   /** A gate shut sends the player back to their ship; one who keeps none yet, to Overlook, where the Harbourmaster is. */
   const shutOut = (why: string) => {

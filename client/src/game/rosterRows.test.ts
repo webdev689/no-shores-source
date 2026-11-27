@@ -137,6 +137,8 @@ test('each player offers what their place in the lists allows, and what cannot b
   assert.ok(!labels(full, 'Ben').includes('Go to them'), 'in the same room');
   assert.ok(labels(full, 'Cal', 'node-saltgrass-downs').includes('Go to them'), 'a member playing elsewhere');
   assert.ok(!labels(full, 'Cal', null).includes('Go to them'), 'a member away');
+  const atSea = roster({ me: person('Ada', 'sea'), company: { leader: 'Ada', members } });
+  assert.ok(labels(atSea, 'Cal', 'sea').includes('Go to them'), 'a member at sea is boarded from the sea too');
 });
 
 test('the Guild column ranks each member, playing first, then those invited', () => {
