@@ -32,6 +32,8 @@ jobs:
           python-version: '3.13'
       - name: Install Blender's module and the TypeScript tools
         run: pip install bpy==5.3.0 && npm ci
+      - name: Test the export's mesh bytes
+        run: python -I tools/ships/test_export.py
       # She stands three times her source model, her quarterdeck opened with steps down, so her
       # waterline, 0.4 m up that model, is 1.2 m up her. Her source's key is the hash of its bytes, so what is fetched
       # is checked against it before Blender opens it.

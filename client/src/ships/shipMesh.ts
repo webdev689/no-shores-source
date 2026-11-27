@@ -3,7 +3,7 @@ import { contentBytes } from '../contentCache.ts';
 import type { SailCorners } from './sails.ts';
 
 /** Bytes a vertex: its position (3 × float32, metres), normal (4 × snorm8), UV (2 × float32, metres) and part (4 ×
- *  uint8, the first its place in `SHIP_PARTS`). */
+ *  uint8, the first its place in `SHIP_PARTS`, the second `GLASS_SHELL` on a stern window's pane, else 0). */
 export const VERTEX_BYTES = 28;
 
 /** Its waterline as the export measured it: its length and beam, and its draught below it, metres. */

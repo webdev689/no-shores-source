@@ -123,7 +123,8 @@ export const SHIP_DRAW_SHADER = /* wgsl */ `
 ${PLACE_SHADER}
 ${SHADOW_WGSL}
 const BOUNCE = 0.15;
-// A lantern's glass (its shell byte GLASS_SHELL): pale horn by day, and its flame's light burning through it.
+// A lantern's glass and a stern window's pane (shell byte GLASS_SHELL): pale horn by day, and the light within
+// burning through it while its ship's lanterns are lit.
 const GLASS = vec3f(0.78, 0.7, 0.52);
 const FLAME = vec3f(1.6, 1.0, 0.42);
 

@@ -295,6 +295,9 @@ the ports, the Sloops moored at Overlook's pier, the players' ships and hostile 
 - **Who runs dark.** The Grey Tithe's ships sail with their lanterns out ([[Pirates Are Replaced by the Grey Tithe]]),
   and a friendly ship running from an attack puts hers out: a merchant fleeing the Tithe ship she clashed with, as the
   room sends her (`Friendly.dark`), and a friendly captain fleeing in a player's fight (`runs_dark`).
+- **Her stern windows.** A lit ship's stern windows burn with her lanterns, and a dark ship's stay dark
+  ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]], [[Hulls]], "Stern
+  windows").
 - **Near.** A lit ship's lanterns burn in their glass, and each within 51.5 m of the eye along the water is a lamp
   among the sky's nearest sixteen, DFO's warm light reaching 20 m, lighting her deck and the water round her. Past
   that its light is off.

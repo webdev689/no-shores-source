@@ -2,9 +2,9 @@
 
     <python with bpy> tools/ships/paint_ship.py /path/to/Ship.blend /path/to/Painted.blend [--pictures <file>]
 
-Each face goes to a part material: `sail` stays canvas; an empty slot is her spars (mast, bowsprit, pins, wheel); any
-other named slot is her hull, or her deck where the face looks up; a cannon is iron, and any other object without a
-material is spar. Her UVs are metres in Blender's frame, each face projected on the axis it faces most, so a picture
+Each face goes to a part material: `sail` stays canvas, `glass` (a window's pane) stays glass; an empty slot is her
+spars (mast, bowsprit, pins, wheel); any other named slot is her hull, or her deck where the face looks up; a cannon is
+iron, and any other object without a material is spar. Her UVs are metres in Blender's frame, each face projected on the axis it faces most, so a picture
 of the game's painter repeats over her at its own scale: hull and deck along her length, a spar along its own. With
 --pictures (the bytes `node tools/ships/ship_pictures.ts` writes), each part's material shows its picture, packed in
 the model. Run on a model painted before, it keeps her parts and lays her UVs and pictures again.
@@ -18,6 +18,10 @@ import bpy  # noqa: I001 - Blender's own modules load once bpy has
 import bmesh
 
 PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
+# A window's pane: the game draws it as iron that glows as glass (tools/ships/export_ship.py GLASS), so it has no
+# picture of its own.
+GLASS = 'glass'
+SLOTS = PARTS + (GLASS,)
 GUN_NAME = re.compile(r'Cannon\.(Port|Starboard)\.(\d+)$')
 # A face looks up, and is deck, past this share of its normal.
 DECK_UP = 0.7
@@ -30,7 +34,7 @@ def part_of(material, face_up):
     """A face's part by the material it was in and whether it looks up."""
     if material is None:
         return 'spar'
-    if material.name in PARTS:
+    if material.name in SLOTS:
         return material.name
     if material.name.lower().startswith('sail'):
         return 'sail'
@@ -38,8 +42,9 @@ def part_of(material, face_up):
 
 
 def picture_materials(pictures):
-    """A material a part, by name; with pictures, each shows its own, repeating at the game's scale."""
-    found = {}
+    """A material a part and the glass, by name; with pictures, each part shows its own, repeating at the game's
+    scale."""
+    found = {GLASS: bpy.data.materials.get(GLASS) or bpy.data.materials.new(GLASS)}
     for index, name in enumerate(PARTS):
         material = bpy.data.materials.get(name) or bpy.data.materials.new(name)
         material.use_nodes = True
@@ -155,14 +160,14 @@ def paint(item, materials):
             for loop, corner in zip(face.loops, project(face)):
                 loop[uv].uv = corner
     item.data.materials.clear()
-    for name in PARTS:
+    for name in SLOTS:
         item.data.materials.append(materials[name])
     for face in bm.faces:
-        face.material_index = PARTS.index(parts[face])
+        face.material_index = SLOTS.index(parts[face])
     bm.transform(item.matrix_world.inverted())
     bm.to_mesh(item.data)
     bm.free()
-    counts = {name: sum(1 for value in parts.values() if value == name) for name in PARTS}
+    counts = {name: sum(1 for value in parts.values() if value == name) for name in SLOTS}
     print(item.name, {name: count for name, count in counts.items() if count})
 
 
