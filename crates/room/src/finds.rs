@@ -25,7 +25,7 @@ pub const SEARCHABLE_MOST: usize = 16;
 /// A dungeon's chest (the cache's, `dungeonChest.ts`): how far its back stands off the wall it is against, so its lid
 /// swinging back as it opens (up to 0.15 m behind it) keeps clear of the 0.3 m a kit piece stands proud of a wall;
 /// half its depth and half its width, metres.
-const OFF_WALL_M: f64 = 0.5;
+pub(crate) const OFF_WALL_M: f64 = 0.5;
 /// How far a second chest in a dungeon's room stands from every other, metres: two cells.
 const SECOND_APART_M: f64 = 2.0 * CELL_M;
 pub const CHEST_HALF_DEEP_M: f64 = 0.25;

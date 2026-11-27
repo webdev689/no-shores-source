@@ -24,6 +24,12 @@ request's head, in three parts at once; before a push, the tests of what changed
   `crates/combat/tests/agree.rs` and `client/src/rules/combatRules.test.ts` hold the same fingerprint of a fight; the
   room door's `garrison_door_tests.rs` and `server/garrison.test.ts` one of a node's garrison fought, and its
   `climb_door_tests.rs` and `server/climb.test.ts` one of a foe climbing after a player.
+  Each fingerprint both languages hold is pinned once, in `content/fingerprints.txt` (a name, then its value), which
+  the Rust tests read with their `pinned` and the TypeScript tests with `server/pinnedForTests.ts`; the `pins` check
+  refuses a copy. A pin moves only once switching the change off for one run restores the old value, so the change
+  is shown to be its only cause; then the server's test, through the WebAssembly rebuilt, shows the build carries it.
+  Where the page keeps its own copy of a rule's number, a Rust test writes the rule's (the rooms' numbers into
+  `target/protocol/room-numbers.json`, the asks' into `asks.json`) and the page's test reads that, never the Rust.
   `crates/protocol/src/protocol_tests.rs` writes a welcome and a snapshot into `target/protocol/`, and
   `client/src/network/messages.test.ts` reads them back to the bit; `server/roomDoor.test.ts` hands the room, in
   WebAssembly, the bytes the browser's own code writes, and reads its snapshots back with the browser's.
@@ -37,6 +43,10 @@ request's head, in three parts at once; before a push, the tests of what changed
 ## What a good test looks like
 
 - Named for the behaviour: `a_ship_in_irons_loses_way`, not `test_3`.
+- Wire inputs built from their layout: an intent by `intentOf` (`server/intentForTests.ts`) or `INTENT_FLOATS`,
+  never as a list of numbers, so a number added to the layout reaches every test at once.
+- A property run that checks something is conserved (totals, rows) also asserts that the run did something: a run
+  that did nothing conserves everything.
 - Made-up inputs a reader can follow, built in the test.
 - One behaviour per test; the assertion says what was expected.
 - Checks results through public functions, not private state.

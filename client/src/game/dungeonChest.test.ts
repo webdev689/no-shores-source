@@ -47,9 +47,10 @@ test("the chests a dungeon stands to find are the cache's chest, each its own, i
 
 test("a found chest's lid, thrown open, stays clear of the 0.3 m a wall's kit pieces stand proud", async () => {
   const { readFile } = await import('node:fs/promises');
-  const finds = await readFile(new URL('../../../crates/room/src/finds.rs', import.meta.url), 'utf8');
-  const off = Number(/const OFF_WALL_M: f64 = ([\d.]+);/.exec(finds)?.[1]);
-  const deep = Number(/pub const CHEST_HALF_DEEP_M: f64 = ([\d.]+);/.exec(finds)?.[1]);
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs).
+  const written = await readFile(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  const room = JSON.parse(written) as { chestOffWallM: number; chestHalfDeepM: number };
+  const [off, deep] = [room.chestOffWallM, room.chestHalfDeepM];
   assert.ok(off > 0 && deep > 0, 'the room stands its chests so far off the wall');
   // The wall is the line y = 0 to the north; the chest faces south, its middle where the room stands it.
   for (const opened of [null, 0.3, 10]) {

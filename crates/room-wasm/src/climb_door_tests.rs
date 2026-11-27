@@ -12,9 +12,6 @@ use protocol::wire::overlook::wire as messages;
 use room::SpawnAsk;
 use serde_json::Value;
 
-/// Both tests hold this value; a change to the course, the bake, the foes or the fight changes it in both, on purpose.
-pub const CLIMB_HASH: &str = "ec2c4d58";
-
 /// The script: ticks east, then ticks north into the ledge and up it, then facing south; the tick the player asks for
 /// a swordsman, and how often they swing at it after; the run's length.
 const EAST: u32 = 40;
@@ -69,5 +66,7 @@ fn a_foe_climbs_after_a_player_to_the_same_fingerprint_natively_as_in_the_browse
         }
     }
     assert!(highest == 2.3, "the foe stood on the ledge: as high as {highest} m");
-    assert_eq!(format!("{hash:08x}"), CLIMB_HASH);
+    // Both tests hold this value; a change to the course, the bake, the foes or the fight changes it in both, on
+    // purpose.
+    assert_eq!(format!("{hash:08x}"), crate::door_tests::pinned("climb.run"));
 }

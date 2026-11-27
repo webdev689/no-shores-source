@@ -4,20 +4,14 @@
 
 use land::landmass::{generate, ground_hash};
 
-/// Both tests hold this value; a change to the generator changes it in both, on purpose.
-pub const SQUARE_GROUND_HASH: &str = "2723ccc818961ecb";
-
 #[test]
 fn the_square_generates_to_its_fingerprint() {
     let text = r#"{ "continents": [{ "id": "square", "outline": [[200000, 300000], [320000, 300000], [320000, 420000], [200000, 420000]] }], "isles": [] }"#;
     let layout = world::layout::parse(text).unwrap();
     let landmass = generate(&layout.continents[0], land::edits::Edits::default()).unwrap();
-    assert_eq!(format!("{:016x}", ground_hash(&landmass.ground)), SQUARE_GROUND_HASH);
+    // Both tests hold this value; a change to the generator changes it in both, on purpose.
+    assert_eq!(format!("{:016x}", ground_hash(&landmass.ground)), pinned("land.square_ground"));
 }
-
-/// The same square with a road, a carved river and a town, sampled on the road, along the river, inside the town and
-/// across the land (`sample_points`; landRules.test.ts lists the same points).
-pub const SQUARE_SAMPLE_HASH: &str = "1316e7b1b67f5f55";
 
 #[test]
 fn the_square_with_places_samples_to_its_fingerprint() {
@@ -30,7 +24,9 @@ fn the_square_with_places_samples_to_its_fingerprint() {
     let landmass = generate(&layout.continents[0], land::edits::parse(edits).unwrap()).unwrap();
     assert!(landmass.problems().is_empty(), "{:?}", landmass.problems());
     let points = sample_points();
-    assert_eq!(format!("{:016x}", land::ground::sample_hash(&landmass.surface, &points)), SQUARE_SAMPLE_HASH);
+    // The same square with a road, a carved river and a town, sampled on the road, along the river, inside the town
+    // and across the land (`sample_points`; landRules.test.ts lists the same points).
+    assert_eq!(format!("{:016x}", land::ground::sample_hash(&landmass.surface, &points)), pinned("land.square_sample"));
 }
 
 /// Ten points along the road, ten along the river, sixteen in the town, a hundred across the square and fifty more
@@ -48,10 +44,6 @@ fn sample_points() -> Vec<(f64, f64)> {
     road.chain(river).chain(town).chain(across).chain(fractions).collect()
 }
 
-/// The sea's swell over the square's margin at a moment of world time, at points a fraction of a metre off the grid
-/// (landRules.test.ts samples the same).
-pub const SQUARE_SEA_HASH: &str = "b6ceaaa9dd1a37f4";
-
 #[test]
 fn the_sea_over_the_square_swells_to_its_fingerprint() {
     let text = r#"{ "continents": [{ "id": "square", "outline": [[200000, 300000], [320000, 300000], [320000, 420000], [200000, 420000]] }], "isles": [] }"#;
@@ -61,7 +53,12 @@ fn the_sea_over_the_square_swells_to_its_fingerprint() {
     let points: Vec<(f64, f64)> =
         (0..60).map(|step| (162_000.5 + 550.25 * f64::from(step), 262_000.75 + 3_300.5 * f64::from(step))).collect();
     assert!(points.iter().all(|&(x, y)| land::sea::sea_surface(&landmass.surface, &swell, x, y, 1234.567).is_some()));
-    assert_eq!(format!("{:016x}", land::sea::sea_hash(&landmass.surface, &swell, &points, 1234.567)), SQUARE_SEA_HASH);
+    // The sea's swell over the square's margin at a moment of world time, at points a fraction of a metre off the
+    // grid (landRules.test.ts samples the same).
+    assert_eq!(
+        format!("{:016x}", land::sea::sea_hash(&landmass.surface, &swell, &points, 1234.567)),
+        pinned("land.square_sea")
+    );
 }
 
 /// The deep sea under the weather round an island, at points from its lee to the open sea and a roadstead, at a moment
@@ -79,3 +76,7 @@ fn the_sea_under_the_weather_swells_to_its_fingerprint() {
     let hash = land::sea::weather_sea_hash(&waters, &roadsteads, &points, 1_790_000_123.25);
     assert_eq!(format!("{hash:016x}"), WEATHER_SEA_HASH);
 }
+
+#[path = "support/pinned.rs"]
+mod pinned;
+use pinned::pinned;

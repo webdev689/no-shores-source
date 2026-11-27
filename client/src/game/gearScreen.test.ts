@@ -166,15 +166,12 @@ test("a module's page fits it in its own slot, never feeds it, and prices its no
 });
 
 test("each vendor's stock is the rules' own: the day's wares, then its starter pieces", async () => {
-  const vendor = await readFile(new URL('../../../crates/gear/src/vendor.rs', import.meta.url), 'utf8');
-  const starter = vendor.slice(vendor.indexOf('fn starter_kinds'));
-  const pieces = ['Armorsmith', 'Weaponsmith', 'Shipwright'].map(
-    (name) =>
-      (new RegExp(`Vendor::${name} => &\\[([^\\]]*)\\]`).exec(starter)?.[1] ?? '').match(/Kind::/g)?.length ?? 0,
-  );
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs): the Armorsmith's, Weaponsmith's and Shipwright's.
+  const written = await readFile(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  const room = JSON.parse(written) as { wares: number; starterPieces: number[] };
   assert.deepEqual(
     STOCK,
-    pieces.map((count) => WARES + count),
+    room.starterPieces.map((count) => WARES + count),
   );
-  assert.equal(Number(/pub const WARES: usize = (\d+);/.exec(vendor)?.[1]), WARES);
+  assert.equal(room.wares, WARES);
 });

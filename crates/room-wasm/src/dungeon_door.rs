@@ -315,7 +315,6 @@ mod tests {
         br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
         br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0x939e_f98a_66ce_5550;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
@@ -323,7 +322,7 @@ mod tests {
             .iter()
             .flat_map(|ask| dungeon_json(ask).into_bytes())
             .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
-        assert_eq!(format!("{hash:016x}"), format!("{AGREED_HASH:016x}"));
+        assert_eq!(format!("{hash:016x}"), crate::door_tests::pinned("dungeon.agreed"));
     }
 
     /// Every Elite Dungeon's ask, as the browser's agreement test makes them too.

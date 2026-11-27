@@ -669,6 +669,13 @@ def _():
         'log never restored (toolkit-data-test.sh)' if rc == 0 else o.strip()[-300:])
 
 
+@check('numbers in flight')
+def _():
+    rc, o = sh(['bash', KIT + '/numbers-in-flight-test.sh'], timeout=120)
+    out('PASS' if rc == 0 else 'FAIL', 'numbers in flight', "numbers-in-flight.sh lists a pull request's new asks, "
+        'refusals and foe types, and none of a merged one (numbers-in-flight-test.sh)' if rc == 0 else o.strip()[-300:])
+
+
 @check('worker kit')
 def _():
     rw = open(KIT + '/workers/run-worker.sh').read()

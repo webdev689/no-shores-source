@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startSkyLaw } from './skyLaw.ts';
 import { DAY_S, EPOCH_UNIX_MS, WorldClock, hourOf, worldSeconds } from './worldClock.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/land_wasm.wasm', import.meta.url);
 
@@ -37,7 +38,7 @@ test('the weather agrees to the bit with the native build (weather_tests.rs hold
       return [cloud, falling, snowShare, storm, fog, sand, ...wind, gust, temperatureC];
     }).flat(),
   );
-  assert.equal(fingerprint(numbers), '9ad102e7d7c276ec');
+  assert.equal(fingerprint(numbers), pinned('sky.weather'));
 });
 
 test('noon stands half an hour after each midnight, and the sun is up then and down at midnight', async () => {

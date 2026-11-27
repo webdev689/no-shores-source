@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startLand } from './landRules.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/land_wasm.wasm', import.meta.url);
 
@@ -48,7 +49,7 @@ test('a continent opens as its window, with land inside the coast and sea around
 
 test('the land agrees to the bit with the native build (crates/land/tests/agree.rs holds the same fingerprint)', async () => {
   const view = (await land()).open(square(200_000, 300_000, 120_000), 'square', null);
-  assert.equal(view.groundHash, '2723ccc818961ecb');
+  assert.equal(view.groundHash, pinned('land.square_ground'));
 });
 
 test('a continent of a biome opens with its ground colour and snow line; one with none, without', async () => {
@@ -207,7 +208,7 @@ test('the sampled ground agrees to the bit with the native build (crates/land/te
     ]),
   ];
   const sample = rules.sample(points);
-  assert.equal(sample.sampleHash, '1316e7b1b67f5f55');
+  assert.equal(sample.sampleHash, pinned('land.square_sample'));
   assert.equal(sample.water[10]?.kind, 'river', 'the carved river holds water');
   assert.ok((sample.heights[10] ?? 0) < (sample.water[10]?.surface ?? 0), 'its bed lies under its surface');
 });
@@ -227,6 +228,6 @@ test('the sea over the square agrees to the bit with the native build (crates/la
     'the margin is sea, not a lake at 0 m',
   );
   assert.ok(sample.sea.every((height) => typeof height === 'number' && Math.abs(height) < 4));
-  assert.equal(sample.seaHash, 'b6ceaaa9dd1a37f4');
+  assert.equal(sample.seaHash, pinned('land.square_sea'));
   assert.equal(rules.sample([[260_000, 360_000]]).sea[0], null, 'no sea on land');
 });

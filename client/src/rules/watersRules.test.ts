@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { LAND_CELL, type PortInfo, startWatersRules } from './watersRules.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const WORLD = new URL('../../../content/world/', import.meta.url);
@@ -146,5 +147,5 @@ test('the sea by weather is calm in a roadstead and the deep sea holds to the fi
   assert.ok(Math.abs(Math.hypot(...swell.wind) - Math.hypot(swell.wind[0], swell.wind[1])) < 1e-9);
   const grid = rules.seaHeights([roadstead[0] - 2_000, roadstead[1] - 2_000], 1_000, 4, 4, time);
   assert.equal(grid.length, 16);
-  assert.equal(rules.seaHash(SEA_POINTS, time), 'aa8b7cd0624a292d');
+  assert.equal(rules.seaHash(SEA_POINTS, time), pinned('sea.world'));
 });
