@@ -12,7 +12,7 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - **Merging on the owner's yes once CI passes on its head**: #221 (hostile ships and islands on the sea map, travel
   anywhere at sea as a fade, home waters sheltered, unnamed islands' seas locked; `main` with #216, #227 and #231
   taken in). A merge deploys the page, the site, the rooms and the bot, and releases the desktop app.
-- **For the owner's yes once CI passes on its head**: #PRNUM (a player's feedback: M the map and N the leave, Tab and
+- **For the owner's yes once CI passes on its head**: #236 (a player's feedback: M the map and N the leave, Tab and
   the side buttons bound anywhere, the controls sheet's words first, a master volume and an interface size, the held
   map's legend hidden on L, a landing icon's card on hover, the mouse back as a window shuts, and the sea map's names
   laid out far less often and faster; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]).
@@ -110,7 +110,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
-- **The players' first asks** (#PRNUM), tested offline only: the mouse taken back as a window shuts is unchecked in a
+- **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
   browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
   2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
   13 ms at 1920 x 1080, measured natively), and its picture's repaint and upload (4 to 18 MB) are unmeasured; lighting
