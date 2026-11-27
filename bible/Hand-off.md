@@ -16,6 +16,7 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   `roomThread.test.ts`).
 - **To come**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
+- **For the owner's yes once CI passes**: #264 (the hand-off says the repository is public under webdev689).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
