@@ -9,7 +9,7 @@ target_file: ["bible/03-Code/Toolkit.md"]
 siblings_checked: "none: the lesson is the repo's worker and bisect setup, not a skill"
 area: "worktrees, cargo target directory"
 date: 2026-11-21
-session_context: "Bisecting a headless WebGPU start failure across five commits of main, each built in a worktree whose target/ was a symlink to the main checkout's."
+session_context: "2026-11-27, session 01AQ3N4rcsyHKfuU32sdJH24: a probe worktree at origin/main built with CARGO_TARGET_DIR set to the main checkout's target; once removed, the main checkout's `npm run wasm` failed in room's and dungeon's build scripts ('the content file: NotFound', paths under the removed worktree) until `cargo clean -p room -p dungeon` in both profiles. Earlier: Bisecting a headless WebGPU start failure across five commits of main, each built in a worktree whose target/ was a symlink to the main checkout's."
 parked_until: "PR #240 merge"
 resolved: 2026-11-27
 resolution: "review 2026-11-27: applied in PR #240, merged 2026-11-27"
@@ -57,3 +57,4 @@ proposed above covers it only if it also refuses a second cargo process in the s
 does not do across the build-then-rustdoc gap. Until a barrier exists: never start a cargo command while a backgrounded
 cargo run is alive; stop it first, or wait.
 
+Instance 2026-11-27 (controller): a short-lived probe worktree shared the main checkout's target dir to save a build; its build scripts' recorded `rerun-if-changed` paths pointed at the worktree, and after the worktree was removed the main checkout's build failed. Same barrier: a worktree gets its own target dir, or the probe runs in the main checkout on a scratch test.
