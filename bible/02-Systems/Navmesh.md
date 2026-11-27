@@ -73,7 +73,13 @@ and their firing spots by it, and climb and drop where its links say.
    between a storey's ceiling and the floor over it stands as a block with a bottom, so the storey under is walked
    beneath it; its jambs, pillars and solids, each on its own floor, are the bake's colliders, and an Elite
    Dungeon's Ascents' pads and a gallery's balustrades with them, so no foe paths onto a pad or over a balustrade. A
-   path between storeys goes by a flight. A dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is
+   free-standing solid (a prop's or a fixture's: a rock, rubble, a brazier; and a pillar's or a landmark's no more
+   than half a cell each way, a standing stone) is baked 0.25 m smaller each way, down to 2 cm across
+   (`SOLID_TRIM_M`): a cell is walled wherever a solid touches it and the erosion takes one more, so it would keep
+   0.4 to 0.8 m off where a body keeps 0.35 m, shutting the gaps beside it a body walks through and leaving the floor
+   round it off the mesh. Trimmed, it keeps 0.15 to 0.55 m, and the narrowest gap the mesh opens between two is
+   0.7 m, a body's width; the jambs and a landmark's greater pieces keep their whole footprint, so no path cuts their
+   outline. A path between storeys goes by a flight. A dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is
    taken up to the higher cell beside alone, never down, so a storey's way over a room of the storey under it (whose
    column's lowest floor is that room's) and the edge of a flight's landing stay floor where they meet the drop.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
@@ -170,6 +176,15 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 - An underside between 1.75 and 1.8 m over a floor rounds up to 2 m, so the mesh may run a path under it that a body
   stoops for; within a voxel.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
+- Of the floor a body stands on within a metre of a dungeon's solids, the mesh finds a way to 98.5% (the patrols'
+  nine, the 18 Elite Dungeons and four passage dungeons of chalk and barrow, `dungeon_room_tests`): what is left are
+  rock-to-wall gaps of 0.7 to 0.95 m, which the 0.4 m cell cannot open, and pockets more than 0.8 m off the mesh,
+  where a foe walks the last stretch straight.
+- In `brine-catacombs` the floor at the foot of the flight up from its third storey (x 4.8, y 8) is two polys either
+  side of a diagonal edge that never link, though they lie on one flat floor 0.2 m apart, so its rooms 14 to 17 have
+  mesh but no way from the way in: their foes cannot reach a player coming from it, nor follow one in. The cause is
+  in the outlines or the polys, not the corners' weld (widened to four voxels, it stays); an ignored test holds the
+  case (`brine_catacombs_flight_foot_is_one_floor_on_the_navmesh`).
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
 - The grid's cells stay 0.25 m however large the room, so a bake's time and memory grow with its area. Tested
   offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course, its 115 links among it, bakes in about

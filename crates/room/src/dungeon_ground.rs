@@ -11,7 +11,8 @@ use movement::{Heights, TUNING, Terrain};
 
 /// A dungeon's ground: each storey's plane of open cells (a flight's and a Void's open), its cells, each column's
 /// spans, the flights, its solids (min x, min y, max x, max y, bottom, top, as the dungeon's `boxes` give them) with
-/// the storey each stands on, and for each column the solids within a body's half-width of it.
+/// the storey each stands on, which of them are the jambs and which stand loose on the floor
+/// (`Dungeon::jamb_and_loose_boxes`), and for each column the solids within a body's half-width of it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DungeonGround {
     planes: Vec<Heights>,
@@ -23,6 +24,8 @@ pub struct DungeonGround {
     spans: Vec<Vec<Span>>,
     stairs: Vec<Stair>,
     pub(crate) solids: Vec<[f64; 6]>,
+    pub(crate) jambs: core::ops::Range<usize>,
+    pub(crate) loose: core::ops::Range<usize>,
     solid_storeys: Vec<usize>,
     pub(crate) near: Vec<Vec<usize>>,
 }
@@ -76,7 +79,22 @@ impl DungeonGround {
         }
         let spans = (0..plane).map(|at| dungeon.spans(at)).collect();
         let (storeys, stairs) = (dungeon.storeys, dungeon.stairs.clone());
-        Some(Self { planes, cell, columns, rows, storeys, cells, spans, stairs, solids, solid_storeys, near })
+        let (jambs, loose) = dungeon.jamb_and_loose_boxes();
+        Some(Self {
+            planes,
+            cell,
+            columns,
+            rows,
+            storeys,
+            cells,
+            spans,
+            stairs,
+            solids,
+            jambs,
+            loose,
+            solid_storeys,
+            near,
+        })
     }
 
     /// The solids, each (min x, min y, max x, max y, bottom, top).

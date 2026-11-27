@@ -34,6 +34,11 @@ pub enum Kind {
 
 /// How far round its middle a Hold's ring is held from (m).
 pub const RING_M: f64 = 6.0;
+/// A lamp's standing stone at its widest, as tools/dungeon's `forms.standing_stone` draws its 0.86 by 0.44 m slab with
+/// its bulges, swell and lean: half across its broad face and half through it, metres; and how far from the plinth's
+/// middle each stands.
+const STONE_HALF_M: (f64, f64) = (0.54, 0.29);
+const STONE_RING_M: f64 = 3.5;
 
 impl Kind {
     /// The piece's name in the passages' pack and kit (tools/dungeon, content/islands/kits.json); a vein's node
@@ -53,25 +58,24 @@ impl Kind {
     }
 
     /// What a body runs into round its middle, each (west, north, east, south, top) from its foot, its front to the
-    /// north: the pieces' sizes, as the passages' Blender pieces are built to.
-    #[must_use]
-    pub fn solids(self) -> Vec<[f64; 5]> {
-        let disc = |x: f64, y: f64, radius: f64, top: f64| [x - radius, y - radius, x + radius, y + radius, top];
+    /// north, and how far it is turned about the middle: the pieces' sizes, as the passages' Blender pieces are built
+    /// to, a lamp's five standing stones each a slab turned a fifth of the way round from the last, its broad face to
+    /// the plinth, as `_ring_of_stones` stands them.
+    fn parts(self) -> Vec<([f64; 5], f64)> {
+        let disc = |radius: f64, top: f64| ([-radius, -radius, radius, radius, top], 0.0);
         match self {
             Kind::Lamp => {
-                let mut solids = vec![[-0.8, -0.8, 0.8, 0.8, 1.4]];
-                solids.extend((0..5).map(|stone| {
-                    let turn = core::f64::consts::TAU * f64::from(stone) / 5.0;
-                    disc(3.5 * libm::sin(turn), -3.5 * libm::cos(turn), 0.5, 2.2)
-                }));
-                solids
+                let (across, through) = STONE_HALF_M;
+                let stone = [-across, -STONE_RING_M - through, across, -STONE_RING_M + through, 2.2];
+                let stones = (0..5).map(|nth| (stone, core::f64::consts::TAU * f64::from(nth) / 5.0));
+                [([-0.8, -0.8, 0.8, 0.8, 1.4], 0.0)].into_iter().chain(stones).collect()
             }
             // A shut mouth fills its opening; the way in is always shut.
-            Kind::WayIn | Kind::Mouth(_) => vec![[-1.2, -0.4, 1.2, 0.4, 3.0]],
-            Kind::Kindle(_) => vec![disc(0.0, 0.0, 0.25, 2.4)],
-            Kind::Post(_) => vec![disc(0.0, 0.0, 0.35, 1.8)],
+            Kind::WayIn | Kind::Mouth(_) => vec![([-1.2, -0.4, 1.2, 0.4, 3.0], 0.0)],
+            Kind::Kindle(_) => vec![disc(0.25, 2.4)],
+            Kind::Post(_) => vec![disc(0.35, 1.8)],
             Kind::Node(_) | Kind::Ring => Vec::new(),
-            Kind::Reliquary => vec![[-0.7, -0.45, 0.7, 0.45, 0.9]],
+            Kind::Reliquary => vec![([-0.7, -0.45, 0.7, 0.45, 0.9], 0.0)],
         }
     }
 
@@ -79,8 +83,8 @@ impl Kind {
     /// south, top).
     #[must_use]
     pub fn solids_at(self, at: [f64; 3], facing: f64) -> Vec<[f64; 5]> {
-        let (sine, cosine) = (libm::sin(facing), libm::cos(facing));
-        let turned = |[west, north, east, south, top]: [f64; 5]| {
+        let turned = |([west, north, east, south, top], own): ([f64; 5], f64)| {
+            let (sine, cosine) = (libm::sin(facing + own), libm::cos(facing + own));
             // A box turned is held as the square round its turned corners.
             let corners = [[west, north], [east, north], [east, south], [west, south]]
                 .map(|[x, y]| [at[0] + x * cosine - y * sine, at[1] + x * sine + y * cosine]);
@@ -95,7 +99,7 @@ impl Kind {
                 at[2] + top,
             ]
         };
-        self.solids().into_iter().map(turned).collect()
+        self.parts().into_iter().map(turned).collect()
     }
 }
 
