@@ -409,6 +409,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Patrol Map's Legend Names Each Way Across and the Passage Gates]]
 - [[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]]
 - [[Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival]]
+- [[The Ways Across Stand at the Runs' Ends, Not on the Landing]]
 
 ## Claude's calls
 
