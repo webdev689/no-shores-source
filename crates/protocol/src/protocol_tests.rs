@@ -589,6 +589,7 @@ fn the_bytes_for_the_clients_test_are_written() {
         heading: 0.75,
         to: [0.0; 2],
         lane: None,
+        dark: true,
     };
     // The first ship a dressed and named Brig, the second as built: none the room knows the look of.
     let look = room::sea::ShipLook { hull: 2, dress: [1, 11, 21, 31], name: [255, 3], emblem: 4 };
@@ -702,6 +703,7 @@ fn a_sea_snapshot_carries_the_traffic_ids_the_room_took_and_the_friendly_ships_i
         heading: 1.5,
         to: [0.0; 2],
         lane: None,
+        dark: false,
     };
     let harbour = SeaHarbour { taken: vec![id, 9], friendlies: vec![friend], ..SeaHarbour::default() };
     let bytes = sea_snapshot_bytes(1, &[], &[], &[], &[], &harbour);

@@ -4,13 +4,16 @@
 // from the passages' pack, laid as the deal stands for the player into a mesh of their own.
 import type { MeshBuilder } from '../models/model.ts';
 import type { Climate } from '../textures/climate.ts';
-import type { Rect } from './dungeonCells.ts';
-import { kitsOf } from './dungeonKits.ts';
+import { besideCell, type Rect } from './dungeonCells.ts';
+import { joinedOn } from './dungeonJoins.ts';
+import { type KitPlacement, kitsOf } from './dungeonKits.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
-import { type DungeonLayout, styleAt, type StyleKey } from './dungeonLayout.ts';
+import { type DungeonLayout, ROCK, STAIR, styleAt, type StyleKey, VOID } from './dungeonLayout.ts';
 import { LIGHT_KINDS, type Light } from './dungeonLight.ts';
 import { box, COLOUR, type Kitted, lookAt } from './dungeonMesh.ts';
 import { layModule, loadStylePack, type ModuleMesh, type ModulePack, PARTS, partPicture } from './dungeonModules.ts';
+import { storeyKits } from './dungeonStoreyKits.ts';
+import { raised, type StoreyPlane, storeyPlanes } from './dungeonStoreyPlanes.ts';
 import type { PassagePiece } from '../rules/passageRules.ts';
 import { pieceModule, type PieceState } from './passages/passagePieces.ts';
 
@@ -25,43 +28,100 @@ export async function stylePacks(
 }
 
 /** What a dungeon is dressed in: the mesh's own pieces its kits stand in place of, the landmarks' cells whose floor
- *  the piece lays, and the laying of every piece into a mesh. */
-export type Dressing = Kitted & { readonly lay: (mesh: MeshBuilder) => void };
+ *  the piece lays, and the laying of each storey's pieces into a mesh raised to its floor (the top storey's, unless
+ *  named), the pieces that join the storeys with the top storey's. */
+export type Dressing = Kitted & { readonly lay: (mesh: MeshBuilder, plane?: StoreyPlane) => void };
+
+/** The props' plans a storey's kits keep clear of: one list for every storey, or each storey's own. */
+export type PropPlans = readonly Rect[] | ((plane: StoreyPlane) => readonly Rect[]);
+
+/** Each storey's kit pieces, as the dressing lays them: on its plane as the kits read it (`kitPlane`, its `read`),
+ *  clear of its props' plans, none on a flight's cell, open air's or a cell opened to them; and the mesh's own pieces
+ *  they stand in place of. */
+export function planeKits(layout: DungeonLayout, packs: ReadonlyMap<StyleKey, ModulePack>, props: PropPlans) {
+  const joined = joinedOn(layout);
+  return storeyPlanes(layout).map((plane) => {
+    const { opened, landings } = joined(plane.storey);
+    const busy = plane.layout.cells.flatMap((kind, cell) =>
+      kind === STAIR || kind === VOID || opened.has(cell) ? [cell] : [],
+    );
+    const plans = typeof props === 'function' ? props(plane) : props;
+    const read = kitPlane(plane.layout, landings);
+    return { plane, read, ...kitsOf(read, packs, plans, { exit: plane.exit, portal: plane.portal, busy }) };
+  });
+}
+
+/** A storey's plane as its kits read it: a flight's cells as rock, but the one each landing (`cell * 4 + side`,
+ *  `Joined.landings`) opens onto, so a wall facing a flight from past its foot or before its head is dressed. */
+export function kitPlane(layout: DungeonLayout, landings: ReadonlySet<number>): DungeonLayout {
+  const ends = new Set([...landings].map((code) => besideCell(layout, Math.floor(code / 4), code % 4)));
+  return { ...layout, cells: layout.cells.map((kind, cell) => (kind === STAIR && !ends.has(cell) ? ROCK : kind)) };
+}
 
 /** A dungeon's dressing from its styles' packs, on an island of `climate`, its kits clear of its props' plans. */
 export function dressingOf(
   layout: DungeonLayout,
   packs: ReadonlyMap<StyleKey, ModulePack>,
   climate: Climate,
-  props: readonly Rect[],
+  props: PropPlans,
 ): Dressing {
-  const { placed: kits, fitted } = kitsOf(layout, packs, props);
-  const landmarks = placedLandmarks(layout).map((landmark) => ({
-    ...landmark,
-    piece: packs.get(landmark.style)?.modules.get(landmark.module) ?? null,
-  }));
-  const pictured = (cell: number) => {
-    const look = lookAt(layout, cell);
+  const cells = layout.columns * layout.rows;
+  const storeys = planeKits(layout, packs, props).map(({ plane, placed, fitted }) => {
+    const landmarks = placedLandmarks(plane.layout).map((landmark) => ({
+      ...landmark,
+      piece: packs.get(landmark.style)?.modules.get(landmark.module) ?? null,
+    }));
+    return { plane, placed, fitted, landmarks };
+  });
+  const planes = storeys.map((storey) => storey.plane);
+  const joins = storeyKits(layout, packs);
+  const pictured = (within: DungeonLayout, cell: number) => {
+    const look = lookAt(within, cell);
     return (part: number) => partPicture(part, look, climate);
   };
-  const lay = (mesh: MeshBuilder) => {
+  const layKits = (mesh: MeshBuilder, within: DungeonLayout, kits: readonly KitPlacement[]) => {
     for (const { module, place, cell } of kits) {
-      const piece = packs.get(styleAt(layout, cell) ?? layout.style)?.modules.get(module);
-      if (piece) layModule(mesh, piece, place, pictured(cell));
+      const piece = packs.get(styleAt(within, cell) ?? within.style)?.modules.get(module);
+      if (piece) layModule(mesh, piece, place, pictured(within, cell));
     }
-    for (const { piece, place, cells, solids } of landmarks) {
-      const cell = cells[0] ?? 0;
-      if (piece) layModule(mesh, piece, place, pictured(cell));
+  };
+  const lay = (mesh: MeshBuilder, plane: StoreyPlane | undefined = planes[0]) => {
+    const storey = storeys[plane?.storey ?? 0];
+    if (!storey) return;
+    const within = storey.plane.layout;
+    layKits(mesh, within, storey.placed);
+    for (const { piece, place, cells: covered, solids } of storey.landmarks) {
+      const cell = covered[0] ?? 0;
+      if (piece) layModule(mesh, piece, place, pictured(within, cell));
       else {
-        const look = lookAt(layout, cell);
+        const look = lookAt(within, cell);
         for (const [west, north, east, south, top] of solids)
           box(mesh, [look.set, look.wall], [west, north, 0], [east, south, top]);
       }
     }
+    if (storey.plane.storey === 0) layKits(raised(mesh, -storey.plane.floor), layout, joins.placed);
   };
+  const whole = (list: readonly number[], numbers: ReadonlySet<number>) =>
+    [...numbers].map((number) => list[number] ?? number);
   return {
-    ...fitted,
-    floorless: new Set(landmarks.flatMap((landmark) => (landmark.piece ? landmark.cells : []))),
+    pillars: new Set(storeys.flatMap(({ plane, fitted }) => whole(plane.pillars, fitted.pillars))),
+    torches: new Set(storeys.flatMap(({ plane, fitted }) => whole(plane.torches, fitted.torches))),
+    portal: storeys.some(({ fitted }) => fitted.portal),
+    flats: new Map(
+      storeys.flatMap(({ plane, fitted }) =>
+        [...fitted.flats].map(([key, spans]) => [key + plane.storey * cells * 4, spans] as const),
+      ),
+    ),
+    floorless: new Set(
+      storeys.flatMap(({ plane, landmarks }) =>
+        landmarks.flatMap((landmark) =>
+          landmark.piece ? landmark.cells.map((cell) => cell + plane.storey * cells) : [],
+        ),
+      ),
+    ),
+    arches: joins.arches,
+    courses: joins.courses,
+    rails: joins.rails,
     lay,
   };
 }

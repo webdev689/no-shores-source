@@ -56,6 +56,8 @@ Tools (all are expected to be used; your final reply must say how):
   action; run a new script 3 times side by side before trusting it.
 - Stopping a process: by its pid (TaskStop, or `bash $KIT_DIR/workers/stop-worker.sh <name>` for a
   worker), never `pkill -f <pattern>`: the pattern also matches the shell that typed it.
+- Never set `CARGO_TARGET_DIR`: each worktree builds into its own `target/`. After a change under `crates/` or to a
+  `.fbs`, and after every merge or rebase, run `npm run -s fixtures` before the page's or server's tests.
 - Sub-agents and you get a terse "caveman" voice automatically; code, comments, commits and docs stay in normal prose.
 
 Hard rules: <project rules: what never to touch, secrets/data rules, ports, test suites to run, files shared with

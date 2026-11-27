@@ -17,6 +17,16 @@ pub(crate) fn elite_room(place: &str) -> Room {
     room
 }
 
+/// The run of the first Elite Dungeon whose plan holds a seal of `kind`, as `elite_room` stands it.
+pub(crate) fn elite_room_with(kind: SealKind) -> Room {
+    gear::activities::elite_dungeons()
+        .map(|elite| elite_room(elite.id))
+        .find(|room| {
+            room.encounters.as_ref().is_some_and(|found| found.plan.seals.iter().any(|seal| seal.kind == kind))
+        })
+        .expect("an Elite Dungeon holding a seal of that kind")
+}
+
 /// A player joined, too hardy to fall to anything a test stands.
 pub(crate) fn hardy(room: &mut Room) -> PlayerId {
     let player = room.join().expect("in");
@@ -38,10 +48,13 @@ pub(crate) fn seal_of(room: &Room, kind: SealKind) -> usize {
     plan.seals.iter().position(|seal| seal.kind == kind).expect("a seal of that kind")
 }
 
-/// A cell's middle, by the plan's columns.
-pub(crate) fn middle_of(room: &Room, cell: usize) -> [f64; 2] {
-    let columns = room.encounters.as_ref().expect("encounters").plan.columns;
-    [((cell % columns) as f64 + 0.5) * dungeon::CELL_M, ((cell / columns) as f64 + 0.5) * dungeon::CELL_M]
+/// A cell's middle on its storey's floor, by the plan's columns and rows.
+pub(crate) fn middle_of(room: &Room, cell: usize) -> [f64; 3] {
+    let plan = &room.encounters.as_ref().expect("encounters").plan;
+    let (columns, plane) = (plan.columns, plan.columns * plan.rows);
+    let at = cell % plane;
+    let floor = dungeon::storey_floor(cell / plane);
+    [((at % columns) as f64 + 0.5) * dungeon::CELL_M, ((at / columns) as f64 + 0.5) * dungeon::CELL_M, floor]
 }
 
 /// An Elite Dungeon as its run lays it.
@@ -104,18 +117,18 @@ fn the_boss_stands_only_once_every_seal_is_broken_and_its_cache_stays_shut_meanw
 
 #[test]
 fn a_seal_runs_once_a_living_player_stands_in_its_room() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Litany);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Litany);
     room.tick();
     assert_eq!(room.encounters.as_ref().expect("encounters").seals[seal].state, SealState::Waiting);
     let rune = room.encounters.as_ref().expect("encounters").plan.seals[seal].pieces[0];
     let first = room.encounters.as_ref().expect("encounters").plan.seals[seal].cells[0];
-    let [x, y] = middle_of(&room, first);
-    put(&mut room, player, [x, y, 0.0]);
+    let at = middle_of(&room, first);
+    put(&mut room, player, at);
     room.tick();
     assert_eq!(room.encounters.as_ref().expect("encounters").seals[seal].state, SealState::Running);
-    assert!(rune[2].abs() < 1e-9);
+    assert!((rune[2] - at[2]).abs() < 1e-9, "on its room's floor");
 }
 
 #[test]
@@ -124,7 +137,7 @@ fn a_wipe_at_abyss_keeps_the_broken_seals_and_starts_the_court_over() {
     let mut room = Room::dungeon_run(&of, gear::Difficulty::Abyss, FRIDAY_NINE).expect("the week's Abyss run");
     let players = [room.join().expect("in"), room.join().expect("in")];
     let (x, y) = room.spawn_points[0];
-    let wave = crate::encounters::seals::seals_tests::stand_one(&mut room, [x, y]);
+    let wave = crate::encounters::seals::seals_tests::stand_one(&mut room, [x, y, 0.0]);
     {
         let encounters = room.encounters.as_mut().expect("encounters");
         encounters.seals[0].state = SealState::Broken;

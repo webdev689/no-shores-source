@@ -49,7 +49,7 @@ test('a fixture burns its flames as fires: over a brazier, on each candle, along
 });
 
 test('crystals and fungus grow wholly inside their solid, from the floor to under its top, leaning out from the wall', () => {
-  const layout = { cell: 3.2, boxes: [[0.1, 1.3, 0.5, 1.9, 0.9] as const] };
+  const layout = { cell: 3.2, boxes: [[0.1, 1.3, 0.5, 1.9, 0, 0.9] as const] };
   const bed = bedOf(layout, [0.3, 1.6, 0.45]);
   assert.deepEqual(bed?.out, [1, 0], 'its wall is to the west, so out is east');
   for (const kind of [FIXTURE.crystals, FIXTURE.fungus]) {

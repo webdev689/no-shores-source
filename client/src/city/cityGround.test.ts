@@ -273,7 +273,7 @@ test('a city built a few steps a frame, at any budget, is the very city built in
 
 test("a port city's drawing is as it was before ruins were laid", () => {
   const port = buildCity({ ...madePlan(), ruined: false, wrecks: [] }, TEMPERATE, blocksOf(), TABLES);
-  assert.equal(drawingFingerprint(port), '1c90ebf6');
+  assert.equal(drawingFingerprint(port), 'a933bb6');
   assert.ok(!port.ruined && [...port.near.values()].flat().every((each) => each.cut === 0));
 });
 
@@ -408,4 +408,26 @@ test("a ruin is overtaken: great formations drawn far, the buildings' crystal in
   assert.ok(chunk);
   assert.equal(detailRuns([chunk], [chunk.middlesLow[0], chunk.middlesLow[1], 50]).length, 1);
   assert.equal(detailRuns([chunk], [chunk.middlesLow[0] + 5000, chunk.middlesLow[1], 50]).length, 0);
+});
+
+test("a lit city's drawing holds its lights at night: posts by instance, glowing points and a light map; an unlit one none", () => {
+  const plan = { ...madePlan(), ruined: false, wrecks: [] };
+  const quayLantern = { at: [plan.centre[0], plan.grid.north + 20, 3] as const, kind: 'lantern' as const };
+  const lit = buildCity({ ...plan, lights: [quayLantern] }, TEMPERATE, blocksOf(), TABLES);
+  const dark = buildCity(plan, TEMPERATE, blocksOf(), TABLES);
+  assert.deepEqual([dark.night.glows.length, dark.night.pools], [0, null]);
+  // the plan's lantern and the blocks' street lamps, which only a lit city stands
+  assert.ok(lit.night.glows.length > 1, `${lit.night.glows.length} glowing`);
+  assert.ok(lit.night.pools && lit.night.pools.texels.some((texel) => texel > 0));
+  const posts = lit.models.entries.length - 3;
+  const standing = [...lit.near.values()].flat().filter((each) => each.model >= posts);
+  assert.equal(standing.length, lit.night.glows.length, 'a post under every light');
+  assert.equal(dark.models.entries.length, lit.models.entries.length, 'the posts are laid either way');
+  assert.ok(
+    [...dark.near.values()].flat().every((each) => each.model < posts),
+    'and stood only in a lit city',
+  );
+  // the cell table numbers each cell's district, for its windows at night
+  const districtOf = (column: number, row: number) => lit.cells[(row * lit.side + column) * 4 + 3];
+  assert.deepEqual([districtOf(2, 1), districtOf(3, 1), districtOf(1, 2)], [6, 7, 1]);
 });

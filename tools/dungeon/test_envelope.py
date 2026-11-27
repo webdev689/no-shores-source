@@ -177,6 +177,26 @@ class KitEnvelopes(unittest.TestCase):
         self.fails('crypt.exit', posts + shapes.box(-1.05, 0, 2.6, 1.05, 0.18, 3.2), 'z > 3.1')
         self.fails('crypt.portal', shapes.box(1.0, 0, 0, 1.35, 0.18, 2.6), 'x > 1.3')
 
+    def test_stair_head(self):
+        posts = shapes.box(1.25, 0, 0, 1.6, 0.3, 2.9) + shapes.box(-1.6, 0, 0, -1.25, 0.3, 2.9)
+        self.passes('crypt.stair.head', posts + shapes.box(-1.6, 0, 2.9, 1.6, 0.3, 3.2))
+        self.fails('crypt.stair.head', posts + shapes.box(-1.6, 0, 2.85, 1.6, 0.3, 3.2), 'way up the flight')
+        self.fails('crypt.stair.head', shapes.box(1.25, -0.05, 0, 1.6, 0.3, 2.9), 'y < 0')
+        self.fails('crypt.stair.head', shapes.box(1.25, 0, 0, 1.6, 0.35, 2.9), 'y > 0.3')
+        self.fails('crypt.stair.head', shapes.box(-1.6, 0, 2.9, 1.6, 0.3, 3.25), 'z > 3.2')
+
+    def test_stair_side_spans_its_wall(self):
+        self.passes('crypt.stair.side', shapes.box(-1.6, 0, -0.3, 1.6, 0.15, 0.45))
+        self.fails('crypt.stair.side', shapes.box(-1.6, 0, -0.3, 1.6, 0.2, 0.45), 'y > 0.15')
+        self.fails('crypt.stair.side', shapes.box(-1.6, 0, -0.35, 1.6, 0.15, 0.45), 'z < -0.3')
+        self.fails('crypt.stair.side', shapes.box(-1.5, 0, -0.3, 1.6, 0.15, 0.45), 'whole edge')
+
+    def test_balustrade_is_the_rules_solid(self):
+        self.passes('crypt.balustrade', shapes.box(-1.6, 0, 0, 1.6, 0.25, 1.0))
+        self.fails('crypt.balustrade', shapes.box(-1.6, 0, 0, 1.6, 0.25, 1.05), 'z > 1')
+        self.fails('crypt.balustrade', shapes.box(-1.6, -0.02, 0, 1.6, 0.25, 1.0), 'y < 0')
+        self.fails('crypt.balustrade', shapes.box(-1.6, 0, 0, 1.2, 0.25, 1.0), 'whole edge')
+
     def test_a_kit_piece_over_its_own_kind_of_budget_fails(self):
         floor = [corner_at((0, 0, 0))]
         self.assertTrue(any('300 a floor.a' in problem for problem in broken('crypt.floor.a', floor * 301)))
@@ -184,6 +204,7 @@ class KitEnvelopes(unittest.TestCase):
         self.assertEqual(envelope.kit_budget('door.b'), 1500)
         self.assertEqual(envelope.kit_budget('pillar.capital'), 750)
         self.assertEqual(envelope.kit_budget('ceiling.c'), 600)
+        self.assertEqual(envelope.kit_budget('stair.side'), 150)
 
     def test_the_way_through_a_door_is_the_rules_doorway(self):
         rules = os.path.join(HERE, '..', '..', 'crates', 'dungeon', 'src', 'dungeon.rs')
@@ -459,12 +480,15 @@ class Shapes(unittest.TestCase):
 
 
 class Catalog(unittest.TestCase):
-    def test_a_style_needs_every_kit_piece_and_its_three_landmarks(self):
+    def test_a_style_needs_every_kit_piece_but_those_it_leaves_and_its_three_landmarks(self):
         for style in catalog.STYLES:
             names = catalog.required(style)
-            self.assertEqual(names[:len(catalog.PIECES)], [f'{style}.{piece}' for piece in catalog.PIECES])
-            self.assertEqual(len(names), len(catalog.PIECES) + 3)
-            self.assertTrue(all(catalog.landmark(name)['style'] == style for name in names[len(catalog.PIECES):]))
+            pieces = [piece for piece in catalog.PIECES if piece not in catalog.STYLES[style].get('leaves', ())]
+            self.assertEqual(names[:len(pieces)], [f'{style}.{piece}' for piece in pieces])
+            self.assertEqual(len(names), len(pieces) + 3)
+            self.assertTrue(all(catalog.landmark(name)['style'] == style for name in names[len(pieces):]))
+        self.assertNotIn('chalk.stair.head', catalog.required('chalk'), "a passage's style lays no flight")
+        self.assertIn('crypt.stair.head', catalog.required('crypt'))
         self.assertEqual(catalog.piece_of('mines.wall.cap'), 'wall.cap')
         self.assertIsNone(catalog.piece_of('mines.collapse'))
 

@@ -48,7 +48,8 @@ boxes, kept from the node's first spawn so its marks keep their centimetres far 
   red, a little darker at random, and over three minutes it dries in eight steps to a dark brown.
 - **Drawing.** One WebGPU pass in the scene's own render, after the ground and the blocks and before the figures, so
   a body stands over its own blood. Each mark is a film whose thinning rim glows toward orange, lit and fogged as what
-  it lies on: the ground is drawn unlit, the blocks by the scene's one light. Chunks and droplets are upright
+  it lies on: the ground, and any floor facing straight up (a dungeon's lower storeys' too), is drawn unlit, the
+  blocks' sides by the scene's one light. Chunks and droplets are upright
   billboards.
 - **Off.** `?blood=off` in the page's address makes and draws none.
 

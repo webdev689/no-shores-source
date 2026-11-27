@@ -56,6 +56,8 @@ code:
   - crates/room/src/friendlies.rs#Friendlies
   - crates/room/src/threat.rs#held_pace
   - client/src/game/seaCombat.ts#SeaCombat
+  - crates/naval/src/night.rs#night_sight
+  - crates/room/src/clash.rs#light_fight
   - client/src/ships/shipCrew.ts#captainInFight
   - crates/naval/src/ranks.rs#SCALES
   - crates/naval/src/ranks.rs#Commission
@@ -80,6 +82,7 @@ code:
   - client/src/network/seaHarbour.ts#harbourOf
   - crates/naval/src/fight.rs#ambush
   - client/src/game/prologue/fightAtSea.ts#StoryFight
+  - client/src/ships/fightLamps.ts#FightLamps
 ---
 # Naval Combat
 
@@ -308,6 +311,25 @@ much hull, canvas, men and fire from a ship, whatever hull fires it. Each gun re
 balls fly from its own mouths, a ball meets its own hull's and sails' boxes, and it rams, is rammed and is kept apart
 by its own hull's box. A captain sizing up a ship reckons their hit share against that ship's hull.
 
+## Night sight
+
+By night a ship is seen as far as her lanterns show her ([[Ships' Lanterns Come Over From DFO]], [[Sailing]],
+"Lanterns at night"): a lit ship to 650 m and a dark one only to 220 m, never farther than by day (`night_sight`). Night
+is when the daylight is 0.375 or less, as the lamps are half up through the dusk ([[Sky]]).
+
+- **The captains' lookouts.** Each room tells its fights the daylight where they lie (`light_fight`), and a captain
+  sees a ship as she shows: its 750 m by day, 650 m for a lit one at night, 220 m for a Tithe ship or a friendly one
+  running dark; the one it fights it keeps on to 1.35 times that.
+- **The player's.** The page asks the same rule, compiled to WebAssembly, of the sky where the eye is
+  (`SkyLaw.nightSight`): by night the compass marks a ship, the sea marks a hostile ship and the voyage names one, a
+  chase picks one, and the held map marks another player's ship, only within that sight of the player's ship; by day
+  each as far as ever.
+- **The sea's.** It holds as a ship is sighted at sea
+  ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]): a player joins a
+  clash of a Tithe ship and a merchant from 750 m by day, and by night within 220 m of the Tithe ship and 650 m of the
+  merchant, 220 m once she runs dark (`clash::sighted`); and a hostile ship at sea comes for a player, whose ship always
+  shows her lanterns, only within 650 m by night (`come_for`), each read under the daylight where it lies.
+
 ## How a fight ends
 
 At sea ([[Server]], "The sea"), each a rule the owner chose
@@ -474,18 +496,23 @@ fire.
 Only the look of it: the rules say what happened, in the fight's events and its view, and `FightFeel` turns each into
 puffs (`Effects`, after DFO's `navalEffects.js`), harm kept on the ship it struck (`ShipHarm`, on its rig), flotsam,
 sounds and, on the player's own ship, jars of the eye. Smoke, spray and foam are soft round puffs blended over what
-is behind them, smoke swelling as it thins and carried by a 4 m/s wind; flash, flame, embers and glints are light
-added unlit; splinters, shreds and planks are solid and lit. The puffs are drawn after the water, far to near, hidden
+is behind them, lit by the sky and the lamps near (a night fight's smoke is dark but where the guns flash), smoke
+swelling as it thins and carried by a 4 m/s wind; flash, flame, embers and glints are light added unlit; splinters,
+shreds and planks are solid and lit. The puffs are drawn after the water, far to near, hidden
 where the scene stands nearer (`puffView.ts`), at most 2,048 a frame, the nearest kept, and fading softly to nothing
 over the last 2.5 to 0.3 m to the eye (`nearFade.ts`), as the fires' smoke does; their floats are written each frame
 into arrays the view keeps (`PuffScratch`), so laying them makes nothing new. Each glow gives its stepped halo through
 the light layer, as the land's bright things do. DFO's lights round a flash (26 m for 0.12 s), a magazine's blast
 (52 m for 0.6 s) and a burning ship (16 m, three at most, flickering from 0.6 of its full to its full with the
 lamps' `flicker`, seeded by its ship) are the effects' `light` marks, cast as the sky's lamps for as long as each
-lasts, steady as lamps, their marks' brightness moving them (`FightLamps`,
-taken up by the ships' lanterns' list a frame later, and by the story's fight on its own, [[Sky]], "Lamps"): they light the hulls, the sea round them and
-the people on deck, and are never drawn as puffs, whose halo of their whole reach would band the sky and sea
-([[Every Light Is Redesigned and Animated, and Each Casts Light]]). At most 900 puffs
+lasts, steady as lamps, their marks' brightness moving them (`FightLamps`, taken up with the ships' lanterns a frame
+later, and by the story's fight on its own; [[Sky]], "Lamps at sea";
+[[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]): they light the hulls,
+the sea round them and the people on deck, lit as the daylight fades as every lamp is, and are never drawn as puffs,
+whose halo of their whole reach would band the sky and sea
+([[Every Light Is Redesigned and Animated, and Each Casts Light]]). Among the sixteen they, the ships' lanterns and
+the city's lamps take their places by nearness to the eye, counting their reach, so a broadside beside the eye
+outshines the lanterns farther off. At most 900 puffs
 live at once; past that, spray, foam and glints go first, then splinters, shreds and embers, then flashes and planks,
 and smoke last.
 The view's own numbers stand in where no event says more: a ship's canvas's share left holes its sails, a ship `struck`
@@ -638,8 +665,8 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   seed's: an Elite and a Miniboss are always bold, any other one in four.
 - **Home waters end a fight.** Every captain afloat and unstruck in a fight whose players all lie inside home waters
   breaks off and leaves it, as one out of reach does ([[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]).
-- **Coming for the player.** A bold ship that has sighted a player who is not fighting and not in home waters comes
-  for them (`come_for`; home waters shelter a player whole, [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]):
+- **Coming for the player.** A bold ship that has sighted a player who is not fighting (by night only within 650 m,
+  "Night sight") and not in home waters comes for them (`come_for`; home waters shelter a player whole, [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]):
   it steers to intercept, heading to where their ship will be when it can reach it at its way on that player's
   clock (lead pursuit; straight at them where it cannot reach them, as when they sail away faster), turning at most
   at a Sloop's helm rate, 10 degrees a second of its clock. It keeps after the one it came for while they stay in
@@ -679,8 +706,9 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   parted meet again only once they have been 750 m apart. None meets a friendly ship lying in Overlook's home waters,
   which hold no hostile ship. A fight with no ship a player past home waters keeps at sea leaves the sea, as a ship does. Two Tithe
   ships never meet.
-- **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight, or of a fight with players in
-  it, joins it: their ship heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
+- **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight
+  (by night as far as her lanterns show her, "Night sight"), or of a fight with players in it, joins it: their ship
+  heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
   its captains choose whom to fight by their own law, the one each fights reckoned nearer ("How a fight ends"). It is
   won once every Tithe ship is beaten: each pays as a Tithe ship beaten, nothing is paid or lost for the friendly ship
   (`SeaFight::friends`), and one sunk lays nothing that floats. Afloat as the fight ends, it sails on for its port.
@@ -839,6 +867,8 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 - A captain's odds and the hulls' hull points (`captain::odds::hit_share_at`) count its gunners' scatter and window,
   not what they misjudge each volley, so a captain reckons itself a better shot than it is when it chooses to fight
   or run, and each hull's hull points are scaled to an exact gunner's fire.
+- By night a bold hostile ship still meets a player within 750 m, and a player still joins a fight with players in it
+  from 750 m, as by day: night sight holds for a hostile ship choosing whom to come for, not for its meeting them.
 - Every Tithe captain sails their rank's hull, a friendly ship the traffic's; there is no iron ram bow (the Tithe Ram)
   and no Fluyt yet, and no other classes.
 - A player's view of a fight shows its captains; the other players' Sloops in it are drawn from the sea's ships, where

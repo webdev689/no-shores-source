@@ -11,6 +11,8 @@ code:
   - client/src/overworld/overworldCamera.ts#cloudBaseOf
   - client/src/sky/bolts.ts#underWeatherM
   - client/src/sky/lamps.ts#lampsRound
+  - client/src/sky/glowPoints.ts#GlowPoints
+  - client/src/ships/shipLights.ts#ShipLights
   - client/src/nearest.ts#Nearest
   - client/src/sky/skyUniform.ts#SKY_WGSL
   - client/src/sky/skyDriver.ts#SkyDriver
@@ -105,11 +107,22 @@ what show the ground there.
   A flame is hidden by whatever stands nearer, and its smoke leans with the wind. A lantern is an enclosed light and
   burns no fire: its glass glows and flickers with its lamp (`lanternLamp`, [[An Enclosed Light Hides Its Flame]]).
 - **Lamps at sea.** Each ship's lanterns are lamps where they burn, moved with it each frame, reaching thirteen metres
-  as a carried lantern does, and a sea fight's flashes, blasts and fires are lamps for as long as each lasts
-  ([[Sailing]], "Its lanterns"; [[Naval Combat]]); they join the city's lamps through `CITY_LAMPS`, told anew only
-  when one comes or goes. The sea's surface takes their light too: a little scattered up from open water and more
-  from its foam, and each lamp's glitter on the waves toward the eye, fading more slowly than its light
-  ([[Every Light Is Redesigned and Animated, and Each Casts Light]]).
+  as a carried lantern does; a ship running dark lights none ([[Sailing]], "Lanterns at night";
+  [[Ships' Lanterns Come Over From DFO]]). A sea fight's flashes, blasts and fires are lamps for as long as each lasts
+  ([[Naval Combat]]). They join the city's lamps through `CITY_LAMPS`, told anew only when one comes or goes, and are
+  lit only as the daylight fades, as every lamp is. Far off at night a lit ship's lanterns are warm points over the
+  water instead (`GlowPoints`), laid again each frame where the ships are. The sea's surface takes the lamps' light
+  too: a little scattered up from open water and more from its foam, and each lamp's glitter on the waves toward the
+  eye, fading more slowly than its light ([[Every Light Is Redesigned and Animated, and Each Casts Light]],
+  [[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]).
+- **A lit city.** Overlook's city below the hub is lit in detail at night
+  ([[Overlook's City Below Is Lit at Night, in Detail]], [[Cities]], "At night"): its windows glow warm, a share of
+  each district's lit and going dark through the night each at its own hour; lamp posts along its avenues and
+  streets lay pools of light on the paving and the walls; lanterns along the quay and the piers, and the harbour
+  mouth's two lights, lay columns of their light on the water. They come up through the dusk as the lamps do. Their
+  thousands are none of the sixteen: the pools are a light map written once, the lanterns glowing points drawn over the
+  picture (`GlowPoints`, which any list of glowing points may use), each flickering as a lantern does, seeded by where
+  it stands; the windows the city's own shaders'.
 - **A carried light.** A torch or a lantern in the player's left hand lights round them at night, on foot and walking
   the Sloop's deck, a lamp at their hand, in first person and third alike: a torch's reaches some eleven metres and
   flickers, a lantern's thirteen and is steadier.
@@ -118,8 +131,8 @@ what show the ground there.
   kept so far (`Nearest`), the city's lamps never all sorted, and nothing is made for them but the sixteen handed on:
   1,500 lamps take about 0.1 ms a frame (tested offline, in Node). The last of them fade as the next lamp nears, so none
   switches on or off as the eye moves. Every lit surface (the land, the plants, the city, the ships, the marks, the
-  figures and the sea) adds their light: each falls smoothly to nothing at its reach, brightest on a face turned to it, with no
-  shadows. A figure by a lantern is lit warm.
+  figures, the sea and a sea fight's smoke and spray) adds their light: each falls smoothly to nothing at its reach,
+  brightest on a face turned to it, with no shadows. A figure by a lantern is lit warm.
 - **Clouds' shadows.** Under a broken sky the key light is dappled on the ground in soft patches as wide as the cover,
   drifting as the clouds overhead do. A clear sky has none, and under a whole deck they fade out: the key light is
   dimmed already.
@@ -141,6 +154,7 @@ what show the ground there.
 - There are no seasons: the year stands in its summer.
 - The World Editor and the Test Ground keep a clear afternoon sky; the World Editor's ships still sail, and their
   sails fill, in the weather's wind.
-- Lamps cast no shadows, and windows are never lit: the city's plan gives windows no places.
+- Lamps cast no shadows. Only Overlook's city lights its windows, lamps and lanterns at night, and those light no
+  figure and no ship. A ship's far lanterns are not fogged.
 - Standing at the Sloop's helm, the player's torch or lantern lights nothing; only walking its deck does it.
 - The ground's hollows where puddles stand are a pattern, not the land's real low spots.

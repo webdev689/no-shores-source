@@ -438,7 +438,7 @@ fn cell_of(dungeon: &dungeon::Dungeon, at: [f64; 2]) -> usize {
 
 #[test]
 fn under_ground_the_lamp_and_the_deals_pieces_stand_clear_of_the_forges_solids_and_mouths_off_its_stones() {
-    let overlaps = |one: &[f64; 5], other: &[f64; 5]| {
+    let overlaps = |one: &[f64; 5], other: &[f64; 6]| {
         one[0] < other[2] && other[0] < one[2] && one[1] < other[3] && other[1] < one[3]
     };
     let (mut in_solid, mut on_stone, mut behind_wall) = (Vec::new(), Vec::new(), Vec::new());
