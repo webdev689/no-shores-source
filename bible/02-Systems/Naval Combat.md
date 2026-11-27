@@ -252,11 +252,16 @@ so they never tack.
   64 in a hundred (5 to 34 a minute) (`captain_gunnery`, six fights of 4 minutes a rank). Their misjudged elevation never passes
   what their carriage depresses or raises to. One run out too long unfired, or that loses its mark, is run in.
 - **When they break off.** A captain runs below their rank's share of their hull (a Major's 30%); a wary one runs from a
-  ship that outguns them. A chase that gains nothing in 150 s is given up. They leave the fight when they have sunk, or,
-  not fighting, lie past 1.9 km from every ship they may fight (each player's, and each afloat captain's of another
-  faction), or, engaged by no captain, have lain out of all their guns' reach for 150 s, as long as they give a chase:
-  so a wary ship a player chased into a fight it will not take breaks off, and the fight ends for both. The editor's
-  fight ends when its one captain leaves.
+  ship that outguns them. A chase in which they neither fire nor, out of their fighting range (1.8 times the range
+  they keep), close by a tenth in 150 s is given up, and its quarry spared for 5 minutes, till it strikes them: so a
+  ship that sails away gets clear, by its way or by keeping its stern to them. A Sloop sailing away from a Boss, which
+  runs it down a third faster, is not struck and is clear of the fight in 10 to 15 minutes in any wind; a lone Sloop
+  that stands and fights a Boss is sunk in 10 fights of 12 standing off and in all 12 closing to 150 m (measured by
+  hand in the naval crate's open water, eight winds and twelve fights a row). They leave the fight when they have
+  sunk, or, not fighting, lie past 1.9 km from every ship they may fight (each player's, and each afloat captain's of
+  another faction), or, engaged by no captain, have lain out of all their guns' reach for 150 s, as long as they give
+  a chase: so a wary ship a player chased into a fight it will not take breaks off, and the fight ends for both. The
+  editor's fight ends when its one captain leaves.
 
 ## Ranks and factions
 

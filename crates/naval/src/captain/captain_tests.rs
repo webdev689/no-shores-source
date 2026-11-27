@@ -128,6 +128,44 @@ fn a_chase_that_gains_nothing_for_150_seconds_is_given_up_and_the_player_spared(
 }
 
 #[test]
+fn a_chase_close_by_that_brings_no_side_to_bear_for_150_seconds_is_given_up_till_the_player_strikes_it() {
+    let deck = Deck::new();
+    let mut mind = captain(Temper::Bold);
+    let astern = player_at(0.0, 60.0);
+    let mut ticks = 0;
+    while mind.mode == Mode::Engage || ticks == 0 {
+        steer_against(&mut mind, &deck, &astern, 0.5);
+        ticks += 1;
+        assert!(ticks < 400, "it never gave up");
+    }
+    assert!((300..=304).contains(&ticks), "{ticks}");
+    steer_against(&mut mind, &deck, &astern, 0.5);
+    assert_eq!(mind.mode, Mode::Cruise, "spared");
+    mind.provoke(0);
+    steer_against(&mut mind, &deck, &astern, 0.5);
+    assert_eq!(mind.mode, Mode::Engage, "struck by it, it fights it again");
+}
+
+#[test]
+fn a_chase_whose_guns_fire_is_kept_however_long_it_gains_nothing() {
+    let mut deck = Deck::new();
+    let mut mind = captain(Temper::Bold);
+    let abeam = player_at(60.0, 0.0);
+    let mut draws = Mulberry32::new(3);
+    let mut fired = 0;
+    for _ in 0..400 {
+        steer_against(&mut mind, &deck, &abeam, 0.5);
+        deck.guns.step(0.5);
+        if let Some(laid) = mind.aim(&deck.own(), Some(&abeam), &mut draws).fire {
+            deck.guns.fired(laid.side, 1.0, true);
+            fired += 1;
+        }
+        assert_eq!(mind.mode, Mode::Engage);
+    }
+    assert!(fired > 3, "{fired} volleys");
+}
+
+#[test]
 fn its_rudder_is_its_commanded_swing_as_a_share_of_its_own() {
     let deck = Deck::new();
     let mut mind = captain(Temper::Bold);

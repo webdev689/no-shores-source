@@ -324,9 +324,10 @@ impl Captain {
         vessel.damage.fighting() && (self.provoked_by(enemy.id) || self.takes_prize(vessel, enemy))
     }
 
-    /// A ship struck the captain: it is hostile to that ship, whatever its temper, for a while.
+    /// A ship struck the captain: it is hostile to that ship, whatever its temper, for a while, and spares it no more.
     pub fn provoke(&mut self, by: ShipId) {
         self.provoked.insert(by, self.clock);
+        self.spared.remove(&by);
     }
 
     /// Whether it takes a ship on: always if bold; if wary, only a hull nearly gone, or one it outguns well.
@@ -355,8 +356,9 @@ impl Captain {
         }
     }
 
-    /// A chase marked: it gives it up, sparing its quarry, after `CHASE_GIVE_UP_S` without closing while still out
-    /// of the fight's range.
+    /// A chase marked: it gives it up, sparing its quarry, after `CHASE_GIVE_UP_S` in which it neither fired (`aim`)
+    /// nor, out of the fight's range, closed by a tenth: so a ship that sails away gets clear, by its way or by keeping
+    /// its stern to the captain.
     fn chase_on(&mut self, apart: f64, quarry: ShipId) -> bool {
         let clock = self.clock;
         let chase = self.chase.get_or_insert_with(|| Chase { since: clock, marks: Vec::new() });
@@ -367,11 +369,11 @@ impl Captain {
             chase.marks.remove(0);
         }
         let far = chase.marks.iter().fold(apart, |most, mark| most.max(mark[1]));
-        let fighting_range = self.build.range_m * CLOSE_FROM;
-        if apart < far * (1.0 - CHASE_GAIN) || apart <= fighting_range {
+        // Close by, a ship weaving at its stern opens and closes the range by more than a tenth: only a volley counts.
+        if apart < far * (1.0 - CHASE_GAIN) && apart > self.build.range_m * CLOSE_FROM {
             chase.since = clock;
         }
-        if clock - chase.since > CHASE_GIVE_UP_S && apart > fighting_range {
+        if clock - chase.since > CHASE_GIVE_UP_S {
             self.spared.insert(quarry, clock + SPARE_S);
             self.chase = None;
             return false;
@@ -568,7 +570,12 @@ impl Captain {
         };
         let (ship, pose, arms, guns, build) = (vessel.ship, vessel.pose, vessel.arms, vessel.guns, &self.build);
         let aboard = Aboard { ship, pose, arms, guns, build, aim_error: self.commission.rank.scale().aim_error };
-        captain_guns(&mut self.run, &aboard, &mark, self.clock, draws)
+        let battery = captain_guns(&mut self.run, &aboard, &mark, self.clock, draws);
+        // A volley fired keeps its chase on, however little it closes.
+        if let Some(chase) = self.chase.as_mut().filter(|_| battery.fire.is_some()) {
+            chase.since = self.clock;
+        }
+        battery
     }
 }
 
