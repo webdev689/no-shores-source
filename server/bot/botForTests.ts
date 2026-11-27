@@ -12,6 +12,7 @@ import { createDispatcher } from './dispatch.ts';
 import { fakeBucket, fakeDiscord, fakeGateway, fakeSql, interactionKeys, type Route } from './discordForTests.ts';
 import type { BotContext } from './kit.ts';
 import type { ServerModule } from './modules/module.ts';
+import { STATE_COOKIE } from './auth.ts';
 import { type Registry, moduleHandlers, registryOf } from './registry.ts';
 import { createRest } from './rest.ts';
 import { type Db, type Statement, writeConfig } from './store.ts';
@@ -165,7 +166,9 @@ export async function ticketFor(bot: StoodWorker, userId = MOD, nowMs?: number):
   const start = await bot.call(new Request('https://bot.test/v1/auth/discord?to=/panel/'), nowMs);
   const state = new URL(start.headers.get('location') ?? '').searchParams.get('state');
   const back = await bot.call(
-    new Request(`https://bot.test/v1/auth/discord/callback?code=goodcode00000&state=${state}`),
+    new Request(`https://bot.test/v1/auth/discord/callback?code=goodcode00000&state=${state}`, {
+      headers: { Cookie: `${STATE_COOKIE}=${state}` },
+    }),
     nowMs,
   );
   return new URL(back.headers.get('location') ?? '').hash.replace('#ticket=', '');

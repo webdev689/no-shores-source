@@ -532,16 +532,20 @@ export class AccountLink {
   }
 
   /** Where to send the player to sign in or link with Discord, coming back to `back`; the tab keeps a nonce for the
-   *  code that comes back. */
-  async discord(back: string): Promise<string> {
-    const ticket = this.token ? await this.call('POST', '/v1/discord/ticket') : null;
+   *  code that comes back. Why not, signed in without a ticket to link by. */
+  async discord(back: string): Promise<{ readonly to: string } | string> {
+    const asked = this.token ? await this.call('POST', '/v1/discord/ticket') : null;
+    // Signed in, Discord links this account by its ticket: without one it would sign in afresh, and that new account's
+    // token would take this one's place, leaving its character behind.
+    if (typeof asked === 'string') return asked;
+    const ticket = asked?.['ticket'];
+    if (asked !== null && typeof ticket !== 'string') return OUT_OF_REACH;
     const nonce = nonceOf();
     this.passing.setItem(NONCE_KEY, nonce);
     const url = new URL(`${this.base}/v1/discord/start`);
     url.searchParams.set('back', back);
     url.searchParams.set('nonce', nonce);
-    if (ticket !== null && typeof ticket !== 'string' && typeof ticket['ticket'] === 'string')
-      url.searchParams.set('ticket', ticket['ticket']);
-    return url.toString();
+    if (typeof ticket === 'string') url.searchParams.set('ticket', ticket);
+    return { to: url.toString() };
   }
 }

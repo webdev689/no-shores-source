@@ -269,7 +269,8 @@ was done finds it done.
   Vestige in a Boss's colours rolled apart from the day's, from the second one Essence of each stock, from the third
   two, and at the fourth a roll as the week's Elite Dungeon's first clear, a Legendary. The first lamp a character
   lights gives the passages' lore chapter ([[Lore]]). Each is kept on
-  `Today` and `ThisWeek` by island, begun anew as they are. **Going home** from a lit lamp keeps what was found since
+  `Today` and `ThisWeek` by island, begun anew as they are. **Going home** from a lit lamp (within 3 m of it, as a
+  hold, else out of reach; asked again once homeward, from anywhere) keeps what was found since
   and turns the dive homeward: no way on takes it further, and what is found on the way out goes into its haul. Its
   patrol zone's room, as it takes the kept character, keeps that haul, ends the dive and stands the player 2 m before
   the mouth the dive began at, toward its run's end arena, facing away from the door (`leave_passages`,

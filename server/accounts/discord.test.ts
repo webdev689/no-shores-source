@@ -68,6 +68,9 @@ test('Discord signs in, links a guest, and keeps one Discord account to one acco
   const linking = await take(await through(NONCE, ticket), NONCE, guest);
   assert.equal(linking.status, 200);
   assert.equal(linking.body['linked'], true);
+  // A ticket used, run out or never given is no plain sign-in: that would make a new account in the guest's place.
+  for (const gone of [ticket, 'f'.repeat(64)])
+    assert.equal((await ask('GET', `/v1/discord/start?back=${PAGE}/&nonce=${NONCE}&ticket=${gone}`)).status, 400);
   const linked = (await ask('GET', '/v1/me', undefined, guest)).body['account'] as { discord: boolean; id: string };
   assert.equal(linked.discord, true);
 

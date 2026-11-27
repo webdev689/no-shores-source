@@ -33,9 +33,15 @@ const SHORTEST_SYLLABLE_S: f64 = 0.04;
 const PROTOTYPE_KEY: &str = "__proto__";
 
 /// A dash or a trailing-off the rule keeps out: a pause is a full stop.
-const BANNED: [(&str, &str); 5] = [
+const BANNED: [(&str, &str); 11] = [
     ("\u{2014}", "an em dash"),
     ("\u{2013}", "an en dash"),
+    ("\u{2012}", "a figure dash"),
+    ("\u{2015}", "a horizontal bar"),
+    ("\u{2E3A}", "a two-em dash"),
+    ("\u{2E3B}", "a three-em dash"),
+    ("\u{FE58}", "a small em dash"),
+    (" - ", "a spaced hyphen standing as a dash"),
     ("--", "a double hyphen"),
     ("\u{2026}", "an ellipsis"),
     ("...", "an ellipsis"),
@@ -419,7 +425,9 @@ mod tests {
 
     #[test]
     fn dashes_and_ellipses_are_refused() {
-        for said in ["Wait \u{2014} there.", "Wait \u{2013} there.", "Wait -- there.", "Wait\u{2026}", "Wait..."] {
+        let dashes = ["Wait \u{2014} there.", "Wait \u{2013} there.", "Wait \u{2012} there.", "Wait \u{2015} there."];
+        let more = ["Wait \u{2E3A} there.", "Wait \u{FE58} there.", "Wait - listen.", "Wait -- there."];
+        for said in dashes.into_iter().chain(more).chain(["Wait\u{2026}", "Wait..."]) {
             let found = checked(&format!(r#"[{{"who": "mate", "say": "{said}"}}]"#));
             assert_eq!(found.len(), 1, "{said}: {found:?}");
             assert!(found.iter().all(|message| message.contains("a pause is a full stop")));

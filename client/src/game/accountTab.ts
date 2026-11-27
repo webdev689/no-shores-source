@@ -153,7 +153,11 @@ export class AccountPanel {
       const discord = press(
         'account-discord',
         account.discord ? 'Sign in with Discord' : 'Sign in or link with Discord',
-        () => void link.discord(this.page.address()).then((to) => this.page.assign(to)),
+        () =>
+          void link.discord(this.page.address()).then((away) => {
+            if (typeof away === 'string') this.say(away);
+            else this.page.assign(away.to);
+          }),
       );
       presses = [...(named ? [signIn] : [keep, signIn]), discord];
       const out = this.held(

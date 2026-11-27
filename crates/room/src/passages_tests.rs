@@ -169,8 +169,17 @@ fn a_lamp_is_lit_for_each_player_once_its_guard_is_down_and_then_they_may_go_hom
     assert!(room.passage_seen(player).is_some_and(|seen| seen.lamp_lit));
     let number = passage::lamp_number(plan.zone.depth).expect("a lamp's depth");
     assert!(room.players[&player].character.activity.this_week.passage_lamps[ISLAND].contains(&number));
+    stand_at(&mut room, player, [lamp[0] + 10.0, lamp[1]]);
+    assert_eq!(
+        room.ask_passage(player, PassageAsk::GoHome),
+        refusal(gear::Refusal::NotAtMouth),
+        "Home is from the lamp"
+    );
+    stand_at(&mut room, player, [lamp[0] + 2.0, lamp[1]]);
     assert_eq!(room.ask_passage(player, PassageAsk::GoHome), 0);
     assert!(dive(&room, player).is_some_and(|dive| dive.homeward), "home, the dive ending in the patrol zone");
+    stand_at(&mut room, player, [lamp[0] + 10.0, lamp[1]]);
+    assert_eq!(room.ask_passage(player, PassageAsk::GoHome), 0, "asked again once homeward, from anywhere");
 }
 
 #[test]
