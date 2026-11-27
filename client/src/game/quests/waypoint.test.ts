@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { QuestState } from '../../network/questMessages.ts';
+import { BINDS } from '../../player/input.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { QUESTS } from './questBook.ts';
 import { type Chart, LEGS, type Standing, guideOf } from './waypoint.ts';
@@ -108,6 +109,11 @@ test('a goal done at sea points at the nearest of its kind in sight, and says to
   assert.deepEqual(guide(ship, sea([0, 0], { hostiles }), CHART).at, [300, 0]);
   assert.deepEqual(guide(ship, sea([0, 0]), CHART), { at: null, notes: [LEGS.search] });
   assert.deepEqual(guide(ship, land(OVERLOOK, [1000, 0]), CHART), { at: null, notes: [LEGS.ship] });
+  // The leave's key as bound, in words on the keys and on the pad.
+  assert.equal(LEGS.ship, 'Hold N to return to your ship');
+  BINDS.device = 'pad';
+  assert.equal(LEGS.ship, 'Hold View to return to your ship');
+  BINDS.device = 'keys';
   const isle = onTask('stormcallers', 'search-hoard-isle');
   const isles = [
     { kind: 'cove', at: [100, 0] as const },

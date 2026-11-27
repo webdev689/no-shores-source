@@ -104,7 +104,17 @@ export function listenForControls(game: Controlled): void {
     const retry = game.retry();
     // No key breaks a travel's fade: the player has the ship again once it has arrived.
     if (sea?.travelling) return;
-    if (playing.helmMap.key(escape ? 'escape' : acts('confirm') ? 'enter' : acts('landMap') ? 'n' : '')) return;
+    // The legend's key is the map's wherever it is up, at the helm too, where the map takes every key; Set sail first.
+    const mapKey = escape
+      ? 'escape'
+      : acts('confirm')
+        ? 'enter'
+        : pressed('legend')
+          ? 'legend'
+          : acts('landMap')
+            ? 'n'
+            : '';
+    if (playing.helmMap.key(mapKey)) return;
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;
     // A landing's confirmation standing at sea is answered first: Enter yes, Escape no.
     if (sailing && game.landings.asking && (escape || acts('confirm'))) return game.landings.answer(!escape);

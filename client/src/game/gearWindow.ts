@@ -10,7 +10,7 @@ import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
-import { uiScale } from '../ui/uiRenderer.ts';
+import { interfaceScale } from '../ui/interfaceSize.ts';
 import { MARK, accountMark, markName } from './accountMark.ts';
 import { AccountPanel } from './accountTab.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
@@ -249,7 +249,7 @@ export function startGearWindow(
 
   /** The menu this frame: the scrim and the window, its page, its footer, and the hover card. */
   const menu = (frame: Interface, shown: View, layer: { width: number; height: number }): Child[] => {
-    const sizes = sizesOf(layer.width, layer.height, uiScale(devicePixelRatio));
+    const sizes = sizesOf(layer.width, layer.height, interfaceScale(devicePixelRatio));
     const now = here();
     const gear = now?.gear ?? null;
     const station = isTab(shown) ? null : stationTitle(shown);
@@ -494,7 +494,7 @@ export function startGearWindow(
     holds.frame(frame);
     const box = frame.boxOf(LAYER) ?? { width: innerWidth, height: innerHeight };
     if (focusNext && view !== null && frame.boxOf(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
-    const sizes = sizesOf(box.width, box.height, uiScale(devicePixelRatio));
+    const sizes = sizesOf(box.width, box.height, interfaceScale(devicePixelRatio));
     const shown = view;
     const children: Child[] = [
       // The company stands under the fight's vitals while they show.

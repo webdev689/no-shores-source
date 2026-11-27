@@ -727,7 +727,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   up, over whatever stood at the view's foot beneath it ("Nothing covers another").
 - **The leave held** (`leaveHold.ts`, [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]):
   on foot, wherever the player stands (a social space, a patrol area, a dungeon, an island's beach), holding the leave
-  key (M, or the pad's View held) for 1.5 s returns them to their ship, as Destiny's Ghost does. While it is held the
+  key (N, or the pad's View held) for 1.5 s returns them to their ship, as Destiny's Ghost does. While it is held the
   use prompt's place shows its key ringed as far as it is held beside "Return to ship" and, under it in faint words,
   "Leave" and the place, as holding E rings E, and the menu holds' rising sound plays; let go early, the ring drains
   over 0.3 s and nothing happens. Held through, it acts once until let go: the room is asked, as a return to the
@@ -743,8 +743,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   window of the kit over a dimmed view, over every layer the game draws but the screen's keyboard: ALL CONTROLS on its
   header band, then its groups, Move, Fight, Arts, Camera, Menus, Sea and Sea fight (`CONTROL_GROUPS`), each its name
   in faint capitals over a rule and its rows under it (Menus holds Continue dialogue, the press that moves a line of
-  the dialogue box on; [[Speech]], "Moving on"): the keys, then the pad's buttons, drawn as the strip draws them,
-  beside a few words on what the row does; a footer band holds a line of a few words and Reset to defaults. Every key
+  the dialogue box on; [[Speech]], "Moving on"): a few words on what the row does, bright, then beside them its keys
+  and the pad's buttons, drawn as the strip draws them, so each row reads as a line ([[M Is the Map, N the Leave, and the Players' First Asks Are Built]]); a footer band holds a line
+  of a few words and Reset to defaults. Every key
   and button shown is as bound now, so the sheet always says what the game hears; the side the player used last stands
   bright and the other faint, and the words are that side's ("Swing; fire" on the pad). The groups stand in as many
   400 px columns as the view holds (two at 1280 by 720, one on a phone), in their order, each column near an even
@@ -760,16 +761,20 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   chosen. While it waits, the frame the key that bound it comes in, and until the mouse button that bound it has come
   up, the drawn interface hears neither the keys nor the pointer, so the press that binds presses nothing behind it;
   on a key's side the next key or mouse button binds it, on the pad's the next button, held past 0.3 s for its hold,
-  or with another within 0.12 s for the two together. Escape cancels, as does six seconds with nothing pressed. A
-  mouse button binds only a control that hears one: the menus, the sheet, Use, Respawn and the helm's controls act on
-  a key going down or at the helm, where the pointer is free, so for them the footer says it "takes keys only"; a
-  button past the fifth is no key, and the slot waits on. Every other control acting with the key in the same place
-  (on foot, dead, in a window, at the helm, in a sea fight, or while a line of the dialogue box waits; `binds.ts`)
-  gives it up, taking the slot's old key
+  or with another within 0.12 s for the two together. Escape cancels, as does six seconds with nothing pressed. The
+  left, middle and right buttons bind only a control that hears them: the menus, the sheet, Use, Respawn, the map, its
+  legend and the helm's controls act on a key going down or at the helm, where the pointer is free, so for them the
+  footer says it "takes keys only". The two side buttons bind any control: the page sends each, after the button
+  itself, as a key of its name (`sideKey`), so it acts as its control's key would, with the pointer free or held, and
+  every window that keeps the keys from the game (the menu, the sheet, the chat's typing, the cards) keeps it too; a
+  side button never takes the page back or forward. A button past the fifth is no key, and the slot waits on. Tab
+  binds as any key does, named "Tab"; bound to a window's own key, it shuts that window rather than walking its focus.
+  Every other control acting with the key in the same place (on foot, dead, in a window, at the helm, in a sea fight,
+  or while a line of the dialogue box waits; `binds.ts`) gives it up, taking the slot's old key
   where that clashes with nothing it acts with there, and the footer says "Swapped with" them; where one would be
   left with nothing, the binding is refused and the footer says that control "needs it". No two controls that act
   in one place ever share a key. Reset to defaults binds every control as it came. A mouse's gesture (the click to
-  look or to sail there, a drag, the wheel), Tab, Escape, the arrows on the menu's tabs, the pad's sticks and their
+  look or to sail there, a drag, the wheel), Tab walking a window's focus, Escape, the arrows on the menu's tabs, the pad's sticks and their
   ways and the pad's buttons in a window (the cross and left stick, A, B, the bumpers) are written, not bound, and
   never given in a swap. What the player binds is kept with their account ([[Accounts]], "Binds").
 - **The pad** (`pad.ts`, `Input`) is read each frame through the browser's Gamepad API, the first pad with the standard
@@ -1150,10 +1155,14 @@ never while a press is held. Each press is an ask the room answers.
   not behind a veil, nor as the view goes down to the helm's map. While the credits show the footer says Back, and
   showing them or putting them away gives the focus to their way back or to their press, never an exit.
   - **Graphics**: under Display, the resolution the world is drawn at ("Resolution": Auto, the first, or 100%, 85%,
-    75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the interface staying at the screen's own. In the
+    75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the interface staying at the screen's own.
+    Under it the interface's size ("Interface size": Auto, the screen's own ratio to a whole pixel, or 1x to 4x,
+    each a whole number of the screen's pixels to an interface pixel so it stays sharp, offered where it leaves the
+    view at least 960 by 540, kept in this browser; `interfaceSize.ts`). In the
     [[Desktop App]] an App part follows: the graphics API where there is a choice, what the app draws with and on
     which card, the version and the update, with Restart now or Download (`desktopSettings.ts`).
-  - **Audio**: under Volume, the volumes of the interface, the world ("World sounds"), the music ("Music") and the
+  - **Audio**: under Volume, the master volume over every sound ("Master", whole at first), then the volumes of the
+    interface, the world ("World sounds"), the music ("Music") and the
     [[Ambience]] ("Ambience"), each kept in this browser; under Credits, "Sound credits" and its View press, which
     shows the recorded sounds' credits in the volumes' place: each one's name, author, licence and source, and what was
     changed, with ‹ Audio, or Escape, back.
@@ -1387,7 +1396,8 @@ stand:
 A tile's words are its name in brass at the larger size and under it its levels in short and its kind ("Lv 1–5 ·
 Patrol zone"; the island's own "Island", then Port, Playlist, Patrol zone, Elite Dungeon, Mission, World boss and
 Outposts), the kind left out where the name says it already, as the Playlist's does; every other detail is a
-glyph at its head, each saying its words in the tile's label, in the Journal's icons (`journalIcons.ts`) and the
+glyph at its head, each saying its words in the tile's label and, with the pointer on it, in a small dark card over
+it (a padlock "Shut:" and why; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]), in the Journal's icons (`journalIcons.ts`) and the
 tiles' own in their style (`islandIconMaps.ts`): the port's counters (a stall under its awning) and its moorings (an
 anchor); a patrol zone's dungeons (its door), its resources (a rock veined with ore), its foes (two blades crossed),
 its Elite and Abyss seas (dim while shut) and today's modifier; an Elite Dungeon's blocks (courses of stone), seals (a

@@ -200,8 +200,8 @@ apart ([[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]); the tas
   (`Room::keep_lessons`), measuring their stretches at a walk and at a gallop from the body's own pace, and forgets
   them once it asks none. The compass and the screen's mark point at the Harbourmaster's counter; the other steps
   read "Anywhere".
-- **Learn the helm**, at sea: Go aboard your Sloop (M held, its step reading "Hold M to return to your ship" ashore),
-  Set sail (W), Steer (A, D), Trim your sails (`[`, `]`, the pace dial), Open the held map (N), and Put a ball in the
+- **Learn the helm**, at sea: Go aboard your Sloop (N held, its step reading "Hold N to return to your ship" ashore, named by the leave's key as bound),
+  Set sail (W), Steer (A, D), Trim your sails (`[`, `]`, the pace dial), Open the held map (M), and Put a ball in the
   hulk (the right button laid and let go, the pad's RT). The sea watches each captain on it each tick
   (`Sea::keep_lessons`), keeping their heading and pace as last seen and how far they have turned under way. The page
   asks the sea (ask 4) each time the held map is raised at the helm (`Sea::charted`); the sea takes it only for a
@@ -365,16 +365,16 @@ acquired are kept by quest id (`acquired`). Claude's calls:
     its types in sight, or the nearest materials to gather;
   - in a patrol whose gate leads to the goal's zone (a dungeon's, a boss's), at that gate, its step saying "Through the
     gate to" the zone; in an instance reached through a gate, back through it the same way;
-  - on any other land, at the landing of the zone it is landed at, across the water, its step saying "Hold M to return
+  - on any other land, at the landing of the zone it is landed at, across the water, its step saying "Hold N to return
     to your ship"; at sea, at that landing, its step saying "Sail to" the zone;
   - a goal with no zone of its own at the nearest place to do it: a talk, a pledge or a buy at the nearest social space
     with its keeper, gathering at the nearest patrol with materials; one done at sea (a ship of its side beaten, an
     isle or a cove landed on, wrecks searched, an isle's leader) at the nearest in sight at sea, its step saying "None
-    in sight: sail the open sea" while none is, and "Hold M to return to your ship" from land;
+    in sight: sail the open sea" while none is, and "Hold N to return to your ship" from land;
   - a goal done anywhere (an Art's spell cast, a piece worn, a riding act but riding up to a counter, and at sea a
     sailing act but the gunnery) at nothing, its step saying "Anywhere"; the stranger, heard anywhere in a social
     space, "Anywhere here" there; riding up to a counter at the counter, as a talk; the gunnery at sea at the sea's
-    mark, and from land "Hold M to return to your ship", as every sailing act;
+    mark, and from land "Hold N to return to your ship", as every sailing act;
   - inside a dungeon, only what stands in it (a foe of the goal's types, the room's mark); on a sea's island, its
     wrecks not yet searched and, if it is of the goal's kind, its leader, any other goal back to the ship.
 

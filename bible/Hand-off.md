@@ -106,6 +106,15 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
+  browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
+  2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
+  13 ms at 1920 x 1080, measured natively), and its picture's repaint and upload (4 to 18 MB) are unmeasured; lighting
+  the water under the pointer takes some 14 ms each time it crosses into another (`litCells`); the sea map's own
+  marks (islands, hostile ships) say nothing under the pointer, the landings' tiles alone do; the Legend has no pad
+  button until one is bound. Its audit's leftovers: the sea's summed tables (`CellSums`) take some 2.6 MB each, the
+  land and each continent asked, kept for the page's life; Firefox's keeping of a side button from going back is
+  unchecked.
 - **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
   third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
   a walk through a three-storey dungeon and its vault. Headless pictures of three (`dungeon-plan.ts`) were taken before
@@ -135,6 +144,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   hub's city does not draw in the headless QA page, so Overlook's lights after the fold are unpictured; each lit ship
   lights up to four lamps, which may crowd the nearest sixteen in a big night fight; the pad's Continue is untested;
   a keeper's screen says its lines on its own 1.6 s.
+
+- **The lights under ground and on land, the islands' textures, the passages' polish** (#233, #241): not seen on a
+  real GPU or played by hand; not pictured: a dungeon with many torches (`dungeon-plan.ts`'s steps still drive the
+  page, but evals run in the game's worker), a ship's lantern (no offline way into a sea fight at night); not
+  measured: a night sea fight's frame (the probe dies on the battle beat) and the fires' GPU cost. Known: the
+  passages' lamp glass shows two dark marks like a face; a hollow's sky is pale at 1 a.m.; map labels can sit over
+  route lines; a strand's hull stands tilted; an open mouth's daylight is a flat pale sheet; islands' modules sample
+  the rock texture on every fragment; f32 time in the shaders drifts from the CPU's flicker after hours.
 
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
