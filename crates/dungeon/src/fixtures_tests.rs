@@ -48,6 +48,7 @@ fn each_fixture_burns_where_its_kind_does() {
                     .into_iter()
                     .any(|side| dungeon.beside(cell, side).is_some_and(|at| dungeon.room_at(at).is_some()));
             if outside {
+                outside_brazier_stands_clear(&dungeon, fixture);
                 continue;
             }
             let Some(room) = dungeon.room_at(cell) else {
@@ -133,4 +134,45 @@ fn each_fixture_burns_where_its_kind_does() {
         }
     }
     assert!(kinds.iter().all(|&count| count > 100), "every kind burns: {kinds:?}");
+}
+
+/// A brazier outside a doorway: its bowl's box and top, wholly in its corridor cell so clear of the rock, clear of
+/// every torch's flame and balustrade, and never by a room, a flight's mouth or a gallery's open
+/// air across the way.
+fn outside_brazier_stands_clear(dungeon: &Dungeon, fixture: &crate::Fixture) {
+    let [min_x, min_y, max_x, max_y, top] = fixture.solid.expect("a brazier is a solid");
+    let cell = dungeon.cell_at(fixture.at);
+    let floor = dungeon.floor_of(cell);
+    assert!((max_x - min_x - 2.0 * BRAZIER_HALF_M).abs() < 1e-9 && (max_y - min_y - 2.0 * BRAZIER_HALF_M).abs() < 1e-9);
+    assert!((top - floor - BRAZIER_TOP_M).abs() < 1e-12 && fixture.at[2] > top, "its flame over its bowl");
+    for [x, y] in [[min_x, min_y], [max_x, min_y], [min_x, max_y], [max_x, max_y]] {
+        assert_eq!(cell_at(dungeon, x, y, floor), cell, "a brazier at {:?} stays in its cell", fixture.at);
+    }
+    for torch in &dungeon.torches {
+        let [x, y, z] = torch.at;
+        assert!(!(x > min_x && x < max_x && y > min_y && y < max_y && z > floor && z < top), "clear of a torch");
+    }
+    for rail in &dungeon.balustrades {
+        let apart = rail[2] <= min_x || rail[0] >= max_x || rail[3] <= min_y || rail[1] >= max_y;
+        assert!(apart || rail[5] <= floor || rail[4] >= top, "a brazier at {:?} meets a balustrade", fixture.at);
+    }
+    let [middle_x, middle_y] = dungeon.centre(cell);
+    for side in SIDES {
+        let [dx, dy] = side.unit();
+        // How far the bowl reaches towards this side of its cell from the middle.
+        let reach = if dx == 0.0 {
+            ((min_y - middle_y) * dy).max((max_y - middle_y) * dy)
+        } else {
+            ((min_x - middle_x) * dx).max((max_x - middle_x) * dx)
+        };
+        // Only the sides across the way come this near: the doorway's room lies farther, past the jambs.
+        let near = reach > CELL_M / 2.0 - 0.2;
+        let open =
+            dungeon.beside(cell, side).is_some_and(|at| !matches!(dungeon.cells[at], Cell::Rock | Cell::Corridor));
+        assert!(
+            !(near && open),
+            "a brazier at {:?} stands by a room, a flight or open air on its {side:?}",
+            fixture.at
+        );
+    }
 }

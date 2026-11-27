@@ -213,7 +213,8 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
         .enumerate()
         // A zone laid as one great room stands its foes in it, away from the arrival as ever.
         .filter(|(number, _)| *number != dungeon.way_in.room || dungeon.rooms.len() == 1)
-        .map(|(_, room)| {
+        // A room with no floor to pick stands no post.
+        .filter_map(|(_, room)| {
             let cells = if room.quiet.is_empty() { &room.cells } else { &room.quiet };
             // A band stands on open floor: the middle of the room's cells no prop, fixture or landmark fills.
             let open: Vec<usize> = cells.iter().copied().filter(|&cell| !dungeon.holds_solid(cell)).collect();
@@ -225,8 +226,7 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
                 .filter(|&&cell| clear(dungeon.centre(cell)))
                 .max_by(|one, other| far(one).total_cmp(&far(other)));
             let pick = if dungeon.rooms.len() == 1 { farthest } else { cells.get(cells.len() / 2) };
-            let middle = pick.map_or([0.0, 0.0], |&cell| dungeon.centre(cell));
-            (room.walk, middle)
+            Some((room.walk, dungeon.centre(*pick?)))
         })
         .collect();
     middles.sort_by(|one, other| one.0.cmp(&other.0).then(one.1[0].total_cmp(&other.1[0])));

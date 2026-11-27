@@ -140,5 +140,7 @@ Claude's choices, each open to change.
 | The way on's braziers | On the room's wall either side of the doorway where both cells there hold them, else in the corridor's cell past it, either side of the opening | The wall beside a doorway is often a room's corner; outside it they still mark the way on, six ways on in ten |
 | Which vault | Off the main way, on the deepest storey it can, a dead end first, then the farthest along the walk; no landmark in it | The best of a dungeon found by looking round, deep down |
 | Who guards first | The main way's rooms stand their bands first, spread along it; then each vault while foes remain; then the others | Fights on the way through, and a vault worth guarding |
-| The flights' light | A torch at each landing | A flight lit from both its ends |
+| The flights' light | A torch at each landing, a landing two flights share lit once | A flight lit from both its ends |
 | Passages under ground | One storey, as their zones were laid for; a laying taken only where every way on has its mouth and its foes a post, a zone laid as one great room standing its post at its clear floor farthest from the arrival | Their zones were built and checked on one storey: whether they go deeper is the owner's to say |
+| Braziers outside a doorway | None where a flight or a gallery's open air opens off the corridor's cell across the way, as where a room does | Never in a flight's mouth under its arch, nor against a gallery's balustrade |
+| The end where its storey has no way to it | The last block's farthest walked room on its deepest storey a walk reaches | The end stays in the last block, never back at the way in |

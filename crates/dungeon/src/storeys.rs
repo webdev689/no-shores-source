@@ -1,5 +1,5 @@
-//! A dungeon's storeys, stacked downward from the way in's: each storey a plane of cells laid as the whole grid was
-//! when there was one, the planes one after another in `cells` and `ceilings`; the flights of stairs between them,
+//! A dungeon's storeys, stacked downward from the way in's: each storey a plane of `columns` by `rows` cells, the
+//! planes one after another in `cells` and `ceilings`; the flights of stairs between them,
 //! walked as the smooth slope under their steps; and the open spans of each column of cells, from floor to ceiling,
 //! that a body stands in, a line passes through and rock or a slab between storeys bounds.
 
