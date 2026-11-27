@@ -64,17 +64,17 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   of its health; a Keeper is matched to half the company), then stand at their own times: the Scrivener six, the
   Steward six and a half, the Mender and the Warden one and a half.
 - **The company.** Companies hold eight, as a Breach is taken on by up to eight
-  ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); a Breach's run holds eight and every other run four. It is
-  launched from the Playlist: the finder (`/v1/find/node-gullwing-vale--breach-<tier>?launch`) starts the run for the
-  launcher's company at once, at its tier's level. Its room is `node-gullwing-vale--breach-<tier>--run-<8>`. A run
+  ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); a Breach's run holds eight and every other run four.
+  It is launched from the Playlist: the finder (`/v1/find/node-gullwing-vale--breach-<tier>?launch`) starts the run for
+  the launcher's company at once, at its tier's level. Its room is `node-gullwing-vale--breach-<tier>--run-<8>`. A run
   follows the company as the accounts hold it now, not as it was launched: one who joins the company later is held at
-  its gate and let into its run as its members are (`launchedFor`). Launched again within its gate's day, the
-  company's run is the one it launched (`BREACH_RELAUNCH_MS`), so it comes back through its gate, still open to it, to
-  the last checkpoint it reached, its gate's opening keeping it with the accounts a day from then (`keepRun`); a run
-  whose gate shut again, cleared or its day out, is forgotten by the accounts (`forgetRun`, asked again each minute
-  they do not answer), and the next Launch starts a new one. A member who leaves the company leaves the run with it. Reset checkpoints on the Playlist, asked by the company's leader
-  or a player alone (`company/reset`), forgets the company's runs of that Breach at that tier, so its next Launch starts
-  the Breach fresh, from the Waking.
+  its gate and let into its run as its members are (`launchedFor`). Launched again within its gate's day, the company's
+  run is the one it launched (`BREACH_RELAUNCH_MS`), so it comes back through its gate, still open to it, to the last
+  checkpoint it reached, its gate's opening keeping it with the accounts a day from then (`keepRun`); a run whose gate
+  shut again, cleared or its day out, is forgotten by the accounts (`forgetRun`, asked again each minute they do not
+  answer), and the next Launch starts a new one. A member who leaves the company leaves the run with it. Reset
+  checkpoints on the Playlist, asked by the company's leader or a player alone (`company/reset`), forgets the company's
+  runs of that Breach at that tier, so its next Launch starts the Breach fresh, from the Waking.
 - **The opening, in the patrol zone.** The bake writes where the layout stood the Sunken Gate (the `breach-gate`
   module, area kind `breach`) into Gullwing Vale's node file, and its room stands the gate there. A launched player
   joins the zone with `?breach=<run>`, may arrive there from anywhere, and stands at the gate in their run's company.
