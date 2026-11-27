@@ -169,7 +169,8 @@ The weapons take under a minute on four cores; `weaponart.py --check` checks the
 
 The `figures` workflow draws figure strips for both bodies and publishes them, only when a run is asked for: by hand
 (`anims`, the moves, and `layers`, empty for every layer), or by a push to a branch other than `main` that changes
-`tools/forge/figures-request.txt`, its first line the moves and its second the layers. A cloud session holds no
+`tools/forge/figures-request.txt`, its first line the moves and its second the layers; a push whose request file is
+`main`'s own, as a merge of `main` brings it in, asks for nothing. A cloud session holds no
 Cloudflare key, so this is how a figure strip reaches R2 from one. It runs a job for each set of layers (`layers.py --set`: classic, wardrobe, armour), body and move
 in parallel, and one for each body's hair and beasts' layers in every move (`forge_publish.py jobs`), each with up to
 360 minutes and no secret. Each draws from an index begun empty, so its move's cell is reckoned from its own layers. One
@@ -186,7 +187,8 @@ repository's token is held, with `python3 -I tools/r2.py upload <folder>` as `fo
 ([[Heavy Forge Renders May Run on the Public Forge Mirror]]).
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes
-`tools/lattice/render-request.txt`, whose first line names the foes, or by hand on `main`. Its actions are pinned by
+`tools/lattice/render-request.txt`, whose first line names the foes (not when it is `main`'s own, as for the
+figures), or by hand on `main`. Its actions are pinned by
 commit, as `ci.yml`, `pages.yml` and `rooms.yml` pin theirs. A job plans one render job for each move of each foe asked
 for and one for the wave (`tools/lattice/jobs.py`), they render in parallel without the token, and one job pulls the
 tables, lays them all in (`lattice`), adds them to what is published and ends its log with the manifest. A first line
