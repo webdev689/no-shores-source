@@ -72,7 +72,9 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
 - **Depth.** The seabed is seen through the water, bent by the surface and tinted by the water it is seen through:
   sand shows turquoise in the shallows, and the sea deepens to blue. Lakes and rivers are greener and murkier.
 - **Light.** The sky ([[Sky]]) and its clouds reflect, more at a glancing angle; the sun glints, its glitter
-  blurring far off; a crest glows green where the sun shines through it. Caustics dance on the bed.
+  blurring far off; a crest glows green where the sun shines through it. Caustics dance on the bed. The lamps near
+  the eye (a ship's lanterns, a sea fight's flashes and fires) light the surface round them, its foam fully and the
+  water a tenth as much ([[Sky]], "The nearest sixteen").
 - **Shadows.** The surface takes the sun's shadows: in a ship's, beside its waterline, it loses the sun's glints and a
   third of the light it scatters and reflects. The seabed's shadows fade with the water over them, about a seventh left
   three metres down, as the water scatters the light, so a ship's shadow lies on the surface by the ship and not on the

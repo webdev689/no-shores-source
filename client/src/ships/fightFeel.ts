@@ -519,7 +519,7 @@ export class FightFeel {
       radius: BURN_LIGHT.reachM * scale,
       colour: BURN_LIGHT.colour,
       blend: 'light' as const,
-      alpha: 0.8 + 0.2 * Math.sin(now * 13 + index * 2.3),
+      alpha: 0.85 + 0.15 * Math.sin(now * 9 + index * 2.3),
     }));
     return [...this.effects.marks(now, scale), ...lights, ...this.flotsam.marks(now, scale, water, eye)];
   }
