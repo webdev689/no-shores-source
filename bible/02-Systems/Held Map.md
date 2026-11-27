@@ -239,7 +239,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     keeps no stall, a sealed letter on a slate coin, the blue of his vest toward the ink; each faction's coin in its
     cloth with its banner's emblem (the Stormcallers' bolt, the Lamplighters' flame over a lamp, the Veiled's crescent
     and star). Each site: a landing's chevrons, a public event's red-brown diamond, a gate's open arch and a sealed
-    door's barred one; a way across to another of the island's patrol zones an ink coin with an arrow out along a
+    door's barred one; a way across to another of the island's patrol zones (at a run's end,
+    [[The Ways Across Stand at the Runs' Ends, Not on the Landing]]) an ink coin with an arrow out along a
     dashed way, its zone named beside it; a sealed door that is one of the passages' mouths ([[Passages]]) a passage
     gate, the open arch on the route's red-brown with a chevron down in it
     ([[The Patrol Map's Legend Names Each Way Across and the Passage Gates]]); an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with

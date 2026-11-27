@@ -5,7 +5,7 @@ import type { Foot } from '../foot.ts';
 import type { NodeInfo } from '../worldData.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { DOWN_S, DRAW_S, LEAVE_S, LEG_DOTS, RISE_S, WALK_S, type WayFrame } from './passageWay.ts';
-import { WayBetween } from './wayBetween.ts';
+import { JOIN_WAIT_S, WayBetween } from './wayBetween.ts';
 
 Object.assign(globalThis, { innerWidth: 1280, innerHeight: 720, document: { exitPointerLock: () => undefined } });
 
@@ -226,4 +226,19 @@ test('the way so far is drawn before the leg being taken', () => {
   ways.passing(1, false, false);
   const dots = (ways as unknown as { way: { frame: WayFrame } }).way.frame.dots;
   assert.equal(dots.filter((dot) => !dot.taking).length, 1 + 2 * LEG_DOTS);
+});
+
+test('a join that never settles fails back as a trip does once JOIN_WAIT_S have passed, and never readies after', async () => {
+  const { held, ways } = game();
+  let finish = () => undefined as void;
+  ways.cross(cross, [0, 0], [5_000, 5_000], () => new Promise<void>((resolve) => (finish = resolve)));
+  ways.passing(0.01, held.ready, false);
+  assert.notEqual(playOut(ways, held, 0.5, (JOIN_WAIT_S - 1) / 0.5), null, 'held over the island while it joins');
+  assert.equal(held.fellBack, null);
+  assert.equal(playOut(ways, held, 0.5, 4), null, 'the way is over');
+  assert.equal(held.fellBack?.place, 'The Gullwing Vale');
+  assert.ok(held.fellBack?.error instanceof Error, 'told why');
+  finish();
+  await settle();
+  assert.equal(held.readied, 0, 'a join come late readies nothing');
 });

@@ -106,6 +106,9 @@ function hear(socket: WebSocket, heard: Heard): void {
 const UPDATED = 'The game was updated. Load the page again.';
 /** Why a room was not joined, as the player is told it. */
 const UNREACHED = 'the room could not be reached';
+/** How long a join waits for the room's welcome once asked, milliseconds: a socket that never opens, or opens and
+ *  never answers, fails the join rather than holding the player for good. */
+export const WELCOME_WAIT_MS = 15_000;
 
 /** A browser's WebSocket to one room: it joins, sends the player's input for each tick (or, at sea, their ship's
  *  course), and hands on every snapshot. When its socket closes for a deploy or a dropped network, it joins the room
@@ -182,7 +185,12 @@ export class RoomConnection implements RoomLink {
     return new Promise((resolve, reject) => {
       const socket = connect(url);
       let made: RoomConnection | null = null;
+      const unanswered = setTimeout(() => {
+        reject(new Error('the room did not answer'));
+        socket.close(1000, 'unanswered');
+      }, WELCOME_WAIT_MS);
       const welcomed = (welcome: Welcome) => {
+        clearTimeout(unanswered);
         if (welcome.protocol !== PROTOCOL) {
           socket.close(1000, 'another protocol');
           reject(new Error(UPDATED));
@@ -199,11 +207,12 @@ export class RoomConnection implements RoomLink {
       // The player is told in words; the room's address is for the console.
       socket.addEventListener(
         'error',
-        () => (console.warn(`${url} could not be reached`), reject(new Error(UNREACHED))),
+        () => (console.warn(`${url} could not be reached`), clearTimeout(unanswered), reject(new Error(UNREACHED))),
       );
-      socket.addEventListener('close', (event) =>
-        reject(new Error(`the room closed: ${event.reason || 'it gave no reason'}`)),
-      );
+      socket.addEventListener('close', (event) => {
+        clearTimeout(unanswered);
+        reject(new Error(`the room closed: ${event.reason || 'it gave no reason'}`));
+      });
     });
   }
 

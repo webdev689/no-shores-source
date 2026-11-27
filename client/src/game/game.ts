@@ -21,6 +21,7 @@ import { arriving, type Flow, type Happening, next, onTheSea } from './flow.ts';
 import { keepPlace, placeKept, placeNow, resume } from './relog.ts';
 import { lieOffRegionLeft, zoneLeft } from './regionLeft.ts';
 import { Foot, type FootContext } from './foot.ts';
+import { latestFoot } from './latestFoot.ts';
 import { enterBreachRun, enterDungeon } from './footEntries.ts';
 import type { TripGame } from './dungeonTrips.ts';
 import type { InBreach } from './breachView.ts';
@@ -223,7 +224,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     playing.sea?.leaveRoom();
     // The held map's coasts are worked out behind the veil, not on its first raising on land.
     void playing.helmMap.made;
-    playing.foot = await entering();
+    playing.foot = await latestFoot(entering());
     if (!playing.foot.dungeon) dungeons.forget();
     // The rain stops under whatever a body meets overhead there: a roof, a ceiling, an arch.
     scene.sky.shelterUnder(playing.foot.boxes);

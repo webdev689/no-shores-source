@@ -128,7 +128,9 @@ fn a_mines_and_an_undercrofts_beats_are_roofed_and_no_area_of_saltmeres_is() {
     use layout::brief::RunKind;
     let mut roofed_runs = 0;
     for laid in continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
-        for space in &laid.map.spaces[..laid.areas.len()] {
+        // A way across stands in its run's end arena, which a mine or an undercroft roofs (layout's crossings.rs).
+        let open = laid.areas.iter().zip(&laid.map.spaces).filter(|(area, _)| !layout::crossings::is_crossing(area));
+        for (_, space) in open {
             assert!(!space.roofed, "{}: {} lies open to the sky", laid.id, space.name);
         }
         for run in laid.runs.iter().filter(|run| matches!(run.kind, RunKind::Mine | RunKind::Undercroft)) {
@@ -275,6 +277,10 @@ fn every_place_of_saltmeres_stands_at_its_briefs_height() {
         heights.dedup();
         assert!(heights.len() >= 3, "{}'s places stand at {heights:?} tenths of its massif", laid.id);
         for (((area, space), level), basin) in laid.areas.iter().zip(&laid.map.spaces).zip(wanted).zip(&laid.basins) {
+            // A way across stands at its run's end, at the level the run ends at (layout's crossings.rs).
+            if layout::crossings::is_crossing(area) {
+                continue;
+            }
             // A place whose basin raises a terrace at its middle (a camp's mound) stands on it.
             let mound = basin
                 .terraces

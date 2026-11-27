@@ -14,6 +14,11 @@ import type { Interface } from '../../ui/ui.ts';
 import { wayDotsNode } from './passagePanels.ts';
 import { LEAVE_S, settledShot, type Way, type WayAsk, type WayFrame, wayAt, wayClock, wayOf } from './passageWay.ts';
 
+/** How long the way waits over the island for the place gone to to be joined, seconds: a join that has not settled
+ *  by then (a room that never answers, or never opens) fails back as a trip's failure does. Past the passage room's
+ *  own wait to hear it took the player (`passageEnter.ts`) and the welcome's (`roomConnection.ts`). */
+export const JOIN_WAIT_S = 40;
+
 /** How near the mouth taken the leave walks the body, metres, before the camera rises. */
 const MOUTH_NEAR_M = 0.6;
 
@@ -56,7 +61,8 @@ export interface WayPlayed {
 /** A way under way: what it plays and the work that joins the place gone to, what its failure does, how long the
  *  leave has walked, its rails once the leave is over (none before), its clock and frame, whether it has come down to
  *  the body the room stood (`landed`), whether the place has come (`come`: once, so a later frame not drawn whole
- *  never stops the way part down), how long it has waited since the room was joined, and whether the body walks. */
+ *  never stops the way part down), how long it has waited since the room was joined, how long the join has taken,
+ *  and whether the body walks. */
 interface Playing {
   readonly played: WayPlayed;
   readonly work: () => Promise<void>;
@@ -68,6 +74,7 @@ interface Playing {
   landed: boolean;
   come: boolean;
   waited: number;
+  joining: number;
   walking: boolean;
 }
 
@@ -94,7 +101,7 @@ export class WayBetween {
     const after = next(this.host.flow(), played.happening);
     if (after === this.host.flow() || after.mode !== 'passing') return;
     const failed = this.host.fallback(played.place, played.back);
-    const start = { leaving: 0, way: null, seconds: 0, frame: null, landed: false, come: false, waited: 0 };
+    const start = { leaving: 0, way: null, seconds: 0, frame: null, landed: false, come: false, waited: 0, joining: 0 };
     this.way = { played, work, failed, ...start, walking: false };
     this.host.setFlow(after);
     this.host.setReady(false);
@@ -174,6 +181,12 @@ export class WayBetween {
       playing.walking = this.leaves(playing, seconds);
       if (playing.walking) return 'place';
       this.setOut(playing);
+    }
+    if (!ready) playing.joining += seconds;
+    if (playing.joining > JOIN_WAIT_S) {
+      this.way = null;
+      playing.failed(new Error(`${playing.played.place} did not answer`));
+      return null;
     }
     // The place has come once its room has stood the body, the way laid to where it stands, and the place has been
     // drawn whole under the island. A room that never stands it, or a place never drawn whole, is waited on as the

@@ -170,6 +170,15 @@ pub fn map(drawn: &Drawn, land: &Land) -> Map {
             map.connections.push(Connection { from, to, joined: Joined::Run, width, points });
             (from, start) = (to, end);
         }
+        // A way across standing in its end arena, as far out as its door, is reached from the end arena.
+        let Some(last) = run.beats.last() else { continue };
+        let reach = distance(run.door, last.at);
+        for (to, area) in drawn.areas.iter().enumerate() {
+            if crate::crossings::is_crossing(area) && distance(area.at, last.at) <= reach {
+                let points = vec![last.at, area.at];
+                map.connections.push(Connection { from, to, joined: Joined::Run, width, points });
+            }
+        }
     }
     for cavern in drawn.caverns {
         map.spaces.push(space(SpaceKind::Cavern, &drawn.areas[cavern.area].name, cavern.middle, cavern.reach));

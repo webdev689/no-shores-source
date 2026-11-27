@@ -67,3 +67,37 @@ test('a gate toward another patrol area offers to go there, arriving at its gate
   assert.deepEqual(across?.node.spawns, [[-700, 0]], "at the Vale's gate toward the Downs");
   assert.equal(across?.node.across, 'downs', 'its room stands the player at that gate too, online');
 });
+
+test('at a run’s sealed door that is a way across, E offers to go to its zone, arriving facing into the far end arena', () => {
+  // As the layout stands them (crates/layout crossings.rs): a step in from the run's door, reached within 4 m.
+  const run = (door: Point, end: Point) => ({ name: 'A Run', door, beats: [{ at: end, radius: 24, level: 0 }] });
+  const zone = (id: string, to: string, spot: Point, ends: { door: Point; end: Point }[]): NodeLayout =>
+    ({
+      id,
+      ring: [],
+      spawns: [],
+      areas: [{ kind: 'gate', name: '', at: spot, radius: 4, leads_to: to, crosses: true }],
+      runs: ends.map(({ door, end }) => run(door, end)),
+    }) as unknown as NodeLayout;
+  const landmass = {
+    layouts: [
+      zone('vale', 'moors', [326, 0], [{ door: [328, 0], end: [300, 0] }]),
+      zone(
+        'moors',
+        'vale',
+        [0, -226],
+        [
+          { door: [0, -228], end: [0, -200] },
+          { door: [500, 0], end: [470, 0] },
+        ],
+      ),
+    ],
+    nodes: [node('vale', 'patrol', 'The Vale', false), node('moors', 'patrol', 'The Moors', false)],
+  };
+  const atDoor = gateWay(landmass, 'vale', [327.5, 1]);
+  assert.equal(atDoor?.offer, 'Go to The Moors  E');
+  assert.deepEqual(atDoor?.happening, { kind: 'cross', node: 'moors', name: 'The Moors' });
+  assert.deepEqual(atDoor?.node.spawns, [[0, -226]], 'a step inside the Moors’ end arena');
+  assert.ok(Math.abs((atDoor?.facing ?? 0) - Math.PI) < 1e-9, 'facing south, into the arena, away from its door');
+  assert.equal(gateWay(landmass, 'vale', [320, 0]), null, 'out of its reach in the end arena');
+});

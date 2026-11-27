@@ -537,10 +537,53 @@ fn each_of_saltmeres_patrol_zones_crosses_to_the_other_two_at_a_gate_and_the_dow
             let gate = layout.areas.iter().find(|area| area.at == place.at).expect("a crossing is an area");
             assert!(gate.kind == AreaKind::Gate && gate.crosses, "{zone}'s crossing to {} is a gate", place.name);
         }
+        ways_across_stand_at_the_runs_ends(layout);
     }
     let downs = laid().layouts.iter().find(|layout| layout.id == "saltgrass-downs").expect("the Downs");
     let doors = bake::doors_of(downs);
     let island = passage::island("continent-1").expect("Saltmere's passages");
     let named: Vec<&str> = doors.iter().map(|door| door.name.as_str()).collect();
     assert_eq!(named, island.mouths, "each run's sealed door, in the passages' mouths' order");
+}
+
+/// A patrol zone's ways across ([[The Ways Across Stand at the Runs' Ends, Not on the Landing]]): each in a run's end
+/// arena, as far out as its door, one run a zone, none on the landing (which run, by its bearing, crossings.rs's tests
+/// say). On the Downs each
+/// stands a second arch in its end arena, clear of the run's way and of its door's reach; elsewhere the run's door is
+/// the way across, a step in from it.
+fn ways_across_stand_at_the_runs_ends(layout: &Layout) {
+    let zone = layout.id.as_str();
+    let landing = layout.areas.first().filter(|area| area.kind == AreaKind::Landing).expect("a landing");
+    let across: Vec<&layout::areas::Area> =
+        layout.areas.iter().filter(|area| layout::crossings::is_crossing(area)).collect();
+    let run_of = |at: [f64; 2]| {
+        layout.runs.iter().position(|run| {
+            run.beats.last().is_some_and(|end| distance(at, end.at) <= distance(run.door, end.at) + 1e-6)
+        })
+    };
+    let runs: Vec<usize> = across.iter().map(|area| run_of(area.at).expect("in a run's end arena")).collect();
+    assert!(runs.len() == 2 && runs[0] != runs[1], "{zone}: one run a zone, {runs:?}");
+    for (area, &number) in across.iter().zip(&runs) {
+        let run = &layout.runs[number];
+        let end = run.beats.last().expect("an end arena");
+        assert!(distance(area.at, landing.at) > landing.radius + area.radius, "{zone}: a way across on the landing");
+        // A beat's band holds its beat (bake's `foes_of`); the end arena holds none, so one crossing in stands in none.
+        let held = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Foes);
+        let nearest = held.map(|site| distance(area.at, site.at) - site.radius).fold(f64::INFINITY, f64::min);
+        assert!(nearest > 10.0, "{zone}: the way across stands {nearest:.1} m from a beat's band");
+        let downs = zone == "saltgrass-downs";
+        let arches = layout.seating.solids.iter().filter(|solid| matches!(solid.shape, Shape::Arch { .. }));
+        let near: Vec<[f64; 2]> =
+            arches.map(|solid| [solid.at[0], solid.at[1]]).filter(|&at| distance(at, area.at) < 6.0).collect();
+        if downs {
+            assert_eq!(near.len(), 1, "{zone}: a second arch by the way across to {:?}", area.leads_to);
+            assert!(distance(area.at, run.door) > 8.0, "{zone}: the way across's reach meets the mouth's");
+            let off =
+                run.way().windows(2).map(|pair| off_line(near[0], pair[0], pair[1])).fold(f64::INFINITY, f64::min);
+            assert!(off > layout::runs::WAY_CLEAR_M, "{zone}: the arch stands {off:.1} m off the run's way");
+            assert!(distance(area.at, end.at) > 4.0, "{zone}: the way across stands on the objective's spot");
+        } else {
+            assert!((distance(area.at, run.door) - 2.0).abs() < 1e-6, "{zone}: a step in from the run's door");
+        }
+    }
 }

@@ -72,11 +72,22 @@ from the sea, fresh water and the claim's edge), then:
    reaches and spread over the claim, so something stands every couple of hundred metres. A patrol area's landing
    comes first on its seaward side, then a gate at its edge toward each instance it leads to (the mission, dungeon
    and boss nodes of its own region, `content/world/regions.json`, nearer it than any other patrol area of that
-   region), then the brief's areas. Once the zone is planned, a crossing gate toward each other patrol area of its
-   island stands on its landing (`crossings.rs`), marked as crossing (`crosses`, which `is_crossing` reads and the
-   page's `across`; no other gate is taken for one), 10 m round, 0.7 of the landing's reach out toward that zone, its
-   map joining it to the landing by a way: added last, it moves none of the zone's places, ways or runs (on Saltmere
-   each of its three zones has one toward each of the others). An
+   region), then the brief's areas. Once the zone's runs are found, a way across toward each other patrol area of its
+   island stands at a run's end, none on the landing (`crossings.rs`,
+   [[The Ways Across Stand at the Runs' Ends, Not on the Landing]]): each zone takes the run whose end arena, seen
+   from the claim's middle, lies at the bearing nearest the bearing to that zone's middle, the nearest pair of all
+   taken first and no run taken twice. Where the run's sealed door is no passage's mouth (`content/passages`), the
+   door is the way across; where it is one (the Saltgrass Downs), a second arch of the door's make stands in the end
+   arena, 3.5 m in from its rim facing its middle. Of the headings whose frame keeps clear of the run's way, whose
+   spot's reach keeps clear of the mouth's and whose frame stands on the arena's floor, those whose spot lies further
+   from the run's way come first; the arch takes the first that stands off the run's climb, and not behind it from the
+   arena's middle, with none of the run's pieces under head height in its frame's way or on the walk up to it, else
+   the first off the climb, the pieces under head height where its frame stands, and what is stacked on them, left
+   out (`run_kits.rs`). Each way across is a gate area marked as crossing (`crosses`, which `is_crossing` reads and
+   the page's `across`; no other gate is taken for one) and a gate site holding its zone, 4 m round (a mouth's reach),
+   a body's step (2 m) inside the end arena from its door or arch: where a player stands to use it, and where one
+   crossing in from that zone arrives. Added last, it moves none of the zone's places or ways; its map joins it to
+   its run's end arena (on Saltmere each of its three zones has one toward each of the others). An
    instance whose region holds no patrol area has no way in from one: it is landed at from the sea. The bake reads
    the regions into the briefs (`Briefs::regions`), and the settle's `links_of` reads them there.
    An outpost site's landing comes first
@@ -508,15 +519,18 @@ tower on an open area's middle does not roof it. A gate's space names the node i
 ways (each joining the two areas it was laid between), its climbs (from the area it climbs out of to the lookout), its
 ledges' stairs (between the places nearest their two ends), its caverns' tunnels and its runs' passages (from the area
 it breaks off into the first beat, then beat to beat, each along the run's line), each with its walked width and its
-line. On continent 1 every space is reached from the first (`crates/room/tests/map_planned.rs`).
+line; a way across standing in a run's end arena, from that end arena. On continent 1 every space is reached from the
+first (`crates/room/tests/map_planned.rs`).
 
 ## Gates
 
 A gate's basin and an instance's way in are passages ([[Game]]): standing in one, the player is offered "Enter" the
 instance or "Return to" the patrol area (E), and goes through the veil to arrive at the other's way in or gate. A
-gate the layout marks as crossing to another patrol area (its `crosses`) offers "Go to" it: E plays the way between
-the two zones over the island, never the veil, framed on the two, while the room of that zone's gate toward the one
-left is joined, then the walk in (`client/src/layout/passage.ts`, `client/src/game/gates.ts`, the flow's `cross`,
+gate the layout marks as crossing to another patrol area (its `crosses`, a way across at a run's end: on the Vale and
+the Moors E at the run's sealed door, on the Downs at the second arch in its end arena) offers "Go to" it: E plays the
+way between the two zones over the island, never the veil, framed on the two, while the room of that zone's way across
+toward the one left is joined, then the walk in, the player standing a step inside its end arena facing the arena's
+middle (`client/src/layout/passage.ts`, `client/src/game/gates.ts`, the flow's `cross`,
 `client/src/game/passages/wayBetween.ts`, as the passages' ways play, [[Passages]]). A way
 into a locked node ([[World Map]], "Seen whole, reached by nodes") is shut: it offers "<name> is locked", and E there
 does nothing.

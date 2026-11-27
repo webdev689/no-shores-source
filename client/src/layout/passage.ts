@@ -1,7 +1,7 @@
 // The ways between a patrol area and its instances: standing in a gate's basin a player may go through it into the
 // instance it leads to, arriving at the instance's way in; standing at an instance's way in, back out to the gate.
 // A gate the layout marks as crossing to another patrol area (Saltmere's three link each to both others) crosses to
-// it, arriving at its gate toward the one left.
+// it, arriving at its way across toward the one left, a step inside the run's end arena it stands in, facing into it.
 import type { NodeLayout } from './layouts.ts';
 
 type Point = readonly [number, number];
@@ -15,13 +15,21 @@ interface Named {
 }
 
 /** A way through: the node it leads to, its name, whether it leads into an instance, whether it crosses to another
- *  patrol area, and where in that node the player arrives. */
+ *  patrol area, where in that node the player arrives, and the point they arrive facing. */
 export interface Passage {
   readonly to: string;
   readonly name: string;
   readonly into: boolean;
   readonly across: boolean;
   readonly arrive: Point;
+  readonly face: Point;
+}
+
+/** The middle of the end arena of `layout`'s run nearest `spot`, or null with no runs. */
+function endArena(layout: NodeLayout, spot: Point): Point | null {
+  const ends = (layout.runs ?? []).flatMap((run) => run.beats.slice(-1).map((beat) => beat.at));
+  const far = (end: Point) => Math.hypot(end[0] - spot[0], end[1] - spot[1]);
+  return ends.reduce<Point | null>((best, end) => (best && far(best) <= far(end) ? best : end), null);
 }
 
 /** The way through the gate or way in the player stands in, in a node's layout, or null. */
@@ -43,11 +51,14 @@ export function passageAt(
   // were.
   const meeting = there.areas.find((each) => each.leads_to === here);
   const across = area.crosses === true;
+  const arrive = meeting?.at ?? target.spawns[0] ?? target.centre;
   return {
     to: target.id,
     name: target.name,
     into: area.kind === 'gate' && !across,
     across,
-    arrive: meeting?.at ?? target.spawns[0] ?? target.centre,
+    arrive,
+    // Across, facing into the end arena the way across stands in (crates/layout crossings.rs).
+    face: (across && endArena(there, arrive)) || target.centre,
   };
 }

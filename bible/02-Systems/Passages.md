@@ -438,14 +438,16 @@ and from the way down the place is drawn as on foot, the player's inputs held, a
 way has played. The walks are the room's own: the way steps the body forward (`FootAsk.walk`), so it walks as any
 body does and stops where the ground and solids stop it. A way on is asked of the room only once the zone beyond is
 laid (`laidOrTold`), or the player is told it cannot be. A way that fails brings the veil down and takes the player
-back, to the patrol zone from a zone, or to the hub, told why (`wayOut`, `tripOrBack`).
+back, to the patrol zone from a zone, or to the hub, told why (`wayOut`, `tripOrBack`); so does a join that has not
+settled 40 s after the room was left (`JOIN_WAIT_S`), and a room's socket that has not welcomed the player 15 s after
+it was asked fails the join (`WELCOME_WAIT_MS`, `roomConnection.ts`), so no way is held over the island for good.
 
 | Beat | Seconds | What is seen |
 |---|---|---|
 | Leave | 1.5 at most | The character turns to the mouth taken and walks into it, the foot's own camera following; the room is left once they reach it. A Home and a crossing gate have none |
 | Rise | 1.5 | From where the foot's camera last stood up to the island seen whole, framed as an island's side is framed from the ship (`frameSide`), every zone of the web inside the picture |
 | Draw | 2 | The way so far (the patrol zone and each zone passed this dive) shown, and the way being taken drawn a dot at a time, 10 a leg, to the next zone's place |
-| Wait | until ready | Held over the island while the room gone to is joined (`wayClock`), a hollow's kits asked for meanwhile (`isles.warm`); then while the place is drawn unseen under the island until it has drawn whole (`drawnWhole`); 20 s at most from the join (`READY_WAIT_S`, as the veil waits) |
+| Wait | until ready | Held over the island while the room gone to is joined (`wayClock`; 40 s at most, `JOIN_WAIT_S`, then the way fails back), a hollow's kits asked for meanwhile (`isles.warm`); then while the place is drawn unseen under the island until it has drawn whole (`drawnWhole`); 20 s at most from the join (`READY_WAIT_S`, as the veil waits) |
 | Down | 1.5 | Above ground, from a low framing over the arrival (3 m back, 10 m up, looking 12 m past it) into the foot's own camera (`settledShot`); under ground, where rock and ceilings stand over the place, none: the way cuts to the foot's own |
 | Walk | 1.5 | The character walks in from where the room stood them, the foot's own camera behind, kept out of the walls as on foot |
 
