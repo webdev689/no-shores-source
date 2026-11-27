@@ -131,8 +131,9 @@ test('a landmass with a city and nodes opens, edits, undoes, saves and reopens u
   tools.finish();
   tools.press('spawn', [east + 100, south + 100], 10);
   tools.press('city', [east + 50, south], 10);
-  assert.equal(places().nodes?.length, 12);
-  assert.deepEqual(places().nodes?.[11]?.spawns, [
+  const placed = places().nodes ?? [];
+  assert.equal(placed.length, 20, 'Saltmere’s nineteen and the new one');
+  assert.deepEqual(placed[placed.length - 1]?.spawns, [
     [east, south],
     [east + 100, south + 100],
   ]);
