@@ -216,14 +216,15 @@ fn front_of(yaw: f64) -> Side {
 impl Dungeon {
     /// Braziers flanking a doorway from the corridor side, where the room's own wall beside it holds none: in the
     /// corridor's cell past the jambs, either side of the opening, so the way through stays its full width. None where
-    /// that cell opens onto a room either side of the way, which its jambs would meet, or a torch burns within half a
-    /// metre.
+    /// that cell opens either side of the way onto a room, which its jambs would meet, a flight, whose mouth it would
+    /// stand in, or a gallery's open air, whose balustrade it would meet; or where a torch burns within half a metre.
     pub(crate) fn flank_outside(&mut self, cell: usize, side: Side) -> bool {
         let Some(next) = self.beside(cell, side).filter(|&next| self.cells[next] == crate::Cell::Corridor) else {
             return false;
         };
         let across = [side.clockwise(), side.clockwise().opposite()];
-        if across.iter().any(|&way| self.beside(next, way).is_some_and(|at| self.room_at(at).is_some())) {
+        let open = |at: usize| !matches!(self.cells[at], crate::Cell::Rock | crate::Cell::Corridor);
+        if across.iter().any(|&way| self.beside(next, way).is_some_and(open)) {
             return false;
         }
         let [x, y] = self.centre(cell);
@@ -242,9 +243,9 @@ impl Dungeon {
             .collect();
         let near_flame = |solid: &[f64; 5]| {
             self.torches.iter().filter(|torch| self.cell_at(torch.at) == next).any(|torch| {
-                let ddx = (solid[0] - torch.at[0]).max(torch.at[0] - solid[2]).max(0.0);
-                let ddy = (solid[1] - torch.at[1]).max(torch.at[1] - solid[3]).max(0.0);
-                ddx * ddx + ddy * ddy < OUTSIDE_FLAME_M * OUTSIDE_FLAME_M
+                let gap_x = (solid[0] - torch.at[0]).max(torch.at[0] - solid[2]).max(0.0);
+                let gap_y = (solid[1] - torch.at[1]).max(torch.at[1] - solid[3]).max(0.0);
+                gap_x * gap_x + gap_y * gap_y < OUTSIDE_FLAME_M * OUTSIDE_FLAME_M
             })
         };
         let taken = self.fixtures.iter().any(|fixture| fixture.solid.is_some() && self.cell_at(fixture.at) == next);

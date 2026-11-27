@@ -130,7 +130,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **A beginning, a middle and an end, with more ways** ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]],
   [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]]). A dungeon has a beginning, the way in's
   room on the top storey of the first block; a middle, the blocks between; and an end, on the deepest storey of the
-  last block, where the Reeve and the return portal stand. The main way (`main_way`) is the walk from the way in's
+  last block a walk reaches, where the Reeve and the return portal stand. The main way (`main_way`) is the walk from the way in's
   cell to the end room's nearest, each step back to the lowest-numbered cell one step nearer the way in; side ways,
   loops, vaults and the storeys round it are found by looking round.
 - **Its size.** A dungeon is two to five blocks of 51.2 m, each count as likely, drawn on its own lane
@@ -190,8 +190,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   such pair on a tie; then each pair the tree left unjoined is joined one time in min(0.3, 2 / its nodes). Each join
   is the cheapest way: rock costs 3, a room 2, a corridor 1, so ways reuse ways. A way never crosses the rim but at a
   doorway, never cuts a stone, and never takes a cell its plan keeps (a flight, the rock beside it, a gallery's open
-  air and the rock round it). Over 2000 dungeons a dungeon holds 13.8 loops on average and 43 at most, counted over
-  its rooms and open cells. A storey that is not one walk, has two dead ends (rooms of one doorway) or more, has no
+  air and the rock round it). Over 2000 dungeons a dungeon holds 4.4 loops on average and 24 at most, counted over
+  its rooms and open cells, a flight's cell one on both its storeys. A storey that is not one walk, has two dead ends (rooms of one doorway) or more, has no
   room and no gallery, or (the way in's) no room against rock for its exit door, tries again on the next of sixteen
   seeds, and past them takes its simplest form, one room of 3 by 3: about one storey in a hundred. A dungeon is one
   walk, since each storey is, each flight joins its two and the doorways join the blocks.
@@ -216,7 +216,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   way is lit and marked before it opens: on its wall 1.55 m either side of its middle, past its arch (1.3 m) and a
   sconce's reach (0.2 m), or, where its cell is the room's corner that way, in the middle of that side wall. Then on each room's quiet cells on every third
   diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; at
-  each landing, so a flight is lit from both its ends; and on every fourth corridor cell of a block storey, row by
+  each landing, so a flight is lit from both its ends, a landing two flights share once; and on every fourth corridor cell of a block storey, row by
   row, but one already lit. Each of these stands in the middle of its cell's wall, none
   over the exit door or the portal, and none within 2.4 m of another of its room's, which would read as a pair.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
@@ -248,8 +248,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **The way on** (`way_on`): the doorway the main way leaves a room by. Before its purpose furnishes a room on the
   main way (but the end), a pair of braziers flanks its way on: on the room's wall either side of it where both cells
   there are its quiet cells with rock on that wall, else in the corridor's cell past it (`flank_outside`), past the
-  jambs either side of the opening, 0.05 m clear of them, where no room opens off that cell across the way and no
-  torch burns within 0.5 m. A room off the main way has no way on, and its side ways take none. Over 2000 dungeons
+  jambs either side of the opening, 0.05 m clear of them, where no room, flight or gallery's open air opens off
+  that cell across the way and no torch burns within 0.5 m. A room off the main way has no way on, and its side ways take none. Over 2000 dungeons
   braziers flank 6 ways on in 10.
 - **Lights.** Beside its torches a purpose lights its room: braziers (a solid 0.6 m square and 1 m high) either side
   of the end's door or the way on, or nearest the middle; candles on its tables', lecterns', altars' and coffins'
@@ -272,11 +272,11 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Where foes stand** (`nearest_middle`): a room's free cells nearest its middle, its quiet cells first and then the
   rest, so a smaller band's cells are always the first of a larger's.
 - **The walk.** Each room's walk is the fewest cells crossed from the way in's cell, down and up the flights; open
-  air is no floor, so the walk never crosses it (`walk_from`). The end is the farthest room by walk on the deepest
-  storey of the last block; every room of the way in's storey lies nearer.
+  air is no floor, so the walk never crosses it (`walk_from`). The end is the farthest room by walk on the last
+  block's deepest storey a walk reaches; every room of the way in's storey lies nearer.
 - **Storeys** (`storeys`): a dungeon holds one to three (`STOREYS_MOST`), stacked downward `STOREY_M` (8 m) apart from
   the way in's: storey k's floor is -8k m. `cells` and `ceilings` hold a plane of `columns` by `rows` for each storey,
-  storey by storey, so a one-storey dungeon's cells and their numbers are the whole grid's as before. A cell's number
+  storey by storey, so a one-storey dungeon's cells and their numbers are its whole grid's. A cell's number
   names its storey (`storey_of`, `floor_of`); `centre` stays (x, y), `standing_point` adds its floor. A ceiling is
   over the cell's own floor. Each room names its storey, and a pillar's top is absolute. Each room's props, fixtures,
   torches and landmark stand on its storey's floor, every point's z absolute. `hand_made::two_storeys` lays two
@@ -363,7 +363,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   air or in rock, the storey whose floor lies nearest them (`storey_of_feet`). A move is walled where it crosses that
   storey's rock, where it ends in a column with no span holding the feet (its floor within a step of them and its
   ceiling over a crouched body's head, 1 m; under the
-  deepest storey's floor and over the top storey's ceiling nothing bounds a span, as nothing bounded the one floor),
+  deepest storey's floor and over the top storey's ceiling nothing bounds a span),
   or where it ends nearer than a body's half-width (0.35 m) to that storey's rock or a solid standing on it and nearer
   than it began: a body slides along a wall, steps away from one, and never stands in its face. Inside a solid, as a shove
   might leave it, its nearness is less than nothing by its depth, so it walks out and never deeper. Movement climbs
@@ -650,8 +650,8 @@ as standing none (`readDungeon`).
   light (`Light.space`, a u32 lane of its own, its bits as they are) reaches its storey and each join of its storey with a cell
   within its reach. The shader skips a light whose mask shares no bit with the surface's, still water's gleams too.
   The 32 lights are picked by distance among those that reach a space the eye may see (`seenFrom`): its storey's, and
-  within 16 m of a join the join's and the storey beside it. The clusters are unchanged, so the cost is too: a mask
-  test a listed light.
+  within 16 m of a join the join's and the storey beside it. The clusters pick no light by storey, so the
+  storeys cost a mask test a listed light.
 - **The camera on a flight** keeps under its sloped ceiling: the ceiling over a point of a flight is its slope there
   and 3.2 m (`ceilingAt`).
 - **What its light costs.** Each frame the page cuts the view into clusters (`LightClusters`): 16 tiles across the

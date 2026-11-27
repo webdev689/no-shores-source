@@ -135,11 +135,19 @@ impl Dungeon {
             dungeon.way_in = WallDoor { cell, side, room: dungeon.room_at(cell).unwrap_or(0) };
         }
         let steps = dungeon.walk();
-        let deepest = owned.last().and_then(|storeys| storeys.last()).cloned().unwrap_or(0..0);
-        dungeon.end = deepest
-            .filter(|&room| dungeon.rooms[room].walk != u32::MAX)
-            .max_by_key(|&room| (dungeon.rooms[room].walk, core::cmp::Reverse(room)))
+        // The end: the last block's farthest walked room on its deepest storey a walk reaches.
+        let last_block = owned.last().map_or(&[][..], Vec::as_slice);
+        dungeon.end = last_block
+            .iter()
+            .rev()
+            .find_map(|rooms| {
+                rooms
+                    .clone()
+                    .filter(|&room| dungeon.rooms[room].walk != u32::MAX)
+                    .max_by_key(|&room| (dungeon.rooms[room].walk, core::cmp::Reverse(room)))
+            })
             .unwrap_or(0);
+        debug_assert!(last_block.iter().any(|rooms| rooms.contains(&dungeon.end)), "the end lies in the last block");
         dungeon.main_way = dungeon.main_way_of(&steps);
         dungeon.portal = dungeon.portal_spot(&steps);
         // The portal's torches first: the rooms' keep clear of them.

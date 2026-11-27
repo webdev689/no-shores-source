@@ -149,13 +149,15 @@ fn every_dead_end_holds_a_chest_a_vault_a_landmark_the_way_in_or_the_end_and_a_s
 
 #[test]
 fn loops_come_now_and_then_as_the_forge_joins_a_storey() {
-    // Loops counted over a graph whose nodes are rooms and open cells but theirs: its edges past a tree's.
+    // Loops counted over a graph whose nodes are rooms and open cells but theirs, a flight's cell one node on both
+    // its storeys: its edges past a tree's.
     let (mut loops, mut most) = (0, 0);
     for dungeon in DUNGEONS.iter() {
         let node = |cell: usize| match dungeon.cells[cell] {
             Cell::Rock | Cell::Void => None,
             Cell::Room(number) => Some(usize::from(number)),
-            Cell::Corridor | Cell::Stair(_) => Some(dungeon.rooms.len() + cell),
+            Cell::Corridor => Some(dungeon.rooms.len() + cell),
+            Cell::Stair(_) => Some(dungeon.rooms.len() + dungeon.cells.len() + cell % dungeon.plane()),
         };
         let mut joined = std::collections::BTreeSet::new();
         let mut nodes = std::collections::BTreeSet::new();
@@ -171,7 +173,7 @@ fn loops_come_now_and_then_as_the_forge_joins_a_storey() {
         most = most.max(found);
     }
     let average = share(loops, COUNT);
-    assert!((8.0..20.0).contains(&average) && most < 60, "{average} loops a dungeon on average, at most {most}");
+    assert!((3.0..6.0).contains(&average) && most < 40, "{average} loops a dungeon on average, at most {most}");
 }
 
 #[test]
@@ -285,6 +287,15 @@ fn a_walk_steps_onto_and_off_a_flight_at_its_landings_alone() {
                     |(end, landing): (usize, usize)| [cell, next] == [end, landing] || [next, cell] == [end, landing];
                 assert!(ends.into_iter().any(step), "a step from {cell} to {next} past flight {number}'s landings");
             }
+        }
+    }
+}
+
+#[test]
+fn each_torch_burns_alone_even_on_a_landing_two_flights_share() {
+    for dungeon in DUNGEONS.iter() {
+        for (number, torch) in dungeon.torches.iter().enumerate() {
+            assert!(!dungeon.torches[..number].contains(torch), "two torches at {:?}", torch.at);
         }
     }
 }

@@ -86,8 +86,11 @@ impl Dungeon {
             .map(|(on, at)| on * plane + at)
             .filter(|&cell| self.square_of(cell) == square)
             .collect();
+        // A landing two flights share is lit once.
         for landing in landings {
-            self.torch_on(landing);
+            if !self.torches.iter().any(|torch| self.cell_at(torch.at) == landing) {
+                self.torch_on(landing);
+            }
         }
         let mut corridors = 0;
         for y in 0..BLOCK_CELLS {

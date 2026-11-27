@@ -201,7 +201,12 @@ fn measure_the_pace() {
         for number in 0..dungeon::PER_PATROL {
             let Some(mut room) = Room::dungeon(patrol, number, Some((1, 1))) else { continue };
             let (seed, style) = dungeon::of_patrol(patrol, number);
-            let walk = dungeon_walk(&dungeon::Dungeon::forge(seed, style), &room);
+            let laid = dungeon::Dungeon::forge(seed, style);
+            // A walk under ground maps one storey: a deeper dungeon is left out of the measure.
+            if laid.storeys > 1 {
+                continue;
+            }
+            let walk = dungeon_walk(&laid, &room);
             row(&format!("Patrol dungeon ({patrol} {number})"), clear_all(&mut room, Some(walk)));
         }
     }
@@ -210,7 +215,11 @@ fn measure_the_pace() {
         let Some(mut room) = Room::dungeon_run(&of, Difficulty::Normal, 29_919_420) else { continue };
         crate::encounters::encounters_tests::unseal(&mut room);
         let (seed, style) = crate::elite_laid(elite.id).expect("its dungeon");
-        let walk = dungeon_walk(&dungeon::Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS), &room);
+        let laid = dungeon::Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
+        if laid.storeys > 1 {
+            continue;
+        }
+        let walk = dungeon_walk(&laid, &room);
         row(&format!("Elite Dungeon ({})", elite.id), clear_all(&mut room, Some(walk)));
     }
 }
