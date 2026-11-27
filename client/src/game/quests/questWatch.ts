@@ -15,7 +15,6 @@ import {
   giftsBetween,
   greetBetween,
   keptOf,
-  lessonsBetween,
   metBetween,
   momentsBetween,
   stepsBetween,
@@ -63,7 +62,7 @@ export class QuestWatch {
       if (after.task === 0 && after.counts.every((count) => count === 0)) this.begin(after.quest);
     } else if (after && before && !behind(before, after)) {
       this.kept = after;
-      notices = [...lessonsBetween(before, after), ...stepsBetween(before, after), ...giftsBetween(before, after)];
+      notices = [...stepsBetween(before, after), ...giftsBetween(before, after)];
       moments = past ? momentsBetween(before, after) : [];
       this.hold([...this.greet(before, after), ...metBetween(before, after), ...linesBetween(before, after)], 0);
       const begins = after.task === 0 && before.quest !== after.quest && this.begin(after.quest);
