@@ -26,9 +26,10 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 2. Read `bible/03-Code/Toolkit.md` (how to use each tool and worker) and `bible/Hand-off.md`.
 3. Run `graphify update .`, then task-observer's scan:
    `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh ${SHARED_DIR:-$HOME/toolkit-data}/task-observer`.
-4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `headroom learn --project . --apply` (say so if
-   Gemini is unreachable, or if it finds no data because the session started in another folder; never apply it to
-   that folder's repository), then rewrite `bible/Hand-off.md`, and last
+4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `headroom learn --project .` (it only suggests:
+   keep a lesson only once checked against this file; say so if Gemini is unreachable, or if it finds no data because
+   the session started in another folder), then `bash tools/claude-toolkit/held-branches.sh` (push each branch it
+   lists, or say it will be lost), then rewrite `bible/Hand-off.md`, and last
    `bash tools/claude-toolkit/toolkit-data.sh save` (the observation log, to the branch `toolkit-data`), so nothing
    logged after it is lost.
 
