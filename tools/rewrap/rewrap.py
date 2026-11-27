@@ -11,7 +11,7 @@ import re
 import sys
 
 WIDTH = 120
-REFUSED = re.compile(r'^\s*(\S+):(\d+)  \[(?:comments|vault)\] a \d+-character line')
+REFUSED = re.compile(r'^\s*(.+?):(\d+)  \[(?:comments|vault)\] a \d+-character line')
 CODE_LEAD = re.compile(r'^(\s*)(//!|///|//|#|/\*\*|/\*|\*(?!/)|"""|\'\'\')?([ \t]*)((?:[-*+]|\d+[.)])[ \t]+)?')
 NOTE_LEAD = re.compile(r'^(\s*)((?:>[ \t]?)*)([ \t]*)((?:[-*+]|\d+[.)])[ \t]+)?')
 # A word Markdown (and so rustdoc) would read as a block's start if a line began with it.
@@ -136,9 +136,9 @@ def rewrap_file(path, numbers):
 
 
 def comparable_words(text, note):
-    """The file's words with comment marks dropped: the rewrap must leave this sequence exactly as it was."""
+    """The file's words with comment and quote marks dropped: the rewrap must leave this sequence exactly as it was."""
     if note:
-        return text.split()
+        return [word for line in text.split('\n') for word in re.sub(r'^\s*(?:>[ \t]?)*', '', line).split()]
     return [word for line in text.split('\n') for word in line[len(CODE_LEAD.match(line).group(0)) :].split()]
 
 
