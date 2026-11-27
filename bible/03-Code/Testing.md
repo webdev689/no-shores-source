@@ -37,6 +37,11 @@ request's head, in three parts at once; before a push, the tests of what changed
 - **A client view that must line up with a rules answer** is tested by driving it on the real WebAssembly rules and
   projecting their output. A gated feature is checked live in the player's plainest mode: no account, a fresh
   character.
+- **What the page's and server's tests read is built, not committed**: the messages, the WebAssembly and the files
+  `cargo test -p protocol` writes. `npm run -s fixtures` refreshes all three: run it after any change under `crates/`
+  or to a `.fbs`, and after every merge, or a test fails on the stale copy (a server test's "entry is not a function").
+  The type check is `npm run -s types`, which covers the server's, the site's and the desktop app's; a bare
+  `tsc -p tsconfig.json` covers only the client.
 - **GPU code** is checked in a browser with WebGPU; the pure parts around it (sizes, layouts, maths) are unit-tested.
 - **The desktop app** is packed for Linux and started on the game's own build by `desktop.yml` whenever it changes,
   until its log says the game's adapter came up ([[Desktop App]]).
@@ -75,9 +80,10 @@ request's head, in three parts at once; before a push, the tests of what changed
   under it moves.
 - "The same to the bit" for a heavy pure stage (the navmesh bake and the like) cites a diff: an ignored test prints
   `name digest` for every real input, run on the base and after, then `diff`, saying how many compared.
-- To compare an older commit's speed with the current one, build it in a worktree. Two trees sharing a target folder
-  write their binaries to one path, so copy each out under its own name right after its build, and check with `cmp`
-  that they differ. An instruction count from callgrind does not move with the machine's load.
+- To compare an older commit's speed with the current one, build it in a worktree, into that worktree's own
+  `target/`. Never point two checkouts at one `CARGO_TARGET_DIR`: each overwrites the other's binaries, and
+  `cargo xtask check` refuses one outside the checkout. An instruction count from callgrind does not move with the
+  machine's load.
 
 ## What we do not do
 
