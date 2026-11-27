@@ -407,8 +407,8 @@
       }
     },
     "schooner": {
-      "mesh": "ships/2f7031179ce4276701f5e3b5a0679f6b140b21a0eae01d1fa61a432848f20201.mesh",
-      "source": "sources/ec53423c86f6850e2a9de7dbe8740a878f0761b6b625a9fa5afd0b618bad1ac3.blend",
+      "mesh": "ships/e9d2504151b87abc1ddfaf37432cad44f42435f4ad87786f2e24431750c53312.mesh",
+      "source": "sources/6c48e651543924eeddf6b1e14c04f8528357a5a266f62a6fcfd17268a4283c70.blend",
       "waterline": {
         "level_m": 1.2,
         "length_m": 25.1942,
@@ -958,8 +958,8 @@
       }
     },
     "brig": {
-      "mesh": "ships/a74ed0e31e9b48be92ecce189bb844e0cc9478f4fb7fde334ceaea714500cfc0.mesh",
-      "source": "sources/5f2334d93cf692b1993c452960bff2c7932a2af9940b241c2eee715f6d12269a.blend",
+      "mesh": "ships/4ceb950de760c0734dcdfd08c337763024f1f1d2cd979b5de8301a6953ca5d5b.mesh",
+      "source": "sources/367dd430ffe3b7dbe0f6c1f187d3d3700c718242c9faae9574a4c4009fc145f2.blend",
       "waterline": {
         "level_m": 1.2,
         "length_m": 30.7446,
@@ -1829,8 +1829,8 @@
       }
     },
     "frigate": {
-      "mesh": "ships/f5bf728ca728c5f49248ae01ac79689d91f578957c3f9c070633eeb979eaee64.mesh",
-      "source": "sources/cd7c9338e3d7ace9ab859cc2a24cd4afb34fbff4259c6429eced1fd199fd14eb.blend",
+      "mesh": "ships/d1a4a78b9c0d281693c560fd598f59baea4691de73247a28036956e853ffa730.mesh",
+      "source": "sources/baadf71c0eeef8d7d5044b19362bc2aea5f67e076d4213894b17c6f05860dbd2.blend",
       "waterline": {
         "level_m": 1.2,
         "length_m": 38.0581,
