@@ -52,4 +52,4 @@ answered:
 
 Still open: how long the Axis stays unseen, and what calls in the deep ([[Open Questions]]).
 
-Not built yet: the Axis in the lore, the brief's cliffs, and the bounties' lines.
+Built ([[Lore]], [[Activities]]; Claude's calls in [[The Open Questions' Answers as Claude Builds Them]]).

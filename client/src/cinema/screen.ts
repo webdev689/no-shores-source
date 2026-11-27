@@ -189,7 +189,7 @@ export class Screen {
         bar(true),
         bar(false),
         this.dark > 0 && { id: 'cinema-dark', width, height, fill: BLACK, opacity: this.dark, float: { to: 'screen' } },
-        this.insertNode(width, height, now),
+        this.insetNode(width, height, now),
         this.titleNode(width, height, now),
         this.promptNode(width, height, now, still),
         this.skipNode(now),
@@ -216,7 +216,7 @@ export class Screen {
   }
 
   /** The insert, three wide to two tall, across 60% of the view's width or height at most, in its middle. */
-  private insertNode(width: number, height: number, now: number): Child {
+  private insetNode(width: number, height: number, now: number): Child {
     const [shown, insert] = [this.inserted.value(now), this.insert];
     if (shown <= 0 || !insert) return null;
     const wide = Math.round(Math.min(640, width * 0.6, height * 0.9));

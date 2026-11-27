@@ -70,4 +70,7 @@ Asked whether a death by a fall and a death in a fight should look the same, the
 - **Other players' damage numbers and the like are not seen from far away**, a fault to fix ([[Interface]]).
 - **Both deaths share one look** ([[Game]]).
 
-Not built yet: all of it but the "!" mark, the break's silence and land hiding plates, which stand.
+Built ([[Enemies]], [[Gear]], [[Game]], [[Interface]]; Claude's calls in
+[[The Open Questions' Answers as Claude Builds Them]]). Already so: the "!" mark, the break's silence, land hiding
+plates, and every dungeon's foes carrying shields. A Miniboss or Boss is drawn larger, but the rules' body it is struck
+by is not; the foes of a public event still carry none ([[Open Questions]]).

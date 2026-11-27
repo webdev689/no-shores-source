@@ -31,4 +31,6 @@ goes, the owner answered:
   ([[The Enemies as Claude Builds Them]]).
 - **The Covenant waits**: how deep it goes, and when the player learns it, is for later ([[Open Questions]]).
 
-Not built yet: the chart in the prologue ([[Prologue]]), and the lore's lines on the Tithe's sails ([[Lore]]).
+Built ([[Prologue]], [[Lore]]; Claude's calls in [[The Open Questions' Answers as Claude Builds Them]]). The owner's
+premise ([[No Shores]]) and the website's copy of it still call the Tithe's ships unmarked: those words are the owner's
+own to change.

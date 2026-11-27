@@ -49,4 +49,6 @@ to Prestige 30), the owner chose:
   ([[The Drowned Vale as Claude Builds It]]).
 - **Forged weapons climb to the higher Prestige**, as Hard's armour does ([[Breach Weapons Come Normal and Forged]]).
 
-Not built yet: all of it.
+Built ([[Breaches]], [[Gear]]; Claude's calls in [[The Open Questions' Answers as Claude Builds Them]]). Already so: the
+Unlit Ways waited on every living player, and a run let in its company's members as the company stood; only its relaunch
+window, 30 minutes, is now the gate's day.

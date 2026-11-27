@@ -44,4 +44,6 @@ Asked which, the owner chose:
 - **A house piece may drop in the dungeons too**: the patrols' dungeons, the Elite and Abyss Dungeons, the sea's
   dungeons and the Breaches ([[Magic and Rare House Pieces Drop in the World, for the Pledged House]]).
 
-Not built yet: all of it but Conduit, which stands.
+Built ([[Arts]], [[Combat]], [[Movement]], [[Gear]]; Claude's calls in
+[[The Open Questions' Answers as Claude Builds Them]]). Already so: a hang kept its facing; its shimmy and going over
+are built.

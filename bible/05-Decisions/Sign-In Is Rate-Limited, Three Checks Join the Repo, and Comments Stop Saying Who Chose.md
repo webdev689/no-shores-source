@@ -71,4 +71,5 @@ Asked whether the bake should read the dungeon crate's families too, the owner a
 - **The Overworld's rise and fall stays out** ([[Pick - Overworld]]).
 - **The bake reads the dungeon crate's families.**
 
-Not built yet: the rate limit, the fixes, the comments, the checks, the cache and the bake.
+Built ([[Accounts]], [[Checks]]; Claude's calls in [[The Open Questions' Answers as Claude Builds Them]]). Already so:
+the vault check refused a wiki link split over two lines, and the bake read the dungeon crate's families.

@@ -43,4 +43,7 @@ Asked whether the page should play online by default, without `?room=`, the owne
 - **A join reaches a friend on any landmass** ([[The Roster and Emblems as Claude Shapes Them]]).
 - **The page plays online by default**, with accounts, without `?room=`.
 
-Not built yet: all of it.
+Built ([[Interface]], [[Prologue]], [[Server]]; Claude's calls in
+[[The Open Questions' Answers as Claude Builds Them]]). Already so: the room kept the story played with the character;
+signing in at the helm on a new browser now goes on past it. Not built yet: reporting a chat line, which exists on no
+device yet, and so its button on the pad: what reporting a line does is the owner's to say ([[Open Questions]]).

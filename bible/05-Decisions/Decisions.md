@@ -410,6 +410,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 Claude's choices where the owner handed a system over ("take some autonomy"), each the owner's to change. They
 are not decisions: each links the owner's decision it builds on, and is typed `claude-calls`.
 
+- [[The Open Questions' Answers as Claude Builds Them]], by the owner's answers to the Open Questions
 - [[The World as Claude Shapes It]]
 - [[The Enemies as Claude Builds Them]]
 - [[Gear as Claude Shapes It]]

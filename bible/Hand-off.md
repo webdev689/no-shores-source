@@ -9,9 +9,10 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **Merging on the owner's yes once CI passes on its head**: #221 (hostile ships and islands on the sea map, travel
-  anywhere at sea as a fade, home waters sheltered, unnamed islands' seas locked; `main` with #216, #227 and #231
-  taken in). A merge deploys the page, the site, the rooms and the bot, and releases the desktop app.
+- **For the owner's yes once CI passes on its head**: #234 (the owner's answers to the Open Questions, recorded and
+  built: the sea, foes and fighting, the patrol zones' folk, the Drowned Vale, the lore, the page, and the repo's
+  rate limit, workflows and two new checks). A merge deploys the page, the site, the rooms and the bot, and releases
+  the desktop app.
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
@@ -106,34 +107,12 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
-- **The owner's answers to the Open Questions**, walked through one at a time, each to build as its decision says:
-  - The prologue's chart that disagrees with the coast, and the lore's Tithe sails marked
-    ([[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]]).
-  - At sea ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]): friendly ships
-    for the three houses; the seas' Elite and Abyss tiers removed; travel aboard a company member's ship; a Sloop
-    able to flee a Boss; travel keeping the hostile clock, and its three small faults; the week's run only from a
-    port docked at; a parked ship's plate following its player's username and guild tag.
-  - The lore and the factions
-    ([[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]): the Axis
-    in the lore, the Pearl Tomb's brief to cliffs, and a line of its tale on each bounty's card.
-  - Foes ([[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]): Minibosses and Bosses drawn
-    larger; the Court dark at Elite; places in a patrol zone holding only civilians and guards (which, Claude's
-    call); the arrivals' sound sheet; shields that regrow, carried by dungeon and Breach foes too; other players'
-    damage numbers seen from far away; one look for both deaths.
-  - The Drowned Vale ([[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]):
-    the run following the company; a checkpoint at each encounter's start, reset from the Playlist; the gate kept
-    over a deploy; the Ways waiting on every living player; Forged weapons climbing to Hard's Prestige.
-  - Fighting and gear
-    ([[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]): Volt's boost
-    lighting the character; Exposure halving the drink; a lip hung as caught; old saves given the Ranged weapon;
-    house pieces dropping in the dungeons and the Breaches.
-  - The page
-    ([[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]): the
-    story's mark with the character; the room deciding the garments; Graphics' own settings; the pad's chat and
-    report buttons; a join to any landmass; online by default.
-  - The repo ([[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]): a
-    sign-in rate limit at Cloudflare; the workflows' and that audit's seven points; the 158 comments; three new
-    checks; the ship meshes cached in CI; the dungeon crate in the bake.
+- **After #234** ([[The Open Questions' Answers as Claude Builds Them]]): a friendly ship in a fight still flies
+  Overlook's blue; travelling aboard another's ship has no getting off at will, no fight of the captain's shown, the
+  helm's controls still offered, no going ashore together, and no way back for one keeping no ship let off far from
+  Overlook; a Breach checkpoint moved less than a second before its last player leaves may not be stored. Its new
+  questions for the owner are in [[Open Questions]]. Not yet seen in a running game, on a real GPU or in a deployed
+  room: all of it, the sign-in limit's Cloudflare binding and a run's storage alarm among it.
 - **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
   deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
 - **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,

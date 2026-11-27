@@ -76,4 +76,8 @@ Asked whether each hull's eye frames well in the sea fight's aim, the owner answ
 - **The sea fight's view outside the aim wants tweaking and a better design**: a pass for later, its specifics the
   owner's ([[Open Questions]]).
 
-Not built yet: all but the console's outline, which stays as it is.
+Built ([[Sailing]], [[Naval Combat]], [[Server]]; Claude's calls in
+[[The Open Questions' Answers as Claude Builds Them]]). Already so: logging back in at sea came back at Normal. Not
+built yet: a friendly ship in a fight still flies Overlook's blue ([[Factions]], "Limits"); aboard another's ship a
+player cannot get off at will, sees no fight of their captain's, is still shown the helm's controls, cannot go ashore
+with the captain, and, keeping no ship, is let off where there may be no way back to Overlook ([[Shipyard]], "Limits").

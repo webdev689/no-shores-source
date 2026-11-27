@@ -78,4 +78,15 @@ owner has said "later" or "not now", the owner's words follow the question.
   ([[Attack Visuals Go Beyond the Limits]]): which effects stay, and at what settings (`FEEL` in
   `combat/attackFeel.ts`); the owner: "Judge once played". The mirrored view: a drawn sword, dagger or mace changes
   hands through the walk, the rest and a blow, as the forge draws none in the left fist there; the owner: "Later".
+- **From building the Open Questions' answers** ([[The Open Questions' Answers as Claude Builds Them]]):
+  - A Miniboss and a Boss are drawn 1.25 and 1.5 times as large, but the rules strike them as a man-sized body
+    (1.8 m), so a shot at a drawn Boss's head may pass over it: whether their body and reach grow too.
+  - Whether the foes of a public event carry shields, as the patrols' do; they carry none.
+  - What reporting a chat line does (which line, how it is picked, the reasons offered, what the accounts keep), so
+    the keys, the mouse and the pad can each do it; none can yet.
+  - The voyage card still reads "Seas" though it now sets only the tier of the places landed at: whether to name it
+    anew; and whether the Playlist's other runs, not only the week's, need the ship docked at a port.
+  - The owner's premise ([[No Shores]]) and the website's copy of it still say "Its unmarked vessels", while the
+    Grey Tithe now fly their colours.
+  - The arrivals' own sounds: the owner's picks from the sound sheet (`arrival.*` in `content/audio/freesound.json`).
 - **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): more emblems and where they come from.
