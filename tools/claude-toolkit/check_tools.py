@@ -669,6 +669,27 @@ def _():
         'log never restored (toolkit-data-test.sh)' if rc == 0 else o.strip()[-300:])
 
 
+@check('pr-state')
+def _():
+    rc, o = sh(['bash', KIT + '/pr-state-test.sh'], timeout=120)
+    out('PASS' if rc == 0 else 'FAIL', 'pr-state', 'pr-state.sh names a conflict with origin/main and an unpushed head '
+        '(pr-state-test.sh)' if rc == 0 else o.strip()[-300:])
+
+
+@check('R2 ship mesh')
+def _():
+    """The page's tests fetch ship meshes from R2 (shipTags.test.ts); a cloud environment's proxy may refuse it."""
+    ships = jload(REPO + '/content/ships/ships.json')
+    if not ships:
+        return out('WARN', 'R2 ship mesh', f'no content/ships/ships.json in {REPO}: not probed')
+    url = ships['base'] + next(iter(ships['ships'].values()))['mesh']
+    rc, code = sh(['curl', '-s', '-r', '0-0', '-o', '/dev/null', '-w', '%{http_code}', '--max-time', '20', url])
+    if code.strip() in ('200', '206'):
+        return out('PASS', 'R2 ship mesh', f'fetched the first byte of {url}')
+    out('FAIL', 'R2 ship mesh', f'{url} answered {code.strip() or rc}: the full check fetches it; start the session in '
+        'the `no-shores-source` environment, whose network rule allows the R2 host')
+
+
 @check('worker kit')
 def _():
     rw = open(KIT + '/workers/run-worker.sh').read()

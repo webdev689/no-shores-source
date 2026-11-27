@@ -31,7 +31,7 @@ pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped w
 MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 [ -e node_modules ] || [ ! -d "$MAIN/node_modules" ] || ln -s "$MAIN/node_modules" node_modules
 if [ -f package.json ] && { [ ! -d generated ] || ! ls client/public/*.wasm >/dev/null 2>&1 || [ ! -d target/protocol ]; }; then
-  { npm run -s schema && npm run -s wasm && cargo test -q -p protocol; } >> "$OUT/$NAME.log" 2>&1 ||
+  npm run -s fixtures >> "$OUT/$NAME.log" 2>&1 ||
     echo "run-worker.sh: the worktree's generated messages, WebAssembly or message fixtures did not build; see $OUT/$NAME.log" >&2
 fi
 [ -f .serena/project.yml ] || yes n | serena project create --name "$NAME" $(bash "$KIT_DIR/serena-languages.sh" "$WT") "$WT" >/dev/null 2>&1   # "n": extra-server prompts abort without a terminal
@@ -55,6 +55,8 @@ PY
 }
 serena_up || serena_up || echo "run-worker.sh: Serena did not answer twice; the worker starts without a warm Serena" >&2
 export MCP_TIMEOUT=120000
+# Two checkouts sharing one build folder overwrite each other's binaries mid-run; cargo xtask check refuses one outside.
+unset CARGO_TARGET_DIR
 python3 - "$WT" "$MEM" "$CFG" <<'PY'
 import json,sys
 wt,mem,cfg=sys.argv[1:4]

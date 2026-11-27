@@ -52,14 +52,43 @@ impl Repo {
     }
 }
 
-/// The workspace root: two folders above this crate's manifest.
+/// The checkout the command runs in, git's top folder from the current one: never the folder this binary was built
+/// from, which is another checkout's when two share a build folder.
 pub fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..").canonicalize().unwrap_or_else(|_| PathBuf::from("."))
+    let top =
+        Command::new("git").args(["rev-parse", "--show-toplevel"]).output().ok().filter(|out| out.status.success());
+    top.map_or_else(|| PathBuf::from("."), |out| PathBuf::from(String::from_utf8_lossy(&out.stdout).trim()))
+}
+
+/// Why a check here would test another checkout's build, or `None`. Two checkouts sharing one build folder
+/// (`CARGO_TARGET_DIR`) overwrite each other's binaries mid-run, so a result can be the other tree's.
+pub fn foreign_build(root: &Path, target: Option<PathBuf>) -> Option<String> {
+    let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    let built = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+    let built = built.canonicalize().unwrap_or(built);
+    if built != root {
+        return Some(format!("this xtask was built from {}, not {}", built.display(), root.display()));
+    }
+    let target = target?;
+    let target = std::env::current_dir().map_or_else(|_| target.clone(), |cwd| cwd.join(&target));
+    let target = target.canonicalize().unwrap_or(target);
+    (!target.starts_with(&root)).then(|| {
+        format!("CARGO_TARGET_DIR is {}, outside the checkout: unset it, or point it inside", target.display())
+    })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Repo;
+    use super::{Repo, foreign_build, repo_root};
+
+    #[test]
+    fn a_build_folder_outside_the_checkout_is_refused_and_one_inside_is_not() {
+        let root = repo_root();
+        assert_eq!(foreign_build(&root, None), None);
+        assert_eq!(foreign_build(&root, Some(root.join("target"))), None);
+        let outside = std::env::temp_dir().join("shared-target");
+        assert!(foreign_build(&root, Some(outside)).is_some_and(|why| why.contains("outside the checkout")));
+    }
 
     #[test]
     fn a_file_that_is_not_utf8_is_reported_not_skipped() {
