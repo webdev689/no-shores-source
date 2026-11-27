@@ -12,6 +12,10 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - **Merging on the owner's yes once CI passes on its head**: #221 (hostile ships and islands on the sea map, travel
   anywhere at sea as a fade, home waters sheltered, unnamed islands' seas locked; `main` with #216, #227 and #231
   taken in). A merge deploys the page, the site, the rooms and the bot, and releases the desktop app.
+- **For the owner's yes once CI passes on its head**: #PRNUM (a player's feedback: M the map and N the leave, Tab and
+  the side buttons bound anywhere, the controls sheet's words first, a master volume and an interface size, the held
+  map's legend hidden on L, a landing icon's card on hover, the mouse back as a window shuts, and the sea map's names
+  laid out far less often and faster; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]).
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
@@ -105,6 +109,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   on hold, whose 48,000 renders publish with the repository's Cloudflare key.
 
 ## Next
+
+- **The players' first asks** (#PRNUM), tested offline only: the mouse taken back as a window shuts is unchecked in a
+  browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
+  2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
+  13 ms at 1920 x 1080, measured natively), and its picture's repaint and upload (4 to 18 MB) are unmeasured; lighting
+  the water under the pointer takes some 14 ms each time it crosses into another (`litCells`); the sea map's own
+  marks (islands, hostile ships) say nothing under the pointer, the landings' tiles alone do; the Legend has no pad
+  button until one is bound.
 
 - **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
   deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
