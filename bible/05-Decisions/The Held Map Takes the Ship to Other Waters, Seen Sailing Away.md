@@ -16,8 +16,12 @@ status: in force
 - **Travelling**, the camera pans in a cinematic view of the ship sailing away as the game fades and loads, then shows
   it arriving in the new waters.
 
-How it is built: [[Sailing]], [[World Map]]; Claude's choices: [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]].
+How it is built: [[Sailing]], [[World Map]]; Claude's choices:
+[[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]].
 
-Replaced in part by [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]: a course anywhere at sea, in the ship's own water too, asks whether to travel there.
+Replaced in part by
+[[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]: a course
+anywhere at sea, in the ship's own water too, asks whether to travel there.
 
-Replaced in part by [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]: a travel fades out and in, with no cinematic.
+Replaced in part by [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]: a
+travel fades out and in, with no cinematic.

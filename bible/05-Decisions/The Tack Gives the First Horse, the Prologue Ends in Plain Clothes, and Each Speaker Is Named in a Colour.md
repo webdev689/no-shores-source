@@ -32,10 +32,11 @@ Asked which city sound is the chatter, the market crowd or the city hum, the own
 - **The camera stands higher while the stranger speaks to the player** in Overlook ([[Prologue]]).
 - **Each speaker's name is shown in a colour of their own** ([[Speech]]).
 
-Replaces in part [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]
-(the stranger giving the Bay), [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]] (the player
-arriving with nothing: they arrive in plain clothes) and
-[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]] (the player's start, the prologue's end).
+Replaces in part
+[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]] (the stranger
+giving the Bay), [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]] (the player arriving with
+nothing: they arrive in plain clothes) and [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]
+(the player's start, the prologue's end).
 
 ## Claude's calls
 

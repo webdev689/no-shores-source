@@ -24,4 +24,6 @@ status: in force
 - **An appearance wardrobe comes later**, showing a collected piece over what is worn.
 - This replaces clothing as cosmetic sets with an armour toggle, in [[Gear and Power Follow Destiny 1 Vanilla]].
 
-Replaced in part by [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]: the plain clothes the prologue's end dresses a player in have no stats.
+Replaced in part by
+[[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]: the plain
+clothes the prologue's end dresses a player in have no stats.

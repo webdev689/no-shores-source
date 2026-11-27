@@ -26,7 +26,8 @@ hard a foe archer's arrow should hit now that foes draw and aim their bows as pl
 - A bow, a crossbow or a gun raises no guard: left click (or `F`) fires it ([[Combat]], [[Test Ground]]).
 - Not aiming, a pull fires a quick shot at once, a bow with no charge, at the foe the soft lock holds.
 - Holding right click aims: over the right shoulder in third person, and zoomed in first person; where the camera
-  stands is [[Aiming Sits Behind the Shoulder and Zooms the View]], and how the hands zoom [[First-Person Aiming Zooms the Weapon With the View]]. It moves at half pace with no sprint, lets the lock go, and
+  stands is [[Aiming Sits Behind the Shoulder and Zooms the View]], and how the hands zoom
+  [[First-Person Aiming Zooms the Weapon With the View]]. It moves at half pace with no sprint, lets the lock go, and
   fires onto the crosshair half again as hard; a bow reaches that over a second's charge.
 - A bow in first person has the same two shots.
 - A foe archer aims and draws as a player does, but its arrow strikes as a quick shot, never half again ([[Foes]]).

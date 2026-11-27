@@ -14,7 +14,8 @@ detail should add, among richer art, more information on the node and motion, th
 ## What it settles
 
 - **Both the map's Playlist mark and the Playlist screen's crests are redrawn** in more detail (replaced for the map:
-  the Playlist is no longer marked at sea, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
+  the Playlist is no longer marked at sea,
+  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
 - **The detail is richer art and motion.**
 
 ## Claude's calls

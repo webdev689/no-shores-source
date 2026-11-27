@@ -24,4 +24,5 @@ status: in force
 - Friendly ships sail only between the three port cities. How they run between them is Claude's call
   ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 
-Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: Sunspire's waters are the Grey Tithe's, as the pirates' were.
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: Sunspire's waters are the Grey Tithe's, as the pirates'
+were.

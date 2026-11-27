@@ -64,13 +64,17 @@ status: in force
   its pace, so each ship stays in sight at least 30 s. It stays until it is out of sight. Its water sets how many come
   and of which ranks. It flies its faction's colours and flag on its rank's hull.
 - Friendly ships sail routes between ports all the time, seen from land and sea, on the same hulls in friendly
-  colours; the ports are three ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). They are the merchantmen that escorts and events need
-  ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
+  colours; the ports are three ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). They are the
+  merchantmen that escorts and events need ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 - The held map tints each water by its owner, with its name and level band, and hatches the contested seam
   ([[Held Map]]). Claude names the waters, and the owner can change any name.
 - Which port faction each friendly ship belongs to waits until later ([[Open Questions]]).
 
-Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: no water is the pirates'; the fourth is the Grey Tithe's, and the contested seam, where the pirates fought the Tithe, is gone with them. The ruined cities' waters are the Lattice's, sailed by the Grey Tithe for now ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]).
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: no water is the pirates'; the fourth is the Grey
+Tithe's, and the contested seam, where the pirates fought the Tithe, is gone with them. The ruined cities' waters are
+the Lattice's, sailed by the Grey Tithe for now
+([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]).
 
-Replaced in part by [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]: home waters reach 10 km from Overlook's island's coast, and the Lantern Sea past them
-is the Grey Tithe's.
+Replaced in part by
+[[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]: home
+waters reach 10 km from Overlook's island's coast, and the Lantern Sea past them is the Grey Tithe's.

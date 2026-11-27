@@ -58,10 +58,12 @@ the resources' own nodes and "Match the resource").
 
 - **A patrol's material nodes stand at its layout's resource places** ([[Layouts]]), each before the place its
   resource comes from. The room gathers there, still a third of them at a time ([[Server]]) (replaced in part:
-  every node stands for everyone, one gathered spent for its gatherer alone, [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
+  every node stands for everyone, one gathered spent for its gatherer alone,
+  [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
 - **No ring and no beam**: each node is drawn as a sprite of its resource baked in the owner's Blender pipeline
-  ([[Sprite Forge]]), for its detail, and the sprite alone marks it: no mark floats over it. It stands in front of its place's dressing, a few metres toward the
-  path, and the room gathers it there, every resource at one scale, half the size it was first drawn.
+  ([[Sprite Forge]]), for its detail, and the sprite alone marks it: no mark floats over it. It stands in front of its
+  place's dressing, a few metres toward the path, and the room gathers it there, every resource at one scale, half the
+  size it was first drawn.
 - **Gathering is E held about two seconds** with a progress ring and a sound, the interaction prompt alone: no tool,
   and the figure does not work the node. Moving or being hit stops it. A node gathered looks spent until it returns
   ([[Game]]). It is not done on horseback.

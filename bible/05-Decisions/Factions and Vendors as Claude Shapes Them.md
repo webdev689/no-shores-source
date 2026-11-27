@@ -9,10 +9,11 @@ The owner handed this round over: "Please take this on with autonomy, be as deta
 this is 100% finished". What the owner decided is in [[Three Factions Keep the Arts, After Destiny 1]],
 [[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]],
 [[Elder Maren Hale Welcomes the Player to Overlook]], [[Only Overlook's Social Space Opens for Now]],
-[[The Character Page Opens Appearance From an Icon Button]] and [[Each Faction Sells Gear of Its Own, in Its Own Colour]].
-Everything below is Claude's, made under that word and the owner's later "Do a comprehensive audit and detailed pass",
-and the owner may change any of it. The numbers live in `content/gear/factions.json`, `content/arts/arts.json` (`levels`)
-and `content/gear/cosmetics.json`, which the rules and the page both read.
+[[The Character Page Opens Appearance From an Icon Button]] and
+[[Each Faction Sells Gear of Its Own, in Its Own Colour]]. Everything below is Claude's, made under that word and the
+owner's later "Do a comprehensive audit and detailed pass", and the owner may change any of it. The numbers live in
+`content/gear/factions.json`, `content/arts/arts.json` (`levels`) and `content/gear/cosmetics.json`, which the rules and
+the page both read.
 
 ## Destiny 1's factions, and what came over
 
@@ -129,7 +130,8 @@ oldest giving way unsaid as more came. Everything below is Claude's.
 | Shapes | At most 200 held. A kill at Elite (Rough) seas gives one 3 times in 100, at Abyss (Storm) 6 in 100; a Boss or Miniboss 2 and 4. None at Normal (Calm) |
 | His level | His named pieces are made at level 20 and sold from level 20, as a faction's are; below it his screen dims them "From level 20", so no keeper sells a piece the buyer could not wear yet |
 
-Replaced in part by [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: no kill gives Shapes; only the week's Abyss content does.
+Replaced in part by [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: no kill gives
+Shapes; only the week's Abyss content does.
 
 Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: an Atheric's armour costs 13 Shapes and its
 weapon 23, as Xûr's exotics cost Strange Coins; a Legendary 7.

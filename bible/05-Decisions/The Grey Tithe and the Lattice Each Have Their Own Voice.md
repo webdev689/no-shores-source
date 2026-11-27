@@ -13,7 +13,8 @@ Asked which moments should get sounds of their own, drafted separately for each 
 "Alert", "Attack effort", "Hurt" and "Death".
 
 On the sheet the owner wrote "All of these" under the Grey Tithe's attack grunts and its pain grunts, "All" under its
-alerts, and "No glass" under the Lattice's swing, hurt and death. Then: "Additionally, I want to avoid sound spam from enemies".
+alerts, and "No glass" under the Lattice's swing, hurt and death. Then: "Additionally, I want to avoid sound spam from
+enemies".
 
 Freesound held no horse in water, nor boosting on stone, in any wording. Asked whether those hoofbeats should play the
 ground's until a recording turns up or stay silent: "yes play a sound in their place".

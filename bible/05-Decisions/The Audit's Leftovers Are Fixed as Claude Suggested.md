@@ -93,7 +93,8 @@ The numbers (500 an hour, 30 days, 2 minutes, 10 seconds, 1 GB) were Claude's, i
   sea is given the two random seeds a room on land is, never sent; a boarded deck's are mixed from them by its ship.
 - **11.** After a Boss's first leash, every foe it calls drops nothing for as long as it stands.
 - **12.** A patrol's nodes still turn every three minutes (replaced: every node stands, one gathered spent for its
-  gatherer alone, [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). A character keeps the latest 16 islands' nodes a day.
+  gatherer alone, [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). A
+  character keeps the latest 16 islands' nodes a day.
 - **13.** The Anima and Tenets come back as left for ten minutes, as a room already kept them for a rejoin.
 - **14.** A ship comes back where the sea last had it, as a ship sails nowhere while its player is away. A ship played
   unkept is known by its session (the token's SHA-256, never the token); a page with no session at all is no one the

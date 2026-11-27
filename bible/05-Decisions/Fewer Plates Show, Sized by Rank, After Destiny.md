@@ -13,8 +13,8 @@ status: in force
 > Shown Claude's recommendation (show an unfought foe's plate only for the one nearest the crosshair, within about 5
 > degrees, or the one the soft lock holds; keep a fought foe's plate 6 s after the last exchange, the target plate's own
 > time, then fade it; a Minor's bar short and thin, an Elite's and up longer and cut in thirds; the land hiding plates;
-> the level square kept; the target's own plate over its head left until the owner has played with which plates show): "Yep do all that
-> you recommended"
+> the level square kept; the target's own plate over its head left until the owner has played with which plates show):
+> "Yep do all that you recommended"
 
 Claude's choices in building it, for the owner to change: [[Plates as Claude Shows Them]].
 

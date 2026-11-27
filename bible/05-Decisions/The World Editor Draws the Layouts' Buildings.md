@@ -15,5 +15,5 @@ The owner's answer:
 
 ## What it settles
 
-- The World Editor's layer may import the city layer and the client's layout layer, and the editor draws each layout's buildings, props and solids
-  as the game does ([[World Editor]], [[Layouts]]).
+- The World Editor's layer may import the city layer and the client's layout layer, and the editor draws each layout's
+  buildings, props and solids as the game does ([[World Editor]], [[Layouts]]).

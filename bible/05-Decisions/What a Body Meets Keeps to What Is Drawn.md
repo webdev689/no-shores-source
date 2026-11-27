@@ -16,7 +16,8 @@ status: in force
 - No prop or solid in a patrol zone has bounds a body can climb where nothing is drawn: what a body runs into, stands
   on and climbs keeps to the shape the page draws, a few solids too costly to box so closely a little looser
   ([[Layouts]], "Boxes"; [[Forged Models]], "Parts").
-- The details are Claude's to call, below; the owner approved their cost ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
+- The details are Claude's to call, below; the owner approved their cost
+  ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
 
 ## Claude's calls
 

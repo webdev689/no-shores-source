@@ -6,7 +6,8 @@ replaced_by: "[[The Prologue Is Reworked With Real Armour, a Bow, the Storm and 
 ---
 # The Prologue's Elites Are as Hard to Bring Down as a Major
 
-Replaced by [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]: the prologue has no Elites; its foes are Minors and Majors but for Thule.
+Replaced by [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]: the prologue has no Elites;
+its foes are Minors and Majors but for Thule.
 
 > "The elite enemies are way too tanky in the prologue"
 
@@ -18,8 +19,8 @@ Thule becomes a Tithe-Mate."
 
 - The player fights the wreck with the sword and shield the story dresses them in, not bare hands.
 - The Tithe-Mate and the pirate Captain keep their elite look and have a Major's health and defence.
-- The gun deck's wave has a Tithe-Mate where a second Captain Brannoc Thule stood. Since [[Thule Fights on a Quarterdeck Twice as Long]] that zone is the
-  wreckage off her port quarter, its wave as it stood.
+- The gun deck's wave has a Tithe-Mate where a second Captain Brannoc Thule stood. Since
+  [[Thule Fights on a Quarterdeck Twice as Long]] that zone is the wreckage off her port quarter, its wave as it stood.
 
 ## Claude's calls
 

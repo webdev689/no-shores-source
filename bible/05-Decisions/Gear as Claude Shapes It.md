@@ -28,8 +28,8 @@ rules carry them out is [[Gear]].
 | Prestige a piece | Rare at level 20, 13 to 15; Legendary, 18 to 27; a Breach's Legendary, 18 to 30 (narrowed by tier in [[The Drowned Vale as Claude Builds It]]: Normal's 19 to 28, Hard's 21 to 30); Atheric, 21 to 30; Normal, Magic and Rare below 20, none | Destiny 1 at launch, its raid armour as the Breaches' (the owner: "Highest prestige drops") |
 | What that reaches | Four Rares, level 24; four Legendaries, 28; three Legendaries and an Atheric, 29; level 30 only with Breach armour | Destiny 1 at launch: level 30 took raid armour |
 
-Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a kill's XP goes by its kind and its rank, and the captain's 2,000 is gone
-([[Gear]], "A kill's pay").
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a kill's XP goes by its
+kind and its rank, and the captain's 2,000 is gone ([[Gear]], "A kill's pay").
 
 ### Attack, Defense and damage
 
@@ -71,7 +71,8 @@ offers a trait twice.
 | Their last three upgrades | 1,500 Aurem and 6 Essence each, 18 an item | Destiny 1 at launch: the last three nodes, 6 Ascendant materials each |
 | An Atheric's own node | 1,000 Aurem and 1 Essence | Destiny 1's exotics needed Ascendant materials at launch |
 
-A Breach's Legendary armour has a Legendary's columns, its upgrades 4 Prestige each instead of 3. Replaced in [[The Drowned Vale as Claude Builds It]]: 3 each, from 19 at Normal and 21 at Hard.
+A Breach's Legendary armour has a Legendary's columns, its upgrades 4 Prestige each instead of 3. Replaced in
+[[The Drowned Vale as Claude Builds It]]: 3 each, from 19 at Normal and 21 at Hard.
 
 Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: an Atheric's last three upgrades ask 8 Essence
 each and a Breach's Legendary armour's 7; an Atheric's own node asks 2,500 Aurem, 4 fragments, 10 of its resource and 1
@@ -122,7 +123,10 @@ Each Atheric has its own, which no other item offers:
 | Tidecaller's Grips | Arms | Ebb: a parry gives back 30 stamina |
 | Driftwalkers | Legs | Slipstream: a counter after a perfect dodge strikes half again as hard as a counter does, Opportunist's included (1.875 times with both) |
 
-Replaced in part by [[The Perk Pass as Claude Shapes It]]: each Atheric weapon has an intrinsic and an own node of its own, Undertow, Last Light, Tolling and Coral Guard becoming intrinsics (Coral Guard 15 stamina and a fifth of the blow back), Updraft gone, and five Atheric weapons more ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]]).
+Replaced in part by [[The Perk Pass as Claude Shapes It]]: each Atheric weapon has an intrinsic and an own node of its
+own, Undertow, Last Light, Tolling and Coral Guard becoming intrinsics (Coral Guard 15 stamina and a fifth of the blow
+back), Updraft gone, and five Atheric weapons more
+([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]]).
 
 Destiny 1's perks were for guns and space magic; these are Overlook's own, for its blades, shots and shields. Its
 armour stats (Intellect, Discipline, Strength) shortened ability cooldowns Overlook does not have, so armour has none
@@ -150,8 +154,9 @@ them ([[Gear]], "Verbs"; [[Factions]]):
 ### The Breaches' perks
 
 The Breaches' own pool ([[Breaches Roll From a Perk Pool of Their Own]]), Claude's under the owner's "stop depending on
-me" ([[Claude Finishes the Gear Calls on Its Own Word]]), as the rules carry it ([[Gear]], "Verbs"). The Lattice overtakes
-what it touches, so its pool Exposes, spreads and hardens; each perk uses a status and a hook the fight already has.
+me" ([[Claude Finishes the Gear Calls on Its Own Word]]), as the rules carry it ([[Gear]], "Verbs"). The Lattice
+overtakes what it touches, so its pool Exposes, spreads and hardens; each perk uses a status and a hook the fight
+already has.
 
 | Choice | Chosen | Why |
 |---|---|---|
@@ -193,7 +198,9 @@ what it touches, so its pool Exposes, spreads and hardens; each perk uses a stat
 | What and when | Six wares a day each, three Rare and three Magic, at the buyer's level (at most 20), the same for everyone that day | Destiny 1's vendors showed a stock that changed on a schedule; Legendary and Atheric gear stays earned, so the loop of Vestiges keeps its worth |
 | Price | Aurem only: Rare 2,000, Magic 600 | About a tenth of the Aurem cap for a Rare piece, about ten patrols' kills; no marks or reputation, as no faction exists yet |
 
-Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: the Armorsmith sells the armour and the Weaponsmith the weapons, six a day each, and each faction sells its own by rank ([[Each Faction Sells Gear of Its Own, in Its Own Colour]]).
+Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: the Armorsmith sells the armour and the Weaponsmith
+the weapons, six a day each, and each faction sells its own by rank
+([[Each Faction Sells Gear of Its Own, in Its Own Colour]]).
 
 ### Elements and shields
 
@@ -227,9 +234,10 @@ Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges ope
 Replaced in part by [[Every Drop Wears Its Content's Set, With Random Perks]]: a Legendary Vestige opens to a rolled
 piece in its content's set look ("Set names and drops in their set", below).
 
-Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]] and [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: a Vestige's chance and colour go by the foe's rank in Destiny 1's
-order, it opens to its own colour three times in four, and a Miniboss, a Boss and a dungeon's clear leave items as
-themselves too ([[Gear]], "Vestiges").
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]] and
+[[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: a Vestige's chance and colour go
+by the foe's rank in Destiny 1's order, it opens to its own colour three times in four, and a Miniboss, a Boss and a
+dungeon's clear leave items as themselves too ([[Gear]], "Vestiges").
 
 Replaced in part by [[Commons Drop as Themselves, Never as Vestiges]]: no Vestige is Normal. The calls it leaves open,
 made on the owner's word that Claude finishes them ([[Claude Finishes the Gear Calls on Its Own Word]]):
@@ -271,9 +279,11 @@ its kind and rank, and a dismantled Atheric gives 3 Essence ([[Gear]], "A kill's
 | Clothing | Every garment is armour of its piece, the everyday ones Normal and Magic, the heavier sets Rare and above; no toggle | The owner: clothing is armour, with a wardrobe later ([[Clothing Is Armour, With a Wardrobe Later]]) |
 | How it looks | Normal and Magic are clothes (Magic adds a tunic or vest, tall boots, a leather helm and gloves); Rare is chain, steel or iron; Legendary silver, elven, dwarven or the knights'; Atheric daedric, ebony, adamantium or mithril; a cloak is casual, formal from Rare | Rarer gear should read as rarer at a glance, as Destiny's does, with the forge's own sets in order of their worth |
 
-Replaced in part by [[The Perk Pass as Claude Shapes It]]: a named piece wears its own look, and a rolled one climbs the metals' and sets' ladders with its rarity and level, so every model the forge draws is worn.
+Replaced in part by [[The Perk Pass as Claude Shapes It]]: a named piece wears its own look, and a rolled one climbs the
+metals' and sets' ladders with its rarity and level, so every model the forge draws is worn.
 
-Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: each faction's cape is a cloak that belongs to it ([[Factions]]).
+Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: each faction's cape is a cloak that belongs to it
+([[Factions]]).
 
 ### Set names and drops in their set
 

@@ -23,9 +23,9 @@ The owner's answers to the questions that followed:
 
 ## What it settles
 
-- The forge's code from DFO's `ccr-aff93cb4-gw1nto-next` comes over exactly, as [[DFO's Sprite Forge Comes Over Exactly]]
-  has it, and its renders and tables come as they are: the whole forge redrawn on its new shoulders, the blows, the
-  bow's own holds and the wagon bench's driver.
+- The forge's code from DFO's `ccr-aff93cb4-gw1nto-next` comes over exactly, as
+  [[DFO's Sprite Forge Comes Over Exactly]] has it, and its renders and tables come as they are: the whole forge redrawn
+  on its new shoulders, the blows, the bow's own holds and the wagon bench's driver.
 - The dodge roll DFO drew for Overlook, both bodies, comes over and replaces the dodge's move.
 - No new werewolf or wereboar work comes: their forge code, claws, model and renders stay behind.
 - [[Own Work]]'s exception covers the forge's CC0 motion from Quaternius's and KayKit's libraries, not nine moves.

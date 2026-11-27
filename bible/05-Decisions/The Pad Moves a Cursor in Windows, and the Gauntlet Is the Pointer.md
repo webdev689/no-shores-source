@@ -44,4 +44,5 @@ Asked four questions, the owner chose from Claude's options:
 | Its press frame | While A holds a press | DFO also showed it for RT, which does nothing in Overlook's windows |
 | The Test Ground's view | The gauntlet, where it wore a crosshair | "Everywhere a player plays" |
 
-Links: [[Interface]], [[Pick - Pad Cursor and Gauntlet]], [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]].
+Links: [[Interface]], [[Pick - Pad Cursor and Gauntlet]],
+[[Every Control Can Be Rebound, and the Pad Plays as Destiny's]].
