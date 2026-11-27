@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import listed from '../../../content/audio/freesound.json' with { type: 'json' };
 import type { ArrivalSeen } from '../network/arrivalMessages.ts';
 import { CROWN } from '../combat/crownLife.ts';
 import { type ArrivalsFight, ArrivalsView } from './arrivalsView.ts';
@@ -24,11 +25,17 @@ const fightAt = (roomTick: number, arrivals: readonly ArrivalSeen[] = [CROWN_SEE
 const flat = () => 0;
 
 /** The view stepped a frame at a time from room tick `from` to `to`, a tick a frame; every sound heard. */
-function play(view: ArrivalsView, from: number, to: number, ground: (x: number, y: number) => number | null = flat) {
+function play(
+  view: ArrivalsView,
+  from: number,
+  to: number,
+  ground: (x: number, y: number) => number | null = flat,
+  arrivals: readonly ArrivalSeen[] = [CROWN_SEEN],
+) {
   const heard: string[] = [];
   const shards: (readonly [number, number, number])[] = [];
   for (let tick = from; tick <= to; tick++) {
-    const frame = view.frame(fightAt(tick), tick / 60, [], [0, 30, 2], ground);
+    const frame = view.frame(fightAt(tick, arrivals), tick / 60, [], [0, 30, 2], ground);
     heard.push(...frame.sounds.map((sound) => sound.cue));
     shards.push(...frame.props.filter((prop) => prop.module === 'lattice-shard').map((prop) => prop.at));
   }
@@ -97,4 +104,24 @@ test('the dust a foe throws up landing off its beam stays where it landed as the
     return marks;
   };
   assert.deepEqual(dust(true), dust(false));
+});
+
+test('an airship’s engines and hatch and a crown’s forming sound their own once picked on the sheet, till then borrowed', () => {
+  const own = listed.cues.map((cue) => cue.id).filter((id) => id.startsWith('arrival.'));
+  assert.deepEqual(own, ['arrival.airship.engine', 'arrival.airship.hatch', 'arrival.crown.forms'], 'on the sheet');
+  const ship: ArrivalSeen = { ...CROWN_SEEN, id: 5, kind: 1, heading: 0, high: 16, gone: 900 };
+  const heard = (picked: (cue: string) => boolean) =>
+    new Set(play(new ArrivalsView(picked), 100, 340, flat, [CROWN_SEEN, ship]).heard);
+  const borrowed = heard(() => false);
+  for (const cue of ['amb.thunder.roll', 'amb.sea.hull.creak', 'ship.blast', 'amb.ice.ping', 'element.cosmic'])
+    assert.ok(borrowed.has(cue), `${cue} until picked`);
+  assert.ok(own.every((cue) => !borrowed.has(cue)));
+  const picked = heard((cue) => own.includes(cue));
+  assert.ok(
+    own.every((cue) => picked.has(cue)),
+    `${[...picked]}`,
+  );
+  for (const cue of ['amb.thunder.roll', 'amb.sea.hull.creak', 'ship.blast', 'amb.ice.ping', 'element.cosmic'])
+    assert.ok(!picked.has(cue), `${cue} no more`);
+  assert.ok(picked.has('story.fire') && picked.has('shield.break'), 'its fire and the crown’s break as they were');
 });

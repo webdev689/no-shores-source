@@ -432,7 +432,9 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
   shards falling to the land under each and sinking. The page runs the room's ticks on between its snapshots, eased
   onto each and never stepped back (`foeArrivals.ts`), so a ship's flight and a foe's build run smoothly. Each is heard
   from recordings the owner picked, a beat it was long past when first seen not heard
-  ([[Foe Arrivals as Claude Builds Them]]).
+  ([[Foe Arrivals as Claude Builds Them]]); the airship's engines and hatch and the crown's forming borrow recordings
+  picked for other things until the owner picks their own on the sound sheet (`arrival.*` in
+  `content/audio/freesound.json`), each then heard in place of the ones it borrowed.
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
 - **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.
 
