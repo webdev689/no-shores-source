@@ -24,6 +24,8 @@ const PARAPET_M: f64 = 1.0;
 /// The quay's top and the piers' over the sea, one level so a pier's root runs onto the quay, and their feet, metres.
 pub const QUAY_TOP_M: f64 = 3.0;
 const QUAY_FOOT_M: f64 = -4.0;
+/// The quay's width, metres, across its line along the shore.
+pub const QUAY_M: f64 = 8.0;
 const PIER_FOOT_M: f64 = -5.0;
 /// A pier's width, metres.
 pub const PIER_M: f64 = 10.0;
@@ -152,30 +154,64 @@ fn round(middle: [f64; 2], reach: f64) -> [[f64; 2]; 5] {
 /// harbour's middle. A ruined harbour's piers are broken off near the shore.
 #[must_use]
 pub fn harbour_works(footprint: &Footprint, ruined: bool) -> Vec<Solid> {
-    let shore: Vec<usize> = (0..RAYS).filter(|&ray| footprint.rays[ray].stop == Stop::Shore).collect();
     let mut solids = Vec::new();
-    for pair in shore.windows(2).filter(|pair| pair[1] == pair[0] + 1) {
-        let (from, to) = (ray_end(footprint, pair[0]), ray_end(footprint, pair[1]));
+    for (from, to) in quay_runs(footprint) {
         let (east, south) = (to[0] - from[0], to[1] - from[1]);
         let length = (east * east + south * south).sqrt();
-        if length < 1.0 {
-            continue;
-        }
         let middle = [(from[0] + to[0]) / 2.0, (from[1] + to[1]) / 2.0];
-        let size = [8.0, length + 4.0, QUAY_TOP_M - QUAY_FOOT_M];
+        let size = [QUAY_M, length + 4.0, QUAY_TOP_M - QUAY_FOOT_M];
         let quay = Solid::upright(Shape::Block, [middle[0], middle[1], QUAY_FOOT_M], size, Material::Stone);
         solids.push(quay.turned(turn_toward([east / length, south / length])));
     }
-    for (place, ray) in pier_rays(footprint) {
-        let direction = footprint.rays[ray].direction;
-        let middle_share = 1.0 - (place as f64 / shore.len().max(1) as f64 - 0.5).abs() * 2.0;
-        let length = (120.0 + 140.0 * middle_share) * if ruined { BROKEN_PIER_KEPT } else { 1.0 };
-        let middle = ahead(ray_end(footprint, ray), direction, length / 2.0);
+    for pier in piers(footprint) {
+        let length = pier.length * if ruined { BROKEN_PIER_KEPT } else { 1.0 };
+        let middle = ahead(pier.root, pier.direction, length / 2.0);
         let size = [PIER_M, length, QUAY_TOP_M - PIER_FOOT_M];
-        let pier = Solid::upright(Shape::Block, [middle[0], middle[1], PIER_FOOT_M], size, Material::Timber);
-        solids.push(pier.turned(turn_toward(direction)));
+        let solid = Solid::upright(Shape::Block, [middle[0], middle[1], PIER_FOOT_M], size, Material::Timber);
+        solids.push(solid.turned(turn_toward(pier.direction)));
     }
     solids
+}
+
+/// Each run of the quay: from one shore ray's end to the next one's, where the two are neighbours and a metre or more
+/// apart.
+#[must_use]
+pub fn quay_runs(footprint: &Footprint) -> Vec<([f64; 2], [f64; 2])> {
+    let shore: Vec<usize> = (0..RAYS).filter(|&ray| footprint.rays[ray].stop == Stop::Shore).collect();
+    shore
+        .windows(2)
+        .filter(|pair| pair[1] == pair[0] + 1)
+        .map(|pair| (ray_end(footprint, pair[0]), ray_end(footprint, pair[1])))
+        .filter(|(from, to)| {
+            let (east, south) = (to[0] - from[0], to[1] - from[1]);
+            (east * east + south * south).sqrt() >= 1.0
+        })
+        .collect()
+}
+
+/// A whole pier: where it meets the quay, the way it runs out to sea and its length, metres.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Pier {
+    pub root: [f64; 2],
+    pub direction: [f64; 2],
+    pub length: f64,
+}
+
+/// Every pier a port's harbour runs out, whole: longer at the harbour's middle.
+#[must_use]
+pub fn piers(footprint: &Footprint) -> Vec<Pier> {
+    let shore = (0..RAYS).filter(|&ray| footprint.rays[ray].stop == Stop::Shore).count();
+    pier_rays(footprint)
+        .into_iter()
+        .map(|(place, ray)| {
+            let middle_share = 1.0 - (place as f64 / shore.max(1) as f64 - 0.5).abs() * 2.0;
+            Pier {
+                root: ray_end(footprint, ray),
+                direction: footprint.rays[ray].direction,
+                length: 120.0 + 140.0 * middle_share,
+            }
+        })
+        .collect()
 }
 
 /// The shore's rays a pier runs out from (every third), each with its place among the shore's rays.

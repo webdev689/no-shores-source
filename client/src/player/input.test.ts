@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HOLD_S } from './binds.ts';
-import { BINDS, handsFree, IDLE, Input, type InputFrame, axis, keyNameOf } from './input.ts';
+import { DEFAULTS, HOLD_S } from './binds.ts';
+import { BINDS, handsFree, IDLE, Input, type InputFrame, axis, keyNameOf, pressTakenBy } from './input.ts';
 import type { PadState } from './pad.ts';
 
 /** A page with one standard pad whose buttons `held` are down (a trigger by its pull) and sticks at `axes`, read
@@ -234,4 +234,17 @@ test('the pad fights with the pointer free once the menu is shut; the keys and m
   } finally {
     BINDS.device = device;
   }
+});
+
+test("a press a waiting line takes is no other control's: Space jumps not, E uses not, the left button guards not", () => {
+  const down = new Set(['jump', 'use', 'guard', 'continue', 'forward']);
+  const frame: InputFrame = { ...IDLE, pressed: (action) => down.has(action), held: (action) => down.has(action) };
+  const taken = pressTakenBy(frame, 'continue', true, DEFAULTS);
+  for (const action of ['jump', 'use', 'guard', 'continue'] as const) {
+    assert.equal(taken.pressed(action), false, action);
+    assert.equal(taken.held(action), false, `${action} held: a drawn bow fires not`);
+  }
+  assert.equal(taken.pressed('forward'), true, 'a key the line does not take still acts');
+  assert.equal(taken.held('forward'), true);
+  assert.equal(pressTakenBy(frame, 'continue', false, DEFAULTS).held('jump'), true, 'in the story Space held skips');
 });

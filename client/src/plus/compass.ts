@@ -41,13 +41,15 @@ export const SHIP_MARK_COLOURS: Readonly<Record<ShipMarkKind, string>> = {
 /** Ships farther off than this, in metres, have no mark, but one that names its own range. */
 export const SHIP_MARK_RANGE_M = 900;
 
-/** A ship the compass marks: where it lies (metres, x east and y south), what it is to the player, and how far off
- *  it is marked from (a hostile ship's sight; `SHIP_MARK_RANGE_M` where none is named). */
+/** A ship the compass marks: where it lies (metres, x east and y south), what it is to the player, how far off it is
+ *  marked from by day (a hostile ship's sight; `SHIP_MARK_RANGE_M` where none is named), and whether she runs dark,
+ *  seen by night only close. */
 export interface ShipMark {
   readonly x: number;
   readonly y: number;
   readonly kind: ShipMarkKind;
   readonly rangeM?: number;
+  readonly dark?: boolean;
 }
 
 const turnsOf = (radians: number) => {
@@ -92,9 +94,16 @@ export interface PlaceMark {
   readonly kind: 'event' | 'heroic' | 'chest' | 'store' | 'breach';
 }
 
-/** The ships the compass marks of `ships` round a player at `from`: those within their range. */
-export function shipsMarked(ships: readonly ShipMark[], from: readonly [number, number]): ShipMark[] {
-  return ships.filter((ship) => Math.hypot(ship.x - from[0], ship.y - from[1]) <= (ship.rangeM ?? SHIP_MARK_RANGE_M));
+/** The ships the compass marks of `ships` round a player at `from`: those within their range, as far as the sky
+ *  lets the player's lookout see each (`sight`: by night as her lanterns show her). */
+export function shipsMarked(
+  ships: readonly ShipMark[],
+  from: readonly [number, number],
+  sight: (rangeM: number, lit: boolean) => number = (rangeM) => rangeM,
+): ShipMark[] {
+  return ships.filter(
+    (ship) => Math.hypot(ship.x - from[0], ship.y - from[1]) <= sight(ship.rangeM ?? SHIP_MARK_RANGE_M, !ship.dark),
+  );
 }
 
 /** A distance as a mark shows it: metres near, kilometres past one. */

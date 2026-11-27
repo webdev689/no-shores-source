@@ -14,6 +14,7 @@ import type { ShipLook } from './dress.ts';
 import { type HullName, hullName, hullPaint, hullSails, SLOOP_HULL } from './hulls.ts';
 import type { SailRig } from './sails.ts';
 import type { ShipCrew } from './shipCrew.ts';
+import { HULL_LANTERNS, lampAlpha, lanternsLit } from './lanterns.ts';
 import { HULL_LINES } from './hullLines.ts';
 import { loadShip } from './shipMesh.ts';
 import { standIn } from '../standIns.ts';
@@ -38,7 +39,7 @@ export function openHull(gpu: Gpu, slots = SHIP_SLOTS, load = loadShip): OpenHul
   return async (hull) => {
     const mesh = await load(hullName(hull));
     HULL_LINES.take(hull, mesh);
-    return ShipView.open(gpu, mesh, hullSails(hull), hullPaint(hull), slots);
+    return ShipView.open(gpu, mesh, hullSails(hull), hullPaint(hull), slots, HULL_LANTERNS[hullName(hull)]);
   };
 }
 
@@ -50,7 +51,7 @@ export const RETRY_MS = { first: 5_000, most: 60_000 } as const;
 export const LANTERN_LIGHT = { reachM: 13, light: [1.0, 0.74, 0.44] } as const;
 /** A ship settled this far into the sea, metres, is sinking: its lanterns are out. A storm's swell heaves a ship
  *  afloat less. */
-const SINKING_M = 3;
+export const SINKING_M = 3;
 /** The soft halo round a lantern's glass, metres across it, and how bright it is by day and at night. */
 const HALO = { radiusM: 0.55, day: 0.25, night: 0.7 } as const;
 
@@ -188,21 +189,26 @@ export class ShipModels {
     this.halos.length = 0;
     this.each(ships, (model, ship, slot) => {
       // Its lanterns light round them whether or not it is in view: a ship astern lights the water ahead. A ship
-      // sinking has them out.
-      const lit = seconds !== null && ship.place.z > -SINKING_M ? seconds : null;
+      // sinking has them out, and one running dark (the Grey Tithe's, a merchant fleeing) never lights them.
+      const lit = seconds !== null && ship.place.z > -SINKING_M && lanternsLit(ship.look) ? seconds : null;
       const seed = shipSeed(ship.hull, slot);
-      if (lit !== null) for (const lantern of model.lanterns) this.light(ship, lantern, seed);
+      if (lit !== null) for (const lantern of model.lamps) this.light(ship, lantern, seed, camera.eye);
       const bounds = model.boundsAt(ship.place, camera.eye, ship.rig);
       if (!bounds || sphereSeen(planes, ...bounds))
         model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow, lit, seed);
-      if (!this.halo && model.lanterns.length > 0) this.halo = new PuffView(model.gpu);
+      if (!this.halo && model.lamps.length > 0) this.halo = new PuffView(model.gpu);
     });
     this.halo?.set(this.halos, camera);
   }
 
   /** Lights `lantern` of `ship` this frame: its lamp, moved to where it burns, flickering as a lantern by the ship's
    *  `seed` as its glass does, and its halo. */
-  private light(ship: DrawnShip, lantern: readonly [number, number, number], seed: number): void {
+  private light(
+    ship: DrawnShip,
+    lantern: readonly [number, number, number],
+    seed: number,
+    eye: readonly [number, number, number],
+  ): void {
     const kept = (this.lanterns[this.lanternCount] ??= {
       at: [0, 0, 0],
       reachM: LANTERN_LIGHT.reachM,
@@ -214,7 +220,11 @@ export class ShipModels {
     lanternAt(ship.place, lantern, kept.at);
     kept.reachM = LANTERN_LIGHT.reachM * (ship.place.scale ?? 1);
     kept.seed = seed;
-    const glow = HALO.day + (HALO.night - HALO.day) * lampsLit(SKY_NOW.current.look.daylight);
+    const lit = lampsLit(SKY_NOW.current.look.daylight);
+    // Far off at night its far point (`shipLights.ts`) takes over from its halo as it fades in, never both whole.
+    const far = lampAlpha(Math.hypot(kept.at[0] - eye[0], kept.at[1] - eye[1], kept.at[2] - eye[2])) * lit;
+    const glow = (HALO.day + (HALO.night - HALO.day) * lit) * (1 - far);
+    if (glow <= 0) return;
     this.halos.push({
       x: kept.at[0],
       y: kept.at[1],

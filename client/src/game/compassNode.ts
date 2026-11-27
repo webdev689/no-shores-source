@@ -12,6 +12,7 @@ import {
   shipsMarked,
 } from '../plus/compass.ts';
 import { TONES } from '../plus/tones.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
 import { questMark } from '../combat/compassNode.ts';
 
 /** How much of the strip at each end a point fades across, so marks come and go softly at its ends. */
@@ -71,7 +72,8 @@ export function compassNode(
       },
     ];
   });
-  const marks = shipsMarked(ships, from).map((ship): Node => ({
+  // By night the player's lookout sees a ship only as far as her lanterns show her.
+  const marks = shipsMarked(ships, from, SKY_NOW.current.sight).map((ship): Node => ({
     width: 10,
     height: 6,
     float: { at: [markPlace([ship.x, ship.y], from, heading), 0], anchor: [0.5, 0], y: -1 },

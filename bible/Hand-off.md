@@ -118,6 +118,11 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   a deployed room: docking and undocking, parked ships ashore and at sea, the tiles and their icons, the console, the
   Playlist's crests.
 
+- **The lights at sea and in the city** (#228 on #233's lights): not pictured on a real GPU or played by hand; the
+  hub's city does not draw in the headless QA page, so Overlook's lights after the fold are unpictured; each lit ship
+  lights up to four lamps, which may crowd the nearest sixteen in a big night fight; the pad's Continue is untested;
+  a keeper's screen says its lines on its own 1.6 s.
+
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
   merge").

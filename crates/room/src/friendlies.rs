@@ -18,7 +18,8 @@ use world::waters::Holder;
 
 /// A friendly ship off its route: its traffic id, its hull, its seed (its sinking's chances), the level of the Tithe
 /// ship it met, the distance it is sighted from, where it is, its heading (radians clockwise from north), its route's
-/// far port's roadstead, where it sails for, and what is left of its route (none: straight for its port).
+/// far port's roadstead, where it sails for, what is left of its route (none: straight for its port), and whether it
+/// runs dark, its lanterns out, running from the Tithe ship that attacked it (`naval::night::runs_dark`).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Friendly {
     pub traffic: u64,
@@ -31,6 +32,7 @@ pub struct Friendly {
     pub heading: f64,
     pub to: [f64; 2],
     pub lane: Option<Lane>,
+    pub dark: bool,
 }
 
 /// What is left of a friendly ship's route: the route by its number, whether it sails it from its second port back to
@@ -221,6 +223,7 @@ fn taken_of(traffic: &Traffic, ship: &TrafficShip, tithe: &Hostile) -> Friendly 
         heading: heading_to([0.0, 0.0], ship.direction).rem_euclid(core::f64::consts::TAU),
         to: far,
         lane: Some(lane_of(traffic, ship)),
+        dark: false,
     }
 }
 
