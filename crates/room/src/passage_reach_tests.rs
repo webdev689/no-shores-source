@@ -125,24 +125,39 @@ pub(crate) fn unreached(room: &Room) -> Vec<String> {
     wanted.into_iter().filter(|(_, at, within)| !near(*at, *within)).map(|(name, ..)| name).collect()
 }
 
+/// The zones of a run of Saltmere's weeks' webs a sweep checks, by week and number: every one on a full sweep,
+/// otherwise the first of each kind (its ground with its size, and its ground with its deal), so the sample still holds
+/// every kind of zone the whole run does.
+fn swept(weeks: core::ops::Range<u64>) -> Vec<(u64, u16)> {
+    let island = passage::island("continent-1").expect("Saltmere's passages");
+    let zones = weeks.flat_map(|week| Web::of(island, week).zones.into_iter().map(move |zone| (week, zone)));
+    let kinds = |(_, zone): &(u64, passage::Zone)| {
+        let ground = match &zone.ground {
+            passage::Ground::Under { style } => format!("under {style}"),
+            passage::Ground::Open { form } => format!("open {}", form.key()),
+        };
+        vec![format!("{ground} {}", zone.size.key()), format!("{ground} {}", zone.deal.key())]
+    };
+    sweep::one_of_each(zones, kinds).into_iter().map(|(week, zone)| (week, zone.number)).collect()
+}
+
 #[test]
 fn every_zone_of_many_weeks_can_be_walked_to_all_its_deal_asks() {
     let island = passage::island("continent-1").expect("Saltmere's passages");
     let mut failed = Vec::new();
-    for week in 2_900..2_912 {
+    for (week, number) in swept(2_900..2_912) {
         let web = Web::of(island, week);
-        for zone in &web.zones {
-            let Some(plan) = Plan::of(&web, zone.number) else { continue };
-            let modifiers = gear::passages::week_modifiers("continent-1", week);
-            let Some(room) = Room::passage(&plan, (1, 4), modifiers, ("continent-1", week, gear::dive::Route::Public))
-            else {
-                failed.push(format!("week {week} zone {}: no room", zone.number));
-                continue;
-            };
-            let under = matches!(zone.ground, passage::Ground::Under { .. });
-            for name in unreached(&room) {
-                failed.push(format!("week {week} zone {} {:?} under {under}: {name}", zone.number, zone.deal));
-            }
+        let zone = &web.zones[usize::from(number)];
+        let Some(plan) = Plan::of(&web, zone.number) else { continue };
+        let modifiers = gear::passages::week_modifiers("continent-1", week);
+        let Some(room) = Room::passage(&plan, (1, 4), modifiers, ("continent-1", week, gear::dive::Route::Public))
+        else {
+            failed.push(format!("week {week} zone {}: no room", zone.number));
+            continue;
+        };
+        let under = matches!(zone.ground, passage::Ground::Under { .. });
+        for name in unreached(&room) {
+            failed.push(format!("week {week} zone {} {:?} under {under}: {name}", zone.number, zone.deal));
         }
     }
     assert!(failed.is_empty(), "{} unreached, the first: {:#?}", failed.len(), &failed[..failed.len().min(30)]);
@@ -176,23 +191,22 @@ fn follow(room: &Room, way: &[[f64; 2]]) -> Option<(usize, [f64; 2], [f64; 2])> 
 fn a_body_follows_every_way_the_walk_finds_to_what_a_zone_asks() {
     let island = passage::island("continent-1").expect("Saltmere's passages");
     let mut failed = Vec::new();
-    for week in 2_900..2_912 {
+    for (week, number) in swept(2_900..2_912) {
         let web = Web::of(island, week);
-        for zone in &web.zones {
-            let Some(plan) = Plan::of(&web, zone.number) else { continue };
-            let modifiers = gear::passages::week_modifiers("continent-1", week);
-            let route = ("continent-1", week, gear::dive::Route::Public);
-            let Some(room) = Room::passage(&plan, (1, 4), modifiers, route) else { continue };
-            let wanted: Vec<[f64; 2]> = plan.wanted().iter().map(|(at, _)| *at).collect();
-            for (way, to) in plan.walk().ways(plan.sites.arrive, &wanted).iter().zip(&wanted) {
-                if let Some((nth, square, stood)) = follow(&room, way) {
-                    let under = matches!(zone.ground, passage::Ground::Under { .. });
-                    failed.push(format!(
-                        "week {week} zone {} under {under} to {to:.1?}: square {nth} of {} at {square:.2?}, stood {stood:.2?}",
-                        zone.number,
-                        way.len()
-                    ));
-                }
+        let zone = &web.zones[usize::from(number)];
+        let Some(plan) = Plan::of(&web, zone.number) else { continue };
+        let modifiers = gear::passages::week_modifiers("continent-1", week);
+        let route = ("continent-1", week, gear::dive::Route::Public);
+        let Some(room) = Room::passage(&plan, (1, 4), modifiers, route) else { continue };
+        let wanted: Vec<[f64; 2]> = plan.wanted().iter().map(|(at, _)| *at).collect();
+        for (way, to) in plan.walk().ways(plan.sites.arrive, &wanted).iter().zip(&wanted) {
+            if let Some((nth, square, stood)) = follow(&room, way) {
+                let under = matches!(zone.ground, passage::Ground::Under { .. });
+                failed.push(format!(
+                    "week {week} zone {} under {under} to {to:.1?}: square {nth} of {} at {square:.2?}, stood {stood:.2?}",
+                    zone.number,
+                    way.len()
+                ));
             }
         }
     }
@@ -203,23 +217,22 @@ fn a_body_follows_every_way_the_walk_finds_to_what_a_zone_asks() {
 fn a_hollows_bands_walk_their_beats_a_spread_inside_its_floor() {
     let island = passage::island("continent-1").expect("Saltmere's passages");
     let mut failed = Vec::new();
-    for week in 2_900..2_906 {
+    for (week, number) in swept(2_900..2_906) {
         let web = Web::of(island, week);
-        for zone in &web.zones {
-            let Some(plan) = Plan::of(&web, zone.number) else { continue };
-            let passage::Laid::Open(hollow) = &plan.ground else { continue };
-            let modifiers = gear::passages::week_modifiers("continent-1", week);
-            let route = ("continent-1", week, gear::dive::Route::Public);
-            let Some(room) = Room::passage(&plan, (1, 4), modifiers, route) else { continue };
-            for beat in room.garrison.iter().filter_map(|post| post.beat.as_ref()) {
-                let inward = |at: &[f64; 3]| {
-                    let edge = reach::distance_to_ring(&hollow.ring, at[0], at[1]);
-                    if reach::inside(&hollow.ring, at[0], at[1]) { edge } else { -edge }
-                };
-                let nearest = beat.way().iter().map(inward).fold(f64::INFINITY, f64::min);
-                if nearest < crate::garrison::SPREAD {
-                    failed.push(format!("week {week} zone {}: a beat {nearest:.1} m inside the floor", zone.number));
-                }
+        let zone = &web.zones[usize::from(number)];
+        let Some(plan) = Plan::of(&web, zone.number) else { continue };
+        let passage::Laid::Open(hollow) = &plan.ground else { continue };
+        let modifiers = gear::passages::week_modifiers("continent-1", week);
+        let route = ("continent-1", week, gear::dive::Route::Public);
+        let Some(room) = Room::passage(&plan, (1, 4), modifiers, route) else { continue };
+        for beat in room.garrison.iter().filter_map(|post| post.beat.as_ref()) {
+            let inward = |at: &[f64; 3]| {
+                let edge = reach::distance_to_ring(&hollow.ring, at[0], at[1]);
+                if reach::inside(&hollow.ring, at[0], at[1]) { edge } else { -edge }
+            };
+            let nearest = beat.way().iter().map(inward).fold(f64::INFINITY, f64::min);
+            if nearest < crate::garrison::SPREAD {
+                failed.push(format!("week {week} zone {}: a beat {nearest:.1} m inside the floor", zone.number));
             }
         }
     }

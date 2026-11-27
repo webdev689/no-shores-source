@@ -1,0 +1,51 @@
+name: nightly
+
+# The Rust tests whole, once a night on main: a pull request's check runs a sample of each sweep of the world, and
+# this run sweeps every case of each (NO_SHORES_FULL_SWEEP). It checks only; it deploys nothing and reads no secret.
+on:
+  schedule:
+    # 10:00 UTC: 02:00 or 03:00 in the Pacific, outside the owner's morning.
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    name: the Rust tests, every sweep whole
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Every Rust test on one runner, the sweeps whole; the limit stops only a hung run.
+    timeout-minutes: 150
+    env:
+      NO_SHORES_FULL_SWEEP: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: rust
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install the TypeScript tools
+        run: npm ci
+      # cargo-nextest as the check installs it: its release as built, checked against its hash.
+      - name: Install cargo-nextest
+        run: |
+          set -euo pipefail
+          release="cargo-nextest-0.9.152"
+          curl -sSfLo "$RUNNER_TEMP/nextest.tar.gz" \
+            "https://github.com/nextest-rs/nextest/releases/download/$release/$release-x86_64-unknown-linux-gnu.tar.gz"
+          echo "d039b43c3e0958441b6ad0a39c8884d018b3d2e8fb9928f209074b1100b5e17a  $RUNNER_TEMP/nextest.tar.gz" | sha256sum -c --quiet -
+          tar -xzf "$RUNNER_TEMP/nextest.tar.gz" -C "$HOME/.cargo/bin"
+      # The check's Rust part: the messages made from the schema, then every Rust test.
+      - name: cargo xtask check rust
+        run: cargo xtask check rust

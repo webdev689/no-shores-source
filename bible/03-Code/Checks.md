@@ -6,6 +6,7 @@ code:
   - crates/xtask/src/checks/html.rs#check_scripts
   - crates/xtask/src/checks/html.rs#check_pages
   - crates/xtask/src/shaders.rs#problem_in
+  - crates/sweep/src/lib.rs#full
 ---
 # Checks
 
@@ -45,7 +46,8 @@ repo checks and the tests of what it changed, and leaves the whole check to CI (
    a record of strings picked by a key; a call naming anything else, or no `code:` this can read, fails
    (`tools/shaderCalls.mjs`). `cargo xtask shaders` runs this step alone.
 6. **tests**: the Rust tests, with cargo-nextest, which runs every crate's at once, where it is installed (CI installs
-   its pinned release) and with `cargo test` elsewhere; the workspace has no doctests, which nextest would not run. Then
+   its pinned release) and with `cargo test` elsewhere; the workspace has no doctests, which nextest would not run. The
+   tests that sweep the world check a sample here (see "The nightly run"). Then
    the Rust tests that write the files the page's tests read (the messages', the schedule's, the arts' first levels and
    the Elite Dungeons' answers, into `target/`), so the page's part has them without the rest; the world rules, the
    land, movement and the rooms built as WebAssembly (`npm run wasm`); then `node --test`, whose bridge tests load
@@ -72,6 +74,27 @@ The checks read scripts of every extension: `.ts`, `.mts`, `.cts`, `.tsx`, `.js`
 not UTF-8 is reported, not skipped. Two folders are kept as their authors ship them, so the size, comment and assets
 checks skip them: the co-dev's toolkit in `tools/claude-toolkit/` ([[The Co-Dev's Toolkit, Whole]]) and DFO's sprite
 forge in `tools/forge/` ([[DFO's Sprite Forge Comes Over Exactly]]).
+
+## The nightly run
+
+The tests that sweep the world's weeks of passage zones (the passages' own and the rooms' walks through them) check a
+sample wherever the check runs, and every case once a night on `main`
+([[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]).
+The sample is the same on every run, so a failure reproduces: the first zone of each kind, by its ground with its
+size and by its ground with its deal, so it holds every kind the whole sweep does; where what a sweep looks for is
+rare rather than a kind, a tenth of its weeks spread evenly over them. The `sweep` crate reads
+`NO_SHORES_FULL_SWEEP`: set to anything but `0`, every sweep checks every case, as
+`NO_SHORES_FULL_SWEEP=1 cargo test -p passage` does by hand.
+
+The workflow `nightly.yml` runs the check's Rust part (`cargo xtask check rust`) with it set, at 10:00 UTC and by
+hand, on `main` only. It reads the repository and nothing else: no secret, no deploy. A failure there is a sweep's
+rare case the sample missed; its message names the week and zone, which a test can then take as a case of its own.
+
+The sweeps over Saltmere's three patrol zones as the bake lays them (`sites_held`, `runs_walked`, `runs_planned`,
+`layouts_laid`, `landings_safe`, `rooms_walked`) are not sampled. Each of their tests first settles or bakes the
+continent, a quarter to all of its time, and its cases are the few territories, runs, buildings and bridges the
+briefs name, each a place of its own that a sample would leave unchecked; `landings_safe` stands a player a minute
+in each zone, which a shorter wait would not check.
 
 ## Adding a check
 
