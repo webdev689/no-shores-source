@@ -38,7 +38,20 @@ def build_ship(name, collection, sloop):
     for item in meshes(collection):
         if item.data.users > 1:
             item.data = item.data.copy()
+        panes_as_iron(item)
     return hull
+
+
+def panes_as_iron(item):
+    """Lays the object's window panes, which the ships tool builds in `glass`, in its `iron`: the wreck is painted,
+    walked, lit and drawn in the five parts only (export_wreck.py PARTS), its windows' panes as iron."""
+    names = [slot.material.name.split('.')[0] if slot.material else None for slot in item.material_slots]
+    if 'glass' not in names:
+        return
+    glass, iron = names.index('glass'), names.index('iron')
+    for polygon in item.data.polygons:
+        if polygon.material_index == glass:
+            polygon.material_index = iron
 
 
 def meshes(collection):

@@ -109,7 +109,8 @@ the part `glass`, which `paint_ship.py` keeps, and `export_ship.py` writes it as
 byte 2 (`GLASS_SHELL`). The game draws it as it draws a lantern's glass, burning evenly
 while its ship's lanterns burn and flickering with them, and pale horn on a ship running dark ([[Sailing]], "Lanterns
 at night"). The `ships` workflow tests the
-export's bytes (`tools/ships/test_export.py`) before it builds.
+export's bytes (`tools/ships/test_export.py`) before it builds. The prologue's wreck lays its ships' panes in iron
+(`tools/wreck/wreck_ships.py`), so they are drawn as iron under the wreck's baked light and never burn.
 
 ## What the code needs
 
