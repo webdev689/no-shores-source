@@ -9,21 +9,24 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**:
+- **Merging on the owner's yes once CI passes on its head**: #236 (a player's feedback: M the map and N the leave,
+  Tab and the side buttons bound anywhere, the controls sheet's words first, a master volume and an interface size, the
+  held map's legend hidden on L, a landing icon's card on hover, the mouse back as a window shuts, and the sea map's
+  names laid out far less often and faster; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]];
+  `main` taken in). A merge deploys the page, the site, the rooms and the bot, and releases the
+  desktop app.
+- **Merging on the owner's yes ("merge and deploy all") as CI passes**:
   - #235: hostile ships come out 1 km off at the helm, still seen and kept from 5 km.
-  - #239: the kit's guards before a push and against known slips (the observations review's 1 and 6).
-  - #240: the full check ends on its verdict; a branch's state; fresh test data; CI caches R2 (review 2, 3, 7, 9).
   - #242: helpers capped at two, their briefs corrected, `headroom learn` suggesting only (review 4, 5, 13).
   - #243: the game's test hooks and the picture tools work everywhere or say why not (review 10).
   - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
   - #245: new repo checks, each landing with what it refuses fixed (review 8).
-  - #229: the deeper dungeons, with storeys, stairs, more ways and DFO's 3D map
-    ([[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]]).
-  - #159: the rooms' worker tests wait for what they check; it conflicts with `main` in `roomThread.test.ts`.
+- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
+  `roomThread.test.ts`).
 - **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
 - **Merge order**: #235 and #245 both move the sea clash pin: whichever merges second moves its line in
-  `content/fingerprints.txt`. #239, #240, #242 and #244 share lines in `install-all.sh`, `check_tools.py`, CLAUDE.md
+  `content/fingerprints.txt`. #242 and #244 share lines in `install-all.sh`, `check_tools.py`, CLAUDE.md
   and the Toolkit.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
@@ -119,6 +122,15 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
+  browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
+  2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
+  13 ms at 1920 x 1080, measured natively), and its picture's repaint and upload (4 to 18 MB) are unmeasured; lighting
+  the water under the pointer takes some 14 ms each time it crosses into another (`litCells`); the sea map's own
+  marks (islands, hostile ships) say nothing under the pointer, the landings' tiles alone do; the Legend has no pad
+  button until one is bound. Its audit's leftovers: the sea's summed tables (`CellSums`) take some 2.6 MB each, the
+  land and each continent asked, kept for the page's life; Firefox's keeping of a side button from going back is
+  unchecked.
 - **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
   third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
   a walk through a three-storey dungeon and its vault. Headless pictures of three (`dungeon-plan.ts`) were taken before
@@ -150,6 +162,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   hub's city does not draw in the headless QA page, so Overlook's lights after the fold are unpictured; each lit ship
   lights up to four lamps, which may crowd the nearest sixteen in a big night fight; the pad's Continue is untested;
   a keeper's screen says its lines on its own 1.6 s.
+
+- **The lights under ground and on land, the islands' textures, the passages' polish** (#233, #241): not seen on a
+  real GPU or played by hand; not pictured: a dungeon with many torches (`dungeon-plan.ts`'s steps still drive the
+  page, but evals run in the game's worker), a ship's lantern (no offline way into a sea fight at night); not
+  measured: a night sea fight's frame (the probe dies on the battle beat) and the fires' GPU cost. Known: the
+  passages' lamp glass shows two dark marks like a face; a hollow's sky is pale at 1 a.m.; map labels can sit over
+  route lines; a strand's hull stands tilted; an open mouth's daylight is a flat pale sheet; islands' modules sample
+  the rock texture on every fragment; f32 time in the shaders drifts from the CPU's flicker after hours.
 
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
