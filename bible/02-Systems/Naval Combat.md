@@ -257,7 +257,9 @@ so they never tack.
 - **When they break off.** A captain runs below their rank's share of their hull (a Major's 30%); a wary one runs from a
   ship that outguns them. A chase in which they neither fire nor, out of their fighting range (1.8 times the range
   they keep), close by a tenth in 150 s is given up, and its quarry spared for 5 minutes, till it strikes them: so a
-  ship that sails away gets clear, by its way or by keeping its stern to them. A Sloop sailing away from a Boss, which
+  ship that sails away gets clear, by its way or by keeping its stern to them. A quarry that struck them in the last 5
+  minutes is never given up, the 150 s counted from when its blow is let go: one that strikes and runs is chased at
+  least 7 and a half minutes after its last blow. A Sloop sailing away from a Boss, which
   runs it down a third faster, is not struck and is clear of the fight in 10 to 15 minutes in any wind; a lone Sloop
   that stands and fights a Boss is sunk in 10 fights of 12 standing off and in all 12 closing to 150 m (measured by
   hand in the naval crate's open water, eight winds and twelve fights a row). They leave the fight when they have
