@@ -120,8 +120,8 @@ export const CONTROLS = {
   shotBack: control([], ['Left'], FIGHT),
   shotNext: control([], ['Right'], FIGHT),
   brace: control(['c'], ['B'], FIGHT),
-  // A line of the dialogue box typed whole, or the next begun: the left click, Space or E, and the pad's A, as the
-  // owner chose; while a line waits the press is the line's alone (`dialogue.ts`).
+  // A line of the dialogue box typed whole, or the next begun: the left click, Space or E, and the pad's A; while a
+  // line waits the press is the line's alone (`dialogue.ts`).
   continue: control(['mouse0', ' ', 'e'], ['A'], ['talk']),
 } as const satisfies Record<string, Control>;
 export type BindId = keyof typeof CONTROLS;

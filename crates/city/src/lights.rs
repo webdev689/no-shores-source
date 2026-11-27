@@ -1,8 +1,7 @@
-//! The lights Overlook's city burns at night ([[Overlook's City Below Is Lit at Night, in Detail]]): lamp posts along
-//! the edges of the avenues' roads and their ramps, lanterns along the quay's seaward edge and down the piers, and the
-//! harbour mouth's light on the heads of the two piers nearest the harbour. Where each stands is the plan's, the same
-//! on every machine. The blocks' own streets are lit by the page, which holds their ground tiles. Only Overlook is
-//! lit, and never as a ruin.
+//! The lights Overlook's city burns at night: lamp posts along the edges of the avenues' roads and their ramps,
+//! lanterns along the quay's seaward edge and down the piers, and the harbour mouth's light on the heads of the two
+//! piers nearest the harbour. Where each stands is the plan's, the same on every machine. The blocks' own streets are
+//! lit by the page, which holds their ground tiles. Only Overlook is lit, and never as a ruin.
 
 use crate::footprint::Footprint;
 use crate::grid::{CELL_M, Grid};

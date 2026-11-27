@@ -1,6 +1,6 @@
 // A lit city's light at night in WGSL, for the city's shaders (`cityShaders.ts`) to take in with the rest of their
-// common code ([[Overlook's City Below Is Lit at Night, in Detail]]): its lamps' pools read from the light map, and its
-// windows' glow, a forged model's panes near and a far mass's walls laid with windows.
+// common code: its lamps' pools read from the light map, and its windows' glow, a forged model's panes near and a far
+// mass's walls laid with windows.
 import { CELL_M } from './plan.ts';
 import { WINDOW_RHYTHM, WINDOW_WGSL } from './windowLights.ts';
 
