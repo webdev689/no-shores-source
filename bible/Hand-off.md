@@ -22,7 +22,8 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
   - #245: new repo checks, each landing with what it refuses fixed (review 8).
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`).
+  `roomThread.test.ts`); #253 (the owner's No Shores (Mobile) decision, kept in `bible/08-Mobile` apart from the main
+  work; still open for the owner: how much of the story it keeps, what is sold, and when its new repository is made).
 - **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
 - **Merge order**: #235 and #245 both move the sea clash pin: whichever merges second moves its line in
