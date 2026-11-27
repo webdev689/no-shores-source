@@ -6,7 +6,7 @@
 //! section and its sites, all from its seed. Its frame is its own: metres from the middle of its floor, x east, y
 //! south.
 
-use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of};
+use crate::sites::{Door, SPOT_APART_M, Sites, apart, posts_off_arrival, spots_of};
 use crate::zone::{Deal, Form, Mission, Zone};
 use core::f64::consts::{FRAC_PI_2, PI, TAU};
 use isle::Placement;
@@ -286,10 +286,10 @@ impl Laying {
 }
 
 /// The sites of a hollow: its way in at one end, its onward mouths round the far end, its lamp toward the far end,
-/// and its posts (as many as `posts_wanted`) and spots on its floor, a Hold's `ring` first where it lies whole.
+/// and its posts (as many as `posts_wanted`, none nearer the arrival than `posts_off`) and spots on its floor, a Hold's `ring` first where it lies whole.
 fn sites(
     outline: &Outline,
-    (onward_count, lamp, ring, wanted, posts_wanted): (usize, bool, bool, usize, usize),
+    (onward_count, lamp, ring, wanted, (posts_wanted, posts_off)): (usize, bool, bool, usize, (usize, f64)),
     draws: &mut Draws,
 ) -> Sites {
     let (way_in_at, ends): ([f64; 2], Vec<[f64; 2]>) = if outline.form == Form::Ravine {
@@ -341,8 +341,7 @@ fn sites(
         .filter(|at| onward.iter().chain([&way_in]).all(|door| apart(door.at, *at) >= SPOT_APART_M / 2.0))
         .collect();
     floor.sort_by(|one, other| apart(*one, arrive).total_cmp(&apart(*other, arrive)).then(one[0].total_cmp(&other[0])));
-    let off_way_in: Vec<[f64; 2]> =
-        floor.iter().copied().filter(|at| apart(*at, arrive) >= POST_OFF_WAY_IN_M).collect();
+    let off_way_in: Vec<[f64; 2]> = floor.iter().copied().filter(|at| apart(*at, arrive) >= posts_off).collect();
     let posts = posts_of(&off_way_in, arrive, posts_wanted);
     floor.reverse();
     // A Hold's ring, the first spot's, stands the farthest from the way in where it lies whole on the floor clear of
@@ -565,7 +564,7 @@ pub(crate) fn layings(
     };
     let wanted = crate::plan::spots_wanted(zone.deal);
     let ring = zone.deal == Deal::Mission(Mission::Hold);
-    let asked = (onward_count, zone.has_lamp(), ring, wanted, zone.size.posts());
+    let asked = (onward_count, zone.has_lamp(), ring, wanted, (zone.size.posts(), posts_off_arrival(zone)));
     let sites = sites(&laying.outline, asked, &mut draws);
     laying.level = sites.spots.first().filter(|_| ring).map(|&middle| (middle, laying.own_floor(middle)));
     let kit = catalog().climates.get(climate).map_or("temperate", |dressing| dressing.kit.as_str()).to_owned();

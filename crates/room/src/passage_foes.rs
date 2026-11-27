@@ -203,7 +203,11 @@ impl Room {
     fn stand_band(&mut self, group: &Group, at: [f64; 2], levels: (u8, u8)) -> bool {
         let floor = self.zone().and_then(|zone| zone.floor.clone());
         let Some(section) = self.section.clone() else { return false };
-        let section = Section { ring: floor.unwrap_or(section.ring), spawns: Vec::new(), ..section };
+        // Where the zone's floor holds its posts BAND_OFF_ARRIVAL_M out, its arrival stays a spawn, so no member stands
+        // and no beat walks within SPAWN_CLEAR of it; elsewhere the posts stand nearer and none is kept clear.
+        let off = self.zone().is_some_and(|zone| passage::bands_off_arrival(&zone.zone));
+        let spawns = if off { section.spawns.clone() } else { Vec::new() };
+        let section = Section { ring: floor.unwrap_or(section.ring), spawns, ..section };
         let spots: Vec<(f64, f64)> =
             self.zone().map(|zone| zone.sites.spots.iter().map(|at| (at[0], at[1])).collect()).unwrap_or_default();
         let nth = (self.garrison.len() as u64) << 8;
