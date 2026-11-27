@@ -1,5 +1,5 @@
 //! One block's layout, as DFO's Forge lays it: 16 by 16 cells of 3.2 m, rock but where rooms are carved by a seeded
-//! split of the square and joined by the cheapest ways through the rock. The owner wants a dungeon run through, not a
+//! split of the square and joined by the cheapest ways through the rock. A dungeon is a run through, not a
 //! maze, so a block's rooms are joined one after another, from its way in to its way on. The outer ring stays rock but
 //! where an opening passes, so a block closes its own edges.
 

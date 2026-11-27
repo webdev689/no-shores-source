@@ -283,7 +283,7 @@ impl Room {
         self.cache = Some(Cache { open, ..cache });
     }
 
-    /// A dungeon's clear for a player as its cache opens, at the Reeve's level, as the owner chose for a dungeon's
+    /// A dungeon's clear for a player as its cache opens, at the Reeve's level, the pay for a dungeon's
     /// completion: its XP and Aurem, an item as itself coloured as its Miniboss's, and now and then a Vestige.
     fn pay_cache(&mut self, player: PlayerId, cache: &Cache, level: u8) {
         let (dice, difficulty, source) = (self.dice(player), self.difficulty, self.source);

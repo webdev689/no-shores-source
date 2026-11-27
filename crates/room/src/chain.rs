@@ -9,7 +9,7 @@ use combat::arms::Stroke;
 use combat::fighter::Action;
 use combat::strike::stroke_reach;
 
-/// The strokes in the order the swings chain, at the owner's word: the side cut, the overhead and the thrust.
+/// The strokes in the order the swings chain: the side cut, the overhead and the thrust.
 pub(crate) const CHAIN: [Stroke; 3] = [Stroke::Left, Stroke::Down, Stroke::Up];
 /// Ticks without a swing (a second) after which the chain starts over at its first.
 pub(crate) const CHAIN_RESTS: u32 = 60;

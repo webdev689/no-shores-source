@@ -4,7 +4,7 @@
 //! round it then (`quests.rs`' `ground_of`), so a room's opening grows no slower; one no player has come near for a
 //! while, out of sight, let go to stand afresh when one does, so the zone's foes are where its players are within the
 //! room's limit; and a half-fallen patrol group made whole again once no player has come near its post for
-//! STAND_AGAIN, as a Destiny patrol area resets (the owner's "Whatever destiny does").
+//! STAND_AGAIN, as a Destiny patrol area resets.
 
 use super::{
     BEAT_STREAM, CLEAR_AROUND, FROM_SQUARE, Group, NODE_AROUND, PATROL, POSTS_APART, STAND_AGAIN, draws_of, foe_type,
@@ -27,7 +27,7 @@ pub(crate) const LIFT_AFTER: u64 = 90 * 60;
 /// A foes' site as a patrol's room keeps it: where it is; whether it has stood its group since it was last let go
 /// (or given it up, finding nowhere for it); where that group's post stands; the last tick a player came within
 /// LIFT_FAR of it; and whether it is one of the landing's own posts, laid as the room opened, whose post is kept while
-/// its group is let go (the owner's "Release the landing's groups too").
+/// its group is let go.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Site {
     pub at: [f64; 2],

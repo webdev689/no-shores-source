@@ -1,5 +1,5 @@
 //! A landmass made whole: its window, which cells are land, the land the generator makes (relief worked by erosion),
-//! the ground with the owner's edits on it, and the water over that ground. Built the same on any machine from the
+//! the ground with its hand edits on it, and the water over that ground. Built the same on any machine from the
 //! layout alone: the seed is the world's, salted with the landmass's id.
 
 use crate::biome::{Biome, biome_of};
@@ -31,11 +31,11 @@ pub struct Landmass {
     pub land: Vec<bool>,
     /// Each cell centre's distance from the painted coast, metres, positive on land: where the ground's coast runs.
     pub coast_m: Grid,
-    /// What the generator makes, before the owner's edits.
+    /// What the generator makes, before the hand edits.
     pub generated: Grid,
-    /// The owner's edits, from the landmass's edits file and the editor.
+    /// The hand edits, from the landmass's edits file and the editor.
     pub edits: Edits,
-    /// The ground: the generated land with the owner's edits on it.
+    /// The ground: the generated land with the hand edits on it.
     pub ground: Grid,
     pub water: Water,
     /// The ground anywhere, to the metre, with the places' channels, beds and pads: what the runtime samples.
@@ -108,7 +108,7 @@ pub fn climate_of(continent: &Continent) -> Climate {
 /// shape, and a bound on the memory and time one landmass may take.
 pub const MAX_WINDOW_CELLS: usize = 6_000_000;
 
-/// Generates a continent's land from its painted coast, with the owner's edits on it, or says why it cannot: a coast
+/// Generates a continent's land from its painted coast, with the hand edits on it, or says why it cannot: a coast
 /// of fewer than three points, or one whose window is too big.
 pub fn generate(continent: &Continent, edits: Edits) -> Result<Landmass, String> {
     if continent.outline.len() < 3 {

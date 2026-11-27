@@ -20,7 +20,7 @@ pub struct Continent {
     pub id: String,
     /// The coast as a closed ring of points, in whole metres; the last point joins back to the first.
     pub outline: Vec<Point>,
-    /// The climate profile the main biome starts from; empty until the owner chooses.
+    /// The climate profile the main biome starts from; empty until one is chosen.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub climate: Option<String>,
 }

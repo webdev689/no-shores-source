@@ -1,4 +1,4 @@
-//! Locked seas: the sea of every island the owner has not named yet (`world::islands`) is closed. No course or travel
+//! Locked seas: the sea of every island not named yet (`world::islands`) is closed. No course or travel
 //! is taken into one, a ship about to cross into one stops at its edge, and a port in one is no port a ship washes up,
 //! puts in or is repaired at; a ship the sea kept in one comes back at the starting port's roadstead.
 

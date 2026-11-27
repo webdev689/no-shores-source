@@ -40,7 +40,7 @@ const WING_ON_WATER: &str = "its wing stands on water";
 const STOPS_SHORT: &str = "stops short of its door";
 const PAST_ITS_DOOR: &str = "a body gets past its door";
 
-/// Where a body walks round the door across its face: the runs there wait on the owner's call, and only Saltmere's
+/// Where a body walks round the door across its face: the runs there are undecided, and only Saltmere's
 /// zones have runs of their own yet.
 const WALKS_ROUND: &str = "a body walks round the door across its face";
 /// The failures known, each run with what it fails by and why, so a new one fails the test and one mended must be

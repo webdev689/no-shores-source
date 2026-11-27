@@ -40,7 +40,7 @@ impl fmt::Display for Problem {
     }
 }
 
-/// Kept exactly as their authors ship them, by the owner's choice: the co-dev's toolkit, and DFO's sprite forge with
+/// Kept exactly as their authors ship them: the co-dev's toolkit, and DFO's sprite forge with
 /// its models. Our code and asset rules are for the code we write.
 const KEPT_AS_SHIPPED: [&str; 2] = ["tools/claude-toolkit/", "tools/forge/"];
 

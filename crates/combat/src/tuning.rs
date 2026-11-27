@@ -107,7 +107,7 @@ pub const PUNISH_PERFECT: f64 = 1.5;
 pub const PUNISH_IRON: u32 = 18;
 
 /// The soft lock: how far it takes a target, how far it holds one, the arc it looks in (it lets go the tick the look
-/// leaves it, at the owner's word), and for how long out of sight.
+/// leaves it), and for how long out of sight.
 pub const LOCK_RANGE: f64 = 9.0;
 pub const LOCK_BREAK: f64 = 15.0;
 pub const LOCK_ARC: f64 = 70.0 * DEGREES;

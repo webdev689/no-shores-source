@@ -16,9 +16,9 @@ use std::collections::BTreeSet;
 mod routes;
 
 /// A ship leaves each end of each course this often, seconds: so about five friendly ships are within 60 km of
-/// Overlook's roadstead at once, counting those lying there, the owner's five.
+/// Overlook's roadstead at once, counting those lying there.
 pub const DEPARTURE_EVERY_S: f64 = 3_000.0;
-/// Every friendly ship sails at this speed, metres a second: the pace dial's slowest step, the owner's.
+/// Every friendly ship sails at this speed, metres a second: the pace dial's slowest step.
 pub const SPEED_M_S: f64 = 60.0;
 /// A ship lies at its destination's roadstead this long once it arrives, seconds, then is gone.
 pub const DWELL_S: f64 = 600.0;

@@ -2,7 +2,7 @@
 //! the burst is over it recharges before it may burst again. A ship that never taps sails as it always has.
 
 /// How much harder a burst drives its ship's sails and oars, how long it lasts, and how long it then takes to
-/// recharge (seconds): the owner's numbers.
+/// recharge (seconds).
 pub const BURST_DRIVE: f64 = 1.5;
 pub const BURST_S: f64 = 4.0;
 pub const RECHARGE_S: f64 = 12.0;

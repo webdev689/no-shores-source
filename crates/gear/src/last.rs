@@ -1,4 +1,4 @@
-//! Where a player logs back in, as the owner asked: wherever they last left the overworld or a social space. The sea
+//! Where a player logs back in: wherever they last left the overworld or a social space. The sea
 //! writes the sea, its ship lying where `ship_at` keeps it; a social space's room writes itself and where they stood.
 //! No other room writes it, so one who logs out in a patrol zone, a dungeon or on an island comes back to whichever of
 //! the two they were in last.
