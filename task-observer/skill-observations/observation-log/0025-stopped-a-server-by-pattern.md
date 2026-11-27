@@ -1,6 +1,6 @@
 ---
 id: 25
-title: "The controller stopped background servers by pattern (pkill -P on a pgrep -f match; pkill -f) instead of by pid, twice"
+title: "Processes stopped or waited on by pattern (pkill -P on a pgrep -f match; pkill -f; a pgrep -f wait loop) instead of by pid: the pattern matches the shell that typed it"
 status: parked
 type: internal
 skill: []
@@ -9,7 +9,7 @@ target_file: ["bible/03-Code/Toolkit.md"]
 siblings_checked: "none: the target is the project's toolkit note, not a skill"
 area: "stopping processes"
 date: 2026-11-20
-session_context: "Overlook factions round, final audit: after a live headless check, the controller stopped the local room server with pkill -P $(pgrep -f 'wrangler dev ...') before reaching for TaskStop on its background task. Again on 2026-11-24, PR #194 site fixes: a timeout-wrapped wrangler dev for a 404 and caching check, stopped with pkill -f 'wrangler dev --config site/wrangler.jsonc'."
+session_context: "2026-11-27, session 01AQ3N4rcsyHKfuU32sdJH24: the repair worker twice waited on a build with a loop on pgrep -f '<pattern>', which matched its own shell and never ended until its time limit. Earlier: Overlook factions round, final audit: after a live headless check, the controller stopped the local room server with pkill -P $(pgrep -f 'wrangler dev ...') before reaching for TaskStop on its background task. Again on 2026-11-24, PR #194 site fixes: a timeout-wrapped wrangler dev for a 404 and caching check, stopped with pkill -f 'wrangler dev --config site/wrangler.jsonc'."
 parked_until: "PR #239 merge"
 resolved:
 resolution:
@@ -29,3 +29,5 @@ the background task's TaskStop is the only easy path.
 check and stopped it with `pkill -f`. The rule sits under the Toolkit's Workers heading and was read as a worker's.
 This is the rule's second break with no fix in between, so the improvement is the hook above, not a rewording; move
 the rule out of the Workers section as well so it reads as everyone's.
+
+Instance 2026-11-27 (repair worker): a wait loop `while pgrep -f "xtask repo"; do sleep; done` matched the loop's own shell, twice, each running to its time limit. The barrier proposed for stopping (by pid only) covers waiting too: wait on a pid (`wait`, `tail --pid`, TaskStop's task), never a pattern.
