@@ -8,7 +8,7 @@ land.sail_square abf7572961569df1
 land.shore_voyage dbcd586188982208
 fight.legs e454e050d99fa04e 4e45e8c4510d7789 5e4368a929d3e57e 966aa293a1b8b24f e252828049982355 57367ddfff1fc024 4d74479c465fc08e 3674caafaa897bf9 896c9ea4b9acae3c
 fight.hulls 896c9ea4b9acae3c 8228aad2d3c4ddea f56ba4f8a141b009 239869e9d951c4cf
-sea.clash 3453dde756d8659b
+sea.clash 37b8fca918a836c5
 sea.world aa8b7cd0624a292d
 isle.ground_41_desert 5372bca559dd7c59
 isle.plans baa11ec6b5b25530
