@@ -7,7 +7,7 @@ import type { Activities, Gates } from './activities.ts';
 import { TEXEL } from './islandArt.ts';
 import { gridOf, islandPanelNode, islandScreen } from './islandPanel.ts';
 import { regionsOf } from '../overworld/regions.ts';
-import { entriesOf, type IslandEntry, type IslandPanel, islandPanelOf } from './islandWords.ts';
+import { entriesOf, type IslandEntry, type IslandPanel, islandPanelOf, type OutpostsEntry } from './islandWords.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const WHERE = { continent: 'continent-1', ring: [], spawns: [], centre: [0, 0] as const };
@@ -555,8 +555,8 @@ test('a tile’s glyphs stand inside it at the narrowest a tile is laid', () => 
 test('each region’s view holds one Outposts tile in place of its sites: its level, its slots and its guild’s', () => {
   const ours = { ...FACTS, ours: ['tern-strand'] };
   const shore = islandPanelOf(REGIONED, true, ours, [100, -700]);
-  const outposts = entriesOf(shore).find((entry) => entry.kind === 'outposts');
-  assert.ok(outposts && 'slots' in outposts);
+  const outposts = entriesOf(shore).find((entry): entry is OutpostsEntry => entry.kind === 'outposts');
+  assert.ok(outposts);
   assert.deepEqual(
     [outposts.id, outposts.name, outposts.levels, outposts.act.does],
     ['outposts-the-beacon-shore', 'Outposts of the Beacon Shore', 'Lv 1–5', 'outposts'],
