@@ -1,7 +1,7 @@
 ---
 id: 96
 title: "tools/uiShot.mjs writes a blank picture although the interface lays its quads"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "headless pictures of the drawn interface"
 date: 2026-11-21
 session_context: "Picturing the healing charges after the merge of main; the gallery's punctuationShot came out blank too."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: obsolete. Later sessions drew real pictures with uiShot (#215 and #229 on 2026-11-24; Passages.md:449 relies on it)"
 reference: "target/grab.mjs in the session (reads the worker's own texture back)"
 commands_verified: "node tools/uiShot.mjs target/punct.json: 97 quads a frame, PNG all ground (51,64,77); the live game read back from its worker shows the HUD"
 ---

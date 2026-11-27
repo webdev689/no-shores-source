@@ -1,7 +1,7 @@
 ---
 id: 220
 title: "CI's check crept past its 45-minute job limit: the guilds' merge was cancelled at 44 minutes and nothing deployed, after a PR run at 44.4 minutes went unremarked"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "watching CI run times against their job limits"
 date: 2026-11-24
 session_context: "PR #179 (guilds) merged as aa73c57e on the owner's yes. main's ci run 45450525381 cancelled its check step at 18:22:13, 44 minutes in, so rooms and pages were skipped and nothing deployed. The PR's last check run (8b06fb69) took 44.4 minutes of the same 45-minute limit; the session read it as green and moved on. The owner saw 'things keep getting canceled'. Fixed in PR #195: timeout-minutes 75."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: .github/workflows/ci.yml:21-23 (timeout 75 min, with the reason)"
 reference:
 commands_verified: "read: actions_list list_workflow_jobs 45450525381 -> check cancelled at 18:22:13, rooms and pages skipped; PR #179 check run 138582951508 16:05:04 to 16:49:27"
 ---

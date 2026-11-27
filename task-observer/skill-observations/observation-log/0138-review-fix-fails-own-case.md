@@ -1,7 +1,7 @@
 ---
 id: 138
 title: "A reviewer's suggested fix would have failed the reviewer's own failing example"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "applying fixes proposed by a delegated code review"
 date: 2026-11-22
 session_context: "Overlook PR #154 audit: the chat's line filter refused 'lets go ok'. The reviewer proposed checking runs of one- and two-letter words; 'go ok' is two two-letter words, so the proposed fix still refused it. Running the failing examples against the change before committing caught it; the fix applied reads only runs of single letters."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: bible/03-Code/Toolkit.md:74-75 (each audit finding measured by a failing test before it is fixed)"
 reference:
 commands_verified: "run: node --import ./tools/testStyles.mjs scratchpad/star.ts printed each example line and its starred result before and after the change"
 ---

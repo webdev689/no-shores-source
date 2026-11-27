@@ -1,7 +1,7 @@
 ---
 id: 229
 title: "uiShot served Vite on a random port, so R2 refused the forge's pictures (CORS) and menu shots had no item art; and its events could only aim at coordinates"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "headless UI pictures of the menu (tools/uiShot.mjs)"
 date: 2026-11-24
 session_context: "Inspect panel redesign: the first baseline render of the item page printed 'blocked by CORS policy' for every R2 index fetch, and the menu drew initials in place of item pictures. uiShot created its Vite server on port 0; R2 answers only localhost:5173. Fixed: uiShot tries 5173 first (strictPort false). Also added to shot.ts: an event may name a node (`on`) and carry its own frame (`at`), so a shot can open a flyout, right-click a tile and hover a node laid on earlier frames without guessing coordinates."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/uiShot.mjs:17-18 (5173 first); client/src/ui/shot.ts:3-5 (`on` and `at` events). Its doc half is in uishot-in-toolkit"
 reference:
 commands_verified: "run: node tools/uiShot.mjs /tmp/claude-0/shots/base.json -> CORS errors on port 43453; after the port change -> pictures drawn, no errors"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 241
 title: "The session's git rules say to restart a merged PR's branch from main with a force-with-lease push, but auto mode refuses that push"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "a cloud session's one branch after its PR is squash-merged"
 date: 2026-11-25
 session_context: "After #205 was squash-merged (9e690992), the session reset its branch ccr-e6d499b8-6v6er9 onto main, as its git rules say ('restart the branch under the same name from the latest default branch (a force-with-lease push is fine when it holds only already-merged history)'). The Stop hook then reported one unpushed commit (main's squash commit), and the force-with-lease push was refused twice by the auto mode classifier ([Destructive or Unwanted Actions]); the first attempt also had its input changed by a graphify hook. Resolved by pointing the local branch back at the remote head, whose tree equals the squash commit's."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: obsolete; PRs merge with a merge commit now (Branches and Merging.md:13), so restarting the branch is a fast-forward push"
 reference: "PR #205; merge 9e690992; branch head df6d66fd"
 commands_verified: "git rev-parse 9e690992^{tree} df6d66fd^{tree} -> equal; git checkout -B ccr-e6d499b8-6v6er9 origin/ccr-e6d499b8-6v6er9"
 ---

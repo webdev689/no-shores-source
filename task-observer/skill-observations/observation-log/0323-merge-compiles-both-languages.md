@@ -1,5 +1,5 @@
 ---
-id: 227
+id: 323
 title: "A clean auto-merge broke Rust the controller never compiled before pushing"
 status: open
 type: open-source

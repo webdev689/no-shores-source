@@ -1,7 +1,7 @@
 ---
 id: 149
 title: "Encounter picture runs: the scratch room ticks only as the page draws, and four workers hit the 2-hour limit"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "picturing timed game moments headless, and sizing a worker's item to its 
 date: 2026-11-23
 session_context: "Overlook Playlist session, workers enc2, enc3, enc4, pl2 (OBSERVATIONS lines): enc2, enc3 and pl2 each hit the 2-hour background limit and were resumed with --resume; enc4 ended after ponytail-review without writing its report and was resumed to finish. The workers reported: the local room only ticks when the page draws a frame, so a picture that waits in seconds never reaches a timed moment (a Reckoning, Fury); a teleported Boss takes about 20 frames to be drawn there and a warded Boss runs back to its post; switching the Vite worktree's commit, or editing a client file, reloads Vite and kills a running picture run; moving encounter pieces breaks seal tests that name a dungeon; four builders sharing 4 cores ran `cargo xtask check` themselves until told not to."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: Toolkit.md:64 (room_qa_freeze / room_qa_encounter hooks, a Vite worktree of its own); the 2 h half is the detached start (run-worker.sh:8-10)"
 reference:
 commands_verified: "run: bash tools/claude-toolkit/workers/run-worker.sh /root/wt/enc3 <brief> --resume -> worker finished and wrote ~/wt/reports/enc3.md; audit.py on each worker"
 ---

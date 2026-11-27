@@ -1,7 +1,7 @@
 ---
 id: 37
 title: "Two items of one worker brief asked for opposite things, and the worker had to choose"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "controller, writing worker briefs from audit findings"
 date: "2026-11-19"
 session_context: "Second round of prologue fixes; each brief was assembled from an auditor's findings verbatim."
 commands_verified: "none"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: one instance; Toolkit.md:74-75 already sizes a fix to what fails, not to the finding's wording"
 ---
 
 The wreck2 brief carried an auditor's fix for pits ("fill a row's inside gaps at the deck's own height") beside another

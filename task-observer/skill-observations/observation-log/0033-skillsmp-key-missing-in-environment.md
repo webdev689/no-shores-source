@@ -1,7 +1,7 @@
 ---
 id: 33
 title: "check-tools FAIL: SkillsMP has no key in this cloud environment, and Context7's anonymous quota runs out"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "session setup, install-all.sh step 1"
 date: "2026-11-19"
 session_context: "Taking over branch claude/loving-darwin-sw4eae (the prologue) after the earlier session paused; first-step install.; No Shores bible-dungeon-matchmaking pickup (2026-11-23): install-all FAIL for skillsmp (no key) and context7 (mcp.context7.com not reachable); the fperks worker found both refused by the proxy (403)"
 commands_verified: "run: KIT_DIR=$PWD/tools/claude-toolkit REPO_DIR=$PWD bash tools/claude-toolkit/install-all.sh returned 21 PASS, 4 WARN, 1 FAIL"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: bible/03-Code/Toolkit.md:38-40 (keys are proxy-injected network secrets); Context7's quota is the owner's key to grant"
 ---
 
 check-tools printed "FAIL skillsmp: no SKILLSMP_API_KEY in the environment" and "WARN context7 key: no CONTEXT7_API_KEY".

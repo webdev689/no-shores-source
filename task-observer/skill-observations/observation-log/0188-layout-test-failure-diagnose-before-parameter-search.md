@@ -1,7 +1,7 @@
 ---
 id: 188
 title: "A layout test broken by a brief change: diagnose the geometry before searching brief parameters"
-status: open
+status: declined
 type: internal
 skill: ["superpowers:systematic-debugging"]
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "no-shores-source, Rust layout tests"
 date: "2026-11-24"
 session_context: "First Breach audit (#182): the Sunken Gate's area in Gullwing Vale's brief broke saltmere_layouts' cave roof test after the base merge."
 commands_verified: "search2.sh over position x level (12 combos, ~3 min each) found none passing; a with/without diff of areas, then edge heights, then floor distances found the cause (masses::reach_masses valley cut past the cavern) in four runs; fix a9aecbb7."
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: covered by superpowers:systematic-debugging; the layout-specific part is too narrow."
 ---
 
 - The failing test said "a cave roof's top 11.4 stands over its rock 9.3". The first response was a brute-force search

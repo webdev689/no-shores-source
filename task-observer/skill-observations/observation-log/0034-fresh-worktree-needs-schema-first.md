@@ -1,7 +1,7 @@
 ---
 id: 34
 title: "Generated files go stale: a fresh worktree needs npm run -s schema; after a schema change the client suite needs npm run wasm and cargo test -p protocol (its .bin fixtures)"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "workers, worktree setup"
 date: "2026-11-19"
 session_context: "First Breach audit 2026-11-24: after BreachSeen.holders was added, a page worker saw 3 standing failures (protocol hash, fleetBerth joins) from a stale room.wasm and called them pre-existing; with the wasm rebuilt, messages.test still failed on joined.bin until cargo test -p protocol rewrote it. Stale fixtures hide real failures in the count. Ship aim session 2026-11-23: in a fresh cloud container after install-all.sh, npm run wasm failed on protocol and tsc on 40 missing imports until node tools/schema.mjs ran. Earlier: four workers in ~/wt/{opening,sea,wreck,ending} fixing the prologue; three reported the same friction."
 commands_verified: "NOT RUN by the controller in a fresh worktree; three workers each report npm run -s types and node --test prologue.test.ts failing until npm run -s schema ran."
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: run-worker.sh:28-36 builds schema, wasm and protocol fixtures in a fresh worktree; CLAUDE.local.md:7-9 covers the after-schema-change rebuilds"
 ---
 
 Three of four workers lost time on the same thing: `generated/messages` (FlatBuffers code from `npm run -s schema`) is not

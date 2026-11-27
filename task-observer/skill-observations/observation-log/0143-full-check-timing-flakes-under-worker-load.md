@@ -1,7 +1,7 @@
 ---
 id: 143
 title: "The full check's timing tests fail while workers share the CPUs, so a check meant to clear a push fails on load"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running cargo xtask check beside workers"
 date: 2026-11-23
 session_context: "Overlook #155: three workers at a load average of 17 on 4 CPUs; the full check failed on 'a chalk zone ... painted in a few tens of ms' (357 ms), a ruin's build-time ratio (3.7x), the audio clock test and the sea worker test. Two were real flakes in main's tests (fixed); the timing ones passed once the workers were done."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: Testing.md:48-49 and CLAUDE.md:12-13 (CI gates a merge, so pushes no longer wait on a local full check)"
 reference:
 commands_verified: "run: uptime showed load 17.35; the same check passed at load 1.8"
 ---

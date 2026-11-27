@@ -1,7 +1,7 @@
 ---
 id: 132
 title: "Three files at the 600-line limit failed the repo check only at the full check's end, after small wiring"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "adding a feature that touches game.ts, ui.ts and gearMessages.ts"
 date: 2026-11-22
 session_context: "The Compendium added 4 lines to game.ts (599), 5 to ui.ts (600) and 22 to gearMessages.ts (593); the size check, last in cargo xtask check, failed 25 minutes in."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: CLAUDE.md:12 and Making a Change.md:10 (`cargo xtask repo` before a push; the local full check is no longer the gate)"
 reference: "client/src/network/loreMessages.ts split out; ui.renderer.measure used in place of a new Interface method"
 commands_verified: "run: cargo xtask repo -> 'repo checks: 3347 files, no problems' after the split"
 ---

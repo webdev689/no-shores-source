@@ -1,7 +1,7 @@
 ---
 id: 21
 title: "Room tests never take the host's gear change, so a flag left set hides staleness bugs"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "test harness"
 date: 2026-11-20
 session_context: "Overlook factions round, final audit's fix pass: the fix3-rules worker found room tests leave gear_changed true because none calls take_gear_change, which masked when a dress was made again"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: crates/room/src/gear_tests.rs:71-76 (`sent()` ticks as the host does, then takes the gear change); also drops_tests.rs:318"
 reference: "/root/wt/reports/fix3-rules.md OBSERVATIONS"
 commands_verified: "none"
 ---

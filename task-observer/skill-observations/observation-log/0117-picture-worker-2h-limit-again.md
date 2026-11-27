@@ -1,7 +1,7 @@
 ---
 id: 117
 title: "A picture worker was stopped by the 2-hour background limit again, losing its end steps"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "picture briefs and the background limit"
 date: 2026-11-22
 session_context: "The public events' picture pass, resume-pictures2"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: run-worker.sh:8-10 and Toolkit.md:81-85 (workers start detached; wait-worker.sh is the 2 h background task)"
 reference:
 commands_verified: none
 ---

@@ -1,7 +1,7 @@
 ---
 id: 288
 title: "Four of six item workers were stopped at the 7200 s background limit before their review, pictures and report"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running item workers in parallel"
 date: 2026-11-26
 session_context: "Six items for the opening tutorial and keeper screen, four workers at once on a 4-core, 15 GB machine (load 9 to 14). escort, hordes, lessons and screen each committed their build, then were killed at 2 h with no report; each needed a finishing run with a narrowed brief."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: run-worker.sh:8-10, Toolkit.md:81-85 (detached start)"
 reference:
 commands_verified: "bg tasks bdbdl8uup, bdycgn691, br71pd0da, bpetao3ke killed at the limit; finishing runs b0k0cs1q5, b2u8m9eaz completed"
 ---

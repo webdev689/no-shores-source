@@ -1,7 +1,7 @@
 ---
 id: 313
 title: "A CPU cost in pure client code was found and its exact rewrite proven fastest in Node: the test's real-world harness as a benchmark, and its output diffed against a worktree of the base"
-status: open
+status: declined
 type: methodology
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "performance work"
 date: 2026-11-26
 session_context: "Held map: client/src/game/heldMapLettering.test.ts's realWorld() copied into a scratch script timed layOut at 88 ms to 1 s; node --cpu-prof named anyCellUnder; each rewrite's JSON output on 90 views was cmp'd with the same script run on a git worktree of HEAD (identical), ending at 14 to 30 ms. The browser probe could not show it, as the ship it put to sea never moved."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: no proposal written; a one-off technique. Testing.md:50-52 covers comparing against a base worktree."
 reference: "scratchpad bench/dump.ts, bench/dump-base.ts"
 commands_verified: "node bench/dump.ts > new.json; node bench/dump-base.ts > base.json; cmp: run, identical"
 ---

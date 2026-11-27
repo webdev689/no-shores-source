@@ -1,7 +1,7 @@
 ---
 id: 125
 title: "A worktree worker's symlinked generated/ broke when the main checkout rebuilt the schema during a merge"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "worktree workers"
 date: 2026-11-22
 session_context: "Overlook audit fixes: two worktree workers ran while the main session merged origin/main and ran npm run schema."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: run-worker.sh:31-37 builds generated/ in the worktree (only node_modules is linked); Toolkit.md:86-88"
 reference:
 commands_verified: "npm run -s types in the worktree failed (roomConnection.test.ts arity); rm generated && npm run -s schema in the worktree fixed it"
 ---

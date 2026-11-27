@@ -1,7 +1,7 @@
 ---
 id: 252
 title: "Audit fixers' observations: no reviewer agent in a worktree worker, a python heredoc edit, git in $(...) refused, shared cores, layer table before dedupe"
-status: open
+status: declined
 type: internal
 skill: ["superpowers:dispatching-parallel-agents"]
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "worktree fixer agents"
 date: "2026-11-25"
 session_context: "PR #209, the codebase audit, fixers A to E (commits 5396e18c, 3afa6f26, cac76822, 0743ef9b, 47c1be73)."
 commands_verified: "none run: the items are the workers' own reports, read in their hand-back messages."
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: a grab-bag; item 1 is done (run-worker.sh:81 allows Agent, the brief's reviewer is one Agent call); the rest are harness quirks or one-offs"
 ---
 
 From the fixers' OBSERVATIONS lines:

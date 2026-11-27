@@ -1,7 +1,7 @@
 ---
 id: 118
 title: "Impeccable's design hook was never turned on by the kit, so it was not automatic; the owner expected it to be"
-status: open
+status: actioned
 type: open-source
 skill: [impeccable]
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "session setup; design work"
 date: 2026-11-22
 session_context: "A design pass loaded impeccable, whose context step reported the hook not installed and an update; Claude passed both to the owner as the skill directs, and the owner answered 'Dude you run it. Its suppose to be auto'."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/claude-toolkit/install-all.sh:49 runs `impeccable hooks on`; bible/03-Code/Toolkit.md:56"
 reference: "PR #144"
 commands_verified: "run: impeccable doctor (hook-not-installed), impeccable hooks on, then doctor: 'No drift found'; check-tools' hook check still PASS with it on. Rerunning the edited install-all.sh was refused by the auto-mode classifier; the v4.10.0 skill was copied from the fetched, read commit instead"
 ---

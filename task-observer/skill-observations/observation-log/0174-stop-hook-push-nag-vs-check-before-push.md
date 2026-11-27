@@ -1,7 +1,7 @@
 ---
 id: 174
 title: "The harness's Stop hook asks to push unpushed commits every turn while CLAUDE.md's 25-minute check must pass first"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "pushing a branch after a long check"
 date: 2026-11-24
 session_context: "Whole-codebase audit: 15 commits waited for `cargo xtask check` (about 25 minutes) before the first push, as CLAUDE.md's Musts say. The harness's Stop hook ('There are N unpushed commit(s) ... Please push') fired at the end of every turn meanwhile, and each background-monitor event made a new turn, so it fired about a dozen times; each answer was a line saying the push waits on the check."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: obsolete, same as #0164"
 reference:
 commands_verified: "none"
 ---

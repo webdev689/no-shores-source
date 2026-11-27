@@ -1,7 +1,7 @@
 ---
 id: 101
 title: "A gameplay choice the owner did not make was filed as Claude's call instead of asked"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "owner's design choices and Claude's calls"
 date: 2026-11-21
 session_context: "The owner's combat notes (#135): the owner chose a fixed swing chain; Claude also decided that a stroke out of reach is passed over (at the edge of reach every swing thrusts) and recorded it under Claude's calls. An independent audit flagged it as the owner's to make."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: bible/04-Procedures/Recording a Decision.md:17-19 (Claude's calls only for a system the owner hands over)"
 reference: "PR #135, bible/05-Decisions/The Player's Swings Chain Side Cut, Overhead and Thrust.md"
 commands_verified: "none"
 ---

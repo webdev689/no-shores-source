@@ -1,7 +1,7 @@
 ---
 id: 179
 title: "A Blender worker building 38 modules hit the background task's two-hour limit before its whole bake, leaving its work uncommitted and unreported"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "headless workers: sizing an item to the two-hour limit"
 date: 2026-11-23
 session_context: "Guild outposts session: the outpost-modules worker wrote seven scripts and rendered every family's contact sheets, then was killed at the background task's 7,200,000 ms limit before running bake.py (the whole bake of 136 modules took some 45 minutes on four shared cores) and before committing or reporting. The controller ran the bake, test_kit.py and the commit itself."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: detached start removes the 2 h kill (run-worker.sh:8-10); the REPORT STALE resume is at run-worker.sh:93-99"
 reference: "/root/wt/reports/outpost-modules-bake.log; commit a6a06bff on wt/outpost-modules"
 commands_verified: "run: ~/bpy-venv/bin/python -I tools/modules/bake.py /root/wt/bake-out -> exit 0, 136 modules, the 98 before unchanged; test_kit.py -> OK"
 ---

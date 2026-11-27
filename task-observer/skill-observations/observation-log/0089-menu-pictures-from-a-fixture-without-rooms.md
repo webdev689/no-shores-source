@@ -1,7 +1,7 @@
 ---
 id: 89
 title: "The menu's gear pages can be pictured from a fixture on the dev server, without rooms or accounts"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, design pass of #119"
 date: "2026-11-21"
 session_context: "Picturing an Atheric's item page needed a character holding it; the room only grants gear in the Test Ground and the menu only shows gear in a room."
 commands_verified: "Playwright on the dev server: goto a non-HTML URL, setContent with index.html minus main.ts and /@vite/client, import gearWindow.ts and gearForTests.ts, startGearWindow with a fixture GearState, keys i/o and a contextmenu on [data-details]"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/uiShot.mjs:1-7, client/src/game/journalShots.ts:201-287 (menu pages from fixture gear, no rooms)"
 ---
 
 - It took several rounds to find: the dev server's HMR client reloads the page after any edit, wiping the set content,

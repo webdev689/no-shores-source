@@ -1,7 +1,7 @@
 ---
 id: 302
 title: "The session's spawn_task tool timed out at 60 s twice, so follow-up tasks went into the hand-off instead"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "queuing follow-up tasks from a cloud session"
 date: 2026-11-26
 session_context: "#223's audit: two follow-ups (the wreck tools writing the mast and ranks; the gear tabs' pad keycap) each timed out after 60 s."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: duplicate of #32."
 reference: "bible/Hand-off.md, #223's Left"
 commands_verified: "mcp__ccd_session__spawn_task: called twice, both timed out"
 ---

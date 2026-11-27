@@ -1,7 +1,7 @@
 ---
 id: 69
 title: "A plan's picture harness lived in a session's /tmp scratchpad, so the session that picked the work up had none"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, browser QA"
 date: "2026-11-20"
 session_context: "Picking up the Dungeons session's Journal (#97) after its usage limit: Task 7 named shots-34's harness in that container's scratchpad."
 commands_verified: "ls /tmp/claude-0/-home-user/*/scratchpad/shots-* (none); node shoot.cjs (rebuilt harness, 14 scenes)"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/uiShot.mjs:1-7 and bible/02-Systems/Interface.md:383-391 (the menu pictured headless from journalShots.ts); a DOM spill check is moot now that the menu is GPU-drawn"
 ---
 
 - The stopped session saved its plans and code to `claude/activities-journal-wip`, but its HTML harness for menu

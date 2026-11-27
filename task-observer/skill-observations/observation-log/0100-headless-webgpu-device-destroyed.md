@@ -1,7 +1,7 @@
 ---
 id: 100
 title: "Headless Chromium here destroys the game's WebGPU device about 2 s in, on every commit tried"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "browser QA of the game"
 date: 2026-11-21
 session_context: "Trying to reproduce the owner's intro freeze headless and to sample the worker's GPU memory over the intro."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/claude-toolkit/webgpu-shot.cjs:7-11 (the driver patches the game's worker; the device loss was #108's cause)"
 reference:
 commands_verified: "run: main (225cd174), #127's merge, 78c918b5 (worker move), its parent e20d62fe (game on the page), and ?at=overlook-social all lose the device with reason 'destroyed' 2-3 s in, no JS destroy() call (patched prototype never fired), GPU process PID unchanged; a minimal worker device survives; the published page fails the same way headless"
 ---

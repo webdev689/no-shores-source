@@ -1,7 +1,7 @@
 ---
 id: 112
 title: "Two parallel workers: one copied a mesh's parts into a Rust constant while the other rebuilt the mesh"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, parallel workers"
 date: "2026-11-21"
 session_context: "Public events perfect pass: rulesfix stood SPIRES from lattice-fissure's parts while assetsfix lowered the spires."
 commands_verified: "cargo test -p room its_spires_stand (failed after the merge, passed with the new parts)"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: the agreement test caught it before the merge reached main; one instance"
 ---
 
 - The rules worker copied lattice-fissure's four parts into `SPIRES` and wrote a test comparing them with

@@ -1,7 +1,7 @@
 ---
 id: 74
 title: "npm test fails in a fresh worktree until schema, wasm and cargo-written fixtures exist; urllib 403s on r2.dev"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, worktrees and tests"
 date: "2026-11-21"
 session_context: "A worker built the forge's large weapon pictures in .claude/worktrees/weapon-art."
 commands_verified: "npm test (failed: missing generated files); npm run schema; npm run wasm; cargo xtask check (passed)"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: run-worker.sh:31-37 builds schema, wasm and protocol fixtures in each worktree; Toolkit.md:86-88"
 ---
 In a fresh worktree `npm test` fails until `npm run schema` and `npm run wasm` run, and some fixtures
 (`art_levels.json`, `dress_layers.json`) are written only by `cargo test`; `cargo xtask check` makes all of them. Also,

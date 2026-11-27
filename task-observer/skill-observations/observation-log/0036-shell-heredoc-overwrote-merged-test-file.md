@@ -1,7 +1,7 @@
 ---
 id: 36
 title: "A shell heredoc overwrote a test file a merged worker had just added, dropping two of its tests"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "controller, after merging workers' branches"
 date: "2026-11-19"
 session_context: "Finishing the prologue; the controller added helm tests after the opening worker's branch had added helm.test.ts."
 commands_verified: "run: git show 55a9308:client/src/game/prologue/helm.test.ts showed the two lost tests; restored in 5a43feb, 4 of 4 pass."
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: one-off (11-19). The Write tool's read-first guard covers it; no repeat logged."
 ---
 
 The controller created `client/src/game/prologue/helm.test.ts` with `cat > file <<EOF` after merging the opening

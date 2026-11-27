@@ -1,7 +1,7 @@
 ---
 id: 32
 title: "The task-suggestion tool (spawn_task) timed out after 60 s twice, so a found gap went to the Hand-off instead"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Handing off work found in passing"
 date: 2026-11-20
 session_context: "#102's audit: the garrison agreement run kills no foe, found while merging main"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: no gap. The session did the fallback, and the Hand-off rewrite (CLAUDE.md:31) carries found work. Tool flakiness."
 reference:
 commands_verified: "run: mcp__ccd_session__spawn_task twice, both times 'MCP server \"ccd_session\" tool \"spawn_task\" timed out after 60s'; not retried a third time, in case a card had been queued"
 ---

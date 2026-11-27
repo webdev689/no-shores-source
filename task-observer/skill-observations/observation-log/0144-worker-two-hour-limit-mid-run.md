@@ -1,7 +1,7 @@
 ---
 id: 144
 title: "Feature workers hit the 2 h background limit mid-run, one with 200 files uncommitted"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "long feature workers"
 date: 2026-11-23
 session_context: "Overlook #155: the tithe worker (a rename across ~200 files plus a new clash system) reached the 2 h limit with four commits and 62 files uncommitted after an inbox nudge; the ruins worker hit it mid-pictures. Both were resumed with a 'commit what you have, then continue' brief and finished.; 2026-11-24: a container restart stopped worker breach2 after its build commit and before its finish steps; one --resume ran the review and ponytail but ended without its report file or OBSERVATIONS line"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: detached start (run-worker.sh:8-10), plus the UNCOMMITTED / REPORT STALE resumes (run-worker.sh:87-99)"
 reference:
 commands_verified: "run: git -C ~/wt/tithe status showed 202 changed files and no commit an hour in"
 ---

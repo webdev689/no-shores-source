@@ -1,7 +1,7 @@
 ---
 id: 56
 title: "No test compiles the client's WGSL shaders, so a shader error shows only in a browser picture"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "client shader checks"
 date: 2026-11-19
 session_context: "Ruined-cities worker: its v4 picture round was a shader compile error that every test had passed."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: bible/03-Code/Checks.md:23-28 (`cargo xtask check` step 5 validates every shader with naga; `cargo xtask shaders`)"
 reference:
 commands_verified: "NOT RUN: reported by the worker (it validated shaders in Chromium by hand)"
 ---

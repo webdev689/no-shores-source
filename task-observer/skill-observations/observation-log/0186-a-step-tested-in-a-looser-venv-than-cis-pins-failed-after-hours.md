@@ -1,7 +1,7 @@
 ---
 id: 186
 title: "A workflow step tested in a worker's own venv passed locally, then failed in CI on a module the pinned requirements lacked, after four hours of figure strips, losing them all"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "testing a CI step locally before a long, owner-approved run"
 date: 2026-11-24
 session_context: "#169's forge run 45307444321: the fpforge worker tested the new firstperson step 'with the venv's python' (/root/wt/reports/bpyvenv, which had scikit-image and Blender 5.3 installed ad hoc); CI installs only artbirds-requirements.txt (Blender 5.2.3, no scikit-image). The run drew all 10,220 figure frames in about 4 h, then the firstperson step failed with ModuleNotFoundError: skimage; staging came after it, so nothing was published. Fixed by pinning scikit-image and its five dependencies with hashes, verifying the step in a venv built from the pins alone, and moving the first-person step before the figure strips."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: one-off; its fix is in (artbirds-requirements.txt:35 pins scikit-image; forge.yml draws first person before the figure strips)"
 reference:
 commands_verified: "run: pip install --require-hashes --only-binary=:all: -r artbirds-requirements.txt into a fresh venv, then fplayers.py --weapon dagger --sets '' [--left] --metals Ebony --samples 4 -> 124 files; run: fplayers.py --check -> both weapons cut from their own canvas"
 ---

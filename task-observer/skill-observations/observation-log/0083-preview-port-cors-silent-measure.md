@@ -1,7 +1,7 @@
 ---
 id: 83
 title: "A headless measure on a random preview port never loads the world, silently: R2 allows only port 4173"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "measuring the game headless (vite preview + Playwright + SwiftShader)"
 date: 2026-11-21
 session_context: "Measuring frame time, long tasks and key-to-frame before moving the game into a worker"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: Toolkit.md:63 (\"serve the page on port 5173, the only origin R2 answers\"; `anyPort`); uiShot.mjs:16"
 reference: "scratchpad framePerf.mjs; the page's console showed CORS refusals from the R2 bucket for port 40471"
 commands_verified: "ran: framePerf on port 0 (1 draw a frame after 200 s, 0.3 ms busy), then on port 4173 (393 draws a frame, 41 ms busy)"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 71
 title: "A committed module manifest from a worker's last local bake was not what a fresh bake makes: exact booleans reorder faces"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, Blender module bake"
 date: "2026-11-20"
 session_context: "PR #113 resumed: the hub's chapels baked to new mesh hashes each run with the same triangles."
 commands_verified: "bake of chapel-stormcallers twice (hashes differed; vertex and triangle sets equal), then three times after kit._in_order (equal)"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/modules/kit.py:406 (`_in_order`), :341 (`+ 0.0`); CI's modules workflow compares the bake with the committed manifest"
 ---
 
 - The worker that built the stalls committed the manifest of its last local bake; a fresh bake gave the three chapels

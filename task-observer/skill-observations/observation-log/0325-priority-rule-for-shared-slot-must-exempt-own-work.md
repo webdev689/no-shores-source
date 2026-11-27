@@ -1,7 +1,7 @@
 ---
-id: 272
+id: 325
 title: "A priority rule over a one-at-a-time shared baker blocked the new consumer's own bake in flight"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "room navmesh bakes shared by sites, quests and the new airship drops (cra
 date: 2026-11-25
 session_context: "Foe arrivals branch: the airships' drops first starved the sites' bakes (a zone walk test failed); the fix 'bake nothing while any bake is under way' then refused the airships' own bake on its second tick, so no ship ever came (four unit tests caught it). Fixed by naming the airships' bakes and yielding only to others'."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: too narrow. A one-off design slip in reinforcements.rs that its own unit tests caught"
 reference: "crates/room/src/reinforcements.rs set_down_near (GROUND_NAME)"
 commands_verified: "run: cargo test -p room --lib reinforcements -> 3 failed (no ship) before the fix, 4 passed after; cargo test -p room --test sites_held -> failed with drops, passed with drops kept clear of laid encounters"
 ---

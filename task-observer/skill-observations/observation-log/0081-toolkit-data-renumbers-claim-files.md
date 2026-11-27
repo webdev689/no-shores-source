@@ -1,7 +1,7 @@
 ---
 id: 81
 title: "toolkit-data.sh save renumbers the id-claim files as if they were observations, and fails on a name it made before"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, toolkit observation log"
 date: "2026-11-21"
 session_context: "PR #113's end of session: the save's renumber found this session's 0072 taken on the branch."
 commands_verified: "toolkit-data.sh save failed: git mv .id-claims/0072 to .id-claims/0079- (destination exists); a copy with the fix below saved"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/claude-toolkit/toolkit-data.sh:26-27 (only `NNNN-*.md` files move)"
 ---
 
 - `renumber` walks every file the save added under the observation log, takes its first four characters as its

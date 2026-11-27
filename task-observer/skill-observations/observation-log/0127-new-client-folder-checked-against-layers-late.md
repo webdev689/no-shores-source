@@ -1,7 +1,7 @@
 ---
 id: 127
 title: "A new top-level client folder was built before checking the declared layers, and had to be moved"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "adding a module folder in a layered codebase"
 date: 2026-11-22
 session_context: "Overlook: nameplates, the player interact menu and DFO's chat. Eleven files went into client/src/social/, which game and combat imported and which imported them back; cargo xtask repo refused the undeclared layer and the cycle, and the files moved to game/social/ and combat/."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: one-off. `cargo xtask repo` (seconds, CLAUDE.md:12) catches an undeclared layer."
 reference:
 commands_verified: "cargo xtask repo (run: 22 problems, then none after the move)"
 ---

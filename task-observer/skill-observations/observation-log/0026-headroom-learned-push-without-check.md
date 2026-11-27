@@ -1,7 +1,7 @@
 ---
 id: 26
 title: "headroom learn wrote 'push in the same command as every commit' into the project memory, against CLAUDE.md's check before every push"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "headroom learn"
 date: 2026-11-20
 session_context: "Overlook factions round, end of session: headroom learn --apply read the stop hook's repeated 'unpushed commits' messages and wrote a pattern to push on every commit into ~/.claude/projects/<project>/memory/MEMORY.md; CLAUDE.md requires cargo xtask check before every push. The controller reworded it by hand."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: obsolete. CLAUDE.md:12-13 no longer asks for the full check before a push, and CLAUDE.local.md now holds no push rule"
 reference: "/root/.claude/projects/-home-user-overlook-source/memory/MEMORY.md, the Pushing section"
 commands_verified: "none"
 ---

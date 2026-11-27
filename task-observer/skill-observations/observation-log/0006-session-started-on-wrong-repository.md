@@ -1,7 +1,7 @@
 ---
 id: 0006
 title: "A pick-up session started on the wrong repository and searched it for the branch"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "session start: picking up another session's branch"
 date: 2026-11-19
 session_context: "Set up tooling and pick up branch ccr-0f4acf2e-wd3195 (overlook-source#63)"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: out of the repo's reach (a session started in another repository never reads this one); handed to the owner on 2026-11-20"
 reference: "Handed to the owner 2026-11-20: no file in overlook-source reaches a session that starts in another repository; proposed a line for the owner's claude.ai preferences (review record, reviews/2026-11-20-overlook/REVIEW.md)."
 commands_verified: "run: git ls-remote origin | grep 0f4acf2e on overlook-source printed refs/heads/ccr-0f4acf2e-wd3195"
 ---

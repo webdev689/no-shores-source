@@ -1,7 +1,7 @@
 ---
 id: 131
 title: "A full check run while other heavy work ran failed a worker timing test, and a headless world never drew"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "running cargo xtask check and headless pictures in one cloud session"
 date: 2026-11-22
 session_context: "Two branches built at once (a worktree with its own target), clippy and a webgpu-shot run beside cargo xtask check."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: Testing.md:48-49 (the check on an idle machine, no picture driver beside it; rerun a timing failure idle)"
 reference: "roomThread.test.ts 'a sea in the rooms' worker sends the same snapshots' failed under load, passed 3 of 3 alone; webgpu-shot printed 'no WebGPU canvas has drawn' for 4 min while cargo built"
 commands_verified: "run: node --import ./tools/testStyles.mjs --test client/src/network/roomThread.test.ts -> pass 6 fail 0 (three times, alone)"
 ---

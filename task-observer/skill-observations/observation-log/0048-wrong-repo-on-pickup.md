@@ -1,7 +1,7 @@
 ---
 id: 48
 title: "A pick-up naming a branch was set up in the wrong repository before the branch was searched for"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "session start: choosing the repository"
 date: 2026-11-19
 session_context: "Owner asked a new cloud session to set up and pick up a lost session, naming only its branch (ccr-21f4d7cf-r8x0qh)."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: duplicate of #6"
 reference:
 commands_verified: "run: git ls-remote origin | grep 21f4d7cf in dfo-online-source (no match); list_repos query overlook (found Lattymoy/overlook-source, which holds the branch)"
 ---

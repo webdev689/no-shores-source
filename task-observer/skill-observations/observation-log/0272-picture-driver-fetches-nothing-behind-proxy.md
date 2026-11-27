@@ -1,7 +1,7 @@
 ---
 id: 272
 title: "The WebGPU picture driver fetched nothing behind a cloud session's proxy: Playwright's route.fetch ignores HTTPS_PROXY, and a launch proxy also takes localhost"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "headless pictures in a cloud session behind the agent proxy"
 date: 2026-11-26
 session_context: "Passages session, picturing the held map at sea: the game's page stopped with 'The game could not start: Failed to fetch' and every R2 mesh 'Failed to fetch'; a second run with chromium.launch({proxy}) drew no frame for 15 minutes because Playwright sends loopback through a launch proxy, so localhost:5173 never loaded."
 parked_until:
-resolved: 2026-11-26
-resolution: "webgpu-shot.cjs launches Chromium on HTTPS_PROXY with bypass 'localhost,127.0.0.1' when the variable is set (commits 20c99669, 671b5f36); Toolkit.md says so."
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/claude-toolkit/webgpu-shot.cjs:165-170 (HTTPS_PROXY launch, localhost bypassed); Toolkit.md:63"
 reference: "commits 20c99669, 671b5f36, af9cee0c on ccr-1c146825-lrjepv"
 commands_verified: "node tools/claude-toolkit/webgpu-shot.cjs <plan>: before, the page's worker reported 'Failed to fetch'; after, __qaSea lent, flow 'foot' then 'sea', pictures written (target/passages/v6_sea-map-c.png, v7_*, v9_*)"
 ---

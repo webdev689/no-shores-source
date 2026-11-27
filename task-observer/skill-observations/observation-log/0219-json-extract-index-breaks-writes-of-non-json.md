@@ -1,7 +1,7 @@
 ---
 id: 219
 title: "An index on json_extract(body, ...) made every save of a character body that is not JSON fail with 'malformed JSON', and would have failed the migration on such a row"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "D1/SQLite expression indexes over JSON text columns"
 date: 2026-11-24
 session_context: "Follow-up to PR #179 (forgetting kept errand answers): a migration added CREATE INDEX characters_errand ON characters (json_extract(body, '$.errand.rid')) so the prune could find carried errands cheaply. The full check failed two keeper tests: saving or releasing a body the room cannot read ('not a character') raised ERR_SQLITE_ERROR 'malformed JSON' from the index. Fixed with json_extract(CASE WHEN json_valid(body) THEN body END, ...) in both the index and the query, checked with EXPLAIN QUERY PLAN to still SEARCH the index."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: server/accounts/migrations/20261124175416_character_errands.sql:4, reused in 20261126003000_character_slots.sql:27 (json_valid guard)"
 reference:
 commands_verified: "run: node --test server/keeping.test.ts server/keepingRuns.test.ts server/accounts/outpostFixes.test.ts -> 49 pass after the guard; EXPLAIN QUERY PLAN -> SEARCH characters USING COVERING INDEX characters_errand (<expr>=?)"
 ---

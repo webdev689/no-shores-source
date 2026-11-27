@@ -1,7 +1,7 @@
 ---
 id: 84
 title: "A controller-made bpy venv lacked the forge's packages (pillow, scipy, cma); the forge pins its own wheels"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, Blender in a cloud container"
 date: "2026-11-21"
 session_context: "Public events: three workers given one shared venv (/root/bpy-venv, bpy 5.3.0 + numpy)."
 commands_verified: "lattice worker's report: installed pillow, scipy, cma into the venv itself"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: bible/02-Systems/Sprite Forge.md:163-165 and bible/03-Code/Toolchain.md:104-105 (each pipeline installs its own hashed requirements)"
 ---
 
 - The controller installed `bpy==5.3.0` and numpy for the workers. The forge and the Lattice pin bpy 5.2.3 and more

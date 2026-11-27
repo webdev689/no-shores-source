@@ -1,7 +1,7 @@
 ---
 id: 30
 title: "A worktree with target/ linked to the main checkout's ran cargo xtask check on the main checkout's tree"
-status: open
+status: actioned
 type: internal
 skill: ["superpowers:using-git-worktrees"]
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Toolkit, Workers: a worktree ready to test"
 date: 2026-11-20
 session_context: "The comprehensive audit of #102, #95 and #96: the follow-up's fixes made in a worktree, /home/user/overlook-audit, set up with node_modules, generated/ and target/ linked from the main checkout"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: bible/03-Code/Toolkit.md:86-90 (workers build their own target; only read-only reviewers link `target/`) with :73 (reviewers run no builds)"
 reference:
 commands_verified: "run: cargo xtask check in /home/user/overlook-audit with target -> /home/user/overlook-source/target reported the main checkout's commit and tree (#102's), not the worktree's; with target relinked to a target of its own (scratchpad/audit-target), the same command reported 83ba69ca7489, the worktree's head, and passed"
 ---

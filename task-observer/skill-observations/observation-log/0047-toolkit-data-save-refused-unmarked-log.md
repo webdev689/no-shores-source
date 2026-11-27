@@ -1,7 +1,7 @@
 ---
 id: 47
 title: "toolkit-data save refused a log that held the branch's content, as restore wrote no restored-from into a folder not fresh"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "observation log storage"
 date: 2026-11-20
 session_context: "A session that started before the kit's restore step existed"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/claude-toolkit/toolkit-data.sh:48 (restore writes restored-from every time)"
 reference:
 commands_verified: none
 ---

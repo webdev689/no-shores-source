@@ -1,7 +1,7 @@
 ---
 id: 299
 title: "Each push to a PR cancels its running CI check, and the stop hook asks for every commit pushed at once"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "CI on a PR during a long session"
 date: 2026-11-26
 session_context: "#223: runs 1183, 1184 and 1186 were cancelled by the next push (a decision note, an owner's answer); a full check takes about 50 minutes, so a run on the whole head came only once the work stopped."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: cancel-in-progress is deliberate (ci.yml:11-13) and the final head still gets its run; batching pushes is judgement, not a rule"
 reference: "CI runs 1183-1187 on ccr-6e659de3-v7ph7h"
 commands_verified: "actions list_workflow_runs on the branch: run, showed the cancelled runs"
 ---

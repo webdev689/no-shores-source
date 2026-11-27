@@ -1,7 +1,7 @@
 ---
 id: 72
 title: "In a worktree whose node_modules is linked, the dev server refuses the face's fonts: every picture falls back to monospace"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, browser QA"
 date: "2026-11-21"
 session_context: "The Journal's pictures: an independent critique saw a smooth monospace with a cursive italic where Pixelify Sans should be."
 commands_verified: "curl the font's /@fs/ URL from the dev server: 403, 'outside of Vite serving allow list'; 200 with a scratch config allowing the main checkout's node_modules"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: Toolkit.md:63 \"Capture a built page ... never the dev server\""
 ---
 
 - Workers and reviewers link the main checkout's `node_modules` into their worktree. Vite resolves the fontsource

@@ -1,7 +1,7 @@
 ---
 id: 301
 title: "Auto mode refused `git checkout <commit> -- <file>` as irreversible local destruction"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "restoring a file to a commit's version"
 date: 2026-11-26
 session_context: "Restoring client/src/game/prologue/wreckView.ts to main's after taking the republished mesh; the classifier refused it. Done instead with two Edit calls and a cmp against `git show <commit>:<file>` written to the scratchpad."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: narrow auto-mode classifier quirk with a known workaround."
 reference: "796594aa"
 commands_verified: "git show b0fe38a2:<file> > scratch; cmp: run, matched after the Edit calls"
 ---

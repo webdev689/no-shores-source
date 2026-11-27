@@ -1,7 +1,7 @@
 ---
 id: 123
 title: "A frozen picture in the game's worker was found in minutes by stubbing the GPU and pausing the worker over CDP"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "reproducing a freeze or hang in the game's worker headless"
 date: 2026-11-22
 session_context: "The owner's intermittent intro freeze. Headless SwiftShader drew the story at 0.2 frames a second, too slow to reach it; with the worker's queue.submit dropped, the JS ran at 60 fps and the sighted beat wedged at 70 s."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: Toolkit.md:65 Freeze probe (webgpu-stall.cjs: submissions dropped, the worker paused, beats)"
 reference: "scratchpad heaprun2.mjs, prelude-nogpu.js (this session); fix 5a78ea5d"
 commands_verified: "run: Q=?prologue=sighted PRELUDE=./prelude-nogpu.js node heaprun2.mjs <dist> 90 out.json -> 'NO ANSWER to Runtime.evaluate' then 'PAUSED: lay < placeShipBars < platesNode'"
 ---

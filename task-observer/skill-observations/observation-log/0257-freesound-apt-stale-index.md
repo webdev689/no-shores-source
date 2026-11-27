@@ -1,7 +1,7 @@
 ---
 id: 257
 title: "The freesound workflow installs ffmpeg after a 45-minute search, without apt-get update, so a stale index wastes the run"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "CI workflows"
 date: 2026-11-25
 session_context: "Taking the owner's sound picks in. Run 157 searched all 33 cues and read 236 picks (42 min), then failed at `sudo apt-get install -y -q ffmpeg`: 404 for pipewire packages Ubuntu had superseded since the runner image was built. Nothing was cut, staged or published. Fixed at its cause (apt-get update first, 56282343); a second run of the same search had to start over."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: .github/workflows/freesound.yml:40-43 (apt-get update, ffmpeg installed before the search at :48)"
 reference: "https://github.com/Lattymoy/no-shores-source/actions/runs/45621633485"
 commands_verified: "mcp__github__get_job_logs run_id failed_only"
 ---

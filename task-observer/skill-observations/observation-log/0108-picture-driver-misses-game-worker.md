@@ -1,7 +1,7 @@
 ---
 id: 108
 title: "The picture driver patches the page, but the game now runs in a worker, so pictures fail headless"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "headless WebGPU pictures"
 date: 2026-11-21
 session_context: "Main's page moved its drawing into a worker (HTML Is Avoided Where It Can Be); every headless picture run on main ended with 'A valid external Instance reference no longer exists'. The owner: 'The headless issue is due to us moving away from html. So not really an issue per say.'"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: tools/claude-toolkit/webgpu-shot.cjs:7-11, Toolkit.md:63 (worker patch landed); the new-observation.sh misparse has its cause fixed at toolkit-data.sh:26-27"
 reference: "local commit cfd75bba in /root/wt/headless (branch headless, not pushed): the driver patches the game's worker too"
 commands_verified: "none"
 ---

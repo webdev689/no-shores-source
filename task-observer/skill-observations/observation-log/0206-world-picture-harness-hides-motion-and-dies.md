@@ -1,7 +1,7 @@
 ---
 id: 206
 title: "The world picture harness slowed Date.now 20x, which hid the banner cloth's motion the audit then called missing; a background vite preview died at the 10-minute default"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "judging motion from world pictures"
 date: 2026-11-24
 session_context: "PR #179's third audit: the visual auditor said the banner cloth 'is a flat sheet with no movement' from two world frames. fix3-world found the audit's plan slows Date.now 20x, so 'one second apart' was 1/20 s of game time; it then measured the cloth truly barely moved, and made it sway. It also saw a background `npx vite preview` die at the 10-minute default timeout mid-run, and webgpu-shot frames take 30-80 s on shared cores."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: the slowed-clock world plan (makeworld.mjs) is not in the repo, so that half is obsolete; the vite-preview timeout half is in worker-long-timeouts"
 reference:
 commands_verified: "worker's report /root/wt/reports/fix3-world.md and fix3-world.log OBSERVATIONS lines"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 38
 title: "A cinema test importing the game passed every local check and failed only the full repo check"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, cross-layer test files"
 date: "2026-11-20"
 session_context: "Fixing the prologue's fire light; a round-trip test for a new cinema helper imported game/camera.ts."
 commands_verified: "cargo xtask check (repo checks: '[layers] cinema may not import game'); cargo xtask repo"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: CLAUDE.md:12-13 and Making a Change.md:10 (`cargo xtask repo` before a push; CI runs the full check)"
 ---
 
 The layer rule (crates/xtask/src/checks/layers.rs) covers test files too: cinema may import only water and combat.

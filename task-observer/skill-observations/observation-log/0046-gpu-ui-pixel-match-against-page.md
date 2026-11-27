@@ -4,7 +4,9 @@ date: 2026-11-20
 project: overlook-source
 skill: browser-qa (webgpu probes)
 type: methodology
-status: open
+status: declined
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: obsolete. No HTML or CSS interface is left to match against (no `*.css` under client/; the html check refuses stylesheets, Checks.md:42)"
 ---
 # Match GPU-drawn interface against the page's own CSS, pixel for pixel
 

@@ -1,7 +1,7 @@
 ---
 id: 24
 title: "webgpu-shot.cjs from a scratch copy needs NODE_PATH, and only port 5173 reaches R2, so a worker's own port draws nothing"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "browser pictures"
 date: 2026-11-20
 session_context: "Overlook factions round, final audit's fix pass: fix3-keepers, told to serve on its own port 5194, needed a CORS route to R2 for that port and NODE_PATH=/opt/node-tools/node_modules to run the shot script from a scratch copy; headless frames took about 15 s each"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: port half done by `anyPort` (webgpu-shot.cjs:13, :186-198; Toolkit.md:63). Playwright now resolves from outside the repo (`require.resolve('playwright')` from /tmp ran just now and gave /opt/node-tools)"
 reference: "/root/wt/reports/fix3-keepers.md OBSERVATIONS"
 commands_verified: "none"
 ---

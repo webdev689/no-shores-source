@@ -1,7 +1,7 @@
 ---
 id: 268
 title: "A client module that imports fonts cannot load under node --test, so its new failure path was checked by types only; and the audit's headless picture driver lost the GPU device after about three shots"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "client tests and headless pictures"
 date: 2026-11-25
 session_context: "Passages session, fix worker fxway: `travel.ts`'s new `wayOut` (the failed way falling back through tripOrBack) and the foot's walk path could not be tested because travel.ts's font imports fail under node; the audit's drive.mjs (SwiftShader WebGPU) crashed the page after about 3 GPU shots, so the worker ran one shot per process."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: client/src/game/travel.test.ts exists (travel.ts is testable now); Toolkit.md:63 (webgpu-shot keeps the device headless)"
 reference: "/root/wt/reports/fxway.md (Tests, OBSERVATIONS); /tmp/claude-0/-home-user-no-shores-source/83f21cd6-8d70-5dae-b616-0dd42cb04b33/scratchpad/audit/visual/drive.mjs"
 commands_verified: "none run by the controller; from the worker's report"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 85
 title: "Timing tests fail cargo xtask check while three workers load four cores; each rerun costs ~15-25 minutes"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, the full check under parallel workers"
 date: "2026-11-21"
 session_context: "Public events: controller plus rules, props and lattice workers on 4 cores (load 9-15)."
 commands_verified: "node --test client/src/cinema/flames.test.ts (17/17 alone); the rules worker's npm test alone on ede85995 (2062 pass)"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: bible/03-Code/Testing.md:48-49 (run the check idle; rerun a timing failure idle before reading it as a regression)"
 ---
 
 - The controller's check failed once on flames.test.ts (4.12 ms a frame against about 1) and the rules worker's on

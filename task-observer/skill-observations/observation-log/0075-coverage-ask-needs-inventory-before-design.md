@@ -1,7 +1,7 @@
 ---
 id: 75
 title: "An 'every X is used' ask was designed before X was inventoried: the worker's coverage test found 103 forge layers unworn"
-status: open
+status: declined
 type: internal
 skill: []
 proposes_skill: []
@@ -11,6 +11,8 @@ area: "overlook-source, gear looks (the perk pass)"
 date: "2026-11-21"
 session_context: "The owner asked that all weapon and armour models be used; the controller wrote 'named pieces own looks, rolled tiers spread' and briefed a worker on it."
 commands_verified: "the worker's modelsWorn.test.ts against tools/forge/tools/sprite-forge/fitted/male.json (103 layers in LEFT_OUT); design rewritten as a ladder by rarity and level"
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: one-off design slip by the controller; too narrow for a rule"
 ---
 
 - The controller counted the forge's metals and sets by hand and judged the design to cover them. Named pieces (one

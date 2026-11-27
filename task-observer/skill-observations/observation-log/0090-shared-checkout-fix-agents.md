@@ -1,7 +1,7 @@
 ---
 id: 90
 title: "Fix agents sharing one checkout work when each owns its files and none writes to git"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "fanning out: several fix agents in one checkout"
 date: 2026-11-21
 session_context: "After five audits, three fix agents (ui, repo, screens) fixed findings at once in the branch's own checkout, then the controller committed each agent's work."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: one-off success pattern (shared checkout, no git writes); it cuts against the worktree model. Reconsider only if worker-target-cleanup or worker-concurrency-cap is refused"
 reference: "/root/wt/reports/fix-common.md"
 commands_verified: "three agents ran together for about 35 minutes; no file was edited by two agents, and the whole TS suite passed after each commit (2658 tests)"
 ---

@@ -1,7 +1,7 @@
 ---
 id: 102
 title: "A memory audit that reads allocation sites misses the largest consumer: the data the code loads"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "audits, memory"
 date: 2026-11-21
 session_context: "The owner asked that there be no memory leaks; two read-only audit agents traced allocation sites in the client."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: too narrow, a one-off memory audit. Toolkit.md:74 already says to measure each finding."
 reference:
 commands_verified: "run: HEAD of all 205 recordings on R2 summed to 107.1 MB of 128 kbps MP3, about 112 minutes, about 2.57 GB decoded at 48 kHz stereo float32 per copy"
 ---

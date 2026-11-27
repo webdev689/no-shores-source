@@ -1,0 +1,80 @@
+DONE - #38: CLAUDE.md:12-13 and Making a Change.md:10 (`cargo xtask repo` before a push; CI runs the full check)
+DONE - #74: run-worker.sh:31-37 builds schema, wasm and protocol fixtures in each worktree; Toolkit.md:86-88
+DONE - #83: Toolkit.md:63 ("serve the page on port 5173, the only origin R2 answers"; `anyPort`); uiShot.mjs:16
+DONE - #120: Toolkit.md:63 (webgpu-shot draws "in the game's worker as on the page"); Code Map.md:187 lists tools/uiShot.mjs
+DONE - #123: Toolkit.md:65 Freeze probe (webgpu-stall.cjs: submissions dropped, the worker paused, beats)
+DONE - #125: run-worker.sh:31-37 builds generated/ in the worktree (only node_modules is linked); Toolkit.md:86-88
+DONE - #131: Testing.md:48-49 (the check on an idle machine, no picture driver beside it; rerun a timing failure idle)
+DONE - #132: CLAUDE.md:12 and Making a Change.md:10 (`cargo xtask repo` before a push; the local full check is no longer the gate)
+DONE - #143: Testing.md:48-49 and CLAUDE.md:12-13 (CI gates a merge, so pushes no longer wait on a local full check)
+DROP - #32: no gap. The session did the fallback, and the Hand-off rewrite (CLAUDE.md:31) carries found work. Tool flakiness.
+DROP - #36: one-off (11-19). The Write tool's read-first guard covers it; no repeat logged.
+DROP - #102: too narrow, a one-off memory audit. Toolkit.md:74 already says to measure each finding.
+DROP - #110: conflicts with CLAUDE.md:12-13 (a merge waits for CI green on the PR's head).
+DROP - #127: one-off. `cargo xtask repo` (seconds, CLAUDE.md:12) catches an undeclared layer.
+DROP - #188: covered by superpowers:systematic-debugging; the layout-specific part is too narrow.
+DROP - #260: one-off. GitHub's expectedHeadSha guard refused it, and nothing merged wrong.
+DROP - #301: narrow auto-mode classifier quirk with a known workaround.
+DROP - #302: duplicate of #32.
+DROP - #313: no proposal written; a one-off technique. Testing.md:50-52 covers comparing against a base worktree.
+DONE #24: port half done by `anyPort` (webgpu-shot.cjs:13, :186-198; Toolkit.md:63). Playwright now resolves from outside the repo (`require.resolve('playwright')` from /tmp ran just now and gave /opt/node-tools)
+DONE #34: run-worker.sh:28-36 builds schema, wasm and protocol fixtures in a fresh worktree; CLAUDE.local.md:7-9 covers the after-schema-change rebuilds
+DONE #71: tools/modules/kit.py:406 (`_in_order`), :341 (`+ 0.0`); CI's modules workflow compares the bake with the committed manifest
+DONE #72: Toolkit.md:63 "Capture a built page ... never the dev server"
+DONE #117: run-worker.sh:8-10 and Toolkit.md:81-85 (workers start detached; wait-worker.sh is the 2 h background task)
+DONE #136: Toolkit.md:95 names the fixed inbox path; run-worker.sh:72-73 tells the worker its path and exports WORKER_INBOX
+DONE #144: detached start (run-worker.sh:8-10), plus the UNCOMMITTED / REPORT STALE resumes (run-worker.sh:87-99)
+DONE #149: Toolkit.md:64 (room_qa_freeze / room_qa_encounter hooks, a Vite worktree of its own); the 2 h half is the detached start (run-worker.sh:8-10)
+DONE #179: detached start removes the 2 h kill (run-worker.sh:8-10); the REPORT STALE resume is at run-worker.sh:93-99
+DONE #288: run-worker.sh:8-10, Toolkit.md:81-85 (detached start)
+DONE #303: run-worker.sh:20-21 reads the brief once at start and refuses an empty one (still open and minor: skip the stale-report resume after a run that failed before its first turn)
+DROP #37: one instance; Toolkit.md:74-75 already sizes a fix to what fails, not to the finding's wording
+DROP #75: one-off design slip by the controller; too narrow for a rule
+DROP #90: one-off success pattern (shared checkout, no git writes); it cuts against the worktree model. Reconsider only if worker-target-cleanup or worker-concurrency-cap is refused
+DROP #112: the agreement test caught it before the merge reached main; one instance
+DROP #186: one-off; its fix is in (artbirds-requirements.txt:35 pins scikit-image; forge.yml draws first person before the figure strips)
+DROP #206: the slowed-clock world plan (makeworld.mjs) is not in the repo, so that half is obsolete; the vite-preview timeout half is in worker-long-timeouts
+DONE - #21: crates/room/src/gear_tests.rs:71-76 (`sent()` ticks as the host does, then takes the gear change); also drops_tests.rs:318
+DONE - #27: tools/claude-toolkit/toolkit-data.sh:47-48 (restore lays the branch's log and always notes its base), :19-35 (save renumbers colliding ids); Toolkit.md:29-36
+DONE - #30: bible/03-Code/Toolkit.md:86-90 (workers build their own target; only read-only reviewers link `target/`) with :73 (reviewers run no builds)
+DONE - #33: bible/03-Code/Toolkit.md:38-40 (keys are proxy-injected network secrets); Context7's quota is the owner's key to grant
+DONE - #35: tools/claude-toolkit/check_tools.py:249-257 (check-tools runs a real MCP search and FAILs if it answers nothing)
+DONE - #45: tools/claude-toolkit/toolkit-data.sh:47-48, :19-35
+DONE - #47: tools/claude-toolkit/toolkit-data.sh:48 (restore writes restored-from every time)
+DONE - #56: bible/03-Code/Checks.md:23-28 (`cargo xtask check` step 5 validates every shader with naga; `cargo xtask shaders`)
+DONE - #69: tools/uiShot.mjs:1-7 and bible/02-Systems/Interface.md:383-391 (the menu pictured headless from journalShots.ts); a DOM spill check is moot now that the menu is GPU-drawn
+DONE - #81: tools/claude-toolkit/toolkit-data.sh:26-27 (only `NNNN-*.md` files move)
+DONE - #84: bible/02-Systems/Sprite Forge.md:163-165 and bible/03-Code/Toolchain.md:104-105 (each pipeline installs its own hashed requirements)
+DONE - #85: bible/03-Code/Testing.md:48-49 (run the check idle; rerun a timing failure idle before reading it as a regression)
+DONE - #89: tools/uiShot.mjs:1-7, client/src/game/journalShots.ts:201-287 (menu pages from fixture gear, no rooms)
+DONE - #93: crates/xtask/src/checks/vault.rs:296 (a wikilink broken across lines fails the vault check)
+DONE - #100: tools/claude-toolkit/webgpu-shot.cjs:7-11 (the driver patches the game's worker; the device loss was #108's cause)
+DONE - #101: bible/04-Procedures/Recording a Decision.md:17-19 (Claude's calls only for a system the owner hands over)
+DONE - #108: tools/claude-toolkit/webgpu-shot.cjs:7-11, Toolkit.md:63 (worker patch landed); the new-observation.sh misparse has its cause fixed at toolkit-data.sh:26-27
+DONE - #229: tools/uiShot.mjs:17-18 (5173 first); client/src/ui/shot.ts:3-5 (`on` and `at` events). Its doc half is in uishot-in-toolkit
+DONE - #237: tools/claude-toolkit/webgpu-shot.cjs:18-19 (down/up steps), :28-30 (World Editor `frames` note); Toolkit.md:63
+DONE - #272a: tools/claude-toolkit/webgpu-shot.cjs:165-170 (HTTPS_PROXY launch, localhost bypassed); Toolkit.md:63
+DROP - #6: out of the repo's reach (a session started in another repository never reads this one); handed to the owner on 2026-11-20
+DROP - #26: obsolete. CLAUDE.md:12-13 no longer asks for the full check before a push, and CLAUDE.local.md now holds no push rule
+DROP - #46: obsolete. No HTML or CSS interface is left to match against (no `*.css` under client/; the html check refuses stylesheets, Checks.md:42)
+DROP - #48: duplicate of #6
+DROP - #91: the id misparse's cause is fixed (toolkit-data.sh:26-27); "check what is staged before commit" is a one-off git habit
+DROP - #96: obsolete. Later sessions drew real pictures with uiShot (#215 and #229 on 2026-11-24; Passages.md:449 relies on it)
+DROP - #97: obsolete. Pushing before the full check is now allowed (CLAUDE.md:12-13), so the Stop hook's push request no longer fights the rule
+DROP - #272b: too narrow. A one-off design slip in reinforcements.rs that its own unit tests caught
+DONE - #0118: tools/claude-toolkit/install-all.sh:49 runs `impeccable hooks on`; bible/03-Code/Toolkit.md:56
+DONE - #0138: bible/03-Code/Toolkit.md:74-75 (each audit finding measured by a failing test before it is fixed)
+DONE - #0176: client/src/game/gearWindow.ts:121,184 (fresh-open flag); bible/03-Code/Toolkit.md:63 (drive an interactive feature once before a PR)
+DONE - #0219: server/accounts/migrations/20261124175416_character_errands.sql:4, reused in 20261126003000_character_slots.sql:27 (json_valid guard)
+DONE - #0220: .github/workflows/ci.yml:21-23 (timeout 75 min, with the reason)
+DONE - #0257: .github/workflows/freesound.yml:40-43 (apt-get update, ffmpeg installed before the search at :48)
+DONE - #0268: client/src/game/travel.test.ts exists (travel.ts is testable now); Toolkit.md:63 (webgpu-shot keeps the device headless)
+DONE - #0280: .github/workflows/freesound.yml:46 ("Test the publish, as it loads here with no numpy")
+DONE - #0300: tools/wreck/export_wreck.py:146 writes masts; tools/wreck/wreck_level.py:29-35 holds the rank 2 boarders
+DROP - #0133: covered by CLAUDE.md:18-20 "Verify before claiming"; the rule held, caught before commit
+DROP - #0164: obsolete; CLAUDE.md:12-13 no longer holds a push for the full check (repo plus changed tests only), so no conflict with the Stop hook
+DROP - #0174: obsolete, same as #0164
+DROP - #0240: obsolete, same as #0164; the full check before a push was one owner brief's ask
+DROP - #0241: obsolete; PRs merge with a merge commit now (Branches and Merging.md:13), so restarting the branch is a fast-forward push
+DROP - #0252: a grab-bag; item 1 is done (run-worker.sh:81 allows Agent, the brief's reviewer is one Agent call); the rest are harness quirks or one-offs
+DROP - #0299: cancel-in-progress is deliberate (ci.yml:11-13) and the final head still gets its run; batching pushes is judgement, not a rule

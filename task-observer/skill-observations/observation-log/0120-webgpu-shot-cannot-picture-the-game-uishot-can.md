@@ -1,7 +1,7 @@
 ---
 id: 120
 title: "The game draws in a worker, so webgpu-shot cannot picture it; tools/uiShot.mjs pictures HUD pieces, and Node scripts on the real data measured the 3D fixes"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "verifying visual fixes headless"
 date: 2026-11-22
 session_context: "Overlook prologue pass: the wake camera, the sea fight's aim camera and the ship's bar needed checking without a GPU picture of the game."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, already in place: Toolkit.md:63 (webgpu-shot draws \"in the game's worker as on the page\"); Code Map.md:187 lists tools/uiShot.mjs"
 reference:
 commands_verified: "node tools/uiShot.mjs <shots.json> with a throwaway module exporting a build function (sea fight HUD at 1280x720, 1920x1080, 480x800); node scripts measuring the boom against the wreck mesh fetched from R2"
 ---

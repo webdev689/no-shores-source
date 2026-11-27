@@ -1,7 +1,7 @@
 ---
 id: 91
 title: "A commit swept in files staged for another commit, and new-observation.sh misfired on an id"
-status: open
+status: declined
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "committing; the observation script"
 date: 2026-11-21
 session_context: "The on-screen keys commit took decision notes staged earlier. Separately, new-observation.sh printed 'line 160: 10#0085-: syntax error' and skipped id 85."
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-27
+resolution: "review 2026-11-27, dropped: the id misparse's cause is fixed (toolkit-data.sh:26-27); \"check what is staged before commit\" is a one-off git habit"
 reference:
 commands_verified: "git reset --soft then regrouped into four commits; new-observation.sh created 0084 and 0086 with that error between them"
 ---
