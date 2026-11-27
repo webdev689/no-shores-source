@@ -1,6 +1,6 @@
 """Builds every module in Blender and writes what the game reads of it.
 
-    python -I tools/modules/bake.py <folder>
+    python -I tools/modules/bake.py <folder> [--only <prefix>]   # only the modules so named, their entries alone
 
 Each surface group is a mesh file in the folder named by its hash, as R2 names it (`modules/<sha-256>.mesh`): a
 vertex count and a triangle count (two little-endian u32), then each vertex's position in the game's frame (3 floats),
@@ -8,6 +8,7 @@ its normal (3 signed bytes) and its glow (a byte, 0 to 127: only crystal's is ev
 three vertex numbers (u32). The manifest, content/modules/modules.json, names R2's base and each module's size, parts,
 sockets, groups and, where it opens the land, its mouth; `publish.py` uploads the meshes it names.
 """
+import argparse
 import hashlib
 import json
 import os
@@ -74,11 +75,29 @@ def written(values, digits=3):
     return [round(value, digits) + 0.0 for value in values]
 
 
+def manifest_text(entries):
+    return json.dumps(dict(base=PUBLIC, modules=entries), separators=(',', ':')) + '\n'
+
+
+def spliced(published, fresh):
+    """The manifest's modules with each fresh one in its place, and any new one after them."""
+    by_name = {entry['name']: entry for entry in fresh}
+    names = {entry['name'] for entry in published}
+    return [by_name.get(entry['name'], entry) for entry in published] + [
+        entry for entry in fresh if entry['name'] not in names]
+
+
 def main():
-    folder = sys.argv[1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('folder')
+    parser.add_argument('--only', default='', help='bake only the modules whose names begin with this')
+    asked = parser.parse_args()
+    folder = asked.folder
     os.makedirs(os.path.join(folder, 'modules'), exist_ok=True)
     entries = []
     for name in catalogue.BUILDERS:
+        if not name.startswith(asked.only):
+            continue
         entry, files = baked(name)
         for key, data in files.items():
             with open(os.path.join(folder, key), 'wb') as file:
@@ -86,10 +105,14 @@ def main():
         entries.append(entry)
         triangles = sum(group['triangles'] for group in entry['groups'])
         print(f'{name}: {triangles} triangles, {len(entry["parts"])} parts, size {entry["size"]}', flush=True)
+    if not entries:
+        sys.exit(f'no module begins with {asked.only!r}')
+    if asked.only:
+        with open(MANIFEST) as file:
+            entries = spliced(json.load(file)['modules'], entries)
     os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)
     with open(MANIFEST, 'w') as file:
-        json.dump(dict(base=PUBLIC, modules=entries), file, separators=(',', ':'))
-        file.write('\n')
+        file.write(manifest_text(entries))
 
 
 if __name__ == '__main__':

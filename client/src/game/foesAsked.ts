@@ -3,11 +3,11 @@ import type { FoeAsk } from '../network/messages.ts';
 /** The most a type's or a rank's number may be, as an input carries it in a byte. */
 const BYTE_MOST = 255;
 
-/** The foes a page playing alone asks its node's room for, from `?spawn=` in its address: types by their numbers, each
- *  with a rank after a colon (`?spawn=2,4:3,12`); a rank left out takes the type's first. A part that is not a type
- *  asks for nothing. */
+/** The foes a page playing alone asks its node's room for, from `?foes=` in its address (`&spawn=` says where the
+ *  player arrives): types by their numbers, each with a rank after a colon (`?foes=2,4:3,12`); a rank left out takes
+ *  the type's first. A part that is not a type asks for nothing. */
 export function foesAsked(search: string): FoeAsk[] {
-  const given = new URLSearchParams(search).get('spawn');
+  const given = new URLSearchParams(search).get('foes');
   if (!given) return [];
   const byte = (value: number) => Number.isInteger(value) && value >= 0 && value <= BYTE_MOST;
   return given.split(',').flatMap((part) => {

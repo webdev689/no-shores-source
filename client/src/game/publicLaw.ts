@@ -195,6 +195,13 @@ export function askedPublic(search: string): 'fissure' | 'raid' | null {
   return asked === 'fissure' || asked === 'raid' ? asked : null;
 }
 
+/** The Unix minute the dev address asks a room played alone to stand its clock at (`&minute=`), if any, so a picture
+ *  holds the world's hour and its public events where it wants them. */
+export function askedMinute(search: string): number | null {
+  const asked = Number(new URLSearchParams(search).get('minute') ?? Number.NaN);
+  return Number.isInteger(asked) && asked > 0 ? asked : null;
+}
+
 /** How many minutes on from `minute` the room's clock is set for `zone`'s next `kind` to start at once: the
  *  room's own schedule (crates/room/src/public/mod.rs), read the other way. Null for a zone that holds none. */
 export function minuteShift(zone: string, kind: 'fissure' | 'raid', minute: number): number | null {

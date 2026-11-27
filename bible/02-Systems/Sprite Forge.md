@@ -129,6 +129,10 @@ python -I tools/sprite-forge/layers.py --body male --anims walk,idle --layers he
 python -I tools/sprite-forge/forgepoints.py --body male
 ```
 
+Without the pull, `layers.py` starts from an empty index and writes one that holds only its own run.
+A change to `layers.py` or `stage.py` leaves the code's digest in `keys/version.json` stale.
+Where the change draws nothing new, run `python3 -I tools/sprite-forge/rendercache.py --record` to write it again.
+
 A layer takes its set's or metal's own grades by its name (`layers.set_of`), a pair's left twin (`_l`) and a short
 sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.

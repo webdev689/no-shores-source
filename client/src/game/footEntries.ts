@@ -2,7 +2,10 @@
 // Each stands the page's movement and fight on the place's own ground as its room stands its bodies, then joins it.
 import { loadRunModules, loadSealModule } from '../city/modules.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
+import { breachAsk } from '../../../server/roomNames.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
+import { RoomThread } from '../network/roomThread.ts';
+import { roomNow } from '../sky/worldClock.ts';
 import { blocksGround, runPlace, socketBearing, spaceSocket, standingBlocks } from './breachPlan.ts';
 import type { InBreach } from './breachView.ts';
 import { type DungeonAsk, type DungeonLayout, seenBlocks } from './dungeonLayout.ts';
@@ -49,7 +52,8 @@ export async function enterDungeon(
  *  blocks over the dark as each snapshot says its seals and its slabs stand. */
 export async function enterBreachRun(context: FootContext, into: InBreach): Promise<Foot> {
   const { rooms, movement } = context;
-  if (!rooms) throw new Error('a Breach is played online');
+  // Played alone only on a development page, for its pictures (`&run=`): a player's Breach is online.
+  if (!rooms && !import.meta.env.DEV) throw new Error('a Breach is played online');
   // Its spaces' meshes come before the veil lifts on it; they are let go once the player is out (`gameFrame.ts`).
   const [rules] = await Promise.all([rulesOf(context), loadRunModules(), loadSealModule()]);
   const { blocks, keep } = standingBlocks(into.plan, (seals, tick) => {
@@ -73,7 +77,10 @@ export async function enterBreachRun(context: FootContext, into: InBreach): Prom
       heard.snapshot(snapshot);
       keep(snapshot.breach?.seals ?? 0, Number(snapshot.tick));
     };
-    const link = await RoomConnection.open(rooms(into.run), hear, heard.gear, session);
+    const ask = rooms ? null : breachAsk(into.run, Math.floor(roomNow() / 60_000));
+    const link = rooms
+      ? await RoomConnection.open(rooms(into.run), hear, heard.gear, session)
+      : await RoomThread.openBreach(await context.roomModule, ask ?? '', hear, heard.gear);
     return { link, boxes: blocks, text: '', dungeon: null, seas: 'normal', run: into, groundAt: blocksGround(blocks) };
   });
 }
