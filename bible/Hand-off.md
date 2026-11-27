@@ -9,6 +9,15 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
+- **Branch `ccr-abd26720-sgga9y`, no pull request yet** (the owner's yes to open one): the patrol map's table names
+  each way across ("To the Gullwing Vale") and the passage gates apart
+  ([[The Patrol Map's Legend Names Each Way Across and the Passage Gates]]); a port repairs a ship for Aurem at once,
+  its card offering Dock, Repair Ship and Leave
+  ([[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]]); foes leave a player
+  arriving in a passage zone be for 10 s and every band stands as far from the arrival as the floor allows, 25 m
+  where it can ([[Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival]]); the
+  ways across stand at the runs' ends ([[The Ways Across Stand at the Runs' Ends, Not on the Landing]]); a way between
+  places whose join never settles fails back. Tested offline.
 - **For the owner's yes**: #229 (the deeper dungeons: storeys and stairs, more ways, great rooms and galleries,
   vaults, richer chests and DFO's 3D map; [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]],
   its pieces published by the dungeon-modules workflow's run 53) and #159 (the rooms' worker tests wait for what they
@@ -106,6 +115,18 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The branch above, seen and played**: the map's new glyphs and rows; the port's card, 500 px wide for its three
+  presses; the Downs' two arches (both took the fallback place, clearing run pieces under them; the Chalk Adit's
+  8.5 m arch may stand through its mine's ceiling, unchecked); a crossing and a dive begun, in a deployed room.
+- **The way that hung on its screen**: its live cause is unchecked (a passage zone opens in 23 to 314 ms in the
+  WebAssembly, so not the room's CPU). A join now fails back after 40 s, and a room's welcome after 15 s, for every
+  `RoomConnection.open` (a cold room's time to welcome is unmeasured); the reason the page then shows names the cause.
+- **Arrivals' gaps**: an under-ground Vault stands its dungeon's own garrison, one of whose members stood 17.1 m from
+  the arrival; an under-ground medium zone keeps one post at 14.1 m (no farther clear cell); an under-ground Hunt's
+  band near the arrival may hold its post rather than walk its round; a crossing's arrival at a run's end has no
+  grace, and a garrison group's beat may pass through it.
+- **A body running into a tree trunk climbs it**, and on the wall it cannot strike: found by the Ambush's scripted
+  run (`passage_room_door_tests.rs` now lets go), a player meets it too.
 - **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
   third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
   a walk through a three-storey dungeon and its vault. Headless pictures of three (`dungeon-plan.ts`) were taken before
