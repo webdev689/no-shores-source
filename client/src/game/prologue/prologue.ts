@@ -201,7 +201,7 @@ export class Prologue {
     if (ended instanceof Battle || ended instanceof Calm) this.carried.wrecks = ended.wrecks;
     if (ended instanceof Ram) this.carried.meeting = ended.meeting;
     if (ended instanceof Ram) void this.openRun();
-    if (ended instanceof Intro && (ended.onward ?? this.played)) {
+    if (ended.onward ?? (ended instanceof Intro && this.played)) {
       this.end = 'begun';
       return;
     }

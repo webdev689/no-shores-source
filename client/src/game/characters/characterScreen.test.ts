@@ -5,7 +5,7 @@ import type { UiEvent } from '../../ui/uiEvent.ts';
 import { fakeInterface, wordsOf } from '../../ui/uiForTests.ts';
 import { Stack } from '../../ui/stack.ts';
 import { PROLOGUE_KEY } from '../prologue/beat.ts';
-import { characterMarked } from './characterMark.ts';
+import { characterMarked, inPlayPlayed } from './characterMark.ts';
 import { DELETE, DELETE_WARNING, NEW_CHARACTER, PLAY, RETRY, TEST_ROOM, UNREAD, bannerId } from './characterNodes.ts';
 import {
   type CharactersAnswer,
@@ -399,4 +399,21 @@ test('the tab mark is read once', () => {
   const tab = storeOf({ 'noshores.characters.open': 'test' });
   assert.equal(characterMarked(tab), 'test');
   assert.equal(characterMarked(tab), null);
+});
+
+test('the character in play past the prologue, signed in to at the helm, sets the browser as Play does', async () => {
+  const link = (four: Characters | string | Error) => ({
+    place: null,
+    characters: () => (four instanceof Error ? Promise.reject(four) : Promise.resolve(four)),
+  });
+  const browser = storeOf();
+  const past = link(FOUR);
+  assert.equal(await inPlayPlayed(browser, past), true, 'slot 2 is in play, past it');
+  assert.equal(browser.kept[PROLOGUE_KEY], 'played');
+  assert.deepEqual(past.place, { kind: 'sea' }, 'where it left, for the arrival');
+  const fresh = storeOf();
+  assert.equal(await inPlayPlayed(fresh, link({ ...FOUR, playing: 0 })), false, 'the first slot waits on the story');
+  assert.equal(await inPlayPlayed(fresh, link('The accounts did not answer.')), false);
+  assert.equal(await inPlayPlayed(fresh, link(new Error('offline'))), false);
+  assert.deepEqual(fresh.kept, {}, 'the browser left as it was');
 });

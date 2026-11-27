@@ -318,3 +318,15 @@ test('a beat that fades itself in is given no fade, and one not from black begun
   assert.equal(after.director.now.name, 'wreck');
   assert.deepEqual(after.asked.slice(-2), ['fade 1 0', 'fade 0 2.5'], 'the wreck fades in over the black left held');
 });
+
+test('a beat that sends the player on past the story ends it there, begun, as a played story ends at the title', () => {
+  const made = new Map<BeatName, Played>();
+  const { director } = directed(made, 'creation');
+  const creation = made.get('creation');
+  assert.ok(creation);
+  Object.assign(creation, { onward: true });
+  creation.done = true;
+  director.frame(controls(false), 0.1, SIZE, SIZE);
+  assert.equal(director.end, 'begun');
+  assert.equal(made.has('sighted'), false, 'nothing after it is made');
+});
