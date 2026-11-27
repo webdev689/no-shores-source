@@ -125,7 +125,7 @@ export class Sea {
     this.setLandmass(landmass);
   }
 
-  /** The player's gear at sea, for the feed to tell what they gain; the menu at sea keeps to the ship, asking nothing. */
+  /** The player's gear at sea, so the feed tells what they gain; the menu at sea keeps to the ship, asking nothing. */
   get gear(): GearHere | null {
     const { forge, walker } = this.context;
     return this.room ? { gear: this.room.gearSent, ask: () => undefined, forge, dress: walker.you.dress } : null;
