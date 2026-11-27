@@ -181,7 +181,7 @@ export async function loadWorld(base: string): Promise<WorldData> {
  *  `mainPorts` (the rules' own; with none known, by its name alone). Null for an id the world does not hold, or a
  *  locked one: played alone too, the page goes nowhere the server would refuse. */
 export function arrivalAt(
-  world: WorldData,
+  world: Pick<WorldData, 'nodes' | 'cities'>,
   id: string,
   mainPorts: readonly string[] | null = null,
 ): { continent: string; node: string; name: string } | null {
