@@ -8,6 +8,7 @@ const PORTED: ClickContext = {
   port: { id: 'overlook-port', name: 'Overlook', harbour: HARBOUR },
   coast: 'Saltmere',
   isleAt: ([x]) => (x > 50_000 ? { id: 7, words: 'the cove' } : null),
+  regionOf: () => null,
 };
 const RUINED: ClickContext = { ...PORTED, port: null, coast: 'Cairnwatch' };
 const DOCK: LandingAim = { kind: 'dock', port: 'Overlook', harbour: HARBOUR };
@@ -30,6 +31,27 @@ test('a port’s icon, or anywhere on its island, asks to dock there; a coast wi
     aim: { kind: 'ashore', coast: 'Cairnwatch', toward: [400, 900] },
   });
   assert.equal(clickAtSea({ kind: 'mark', id: 'elsewhere-port' }, 'oversea', PORTED), null, 'no other port here');
+});
+
+test('on an island cut into regions, land asks to dock only within the port’s; another region’s, to go ashore on it', () => {
+  // West of x = 0 is the port's region; east of it the Weirlands.
+  const regioned: ClickContext = {
+    ...PORTED,
+    regionOf: ([x]) => (x < 0 ? { coast: 'the Beacon Shore', port: true } : { coast: 'the Weirlands', port: false }),
+  };
+  assert.deepEqual(clickAtSea({ kind: 'land', point: [-400, 900, 30] }, 'oversea', regioned), {
+    kind: 'ask',
+    aim: DOCK,
+  });
+  assert.deepEqual(clickAtSea({ kind: 'land', point: [400, 900, 30] }, 'oversea', regioned), {
+    kind: 'ask',
+    aim: { kind: 'ashore', coast: 'the Weirlands', toward: [400, 900] },
+  });
+  const ruined: ClickContext = { ...RUINED, regionOf: () => ({ coast: 'the Cairn Heights', port: false }) };
+  assert.deepEqual(clickAtSea({ kind: 'land', point: [400, 900, 30] }, 'oversea', ruined), {
+    kind: 'ask',
+    aim: { kind: 'ashore', coast: 'the Cairn Heights', toward: [400, 900] },
+  });
 });
 
 test('a hostile ship’s mark sets the chase in either view; water by a sea island asks to go ashore on it', () => {

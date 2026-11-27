@@ -1,7 +1,7 @@
 // The city's pipelines, made once a GPU and format: the models (and solids), the masses and the plates, all drawn
 // into the scene's pass (4x MSAA, depth reversed) and sharing one bind group layout.
 import { skyUniformFor } from '../sky/skyUniform.ts';
-import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
+import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import { shadowLayouts } from '../shadow.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import {
@@ -53,6 +53,30 @@ export const MODEL_INSTANCE_LAYOUT = {
 /** One instance standing at the origin, whole: what a view draws its solids, laid already in place, with. */
 export const originInstance = (): ArrayBuffer => new ArrayBuffer(MODEL_INSTANCE_BYTES);
 
+/** Bytes of the city's view uniform (`cityShaders.ts` View). */
+export const CITY_VIEW_BYTES = 128;
+
+const poolSamplers = new WeakMap<GPUDevice, GPUSampler>();
+
+/** A light map for a city that is not lit: one dark texel. Its maker lets it go with the rest of its city. */
+export function darkPoolMap(device: GPUDevice): GPUTexture {
+  return device.createTexture({
+    size: [1, 1],
+    format: 'r8unorm',
+    usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
+  });
+}
+
+/** The light map's bindings (6 and 7): the map, read smoothly. */
+export function poolBindings(device: GPUDevice, map: GPUTexture): GPUBindGroupEntry[] {
+  const sampler = poolSamplers.get(device) ?? device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
+  poolSamplers.set(device, sampler);
+  return [
+    { binding: 6, resource: map.createView() },
+    { binding: 7, resource: sampler },
+  ];
+}
+
 const made = new WeakMap<GPUDevice, Map<GPUTextureFormat, CityPipelines>>();
 
 export function cityPipelines(gpu: Gpu): CityPipelines {
@@ -70,6 +94,9 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
       { binding: 3, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'float', viewDimension: '2d-array' } },
       { binding: 4, visibility: SHADER_STAGE.fragment, sampler: { type: 'filtering' } },
       { binding: 5, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'uint' } },
+      // a lit city's light map of its lamps' pools, and its smooth sampler
+      { binding: 6, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'float' } },
+      { binding: 7, visibility: SHADER_STAGE.fragment, sampler: { type: 'filtering' } },
     ],
   });
   const shadows = shadowLayouts(device);

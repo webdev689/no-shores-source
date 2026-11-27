@@ -13,7 +13,9 @@ function fieldsOf(wgsl: string, name: string): Map<string, { start: number; floa
   let start = 0;
   for (const [, field = '', kind = ''] of body.matchAll(/^\s*(\w+): (.+),\s*$/gm)) {
     const array = /^array<vec4f, (\d+)>$/.exec(kind);
-    const floats = kind === 'mat4x4f' ? 16 : kind === 'vec4f' ? 4 : array ? Number(array[1]) * 4 : Number.NaN;
+    // A vec3f is taken as three floats: these structs pack it before a 4-byte lane, which fills its 16-byte slot.
+    const sizes: Record<string, number> = { mat4x4f: 16, vec4f: 4, vec3f: 3, u32: 1, f32: 1 };
+    const floats = sizes[kind] ?? (array ? Number(array[1]) * 4 : Number.NaN);
     fields.set(field, { start, floats });
     start += floats;
   }
@@ -31,7 +33,9 @@ test("the view's buffer is laid out as the shader's View: each part where it sta
 });
 
 test("a light's floats are the shader's Light", () => {
-  assert.equal(fieldsOf(LIGHT_WGSL, 'Light').get('')?.start, LIGHT_FLOATS);
+  const light = fieldsOf(LIGHT_WGSL, 'Light');
+  assert.equal(light.get('')?.start, LIGHT_FLOATS);
+  assert.equal(light.get('space')?.start, 11, "the spaces' lane, which lightFloats writes as a u32");
 });
 
 test("a surface's mood is looked up past the farthest a cave's wall bulges into the rock", () => {

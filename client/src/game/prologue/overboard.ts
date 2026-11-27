@@ -75,7 +75,10 @@ export class Overboard implements Beat {
     // The fight has faded out already; begun here, the beat starts as black as the fight left it.
     screen.fade(1, 0);
     this.cues = new Cues([
-      [LIT_S - 0.1, () => this.skipped || void stage.play('overboard', true, { thule: 'thule', tithe: 'celebrant-1' })],
+      [
+        LIT_S - 0.1,
+        () => this.skipped || void stage.play('overboard', false, { thule: 'thule', tithe: 'celebrant-1' }),
+      ],
       [THROW_AT_S + FLIGHT_S, () => this.skipped || ambience.splash(1)],
       [OVER_S - SCENE.outS, () => screen.fade(1, SCENE.outS)],
       [OVER_S, () => (this.done = true)],

@@ -140,7 +140,7 @@ export function outpostsNode(ui: Interface, holds: Holds, given: Given, acts: Ou
         : state.shown === raisable && raisable
           ? raiseNode(ui, given, siteOf(raisable).name, raisable, acts)
           : hintAt(
-              'Sail to any island and come ashore at its outpost site, a flag on the map, to raise an outpost.',
+              'Sail to any island and come ashore at one of its outpost sites, flags on the map, to raise an outpost.',
               size,
             ),
     ],

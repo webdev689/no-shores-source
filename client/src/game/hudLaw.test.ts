@@ -140,6 +140,10 @@ test('in an Abyss run the words under its name end with the revives its company 
   assert.ok(placeWords(dungeon, null, 0, true).endsWith(' · No revives left · Darkness zone'), 'no respawn here');
   assert.ok(placeWords(dungeon, 'the Court', -1, true).endsWith(' · Darkness zone'));
   assert.equal(placeWords(dungeon, null, -1), placeWords(dungeon, null), 'none counted outside Abyss');
+  assert.equal(
+    placeWords(dungeon, 'the Court', -1, false, 'Chests 2 of 5'),
+    `${placeWords(dungeon, 'the Court')} · Chests 2 of 5`,
+  );
 });
 
 test("a place's words name its kind, and its island where the owner has named one", () => {

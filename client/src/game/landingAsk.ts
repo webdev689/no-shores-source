@@ -1,7 +1,7 @@
 // What a click at sea leads to, and the landing it asks the player to confirm before the ship makes for it: a port's
-// icon, or anywhere on its island, asks to dock there; a coast with no port asks to go ashore on it; one of the sea's
-// islands asks to go ashore on it. Yes sets the ship making for it, and it lands once it lies where it can; another
-// course given meanwhile lets the landing go.
+// icon, or anywhere on its region of the island, asks to dock there; another region, or a coast with no port, asks to
+// go ashore on it; one of the sea's islands asks to go ashore on it. Yes sets the ship making for it, and it lands
+// once it lies where it can; another course given meanwhile lets the landing go.
 import type { Point2 } from '../overworld/ground.ts';
 import type { Pick } from '../overworld/overworldPick.ts';
 import { HOSTILE_PREFIX } from './seaHostiles.ts';
@@ -28,11 +28,15 @@ export interface ClickContext {
   readonly port: { readonly id: string; readonly name: string; readonly harbour: Point2 } | null;
   readonly coast: string;
   readonly isleAt: (point: Point2) => { readonly id: number; readonly words: string } | null;
+  /** The region a point of the landmass lies in, named within a sentence, and whether it holds the living port;
+   *  none where the island has no regions. */
+  readonly regionOf: (point: Point2) => { readonly coast: string; readonly port: boolean } | null;
 }
 
-/** What a click that met `pick` does in the view switched to (`level`): a port's icon, or its island's land, asks to
- *  dock there, a coast with no port to go ashore; a sea island's water asks to go ashore on it; a hostile ship's mark
- *  sets the chase. Only the Oversea view sails to a point clicked: at sea level the helm's keys sail. */
+/** What a click that met `pick` does in the view switched to (`level`): a port's icon, or its region's land, asks to
+ *  dock there, another region or a coast with no port to go ashore; a sea island's water asks to go ashore on it; a
+ *  hostile ship's mark sets the chase. Only the Oversea view sails to a point clicked: at sea level the helm's keys
+ *  sail. */
 export function clickAtSea(pick: Pick, level: SeaLevel, here: ClickContext): SeaClick {
   if (pick.kind === 'none') return null;
   if (pick.kind === 'mark') {
@@ -43,9 +47,16 @@ export function clickAtSea(pick: Pick, level: SeaLevel, here: ClickContext): Sea
   // A sea island's own ground, or the water by it, is that island's before the open landmass's.
   const isle = here.isleAt(point);
   if (isle) return { kind: 'ask', aim: { kind: 'isle', ...isle } };
-  if (pick.kind === 'land')
-    return { kind: 'ask', aim: here.port ? dockAt(here.port) : { kind: 'ashore', coast: here.coast, toward: point } };
+  if (pick.kind === 'land') return { kind: 'ask', aim: landingOn(here, point) };
   return level === 'oversea' ? { kind: 'sail', point } : null;
+}
+
+/** The landing on the open landmass at `point`: its port's within the port's region (anywhere on an island with no
+ *  regions), else going ashore on the region there, or on the coast. */
+export function landingOn(here: ClickContext, point: Point2): LandingAim {
+  const region = here.regionOf(point);
+  if (here.port && (region === null || region.port)) return dockAt(here.port);
+  return { kind: 'ashore', coast: region?.coast ?? here.coast, toward: point };
 }
 
 const dockAt = (port: NonNullable<ClickContext['port']>): LandingAim => ({

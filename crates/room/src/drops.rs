@@ -107,7 +107,7 @@ impl Room {
         let high = from[2] + TUNING.step;
         let walled = !combat::sight::clear_line(&self.blocks, &self.floor, [from[0], from[1], high], [x, y, high]);
         let outside = self.section.as_ref().is_some_and(|section| !reach::inside(&section.ring, x, y));
-        let buried = self.floor.depth_in_solid(x, y) > PICK_UP_REACH - TUNING.radius;
+        let buried = self.floor.depth_in_solid(x, y, from[2]) > PICK_UP_REACH - TUNING.radius;
         let ground = ground_at(&self.blocks, &self.floor, x, y, from[2]);
         if walled || outside || buried || ground < from[2] - TUNING.step { from } else { [x, y, ground] }
     }

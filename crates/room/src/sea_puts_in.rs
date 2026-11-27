@@ -29,16 +29,24 @@ impl Sea {
 
     /// Where a ship not yet at sea puts in: where the sea last had its owner's ship; else, asked by a port city within
     /// reach of its roadstead, at that roadstead itself, never the page's own point; in a sea with no port cities,
-    /// where the page asks. None where it may not put to sea.
+    /// where the page asks. A ship last had off one region of an island, asked within reach of another region's
+    /// anchorage there, puts in at that anchorage: the page leaving a patrol zone finds the ship off the zone's side of
+    /// the island. None where it may not put to sea.
     pub(super) fn puts_in(&self, player: PlayerId, asked: Point) -> Option<Point> {
         let left = self.harbour.accounts.get(&player).and_then(|owner| self.harbour.left.get(owner));
         let left = left.and_then(|&[x, y, ..]| self.open_at([x, y]));
-        let [x, y] = match left {
-            Some(at) => at,
-            None if !self.harbour.harbours.puts_to_sea(asked) => return None,
-            None if self.harbour.harbours.ports.is_empty() => return Some(asked),
-            None => {
-                let port = self.harbour.harbours.nearest([asked.x as f64, asked.y as f64])?;
+        let [x, y] = [asked.x as f64, asked.y as f64];
+        let near = |at: [f64; 2]| libm::hypot(at[0] - x, at[1] - y) <= crate::harbour::REPAIR_REACH_M;
+        let open = |at: [f64; 2]| near(at) && self.open_at(at).is_some();
+        let region = world::regions::all().iter().find(|region| open(region.anchorage));
+        let moved = |region: &&world::regions::Region| left.is_some_and(|at| self.off_another_region(region, at));
+        let anchorage = region.filter(moved).map(|region| region.anchorage);
+        let [x, y] = match (anchorage, left) {
+            (Some(at), _) | (None, Some(at)) => at,
+            _ if !self.harbour.harbours.puts_to_sea(asked) => return None,
+            _ if self.harbour.harbours.ports.is_empty() => return Some(asked),
+            _ => {
+                let port = self.harbour.harbours.nearest([x, y])?;
                 self.harbour.harbours.ports.get(port)?.1
             }
         };

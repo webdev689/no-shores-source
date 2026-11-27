@@ -5,7 +5,7 @@ import { startRoomDoor } from '../../../server/roomDoor.ts';
 
 /** The room-wasm crate's dungeon door holds the same asks and hash (crates/room-wasm/src/dungeon_door.rs): four
  *  patrols' dungeons, the last of five blocks with its last a style deeper, then one laid by a seed and a style. */
-const AGREED_HASH = '939ef98a66ce5550';
+const AGREED_HASH = '28aeb7f85045e220';
 const AGREED_ASKS: readonly (readonly [string, string, number])[] = [
   ['saltgrass-downs', 'The Saltgrass Downs', 0],
   ['highwater-fells', 'The Highwater Fells', 1],

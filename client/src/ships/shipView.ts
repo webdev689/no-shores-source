@@ -27,6 +27,8 @@ import {
   YARD_FLOATS_AT,
 } from './shipShader.ts';
 import { tagShip, type ShipTags } from './shipTags.ts';
+import { lanternMesh } from './lanternMesh.ts';
+import type { Lantern } from './lanterns.ts';
 
 export { FRONT_FACE } from './shipShader.ts';
 
@@ -243,10 +245,21 @@ export class ShipView {
   private readonly sphere: readonly number[];
   /** Where its lanterns stand in its own frame, as its manifest says (`shipLanterns`). */
   readonly lanterns: readonly (readonly [number, number, number])[];
+  /** Where each of its lanterns' light burns in its own frame: its manifest's, then those of ours hung on it (at its
+   *  quarters, its door; the Sloop's taffrail). */
+  readonly lamps: readonly (readonly [number, number, number])[];
 
-  /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the device's kit made if it is not yet. */
-  static async open(gpu: Gpu, mesh: ShipMesh, sails: readonly SailCorners[], paint: HullPaint, slots = SHIP_SLOTS) {
-    return new ShipView(gpu, await shipKit(gpu), mesh, sails, paint, slots);
+  /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the lanterns `hung` on it, and the device's
+   *  kit made if it is not yet. */
+  static async open(
+    gpu: Gpu,
+    mesh: ShipMesh,
+    sails: readonly SailCorners[],
+    paint: HullPaint,
+    slots = SHIP_SLOTS,
+    hung: readonly Lantern[] = [],
+  ) {
+    return new ShipView(gpu, await shipKit(gpu), mesh, sails, paint, slots, hung);
   }
 
   private constructor(
@@ -256,6 +269,7 @@ export class ShipView {
     sails: readonly SailCorners[],
     paint: HullPaint,
     slots: number,
+    hung: readonly Lantern[],
   ) {
     this.gpu = gpu;
     this.device = gpu.device;
@@ -267,12 +281,24 @@ export class ShipView {
     this.tags = tagShip(mesh, sails);
     this.sphere = shipSphere(mesh, sails);
     this.lanterns = shipLanterns(mesh.name).slice(0, MOST_LANTERNS);
+    this.lamps = [...this.lanterns, ...hung.map((lantern) => lantern.at)];
     if (this.tags.yards.length > MOST_YARDS) throw new Error(`a ship of ${this.tags.yards.length} yards is too many`);
     if (this.tags.masts.length > MOST_MASTS) throw new Error(`a ship of ${this.tags.masts.length} masts is too many`);
     this.flat = [flagFlat()];
-    this.vertices = bufferOf(gpu.device, this.tags.vertices, BUFFER_USAGE.vertex);
-    this.indices = bufferOf(gpu.device, mesh.indices, BUFFER_USAGE.index);
-    this.indexCount = mesh.indices.length;
+    // Its hung lanterns after its own vertices, once its tags are laid: none of them is its shell, a yard or a mast.
+    const extra = lanternMesh(hung);
+    const vertices = new Uint8Array(this.tags.vertices.byteLength + extra.vertices.byteLength);
+    vertices.set(new Uint8Array(this.tags.vertices));
+    vertices.set(new Uint8Array(extra.vertices), this.tags.vertices.byteLength);
+    const indices = new Uint32Array(mesh.indices.length + extra.indices.length);
+    indices.set(mesh.indices);
+    indices.set(
+      extra.indices.map((corner) => corner + mesh.vertexCount),
+      mesh.indices.length,
+    );
+    this.vertices = bufferOf(gpu.device, vertices.buffer, BUFFER_USAGE.vertex);
+    this.indices = bufferOf(gpu.device, indices, BUFFER_USAGE.index);
+    this.indexCount = indices.length;
     // Its sails' grids, then its flag's: each slot's own, as each ship's holes are its own.
     const gridBytes = canvasIndices(sails.length + 1).byteLength;
     this.slots = Array.from({ length: slots }, () => {

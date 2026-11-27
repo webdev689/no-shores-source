@@ -122,7 +122,7 @@ export class Epilogue {
 
   /** Says a scene of hers, and of whoever answers her, in the dialogue box; resolved once said or hushed. */
   say(scene: string): Promise<void> {
-    return this.stage.play(scene, true, { stranger: 'stranger' });
+    return this.stage.play(scene, false, { stranger: 'stranger' });
   }
 
   /** Lights `lamps` in the scene she stands in, in place of the last she lit; none puts them out. */

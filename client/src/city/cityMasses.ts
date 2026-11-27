@@ -12,6 +12,8 @@ export const MASS_TIER_MASSES = 2;
 export const MASS_TIER_HULLS = 4;
 /** A ruin's broken mass, its walls scorched toward the break. */
 export const MASS_RUIN = 8;
+/** A building's mass, whose walls hold windows; a prop's (a well, a cart) holds none. */
+export const MASS_BUILDING = 16;
 
 /** A mass shorter than this, or smaller in plan, is a step or a ledge the far view leaves out. */
 const LEAST_HEIGHT_M = 1.5;
