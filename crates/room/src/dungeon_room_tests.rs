@@ -213,7 +213,13 @@ fn a_path_joins_the_way_in_and_the_reeves_post() {
         let room = Room::dungeon(PATROLS[1], number, LEVELS).expect("a patrol's dungeon");
         let (arrival, _) = forged(PATROLS[1], number).arrival();
         let route = room.nav.find_path([arrival[0], arrival[1], 0.0], room.garrison[0].at);
-        assert!(route.is_some(), "dungeon {number}: down every storey between them");
+        let route = route.unwrap_or_else(|| panic!("dungeon {number}: down every storey between them"));
+        // Every point of it on a floor or a flight's slope of its own storey, and none inside a solid.
+        for &[x, y, z] in &route {
+            let floor = room.floor.floor_under(x, y, z);
+            assert!((z - floor).abs() < 0.3, "dungeon {number}: {:?} off the floor at {floor}", [x, y, z]);
+            assert!(room.floor.height_under(x, y, z) <= z + movement::TUNING.step, "dungeon {number}: {:?}", [x, y, z]);
+        }
     }
 }
 

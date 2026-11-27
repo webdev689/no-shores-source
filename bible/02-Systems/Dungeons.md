@@ -365,12 +365,16 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   ceiling over a crouched body's head, 1 m; under the
   deepest storey's floor and over the top storey's ceiling nothing bounds a span),
   or where it ends nearer than a body's half-width (0.35 m) to that storey's rock or a solid standing on it and nearer
-  than it began: a body slides along a wall, steps away from one, and never stands in its face. Inside a solid, as a shove
-  might leave it, its nearness is less than nothing by its depth, so it walks out and never deeper. Movement climbs
+  than it began: a body slides along a wall, steps away from one, and never stands in its face. A flight's cell is rock
+  to a body but on its own flight or on the landing at its end on that storey, as the page draws it (`open_from`), so a
+  body beside a flight, past its foot or before its head stands its half-width off its side. Inside a solid, as a shove
+  might leave it, its nearness is less than nothing by its depth, so it walks out and never deeper; its feet, lifted to
+  the solid's top, are held as on the floor under it, so a solid near a lower room's ceiling never holds it in. Movement climbs
   blocks, never a ground's walls, so no solid is climbed; an Elite Dungeon's Ascents' pads are its room's blocks, and
   are climbed, their tops kept under the ceiling. Each cell keeps the solids
   within a half-width of it, so a move looks at a few. The browser predicts on the same ground (`fighter_dungeon`).
-- **What a line meets** (`line_walled`): rock at any height of its storey, rock or a slab between storeys wherever
+- **What a line meets** (`line_walled`): rock at any height of its storey (each end's, as feet there are held, so a
+  line high in a tall lower room meets that room's rock), rock or a slab between storeys wherever
   the line leaves the spans of a column it crosses, and a jamb, a pillar or a prop where the line passes between its
   bottom and its top, as a block meets a line; a line looks only at the solids by the cells it crosses. A foe's eyes, a
   soft lock, a blow, a telegraphed shape, a charge's lane and a shooter's cover are stopped by them and see over a
@@ -382,7 +386,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   lower than itself, and falls onto the floor or slope under it alone (`floor_under`).
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on each column's lowest span (a flight's slope
   where it is one, rock a wall 10 m over the top storey) with the rock between each span and the one over it as a
-  block with a bottom (`slabs`), every solid on its own floor as its colliders, each a body's height at least over
+  block with a bottom (`slabs`), and over a column's top span, unless it is the top storey's floor open as a line
+  sees it, rock from its ceiling to 10 m over the top storey, as a rock column stands, so the firing spots of the top
+  storey see no lane over a lower room; every solid on its own floor as its colliders, each a body's height at least over
   that floor, since the ground walls a solid however low, and an Ascent's pads with them, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It lays no
   links: no foe paths up a solid's or a pad's side or off its top.
 - **Its garrison** ([[Enemies]]): the end foe (the Reeve, a Miniboss, or an Elite Dungeon's Boss, held back until its

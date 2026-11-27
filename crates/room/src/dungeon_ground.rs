@@ -5,13 +5,13 @@
 //! wall's face. Each column of cells holds open spans one over another (`Dungeon::spans`): a body stands on the
 //! highest floor at or below a step over its feet, and a line or a shot is stopped by rock and the slabs between.
 
-use dungeon::{Dungeon, Span, Stair, storey_at, storey_floor};
+use dungeon::{Cell, Dungeon, FLIGHT_CELLS, Span, Stair, storey_at, storey_floor};
 use movement::heights::WALL_RISE_M;
 use movement::{Heights, TUNING, Terrain};
 
-/// A dungeon's ground: each storey's plane of open cells (a flight's and a Void's open), each column's spans, the
-/// flights, its solids (min x, min y, max x, max y, bottom, top, as the dungeon's `boxes` give them) with the storey
-/// each stands on, and for each column the solids within a body's half-width of it.
+/// A dungeon's ground: each storey's plane of open cells (a flight's and a Void's open), its cells, each column's
+/// spans, the flights, its solids (min x, min y, max x, max y, bottom, top, as the dungeon's `boxes` give them) with
+/// the storey each stands on, and for each column the solids within a body's half-width of it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DungeonGround {
     planes: Vec<Heights>,
@@ -19,7 +19,7 @@ pub struct DungeonGround {
     pub(crate) columns: usize,
     pub(crate) rows: usize,
     pub(crate) storeys: usize,
-    open: Vec<bool>,
+    cells: Vec<Cell>,
     spans: Vec<Vec<Span>>,
     stairs: Vec<Stair>,
     pub(crate) solids: Vec<[f64; 6]>,
@@ -60,7 +60,7 @@ impl DungeonGround {
         let planes = (0..dungeon.storeys)
             .map(|storey| Heights::new(0.0, 0.0, cell, columns, rows, dungeon.heights(storey)))
             .collect::<Option<Vec<_>>>()?;
-        let open = dungeon.cells.iter().map(|&kind| kind != dungeon::Cell::Rock).collect();
+        let cells = dungeon.cells.clone();
         let solids = dungeon.boxes();
         let solid_storeys = solids.iter().map(|solid| dungeon.storey_at(solid[4])).collect();
         let reach = TUNING.radius;
@@ -76,7 +76,7 @@ impl DungeonGround {
         }
         let spans = (0..plane).map(|at| dungeon.spans(at)).collect();
         let (storeys, stairs) = (dungeon.storeys, dungeon.stairs.clone());
-        Some(Self { planes, cell, columns, rows, storeys, open, spans, stairs, solids, solid_storeys, near })
+        Some(Self { planes, cell, columns, rows, storeys, cells, spans, stairs, solids, solid_storeys, near })
     }
 
     /// The solids, each (min x, min y, max x, max y, bottom, top).
@@ -144,6 +144,30 @@ impl DungeonGround {
         self.solid_storeys[number] == storey
     }
 
+    /// Whether a cell beside another of its storey (or itself) is open to a body in that one, as the page walls it: a
+    /// flight's cell and any other cell only where one is the flight's head on its upper storey or its foot on the
+    /// lower and the other its landing there; a flight's cells to one another; rock never.
+    fn open_from(&self, from: usize, to: usize) -> bool {
+        match (self.cells[from], self.cells[to]) {
+            (_, Cell::Rock) => false,
+            (Cell::Stair(one), Cell::Stair(other)) => one == other,
+            (Cell::Stair(number), _) => self.lands(number, from, to),
+            (_, Cell::Stair(number)) => self.lands(number, to, from),
+            _ => true,
+        }
+    }
+
+    /// Whether `end`, a cell of flight `number`, is its head on its upper storey or its foot on the lower, and
+    /// `landing` its landing there.
+    fn lands(&self, number: u16, end: usize, landing: usize) -> bool {
+        let plane = self.columns * self.rows;
+        self.stairs.get(usize::from(number)).is_some_and(|flight| {
+            let (storey, at, beside) = (end / plane, end % plane, landing % plane);
+            (storey == flight.upper && at == flight.cells[0] && beside == flight.top)
+                || (storey == flight.upper + 1 && at == flight.cells[FLIGHT_CELLS - 1] && beside == flight.bottom)
+        })
+    }
+
     /// How far a point stands from the nearest rock and solid of a storey, less than nothing inside one; no more
     /// than a body's half-width is ever asked, so only the cells round it are looked at.
     fn clearance(&self, x: f64, y: f64, storey: usize) -> f64 {
@@ -158,7 +182,7 @@ impl DungeonGround {
                 && next_row >= 0
                 && (next_column as usize) < self.columns
                 && (next_row as usize) < self.rows;
-            if !inside || !self.open[first + next_row as usize * self.columns + next_column as usize] {
+            if !inside || !self.open_from(first + at, first + next_row as usize * self.columns + next_column as usize) {
                 let (west, north) = (next_column as f64 * self.cell, next_row as f64 * self.cell);
                 nearest = nearest.min(apart_from(x, y, west, north, west + self.cell, north + self.cell));
             }
@@ -181,13 +205,17 @@ impl DungeonGround {
     #[must_use]
     pub fn clear_between(&self, from: [f64; 2], to: [f64; 2], keep: f64, storey: usize) -> bool {
         let first_cell = storey * self.columns * self.rows;
+        let ends = [from, to].map(|[x, y]| self.column_at(x, y).map(|at| first_cell + at));
         let first = |low: f64| ((low - keep) / self.cell).floor() as isize;
         let last = |high: f64| ((high + keep) / self.cell).floor() as isize;
         let rock_clear = (first(from[1].min(to[1]))..=last(from[1].max(to[1]))).all(|row| {
             (first(from[0].min(to[0]))..=last(from[0].max(to[0]))).all(|column| {
                 let inside = column >= 0 && row >= 0 && (column as usize) < self.columns && (row as usize) < self.rows;
                 let (west, north) = (column as f64 * self.cell, row as f64 * self.cell);
-                (inside && self.open[first_cell + row as usize * self.columns + column as usize])
+                let open = |next: usize| {
+                    self.cells[next] != Cell::Rock && ends.iter().flatten().all(|&end| self.open_from(end, next))
+                };
+                (inside && open(first_cell + row as usize * self.columns + column as usize))
                     || crate::dungeon_lines::clear_of(
                         [west, north, west + self.cell, north + self.cell],
                         from,
@@ -249,7 +277,12 @@ impl Terrain for DungeonGround {
     /// face, and one shoved inside a solid can only move out of it.
     fn walled_at(&self, from: (f64, f64), to: (f64, f64), z: f64) -> bool {
         let storey = self.storey_of_feet(from.0, from.1, z);
-        if self.planes[storey].walled(from, to) || self.holding(to.0, to.1, z).is_none() {
+        // Feet lifted onto a solid's top (a body shoved inside one) are held as on the floor under it, so a solid
+        // reaching near a lower room's ceiling never leaves no room for the head to move out.
+        let inside = self.depth_in_solid(from.0, from.1, z) > 0.0;
+        let landing = if inside { z.min(self.floor_under(to.0, to.1, z)) } else { z };
+        let held = self.holding(to.0, to.1, landing).filter(|span| z <= self.span_reach(span).1);
+        if self.planes[storey].walled(from, to) || held.is_none() {
             return true;
         }
         let ends = self.clearance(to.0, to.1, storey);
@@ -262,12 +295,13 @@ impl Terrain for DungeonGround {
         self.ground_below(x, y, z + TUNING.step, false).unwrap_or_else(|| storey_floor(self.storey_at(z)))
     }
 
-    /// A line is walled where it crosses rock of its storey, as a move is, where it passes through rock or a slab
-    /// between storeys, or where it passes through a solid between its bottom and its top: a look, a blow or a throw
-    /// passes over a low coffin, never through a shelf.
+    /// A line is walled where it crosses rock of its storey (each end's, as feet there are held), as a move is, where
+    /// it passes through rock or a slab between storeys, or where it passes through a solid between its bottom and its
+    /// top: a look, a blow or a throw passes over a low coffin, never through a shelf.
     fn line_walled(&self, from: [f64; 3], to: [f64; 3]) -> bool {
-        let storey = self.storey_at(from[2]);
-        (storey == self.storey_at(to[2]) && self.planes[storey].walled((from[0], from[1]), (to[0], to[1])))
+        let storey = self.storey_of_feet(from[0], from[1], from[2]);
+        (storey == self.storey_of_feet(to[0], to[1], to[2])
+            && self.planes[storey].walled((from[0], from[1]), (to[0], to[1])))
             || self.slab_across(from, to)
             || self.solid_across(from, to)
     }
