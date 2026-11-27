@@ -241,13 +241,12 @@ export class ShipView {
   private readonly flat: readonly Float32Array[];
   /** The bytes its canvas was last laid in, laid into again. */
   private canvasBytes: DataView | undefined;
-  /** The lanterns of ours hung on it (at its quarters, its door; the Sloop's taffrail), in its frame. */
-  readonly hung: readonly Lantern[];
   /** Its bounding sphere in its own frame, made once (`shipSphere`). */
   private readonly sphere: readonly number[];
   /** Where its lanterns stand in its own frame, as its manifest says (`shipLanterns`). */
   readonly lanterns: readonly (readonly [number, number, number])[];
-  /** Where each of its lanterns' light burns in its own frame: its manifest's, then those hung on it. */
+  /** Where each of its lanterns' light burns in its own frame: its manifest's, then those of ours hung on it (at its
+   *  quarters, its door; the Sloop's taffrail). */
   readonly lamps: readonly (readonly [number, number, number])[];
 
   /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the lanterns `hung` on it, and the device's
@@ -273,7 +272,6 @@ export class ShipView {
     hung: readonly Lantern[],
   ) {
     this.gpu = gpu;
-    this.hung = hung;
     this.device = gpu.device;
     this.kit = kit;
     this.waterline = mesh.waterline;
