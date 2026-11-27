@@ -441,8 +441,9 @@ impl Room {
         gate.waves += 1;
     }
 
-    /// One of the Waking's foes: at the company's tier's level, dropping nothing, hunting the nearest living player;
-    /// none while the room stands as many as it may beside a running public event's (`others_most`).
+    /// One of the Waking's foes: at the company's tier's level, shielded as any foe may be (`breach_shield`), dropping
+    /// nothing, hunting the nearest living player; none while the room stands as many as it may beside a running
+    /// public event's (`others_most`).
     fn stand_gate_foe(&mut self, gate: &mut Gate, (number, rank): (u8, Rank), at: [f64; 3]) -> Option<FighterId> {
         if self.living_foes() >= self.others_most() {
             return None;
@@ -451,7 +452,7 @@ impl Room {
         let level = tier.unwrap_or(Tier::Normal).foes_at();
         let place = self.nav.nearest_point(at).unwrap_or(at);
         let id = self.stand_foe(::foes::foe_type(number)?, rank, place, 0.0, None);
-        self.gird(id, level, None);
+        self.gird(id, level, self.breach_shield(id, (number, rank)));
         self.quests.spoilless.insert(id);
         let hunted = self.nearest_player([at[0], at[1]]);
         let clock = self.clock;

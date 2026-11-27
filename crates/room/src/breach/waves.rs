@@ -16,6 +16,9 @@ pub const STANDING_MOST: usize = 18;
 /// What a great foe's health is times for each player of the company beyond the first.
 pub const HEALTH_PER_PLAYER: f64 = 0.45;
 
+/// The stream a Breach's foes draw their shields from, apart from every other draw of the room.
+const SHIELD_STREAM: u64 = 0x7368_6965_6c64;
+
 /// A great foe's health times for a company of `players`.
 fn company_times(players: usize) -> f64 {
     1.0 + HEALTH_PER_PLAYER * (players.max(1) - 1) as f64
@@ -51,9 +54,9 @@ impl Room {
         self.living_foes() < self.foes_most && living < STANDING_MOST
     }
 
-    /// Stands one of an encounter's foes of a type and rank at a point, at the tier's level, dropping nothing and
-    /// hunting the nearest living player; named where it has a name of its own. Its waves' foes ask
-    /// `room_for_lesser` first, its walkers `room_for_walker`.
+    /// Stands one of an encounter's foes of a type and rank at a point, at the tier's level, shielded as any foe may be
+    /// (`breach_shield`), dropping nothing and hunting the nearest living player; named where it has a name of its own.
+    /// Its waves' foes ask `room_for_lesser` first, its walkers `room_for_walker`.
     pub(crate) fn stand_breach_foe(
         &mut self,
         breach: &mut Breach,
@@ -63,7 +66,7 @@ impl Room {
     ) -> Option<FighterId> {
         let place = self.nav.nearest_point(at).unwrap_or(at);
         let id = self.stand_foe(::foes::foe_type(number)?, rank, place, 0.0, None);
-        self.gird(id, breach.tier.foes_at(), None);
+        self.gird(id, breach.tier.foes_at(), self.breach_shield(id, (number, rank)));
         self.quests.spoilless.insert(id);
         if let Some(name) = name {
             self.names.insert(id, name);
@@ -78,6 +81,15 @@ impl Room {
         }
         breach.foes.push(id);
         Some(id)
+    }
+
+    /// The element of the shield a Breach's foe stands with, if any: drawn as any foe's, at the room's share
+    /// (`shield_chance`), from its own number. A Boss or a Miniboss stands with none, as anywhere, nor a bell or a
+    /// Watcher, an encounter's pieces rather than its fighters.
+    pub(crate) fn breach_shield(&self, id: FighterId, (number, rank): (u8, Rank)) -> Option<gear::Element> {
+        let pieces = [::foes::roster::BELL, ::foes::roster::IDOL];
+        let (_, shield) = crate::garrison::gird_of(self.world_seed ^ SHIELD_STREAM, id, None, self.shield_chance());
+        shield.filter(|_| rank < Rank::Miniboss && !pieces.contains(&number))
     }
 
     /// The players the run counts as its company: every one the room keeps, or every one in a room that keeps none (a

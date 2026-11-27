@@ -15,6 +15,13 @@ fn node() -> Room {
     Room::node(Floor::Flat, Vec::new(), Section { ring, spawns: vec![[0.0, 150.0]], falls_kill: false })
 }
 
+/// An Elite Dungeon's run at Elite, foes standing nowhere: its Court is dark while its Boss stands.
+fn elite_court() -> Room {
+    let mut room = elite_room("krakens-grotto");
+    room.set_difficulty(gear::Difficulty::Elite);
+    room
+}
+
 /// A player's page: each tick it sends one input, holding Use to revive or asking to respawn as it is told.
 struct Page {
     player: PlayerId,
@@ -188,7 +195,7 @@ fn in_an_abyss_run_a_revive_spends_one_of_the_company_s_revives_and_with_none_le
 
 #[test]
 fn in_the_court_while_its_boss_stands_no_one_respawns_by_their_ask_but_an_ally_revives_them() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_court();
     let mut ally = Page { player: hardy(&mut room), sequence: 0 };
     let mut fallen = Page::join(&mut room);
     unseal(&mut room);
@@ -212,7 +219,7 @@ fn in_the_court_while_its_boss_stands_no_one_respawns_by_their_ask_but_an_ally_r
 
 #[test]
 fn a_company_all_down_in_the_court_falls_back_to_its_checkpoint_as_the_court_starts_over() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_court();
     let players = [room.join().expect("in"), room.join().expect("in")];
     unseal(&mut room);
     let boss = room.boss().expect("awake");
@@ -303,7 +310,7 @@ fn a_player_revived_on_a_ledge_stands_on_it_not_on_the_ground_under_it() {
 
 #[test]
 fn the_courts_darkness_holds_those_lying_in_it_and_one_down_at_the_way_in_may_respawn_to_the_courts_door() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_court();
     let _ally = hardy(&mut room);
     let mut outside = Page::join(&mut room);
     let mut inside = Page::join(&mut room);
@@ -326,7 +333,7 @@ fn the_courts_darkness_holds_those_lying_in_it_and_one_down_at_the_way_in_may_re
 
 #[test]
 fn a_body_past_the_dungeon_s_last_column_lies_in_no_court_cell_however_its_row_wraps() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_court();
     let player = room.join().expect("in");
     unseal(&mut room);
     let encounters = room.encounters.as_ref().expect("encounters");
@@ -337,4 +344,24 @@ fn a_body_past_the_dungeon_s_last_column_lies_in_no_court_cell_however_its_row_w
     let past = [((column + columns) as f64 + 0.5) * dungeon::CELL_M, ((row - 1) as f64 + 0.5) * dungeon::CELL_M];
     put(&mut room, player, past);
     assert!(!room.darkness_for(player), "outside the dungeon's columns");
+}
+
+#[test]
+fn the_court_is_dark_at_elite_and_abyss_and_at_normal_one_fallen_in_it_respawns_by_their_ask() {
+    let mut room = elite_room("krakens-grotto");
+    let _ally = hardy(&mut room);
+    let mut inside = Page::join(&mut room);
+    unseal(&mut room);
+    let cell = room.encounters.as_ref().expect("encounters").court_cells[0];
+    let court = crate::encounters::encounters_tests::middle_of(&room, cell);
+    put(&mut room, inside.player, court);
+    use gear::Difficulty::{Abyss, Elite, Normal};
+    for (tier, dark) in [(Elite, true), (Abyss, true), (Normal, false)] {
+        room.set_difficulty(tier);
+        assert_eq!(room.darkness_for(inside.player), dark, "{tier:?}");
+    }
+    fell(&mut room, inside.player, RESPAWN);
+    inside.send(&mut room, false, true);
+    room.tick();
+    assert!(!room.players[&inside.player].fighter.dead(), "at Normal they stand again by their own ask");
 }

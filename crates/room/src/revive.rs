@@ -1,11 +1,11 @@
 //! Destiny's revive. A player fallen in a fight lies where they fell until an ally revives them, holding Use beside
 //! them for REVIVE_TICKS, or until they respawn by their own ask once they have lain RESPAWN ticks: revived, they stand
 //! where they lay; respawned, where `stand_again` puts them (`respawns.rs`), whole either way, the foes leaving them be
-//! for GRACE. A darkness zone (an Elite Dungeon's Court while its Boss stands, an Abyss run with no revive left) takes
-//! no ask to respawn: only an ally stands the fallen up there, and a company all down in the Court falls back to its
-//! checkpoint as the Court starts over. In an Abyss run every stand, revived or respawned, takes one of the company's
-//! revives (`abyss.rs`). A room with no section (the Test Ground, the prologue's wreck), whose page never asks, stands
-//! its fallen again as soon as they may, and a Breach as its rules say (`breach/fallen.rs`).
+//! for GRACE. A darkness zone (an Elite Dungeon's Court while its Boss stands, at Elite or Abyss; an Abyss run with no
+//! revive left) takes no ask to respawn: only an ally stands the fallen up there, and a company all down in the Court
+//! falls back to its checkpoint as the Court starts over. In an Abyss run every stand, revived or respawned, takes one
+//! of the company's revives (`abyss.rs`). A room with no section (the Test Ground, the prologue's wreck), whose page
+//! never asks, stands its fallen again as soon as they may, and a Breach as its rules say (`breach/fallen.rs`).
 
 use crate::players::GRACE;
 use crate::{EventKind, Input, PlayerId, Room};
@@ -96,16 +96,22 @@ impl Room {
     }
 
     /// Whether a body at (x, y) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell of an
-    /// Elite Dungeon's Court while its Boss stands, so one come back down at the way in may still respawn.
+    /// Elite Dungeon's Court while it is dark (`court_dark`), so one come back down at the way in may still respawn.
     fn dark_at(&self, x: f64, y: f64) -> bool {
         let in_court = self.encounters.as_ref().is_some_and(|encounters| {
             encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.court_cells.contains(&cell))
         });
-        self.revives() == Some(0) || (in_court && self.boss().is_some()) || self.gloomy()
+        self.revives() == Some(0) || (in_court && self.court_dark()) || self.gloomy()
     }
 
-    /// Whether every player the room judges (those it keeps, where it keeps anyone) is down while the Court's Boss
-    /// stands, the last of them for RESPAWN, so the company sees itself fall before it falls back; one the section
+    /// Whether an Elite Dungeon's Court is a darkness zone: while its Boss stands, at Elite or Abyss; at Normal its
+    /// fallen respawn by their own ask, as anywhere.
+    fn court_dark(&self) -> bool {
+        self.difficulty != gear::Difficulty::Normal && self.boss().is_some()
+    }
+
+    /// Whether every player the room judges (those it keeps, where it keeps anyone) is down while the Court is dark,
+    /// the last of them for RESPAWN, so the company sees itself fall before it falls back; one the section
     /// killed counts once it may respawn, so a Gloom that refuses it that does not leave it lying.
     fn fallen_in_darkness(&self) -> bool {
         let keeps = self.players.values().any(|found| found.owner.is_some());
@@ -114,7 +120,7 @@ impl Room {
             matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN)
                 || found.standing.may_respawn()
         };
-        (self.boss().is_some() || self.gloomy()) && !self.players.is_empty() && judged.all(lain)
+        (self.court_dark() || self.gloomy()) && !self.players.is_empty() && judged.all(lain)
     }
 
     /// A company fallen together while the Court's Boss stands: each player is told, shots, blows waiting and spells

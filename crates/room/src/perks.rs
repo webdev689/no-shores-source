@@ -235,10 +235,15 @@ pub fn trim_by<'a>(traits: impl IntoIterator<Item = &'a str>, forged: impl Fn(&s
 
 impl Room {
     /// Sets a player's trims from their worn gear, after an ask that may have changed it, their fighter taking the one
-    /// of the loadout it has drawn (`Player::armed`).
+    /// of the loadout it has drawn (`Player::armed`). The drink heals as every heal on a player does here
+    /// (`heal_times`), so the page predicts it by the trim the room sends.
     pub(crate) fn retrim(&mut self, player: PlayerId) {
+        let healing = self.heal_times();
         if let Some(found) = self.players.get_mut(&player) {
-            found.trims = [Slot::Melee, Slot::Ranged].map(|drawn| trim_of(&found.character, drawn));
+            found.trims = [Slot::Melee, Slot::Ranged].map(|drawn| {
+                let trim = trim_of(&found.character, drawn);
+                Trim { drink_heal: trim.drink_heal * healing, ..trim }
+            });
             found.fighter = found.armed(found.fighter);
         }
     }

@@ -527,3 +527,26 @@ fn every_great_foe_and_watcher_stands_past_a_full_cap() {
     begin_at(&mut room, &players, "court", "chest");
     assert!(breach(&room).fights.steward.boss.is_some(), "the Steward stands");
 }
+
+#[test]
+fn about_one_of_an_encounters_foes_in_five_stands_shielded_but_no_great_foe_bell_or_watcher() {
+    use ::foes::Rank::{Boss, Elite, Major, Miniboss, Minor};
+    use ::foes::roster::{BELL, BULWARK, HUSK, IDOL};
+    let (mut room, _) = run(Tier::Normal, 1);
+    let mut breach_box = room.breach.take().expect("run");
+    let (mouth, _) = breach_box.plan.numbered("mending", "mouth")[0];
+    let mut shields = |kind: (u8, ::foes::Rank), count: usize| -> Vec<Option<gear::Element>> {
+        let stood: Vec<FighterId> =
+            (0..count).filter_map(|_| room.stand_breach_foe(&mut breach_box, kind, mouth, None)).collect();
+        stood.iter().map(|id| room.foes[id].shield.map(|shield| shield.element)).collect()
+    };
+    let lesser = [shields((HUSK, Minor), 100), shields((HUSK, Major), 100), shields((HUSK, Elite), 100)].concat();
+    let shielded = lesser.iter().flatten().count();
+    assert!((40..=80).contains(&shielded), "about one in five of 300: {shielded}");
+    for element in gear::Element::ALL {
+        assert!(lesser.contains(&Some(element)), "each element drawn: {element:?}");
+    }
+    for kind in [(BULWARK, Miniboss), (BULWARK, Boss), (BELL, Minor), (IDOL, Elite)] {
+        assert!(shields(kind, 50).iter().all(Option::is_none), "{kind:?} stands with none");
+    }
+}

@@ -276,3 +276,23 @@ fn a_garrison_foe_raised_to_the_seas_backs_off_from_a_third_of_its_health_lost_i
     }
     assert!(backed, "raised, it backs off as one that stood at the level would");
 }
+
+#[test]
+fn a_broken_shield_grows_back_whole_once_its_foe_has_gone_a_while_unstruck_and_a_blow_on_its_health_waits_it() {
+    use gear::element::{SHIELD_REGROWS, Shield};
+    let mut room = levelled(NodeKind::Patrol, "glade", (4, 7));
+    let player = room.join().expect("room");
+    let foe = room.garrison[0].standing[0];
+    let most = room.foes[&foe].fighter.health_max;
+    room.foes.get_mut(&foe).expect("standing").shield = Some(Shield::whole(Element::Volt, most));
+    let left = |room: &Room| room.foes[&foe].shield.expect("shielded").left;
+    land(&mut room, player, foe, most * 0.6);
+    assert_eq!(left(&room), 0.0, "broken");
+    run(&mut room, SHIELD_REGROWS / 2);
+    land(&mut room, player, foe, 1.0);
+    run(&mut room, SHIELD_REGROWS - 1);
+    assert_eq!(left(&room), 0.0, "a blow past it keeps it down");
+    run(&mut room, 1);
+    assert_eq!(left(&room), most * gear::element::SHIELD_SHARE, "whole again");
+    assert!(!room.foes[&foe].fighter.dead());
+}

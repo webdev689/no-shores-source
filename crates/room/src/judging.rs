@@ -313,11 +313,15 @@ impl Room {
 
     /// The verdict as a foe's shield leaves it: the shield takes the blow's damage first, weighed by the blow's element
     /// against its own, and only what it could not hold reaches health. With it, what the shield took and whether it
-    /// broke.
+    /// broke. A blow that lands, on the shield or past it, keeps a broken one down a while longer (`regrow_shields`).
     fn shielded(&mut self, defender: FighterId, blow: &Blow, verdict: Verdict) -> (Verdict, Option<(f64, bool)>) {
+        let clock = self.clock;
         let Some(shield) = self.foes.get_mut(&defender).and_then(|foe| foe.shield.as_mut()) else {
             return (verdict, None);
         };
+        if matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. }) {
+            shield.struck_at = clock;
+        }
         if shield.left <= 0.0 {
             return (verdict, None);
         }
@@ -336,6 +340,15 @@ impl Room {
         };
         let took = held - shield.left;
         (verdict, (took > 0.0).then_some((took, shield.left <= 0.0)))
+    }
+
+    /// Each tick, every living foe's broken shield that has gone a while unstruck grows back whole (`Shield::regrow`).
+    pub(crate) fn regrow_shields(&mut self) {
+        let clock = self.clock;
+        let living = self.foes.values_mut().filter(|foe| !foe.fighter.dead());
+        for shield in living.filter_map(|foe| foe.shield.as_mut()) {
+            shield.regrow(clock);
+        }
     }
 
     pub(crate) fn tell(

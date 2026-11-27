@@ -732,10 +732,15 @@ the Tack in [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes
   from the fists; a shot keeps the one it was loosed with.
 - **A foe's shield.** One foe in five that a garrison stands carries a shield of an element chosen evenly, holding half
   its health, drawn from its node's id, so its group stands with the same shields each time; a Boss or a Miniboss never
-  does. A foe a Boss calls stands with none. While it holds, a blow wears the shield and not the foe's health: three
-  times as hard with the shield's own element, half as hard with another, as hard as on health with none. A blow the
-  shield holds whole fills no poise; what a guard pays in stamina is paid as ever. What a breaking shield cannot hold
-  reaches health. A shield does not come back.
+  does. Garrisons stand in a patrol zone, a patrol's dungeon, an Elite or Abyss Dungeon (whose encounters' waves are
+  drawn alike) and a sea island's dungeon. A Breach's foes are drawn so too, its encounters' and its Waking's, each from
+  its own number (`breach_shield`), but never its bells or Watchers. A foe a Boss calls stands with none, as does a
+  public event's. While it holds, a blow wears the shield and not the foe's health: three times as hard with the
+  shield's own element, half as hard with another, as hard as on health with none. A blow the shield holds whole fills
+  no poise; what a guard pays in stamina is paid as ever. What a breaking shield cannot hold reaches health. A broken
+  shield grows back whole once no blow has landed on its foe for ten seconds, as long as a blow still shares a kill
+  (`SHIELD_REGROWS`); one worn but not broken stays as it is, and one the Lodestone strips does not come back
+  ([[Breaches]]).
 - **What is told.** The room tells each blow a shield takes, with what it took, and its breaking; the browser draws a
   shielded foe's shield over its health in its element's colour, says what the shield took in that colour for the
   player's own blows, and stacks the words told of one foe at once. Its glyphs show the elements on the screens

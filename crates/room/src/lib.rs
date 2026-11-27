@@ -417,10 +417,8 @@ impl Room {
         }
         self.players.insert(id, joined);
         self.arrived(id);
-        // The test character comes in its gear, its perks' trims and its weapon taken at once.
-        if self.test {
-            self.retrim(id);
-        }
+        // Trimmed at once: the test character by its gear, its perks and its weapon, and anyone by the room's heals.
+        self.retrim(id);
         id
     }
 
@@ -494,6 +492,7 @@ impl Room {
         self.step_arts();
         self.judge_waiting();
         self.heal_linked();
+        self.regrow_shields();
         self.tell_brains();
         self.fall_with_callers();
         self.raise_the_dead();

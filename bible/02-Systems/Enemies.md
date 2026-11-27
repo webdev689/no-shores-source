@@ -233,7 +233,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   the rest round it facing out; the others walk beats as any group does.
 - **Levels and shields** ([[Garrisons Take the Gear Loop's Levels and Shields]]): each foe stands at a level drawn
   evenly from its island's band ([[Gear]], "Where foes stand"), raised by the difficulty its voyage set out at, and one foe in
-  five, a Boss or a Miniboss never, with a shield of an element drawn evenly, holding half its health; both are drawn
+  five, a Boss or a Miniboss never, with a shield of an element drawn evenly, holding half its health and growing back
+  once broken and left ten seconds unstruck ([[Gear]], "Elements and shields"); both are drawn
   from the node's id, so a group stands again with the same. Its level sets its power against a player's gear, and its
   rank multiplies on top: a Grey Tithe Elite at level 13 has 2.2 times a Major's health, times 1.07 to the 13th (2.41),
   5.30 times in all, and its blow is 1.15 times a Major's, times 2.41 on a level-13 player with no Defense. A Boss's

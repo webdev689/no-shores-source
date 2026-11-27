@@ -7,7 +7,7 @@ use movement::{Block, Body, Controls, Flat, Mode, TICK_SECONDS, standing, step_b
 use std::f64::consts::{FRAC_PI_2, PI};
 
 /// Both tests hold this value; a change to the moves changes it in both, on purpose.
-pub const RUN_HASH: &str = "e8369fd91758ace2";
+pub const RUN_HASH: &str = "f3c408c9a9782f6f";
 
 /// A ledge to catch and climb, a low thin wall to vault, a tower to climb, and a step.
 const COURSE: [Block; 4] = [

@@ -230,7 +230,8 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
     shield and element, since the same roll is read at a higher bar ("Half of all foes carry shields.").
   - Trickle: an Art's recharge takes 1.5 times as long ("Arts take 50% longer to recharge.").
   - Juggler: no Ammo box and no crate drop ("No ammunition drops.").
-  - Exposure: a heal on a player gives half; foes heal in full ("Heals restore half as much.").
+  - Exposure: a heal on a player gives half, the healing drink's among them; foes heal in full ("Heals restore half
+    as much.").
 
 ## What it pays, once
 

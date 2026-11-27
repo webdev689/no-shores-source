@@ -427,12 +427,12 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
 - **A wipe at Abyss** keeps every broken seal; the rest wait again, every wave is gone before the posts stand again
   (any dungeon's, as a wave never stands again), and the Court starts over, its Boss held back again unless every seal
   is broken. Leaving and coming back keeps everything: it is the room's.
-- **The Court's darkness.** While the Boss stands the Court's cells are a darkness zone ([[Revives]]): no one fallen
-  there respawns by their own ask, and only an ally stands them up; one fallen outside it may. A company all down
-  while the Boss stands, below Abyss, falls back to the Court's checkpoint once the last of them has lain four
-  seconds, every player whole at its door: its waves
-  are gone, its ward, anchors and Fury begin again, and its Boss stands again whole and awake; every seal stays
-  broken.
+- **The Court's darkness.** At Elite and Abyss, while the Boss stands, the Court's cells are a darkness zone
+  ([[Revives]]): no one fallen there respawns by their own ask, and only an ally stands them up; one fallen outside it
+  may. At Normal the Court is no darkness zone, and its fallen respawn by their own ask at its checkpoint. A company all
+  down in the dark at Elite falls back to the Court's checkpoint once the last of them has lain four seconds, every
+  player whole at its door: its waves are gone, its ward, anchors and Fury begin again, and its Boss stands again
+  whole and awake; every seal stays broken.
 - **On the wire.** Each snapshot carries the encounters whole (`EncounterSeen`, about 240 bytes): each seal's kind,
   state, progress, its pieces' marks (a Litany's runes dark, showing, lit or wrong; a Weighing's plates in play and a
   Holdfast's ring stood on; an Ascent's players on its stone and the living in its room) and its relic's strength;
