@@ -441,6 +441,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Character Slots and the Test Room as Claude Builds Them]]
 - [[Passages as Claude Builds Them]]
 - [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]
+- [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
 
 ## Replaced
 
