@@ -295,12 +295,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     );
   };
 
-  /** Walks ashore on `held` on the sea's `word` for it; online its room is joined by its name alone. */
+  /** Walks ashore on `held` on the sea's `word` for it, at the voyage's tier; online its room is joined by its name. */
   const isleFoot = (held: IsleHeld, word: string | null) =>
     ashoreOn(
       footContext,
       held,
-      { word, continent: continents[held.seen.continent]?.id ?? '', seas: 'normal' },
+      { word, continent: continents[held.seen.continent]?.id ?? '', voyage: playing.helmMap },
       trips.enterSeaDungeon,
     );
   const { travel, behindVeil, retry, tell, wayOut } = startTravel({

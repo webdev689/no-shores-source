@@ -11,13 +11,16 @@ import { type DungeonDoor, isleNode, isleRoomName, isleUses, isleWords } from '.
 import type { IsleHeld } from './isles.ts';
 
 /** The player walks ashore on an island: online into its room on the server, which opens on the sea's word; alone
- *  into the same room in the rooms' worker, opened on the sea's word (`word`). */
+ *  into the same room in the rooms' worker, opened on the sea's word (`word`). The island and its dungeon stand at the
+ *  tier the voyage set out at, Normal before one has, as a node landed at does. */
 export async function ashoreOn(
   context: FootContext,
   held: IsleHeld,
-  { word, continent, seas }: { readonly word: string | null; readonly continent: string; readonly seas: Difficulty },
+  where: { readonly word: string | null; readonly continent: string; readonly voyage: Voyage },
   enter: (door: DungeonDoor) => void,
 ): Promise<Foot> {
+  const { word, continent } = where;
+  const seas = where.voyage.difficulty ?? 'normal';
   const node = isleNode(held.seen, held.plan, { continent, seas });
   const gear: { gear: GearState | null } = { gear: null };
   let hear: (snapshot: Snapshot) => void = () => undefined;
@@ -57,6 +60,11 @@ export async function ashoreOn(
     link.close?.();
     throw error;
   }
+}
+
+/** The voyage an island is landed from: the tier its card set it out at, none before one has (`HelmMap`). */
+interface Voyage {
+  readonly difficulty: Difficulty | undefined;
 }
 
 /** The tiers by their number in the rooms. */

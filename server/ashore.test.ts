@@ -11,7 +11,7 @@ const [SEAS, TIERED] = [['sea'], ['sea', 'sea--elite', 'sea--abyss']];
 /** A room's word on a player for the seas, as `room_named` gives it: only player 4's account, Ann's, is known. */
 const named = (player: number) => (player === 4 ? '{"account":"ann","hull":2,"level":9}' : '');
 
-test('every room on land names its players to the one sea, at Normal, at its island', () => {
+test('every room on land names its players to the one sea, at Normal, at its island, whatever its own tier', () => {
   assert.deepEqual(placeOf('node-overlook-social', reach(), null), {
     seas: SEAS,
     island: { continent: 'continent-1' },
@@ -33,6 +33,9 @@ test('every room on land names its players to the one sea, at Normal, at its isl
     island: { island: 7, seed: '255' },
     draws: true,
   });
+  // An island landed at Abyss and its dungeon's run at Elite are the one sea's islands, as every island is.
+  for (const name of ['isle-7-00000000000000ff--abyss', 'sea-dungeon-continent-1-crypt-0000002a--elite--run-a1b2c3d4'])
+    assert.deepEqual(placeOf(name, null, { id: 7, seed: '255' })?.seas, SEAS, name);
   assert.deepEqual(placeOf('passage-continent-1-w12-z3--run-a1b2c3d4', null, null), {
     seas: SEAS,
     island: { continent: 'continent-1' },

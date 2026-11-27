@@ -64,7 +64,7 @@ test('a node has one room at each difficulty, by one spelling each', () => {
   assert.equal(nodeRoom('tidewall--storm'), null);
 });
 
-test('the sea has one room, at Normal: no room opens at its other tiers, nor their islands', () => {
+test('the sea has one room, at Normal: no room opens at its other tiers', () => {
   assert.equal(seaRoom('sea'), 0);
   assert.equal(seaRoom(seaRoomName(0)), 0, 'its name reads back');
   for (const name of ['sea--elite', 'sea--abyss', ...[1, 2].map(seaRoomName)]) assert.equal(seaRoom(name), null, name);
@@ -81,7 +81,9 @@ test("an island's room is named by its number and its whole seed, one spelling e
   assert.equal(isleRoom('0-00000000000000ff'), null);
   assert.equal(isleRoom('5000000000-00000000000000ff'), null, 'past 32 bits');
   assert.equal(isleRoom('5-00000000000000FF'), null);
-  assert.deepEqual(isleRoom('5-00000000000000ff--abyss'), { id: 5, seed: '255', seas: 2 }, "the abyss sea's island");
+  // Landed at the tier the voyage set out at, as a node's room is, an island being the one sea's at any.
+  assert.deepEqual(isleRoom('5-00000000000000ff--elite'), { id: 5, seed: '255', seas: 1 }, 'landed at Elite');
+  assert.deepEqual(isleRoom('5-00000000000000ff--abyss'), { id: 5, seed: '255', seas: 2 }, 'landed at Abyss');
   assert.equal(isleRoom('5-00000000000000ff--normal'), null, 'Normal is the plain name');
 });
 

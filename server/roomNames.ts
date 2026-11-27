@@ -312,9 +312,9 @@ export function canonicalRoom(name: string): string {
   return own === undefined ? name : [node, own, ...rest].join('--');
 }
 
-/** A sea island's room by the name after `isle-`: `<its number>-<its seed, 16 hex digits>`, and `--elite` or
- *  `--abyss` after it for an island of that sea's room, so an island the sea rolls after a restart, whose number an
- *  older one held, never opens that older one's room. Null for any other spelling. */
+/** A sea island's room by the name after `isle-`: `<its number>-<its seed, 16 hex digits>`, so an island the sea
+ *  rolls after a restart, whose number an older one held, never opens that older one's room; and `--elite` or
+ *  `--abyss` after it for the tier the voyage landed at, as a node's room has. Null for any other spelling. */
 export function isleRoom(name: string): { readonly id: number; readonly seed: string; readonly seas: number } | null {
   const [island = '', seas, ...more] = name.split('--');
   const difficulty = seas === undefined ? 0 : SEAS.indexOf(seas);
@@ -330,8 +330,8 @@ export function seaRoomName(seas: number): string {
 }
 
 /** The sea's room by its name, answering its difficulty: `sea`, at Normal, the one sea every voyage sails for now;
- *  null for any other name, `sea--elite` and `sea--abyss` among them, so no room opens at the sea's other tiers, nor
- *  an island or a dungeon of theirs. */
+ *  null for any other name, `sea--elite` and `sea--abyss` among them, so no room opens at the sea's other tiers. An
+ *  island landed at Elite or Abyss, and its dungeon, are the one sea's (`seaIsland.ts`). */
 export function seaRoom(name: string): number | null {
   return name === seaRoomName(0) ? 0 : null;
 }

@@ -68,9 +68,9 @@ const AGAIN = 1013;
 
 /**
  * One room on Cloudflare: a Durable Object for each room's name (`roomNames.ts`), keeping the room in WebAssembly:
- * `sea` the sea (with `--elite` or `--abyss` at a harder tier); `node-...` a node's room, a patrol's shared dungeon, or
- * a run (`--run-<instance>`, kept to one company); `sea-dungeon-...` a sea island's dungeon and `isle-...` an island a
- * sea rolled, each opened on that sea's word; `passage-...` a passage zone's room (`passageRoom`); `fleet-<name>` a
+ * `sea` the sea, at Normal for now; `node-...` a node's room, a patrol's shared dungeon, or a run (`--run-<instance>`,
+ * kept to one company); `sea-dungeon-...` a sea island's dungeon and `isle-...` an island the sea rolled, each
+ * opened on its word at its name's tier; `passage-...` a passage zone's room (`passageRoom`); `fleet-<name>` a
  * fleet's place; `test-<name>` the Test Ground's course.
  * Each binary message on a player's WebSocket is an input. While anyone is in, it ticks the room with the clock and
  * sends each player each tick's snapshot. Its sockets live and die with it, the room kept in its memory (what its
