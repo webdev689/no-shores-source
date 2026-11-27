@@ -19,6 +19,6 @@ sessions is so long". Offered: (1) sessions leave the full check to CI, as the r
 
 - A session runs the repo checks and the tests of what it changed, never the whole `cargo xtask check`; CI runs that
   ([[Toolkit]], [[Checks]]).
-- On a pull request, and wherever the check runs but the nightly run, the world's sweeps check a sample; the nightly
-  run on `main` checks them whole ([[Checks]]).
-- Builds link with a faster linker and share a build cache where they can ([[Checks]]).
+- On a pull request, and wherever the check runs but the nightly run, the world's sweeps a sample can stand for check
+  a sample; the nightly run on `main` checks them whole ([[Checks]]).
+- Builds are made faster where a measurement shows it helps ([[Checks]]).
