@@ -107,14 +107,14 @@ table Isle {
   found: bool;
 }
 
-// A player's ship's hurts as the sea keeps them: the shares of its hull, canvas and men it has, and the seconds its
-// repair has left (0 with none under way).
+// A player's ship's hurts as the sea keeps them: the shares of its hull, canvas and men it has. A repair is done at
+// once, so `repair_left` is kept deprecated only so the table's field numbers hold.
 table Kept {
   player: uint;
   hull: double;
   sail: double;
   crew: double;
-  repair_left: double;
+  repair_left: double (deprecated);
 }
 
 // A captain's deck that players boarded: each boarder's number at sea and in turn their number on its deck, its hull

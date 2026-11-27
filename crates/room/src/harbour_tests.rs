@@ -1,41 +1,13 @@
 use super::*;
 
 #[test]
-fn a_repair_takes_a_second_for_each_hundredth_missing_of_the_most_missing_and_a_hundred_at_most() {
-    assert!((Repair::takes([0.9, 1.0, 0.95]) - 10.0).abs() < 1e-9);
-    assert!((Repair::takes(SUNK_KEPT) - 90.0).abs() < 1e-9);
-    assert!((Repair::takes([0.0, 0.0, 0.0]) - REPAIR_MOST_S).abs() < 1e-9);
-    assert_eq!(Repair::takes([1.0; 3]), 0.0);
-}
-
-#[test]
-fn a_repair_makes_it_whole_evenly_and_stops_where_it_stood() {
-    let mut repairs = Repairs::default();
-    repairs.under_way.insert(1, Repair { from: [0.5, 0.8, 1.0], seconds: 0.0 });
-    // Half of its 50 s.
-    for _ in 0..25 * 60 {
-        repairs.tick(1.0 / 60.0);
-    }
-    let now = repairs.under_way[&1].now();
-    assert!((now[0] - 0.75).abs() < 1e-6 && (now[1] - 0.9).abs() < 1e-6 && now[2] == 1.0, "{now:?}");
-    let stood = repairs.stop(1).expect("one under way");
-    assert_eq!(stood, now);
-    assert!(repairs.under_way.is_empty());
-}
-
-#[test]
-fn a_repair_done_ends_with_it_whole() {
-    let mut repairs = Repairs::default();
-    repairs.under_way.insert(1, Repair { from: [0.99, 1.0, 1.0], seconds: 0.0 });
-    let mut last = Vec::new();
-    for _ in 0..61 {
-        let stepped = repairs.tick(1.0 / 60.0);
-        if !stepped.is_empty() {
-            last = stepped;
-        }
-    }
-    assert!(repairs.under_way.is_empty());
-    assert!(last.len() == 1 && last[0].1.iter().all(|share| (share - 1.0).abs() < 1e-12), "{last:?}");
+fn a_repair_costs_two_aurem_for_each_whole_percent_missing_of_the_most_missing_a_part_counted_whole() {
+    assert_eq!(repair_price([0.9, 1.0, 0.95]), 20);
+    assert_eq!(repair_price([0.7, 1.0, 1.0]), 60, "a share a hair off its percent counts as that percent");
+    assert_eq!(repair_price([0.995, 1.0, 1.0]), 2, "half a percent costs a whole one");
+    assert_eq!(repair_price(SUNK_KEPT), 180);
+    assert_eq!(repair_price([0.0; 3]), 200);
+    assert_eq!(repair_price([1.0; 3]), 0, "whole, free");
 }
 
 #[test]

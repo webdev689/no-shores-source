@@ -3,6 +3,7 @@
 // at a port city, and their ship's repair by one. The sea decides all of it; the page shows its word and sends the
 // player's asks.
 import type { NavalEvent } from '../network/seaFight.ts';
+import type { Point2 } from '../overworld/ground.ts';
 import { TOLD } from '../network/seaHarbour.ts';
 import { capital } from '../player/gear.ts';
 import type { SeaFacts } from '../rules/watersRules.ts';
@@ -90,10 +91,39 @@ export function linesOf(told: readonly (readonly number[])[], naval: readonly Na
   return lines;
 }
 
-/** Their ship's repair as Manage offers it: whether it is whole, and the seconds a repair under way has left. */
-export interface RepairShown {
-  readonly whole: boolean;
-  readonly left: number;
+/** The sea's rules SeaWord reads: its rules' facts and the port cities' roadsteads. */
+export type SeaWordFacts = SeaFacts & { readonly roadsteads: readonly Point2[] };
+
+/** A repair as a port's card and Manage offer it: its price in Aurem, and why it cannot be had now, if it cannot. */
+export interface RepairOffer {
+  readonly price: number;
+  readonly why: string | null;
+}
+
+/** A ship's shares of hull, canvas and men. */
+type Shares = { readonly hull: number; readonly sail: number; readonly crew: number };
+
+/** What making a ship whole costs, as the room charges it (crates/room/src/harbour.rs `repair_price`): `perPercent`
+ *  Aurem for each percent missing of the most missing of hull, canvas and men, a part of a percent counted whole. */
+export function repairPrice(kept: Shares, perPercent: number): number {
+  const missing = Math.max(...[kept.hull, kept.sail, kept.crew].map((share) => 1 - Math.min(Math.max(share, 0), 1)));
+  // A share read back from the character's ten-thousandths lands a hair past its percent, never a whole millionth.
+  return Math.max(0, Math.ceil(missing * 100 - 1e-6)) * perPercent;
+}
+
+/** The repair offered a ship with `kept` hurts (none out of the sea room) to a player holding `aurem`. */
+export function repairOffer(kept: Shares | null, aurem: number, perPercent: number): RepairOffer {
+  if (!kept) return { price: 0, why: 'Repairs are made at sea, by a port city.' };
+  const price = repairPrice(kept, perPercent);
+  if (price === 0) return { price, why: 'The ship is whole.' };
+  return { price, why: aurem < price ? `You hold ${aurem} Aurem of the ${price} it costs.` : null };
+}
+
+/** Where a port's repair is had and what it costs now: within `reachM` of one of the port cities' `roadsteads`. */
+export interface PortRepairs {
+  readonly offer: RepairOffer;
+  readonly reachM: number;
+  readonly roadsteads: readonly Point2[];
 }
 
 /** The sea's word to the player, frame by frame. */
@@ -101,7 +131,7 @@ export class SeaWord {
   /** Each piece of what floats laid for the player, by its number: what it looks like. */
   private readonly kinds = new Map<number, string>();
   private readonly ports: readonly PortCity[];
-  private readonly facts: SeaFacts;
+  private readonly facts: SeaWordFacts;
   /** The port city the player washed up at, by the sea's number, until they walk ashore there; or the found island
    *  they washed up on, by its number. */
   private washed: number | null = null;
@@ -109,7 +139,7 @@ export class SeaWord {
   private said: { readonly line: string; readonly at: number }[] = [];
 
   /** `ports` the port cities in the sea's order; `facts` the sea's rules as its waters' table gives them. */
-  constructor(ports: readonly PortCity[], facts: SeaFacts) {
+  constructor(ports: readonly PortCity[], facts: SeaWordFacts) {
     [this.ports, this.facts] = [ports, facts];
   }
 
@@ -169,25 +199,26 @@ export class SeaWord {
     return this.washedOn;
   }
 
-  /** The ship's repair as Manage offers it, from the room's word on its kept hurts. */
-  static repairOf(room: SeaRoom): RepairShown | null {
-    const kept = room.kept;
-    if (!kept) return null;
-    return { whole: kept.hull >= 1 && kept.sail >= 1 && kept.crew >= 1, left: kept.repairLeft };
+  /** The repair offered from the room's word on the ship's kept hurts (none out of the sea room) to a player holding
+   *  `aurem`, and where it is had. */
+  repairs(room: SeaRoom | null, aurem: number): PortRepairs {
+    const { repairAuremPerPercent, repairReachM, roadsteads } = this.facts;
+    return { offer: repairOffer(room?.kept ?? null, aurem, repairAuremPerPercent), reachM: repairReachM, roadsteads };
   }
 
-  /** The ship's kept hurts and repair as Manage's panel shows them; none out of the sea room. */
-  keptOf(room: SeaRoom | null): Kept | null {
+  /** The ship's kept hurts and repair as Manage's panel shows them, to a player holding `aurem`; none out of the sea
+   *  room. */
+  keptOf(room: SeaRoom | null, aurem: number): Kept | null {
     const kept = room?.kept;
-    if (!kept || !room) return null;
-    return { hull: kept.hull, sail: kept.sail, crew: kept.crew, repair: this.repairWords(SeaWord.repairOf(room)) };
+    if (!kept) return null;
+    const repair = this.repairWords(this.repairs(room, aurem).offer);
+    return { hull: kept.hull, sail: kept.sail, crew: kept.crew, repair };
   }
 
-  /** The repair's line for Manage's panel. */
-  repairWords(repair: RepairShown | null): string {
-    if (!repair) return 'Repairs are made at sea, by a port city';
-    if (repair.left > 0) return `Repairing it: ${Math.ceil(repair.left)} s left`;
+  /** The repair's line for Manage's panel: its price and where it is had, or why it cannot be. */
+  repairWords(offer: RepairOffer): string {
+    if (offer.why) return offer.why;
     const reach = `${Number((this.facts.repairReachM / 1000).toFixed(1))} km`;
-    return repair.whole ? 'The ship is whole' : `Repair: free, lying at rest within ${reach} of a port city`;
+    return `Repair: ${offer.price} Aurem, lying at rest within ${reach} of a port city`;
   }
 }

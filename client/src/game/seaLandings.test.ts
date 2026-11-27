@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import type { Point2 } from '../overworld/ground.ts';
 import { regionsOf } from '../overworld/regions.ts';
 import { BINDS } from '../player/input.ts';
+import type { Node } from '../ui/node.ts';
 import { byId, fakeInterface } from '../ui/uiForTests.ts';
 import type { IsleAt } from './isleLaw.ts';
 import type { IsleHeld, Isles } from './isles.ts';
@@ -12,6 +13,9 @@ import type { Landfall } from './seaLaw.ts';
 import { aimOf, clickContext, landingAskNode, SeaLandings } from './seaLandings.ts';
 
 const HARBOUR: Point2 = [1_000, -2_000];
+/** The roadstead off Overlook's harbour the room repairs by, and another far off. */
+const ROADSTEAD: Point2 = [1_000, -4_000];
+const ROADSTEADS: Point2[] = [[90_000, 90_000], ROADSTEAD];
 /** Its pier's two places, out from the harbour. */
 const PIER = [
   [1_000, -2_050, 0],
@@ -49,7 +53,12 @@ function seaOf() {
     fight: null as object | null,
     busy: false,
     view: { kind: 'sail' },
-    sighted: { others: [] as { x: number; y: number }[], settledShip: null as { x: number; y: number } | null },
+    sighted: {
+      others: [] as { x: number; y: number }[],
+      settledShip: null as { x: number; y: number; pace?: number } | null,
+      ownShip: null as { x: number; y: number; pace?: number } | null,
+      ask: (what: string) => void asked.push(`ask ${what}`),
+    },
     passage: {
       sailAlong: (points: Point2[]) => void asked.push(`out ${points.join(' ')}`),
       letGo: () => void asked.push('voyage let go'),
@@ -75,8 +84,9 @@ function seaOf() {
 function landingsOf(ruined = false, isles = NO_ISLES) {
   const { sea, asked } = seaOf();
   const landed: LandingAim[] = [];
-  const held = { now: false, refused: false };
+  const held = { now: false, refused: false, offer: { price: 40, why: null as string | null } };
   const landings = new SeaLandings({
+    repairs: () => ({ offer: held.offer, reachM: 3_000, roadsteads: ROADSTEADS }),
     sea: () => sea as unknown as Sea,
     landmass: () => ({ id: 'continent-1', plan: { ...PLAN, ruined }, outline: COAST, heightAt: () => -50 }) as never,
     isles,
@@ -84,7 +94,16 @@ function landingsOf(ruined = false, isles = NO_ISLES) {
     land: (aim) => !held.now && !held.refused && landed.push(aim) > 0,
   });
   const hold = (holding: boolean) => (held.now = holding);
-  return { landings, sea, asked, landed, hold, refuse: (refused: boolean) => (held.refused = refused) };
+  const refuse = (refused: boolean) => (held.refused = refused);
+  return {
+    landings,
+    sea,
+    asked,
+    landed,
+    hold,
+    refuse,
+    offer: (why: string | null) => (held.offer = { price: 40, why }),
+  };
 }
 
 test('a click on the sea sails at once; on the island it asks first, and no answer leaves the ship as it was', () => {
@@ -203,7 +222,7 @@ test('regions: the port’s region docks, another’s goes ashore on it, and L a
   );
 });
 
-test('the confirmation asks in brass; its yes’s press answers yes, and Cancel’s no', () => {
+test('the confirmation asks in brass; its yes’s press answers yes, and Leave’s no', () => {
   const { ui, step } = fakeInterface(1280, 720);
   const answers: boolean[] = [];
   const asking = { aim: { kind: 'dock', port: 'Overlook', harbour: HARBOUR } as const, near: false };
@@ -226,14 +245,14 @@ test('the confirmation asks in brass; its yes’s press answers yes, and Cancel�
   press('sea:ask-yes');
   press('sea:ask-no');
   assert.deepEqual(answers, [true, false]);
-  assert.equal(byId(card, 'sea:ask-no')?.label, 'Cancel  Esc');
+  assert.equal(byId(card, 'sea:ask-no')?.label, 'Leave  Esc');
   BINDS.device = 'pad';
   const onPad = byId(
     landingAskNode(ui, asking, () => undefined),
     'sea:ask-no',
   )?.label;
   BINDS.device = 'keys';
-  assert.equal(onPad, 'Cancel  B', 'the pad’s B while the pad is in use');
+  assert.equal(onPad, 'Leave  B', 'the pad’s B while the pad is in use');
 });
 
 test('a question still standing is put by once the player is no longer at sea', () => {
@@ -429,4 +448,120 @@ test('back to the sea from the island’s tiles, the ship docked there sails out
   landings.frame(false);
   landings.frame();
   assert.deepEqual(asked, ['view oversea', 'out 1000,-2600']);
+});
+
+/** The presses a node holds, by id, in the order drawn. */
+const pressesOf = (node: Node): string[] => [
+  ...(node.press && node.id ? [node.id] : []),
+  ...(node.children ?? []).flatMap((child) => (child ? pressesOf(child) : [])),
+];
+
+test("a port's card offers Dock, Repair Ship and Leave in that order, names the price, and says why a repair can't be had", () => {
+  const { ui, step } = fakeInterface(1280, 720);
+  const done: string[] = [];
+  const asking = { aim: { kind: 'dock', port: 'Overlook', harbour: HARBOUR } as const, near: false };
+  let offer: { price: number; why: string | null } = { price: 40, why: null };
+  const root = () =>
+    landingAskNode(ui, asking, (yes) => done.push(`${yes}`), { offer, mend: () => done.push('repair') });
+  step(root);
+  const card = root();
+  assert.deepEqual(pressesOf(card), ['sea:ask-yes', 'sea:ask-repair', 'sea:ask-no']);
+  assert.deepEqual(
+    ['sea:ask-yes', 'sea:ask-repair', 'sea:ask-no'].map((id) => byId(card, id)?.label),
+    ['Dock  Enter', 'Repair Ship  R', 'Leave  Esc'],
+  );
+  assert.match(card.label ?? '', /Repairing your ship here costs 40 Aurem\./);
+  const press = (id: string) => {
+    const box = ui.boxOf(id);
+    assert.ok(box, id);
+    const spot = { x: box.x + 4, y: box.y + 4 };
+    step(root, [
+      { kind: 'pointer', ...spot },
+      { kind: 'down', ...spot, button: 0 },
+      { kind: 'up', ...spot, button: 0 },
+    ]);
+  };
+  press('sea:ask-yes');
+  press('sea:ask-repair');
+  press('sea:ask-no');
+  assert.deepEqual(done, ['true', 'repair', 'false']);
+  offer = { price: 0, why: 'The ship is whole.' };
+  step(root);
+  const whole = root();
+  assert.equal(byId(whole, 'sea:ask-repair')?.disabled, true, 'shown, but does nothing');
+  assert.match(whole.label ?? '', /The ship is whole\./);
+  press('sea:ask-repair');
+  assert.deepEqual(done, ['true', 'repair', 'false'], 'nothing done');
+  const ashore = landingAskNode(
+    ui,
+    { aim: { kind: 'ashore', coast: 'Cairnwatch', toward: [0, 0] }, near: false },
+    () => 0,
+  );
+  assert.deepEqual(pressesOf(ashore), ['sea:ask-no', 'sea:ask-yes'], 'a coast with no port offers no repair');
+});
+
+test('Repair Ship sails for the port’s roadstead and asks the repair once the room has the ship at rest within reach', () => {
+  const { landings, sea, asked } = landingsOf();
+  landings.click({ kind: 'mark', id: 'overlook-port' });
+  landings.repair();
+  assert.equal(landings.asking, null, 'the card is answered');
+  assert.deepEqual(asked, [`sail ${ROADSTEAD.join(',')}`], 'for the roadstead nearest its harbour');
+  landings.frame();
+  sea.sighted.settledShip = { x: 1_000, y: -3_000, pace: 3 };
+  landings.frame();
+  assert.equal(asked.length, 1, 'within reach, under way still');
+  [sea.sighted.settledShip, sea.bound] = [{ x: 1_000, y: -3_900, pace: 0 }, null];
+  landings.frame();
+  landings.frame();
+  assert.deepEqual(asked.slice(1), ['ask repair'], 'at rest there: asked once');
+  landings.click({ kind: 'mark', id: 'overlook-port' });
+  landings.repair();
+  assert.deepEqual(asked.slice(2), ['ask repair'], 'lying at rest within reach already: asked at once, nothing sailed');
+});
+
+test('a repair waiting is let go by a new course, a fight or leaving the sea; one that cannot be had does nothing', () => {
+  const { landings, sea, asked, offer } = landingsOf();
+  const atRest = { x: 1_000, y: -3_900, pace: 0 };
+  const makeFor = () => {
+    sea.sighted.settledShip = { x: 0, y: 0, pace: 4 };
+    landings.click({ kind: 'mark', id: 'overlook-port' });
+    landings.repair();
+  };
+  makeFor();
+  landings.click({ kind: 'sea', point: [5, 6, 0] });
+  [sea.sighted.settledShip, sea.bound] = [atRest, null];
+  landings.frame();
+  makeFor();
+  sea.fight = {};
+  landings.frame();
+  sea.fight = null;
+  [sea.sighted.settledShip, sea.bound] = [atRest, null];
+  landings.frame();
+  makeFor();
+  landings.frame(false);
+  [sea.sighted.settledShip, sea.bound] = [atRest, null];
+  landings.frame();
+  assert.ok(!asked.includes('ask repair'), `${asked.join('; ')}`);
+  offer('The ship is whole.');
+  landings.click({ kind: 'mark', id: 'overlook-port' });
+  const before = asked.length;
+  landings.repair();
+  assert.equal(asked.length, before, 'nothing asked or sailed');
+  assert.equal(landings.asking?.aim.kind, 'dock', 'the card stays up, saying why');
+});
+
+test('with no course sent since joining, the room’s last word on the ship decides: at rest by the roadstead it asks at once', () => {
+  const { landings, sea, asked } = landingsOf();
+  sea.sighted.ownShip = { x: 1_000, y: -3_500, pace: 0 };
+  landings.click({ kind: 'mark', id: 'overlook-port' });
+  landings.repair();
+  assert.deepEqual(asked, ['ask repair'], 'asked, nothing sailed');
+  sea.sighted.ownShip = { x: 0, y: 0, pace: 0 };
+  landings.click({ kind: 'mark', id: 'overlook-port' });
+  landings.repair();
+  sea.bound = null;
+  landings.frame();
+  sea.sighted.ownShip = { x: 1_000, y: -3_500, pace: 0 };
+  landings.frame();
+  assert.deepEqual(asked.slice(1), ['sail 1000,-4000'], 'a voyage that never set out lets the repair go');
 });

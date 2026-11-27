@@ -300,7 +300,7 @@ fn a_player_washes_up_at_a_found_island_nearer_than_any_port_unrepaired() {
     assert!(apart([ship.x, ship.y], anchorage) < 1e-9, "at the island's anchorage");
     let told = sea.harbour.told.iter().find(|(to, numbers)| *to == player && numbers[0] == WASHED_UP);
     assert_eq!(told.map(|(_, numbers)| (numbers[2], numbers[4])), Some((-1.0, f64::from(id))));
-    assert_eq!(sea.kept(player).map(|(kept, _)| kept), Some(SUNK_KEPT), "an island does not repair");
+    assert_eq!(sea.kept(player), Some(SUNK_KEPT), "an island does not repair");
 }
 
 #[test]

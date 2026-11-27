@@ -57,7 +57,10 @@ export const landingAskShot = (ui: Interface): Node =>
       ACTS,
       ui.size.width,
     ),
-    landingAskNode(ui, { aim: { kind: 'dock', port: 'Overlook', harbour: [0, 0] }, near: false }, nothing),
+    landingAskNode(ui, { aim: { kind: 'dock', port: 'Overlook', harbour: [0, 0] }, near: false }, nothing, {
+      offer: { price: 40, why: null },
+      mend: nothing,
+    }),
   ]);
 
 const WHERE = { continent: 'continent-1', ring: [], spawns: [], centre: [0, 0] as const };

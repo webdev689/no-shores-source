@@ -73,8 +73,9 @@ export function seaLockOf(open: OpenWaters, names: Readonly<Record<string, strin
   };
 }
 
-/** The sea's facts as the page gives them: its rules', and the locked seas. */
-export type PageSeaFacts = SeaFacts & { readonly locked: SeaLock };
+/** The sea's facts as the page gives them: its rules', the locked seas, and the port cities' roadsteads, which the
+ *  room repairs by. */
+export type PageSeaFacts = SeaFacts & { readonly locked: SeaLock; readonly roadsteads: readonly Point2[] };
 
 /** What the sea reads of the page's waters: the water at a point, named, the port cities, in the sea's order, and the
  *  sea's facts its rules give, with the locked seas. */
@@ -86,9 +87,17 @@ export function seaWatersOf(
   readonly ports: readonly PortCity[];
   readonly facts: PageSeaFacts;
 } {
+  const locked = seaLockOf(open);
   return {
     waterAt: waterNamer(open.rules, open.table),
     ports: portCities(portsOf(world.cities), open.table.mainPorts),
-    facts: { ...open.table.sea, locked: seaLockOf(open) },
+    facts: {
+      ...open.table.sea,
+      locked,
+      // A port in a locked sea repairs nothing (crates/room/src/harbour.rs `Harbours::in_reach`).
+      roadsteads: open.table.ports
+        .map(({ roadstead }): Point2 => [roadstead[0], roadstead[1]])
+        .filter((roadstead) => !locked.at(roadstead)),
+    },
   };
 }

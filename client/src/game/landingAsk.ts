@@ -138,3 +138,45 @@ export class LandingCourse {
     [this.aim, this.sent] = [null, null];
   }
 }
+
+/** A repair answered at a port's card and made for: the ship sails for the port's roadstead, and the repair is asked
+ *  once the room has it lying at rest within the repair's reach there. Another course given meanwhile (bound
+ *  elsewhere), or none (no voyage, at rest out of reach), lets it go; a voyage stopped short keeps it. */
+export class RepairCourse {
+  /** The roadstead made for. */
+  private sent: Point2 | null = null;
+
+  begin(roadstead: Point2): void {
+    this.sent = roadstead;
+  }
+
+  /** Whether a repair is made for. */
+  get waiting(): boolean {
+    return this.sent !== null;
+  }
+
+  /** Whether the repair is due now, taken once: once the room's word on the ship (`settled`, none until it has taken
+   *  the last course) has it at rest within `reachM` of the roadstead. `bound` is where the voyage is bound, kept while
+   *  it is stopped short to be resumed. */
+  due(
+    settled: { readonly x: number; readonly y: number; readonly pace: number } | null,
+    bound: Point2 | null,
+    reachM: number,
+  ): boolean {
+    const sent = this.sent;
+    if (!sent) return false;
+    const near = settled !== null && Math.hypot(settled.x - sent[0], settled.y - sent[1]) <= reachM;
+    if (near && settled.pace === 0) {
+      this.cancel();
+      return true;
+    }
+    const boundThere = bound !== null && Math.hypot(bound[0] - sent[0], bound[1] - sent[1]) < 1;
+    // Arrived, the voyage ends before the room's word has the ship at rest: within reach it waits for that word.
+    if (bound !== null ? !boundThere : settled !== null && !near) this.cancel();
+    return false;
+  }
+
+  cancel(): void {
+    this.sent = null;
+  }
+}

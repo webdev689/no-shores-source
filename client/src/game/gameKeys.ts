@@ -106,8 +106,10 @@ export function listenForControls(game: Controlled): void {
     if (sea?.travelling) return;
     if (playing.helmMap.key(escape ? 'escape' : acts('confirm') ? 'enter' : acts('landMap') ? 'n' : '')) return;
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;
-    // A landing's confirmation standing at sea is answered first: Enter yes, Escape no.
+    // A landing's confirmation standing at sea is answered first: Enter yes, Escape no, and a port's Repair Ship with
+    // the repair's key.
     if (sailing && game.landings.asking && (escape || acts('confirm'))) return game.landings.answer(!escape);
+    if (sailing && game.landings.asking?.aim.kind === 'dock' && pressed('repair')) return game.landings.repair();
     // A piece of decoration being placed is let go first, and nothing opens.
     if (escape && placingNow() && !overGame()) return letGo();
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();

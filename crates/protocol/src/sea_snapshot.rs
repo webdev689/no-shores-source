@@ -91,8 +91,8 @@ pub fn sea_snapshot_bytes(
     let each: Vec<_> = harbour
         .kept
         .iter()
-        .map(|&(player, [hull, sail, crew], repair_left)| {
-            messages::Kept::create(&mut builder, &messages::KeptArgs { player, hull, sail, crew, repair_left })
+        .map(|&(player, [hull, sail, crew])| {
+            messages::Kept::create(&mut builder, &messages::KeptArgs { player, hull, sail, crew })
         })
         .collect();
     let kept = Some(builder.create_vector(&each));
@@ -192,15 +192,15 @@ pub(crate) fn ship_offset<'built>(
 }
 
 /// What the sea's snapshot carries beside its ships and fights: each piece of what floats (its player, its number,
-/// where it floats and its kind, 0 a crate, 1 a barrel, 2 a chest), each player's ship's kept hurts with the seconds
-/// its repair has left, what each player is told this tick, and each deck boarded (each boarder's number at sea with
-/// theirs on its deck, its hull, and its deck room's snapshot), the islands the player sees or has found, each traffic
-/// id the room has taken off its route, the friendly ships it keeps at sea, the plate over each other player's ship
-/// the player is sent, and the sea's chart when it is sent (`charted`, and `chart_marks` for the player's water).
+/// where it floats and its kind, 0 a crate, 1 a barrel, 2 a chest), each player's ship's kept hurts, what each player
+/// is told this tick, and each deck boarded (each boarder's number at sea with theirs on its deck, its hull, and its
+/// deck room's snapshot), the islands the player sees or has found, each traffic id the room has taken off its route,
+/// the friendly ships it keeps at sea, the plate over each other player's ship the player is sent, and the sea's chart
+/// when it is sent (`charted`, and `chart_marks` for the player's water).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SeaHarbour {
     pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
-    pub kept: Vec<(PlayerId, [f64; 3], f64)>,
+    pub kept: Vec<(PlayerId, [f64; 3])>,
     pub told: Vec<(PlayerId, Vec<f64>)>,
     pub decks: Vec<SeaDeck>,
     pub islands: Vec<IsleSeen>,

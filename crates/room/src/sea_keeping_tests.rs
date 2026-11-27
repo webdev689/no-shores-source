@@ -1,10 +1,9 @@
 use super::tests::{floating_for, met, sailor, sea, ticks, told, vessel_mut};
 use super::*;
-use crate::harbour::Repair;
 use crate::sea::decks::HOLD_TICKS;
 use naval::damage::{Hurt, State};
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
-use naval::ranks::{Commission, Rank};
+use naval::ranks::Rank;
 
 fn kept(sea: &Sea, player: PlayerId) -> gear::Character {
     gear::Character::from_json(&sea.kept_character(player).unwrap()).unwrap()
@@ -52,27 +51,6 @@ fn back_at_sea_their_ship_lies_where_the_room_last_kept_it_not_where_the_page_fi
     );
     assert_eq!(kept(&sea, player).ship_at, Some([60_000, 50_000]));
     assert_eq!(kept(&sea, player).last, Some(gear::last::Last::Sea), "and the sea is where they log back in");
-}
-
-#[test]
-fn a_repair_stops_as_the_ship_heaves_to_for_a_fight_and_the_fight_starts_from_what_it_mended() {
-    let mut sea = sea();
-    let player = sea.join();
-    sea.course(player, &[[60_000.0, 50_000.0]], 10).unwrap();
-    sea.tick();
-    sea.berths.get_mut(&player).unwrap().kept = [0.5, 1.0, 1.0];
-    sea.repair(player).unwrap();
-    ticks(&mut sea, 10 * 60);
-    let mended = sea.harbour.repairs.under_way[&player].now()[0];
-    let bold = crate::hostiles::Hostile::standing(1, 7, Commission::default(), [60_000.0, 49_300.0], 0.0, true);
-    sea.hostiles.sailing.push(bold);
-    sea.tick();
-    assert!(sea.fights.fighting(player));
-    assert!(sea.harbour.repairs.under_way.is_empty(), "the repair stopped as the ship hove to");
-    let damage = &sea.fights.of_mut(player).unwrap().0.fight.vessel(PLAYER).unwrap().damage;
-    assert!((damage.hull - (damage.max_hull * mended).round()).abs() < 1.0 + 1e-9, "{} {mended}", damage.hull);
-    ticks(&mut sea, 120);
-    assert!(sea.harbour.repairs.under_way.is_empty() && Repair::takes(sea.berths[&player].kept) > 0.0);
 }
 
 #[test]
@@ -136,7 +114,7 @@ fn a_beaten_boarder_whose_ship_is_going_down_comes_back_as_a_sunk_ship_does() {
     let boarder = sea.decks.boarded[0].aboard[&player];
     sea.decks.boarded[0].room.players.get_mut(&boarder).unwrap().fighter.action = combat::Action::Dead { elapsed: 0 };
     sea.tick();
-    assert_eq!(sea.kept(player).map(|(kept, _)| kept), Some(crate::harbour::SUNK_KEPT));
+    assert_eq!(sea.kept(player), Some(crate::harbour::SUNK_KEPT));
 }
 
 #[test]
@@ -321,11 +299,11 @@ fn a_character_given_back_or_washed_up_or_hurt_or_repaired_at_sea_is_flagged_cha
     assert!(!change(&mut sea, player), "not again within GEAR_EVERY_TICKS");
     ticks(&mut sea, crate::players::GEAR_EVERY_TICKS as usize);
     assert!(change(&mut sea, player), "a fight's hurts, once the wait is over");
+    sea.harbour.characters.get_mut(&player).unwrap().materials.aurem = 100;
     sea.repair(player).unwrap();
-    ticks(&mut sea, 60);
-    assert!(!change(&mut sea, player), "a repair under way changes it every tick but is not sent every tick");
-    ticks(&mut sea, 50 * 60);
-    assert!(change(&mut sea, player), "a repair done");
+    assert!(!change(&mut sea, player), "not within GEAR_EVERY_TICKS of the last");
+    ticks(&mut sea, crate::players::GEAR_EVERY_TICKS as usize);
+    assert!(change(&mut sea, player), "repaired, once the wait is over");
     ticks(&mut sea, 20);
     sea.wash_up(player, [50_000.0, 50_000.0], false);
     assert!(change(&mut sea, player), "washed up");

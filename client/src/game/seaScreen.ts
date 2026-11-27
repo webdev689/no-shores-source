@@ -93,12 +93,14 @@ export function seaLayer(game: SeaScreenGame): Layer {
       heaveTo: () => sea?.helm(0, false, true, 0),
     };
     const asking = game.landings.asking;
+    const offer = asking?.aim.kind === 'dock' ? game.landings.repairOffer : null;
+    const repair = offer && { offer, mend: () => game.landings.repair() };
     return {
       width: 'grow',
       height: 'grow',
       children: [
         shown && shipConsoleNode(ui, consoleOf(sea, game), actions, ui.size.width),
-        shown && asking && landingAskNode(ui, asking, (yes) => game.landings.answer(yes)),
+        shown && asking && landingAskNode(ui, asking, (yes) => game.landings.answer(yes), repair),
         mode === 'landing' && game.island(ui),
       ],
     };

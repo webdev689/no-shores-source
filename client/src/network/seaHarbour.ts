@@ -18,14 +18,12 @@ export interface SeenFlotsam {
   readonly kind: (typeof PIECES)[number];
 }
 
-/** A player's ship's hurts as the sea keeps them: the shares of hull, canvas and men it has, and the seconds its
- *  repair has left (0 with none under way). */
+/** A player's ship's hurts as the sea keeps them: the shares of hull, canvas and men it has. */
 export interface SeenKept {
   readonly player: number;
   readonly hull: number;
   readonly sail: number;
   readonly crew: number;
-  readonly repairLeft: number;
 }
 
 /** A deck boarded: each boarder's number at sea with theirs on its deck, its hull, its deck room's snapshot's bytes (a
@@ -109,8 +107,7 @@ export function harbourOf(snapshot: Snapshot): HarbourPart {
   const kept = Array.from({ length: snapshot.keptLength() }, (unused, index): SeenKept => {
     const held = snapshot.kept(index);
     if (!held) throw new Error(`snapshot kept ${index} does not read`);
-    const [hull, sail, crew, repairLeft] = [held.hull(), held.sail(), held.crew(), held.repairLeft()];
-    return { player: held.player(), hull, sail, crew, repairLeft };
+    return { player: held.player(), hull: held.hull(), sail: held.sail(), crew: held.crew() };
   });
   const told = Array.from({ length: snapshot.toldLength() }, (unused, index) => {
     const each = snapshot.told(index);

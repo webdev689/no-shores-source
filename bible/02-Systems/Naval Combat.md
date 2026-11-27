@@ -74,7 +74,7 @@ code:
   - crates/room/src/battle.rs#Fights
   - crates/room/src/flotsam.rs#Flotsam
   - crates/room/src/harbour.rs#Harbours
-  - crates/room/src/harbour.rs#Repair
+  - crates/room/src/harbour.rs#repair_price
   - crates/room/src/deck_fight.rs
   - crates/room/src/sea_decks.rs#Decks
   - crates/foes/src/crews.rs#deck_crew
@@ -91,7 +91,7 @@ captains, each in its rank's hull: DFO's naval
 combat, rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one
 captain alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. At sea a fight ends
 in a sinking and what floats, or in a captain striking and a boarding; a player who loses washes up at a port city,
-and the damage stays until repaired ([[The Sea Is a Patrol Zone, and the Ship Is Gear]],
+and the damage stays until repaired ([[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]],
 [[The Waters Come From the Islands]], [[Hulls]], [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]], [[The Sea Fight Looks and Aims as DFO's Does]]). A ship is "it" ([[Ships Are It, Not Her]]).
 
 ## The fight
@@ -422,11 +422,15 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
   character: a course asked meanwhile waits, and sails once they answer with none kept (or the page sends an input
   before its token); given back later, even mid-fight, the ship is moored where it was kept, that fight over for it. A fight's waters run past the world's
   edge, but the ship is kept within it: where the fight has it, where it washes up and where its next course starts.
-  What changes the player's character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up) is sent
+  What changes the player's character at sea (a piece gathered, a fight's hurts, a repair, washing up) is sent
   to the player as their gear, five times a second at most, and so saved within 2 s ([[Accounts]]).
-- **Repair** (`harbour.rs`). Within 3 km of a port city's roadstead, at rest and out of a fight, Manage offers
-  "Repair: free, lying at rest within 3 km of a port city" (R; the reach is the rules', from the waters' table): free, the ship is made whole evenly over a second for each hundredth it is missing (the most of hull, canvas
-  and men), 100 s at most. Setting a course, heaving to for a fight or leaving the sea stops it where it stood.
+- **Repair** (`harbour.rs`, `sea_ports.rs`; [[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]]). Lying at rest within 3 km of an open port city's
+  roadstead, out of a fight, the ship is made whole at once for 2 Aurem for each percent it is missing (the most
+  missing of hull, canvas and men, a part of a percent counted whole: `repair_price`), taken from the character's
+  Aurem and saved with it. The room refuses it not at sea, in a fight, under way or out of reach, whole, or with too
+  little Aurem (or no character held). It is asked by Manage's R, its line naming the price ("Repair: 40 Aurem, lying
+  at rest within 3 km of a port city", the reach and the price per percent the rules', from the waters' table), and
+  by a port's card at sea (Repair Ship, [[Game]], "Landings").
 - **Its weather.** Each fight at sea, and each fight among captains alone (`clash.rs`), takes the swell and the wind
   where and when it began (`sea_weather.rs`, sheltered by the coasts and calm by the port cities' roadsteads) and
   keeps them while it lasts; a player joining it fights in its weather, a fight among captains a player came on keeps

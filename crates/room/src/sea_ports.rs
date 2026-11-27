@@ -6,11 +6,10 @@
 use super::{Berth, Sea, Ship};
 use crate::PlayerId;
 use crate::battle::{Outcome, Sank};
-use crate::harbour::{HELD, JOINED, MOORED, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
+use crate::harbour::{HELD, JOINED, MOORED, RepairRefused, SUNK_KEPT, WASHED_UP, repair_price};
 use crate::players::GEAR_EVERY_TICKS;
 use gear::quests::Event as QuestEvent;
 use gear::ship::materials::ShipMaterial;
-use movement::TICK_SECONDS;
 use naval::fight::Event;
 use naval::wire::told_numbers;
 use std::collections::{BTreeMap, BTreeSet};
@@ -177,17 +176,21 @@ impl Sea {
     }
 
     /// The player asks for their ship's repair: at sea, out of a fight, lying at rest within reach of a port city's
-    /// roadstead, and not whole.
+    /// roadstead, not whole, and their character holding its `repair_price` in Aurem, which it pays as the ship is
+    /// made whole at once.
     pub fn repair(&mut self, player: PlayerId) -> Result<(), RepairRefused> {
         let berth = self.berths.get(&player).ok_or(RepairRefused::NotAtSea)?;
         let ship = berth.sailing.as_ref().map(|sailing| sailing.ship).ok_or(RepairRefused::NotAtSea)?;
         if self.fights.fighting(player) || ship.pace != 0 || !self.harbour.harbours.in_reach([ship.x, ship.y]) {
             return Err(RepairRefused::NotThere);
         }
-        if Repair::takes(berth.kept) <= 0.0 {
+        let price = repair_price(berth.kept);
+        if price == 0 {
             return Err(RepairRefused::Whole);
         }
-        self.harbour.repairs.under_way.entry(player).or_insert(Repair { from: berth.kept, seconds: 0.0 });
+        let held = self.harbour.characters.get_mut(&player).filter(|character| character.materials.aurem >= price);
+        held.ok_or(RepairRefused::TooLittleAurem)?.materials.aurem -= price;
+        self.keep_hurts(player, [1.0; 3]);
         Ok(())
     }
 
@@ -199,24 +202,9 @@ impl Sea {
         }
     }
 
-    /// A player's repair stops where it stood, as they sail or leave.
-    pub(super) fn stop_repair(&mut self, player: PlayerId) {
-        let Some(kept) = self.harbour.repairs.stop(player) else { return };
-        self.keep_hurts(player, kept);
-    }
-
     /// The harbour's tick, the sea's ships sailed from where they lay through each turn of their courses (`sailed`):
-    /// every repair runs on, and what floats drifts and is gathered along every leg each sailed.
+    /// what floats drifts and is gathered along every leg each sailed.
     pub(super) fn tick_harbour(&mut self, sailed: &BTreeMap<PlayerId, Vec<[f64; 2]>>) {
-        for (player, kept) in self.harbour.repairs.tick(TICK_SECONDS) {
-            if let Some(berth) = self.berths.get_mut(&player) {
-                keep(berth, &mut self.harbour.characters, player, kept);
-            }
-            // Flagged once it is done, not each tick it runs: the snapshot tells how it stands meanwhile.
-            if !self.harbour.repairs.under_way.contains_key(&player) {
-                self.harbour.changed.insert(player);
-            }
-        }
         // A boarder's ship gathers nothing while they stand on its enemy's deck, whose room holds their character.
         let on_deck = |player: &PlayerId| self.decks.boarded.iter().any(|deck| deck.aboard.contains_key(player));
         let ships: Vec<(PlayerId, [[f64; 2]; 2])> = (self.ships().filter(|(player, _)| !on_deck(player)))
@@ -269,12 +257,10 @@ impl Sea {
         std::mem::take(&mut self.harbour.told)
     }
 
-    /// The shares of hull, canvas and men a player's ship keeps, and the seconds its repair has left (0 with none).
+    /// The shares of hull, canvas and men a player's ship keeps.
     #[must_use]
-    pub fn kept(&self, player: PlayerId) -> Option<([f64; 3], f64)> {
-        let kept = self.berths.get(&player)?.kept;
-        let repair = self.harbour.repairs.under_way.get(&player);
-        Some(repair.map_or((kept, 0.0), |repair| (repair.now(), repair.left())))
+    pub fn kept(&self, player: PlayerId) -> Option<[f64; 3]> {
+        Some(self.berths.get(&player)?.kept)
     }
 
     /// How much farther a player's ship sights ships, by its Lookout and its modules (`gear::ship::trim`); 1 for a
@@ -431,8 +417,6 @@ impl Sea {
         } else if let Some((points, pace)) = held {
             let _ = self.course(player, &points, pace);
         }
-        // A repair begun while played unkept mended the unkept ship, not the kept one, which may lie far from a port.
-        self.harbour.repairs.under_way.remove(&player);
         if let Some(berth) = self.berths.get_mut(&player) {
             berth.kept = character.ship.map(|share| f64::from(share) / f64::from(gear::character::SHIP_WHOLE));
         }
