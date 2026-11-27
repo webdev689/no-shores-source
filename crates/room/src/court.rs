@@ -122,18 +122,23 @@ impl Room {
         }
         let clock = self.clock;
         let anchors = encounters.plan.anchors.clone();
+        // Its waves come in at the end room's doorways clear of the anchors, never on a player holding one.
+        let doors = crate::encounters::seals::off_pieces(&encounters.plan.court_doors, &anchors);
         let court = &mut encounters.court;
-        let wave = if court.ward_told {
-            court.ward_waves < 2 && clock - court.ward_at >= WARD_WAVE_AGAIN
-        } else {
-            (court.ward_told, court.ward_at, court.ward_waves) = (true, clock, 0);
+        if !court.ward_told {
+            (court.ward_told, court.ward_at, court.ward_waves, court.ward_retry) = (true, clock, 0, clock);
             let ward = court.wards_broken + 1;
             self.tell_all(EventKind::WardRaised, ward as f64);
-            true
-        };
-        if wave {
-            encounters.court.ward_waves += 1;
-            self.stand_seal_wave(encounters, WaveOf::Court, &anchors, living);
+        }
+        let court = &encounters.court;
+        let due = court.ward_waves == 0 || (court.ward_waves == 1 && clock - court.ward_at >= WARD_WAVE_AGAIN);
+        if due && clock >= court.ward_retry {
+            // A wave refused while the Court's waves stand as many as they may comes as soon as there is room.
+            if self.stand_seal_wave(encounters, WaveOf::Court, &doors, living) > 0 {
+                encounters.court.ward_waves += 1;
+            } else {
+                encounters.court.ward_retry = clock + crate::encounters::WAVE_RETRY_TICKS;
+            }
         }
         self.slam(encounters.court.ward_at, boss);
         let standing: Vec<[f64; 3]> = self

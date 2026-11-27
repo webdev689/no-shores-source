@@ -470,6 +470,8 @@ fn a_holdfast_is_held_in_its_ring_and_a_relic_drained_by_foes_halves_the_hold() 
     {
         while room.clock() < at + state(&room, seal).shown_from {
             put(&mut room, player, laid.pieces[0]);
+            // Its waves reach the ring and drain the relic, which halves the hold: kept whole here, drained below.
+            room.encounters.as_mut().expect("encounters").seals[seal].relic = 1.0;
             room.tick();
         }
         counts.push(room.foes.len());
@@ -598,6 +600,30 @@ fn a_seals_wave_stands_one_foe_for_each_living_player_two_to_four_each_hunting_t
     room.stand_foes(&mut encounters, WaveOf::Alone, &[beside], 2, 1);
     room.encounters = Some(encounters);
     assert!(room.foes.values().all(|foe| foe.brain.target() == Some(near)), "hunting the nearest");
+}
+
+#[test]
+fn a_seals_wave_refused_while_its_waves_stand_as_many_as_they_may_comes_once_there_is_room() {
+    let mut room = elite_room_with(SealKind::Holdfast);
+    let player = hardy(&mut room);
+    let seal = seal_of(&room, SealKind::Holdfast);
+    let laid = plan(&room, seal);
+    inside(&mut room, player, &laid);
+    room.tick();
+    let waves = |room: &Room| state(room, seal).waves.len();
+    ticks(&mut room, HOLDFAST_FIRST_WAVE_TICKS);
+    assert_eq!(waves(&room), 2, "the first wave");
+    let mut encounters = room.encounters.take().expect("encounters");
+    room.stand_seal_wave(&mut encounters, WaveOf::Seal(seal), &Room::doorways_of(&laid), 1);
+    room.encounters = Some(encounters);
+    room.encounters.as_mut().expect("encounters").seals[seal].next_wave = room.clock;
+    room.tick();
+    assert_eq!(waves(&room), 4, "refused while a lone player's four stand");
+    for id in state(&room, seal).waves {
+        kill(&mut room, id);
+    }
+    ticks(&mut room, crate::encounters::WAVE_RETRY_TICKS);
+    assert_eq!(waves(&room), 6, "tried again a second on, not twelve");
 }
 
 #[test]

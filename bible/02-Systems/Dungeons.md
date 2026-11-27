@@ -454,17 +454,17 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
 
 - **The plan** (`plan_encounters`) is laid from the dungeon alone, so the room and the page lay the same: its draws on
   a lane of its own, named for the dungeon's cells, its way in and its portal (`encounters:<hash>:<way in>:<portal>`),
-  its maths + - * / and comparisons. A dungeon of four blocks holds two seals and one of five three, each in its own
+  its maths + - * / and comparisons. A dungeon of four blocks holds two seals at the most and one of five three, each in its own
   room, never two of a kind. The rooms past the way in's, but the end, every landmark's and every vault's (which stands its gold chest), are taken in walk order
-  and split into as many stretches as there are seals. For each, while no Ascent is laid, an Ascent is tried first in
-  every room of its stretch (never the first room of the walk where there are four or more), nearest the stretch's
-  middle first; then, while no Holdfast is laid, a Holdfast in the stretch's rooms and, where none is great enough,
-  in any room of the walk but the first; else each kind not yet laid, in an order drawn once, in the stretch's room
-  nearest its middle that fits it, then in any room of the walk but the first, then in the first (never a climb), and
-  the first that fits is laid there. A room too small, too low or too cluttered for a kind is passed over. Sixteen of
-  the 18 lay their full count; `smugglers-labyrinth` and `saltworm-warrens`, of five blocks, lay two, as no room of
-  theirs is great enough for a Holdfast or tall enough for an Ascent, and a test holds that no kind left fits a room
-  of a dungeon a seal short. Eleven lay an Ascent, and a test holds it to nine or more; five a Holdfast.
+  and split into as many stretches as there are seals. A Holdfast, which wants a great room, takes the stretch whose great
+  room lies nearest its middle, and that room, so it stands wherever the dungeon has one; no other stretch lays one. In
+  each other stretch, while no Ascent is laid, an Ascent is tried first in every room of the stretch (never the first
+  room of the walk where there are four or more), nearest its middle first; else each kind left, in an order drawn once,
+  in the stretch's room nearest its middle that fits it; then in any room of the walk but the first; then, but a climb,
+  in the first. No kind is tried twice in a room. A room too small, too low or too cluttered for a kind is passed over.
+  Sixteen of the 18 lay their full count; `smugglers-labyrinth` and `saltworm-warrens`, of five blocks, lay two, as no
+  room of theirs is great enough for a Holdfast or tall enough for an Ascent, and a test holds that no kind left fits a
+  room of a dungeon a seal short. Nine lay an Ascent, and a test holds it to nine or more; five a Holdfast.
 - **Where pieces stand.** A piece stands on a spot of its room: a cell's middle or one of its four quarters' (0.8 m
   each way toward a corner), never on the way in's or the portal's cell, nor a doorway's (but an anchor), each 0.9 m from
   every solid and 1.4 m from every prop's and fixture's middle, so no brazier or candle stands on a piece. Only the
@@ -519,7 +519,8 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   room's doorways 4 m or more from every piece of its seal (`WAVE_OFF_PIECES_M`; where none is, the farthest) and
   hunting the nearest living player on its storey (one on another is never near, `seals::near`). A seal's waves, a
   wrong rune's foes among them, stand no more while two for each living player in its room live, four at the fewest
-  and eight at the most (`wave_living_most`), nor past the room's most foes.
+  and eight at the most (`wave_living_most`), nor past the room's most foes; a wave so refused is tried again a
+  second on (`WAVE_RETRY_TICKS`), not given up till the next.
 - **Spoilless.** Every foe an encounter stands (its waves, a wrong rune's, a ward's) drops nothing when killed, as a
   defence tried again stands foes that drop nothing (`quests.spoilless`): kills there pay their experience, and the
   seal's breaking and the cache stay the reward. An unfinished seal's waves keep coming, so they could otherwise be
@@ -528,8 +529,9 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   broken; then it stands (`BossWoke`), and its health is made a match for the living players then, half again for each
   beyond the first, as a public event's great foes are (`toughen`). At two thirds of its health, and again at one
   third, a blow that would take it to that share or past is held there and the Boss is warded (`WardRaised`): a wave of the dungeon's
-  Majors for each living player, two to four, stands at its anchors, and another 15 s on while the ward still stands,
-  the Court's waves kept as a seal's are, two for each living player, four to eight (`WaveOf::Court`).
+  Majors for each living player, two to four, comes in at the end room's doorways 4 m or more from every anchor (the
+  farthest where none is), and another 15 s on while the ward still stands, the Court's waves kept as a seal's are,
+  two for each living player, four to eight, and one refused tried again a second on (`WaveOf::Court`).
   While warded the Boss runs back to its post, by the navmesh from off its floor (a flight or another storey), and stands there (`hold_ward`), striking where it stands, and every 8 s
   from the ward rising it slams: a ring 4 m round it shown 2 s, then 30% of their health from every living player
   inside it (`BossSlammed`). Its three anchors stand in the end room 2.4 m or more from its post, each the spot

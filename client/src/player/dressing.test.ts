@@ -106,11 +106,10 @@ test('another player’s dress is taken only when it has a dress’s shape', () 
     JSON.stringify({ ...dress, outfit: { ...outfit, armour: { tail: 'iron' } } }),
     JSON.stringify({ ...dress, outfit: { ...outfit, right: 'x'.repeat(65) } }),
     JSON.stringify({ ...dress, outfit: { ...outfit, hair: { style: 'crop' } } }),
-    JSON.stringify({ ...dress, glow: [4, 0] }),
-    JSON.stringify({ ...dress, glow: [1] }),
-    JSON.stringify({ ...dress, glow: '1' }),
   ])
     assert.equal(dressFrom(broken), null, broken.slice(0, 60));
+  for (const glow of [[4, 0], [1], '1', null])
+    assert.deepEqual(dressFrom(JSON.stringify({ ...dress, glow })), dress, `a glow of ${JSON.stringify(glow)} dropped`);
 });
 
 test('another player’s weapon glows in the element their dress says while it is drawn, and nothing else does', () => {

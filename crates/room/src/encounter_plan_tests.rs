@@ -25,16 +25,14 @@ fn seal_rooms(laid: &Dungeon) -> Vec<usize> {
     rooms
 }
 
-/// Whether a seal of `kind` fits a room of `laid` that holds no seal of `plan`, among `rooms`.
-fn fits_elsewhere(laid: &Dungeon, plan: &EncounterPlan, kind: SealKind, rooms: &[usize]) -> bool {
-    let reading = Reading::of(laid);
-    let mut lane = Lane::named("probe");
+/// Whether a seal of `kind` fits a room of `laid` that holds no seal of `plan`, among `rooms`: a Litany's fit hangs on
+/// its runes' draw, so each room is tried on several lanes, any fit counting.
+fn fits_elsewhere(dungeon: &Dungeon, plan: &EncounterPlan, kind: SealKind, rooms: &[usize]) -> bool {
+    let reading = Reading::of(dungeon);
     let free = rooms.iter().filter(|room| plan.seals.iter().all(|seal| seal.room != **room));
-    free.collect::<Vec<_>>().into_iter().any(|&room| laid_fits(&reading, &mut lane, kind, room))
-}
-
-fn laid_fits(reading: &Reading, lane: &mut Lane, kind: SealKind, room: usize) -> bool {
-    laid(reading, lane, kind, room).is_some()
+    free.collect::<Vec<_>>().into_iter().any(|&room| {
+        (0..8).any(|draw| laid(&reading, &mut Lane::named(&format!("probe {draw}")), kind, room).is_some())
+    })
 }
 
 #[test]
@@ -110,7 +108,7 @@ fn a_dungeon_of_four_blocks_holds_two_seals_and_one_of_five_three() {
 }
 
 #[test]
-fn each_seal_is_laid_nearest_the_middle_of_its_stretch_of_the_walk_not_at_its_start() {
+fn the_walks_first_room_stands_no_climb_and_another_seal_only_where_nothing_further_on_fits_it() {
     for (place, laid, plan) in elite_plans() {
         let rooms = seal_rooms(&laid);
         let Some(seal) = plan.seals.iter().find(|seal| rooms.len() >= 4 && seal.room == rooms[0]) else { continue };

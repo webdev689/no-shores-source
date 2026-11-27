@@ -35,10 +35,12 @@ pub enum Kind {
 /// How far round its middle a Hold's ring is held from (m).
 pub const RING_M: f64 = 6.0;
 /// A lamp's standing stone at its widest, as tools/dungeon's `forms.standing_stone` draws its 0.86 by 0.44 m slab with
-/// its bulges, swell and lean: half across its broad face and half through it, metres; and how far from the plinth's
-/// middle each stands.
+/// its bulges, swell and lean: half across its broad face and half through it, metres; how far from the plinth's
+/// middle each stands; and how many pieces along its face it is held as, each turned with it and boxed alone, so the
+/// boxes round a turned stone keep close to its faces.
 const STONE_HALF_M: (f64, f64) = (0.54, 0.29);
 const STONE_RING_M: f64 = 3.5;
+const STONE_PIECES: u32 = 3;
 
 impl Kind {
     /// The piece's name in the passages' pack and kit (tools/dungeon, content/islands/kits.json); a vein's node
@@ -66,8 +68,13 @@ impl Kind {
         match self {
             Kind::Lamp => {
                 let (across, through) = STONE_HALF_M;
-                let stone = [-across, -STONE_RING_M - through, across, -STONE_RING_M + through, 2.2];
-                let stones = (0..5).map(|nth| (stone, core::f64::consts::TAU * f64::from(nth) / 5.0));
+                let piece = 2.0 * across / f64::from(STONE_PIECES);
+                let pieces = (0..STONE_PIECES).map(move |nth| {
+                    let west = -across + piece * f64::from(nth);
+                    [west, -STONE_RING_M - through, west + piece, -STONE_RING_M + through, 2.2]
+                });
+                let turns = (0..5).map(|nth| core::f64::consts::TAU * f64::from(nth) / 5.0);
+                let stones = turns.flat_map(move |turn| pieces.clone().map(move |part| (part, turn)));
                 [([-0.8, -0.8, 0.8, 0.8, 1.4], 0.0)].into_iter().chain(stones).collect()
             }
             // A shut mouth fills its opening; the way in is always shut.

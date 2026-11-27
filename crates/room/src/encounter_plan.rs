@@ -1,8 +1,9 @@
 //! Where an Elite Dungeon's encounters stand, from its laid dungeon alone, so the room and the page lay the same: its
-//! seals, two in four blocks and three in five, each in its own room along the walk (never the way in's, the end, a
-//! landmark's or a vault's) and never two alike, and the Court's three anchors round the end foe's post. Every draw is
-//! made on a lane of the plan's own (`encounters:<fingerprint>`), and its maths is + - * / and comparisons, exact on
-//! every machine. A room too small or too cluttered for a kind is passed over for one that fits.
+//! seals, two in four blocks and three in five where its rooms fit three kinds, each in its own room along the walk
+//! (never the way in's, the end, a landmark's or a vault's) and never two alike, and the Court's three anchors round
+//! the end foe's post. Every draw is made on a lane of the plan's own (`encounters:<fingerprint>`), and its maths is
+//! sums, products, quotients and comparisons, exact on every machine. A room too small or too cluttered for a kind is
+//! passed over for one that fits.
 
 use dungeon::lane::{Lane, named};
 use dungeon::{CELL_M, Cell, Dungeon, SIDES};
@@ -81,12 +82,14 @@ pub struct SealPlan {
     pub doors: Vec<[f64; 3]>,
 }
 
-/// An Elite Dungeon's encounters: its seals in walk order, the Court's anchors (x, y, z) round the end foe's post,
-/// and the dungeon's columns, rows and storeys, by which a point finds its cell.
+/// An Elite Dungeon's encounters: its seals in walk order, the Court's anchors (x, y, z) round the end foe's post and
+/// the middles of its end room's doorway cells, where the Court's waves come in, and the dungeon's columns, rows and
+/// storeys, by which a point finds its cell.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EncounterPlan {
     pub seals: Vec<SealPlan>,
     pub anchors: Vec<[f64; 3]>,
+    pub court_doors: Vec<[f64; 3]>,
     pub columns: usize,
     pub rows: usize,
     pub storeys: usize,
@@ -120,7 +123,7 @@ impl EncounterPlan {
     }
 }
 
-/// How many seals a dungeon of `blocks` blocks holds.
+/// How many seals a dungeon of `blocks` blocks holds at the most: fewer where its rooms fit fewer kinds.
 #[must_use]
 pub const fn seals_for(blocks: usize) -> usize {
     if blocks >= 5 { 3 } else { 2 }
@@ -268,40 +271,70 @@ pub fn plan_encounters(dungeon: &Dungeon) -> EncounterPlan {
     // The first room of the walk where there are four or more, which no climb stands in, so the way in is not
     // straight into one, and another seal only where no other room of the walk fits it.
     let first = usize::from(rooms.len() >= 4);
+    let target_of = |nth: usize| (2 * nth + 1) * rooms.len() / (2 * count).max(1);
+    let stretch_of = |nth: usize| (nth * rooms.len() / count).max(first)..(nth + 1) * rooms.len() / count;
+    // A Holdfast wants a great room, few in a dungeon: the stretch it stands in is the one whose great room lies
+    // nearest its middle, the room it takes, so it stands wherever the dungeon has one and the seals keep their
+    // stretches. Its fit draws nothing, so finding it moves no other draw.
+    let holdfast = (0..count)
+        .filter_map(|nth| {
+            let target = target_of(nth);
+            let mut fits: Vec<usize> = stretch_of(nth)
+                .filter(|&at| relic(&reading, rooms[at], &reading.spots(rooms[at], false)).is_some())
+                .collect();
+            fits.sort_by_key(|&at| (at.abs_diff(target), at));
+            fits.first().map(|&at| (at.abs_diff(target), nth, at))
+        })
+        .min();
     for nth in 0..count {
         // Nearest the middle of its stretch of the walk first, then outward.
-        let target = (2 * nth + 1) * rooms.len() / (2 * count).max(1);
+        let target = target_of(nth);
         let mut order: Vec<usize> = (0..rooms.len()).collect();
         order.sort_by_key(|&at| (at.abs_diff(target), at));
         order.retain(|&at| seals.iter().all(|seal| seal.room != rooms[at]));
-        let stretch = (nth * rooms.len() / count).max(first)..(nth + 1) * rooms.len() / count;
-        let left: Vec<SealKind> =
-            kinds.iter().copied().filter(|kind| seals.iter().all(|seal| seal.kind != *kind)).collect();
-        // The rarest fits first while none of their kind is laid: an Ascent, which wants a tall room, wherever a room
-        // of the stretch fits one; then a Holdfast, which wants a great room, in the stretch or, where it has none,
-        // any room of the walk but the first; then each kind left, in the order drawn, in the stretch's room nearest
-        // its middle that fits it, then in any room of the walk but the first, then in the first, but never a climb.
-        let tried = |pass: usize| -> Vec<usize> {
-            order.iter().copied().filter(|&at| [stretch.contains(&at), at >= first, true][pass]).collect()
+        let stretch = stretch_of(nth);
+        if let Some((_, _, at)) = holdfast.filter(|&(_, stretch, _)| stretch == nth) {
+            seals.extend(laid(&reading, &mut lane, SealKind::Holdfast, rooms[at]));
+            continue;
+        }
+        // The Holdfast's stretch, where it has one, is its own: no other lays one.
+        let left: Vec<SealKind> = kinds
+            .iter()
+            .copied()
+            .filter(|kind| seals.iter().all(|seal| seal.kind != *kind))
+            .filter(|&kind| kind != SealKind::Holdfast || holdfast.is_none())
+            .collect();
+        // The rooms each pass tries, nearest the stretch's middle first, none tried twice: the stretch's, then the rest
+        // of the walk but its first room, then that first room.
+        let rooms_of = |pass: usize| -> Vec<usize> {
+            let tried = |at: usize| match pass {
+                0 => stretch.contains(&at),
+                1 => at >= first && !stretch.contains(&at),
+                _ => at < first,
+            };
+            order.iter().copied().filter(|&at| tried(at)).collect()
         };
-        let rare = [(SealKind::Ascent, 1), (SealKind::Holdfast, 2)].into_iter().filter(|(kind, _)| left.contains(kind));
-        let found = rare
-            .collect::<Vec<_>>()
-            .into_iter()
-            .find_map(|(kind, passes)| {
-                (0..passes)
-                    .find_map(|pass| tried(pass).into_iter().find_map(|at| laid(&reading, &mut lane, kind, rooms[at])))
-            })
-            .or_else(|| {
-                (0..3).find_map(|pass| {
-                    let kinds = left.iter().copied().filter(|&kind| pass < 2 || kind != SealKind::Ascent);
-                    let rooms_tried = tried(pass);
-                    kinds
-                        .collect::<Vec<_>>()
-                        .into_iter()
-                        .find_map(|kind| rooms_tried.iter().find_map(|&at| laid(&reading, &mut lane, kind, rooms[at])))
-                })
-            });
+        let mut found = None;
+        // An Ascent first wherever a room of the stretch fits one, as the climb is the rarest fit; then each kind left,
+        // in the order drawn, in the stretch's room nearest its middle that fits it; then each in any room of the
+        // walk but the first; then any but a climb in the first room.
+        let passes: [(usize, &dyn Fn(SealKind) -> bool); 4] = [
+            (0, &|kind| kind == SealKind::Ascent),
+            (0, &|kind| kind != SealKind::Ascent),
+            (1, &|_| true),
+            (2, &|kind| kind != SealKind::Ascent),
+        ];
+        for (pass, takes) in passes {
+            if found.is_some() {
+                break;
+            }
+            let tried = rooms_of(pass);
+            found = left
+                .iter()
+                .copied()
+                .filter(|&kind| takes(kind))
+                .find_map(|kind| tried.iter().find_map(|&at| laid(&reading, &mut lane, kind, rooms[at])));
+        }
         if let Some(seal) = found {
             seals.push(seal);
         }
@@ -317,7 +350,11 @@ pub fn plan_encounters(dungeon: &Dungeon) -> EncounterPlan {
     let end_floor = dungeon.rooms.get(end).map_or(dungeon::FLOOR_M, |room| dungeon::storey_floor(room.storey));
     let anchors = anchors_of(&reading).into_iter().map(|[x, y, z]| [x, y, z + end_floor]).collect();
     let (columns, rows, storeys) = (dungeon.columns, dungeon.rows, dungeon.storeys);
-    EncounterPlan { seals, anchors, columns, rows, storeys }
+    let court_doors = dungeon.rooms.get(end).map_or_else(Vec::new, |room| {
+        let doorways = room.cells.iter().filter(|cell| reading.doorways.contains(cell));
+        doorways.map(|&cell| dungeon.standing_point(cell)).collect()
+    });
+    EncounterPlan { seals, anchors, court_doors, columns, rows, storeys }
 }
 
 /// A seal of `kind` laid in `room`, or none where it does not fit.

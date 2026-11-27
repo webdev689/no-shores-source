@@ -290,7 +290,7 @@ impl Room {
     }
 
     /// Where `count` foes stand in a room: its free cells nearest its middle on its own storey's floor, each on the
-    /// navmesh.
+    /// navmesh and a body's radius clear of its rock and solids.
     fn placed(&self, dungeon: &Dungeon, room: usize, count: usize) -> Vec<[f64; 3]> {
         dungeon
             .nearest_middle(room, count)
@@ -298,7 +298,7 @@ impl Room {
             .map(|cell| {
                 let [x, y, z] = dungeon.standing_point(cell);
                 let place = [x, y, self.floor.height_under(x, y, z)];
-                self.nav.nearest_point(place).unwrap_or(place)
+                self.floor.standing_clear(self.nav.nearest_point(place).unwrap_or(place))
             })
             .collect()
     }

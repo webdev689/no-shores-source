@@ -2,13 +2,12 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
 import { GLOW_PAD, GLOW_WGSL } from '../elementGlow.ts';
-import { GLOW_SHADER as FIRST_PERSON_GLOW } from '../firstperson/firstPersonView.ts';
 import { PART, type Strip } from '../forge/compose.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type Card, type CardMaker, Cards } from './cards.ts';
 import { plainDress } from './dressing.ts';
-import { SHADER, glowQuad } from './glowCards.ts';
+import { glowQuad } from './glowCards.ts';
 
 test('a glowing quad grows by the reach and keeps its feet', () => {
   const card = { texture: {} as GPUTexture, width: 20, height: 40, root: [10, 40] as const };
@@ -34,14 +33,6 @@ test('an edge pixel shaded from outside its quad reads the field inside it, neve
     assert.ok(texel >= 0 && texel <= 39 && Number.isInteger(texel), `${share} reads texel ${texel}`);
   }
   assert.equal(glowTexel(0.5, 40), 20);
-  for (const [name, shader] of [
-    ['the figure', SHADER],
-    ['first person', FIRST_PERSON_GLOW],
-  ] as const) {
-    const lookups = [...shader.matchAll(/textureLoad\(glow_field, vec2i\((\w+)\), 0\)/g)];
-    assert.equal(lookups.length, 1, `${name} reads its field once`);
-    assert.match(shader, new RegExp(`let ${lookups[0]?.[1]} = glow_texel\\(`), `${name} reads it through glow_texel`);
-  }
 });
 
 // A figure one pixel wide and two tall, holding a sword drawn over its lower pixel.

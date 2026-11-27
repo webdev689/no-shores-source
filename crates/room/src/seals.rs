@@ -46,6 +46,18 @@ pub const RELIC_REGAIN: f64 = 1.0 / (40.0 * 60.0);
 /// beside a plate, a rune or the relic's ring; where no doorway does, they come in at the farthest.
 pub const WAVE_OFF_PIECES_M: f64 = 4.0;
 
+/// Where foes come in among `doors`: those WAVE_OFF_PIECES_M or more from every one of `pieces`, else the door farthest
+/// from its nearest piece; the pieces themselves where there is no door.
+pub(crate) fn off_pieces(doors: &[[f64; 3]], pieces: &[[f64; 3]]) -> Vec<[f64; 3]> {
+    let off = |door: &[f64; 3]| pieces.iter().map(|piece| near(*door, *piece)).fold(f64::INFINITY, f64::min);
+    let clear: Vec<[f64; 3]> = doors.iter().copied().filter(|door| off(door) >= WAVE_OFF_PIECES_M).collect();
+    if !clear.is_empty() {
+        return clear;
+    }
+    let farthest = doors.iter().copied().max_by(|one, other| off(one).total_cmp(&off(other)));
+    farthest.map_or_else(|| pieces.to_vec(), |door| vec![door])
+}
+
 /// How long a plate stays held after its last player steps off: PLATE_LINGER_TICKS, and for a lone player the walk
 /// between its two plates besides, so one player walking, not only sprinting, can hold both.
 pub(crate) fn plate_linger(players: usize, plates: &[[f64; 3]]) -> u64 {
@@ -235,26 +247,21 @@ impl Room {
     }
 
     /// A wave at the seal room's doorways once it is due, one foe for each of the `living` players in its room, the
-    /// next `every` ticks on.
+    /// next `every` ticks on; one refused while the seal's waves stand as many as they may is tried again
+    /// WAVE_RETRY_TICKS on.
     fn wave_when_due(&mut self, encounters: &mut Encounters, seal: usize, plan: &SealPlan, every: u64, living: usize) {
         if self.clock < encounters.seals[seal].next_wave {
             return;
         }
-        encounters.seals[seal].next_wave = self.clock + every;
         let doors = Self::doorways_of(plan);
-        self.stand_seal_wave(encounters, WaveOf::Seal(seal), &doors, living);
+        let stood = self.stand_seal_wave(encounters, WaveOf::Seal(seal), &doors, living);
+        encounters.seals[seal].next_wave =
+            self.clock + if stood > 0 { every } else { crate::encounters::WAVE_RETRY_TICKS };
     }
 
-    /// Where a seal's foes come in: its room's doorways WAVE_OFF_PIECES_M or more from every piece, else the doorway
-    /// farthest from its nearest piece; its pieces where it has no doorway.
+    /// Where a seal's foes come in: `off_pieces` of its room's doorways and its pieces.
     fn doorways_of(plan: &SealPlan) -> Vec<[f64; 3]> {
-        let off = |door: &[f64; 3]| plan.pieces.iter().map(|piece| near(*door, *piece)).fold(f64::INFINITY, f64::min);
-        let clear: Vec<[f64; 3]> = plan.doors.iter().copied().filter(|door| off(door) >= WAVE_OFF_PIECES_M).collect();
-        if !clear.is_empty() {
-            return clear;
-        }
-        let farthest = plan.doors.iter().copied().max_by(|one, other| off(one).total_cmp(&off(other)));
-        farthest.map_or_else(|| plan.pieces.clone(), |door| vec![door])
+        off_pieces(&plan.doors, &plan.pieces)
     }
 
     /// Once a second, the drowned floor takes DROWNED_SHARE of their health from every living player standing on it,

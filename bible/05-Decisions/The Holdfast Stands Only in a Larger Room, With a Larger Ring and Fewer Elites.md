@@ -12,10 +12,11 @@ status: in force
 
 ## What it settles
 
-- **The Holdfast stands only in a larger room**, never a small one.
+- **The Holdfast stands only in a larger room**, not a small one.
 - **Its ring is larger.**
-- **It stands fewer Elites.**
-- **The other dungeon activities are audited for the same faults**, and what the audit finds is fixed alike.
+- **It spawns fewer elite enemies.**
+- **The other dungeon activities are audited for similar issues.**
 
-How large, and what the audit changed, are Claude's calls in [[The Playlist and Its Dungeons as Claude Shapes Them]]
-("Encounters") and [[Passages as Claude Builds Them]]. How it works: [[Dungeons]], "Encounters"; [[Passages]].
+How large, how few, and what the audit changed, are Claude's calls in
+[[The Playlist and Its Dungeons as Claude Shapes Them]] ("Encounters") and [[Passages as Claude Builds Them]]. How it
+works: [[Dungeons]], "Encounters"; [[Passages]].

@@ -51,8 +51,8 @@ player's shots and landed blows take the element too. Foes and the menu's pictur
   and tested against their depth, in the [[Test Ground]] and the [[Game]].
 - **Other players.** A player's page sends the element each hand's weapon glows in with the dress it tells the room
   (`glow`, none for a plain weapon); another player's page draws their figure glowing in its right hand's element while
-  their weapon is drawn (`weaponGlow`), at rest (no surge), as their own figure is composed. A dress with any other
-  `glow` is refused whole, as a broken one is.
+  their weapon is drawn (`weaponGlow`), at rest (no surge), as their own figure is composed. A `glow` the page cannot
+  read (a later page's element, a broken one) is dropped, the rest of the dress kept.
 - **In first person.** A sword or a dagger laid over its hand glows on its blade only; every other weapon's picture
   glows whole. Each hand glows in its own weapon's element, each outline drawn just after its picture. A picture
   standing on the screen's foot takes no light along it.

@@ -500,6 +500,24 @@ fn a_player_leaving_a_dungeon_by_its_exit_door_or_its_open_portal_is_kept_as_com
     assert!(out(&mut room, portal), "at its portal once it stands open");
 }
 
+/// How far a point stands off a solid's footprint (0 inside it).
+fn off_box([x, y]: [f64; 2], solid: &[f64; 6]) -> f64 {
+    let (east, south) = ((solid[0] - x).max(x - solid[2]).max(0.0), (solid[1] - y).max(y - solid[3]).max(0.0));
+    libm::hypot(east, south)
+}
+
+/// Whether a body stands at a point on a floor: on open floor, its radius clear of every solid of that floor (`near`)
+/// and of the rock round it.
+fn body_fits(dungeon: &Dungeon, near: &[&[f64; 6]], at: [f64; 2], floor: f64) -> bool {
+    let radius = TUNING.radius;
+    let open = |cell: usize| matches!(dungeon.cells[cell], Cell::Room(_) | Cell::Corridor);
+    let rock_clear =
+        [[-radius, 0.0], [radius, 0.0], [0.0, -radius], [0.0, radius], [0.0, 0.0]].iter().all(|[east, south]| {
+            at[0] + east >= 0.0 && at[1] + south >= 0.0 && open(dungeon.cell_at([at[0] + east, at[1] + south, floor]))
+        });
+    rock_clear && near.iter().all(|other| off_box(at, other) >= radius - 1e-6)
+}
+
 /// Of the floor a body stands on within a metre of a solid (a rock, a pillar, a jamb, a brazier), sampled every 0.3 m,
 /// how many points there are and how many the room's navmesh finds a way to from the arrival.
 fn reached_beside_solids(room: &Room, dungeon: &Dungeon) -> (usize, usize) {
@@ -508,12 +526,6 @@ fn reached_beside_solids(room: &Room, dungeon: &Dungeon) -> (usize, usize) {
     let (arrival, _) = dungeon.arrival();
     let from = [arrival[0], arrival[1], room.floor.height_at(arrival[0], arrival[1])];
     let boxes = dungeon.boxes();
-    let radius = TUNING.radius;
-    let off_box = |[x, y]: [f64; 2], solid: &[f64; 6]| {
-        let (east, south) = ((solid[0] - x).max(x - solid[2]).max(0.0), (solid[1] - y).max(y - solid[3]).max(0.0));
-        libm::hypot(east, south)
-    };
-    let open = |cell: usize| matches!(dungeon.cells[cell], Cell::Room(_) | Cell::Corridor);
     let (mut stood, mut reached) = (0, 0);
     for solid in &boxes {
         let floor = solid[4];
@@ -523,14 +535,7 @@ fn reached_beside_solids(room: &Room, dungeon: &Dungeon) -> (usize, usize) {
         for column in -reach..=across + reach {
             for row in -reach..=down + reach {
                 let at = [solid[0] + f64::from(column) * STEP_M, solid[1] + f64::from(row) * STEP_M];
-                if at[0] < radius || at[1] < radius || off_box(at, solid) > BESIDE_M {
-                    continue;
-                }
-                // A body stands there: on open floor, its radius clear of every solid and of the rock round it.
-                let rock_clear = [[-radius, 0.0], [radius, 0.0], [0.0, -radius], [0.0, radius], [0.0, 0.0]]
-                    .iter()
-                    .all(|[east, south]| open(dungeon.cell_at([at[0] + east, at[1] + south, floor])));
-                if !rock_clear || storey.iter().any(|other| off_box(at, other) < radius) {
+                if off_box(at, solid) > BESIDE_M || !body_fits(dungeon, &storey, at, floor) {
                     continue;
                 }
                 stood += 1;
@@ -539,6 +544,33 @@ fn reached_beside_solids(room: &Room, dungeon: &Dungeon) -> (usize, usize) {
         }
     }
     (stood, reached)
+}
+
+#[test]
+fn a_point_the_navmesh_gives_beside_a_solid_is_moved_where_a_body_stands_clear_of_it() {
+    let (mut given, mut stood) = (0, 0);
+    for elite in gear::activities::elite_dungeons() {
+        let room = crate::encounters::encounters_tests::elite_room(elite.id);
+        let laid = crate::encounters::encounters_tests::laid_dungeon(elite.id);
+        let boxes = laid.boxes();
+        for solid in &boxes[laid.jamb_and_loose_boxes().1] {
+            let floor = solid[4];
+            let storey: Vec<&[f64; 6]> = boxes.iter().filter(|other| (other[4] - floor).abs() < 0.5).collect();
+            let middle = [(solid[0] + solid[2]) / 2.0, (solid[1] + solid[3]) / 2.0];
+            for nth in 0..16 {
+                let turn = core::f64::consts::TAU * f64::from(nth) / 16.0;
+                let reach = (solid[2] - solid[0]).max(solid[3] - solid[1]) / 2.0 + 0.6;
+                let asked = [middle[0] + reach * libm::cos(turn), middle[1] + reach * libm::sin(turn), floor];
+                let Some(near) = room.nav.nearest_point(asked) else { continue };
+                given += 1;
+                let [x, y, _] = room.floor.standing_clear(near);
+                stood += usize::from(body_fits(&laid, &storey, [x, y], floor));
+            }
+        }
+    }
+    let share = stood as f64 / given as f64;
+    assert!(given > 10_000, "{given} points");
+    assert!(share >= 0.998, "{stood} of {given} points a body stands at, once moved clear ({share:.4})");
 }
 
 #[test]
@@ -578,7 +610,7 @@ fn foes_find_a_way_to_the_floor_beside_a_dungeons_rocks_pillars_and_jambs() {
 }
 
 #[test]
-#[ignore = "open: the foot of Brine Catacombs' flight from its third storey is two polys that never link (Hand-off)"]
+#[ignore = "open: the foot of Brine Catacombs' flight from its third storey is two polys that never link"]
 fn brine_catacombs_flight_foot_is_one_floor_on_the_navmesh() {
     // At the foot of the flight up from the third storey (x 4.8, y 8 to 24), the floor west of a diagonal edge and the
     // floor east of it, 0.2 m apart on the same flat floor, have no way between them: rooms 14 to 17 are cut off.

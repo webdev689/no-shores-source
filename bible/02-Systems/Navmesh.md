@@ -79,7 +79,9 @@ and their firing spots by it, and climb and drop where its links say.
    0.4 to 0.8 m off where a body keeps 0.35 m, shutting the gaps beside it a body walks through and leaving the floor
    round it off the mesh. Trimmed, it keeps 0.15 to 0.55 m, and the narrowest gap the mesh opens between two is
    0.7 m, a body's width; the jambs and a landmark's greater pieces keep their whole footprint, so no path cuts their
-   outline. A path between storeys goes by a flight. A dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is
+   outline. As the mesh keeps less than a body's radius off them, a point the room takes from it to stand a foe at or
+   walk one to (a post, a wave's place, a path's corner) is moved where a body stands clear of the rock and solids
+   round it, the nearest such within 0.6 m (`DungeonGround::standing_clear`). A path between storeys goes by a flight. A dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is
    taken up to the higher cell beside alone, never down, so a storey's way over a room of the storey under it (whose
    column's lowest floor is that room's) and the edge of a flight's landing stay floor where they meet the drop.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
@@ -183,8 +185,8 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 - In `brine-catacombs` the floor at the foot of the flight up from its third storey (x 4.8, y 8) is two polys either
   side of a diagonal edge that never link, though they lie on one flat floor 0.2 m apart, so its rooms 14 to 17 have
   mesh but no way from the way in: their foes cannot reach a player coming from it, nor follow one in. The cause is
-  in the outlines or the polys, not the corners' weld (widened to four voxels, it stays); an ignored test holds the
-  case (`brine_catacombs_flight_foot_is_one_floor_on_the_navmesh`).
+  in the outlines or the polys; an ignored test holds the case
+  (`brine_catacombs_flight_foot_is_one_floor_on_the_navmesh`).
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
 - The grid's cells stay 0.25 m however large the room, so a bake's time and memory grow with its area. Tested
   offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course, its 115 links among it, bakes in about

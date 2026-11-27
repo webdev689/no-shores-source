@@ -159,8 +159,8 @@ passages' own pieces standing in it with their solids.
   laid, so a zone's plan, its heights and its local room are laid once.
 - **The pieces**: the way in, the onward mouths, the lamp (a plinth 1.6 m square in a ring of five standing stones
   3.5 m out, facing the arrival turned half a stone's step, so the way from it comes in between two stones, each
-  stone's solid its drawn slab at its widest, 1.08 m across its broad face and 0.58 m through, turned with it and held
-  as the square round its turned corners: `Kind::solids_at`), and what the deal stands on the spots farthest from the way in: three dead lamps for a Kindle, three
+  stone's solid its drawn slab at its widest, 1.08 m across its broad face and 0.58 m through, in three pieces along
+  its face, each turned with it and held as the square round its turned corners: `Kind::solids_at`), and what the deal stands on the spots farthest from the way in: three dead lamps for a Kindle, three
   tally posts for a Sever, six nodes for a vein, a reliquary, a Hold's ring (`passage.ring`, no solid: 32 worn flat stones of the grey-green
   stone laid end to end in the floor on its 6 m, none 5 cm over it, so a body walks over it).
 

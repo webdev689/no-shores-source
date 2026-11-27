@@ -92,7 +92,7 @@ const CLOAK = /(^|_)cloak(_|$)/;
 const COVERED = /^(shield|bow|staff)_/;
 
 /** The dress another player's browser sent, as text, if it is one: each field of a dress's shape, its names short, so
- *  a broken or hostile one never reaches the forge. */
+ *  a broken or hostile one never reaches the forge; a glow it cannot read is dropped, the dress kept. */
 export function dressFrom(text: string): Dress | null {
   let value: unknown;
   try {
@@ -115,9 +115,13 @@ export function dressFrom(text: string): Dress | null {
   if (!(hair === null || (isRecord(hair) && isName(hair['style']) && isName(hair['colour'])))) return null;
   if (!isWorn(outfit['dye'], 'dye') || !isWorn(outfit['coat'], 'coat') || !isWorn(outfit['barding'], 'barding'))
     return null;
+  // A glow it cannot read (a later page's element, a broken one) is left out, the rest of the dress kept.
   const glow = value['glow'];
-  if (!(glow === undefined || (Array.isArray(glow) && glow.length === 2 && glow.every(isGlowLook)))) return null;
-  return value as unknown as Dress;
+  if (glow === undefined || (Array.isArray(glow) && glow.length === 2 && glow.every(isGlowLook)))
+    return value as unknown as Dress;
+  const plain: Record<string, unknown> = { ...value };
+  delete plain['glow'];
+  return plain as unknown as Dress;
 }
 
 /** The forge figure a dress stacks in a move: the race's own body or the human tone, and its outfit's layers and hair,
