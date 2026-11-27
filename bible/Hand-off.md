@@ -9,14 +9,15 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: #232, this session's audit and cleanup (branch `claude/epic-faraday-xmfrot`: the sea's held map
-  some twenty times faster and no longer laid out as the ship sails, a settled rig no longer redrawing the far shadow
-  map, six audits' fixes across the client, rooms, server, bot and repo checks, the bible's review; its description
-  says what and how it was tested); #159 (the rooms' worker tests wait for what they check; it conflicts with `main`
-  in `roomThread.test.ts`, which this session's branch also touches).
+- **For the owner's yes**: #232, this session's audit and cleanup (branch `claude/epic-faraday-xmfrot`: the sea's
+  held map some twenty times faster and no longer laid out as the ship sails, a settled rig no longer redrawing the
+  far shadow map, six audits' fixes across the client, rooms, server, bot and repo checks, the bible's review; its
+  description says what and how it was tested); #159 (the rooms' worker tests wait for what they check; it conflicts
+  with `main` in `roomThread.test.ts`, which #232 also touches).
 - **Other sessions' work under way**: #221 (hostile ships and islands on the sea map, travel anywhere at sea; it edits
-  the held map's `heldMap.ts`, `heldMapAsk.ts`, `heldMapWaters.ts` and `mapLetters.ts`, as this session's branch does),
-  #229 (deeper dungeons and DFO's 3D map) and #230 (the page follows the rooms its own run deployed).
+  the held map's `heldMap.ts`, `heldMapAsk.ts`, `heldMapWaters.ts` and `mapLetters.ts`, as #232 does), #229 (deeper
+  dungeons and DFO's 3D map), #233 (lights redesigned, island and hollow ground textured) and #234 (the owner's answers
+  to the Open Questions).
 - **Drafts**: #228 (dialogue waits for a click, Overlook lit at night, ships' lanterns), #224 (the walk's left arm,
   the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the
   gear message carries the pledge once).
@@ -60,11 +61,11 @@ yet played by hand or with other players in a deployed room.
 - **Timed on a real GPU**: the game in and out of its worker; the hub with some 125 figures; the wreck with every
   fire; the light layer of the attack visuals; ships and marks under the lamps; the meadow (some 180,000 tufts on open
   grass); the curved wake; the loading screen; everything the performance pass changed ([[Game]], "Limits").
-- **#227's**: the hub's walks and their joints, the paving's seams and the ship's stern on a real GPU (pictured
-  headless before the audit; no Frigate under way after the stern's fix); its music heard (checked by its notes).
-- **This session's**: the held map at sea on a real GPU (its frame time with a voyage inked, the route's tiles, the
-  arrow's repaint leaving no trace); a ship's flag flying on a settled rig and coming down its mast when struck; the
-  far shadow map with traffic offshore; the bot panel's sign-in in a real browser with its new cookie.
+- **Seen on a real GPU**: Overlook's walks where they meet and the paving's seams beside the plaza, and a ship's
+  stern on the water, the Frigate's under way (pictured headless only, #227).
+- **#232's**: the held map at sea on a real GPU (its frame time with a voyage inked, the route's tiles, the arrow's
+  repaint leaving no trace); a ship's flag flying on a settled rig and coming down its mast when struck; the far
+  shadow map with traffic offshore; the bot panel's sign-in in a real browser with its new cookie.
 - **Heard**: the music, the ambience, the world's, sea's and menu's sounds and their levels; the prologue's music and
   voices; the seams between a long recording's chunks; whether a browser drops an MP3's 25 to 40 ms of padding, as
   ffmpeg does, so each hoofbeat plays to its cut.
@@ -133,6 +134,9 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
+  on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
+  stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
 - **After #216** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]] and the
   four decisions before it): the three landing zones of Saltmere's patrol zones, the zone's map and their fast travel,
   not built; ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore
@@ -311,7 +315,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   - Repo checks that still let things through: the html check misses `.after(` and `.before(` (the game has methods
     of those names, so they need types to tell apart) and an element's style held under another name
     (`const look = canvas.style;`, where `.style` before `;`, `,` or `)` stands in game code: `hair.style`).
-- **This session's audits' findings left** (its pull request's description holds each with its evidence):
+- **#232's audits' findings left** (its description holds each with its evidence):
   - Per frame (the client perf audit): every water pixel loops over up to 48 hulls twice (`water/hullMask.ts`
     `hull_cover`, `water/wakes.ts` `wake_at`), the ships within the far plane, not the view: culling them on the CPU
     must keep each one's wake trail; line-of-sight scans walk the node's whole box list several times a frame
