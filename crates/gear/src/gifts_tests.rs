@@ -252,7 +252,7 @@ fn one_who_pledged_before_the_round_is_given_its_gifts_as_they_pledge_and_the_we
 #[test]
 fn a_character_past_the_round_before_the_gifts_is_owed_nothing_new() {
     let opening = quests().quests.iter().position(|quest| quest.faction == 0).expect("the opening");
-    for past in ["wear-them", "hear-three-houses", "choose-house"] {
+    for past in ["hear-three-houses", "choose-house"] {
         let mut character = Character::starting();
         let at = quests().quests[opening].tasks.iter().position(|task| task.id == past).expect("a task");
         character.quests.set_task(opening, at);
@@ -264,6 +264,27 @@ fn a_character_past_the_round_before_the_gifts_is_owed_nothing_new() {
         let gifted =
             read.items.values().any(|(item, _)| matches!(item.kind, Kind::Head | Kind::Cloak) && item.named.is_none());
         assert!(read.quests.gifts == ["stormcallers_hauberk"] && !gifted && read.mail.is_empty(), "{past}");
+    }
+}
+
+#[test]
+fn an_old_save_on_put_them_on_or_arm_yourself_is_given_the_ranged_weapon_free_at_her_counter_once() {
+    let opening = quests().quests.iter().find(|quest| quest.faction == 0).expect("the opening");
+    for task_id in ["wear-them", "arm-yourself"] {
+        // As a room before the keepers' gifts kept it: past the round, no gift given, Aurem left of the stranger's.
+        let mut kept = serde_json::to_value(Character::starting()).expect("kept");
+        kept["quests"]["roads"][&opening.id] = serde_json::json!({ "task": task_id, "counts": [] });
+        kept["materials"]["aurem"] = serde_json::json!(STARTER_PRICE * 3);
+        let mut read = Character::from_json(&kept.to_string()).expect("read");
+        assert_eq!(task(&read), Some("wear-them"), "{task_id}");
+        assert_eq!(read.quests.free, [Slot::Ranged], "{task_id}: the Ranged weapon owed, the Melee one theirs");
+        assert_eq!(buy(&mut read, Kind::Bow), Ok(()));
+        assert_eq!(read.materials.aurem, STARTER_PRICE * 3, "{task_id}: given, not bought");
+        let mut again = Character::from_json(&read.to_json()).expect("read again");
+        again.earn_due();
+        assert!(again.quests.free.is_empty(), "{task_id}: given once");
+        assert_eq!(buy(&mut again, Kind::Crossbow), Ok(()));
+        assert_eq!(again.materials.aurem, STARTER_PRICE * 2, "{task_id}: a second one bought");
     }
 }
 
