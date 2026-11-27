@@ -51,7 +51,7 @@ pub struct Path {
 
 /// The sixteen steps a path takes from a cell: every (i, j) within two with no common factor, so a way runs at any of
 /// sixteen headings rather than eight.
-const STEPS: [(i32, i32); 16] = [
+pub(crate) const STEPS: [(i32, i32); 16] = [
     (1, 0),
     (2, 1),
     (1, 1),
@@ -74,11 +74,11 @@ const LAID_SHARE: f64 = 0.35;
 /// The extra cost of a metre over a river, in metres of dry ground: a bridge is worth a detour, but not a long one.
 const RIVER_COST_M: f64 = 14.0;
 /// How far round its ends a path may pass between buildings, metres: out of a village's yards.
-const END_YARD_M: f64 = 18.0;
+pub(crate) const END_YARD_M: f64 = 18.0;
 /// The steepest grade any way climbs where no gentler one is open: stepped like a stair.
 pub const STEPPED: f64 = 0.7;
 /// How far inside the claim a path keeps, metres.
-const EDGE_KEEP_M: f64 = 14.0;
+pub(crate) const EDGE_KEEP_M: f64 = 14.0;
 
 /// The cells a body cannot path through: what stands there (a building), or lies past the claim's edge.
 #[derive(Debug, Clone)]

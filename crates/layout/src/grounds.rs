@@ -31,6 +31,8 @@ pub const STORE_CLEAR: f64 = 1.5;
 pub const STORE_OFF_WAYS: f64 = 2.0;
 /// How far out from the plaza a hamlet's raiders come in, and how far its banners stand, either side of the way in.
 pub const APPROACH_M: f64 = 36.0;
+/// How many 15 degree turns either side of the line to the nearest camp a raid's way in is looked for along.
+const WAY_IN_TURNS: u8 = 6;
 pub const BANNERS_M: f64 = 28.0;
 pub const BANNERS_APART: f64 = 6.0;
 /// How far from the fissure its crystal growth rises: the nearest of these that is clear.
@@ -106,9 +108,34 @@ fn stores(field: &Field, around: (&[Print], &[Path]), hamlet: &Area, seating: &S
 
 /// The first clear point along a line out from `from` toward `toward`, trying from `out` in toward the middle.
 fn out_along(field: &Field, around: (&[Print], &[Path]), from: [f64; 2], toward: [f64; 2], out: f64) -> [f64; 2] {
+    clear_along(field, around, from, toward, out).unwrap_or([from[0] + toward[0] * out, from[1] + toward[1] * out])
+}
+
+fn clear_along(
+    field: &Field,
+    around: (&[Print], &[Path]),
+    from: [f64; 2],
+    toward: [f64; 2],
+    out: f64,
+) -> Option<[f64; 2]> {
     let along = |metres: f64| [from[0] + toward[0] * metres, from[1] + toward[1] * metres];
     let steps = (0..12).map(|step| out - f64::from(step) * 3.0);
-    steps.map(along).find(|&at| open(field, around, at, [0.5, 0.5], 0.5)).unwrap_or_else(|| along(out))
+    steps.map(along).find(|&at| open(field, around, at, [0.5, 0.5], 0.5))
+}
+
+/// The way the raiders come in: toward `toward`, or where a house or a way stands across every point of that line,
+/// the nearest bearing either side of it, 15 degrees apart, that has a clear point, so they never come in through a
+/// wall. None is clear: the line asked.
+fn way_in(field: &Field, around: (&[Print], &[Path]), from: [f64; 2], toward: [f64; 2]) -> [f64; 2] {
+    let turned = |degrees: f64| {
+        let (sin, cos) = (libm::sin(degrees.to_radians()), libm::cos(degrees.to_radians()));
+        [toward[0] * cos - toward[1] * sin, toward[0] * sin + toward[1] * cos]
+    };
+    let bearings = (0..=WAY_IN_TURNS).flat_map(|turn| [f64::from(turn) * 15.0, -f64::from(turn) * 15.0]).map(turned);
+    bearings
+        .into_iter()
+        .find(|&bearing| clear_along(field, around, from, bearing, APPROACH_M).is_some())
+        .unwrap_or(toward)
 }
 
 /// The sites a zone's public events stand on, in a zone that holds them (EVENT_ZONES) and nowhere else: its first
@@ -143,6 +170,7 @@ pub fn mark(zone: &str, field: &Field, areas: &[Area], paths: &[Path], seating: 
             .min_by(|one, two| distance(one.at, area.at).total_cmp(&distance(two.at, area.at)));
         let toward = camp.map_or(field.seaward, |camp| crate::unit(camp.at, area.at, field.seaward));
         let toward = if toward == [0.0, 0.0] { [0.0, -1.0] } else { toward };
+        let toward = way_in(field, around, area.at, toward);
         sites.push(site(SiteKind::Approach, out_along(field, around, area.at, toward, APPROACH_M), 3.0, &area.name));
         let edge = [area.at[0] + toward[0] * BANNERS_M, area.at[1] + toward[1] * BANNERS_M];
         for side in [-1.0, 1.0] {
