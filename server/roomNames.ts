@@ -329,11 +329,9 @@ export function seaRoomName(seas: number): string {
   return seas > 0 && seas < SEAS.length ? `sea--${SEAS[seas] ?? ''}` : 'sea';
 }
 
-/** The sea's room by its name: `sea` at Normal, `sea--elite` or `sea--abyss`, answering its difficulty; null for any
- *  other name. */
+/** The sea's room by its name, answering its difficulty: `sea`, at Normal, the one sea every voyage sails for now;
+ *  null for any other name, `sea--elite` and `sea--abyss` among them, so no room opens at the sea's other tiers, nor
+ *  an island or a dungeon of theirs. */
 export function seaRoom(name: string): number | null {
-  const [sea, seas, ...more] = name.split('--');
-  const difficulty = seas === undefined ? 0 : SEAS.indexOf(seas);
-  if (sea !== 'sea' || more.length > 0 || difficulty < 0 || seas === SEAS[0]) return null;
-  return difficulty;
+  return name === seaRoomName(0) ? 0 : null;
 }

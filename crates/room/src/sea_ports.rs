@@ -392,6 +392,16 @@ impl Sea {
         gear::gate::shut(character, gear::gate::Place::Node, self.hostiles.difficulty)
     }
 
+    /// Why the sea's gate shuts to `player`'s character: as `shut`, but one who asked to travel aboard another's ship
+    /// needs none of their own (`ask_aboard`).
+    #[must_use]
+    pub fn shut_to(&self, player: PlayerId, character: &gear::Character) -> Option<gear::gate::Shut> {
+        if self.travels_aboard(player) {
+            return gear::gate::shut(character, gear::gate::Place::Node, self.hostiles.difficulty);
+        }
+        self.shut(character)
+    }
+
     /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea,
     /// the text is not a character, or the sea's gate shuts to it (`shut`). Their ship lies where the room last kept
     /// it, turned as it lay there, wherever the page first put it to sea: a fight they met from the page's spawn is
@@ -402,14 +412,15 @@ impl Sea {
         let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
             return false;
         };
-        if self.shut(&character).is_some() {
+        if self.shut_to(player, &character).is_some() {
             return false;
         }
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
         let kept_at =
             character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
         let kept_at = kept_at.and_then(|at| self.open_at(at));
-        let at = kept_at.or(self.harbour.harbours.starting());
+        // One who travels aboard another's ship leaves their own where it lies.
+        let at = kept_at.or(self.harbour.harbours.starting()).filter(|_| !self.travels_aboard(player));
         if at.is_some() && self.fights.fighting(player) {
             self.leave_decks(player);
             self.fights.leave(player);

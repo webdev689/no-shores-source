@@ -4,9 +4,11 @@ import { SIDE, coastDistance } from '../client/src/overworld/islandView.ts';
 import { accounts } from './accounts/accountsForTests.ts';
 import { characters } from './accounts/characters.ts';
 import {
+  DOCK_AT_PORT,
   FIRST_ROOM,
   LANDFALL_M,
   NO_WAY_HERE,
+  PORT_REACH_M,
   type Reach,
   arrives,
   cameOutOf,
@@ -25,12 +27,17 @@ const COAST: [number, number][] = [
   [1_100_000, 1_100_000],
   [1_000_000, 1_100_000],
 ];
-const reach = (gatedFrom: string[] = [], social = false): Reach => ({
-  social,
+/** A living port city's centre, on another island 1,000 km east, and a ship docked at its pier 3 km off it. */
+const [PORT, AT_PORT]: [number, number][] = [
+  [2_000_000, 1_000_000],
+  [2_000_000, 1_003_000],
+];
+const reach = (gatedFrom: string[] = []): Reach => ({
   continent: 'continent-1',
   coast: COAST,
   gatedFrom,
   locked: false,
+  ports: [PORT],
 });
 const [OFF_COAST, FAR_OFF]: [number, number][] = [
   [1_050_000, 1_120_000],
@@ -46,21 +53,20 @@ test('Overlook’s social space takes anyone, a room takes back whoever it held 
     assert.equal(arrives(room, 'node-tidewall', null, null), true, room);
 });
 
-test('a node is landed at from the sea at its seas, its ship lying off the node’s island', () => {
+test('a node is landed at from the sea at any tier the voyage set out at, its ship lying off the node’s island', () => {
   assert.equal(arrives('node-tidewall', 'sea', OFF_COAST, reach()), true);
-  assert.equal(arrives('node-tidewall--elite', 'sea--elite', OFF_COAST, reach()), true);
+  assert.equal(arrives('node-tidewall--elite', 'sea', OFF_COAST, reach()), true, 'the one sea sails at Normal');
+  assert.equal(arrives('node-tidewall--abyss', 'sea', OFF_COAST, reach()), true);
   assert.equal(arrives('node-tidewall', 'sea', FAR_OFF, reach()), false, 'a voyage skipped');
   assert.equal(arrives('node-tidewall', 'sea', null, reach()), false, 'no ship the sea kept');
   assert.equal(arrives('node-tidewall', 'sea', OFF_COAST, { ...reach(), locked: true }), false, 'an island not named');
-  assert.equal(arrives('node-tidewall', 'sea--abyss', OFF_COAST, reach()), false, 'at another tier');
-  assert.equal(arrives('node-tidewall--abyss', 'sea', OFF_COAST, reach()), false);
+  assert.equal(arrives('node-tidewall', 'sea--abyss', OFF_COAST, reach()), false, 'no sea sails at Abyss');
   assert.equal(arrives('node-tidewall', 'node-saltgrass-downs', OFF_COAST, reach()), false, 'not from the sea');
   assert.equal(arrives('node-tidewall', 'sea', OFF_COAST, null), false, 'a node the index does not list');
-  assert.equal(arrives('node-sunspire-social', 'sea--abyss', OFF_COAST, reach([], true)), true, 'one room each tier');
-  assert.equal(arrives('node-sunspire-social', 'sea', FAR_OFF, reach([], true)), false);
+  assert.equal(arrives('node-sunspire-social', 'sea', OFF_COAST, reach()), true, 'one room each tier');
+  assert.equal(arrives('node-sunspire-social', 'sea', FAR_OFF, reach()), false);
   const plot = 'node-gull-cove-outpost--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
-  for (const sea of ['sea--elite', 'sea--abyss'])
-    assert.equal(arrives(plot, sea, OFF_COAST, reach([], true)), true, sea);
+  assert.equal(arrives(plot, 'sea', OFF_COAST, reach()), true);
   // The page's own measure off a coast, and every landfall it offers within the room's reach.
   for (const ship of [OFF_COAST, FAR_OFF, [1_050_000, 1_050_000], [900_000, 1_250_000]] as const)
     assert.equal(toCoast(ship, COAST), coastDistance(ship, COAST), String(ship));
@@ -100,7 +106,7 @@ test('a dungeon or a run is entered from its node’s room, and left back into i
 
 test('a playlist’s run is launched from the sea, from beside any port, and left back to it', () => {
   const run = 'node-krakens-grotto--elite--playlist-17--run-k3j4h5g6';
-  for (const sea of ['sea', 'sea--elite', 'sea--abyss']) assert.equal(arrives(run, sea, null, null), true, sea);
+  assert.equal(arrives(run, 'sea', null, null), true);
   assert.equal(arrives(run, 'node-krakens-grotto--elite', null, null), false, 'never through the dungeon’s door');
   assert.equal(arrives(run, 'node-overlook-social', null, null), false);
   assert.equal(arrives(run, null, null, null), false);
@@ -109,8 +115,8 @@ test('a playlist’s run is launched from the sea, from beside any port, and lef
   assert.equal(arrives('node-krakens-grotto--elite', run, null, null), false, 'nor onto its dungeon’s island');
   // The week's run started from the Playlist is marked so, and goes back to the sea as a playlist's does.
   const week = 'node-saltworm-warrens--abyss--sea--run-k3j4h5g6';
-  for (const sea of ['sea', 'sea--elite', 'sea--abyss']) assert.equal(arrives(week, sea, null, null), true, sea);
-  assert.equal(arrives(week, 'node-saltworm-warrens--abyss', null, null), false, 'not by its door');
+  assert.equal(arrives(week, 'sea', AT_PORT, reach()), true);
+  assert.equal(arrives(week, 'node-saltworm-warrens--abyss', AT_PORT, reach()), false, 'not by its door');
   assert.equal(arrives('node-saltworm-warrens--abyss', week, null, reach()), false, 'nor out onto its island');
   assert.equal(cameOutOf('node-saltworm-warrens--abyss', week, 0), false);
   // Unmarked, the week's run is its door's: it never takes a player from the sea onto the island it leaves to.
@@ -124,9 +130,24 @@ test('a playlist’s run is launched from the sea, from beside any port, and lef
   assert.equal(arrives('node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6', 'sea', null, null), false);
 });
 
+test('the week’s run launched from the Playlist is entered only with the ship docked at a port', () => {
+  const week = 'node-krakens-grotto--elite--sea--run-k3j4h5g6';
+  assert.equal(arrives(week, 'sea', AT_PORT, reach()), true, 'docked at a port');
+  assert.equal(arrives(week, 'sea', [PORT[0], PORT[1] + PORT_REACH_M + 1], reach()), DOCK_AT_PORT, 'just past it');
+  assert.equal(arrives(week, 'sea', OFF_COAST, reach()), DOCK_AT_PORT, 'off a coast with no port');
+  assert.equal(arrives(week, 'sea', null, reach()), DOCK_AT_PORT, 'with no ship the sea kept');
+  assert.equal(arrives(week, 'sea', AT_PORT, { ...reach(), ports: [] }), DOCK_AT_PORT, 'no living port known');
+  assert.equal(arrives(week, 'sea', AT_PORT, null), DOCK_AT_PORT, 'nor where the node is unknown');
+  assert.equal(arrives(week, 'node-tidewall', OFF_COAST, reach()), DOCK_AT_PORT, 'by no way, even to a companion');
+  assert.equal(arrives(week, 'node-overlook-social', AT_PORT, reach()), false, 'docked: its company may bring one in');
+  assert.equal(arrives(week, week, null, null), true, 'a rejoin');
+  assert.equal(arrives('node-krakens-grotto--sea--run-k3j4h5g6', 'sea', OFF_COAST, reach()), true, 'one at Normal');
+  assert.equal(arrives('node-krakens-grotto--elite--playlist-17--run-k3j4h5g6', 'sea', OFF_COAST, null), true);
+});
+
 test('an Elite Dungeon’s run at Normal started at sea is entered from the sea off its island alone, and left back to it', () => {
   const run = 'node-krakens-grotto--sea--run-k3j4h5g6';
-  for (const sea of ['sea', 'sea--elite', 'sea--abyss']) assert.equal(arrives(run, sea, OFF_COAST, reach()), true, sea);
+  assert.equal(arrives(run, 'sea', OFF_COAST, reach()), true);
   assert.equal(arrives(run, 'sea', FAR_OFF, reach()), false, 'never from a ship far from its island');
   assert.equal(arrives(run, 'sea', null, reach()), false, 'nor from one the sea kept nowhere');
   assert.equal(arrives(run, 'sea', OFF_COAST, null), false, 'nor where its island is unknown');
@@ -159,12 +180,12 @@ test('a node’s reach reads from the bake’s index, and a ship’s place from 
     { id: 'overlook-social', kind: 'social', continent: 'continent-1' },
   ];
   const continents = [{ id: 'continent-1', outline: COAST }];
-  assert.deepEqual(reachOf(index, continents, 'tidewall'), {
-    social: false,
+  assert.deepEqual(reachOf(index, continents, 'tidewall', [PORT]), {
     continent: 'continent-1',
     coast: COAST,
     gatedFrom: ['gullwing-vale'],
     locked: false,
+    ports: [PORT],
   });
   const sunspire = reachOf(
     [{ id: 'sunspire-social', kind: 'social', continent: 'continent-4' }],
@@ -172,12 +193,6 @@ test('a node’s reach reads from the bake’s index, and a ship’s place from 
     'sunspire-social',
   );
   assert.equal(sunspire?.locked, true, 'an island not yet named has its sea locked');
-  assert.equal(reachOf(index, continents, 'overlook-social')?.social, true);
-  assert.equal(
-    reachOf([{ id: 'gull-cove', kind: 'outpost', continent: 'continent-1' }], continents, 'gull-cove')?.social,
-    true,
-    'an outpost site',
-  );
   assert.equal(reachOf(index, continents, 'nowhere'), null);
   assert.deepEqual(shipOf('{"xp":1,"ship_at":[5000,6000]}'), [5000, 6000]);
   for (const body of [null, '{"xp":1}', '{"ship_at":null}', '{"ship_at":["a",1]}', 'not a character'])
@@ -251,6 +266,45 @@ test('a node’s room lets go a character that came by no way leading there, unl
   await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben']);
   assert.equal(await tidewall.signIn(3, tokens['Ada'] ?? '', now, here), true, 'the Roster’s join');
   assert.equal(far.held.get(3), '{"start":1}', 'with her own character');
+});
+
+test('the week’s run turns away, saying why, one not docked at a port, though one of their company plays there', async () => {
+  const made = accounts();
+  const tokens: Record<string, string> = {};
+  for (const name of ['Ada', 'Ben']) {
+    tokens[name] = (await made.ask('POST', '/v1/guest')).body['token'] as string;
+    await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, tokens[name]);
+  }
+  await made.ask('POST', '/v1/social/company/invite', { name: 'Ben' }, tokens['Ada']);
+  await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben']);
+  const kept = characters(
+    made.deps.database,
+    () => made.clock.now,
+    () => Promise.resolve(),
+  );
+  const [now, here] = [() => made.clock.now, () => true];
+  // Ben docks at a port and Ada lies off a coast with none, each at sea.
+  const sea = roomOf();
+  const atSea = new Keeper(kept, sea, 'sea', () => undefined);
+  for (const [player, name, ship] of [
+    [1, 'Ben', AT_PORT],
+    [2, 'Ada', OFF_COAST],
+  ] as const) {
+    sea.held.set(player, '{}');
+    assert.equal(await atSea.signIn(player, tokens[name] ?? '', now, here), true);
+    sea.held.set(player, JSON.stringify({ ship_at: ship }));
+    await atSea.leave(player);
+  }
+  const name = 'node-krakens-grotto--elite--sea--run-k3j4h5g6';
+  const run = roomOf();
+  for (const player of [1, 2]) run.held.set(player, '{}');
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(kept, run, name, (player, why) => sent.push([player, why])).judgingArrivals((from, body) =>
+    arrives(name, from, shipOf(body), reach()),
+  );
+  assert.equal(await keeper.signIn(1, tokens['Ben'] ?? '', now, here), true, 'docked at a port');
+  assert.equal(await keeper.signIn(2, tokens['Ada'] ?? '', now, here), false, 'not through Ben');
+  assert.deepEqual(sent, [[2, DOCK_AT_PORT]]);
 });
 
 test('a passage zone takes no one of a company playing there who is not on its dive', async () => {

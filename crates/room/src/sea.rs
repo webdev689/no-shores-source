@@ -135,6 +135,7 @@ pub struct Sea {
     decks: decks::Decks,
     islands: islands::Islands,
     parked: parked::ParkedShips,
+    passengers: passengers::Passengers,
     lessons: lessons::Lessons,
     /// The minute it is, counted from the Unix epoch, as the host sets it.
     pub minute: u64,
@@ -173,6 +174,7 @@ impl Sea {
             decks: decks::Decks::default(),
             islands: islands::Islands::new(seed, layout.continents.iter().map(islands::climate_and_resource).collect()),
             parked: parked::ParkedShips::new(layout),
+            passengers: passengers::Passengers::default(),
             lessons: lessons::Lessons::default(),
             minute: 0,
         }
@@ -188,6 +190,7 @@ impl Sea {
     }
 
     pub fn leave(&mut self, player: PlayerId) {
+        self.let_off(player);
         self.park(player);
         self.remember_left(player);
         self.stop_repair(player);
@@ -255,6 +258,9 @@ impl Sea {
     /// (`hold_course`).
     pub fn course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> Result<(), CourseRefused> {
         let clock = self.clock;
+        if self.travels_aboard(player) {
+            return Err(CourseRefused::OffTheHelm);
+        }
         if self.hold_course(player, points, pace) {
             return Ok(());
         }
@@ -544,6 +550,8 @@ pub mod islands;
 pub mod lessons;
 #[path = "sea_parked.rs"]
 pub mod parked;
+#[path = "sea_passengers.rs"]
+pub mod passengers;
 #[path = "sea_plates.rs"]
 mod plates;
 pub use plates::ShipLook;

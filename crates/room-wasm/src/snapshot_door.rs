@@ -63,6 +63,8 @@ struct SeaParts {
     lookouts: Vec<(PlayerId, f64)>,
     /// With the chart, each player's marks: every hostile ship and standing island in their ship's water.
     chart_marks: Vec<(PlayerId, Vec<ChartMark>)>,
+    /// Each passenger and the captain whose ship they travel aboard (`room::sea::passengers`).
+    captains: Vec<(PlayerId, PlayerId)>,
 }
 
 impl SeaParts {
@@ -213,6 +215,7 @@ pub fn prepare() {
                 islands,
                 lookouts: sea.ships().map(|(player, _)| (player, sea.lookout(player))).collect(),
                 chart_marks,
+                captains: sea.passengers().collect(),
             }))
         }
         Opened::Fleet(fleet) => {
@@ -238,7 +241,15 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
         Some(Prepared::Everyone(bytes)) => bytes.clone(),
         Some(Prepared::Sea(parts)) => {
             let all = &parts.harbour;
-            let (ships, hostiles) = parts.near(player);
+            // A passenger sees what their captain sees, the captain's ship sent as their own, so their page sails it.
+            let captain = parts.captains.iter().find(|(each, _)| *each == player).map(|(_, captain)| *captain);
+            let viewer = captain.unwrap_or(player);
+            let (mut ships, hostiles) = parts.near(viewer);
+            ships.iter_mut().filter(|(each, _)| Some(*each) == captain).for_each(|(each, _)| *each = player);
+            let mut looks = all.looks.clone();
+            let carried =
+                captain.and_then(|captain| looks.iter().find(|(each, _)| *each == captain).map(|(_, look)| *look));
+            looks.extend(carried.map(|look| (player, look)));
             // The plate over each other ship this player is sent: their own is never drawn.
             let sent = |other: &PlayerId| *other != player && ships.iter().any(|(each, _)| each == other);
             let harbour = protocol::SeaHarbour {
@@ -254,16 +265,16 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                         Some((aboard.clone(), *hull, bytes.clone(), *hold))
                     })
                     .collect(),
-                islands: parts.islands(player),
+                islands: parts.islands(viewer),
                 taken: all.taken.clone(),
-                friendlies: friendlies_seen(parts.own(player), &all.friendlies),
+                friendlies: friendlies_seen(parts.own(viewer), &all.friendlies),
                 plates: all.plates.iter().filter(|(other, _)| sent(other)).cloned().collect(),
-                looks: all.looks.clone(),
+                looks,
                 charted: all.charted.clone(),
                 chart_marks: parts
                     .chart_marks
                     .iter()
-                    .find(|(each, _)| *each == player)
+                    .find(|(each, _)| *each == viewer)
                     .map(|(_, marks)| marks.clone())
                     .unwrap_or_default(),
             };

@@ -127,7 +127,7 @@ export class Keeper {
   private company = false;
   /** Whether a character that came from a room, kept as it was claimed, may arrive here by a way that needs no one
    *  here (`arrival.ts`); null where the room judges no arrival. */
-  private arrives: ((from: string | null, body: string | null) => boolean) | null = null;
+  private arrives: ((from: string | null, body: string | null) => boolean | string) | null = null;
   /** Whether no one comes in by their company playing here alone, as a passage zone takes only its dives. */
   private alone = false;
   /** A gate the room keeps shut until another room says otherwise: why it is shut, '' once open. */
@@ -172,8 +172,8 @@ export class Keeper {
 
   /** Judges where each kept character comes from: one that came by no way leading here is let go untouched, its
    *  player sent away saying so, unless one of their company plays here (the Roster's join brings them in) and the
-   *  room is not `alone`. */
-  judgingArrivals(arrives: (from: string | null, body: string | null) => boolean, alone = false): this {
+   *  room is not `alone`; one the judge answers with words is sent away saying them, whoever plays here. */
+  judgingArrivals(arrives: (from: string | null, body: string | null) => boolean | string, alone = false): this {
     this.arrives = arrives;
     this.alone = alone;
     return this;
@@ -400,14 +400,15 @@ export class Keeper {
     if (shut !== '' || !characters || !this.arrives) return shut;
     // A judge that throws (the room's module failing to lay the web) cannot judge: refused for now, as accounts that
     // do not answer are, and said in the room's log.
-    let came: boolean;
+    let came: boolean | string;
     try {
       came = this.arrives(from, body);
     } catch (error) {
       console.error('arrival judge:', error);
       return undefined;
     }
-    if (came) return '';
+    if (came === true) return '';
+    if (came !== false) return came;
     if (this.alone) return NO_WAY_HERE;
     const launchedHere = this.launchedHere;
     const launched = launchedHere ? await this.tried(() => launchedHere(player, account), here) : false;

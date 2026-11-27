@@ -27,7 +27,8 @@ struct Named {
 }
 
 /// A player a place's room names to the sea: their account, the ship their character sails now as others see it
-/// (`ShipLook::of`) and their level, which their ship lying parked takes on (`Sea::refit`).
+/// (`ShipLook::of`), their level, and their username and guild tag as the accounts told the room (each empty until
+/// it is told, and the tag for no guild), which their ship lying parked takes on (`Sea::refit`).
 #[derive(Deserialize, Serialize)]
 struct NamedWord {
     account: String,
@@ -36,6 +37,10 @@ struct NamedWord {
     name: [u8; 2],
     emblem: u16,
     level: u8,
+    #[serde(default)]
+    username: String,
+    #[serde(default)]
+    tag: String,
 }
 
 /// A parked ship as the sea tells a place's room of it, and as the room is given it: its account, the number it is
@@ -71,7 +76,7 @@ pub fn sea_ashore(text: &[u8]) -> String {
             named.afloat.iter().for_each(|account| sea.unpark(account));
             for each in &named.named {
                 let look = ShipLook { hull: each.hull, dress: each.dress, name: each.name, emblem: each.emblem };
-                sea.refit(&each.account, look, each.level);
+                sea.refit(&each.account, look, each.level, (&each.username, &each.tag));
             }
             Some(sea.ashore(place, &accounts))
         }
@@ -90,8 +95,8 @@ pub fn sea_ashore(text: &[u8]) -> String {
 }
 
 /// The open room on land's word on one of its players for the seas it names them to (`sea_ashore`'s `named`), as
-/// JSON: their account and their ship and level as their character has them now. Empty for a player of no account
-/// here, or with no room on land open.
+/// JSON: their account, their ship and level as their character has them now, and the username and guild tag on their
+/// plate. Empty for a player of no account here, or with no room on land open.
 #[must_use]
 pub fn land_named(player: PlayerId) -> String {
     let word = with_open(|opened| match opened {
@@ -99,7 +104,9 @@ pub fn land_named(player: PlayerId) -> String {
             let found = room.player(player)?;
             let ShipLook { hull, dress, name, emblem } = ShipLook::of(Some(&found.character));
             let level = found.character.level();
-            Some(NamedWord { account: found.owner.clone()?, hull, dress, name, emblem, level })
+            let (_, plate) = room.plates().find(|(each, _)| *each == player)?;
+            let (username, tag) = (plate.name, plate.tag);
+            Some(NamedWord { account: found.owner.clone()?, hull, dress, name, emblem, level, username, tag })
         }
         _ => None,
     });

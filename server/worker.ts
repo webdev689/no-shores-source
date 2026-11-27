@@ -29,7 +29,8 @@ import {
 import { behindDoor, type HeldIsland, openIsland } from './seaIsland.ts';
 import { TestRun } from './testRuns.ts';
 import { present } from './presence.ts';
-import { SEA_REQUEST } from './seaPorts.ts';
+import { livingPorts, SEA_REQUEST } from './seaPorts.ts';
+import { Aboard } from './aboard.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 import { healthAnswer } from './health.ts';
 
@@ -129,6 +130,8 @@ export class RoomHost extends DurableObject<Env> {
     (ships) => this.guarded(() => this.room.parked(ships), false),
     (player) => this.guarded(() => this.room.named(player), ''),
   );
+  /** At sea, its players travelling aboard a company member's ship (`aboard.ts`). */
+  private aboard: Aboard | null = null;
   /** At a guild's outpost, what stands its plot and runs its players' errands with the accounts. */
   private outpost: OutpostHost | null = null;
   /** A patrol zone's gates crossing to the others, where a player crossing from one joins (`?from=`). */
@@ -217,6 +220,7 @@ export class RoomHost extends DurableObject<Env> {
     const held = { player, address, count: undefined, signed: false, spoke: false, token: null, door, relog };
     this.players.set(server, held);
     this.breach?.joined(player, breachAsked(request, this.name));
+    this.guarded(() => this.aboard?.joined(player, request), undefined);
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
     // In a run no one plays before the room keeps their character, nor in a sea island's dungeon before the sea says
     // they are landed on its island: their inputs are taken in their order and stand still until then.
@@ -259,6 +263,7 @@ export class RoomHost extends DurableObject<Env> {
         if (owned && !this.name.startsWith('sea-dungeon-')) this.guarded(() => this.room.hold(player, false), false);
         if (owned && this.island) void this.landOn(this.island, player, account);
         if (owned) this.shore.own(player, account, seaRoom(this.name));
+        if (owned) void this.aboard?.owned(player, account);
         return owned;
       },
       shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),
@@ -283,6 +288,7 @@ export class RoomHost extends DurableObject<Env> {
       if (socket) this.dismiss(socket, code, why ?? 'your character joined another room');
     };
     this.keeper = new Keeper(keeps && !tested ? accounts : null, room, name, away);
+    if (seas !== null) this.aboard = new Aboard(this.room, (account) => accounts.companions(account, name), away);
     const gateOpen = breachRun(name) ? () => this.breach?.gateOpen() ?? Promise.resolve(false) : undefined;
     this.tester = tested ? new TestRun({ accounts, room, away, ...(gateOpen ? { gateOpen } : {}) }) : null;
     if (privateRun(name)) this.keeper.forCompany();
@@ -365,10 +371,12 @@ export class RoomHost extends DurableObject<Env> {
     return opened && this.room.reseed(seeds) && this.room.minute(Math.floor(Date.now() / MINUTE_MS));
   }
 
-  /** Where a node lies and what leads into it, from the bake's index (`arrival.ts`); null when the index is missing. */
+  /** Where a node lies and what leads into it, from the bake's index, and where the living port cities stand
+   *  (`arrival.ts`); null when the index is missing. */
   private async reachOf(id: string): Promise<ReturnType<typeof reachOf>> {
     const index = await this.env.NODES.fetch('https://nodes/index.json');
-    return index.ok ? reachOf((await index.json()) as Listed[], layout.continents, id) : null;
+    const ports = livingPorts(this.guarded(() => this.room.mainPorts(), '[]'));
+    return index.ok ? reachOf((await index.json()) as Listed[], layout.continents, id, ports) : null;
   }
 
   /** Stands a player joined before an entrance or at a crossing gate at a spawn, as an ordinary join, unless the room

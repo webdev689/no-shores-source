@@ -612,7 +612,8 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   No Boss comes by a roll: the Boss Frigate sails only at the Grey Tithe's sea strike, which is not built. Its level is
   drawn evenly from the band, as a garrison foe's is, and raised by the sea's tier as a foe's on land: two levels in an
   Elite sea, three in an Abyss one (`Difficulty::raise`), the ranks that come the same. A host sets a sea's tier as its
-  sets a node's room's (`Sea::set_difficulty`, the door's `room_difficulty`); the server opens one sea, at Normal.
+  sets a node's room's (`Sea::set_difficulty`, the door's `room_difficulty`); the server opens one sea, at Normal,
+  whatever tier a voyage sets out at.
   Its level raises its strength
   in a fight (above, "Ranks and factions"). Its faction and rank are drawn as it comes and kept on it
   (`sighting.rs`). The rolls wait real seconds, and
