@@ -17,9 +17,10 @@ when to install it and what each session does at its start and end; this note sa
 
 - Call its scripts as `bash x.sh` or `python3 x.py`. Start a long background job (a bake, a render, a full check, a
   capture) with `timeout: 7200000`: the default limit kills it.
-- A session that starts, resumes or comes back from a compaction in a container without the kit is told so before
-  any work: the repository's `.claude/settings.json` runs `hooks/kit-check.sh` at each start, where nothing the
-  install adds exists yet.
+- The kit runs only in cloud sessions, where `CLAUDE_CODE_REMOTE` is `true`: it is built for their Linux containers
+  ([[The Kit Runs Only in Cloud Sessions]]). A cloud session that starts, resumes or comes back from a compaction
+  without the kit is told so before any work: the repository's `.claude/settings.json` runs `hooks/kit-check.sh` at
+  each start of one, where nothing the install adds exists yet. A session on the owner's own computer is told nothing.
 - After any change to the kit, run `bash tools/claude-toolkit/check-tools.sh --worker` and expect no FAIL line. It
   checks the repository it sits in (its main checkout), unless `REPO_DIR` names another.
 - After editing a file, run its own lint, types or clippy (`npx eslint <file>`, `npm run -s types`,
