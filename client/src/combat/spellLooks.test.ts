@@ -7,7 +7,7 @@ import type { Fighting } from './fighting.ts';
 import { MARK_FLOATS } from './marks.ts';
 import { Sparks } from './sparks.ts';
 import { SpellEffects } from './spellEffects.ts';
-import { SpellLooks, castLookOf, elementOfArt, veiledIn } from './spellLooks.ts';
+import { SpellLooks, castLookOf, elementOfArt, hastedIn, veiledIn } from './spellLooks.ts';
 import { facesLeft, lashEnd, lashed, onBody, shoulderOf } from './spellPlaces.ts';
 
 type Point = readonly [number, number, number];
@@ -238,13 +238,18 @@ test('a Charged foe crackles, throwing sparks while the fight runs; its arcs are
   assert.ok(sparks.flying.length > 0);
 });
 
-test('a Hasted player leaves streaks once they move, none standing still', () => {
+test('a Hasted player leaves no streaks as they run: their figure is lit instead, and known as Hasted', () => {
   const hasted = { ...NONE, haste: 300 };
   const looks = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
-  assert.equal(looks.marks(fightOf({ own: hasted, feet: [0, 0, 0] }), EYE, 0.05, 1).length, 0);
-  assert.equal(looks.marks(fightOf({ own: hasted, feet: [0, 0, 0] }), EYE, 0.05, 1.05).length, 0, 'standing');
-  const out = looks.marks(fightOf({ own: hasted, feet: [1, 0, 0] }), EYE, 0.05, 1.1);
-  assert.ok(out.length > 0, 'running');
+  // Running a metre each twentieth of a second.
+  for (const east of [0, 1, 2])
+    assert.equal(looks.marks(fightOf({ own: hasted, feet: [east, 0, 0] }), EYE, 0.05, 1 + east / 20).length, 0);
+  const fighter = new Float64Array(UNTRIMMED_FLOATS);
+  fighter[UNTRIMMED_FLOATS - STATUS_FLOATS + 3] = 120;
+  const others = new Map([[OTHER, { body: { x: 0, y: 0, z: 0, facing: 0 }, fighter }]]);
+  assert.equal(hastedIn(fightOf({ others }), OTHER), true, 'another player');
+  assert.equal(hastedIn(fightOf({ own: hasted }), OWN), true, 'the player');
+  assert.equal(hastedIn(fightOf(), OWN), false);
 });
 
 test("a Linked player's motes rise off them", () => {

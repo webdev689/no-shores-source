@@ -6,7 +6,7 @@ import { Fighting } from '../../combat/fighting.ts';
 import { crosshairOf } from '../../combat/reticle.ts';
 import { FoeFigures } from '../../combat/foeFigures.ts';
 import { PlayerFight } from '../../combat/playerFight.ts';
-import { veiledIn } from '../../combat/spellLooks.ts';
+import { hastedIn, veiledIn } from '../../combat/spellLooks.ts';
 import type { Vector } from '../../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../../combat/tracers.ts';
 import { WorldSounds } from '../../combat/worldSounds.ts';
@@ -476,7 +476,7 @@ export class WreckRun {
     if (own) {
       const arrival = this.arrivals.ownShareOf(fight.player, clock);
       const looks = { veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player), arrival };
-      figures.push({ ...own, ...looks });
+      figures.push({ ...own, ...looks, hasted: hastedIn(fight, fight.player) });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
     }
