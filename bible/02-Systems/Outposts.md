@@ -47,9 +47,10 @@ one plays it in a room of its own, `node-<site>--guild-<key>`, apart from every 
   them: in a region short of three it draws points from the island's seed out round the region's centre, brings each
   to the strand 450 m inland of the nearest coast, and keeps one that lies nearest its own region's centre, 4 km or
   more from the port city and 300 m clear of every other node's ring, whose 357 m ring stays on the land; then it lays
-  the island and passes over any slot whose plot is not level, bare and within reach of its landing, drawing again
-  past it. It names each from its island's own words and a shore's ending (Strand, Cove, Hythe, Ness, Haven,
-  Landing), a name no place has, and its id is the name's with `-outpost` after. A region already holding three is
+  the island and passes over any slot whose plot is not level, bare and within reach of its landing, or whose layout
+  stands a box across one of its ways, drawing again past it. It names each from its island's own words and a shore's
+  ending (Strand, Cove, Hythe, Ness, Haven, Landing), a name no place has, and its id is the name's with `-outpost`
+  after. A region already holding three is
   left as it is, so the slots never move. The bake's tests hold every region to three, each plot level and bare.
 
 - **The law is shared.** `content/guilds/outposts.json` holds every number: the plot (16 cells of 4 m a side), the

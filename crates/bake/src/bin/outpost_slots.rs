@@ -190,8 +190,8 @@ fn draw(
     })
 }
 
-/// Which of `ids` the bake lays no bare, level plot for in reach of its landing (as `tests/outposts_baked.rs` asks),
-/// on `edits` laid on `continent`.
+/// Which of `ids` the bake lays no bare, level plot for in reach of its landing (as `tests/outposts_baked.rs` asks), or
+/// lays a box across a way of, on `edits` laid on `continent`.
 fn unlaid(
     continent: &world::layout::Continent,
     edits: land::edits::Edits,
@@ -215,11 +215,41 @@ fn unlaid(
             bake::plot_off(&outpost, &window) > LEVEL_WITHIN_M
                 || apart(outpost.plot, outpost.landing) > PLOT_FROM_LANDING_M
                 || !bake::on_plot(layout).is_empty()
+                || blocks_a_way(layout, &landmass.surface)
         })
         .cloned()
         .collect())
 }
 
+/// Whether a box of the layout stands across one of its ways' walked width between a step and head height, as the
+/// room's `tests/layouts_laid.rs` asks of Saltmere's: a slot by a cliff can stand its rim's ruins on its own path.
+fn blocks_a_way(layout: &layout::Layout, ground: &land::ground::Ground) -> bool {
+    const HEAD_M: f64 = 1.8;
+    const STEPPED_OVER_M: f64 = 0.45;
+    let walked = layout.paths.iter().filter(|path| !layout.runs.iter().any(|run| run.line == path.points));
+    walked.into_iter().any(|path| {
+        // Boxes are written grown out to the centimetre, so a box grazing the edge by that much is not in the way.
+        let reach = path.tier.width() / 2.0 - 0.02;
+        path.points.windows(2).any(|pair| {
+            let steps = (apart(pair[0], pair[1]) / 0.25).ceil().max(1.0) as usize;
+            (0..=steps).any(|step| {
+                let share = step as f64 / steps as f64;
+                let at =
+                    [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share];
+                let floor = ground.height_at(at[0], at[1]);
+                layout.boxes.iter().any(|found| {
+                    let east = (found[0] - at[0]).max(at[0] - found[2]).max(0.0);
+                    let south = (found[1] - at[1]).max(at[1] - found[3]).max(0.0);
+                    (east * east + south * south).sqrt() < reach
+                        && found[5] < floor + HEAD_M
+                        && found[4] > floor + STEPPED_OVER_M
+                })
+            })
+        })
+    })
+}
+
+/// A slot's name from the continent's words and a shore's ending, one no place of the world has yet.
 fn name_of(seed: u32, words: &[&str; 8], used: &BTreeSet<String>) -> Result<String, String> {
     let names = words.iter().flat_map(|word| ENDS.iter().map(move |end| (*word, format!("{word} {end}"))));
     let mut names: Vec<(&str, String)> =
@@ -290,11 +320,11 @@ fn slots_of(
         trial.nodes.extend(drawn.iter().map(|(_, node, _)| node.clone()));
         let ids: Vec<String> = drawn.iter().map(|(_, node, _)| node.id.clone()).collect();
         let bare = unlaid(continent, trial, blocks, builders, &ids)?;
-        // A slot the bake lays no plot on is passed over: its region draws again from past it.
+        // A slot the bake lays badly is passed over: its region draws again from past it.
         let Some(first) = drawn.iter().find(|(_, node, _)| bare.contains(&node.id)) else {
             return Ok(drawn.into_iter().map(|(region, node, _)| (region, node)).collect());
         };
-        println!("{} {}: draw {} lays no plot, drawn past", continent.id, regions[first.0].name, first.2);
+        println!("{} {}: draw {} fails a laid check, drawn past", continent.id, regions[first.0].name, first.2);
         next[first.0] = first.2 + 1;
     }
 }
