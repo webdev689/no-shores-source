@@ -4,7 +4,7 @@ import { courseBytes, helmBytes } from '../network/courseMessages.ts';
 import type { SeenShip } from '../network/messages.ts';
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
-import type { SeenCharted } from '../network/seaHarbour.ts';
+import type { SeenCharted, SeenMark } from '../network/seaHarbour.ts';
 import { SeaRoom } from './seaRoom.ts';
 
 /** A sea room's link in the test: what the page sends, and its snapshots handed on by tick, with the ships at sea. */
@@ -34,6 +34,7 @@ async function joined() {
     told: readonly number[][] = [],
     plates: readonly PlayerPlate[] = [],
     charted: readonly SeenCharted[] = [],
+    chartMarks: readonly SeenMark[] = [],
   ) =>
     hand({
       tick: BigInt(tick),
@@ -49,6 +50,7 @@ async function joined() {
       taken: [],
       friendlies: [],
       charted,
+      chartMarks,
       plates,
     } as unknown as Snapshot);
   return { room, sent, atTick, link };
@@ -143,8 +145,8 @@ test('a travel waits its turn as a course does, no course takes its place, and t
   atTick(1045);
   assert.deepEqual(sent.at(-1), courseBytes([[550_000, 150_000]], 10, true), 'the travel is sent, not the course');
   assert.equal(room.takeTravelled(), null, 'no answer yet');
-  atTick(1050, [], [[24, 1049, 4]]);
-  assert.equal(room.takeTravelled(), 4, 'refused: the ship’s own water');
+  atTick(1050, [], [[24, 1049, 5]]);
+  assert.equal(room.takeTravelled(), 5, 'refused: across land');
   assert.equal(room.takeTravelled(), null, 'taken once');
   room.course([[60_000, 150_000]], 10);
   atTick(1095);
@@ -181,12 +183,14 @@ test('the sea’s chart is the last the room sent, kept through the snapshots be
     { player: 1, at: [50_000, 150_000] as const, name: 'Own_Ship' },
     { player: 2, at: [900_000, 20_000] as const, name: 'Far_Away' },
   ];
-  atTick(60, [], [], [], charted);
+  const marks = [{ at: [60_000, 150_000] as const, kind: 'hostile' as const }];
+  atTick(60, [], [], [], charted, marks);
   atTick(61);
-  assert.deepEqual(room.charted, charted, 'a snapshot with no chart leaves the last');
+  assert.deepEqual([room.charted, room.chartMarks], [charted, marks], 'a snapshot with no chart leaves the last');
   atTick(120, [], [], [], charted.slice(0, 1));
   assert.deepEqual(room.charted, charted.slice(0, 1), 'a player gone from the sea is gone from its chart');
+  assert.deepEqual(room.chartMarks, [], 'a chart with no marks clears them');
   link.rejoining = true;
   room.pump(0);
-  assert.deepEqual(room.charted, []);
+  assert.deepEqual([room.charted, room.chartMarks], [[], []]);
 });

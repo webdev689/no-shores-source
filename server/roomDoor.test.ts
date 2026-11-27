@@ -334,7 +334,7 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
   assert.ok(Math.abs((ships[0]?.y ?? 0) - (150_000 - 120)) < 1e-6, 'a second north at 10 × 12 m/s');
 });
 
-test('the sea travels a ship a browser asks to take to other waters, and refuses one within its own', () => {
+test('the sea travels a ship a browser asks to take anywhere at sea, within its own water or into another', () => {
   const room = startRoomDoor(compiled);
   const square = (west: number) => [
     [west, 100_000],
@@ -350,17 +350,19 @@ test('the sea travels a ship a browser asks to take to other waters, and refuses
   const player = room.join();
   assert.equal(room.input(player, courseBytes([[250_000, 150_000]], 10)), 'taken');
   for (let tick = 0; tick < 30; tick++) room.tick();
-  assert.equal(room.input(player, courseBytes([[260_000, 150_000]], 10, true)), 'refused', 'within its own water');
+  assert.equal(room.input(player, courseBytes([[250_000, 300_000]], 10, true)), 'taken', 'within its own water');
+  const within = readFromRoom(room.snapshot(player));
+  const ship = within?.kind === 'snapshot' ? within.ships[0] : undefined;
+  assert.deepEqual([ship?.x, ship?.y], [250_000, 299_600], '400 m short of its end');
   for (let tick = 0; tick < 30; tick++) room.tick();
-  assert.equal(room.input(player, courseBytes([[550_000, 150_000]], 20, true)), 'taken');
-  const snapshot = readFromRoom(room.snapshot(player));
-  const ship = snapshot?.kind === 'snapshot' ? snapshot.ships[0] : undefined;
-  assert.deepEqual([ship?.x, ship?.y], [549_600, 150_000], '400 m short of its end');
-  const told = snapshot?.kind === 'snapshot' ? snapshot.told.map((each) => [...each.numbers]) : [];
+  assert.equal(room.input(player, courseBytes([[550_000, 150_000]], 20, true)), 'taken', 'into another water');
+  const into = readFromRoom(room.snapshot(player));
+  const told = [within, into].flatMap((seen) => (seen?.kind === 'snapshot' ? seen.told : []));
+  const outcomes = told.map((each) => [...each.numbers]).filter((numbers) => numbers[0] === 24);
   assert.deepEqual(
-    told.filter((numbers) => numbers[0] === 24).map((numbers) => numbers[2]),
-    [4, 0],
-    'told its own water first, then taken',
+    outcomes.map((numbers) => numbers[2]),
+    [0, 0],
+    'told each was taken',
   );
 });
 
@@ -409,7 +411,7 @@ test('a sea where a Tithe ship attacks a friendly ship and a player joins them s
     friendly ||= others.some((other) => other.faction === 0);
   }
   assert.ok(friendly, 'the player fights beside the friendly ship');
-  assert.equal(hash.toString(16).padStart(16, '0'), '0462cf65304bcb00');
+  assert.equal(hash.toString(16).padStart(16, '0'), '3453dde756d8659b');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {

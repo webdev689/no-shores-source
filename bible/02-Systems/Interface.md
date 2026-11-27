@@ -449,7 +449,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   - sailing: the ship's console (window, rail), the status line (chip), the place line and the hints (the on-foot
     words, outlined), the landing's confirmation (window) and Take the helm (primary); a sighting's hostile marks wear its rank's colour
     and emblem; the status line keeps the state alone ("Under way", "Fighting"), and the sea's word (a ship
-    sighted, other waters entered, who joins, colours struck, boarders away, what floats gathered, washing up) stands
+    sighted, another water or the Lantern Sea's 10 km line crossed, who joins, colours struck, boarders away, what floats gathered, washing up) stands
     as notices, DFO's toasts;
   - the fight: the player's plate (the vitals' thin bars), the ship's bar (the Arts' rings and keycaps) and the card (the target plate), the bars (track and meter), the tally and the
     broadside warning directly under the card at the top's middle (under the compass while no card shows), never over

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PUBLIC_KIND, type PublicEvent } from '../network/publicMessages.ts';
 import type { OtherPlayers } from '../player/others.ts';
-import { chartMarksOf, mapMarksOf } from './mapMarks.ts';
+import { chartMarksOf, isleMarksOf, mapMarksOf } from './mapMarks.ts';
 
 const raid = (phase: number): PublicEvent => ({
   kind: PUBLIC_KIND.raid,
@@ -53,14 +53,19 @@ test('the sea map marks every other ship on the sea’s chart in its captain’s
     { player: 2, at: [4_000_000, 90_000] as const, name: 'Wren' },
     { player: 3, at: [-5, 7] as const, name: '' },
   ];
+  const marks = [
+    { at: [600, 700] as const, kind: 'hostile' as const },
+    { at: [800, 900] as const, kind: 'cove' as const },
+  ];
   assert.deepEqual(
-    chartMarksOf(charted, 1, (name) => name === 'Wren'),
+    chartMarksOf(charted, 1, marks, (name) => name === 'Wren'),
     {
       others: [
         { at: [4_000_000, 90_000], company: true },
         { at: [-5, 7], company: false },
       ],
       events: [],
+      hostiles: [{ at: [600, 700], kind: 'hostile' }],
     },
   );
 });
@@ -71,12 +76,13 @@ test('by night the sea map marks only the ships within sight of the player’s l
     { player: 3, at: [5_000, 0] as const, name: 'Far' },
   ];
   const night = (rangeM: number, lit: boolean) => Math.min(rangeM, lit ? 650 : 220);
-  const marked = chartMarksOf(charted, 1, () => false, [0, 0], night).others.map((mark) => mark.at[0]);
+  const marked = chartMarksOf(charted, 1, [], () => false, [0, 0], night).others.map((mark) => mark.at[0]);
   assert.deepEqual(marked, [600]);
   assert.equal(
     chartMarksOf(
       charted,
       1,
+      [],
       () => false,
       [0, 0],
       (rangeM) => rangeM,
@@ -84,4 +90,21 @@ test('by night the sea map marks only the ships within sight of the player’s l
     2,
     'by day, all',
   );
+});
+
+test('the sea map marks the islands found, wherever they lie, and those standing in the ship’s water, each once', () => {
+  const isle = (where: readonly [number, number], kind: 'cove' | 'ruin' | 'quarry', found: boolean) => {
+    return { id: 1, seed: '1', at: where, kind, continent: 0, found };
+  };
+  const found = [isle([1, 2], 'cove', true), isle([3, 4], 'ruin', true)];
+  const marks = [
+    { at: [3, 4] as const, kind: 'ruin' as const },
+    { at: [5, 6] as const, kind: 'quarry' as const },
+    { at: [7, 8] as const, kind: 'hostile' as const },
+  ];
+  assert.deepEqual(isleMarksOf(found, marks), [
+    { at: [1, 2], kind: 'cove', isle: false },
+    { at: [3, 4], kind: 'ruin', isle: true },
+    { at: [5, 6], kind: 'quarry', isle: true },
+  ]);
 });

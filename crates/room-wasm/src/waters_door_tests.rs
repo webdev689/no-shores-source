@@ -33,12 +33,28 @@ fn the_table_names_each_water_its_holder_and_its_levels() {
     assert_eq!(ports, [&json!("overlook"), &json!("sunspire"), &json!("rimeholt")], "only the port cities sail");
 }
 
+/// How far from its coast a home water stays home, as the opened table tells the page.
+fn table_sea_home_reach() -> f64 {
+    open_world()["sea"]["home_reach_m"].as_f64().unwrap()
+}
+
 #[test]
 fn the_door_answers_waters_grid_and_ships() {
     open_world();
     let overlook = [2_809_214.0, 1_201_477.0];
     assert_eq!(water_byte(overlook[0], overlook[1]), 255, "the city stands on land");
     assert_eq!(water_byte(2_400_000.0, 1_100_000.0), 0, "the sea west of Overlook is the Lantern Sea");
+    assert_eq!(holder_byte(2_400_000.0, 1_100_000.0), 1, "119 km off its coast, the Grey Tithe's open sea");
+    assert_eq!(holder_byte(overlook[0], overlook[1]), 255, "land is held by no water");
+    // Sailing in toward Overlook, the last sea before its coast is home.
+    let toward = |share: f64| {
+        [2_400_000.0 + share * (overlook[0] - 2_400_000.0), 1_100_000.0 + share * (overlook[1] - 1_100_000.0)]
+    };
+    let shore =
+        (0..10_000).map(|step| toward(f64::from(step) / 10_000.0)).take_while(|at| water_byte(at[0], at[1]) == 0);
+    let last = shore.last().unwrap();
+    assert_eq!(holder_byte(last[0], last[1]), 0, "by the coast, home waters");
+    assert_eq!(table_sea_home_reach(), world::waters::HOME_REACH_M);
     let grid = grid_bytes(48_000.0);
     let columns = u32::from_le_bytes(grid[0..4].try_into().unwrap());
     let rows = u32::from_le_bytes(grid[4..8].try_into().unwrap());

@@ -70,7 +70,7 @@ table Input {
 // the helm left (1), or taken again at the wheel (2), or a chase (3): the hostile ship it chases by that ship's number,
 // `chase`, 0 for none. Or an ask: its repair by a port city (1), to board a captain who struck (2), to leave the
 // captain's deck once its crew has fallen (3), or the held map raised at the helm (4), told to a sailing lesson. A
-// course asked with `travel` takes the ship to other waters by the held map (crates/room/src/sea_travel.rs).
+// course asked with `travel` takes the ship anywhere at sea by the held map (crates/room/src/sea_travel.rs).
 table Course {
   points: [double];
   pace: ushort;
@@ -340,6 +340,14 @@ table Charted {
   x: double;
   y: double;
   name: string;
+}
+
+// A mark on the sea's chart (Snapshot.chart_marks): a hostile ship or a standing island in the water the player's ship
+// lies in, where it lies (x, y in metres), and what it is (0 a hostile ship, 1 a cove, 2 a ruin, 3 a quarry).
+table ChartMark {
+  x: double;
+  y: double;
+  kind: ubyte;
 }
 
 // A hostile ship at sea, the Grey Tithe's: its number, where it is, its heading in radians clockwise from north, its
@@ -672,6 +680,9 @@ table Snapshot {
   arrivals: [Arrival];
   // In a passage zone, its deal as it stands for the player; none in any other room.
   passage: PassageSeen;
+  // At sea, with the chart: every hostile ship and standing island in the water the player's ship lies in, for the
+  // held map.
+  chart_marks: [ChartMark];
 }
 
 // A passage zone's deal for one player: its key (crates/passage's `Deal::key`), whether it is done, its dead lamps

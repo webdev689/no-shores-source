@@ -37,13 +37,13 @@ test("the page's WebAssembly lays every module, block and post of an island wher
   assert.equal(hash.toString(16).padStart(16, '0'), PLANS);
 });
 
-test("an island's plan comes to the page whole, and none for home waters' climate", () => {
+test("an island's plan comes to the page whole, and none for a climate the islands do not dress", () => {
   const door = startRoomDoor(compiled);
   const plan = JSON.parse(door.islePlan('41', 'desert')) as { kind: string; spawns: unknown[]; placements: unknown[] };
   assert.ok(['cove', 'ruin', 'quarry'].includes(plan.kind));
   assert.equal(plan.spawns.length, 3);
   assert.ok(plan.placements.length > 20);
-  assert.equal(door.islePlan('41', 'temperate-coast'), '');
+  assert.equal(door.islePlan('41', 'moon'), '');
   assert.equal(door.isleHeights('41', 'moon', [0, 0]).length, 0);
 });
 

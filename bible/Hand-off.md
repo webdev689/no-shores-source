@@ -9,13 +9,11 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: #227 (branch `claude/sleepy-einstein-f6fqvk`: the hub's ground and walks, the ship's
-  stern on the water, music that repeats less, then the owner's "Do a comprehensive audit and deep detail pass": five
-  read-only audits, every finding fixed with a test that failed first; CI's full check passed on its head before #216
-  merged; its description says what and how it was tested); #159 (the rooms' worker tests wait for what they check; it
-  conflicts with `main` in `roomThread.test.ts`).
-- **Other sessions' work under way**: #221 (hostile ships and islands on the sea map, travel anywhere at sea; it
-  shares the sea's files with #216, merged, so it takes `main` in again).
+- **Merging on the owner's yes once CI passes on its head**: #221 (hostile ships and islands on the sea map, travel
+  anywhere at sea as a fade, home waters sheltered, unnamed islands' seas locked; `main` with #216, #227 and #231
+  taken in). A merge deploys the page, the site, the rooms and the bot, and releases the desktop app.
+- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
+  `roomThread.test.ts`).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -57,8 +55,8 @@ yet played by hand or with other players in a deployed room.
 - **Timed on a real GPU**: the game in and out of its worker; the hub with some 125 figures; the wreck with every
   fire; the light layer of the attack visuals; ships and marks under the lamps; the meadow (some 180,000 tufts on open
   grass); the curved wake; the loading screen; everything the performance pass changed ([[Game]], "Limits").
-- **#227's**: the hub's walks and their joints, the paving's seams and the ship's stern on a real GPU (pictured
-  headless before the audit; no Frigate under way after the stern's fix); its music heard (checked by its notes).
+- **Seen on a real GPU**: Overlook's walks where they meet and the paving's seams beside the plaza, and a ship's
+  stern on the water, the Frigate's under way (pictured headless only, #227).
 - **Heard**: the music, the ambience, the world's, sea's and menu's sounds and their levels; the prologue's music and
   voices; the seams between a long recording's chunks; whether a browser drops an MP3's 25 to 40 ms of padding, as
   ffmpeg does, so each hoofbeat plays to its cut.
@@ -108,6 +106,11 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
+  deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
+- **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
+  on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
+  stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
 - **After #216** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]] and the
   four decisions before it): the three landing zones of Saltmere's patrol zones, the zone's map and their fast travel,
   not built; ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore

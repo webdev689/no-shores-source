@@ -227,12 +227,13 @@ pub fn refusal() -> Option<String> {
     .flatten()
 }
 
-/// The sea's opening text with its ports: `{ "layout": <layout file>, "ports": [{ "id", "name", "continent",
-/// "centre": [x, y] }] }`, the ports as the waters' door takes them.
+/// The sea's opening text: `{ "layout", "ports": [{ "id", "name", "continent", "centre": [x, y] }], "islands" }`, the
+/// ports as the waters' door takes them, and the islands' names (`world::islands`): an unnamed island's sea locked.
 #[derive(Deserialize)]
 struct SeaRequest {
     layout: world::layout::Layout,
     ports: Vec<world::traffic::Port>,
+    islands: Option<std::collections::BTreeMap<String, String>>,
 }
 
 /// Opens the sea round the continents of a layout, its hostile ships' chances drawn from `seed`: the text is a layout file,
@@ -240,11 +241,12 @@ struct SeaRequest {
 pub fn open_sea(text: &[u8], seed: u32) -> bool {
     let Ok(text) = std::str::from_utf8(text) else { return false };
     let opened = match serde_json::from_str::<SeaRequest>(text) {
-        Ok(request) => Some((request.layout, request.ports)),
-        Err(_) => world::layout::parse(text).ok().map(|layout| (layout, Vec::new())),
+        Ok(request) => Some((request.layout, request.ports, request.islands)),
+        Err(_) => world::layout::parse(text).ok().map(|layout| (layout, Vec::new(), None)),
     };
-    let Some((layout, ports)) = opened else { return false };
+    let Some((layout, ports, islands)) = opened else { return false };
     let mut sea = Sea::new(&layout, deck_door::sloop_deck().clone(), seed, &ports);
+    sea.lock_unnamed(|id| islands.as_ref().is_none_or(|names| names.contains_key(id)));
     sea.set_hull_decks(deck_door::hull_decks().to_vec());
     sea.set_world_start(EPOCH_MS.get() / 1000.0);
     keep(Opened::Sea(Box::new(sea)));

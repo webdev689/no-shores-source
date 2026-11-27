@@ -133,16 +133,36 @@ fn just_offshore_each_port_city_is_its_own_island_water() {
 }
 
 #[test]
-fn every_point_of_sea_is_held_as_its_island_water_is() {
+fn every_point_of_sea_is_held_as_its_island_water_is_but_home_waters_past_their_reach() {
     let layout = world_layout();
     let waters = Waters::new(&layout);
     let grid = waters.grid(20_000.0).unwrap();
+    let mut beyond = 0;
     for (cell, &byte) in grid.cells.iter().enumerate() {
         let middle = [((cell % grid.columns) as f64 + 0.5) * 20_000.0, ((cell / grid.columns) as f64 + 0.5) * 20_000.0];
         let Some(water) = waters.water_at(middle) else { continue };
         assert_eq!(usize::from(byte), water.continent, "a sea cell holds its water's index alone");
-        assert_eq!(water.holder, holder_of(&layout.continents[water.continent].id).unwrap());
+        let island = holder_of(&layout.continents[water.continent].id).unwrap();
+        let out = waters.nearest(middle).unwrap().distance_squared.sqrt();
+        let held = if island == Holder::Home && out > HOME_REACH_M { Holder::GreyTithe } else { island };
+        beyond += usize::from(island == Holder::Home && out > HOME_REACH_M);
+        assert_eq!(water.holder, held, "{out} m out");
     }
+    assert!(beyond > 0, "the Lantern Sea has open sea past its reach");
+}
+
+#[test]
+fn home_waters_reach_10_km_from_their_coast_and_the_grey_tithe_holds_the_sea_past_it() {
+    let text = r#"{ "continents": [
+        { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }
+    ], "isles": [] }"#;
+    let waters = Waters::new(&crate::layout::parse(text).unwrap());
+    let holder = |east: f64| waters.water_at([200_000.0 + east, 150_000.0]).map(|water| water.holder);
+    assert_eq!(holder(2_000.0), Some(Holder::Home));
+    assert_eq!(holder(HOME_REACH_M), Some(Holder::Home), "its edge is home");
+    assert_eq!(holder(HOME_REACH_M + 1.0), Some(Holder::GreyTithe));
+    assert_eq!(holder(300_000.0), Some(Holder::GreyTithe));
+    assert_eq!(waters.holder(0), Holder::Home, "the water itself is still home");
 }
 
 #[test]

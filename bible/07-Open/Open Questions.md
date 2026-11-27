@@ -237,9 +237,14 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]):
   - A node the quest names keeps a red-brown ring, though the owner's "Remove the tiny nodes on the held map" leaves
     no node marked.
-  - A sea is locked while its island has no name in `ISLANDS`, so naming an island unlocks its sea.
-  - A locked sea is still sailed and travelled to as before: the lock is drawn, not enforced.
+  - A sea is locked while its island has no name in `content/world/islands.json`, so naming an island unlocks its
+    sea; a locked sea is not sailed or travelled into ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]).
   - A sea's name falls back to a plain word's size where its arch fits nowhere.
+- **The sea map, travel and home waters** (#221), for the owner:
+  - Lantern Sea islands carry continent-1's resource, brineglass, Saltmere's own.
+  - A click on an island the map marks but the room has not told of still asks to travel, and the room refuses it
+    ("The way there crosses land.").
+  - A gunnery lesson's hulk off Overlook is a captain in a player's fight, so every map in the Lantern Sea marks it.
 - **Docking with no way in.** Yes to a landing within reach sails the ship in to its berth, but where no way in to
   the berth can be planned the ship stays at sea, the voyage's line saying why, and no landing is made. What it
   should do then is the owner's to say

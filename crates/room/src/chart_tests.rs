@@ -17,14 +17,19 @@ fn the_chart_reads_each_water_its_band_and_refuses_a_step_into_home_waters() {
     let charted = Charted::new(&layout, &[]);
     let coasts = Coast::of(&layout);
     let chart = SeaChart { coasts: &coasts, charted: &charted, islands: &[] };
-    let home = chart.water([250_000.0, 150_000.0]).unwrap();
+    let home = chart.water([205_000.0, 150_000.0]).unwrap();
     assert_eq!((home.holder, home.levels), (Holder::Home, Some((1, 4))));
+    let open_sea = chart.water([250_000.0, 150_000.0]).unwrap();
+    assert_eq!((open_sea.holder, open_sea.levels), (Holder::GreyTithe, Some((1, 4))), "past home's reach, its band");
     let tithe = chart.water([350_000.0, 150_000.0]).unwrap();
     assert_eq!((tithe.holder, tithe.levels), (Holder::GreyTithe, Some((10, 13))));
     assert_eq!(chart.water([150_000.0, 150_000.0]), None, "land");
     assert!(chart.open([350_000.0, 150_000.0], [330_000.0, 150_000.0]));
-    assert!(!chart.open([310_000.0, 150_000.0], [290_000.0, 150_000.0]), "into home waters");
-    assert!(chart.open([290_000.0, 150_000.0], [310_000.0, 150_000.0]), "a ship left inside them sails out");
+    assert!(chart.open([310_000.0, 150_000.0], [290_000.0, 150_000.0]), "the Lantern Sea's open sea");
+    assert!(!chart.open([215_000.0, 150_000.0], [205_000.0, 150_000.0]), "into home waters");
+    assert!(chart.open([205_000.0, 150_000.0], [215_000.0, 150_000.0]), "a ship left inside them sails out");
+    assert!(!chart.open([208_000.0, 150_000.0], [207_000.0, 150_000.0]), "never deeper in");
+    assert!(!chart.open([208_000.0, 150_000.0], [208_000.0, 151_000.0]), "nor along them");
     assert!(!chart.open([350_000.0, 150_000.0], [450_000.0, 150_000.0]), "onto land");
     assert!((chart.coast([350_000.0, 150_000.0]) - 50_000.0).abs() < 1.0);
     assert_eq!(chart.lane([350_000.0, 150_000.0]), None, "no ports, no lanes");
@@ -90,7 +95,7 @@ fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
 }
 
 #[test]
-fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rather_than_swinging_at_it() {
+fn a_bold_ship_held_off_home_waters_follows_their_edge_round_rather_than_swinging_at_it() {
     use crate::hostiles::{Hostile, Hostiles, Voyager};
     let (layout, ports) = crate::measure_tests::world();
     let charted = Charted::new(&layout, &ports);
@@ -111,6 +116,8 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
         heading: 0.0,
         pace: 0,
         fighting: false,
+        // Flagged as past them, so the ship keeps coming and only the chart holds it off; the room flags a player
+        // there home, and no ship comes for them at all.
         home: false,
         clock: 1.0,
         hull: 1.0,
@@ -137,4 +144,55 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
     });
     assert_eq!(flips.count(), 0, "no swinging back and forth: {headings:?}");
     assert!(sailed > 0.8 * crate::sighting::way_of(elite.rank) * 600.0, "it kept sailing along the edge: {sailed} m");
+}
+
+#[test]
+fn a_ship_left_inside_home_waters_never_comes_nearer_their_coast() {
+    use crate::hostiles::{Hostile, Hostiles, Voyager};
+    let layout = layout();
+    let charted = Charted::new(&layout, &[]);
+    let coasts = Coast::of(&layout);
+    let chart = SeaChart { coasts: &coasts, charted: &charted, islands: &[] };
+    let player = Voyager {
+        player: 1,
+        at: [203_000.0, 150_000.0],
+        heading: 0.0,
+        pace: 0,
+        fighting: false,
+        home: true,
+        clock: 1.0,
+        hull: 1.0,
+        hull_kind: sailing::HullKind::Sloop,
+    };
+    // Past home waters, 5.2 km off: near enough to keep the ship at sea, too far for it to see.
+    let out = Voyager { player: 2, at: [213_200.0, 150_000.0], home: false, ..player };
+    let minor = naval::ranks::Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Minor };
+    let mut hostiles = Hostiles::new(1);
+    hostiles.sailing.push(Hostile::standing(1, 1, minor, [208_000.0, 150_000.0], 1.5 * std::f64::consts::PI, true));
+    for _ in 0..60 {
+        hostiles.tick(1.0, &[player, out], &chart);
+        let ship = hostiles.sailing.iter().find(|ship| ship.id == 1).expect("kept at sea");
+        assert!(ship.x >= 208_000.0 - 1e-6, "it came nearer the coast, to {}", ship.x);
+    }
+}
+
+#[test]
+fn every_leg_the_traffic_sails_is_kept_its_ways_from_berth_to_berth_too() {
+    let (layout, ports) = crate::measure_tests::world();
+    let charted = Charted::new(&layout, &ports);
+    let traffic = charted.traffic.as_ref().expect("the traffic between the port cities");
+    let corner = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
+    for route in &traffic.routes {
+        for way in &route.ways {
+            for leg in way.path.windows(2) {
+                let [from, to] = [corner(&leg[0]), corner(&leg[1])];
+                assert!(charted.sailed.contains(&[from, to]), "the leg {from:?} to {to:?} of a way, kept");
+            }
+        }
+    }
+    let berthed = traffic.routes.iter().flat_map(|route| route.ways.iter()).any(|way| {
+        let start = corner(&way.path[0]);
+        !charted.lanes.iter().any(|[from, to]| *from == start || *to == start)
+    });
+    assert!(berthed, "a way begins at a berth off its lane, which the lanes alone would miss");
 }

@@ -63,6 +63,8 @@ pub enum CourseRefused {
     Fighting,
     /// A course while the player is off the helm: the ship's helmsman keeps the one it has.
     OffTheHelm,
+    /// A point in a locked sea, the sea of an island not yet named.
+    Locked,
 }
 
 /// Why leaving or taking the helm was refused.
@@ -284,6 +286,9 @@ impl Sea {
             Some(ship) => whole(&ports::in_frame([ship.x, ship.y])).ok_or(CourseRefused::BadCourse)?,
             None => self.puts_in(player, whole_points[0]).ok_or(CourseRefused::BadCourse)?,
         };
+        if whole_points.iter().any(|point| self.chart.locked([point.x as f64, point.y as f64])) {
+            return Err(CourseRefused::Locked);
+        }
         let legs = std::iter::once(start).chain(whole_points.iter().copied());
         let path: Vec<Point> = legs.collect();
         if self.crosses_land(player, &path) {
@@ -383,17 +388,25 @@ impl Sea {
             sailing.ship.rate = if self.fights.fighting(*player) {
                 0
             } else {
-                ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
+                way::ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
             };
             // Its way is its pace's by the canvas it keeps, never under half, and its hull's class.
             let way = berth.kept[1].max(0.5) * class.way;
             let turns = sailed.entry(*player).or_default();
-            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way, turns);
+            let reached = turns.len();
+            way::sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way, turns);
+            // No ship sails into a locked sea: one about to cross into it stops at its edge.
+            if self.chart.locked([sailing.ship.x, sailing.ship.y]) && !self.chart.locked([ship.x, ship.y]) {
+                (sailing.ship, sailing.course) = (Ship { pace: 0, rate: 0, ..ship }, VecDeque::new());
+                turns.truncate(reached);
+            }
         }
         self.tick_harbour(&sailed);
         self.give_guilds();
         self.tick_islands();
         self.fights.fit(&self.harbour.characters);
+        let chart = &self.chart;
+        self.fights.break_off_home(|at| chart.home(at));
         let world_s = self.weather.world_start_s + time;
         let fights = self.fights.list.iter_mut().map(|fought| &mut fought.fight);
         for fight in fights.chain(self.clashes.iter_mut().map(|clash| &mut clash.fight)) {
@@ -404,8 +417,10 @@ impl Sea {
         self.after_fights(outcomes, &sank);
         self.tick_decks();
         let players: Vec<[f64; 2]> = self.ships().map(|(_, ship)| [ship.x, ship.y]).collect();
+        // A clash, as a hostile ship, stays at sea for no player inside home waters.
+        let past_home: Vec<[f64; 2]> = players.iter().copied().filter(|&at| !self.chart.home(at)).collect();
         let at_sea = (&mut self.hostiles, &mut self.friendlies);
-        step_clashes(&mut self.clashes, at_sea, &players, (&self.coasts, time));
+        step_clashes(&mut self.clashes, at_sea, &past_home, (&self.coasts, time));
         // Each player's waters run at the pace they sail, the world's own time at rest.
         let ships: Vec<Voyager> = self
             .ships()
@@ -467,6 +482,13 @@ impl Sea {
         self.hostiles.sailing.iter().copied().chain(clashing).collect()
     }
 
+    /// Where every hostile ship lies, as the held map marks them: each `hostiles` gives, and each captain still in a
+    /// player's fight, where its fight has it.
+    #[must_use]
+    pub fn hostiles_marked(&self) -> Vec<[f64; 2]> {
+        self.hostiles().iter().map(|hostile| [hostile.x, hostile.y]).chain(self.fights.captains_at()).collect()
+    }
+
     /// The friendly ships the room keeps at sea: each sailing on for its port, then each in a clash, where its fight
     /// has it. None in a player's fight.
     #[must_use]
@@ -517,53 +539,6 @@ fn heave_to(
     Some((player, ship_at(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0), kept, hull))
 }
 
-/// The bearing of each leg a ship sails through within `reach` metres along its course, from where it is.
-fn ways_ahead(sailing: &Sailing, reach: f64) -> Vec<f64> {
-    let (mut at, mut left, mut ways) = ([sailing.ship.x, sailing.ship.y], reach, Vec::new());
-    for &[to_x, to_y] in &sailing.course {
-        let (along_x, along_y) = (to_x - at[0], to_y - at[1]);
-        let length = (along_x * along_x + along_y * along_y).sqrt();
-        if length > 0.0 {
-            ways.push(libm::atan2(along_x, -along_y));
-        }
-        left -= length;
-        if left <= 0.0 {
-            break;
-        }
-        at = [to_x, to_y];
-    }
-    ways
-}
-
-/// Sails `sailing` `distance` metres along its course, each turn of it reached added to `turns`.
-fn sail(sailing: &mut Sailing, distance: f64, turns: &mut Vec<[f64; 2]>) {
-    let mut left = distance;
-    while left > 0.0 {
-        let Some(&[to_x, to_y]) = sailing.course.front() else {
-            (sailing.ship.pace, sailing.ship.rate) = (0, 0);
-            return;
-        };
-        let (along_x, along_y) = (to_x - sailing.ship.x, to_y - sailing.ship.y);
-        let length = (along_x * along_x + along_y * along_y).sqrt();
-        if length > 0.0 {
-            sailing.ship.heading = libm::atan2(along_x, -along_y);
-        }
-        if length <= left {
-            (sailing.ship.x, sailing.ship.y) = (to_x, to_y);
-            turns.push([to_x, to_y]);
-            sailing.course.pop_front();
-            left -= length;
-        } else {
-            sailing.ship.x += along_x * (left / length);
-            sailing.ship.y += along_y * (left / length);
-            left = 0.0;
-        }
-    }
-    if sailing.course.is_empty() {
-        (sailing.ship.pace, sailing.ship.rate) = (0, 0);
-    }
-}
-
 #[path = "sea_decks.rs"]
 pub mod decks;
 #[cfg(test)]
@@ -580,13 +555,23 @@ pub mod parked;
 #[path = "sea_plates.rs"]
 mod plates;
 pub use plates::ShipLook;
+#[path = "sea_locked.rs"]
+mod locked;
 #[path = "sea_ports.rs"]
 mod ports;
 #[path = "sea_puts_in.rs"]
 mod puts_in;
 #[path = "sea_travel.rs"]
 pub mod travel;
+#[path = "sea_way.rs"]
+mod way;
 
+#[cfg(test)]
+#[path = "sea_home_tests.rs"]
+mod sea_home_tests;
+#[cfg(test)]
+#[path = "sea_locked_tests.rs"]
+mod sea_locked_tests;
 #[cfg(test)]
 #[path = "sea_tests.rs"]
 mod sea_tests;
