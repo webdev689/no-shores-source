@@ -23,12 +23,12 @@ const ROWS_A_COLUMN = 7;
 /** The lengths the bar may stand for, metres. */
 const BAR_LENGTHS = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000];
 
-/** The table's rows: each glyph the sheet holds, once, in `GLYPHS`' order, with what its first mark is called; then
- *  the player's arrow. */
+/** The table's rows: each glyph the sheet holds, in `GLYPHS`' order, once for each thing its marks are called (each
+ *  way across by its zone); then the player's arrow. */
 export function tableRows(sheet: Pick<LandSheet, 'marks'>, others: MapMarks['others'] = []): TableRow[] {
   const rows = GLYPHS.flatMap((glyph): TableRow[] => {
-    const mark = sheet.marks.find((each) => each.glyph === glyph);
-    return mark ? [{ glyph, word: mark.word }] : [];
+    const words = new Set(sheet.marks.filter((each) => each.glyph === glyph).map((mark) => mark.word));
+    return [...words].map((word) => ({ glyph, word }));
   });
   const dots: TableRow[] = [
     ...(others.some((other) => other.company) ? [{ glyph: 'company' as const, word: 'Your company' }] : []),

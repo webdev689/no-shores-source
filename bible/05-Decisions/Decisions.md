@@ -406,6 +406,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Dialogue Waits for a Click by Default, With Auto as a Setting]]
 - [[Overlook's City Below Is Lit at Night, in Detail]]
 - [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
+- [[The Patrol Map's Legend Names Each Way Across and the Passage Gates]]
+- [[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]]
+- [[Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival]]
 
 ## Claude's calls
 

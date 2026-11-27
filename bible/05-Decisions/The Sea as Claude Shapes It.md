@@ -159,8 +159,8 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
   crew stands to meet you"; won, "Its deck is yours" and its hold's take.
 - **Losing**: washed up at the port city nearest by the sea's way; a sunk ship comes back with 10% of its hull, 25%
   of its canvas and half its men.
-- **Repair**: free at a port city, within 3 km of its roadstead, at rest: a second for each hundredth missing, 100 s
-  at most.
+- **Repair**: at a port city, within 3 km of its roadstead, at rest. Its price and time are the owner's since
+  [[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]].
 - **Limits**: a player or a hostile ship within 750 m of a fight joins it. A wary captain falls on a Sloop by DFO's
   own rule: one it outguns 1.25 to one, or one holed under 0.35 of its hull.
 

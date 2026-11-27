@@ -121,6 +121,10 @@ export class PassageGame {
     return web?.patrol === node.id ? web : null;
   }
 
+  /** The runs whose sealed doors are the passages' mouths in the patrol zone `node` this week; none elsewhere. */
+  readonly mouthRuns = (node: NodeInfo): readonly string[] =>
+    this.mouthsWeb(node)?.mouths.map((mouth) => mouth.run) ?? [];
+
   /** What E does at the passages where the player stands, for the foot's frame. */
   readonly uses = (): Uses | null => {
     const foot = this.host.foot();

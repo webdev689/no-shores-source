@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import manifest from '../../../content/modules/modules.json' with { type: 'json' };
 import type { Solid } from '../city/plan.ts';
 import type { NodeLayout } from '../layout/layouts.ts';
+import { tableRows } from '../heldmap/landTable.ts';
 import { landSheetOf } from './landMap.ts';
 import type { Landmass } from './landmass.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -47,7 +48,7 @@ const solid = (material: Solid['material'], height: number, shape: Partial<Solid
 /** The range of the hub's ranges with its arched passage: two piers, a lintel over the way and parapets. */
 const GATE = manifest.modules.findIndex((module) => module.name === 'range-gate');
 
-const landmass = (layouts: readonly NodeLayout[] = []) =>
+const landmass = (layouts: readonly NodeLayout[] = [], nodes: readonly NodeInfo[] = []) =>
   ({
     plan: { social: { areas: [{ name: 'Watch Court', at: [1100, 2050] }] } },
     drawnPlan: {
@@ -85,7 +86,8 @@ const landmass = (layouts: readonly NodeLayout[] = []) =>
       ],
     },
     layouts,
-  }) as unknown as Pick<Landmass, 'plan' | 'drawnPlan' | 'layouts' | 'view'>;
+    nodes,
+  }) as unknown as Pick<Landmass, 'plan' | 'drawnPlan' | 'layouts' | 'view' | 'nodes'>;
 
 /** Ground level with the plan's foot. */
 const flat = () => 30;
@@ -224,6 +226,60 @@ test("a patrol area's sheet is its layout: paths, buildings, plantings, areas by
       ['resource', 'Brineglass'],
     ],
     "a resource node named for the island's resource; one of no island's, or with no node, left off",
+  );
+});
+
+test("a patrol zone's ways across to the island's other zones and its passage gates are each their own row", () => {
+  const zone = (id: string, name: string): NodeInfo => ({ ...SOCIAL, id, kind: 'patrol', name, stations: [] });
+  const mission: NodeInfo = { ...SOCIAL, id: 'burned-mill', kind: 'mission', name: 'The Burned Mill', stations: [] };
+  const downs = zone('saltgrass-downs', 'The Saltgrass Downs');
+  const nodes = [downs, zone('gullwing-vale', 'The Gullwing Vale'), zone('driftwood-moors', 'The Driftwood Moors')];
+  const layout = {
+    id: downs.id,
+    ring: RING,
+    paths: [],
+    buildings: [],
+    solids: [],
+    areas: [],
+    sites: [
+      { kind: 'gate', at: [1010, 2010], radius: 10, holds: 'gullwing-vale' },
+      { kind: 'gate', at: [1020, 2010], radius: 10, holds: 'driftwood-moors' },
+      { kind: 'gate', at: [1030, 2010], radius: 40, holds: 'burned-mill' },
+      { kind: 'door', at: [1040, 2010], radius: 3, holds: 'The Chalk Adit' },
+      { kind: 'door', at: [1050, 2010], radius: 3, holds: 'Moorhold' },
+    ],
+  } as unknown as NodeLayout;
+  const sheet = landSheetOf(downs, landmass([layout], [...nodes, mission]), flat, ['The Chalk Adit']);
+  assert.deepEqual(
+    sheet.marks.map((mark) => [mark.glyph, mark.word]),
+    [
+      ['crossing', 'To the Gullwing Vale'],
+      ['crossing', 'To the Driftwood Moors'],
+      ['gate', 'Gate'],
+      ['passage', 'Passage gate'],
+      ['door', 'Sealed door'],
+    ],
+    "a gate into an instance and a run's door that is no mouth keep their marks",
+  );
+  assert.deepEqual(
+    sheet.places.filter((place) => place.near),
+    [
+      { name: 'The Gullwing Vale', at: [50, 50], near: true },
+      { name: 'The Driftwood Moors', at: [60, 50], near: true },
+    ],
+    'each way across named beside its mark',
+  );
+  assert.deepEqual(
+    tableRows(sheet).map((row) => [row.glyph, row.word]),
+    [
+      ['gate', 'Gate'],
+      ['crossing', 'To the Gullwing Vale'],
+      ['crossing', 'To the Driftwood Moors'],
+      ['door', 'Sealed door'],
+      ['passage', 'Passage gate'],
+      ['you', 'You'],
+    ],
+    'the table names each way across by its zone, and the passage gate apart from a sealed door',
   );
 });
 

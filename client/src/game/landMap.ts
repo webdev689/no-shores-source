@@ -1,6 +1,7 @@
 // What the held map shows on land (heldmap/landSheet.ts), gathered from the node the player stands in: a social
 // space's plan, its keepers' stalls, its trees, its places by name and where players land; a patrol area's paths,
-// buildings, plantings, areas and sites; and under either the ground's relief.
+// buildings, plantings, areas and sites (its ways across to the island's other patrol zones and its passage gates each
+// their own); and under either the ground's relief.
 import resources from '../../../content/gear/resources.json' with { type: 'json' };
 import { moduleParts } from '../city/modules.ts';
 import type { Solid } from '../city/plan.ts';
@@ -46,7 +47,9 @@ const SITE_WORDS: Readonly<Record<Exclude<LandGlyph, KeeperGlyph | MissionGlyph 
   landing: 'Landing',
   event: 'Public event',
   gate: 'Gate',
+  crossing: 'To another zone',
   door: 'Sealed door',
+  passage: 'Passage gate',
   objective: 'Objective',
   foes: 'Foes',
   beacon: 'Beacon',
@@ -65,11 +68,13 @@ type Piece = { readonly quad: Quad; readonly bottom: number; readonly top: numbe
 /** The ground a node's sheet takes in when its ring has no corners: this far round its middle, metres. */
 const BARE_REACH_M = 100;
 
-/** The sheet of the land `node` stands on: its relief and the heights its pieces stand over read from `heightAt`. */
+/** The sheet of the land `node` stands on: its relief and the heights its pieces stand over read from `heightAt`; the
+ *  sealed doors of the runs named in `mouths` marked as passage gates. */
 export function landSheetOf(
   node: NodeInfo,
-  landmass: Pick<Landmass, 'plan' | 'drawnPlan' | 'layouts' | 'view'>,
+  landmass: Pick<Landmass, 'plan' | 'drawnPlan' | 'layouts' | 'view' | 'nodes'>,
   heightAt: (x: number, y: number) => number | null,
+  mouths: readonly string[] = [],
 ): LandSheet {
   const [west, north, east, south] = node.ring.length
     ? layoutBounds(node)
@@ -162,6 +167,13 @@ export function landSheetOf(
   const layout = landmass.layouts.find((each) => each.id === node.id);
   if (!layout) return { ...sheet, ...bare, marks: landing() };
   const laid = sorted(piecesOf(layout.solids));
+  /** The patrol zone a gate leads across to, by its id; none for a gate into an instance. */
+  const across = (holds: string | undefined) =>
+    landmass.nodes.find((other) => other.id === holds && other.kind === 'patrol' && other.id !== node.id);
+  const crossings = layout.sites.flatMap((site) => {
+    const zone = site.kind === 'gate' ? across(site.holds) : undefined;
+    return zone ? [{ zone, at: local(site.at) }] : [];
+  });
   return {
     ...sheet,
     ...laid,
@@ -182,13 +194,21 @@ export function landSheetOf(
     plants: (layout.plantings ?? []).flatMap((planting) =>
       planting.points.map((point) => ({ tree: !SHRUBS.has(planting.kind), at: local(point) })),
     ),
-    places: layout.areas.map((area) => ({ name: area.name, at: local(area.at) })),
+    // Each way across named for its zone beside its mark, so the table's rows say which is which.
+    places: [
+      ...layout.areas.map((area) => ({ name: area.name, at: local(area.at) })),
+      ...crossings.map(({ zone, at }) => ({ name: zone.name, at, near: true })),
+    ],
     marks: layout.sites.flatMap((site): LandMark[] => {
       // A resource node is marked where it stands, named for the island's resource it gives.
       if (site.kind === 'resource') {
         const resource = resources.resources.find((each) => each.id === site.holds);
         return resource && site.node ? [{ glyph: 'resource', at: local(site.node), word: resource.name }] : [];
       }
+      const zone = site.kind === 'gate' ? across(site.holds) : undefined;
+      if (zone) return [{ glyph: 'crossing', at: local(site.at), word: `To ${lowerThe(zone.name)}` }];
+      if (site.kind === 'door' && site.holds !== undefined && mouths.includes(site.holds))
+        return [{ glyph: 'passage', at: local(site.at), word: SITE_WORDS.passage }];
       const glyph = site.kind;
       return isGlyph(glyph) && glyph in SITE_WORDS
         ? [{ glyph, at: local(site.at), word: SITE_WORDS[glyph as keyof typeof SITE_WORDS] }]
@@ -215,6 +235,9 @@ function riversOn(
     });
   });
 }
+
+/** A name as it reads inside a line: "The Gullwing Vale" after a word is "the Gullwing Vale". */
+const lowerThe = (name: string) => name.replace(/^The /, 'the ');
 
 /** The middle of some points. */
 function middleOf(points: readonly (readonly [number, number])[]): Point2 {

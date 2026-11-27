@@ -14,7 +14,7 @@ function underGround(passage: LandSheet | null) {
     foot: { fallen: false, dungeon: {}, mapless: true, node: {} },
     helmMap: { openLand: (sheet: LandSheet) => void opened.push(sheet) },
   } as unknown as Playing;
-  const game = { mark: () => undefined, groundAt: () => null, passageMap: () => passage };
+  const game = { mark: () => undefined, groundAt: () => null, passageMap: () => passage, mouthRuns: () => [] };
   return { opened, controls: helmControls(playing, { lock: () => undefined }, game) };
 }
 

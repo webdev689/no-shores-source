@@ -1,8 +1,9 @@
 // The land map's icon glyphs, in the game's own devices: each keeper's coin in their sign's board colour with the
 // device their sign carries (a star for the Mage, a key for the vaults, an anvil, a helm, open shears, a horseshoe, a
 // ship's wheel, candles: tools/modules/adorn.py), the Postmaster's a sealed letter on the slate of his vest, each
-// faction's with its banner's emblem, a mark for each kind of site a layout holds, and the passages' missions each by
-// its kind on an objective's ringed disc. Each is painted about the origin in units, `GLYPH_HALF` either side.
+// faction's with its banner's emblem, a mark for each kind of site a layout holds (a gate into an instance, the way
+// across to another patrol zone, a sealed door and a passage gate among them), and the passages' missions each by its
+// kind on an objective's ringed disc. Each is painted about the origin in units, `GLYPH_HALF` either side.
 import type { Point2 } from '../overworld/ground.ts';
 import { INK } from './mapKey.ts';
 import { LIGHT_INK, type Painter, PARCHMENT, ROUTE } from './mapLetters.ts';
@@ -21,7 +22,17 @@ export type KeeperGlyph =
   | 'lamplighters'
   | 'veiled';
 export type MissionGlyph = 'kindle' | 'hold' | 'hunt' | 'reckoning' | 'gauntlet' | 'ambush' | 'sever';
-export type SiteGlyph = 'landing' | 'event' | 'gate' | 'door' | 'objective' | 'foes' | 'beacon' | MissionGlyph;
+export type SiteGlyph =
+  | 'landing'
+  | 'event'
+  | 'gate'
+  | 'crossing'
+  | 'door'
+  | 'passage'
+  | 'objective'
+  | 'foes'
+  | 'beacon'
+  | MissionGlyph;
 export type ResourceGlyph = 'resource';
 export type LandGlyph = KeeperGlyph | SiteGlyph | ResourceGlyph;
 
@@ -42,7 +53,9 @@ export const GLYPHS: readonly LandGlyph[] = [
   'landing',
   'event',
   'gate',
+  'crossing',
   'door',
+  'passage',
   'objective',
   'kindle',
   'hold',
@@ -311,7 +324,8 @@ const KEEPER_DEVICES: Readonly<Record<KeeperGlyph, (painter: Painter, coin: stri
   },
 };
 
-/** Each site's mark: where players land, a public event, a gate and a sealed door, an objective, foes and a beacon. */
+/** Each site's mark: where players land, a public event, a gate, the way across to another patrol zone, a sealed door
+ *  and a passage gate, an objective, foes and a beacon. */
 const SITE_DEVICES: Readonly<Record<SiteGlyph, (painter: Painter) => void>> = {
   landing: (painter) => {
     painter.fillStyle = PARCHMENT;
@@ -344,6 +358,32 @@ const SITE_DEVICES: Readonly<Record<SiteGlyph, (painter: Painter) => void>> = {
     painter.arc(0, -0.6, 2.8, Math.PI, 0);
     painter.lineTo(2.8, 4.4);
     painter.stroke();
+  },
+  crossing: (painter) => {
+    // An ink coin with an arrow out along a dashed way: the way across, not an arch to go in by.
+    badge(painter, 'coin', INK);
+    painter.strokeStyle = PARCHMENT;
+    painter.fillStyle = PARCHMENT;
+    for (const x of [-5, -2.6]) line(painter, 1.3, [x, 0], [x + 1.3, 0]);
+    line(painter, 1.5, [-0.4, 0], [2.4, 0]);
+    filled(painter, [
+      [1.6, -3.2],
+      [5.2, 0],
+      [1.6, 3.2],
+    ]);
+  },
+  passage: (painter) => {
+    // The open arch on the route's red-brown, a chevron in it pointing down: a way into the passages under the land.
+    badge(painter, 'square', ROUTE);
+    painter.strokeStyle = PARCHMENT;
+    painter.lineWidth = 1.3;
+    painter.beginPath();
+    painter.moveTo(-2.8, 4.4);
+    painter.lineTo(-2.8, -0.6);
+    painter.arc(0, -0.6, 2.8, Math.PI, 0);
+    painter.lineTo(2.8, 4.4);
+    painter.stroke();
+    line(painter, 1.2, [-1.5, 0.4], [0, 2.0], [1.5, 0.4]);
   },
   door: (painter) => {
     badge(painter, 'square', INK);

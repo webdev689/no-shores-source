@@ -5,13 +5,16 @@ import type { Playing } from './gameFrame.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { landSheetOf } from './landMap.ts';
 import type { LandSheet } from '../heldmap/landSheet.ts';
+import type { NodeInfo } from './worldData.ts';
 
-/** What the controls ask of the game: a mark at sea chosen (`seaLandings.ts`), the ground under a point, and the web's
- *  map where the player stands in a passage zone (none elsewhere). */
+/** What the controls ask of the game: a mark at sea chosen (`seaLandings.ts`), the ground under a point, the web's
+ *  map where the player stands in a passage zone (none elsewhere), and the runs whose sealed doors are a patrol zone's
+ *  passage gates. */
 interface HelmGame {
   readonly mark: (id: string) => void;
   readonly groundAt: (x: number, y: number) => number | null;
   readonly passageMap: () => LandSheet | null;
+  readonly mouthRuns: (node: NodeInfo) => readonly string[];
 }
 
 /** The helm's and the map's controls over `playing`, the pointer `input` locked to walk the deck. */
@@ -30,7 +33,9 @@ export function helmControls(playing: Playing, input: { lock(): void }, game: He
       // In a dungeon the same key opens its own map; in a passage zone, under ground or not, the web's.
       if (!passage && foot.dungeon) DUNGEON_MAP.toggle();
       else if (passage || !foot.mapless)
-        playing.helmMap.openLand(passage ?? landSheetOf(foot.node, playing.landmass, groundAt));
+        playing.helmMap.openLand(
+          passage ?? landSheetOf(foot.node, playing.landmass, groundAt, game.mouthRuns(foot.node)),
+        );
       else return;
       document.exitPointerLock();
     }
