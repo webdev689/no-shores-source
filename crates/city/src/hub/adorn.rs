@@ -25,8 +25,8 @@ const BUNTING_M: f64 = 4.6;
 const RANGE_BANNERS_TOWARD_M: [f64; 3] = [36.0, 0.0, -36.0];
 /// Where the ranges' passages are, metres seaward: a lantern hangs either side of each mouth.
 const PASSAGES_TOWARD_M: [f64; 2] = [18.0, -18.0];
-/// The market lane on the Beacon Walk: its line seaward of the plaza's middle and its lamp posts across, metres; bunting
-/// is slung between each two.
+/// The market lane on the Beacon Walk: its line seaward of the plaza's middle and its lamp posts across, metres;
+/// bunting is slung between each two.
 const MARKET_TOWARD_M: f64 = -92.0;
 const MARKET_POSTS_M: [[f64; 3]; 2] = [[-94.0, -70.0, -46.0], [46.0, 70.0, 94.0]];
 

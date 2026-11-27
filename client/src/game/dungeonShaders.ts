@@ -1,7 +1,8 @@
 // The dungeon's WGSL: its floor's mesh, its fixtures and its cache in the dungeon's pictures, lit by its lights and
 // the faint light of each cell's mood (`LIGHT_WGSL`), never by a sun; each ember, lantern, crystal and fungus cap
-// glowing in its own colour, moving with the light nearest it, a crystal's and a lantern's glass by their facets, and still water over its bed,
-// mirroring the lit room and catching the lights. A lit surface sums only the lights its cluster lists (`reaching`).
+// glowing in its own colour, moving with the light nearest it, a crystal's and a lantern's glass by their facets, and
+// still water over its bed, mirroring the lit room and catching the lights. A lit surface sums only the lights its
+// cluster lists (`reaching`).
 import { COLOUR_LAYERS } from '../city/pictures.ts';
 import { DUNGEON_LAYERS, FOUL_FLAG, PORTAL_FLAG, WATER_FLAG } from './dungeonBook.ts';
 import { CAVE_BULGE_M } from './dungeonCeilings.ts';

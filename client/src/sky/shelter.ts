@@ -6,9 +6,9 @@
 export const SHELTER_CELLS = 112;
 export const SHELTER_CELL_M = 2;
 /** How far a box must reach into a cell, metres, to keep the rain off all of it: less than a room's lining stands
- *  inside its outer face (0.24 m, `crates/layout/src/interiors.rs`), so a cell a room's ceiling reaches into at all past
- *  its lining is dry and no rain falls inside its walls, wherever they fall on the grid; outside, the dry ground runs
- *  at most a cell less this past a roof's edge. */
+ *  inside its outer face (0.24 m, `crates/layout/src/interiors.rs`), so a cell a room's ceiling reaches into at all
+ *  past its lining is dry and no rain falls inside its walls, wherever they fall on the grid; outside, the dry ground
+ *  runs at most a cell less this past a roof's edge. */
 const REACHES_IN_M = SHELTER_CELL_M / 10;
 /** A cell nothing covers: lower than any point the grid is read for. */
 export const OPEN_SKY = -1e6;

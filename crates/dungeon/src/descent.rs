@@ -120,8 +120,8 @@ fn side_between(before: (usize, usize), after: (usize, usize)) -> Option<Side> {
 }
 
 /// The doorways blocks side by side share, each block's own as an opening on a storey: a block and the next in the
-/// chain one on the deepest storey both hold, its cell drawn on the edge's lane, the way on; any two others side by side
-/// one time in two, on a storey both hold.
+/// chain one on the deepest storey both hold, its cell drawn on the edge's lane, the way on; any two others side by
+/// side one time in two, on a storey both hold.
 pub(crate) fn doorways(seed: u32, squares: &[(usize, usize)], storeys: &[usize]) -> Vec<Vec<Vec<Opening>>> {
     let mut openings: Vec<Vec<Vec<Opening>>> = storeys.iter().map(|&count| vec![Vec::new(); count]).collect();
     let mut join = |first: usize, second: usize, side: Side, cell: usize, storey: usize| {
@@ -179,9 +179,9 @@ fn shuffled<T>(mut items: Vec<T>, lane: &mut Lane) -> Vec<T> {
 
 impl BlockPlan {
     /// A block's plan before its great rooms: its storeys' doorways, and a flight for each two storeys one over the
-    /// other, laid before any room as the Forge lays them, each on the first of every head cell and way, shuffled, whose
-    /// cells and walls are clear on every storey and whose landings are inside the rim. A flight's cells are rock on
-    /// every storey of its block, so nothing stands over or under one.
+    /// other, laid before any room as the Forge lays them, each on the first of every head cell and way, shuffled,
+    /// whose cells and walls are clear on every storey and whose landings are inside the rim. A flight's cells are rock
+    /// on every storey of its block, so nothing stands over or under one.
     pub(crate) fn planned(seed: u32, number: usize, openings: Vec<Vec<Opening>>) -> Self {
         let mut plan = Self {
             storeys: openings.into_iter().map(|openings| StoreyPlan { openings, ..StoreyPlan::default() }).collect(),
@@ -257,9 +257,9 @@ impl BlockPlan {
         self.flights.push(flight);
     }
 
-    /// Now and then a storey of the block is one great room, in every style but the cells: a rectangle of nine to twelve
-    /// cells each way, drawn, inside the rim with rock round it, on the first spot clear of its storey's flights and
-    /// landings; or nine each way where the drawn sides find none.
+    /// Now and then a storey of the block is one great room, in every style but the cells: a rectangle of nine to
+    /// twelve cells each way, drawn, inside the rim with rock round it, on the first spot clear of its storey's flights
+    /// and landings; or nine each way where the drawn sides find none.
     pub(crate) fn plan_great(&mut self, seed: u32, number: usize, style: &Style) {
         if style.key == "cells" {
             return;

@@ -32,7 +32,8 @@ export interface Asked {
 
 export class PassageAsks {
   private asked: Asked | null = null;
-  /** A hold asked, awaiting the room's next answer: the foot it was asked on and how many asks the room had answered. */
+  /** A hold asked, awaiting the room's next answer: the foot it was asked on and how many asks the room had
+   *  answered. */
   private holding: { readonly foot: Foot; readonly answered: number } | null = null;
   private readonly now: () => number;
   private readonly tell: (words: string) => void;

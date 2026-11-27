@@ -237,7 +237,8 @@ fn line(frame: &Frame, plan: &Plan, doors: &[Door], built: &mut Built) {
             .map(|(other, _)| other.top)
     };
     let millimetres = |metres: f64| (metres * 1000.0).round() as i64;
-    // Each edge keyed by whether it runs along x, its line, its way out, its floor, its top and where its lining starts.
+    // Each edge keyed by whether it runs along x, its line, its way out, its floor, its top and where its lining
+    // starts.
     let mut edges: std::collections::BTreeMap<EdgeKey, Vec<[f64; 2]>> = std::collections::BTreeMap::new();
     for row in 0..rows {
         for column in 0..columns {
@@ -444,7 +445,8 @@ fn furnish(kit: &mut Kit, frame: &Frame, room: &Room, doors: &[Door], stair: Opt
     if xs[1] - xs[0] < 1.5 || zs[1] - zs[0] < 1.5 {
         return;
     }
-    // Slots round the room, a metre and three quarters apart, each facing the middle; none before a door or on the stair.
+    // Slots round the room, a metre and three quarters apart, each facing the middle; none before a door or on the
+    // stair.
     let mut slots: Vec<([f64; 2], [f64; 2])> = Vec::new();
     for (start, end, facing) in [
         ([xs[0], zs[0]], [xs[1], zs[0]], [0.0, 1.0]),

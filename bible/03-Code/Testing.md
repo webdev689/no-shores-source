@@ -5,11 +5,12 @@ type: reference
 
 Tests say what the code does ([[Tests Check Behaviour]]). They run in `cargo xtask check`, which CI runs on every pull
 request's head, in three parts at once; before a push, the tests of what changed and `cargo xtask repo` run
-([[CI Is the Check Before a Merge]], [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]). But the asset pipelines' tests run in their own workflows, as their tools change:
-`tools/flora`'s, `tools/islands`', `tools/dungeon`'s, `tools/modules`', `tools/freesound`'s and the Lattice's
-(`tools/test_forge_lattice.py`, whose `MergeFoe` cases CI runs too). `tools/item-pictures/test_pixels.py`
-([[Item Pictures]]) and `tools/freesound/test_root.py` run in no workflow. The build tools' own tests beside them
-(`tools/*.test.mjs`) run with the TypeScript tests.
+([[CI Is the Check Before a Merge]], [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]).
+But the asset pipelines' tests run in their own workflows, as their tools change: `tools/flora`'s, `tools/islands`',
+`tools/dungeon`'s, `tools/modules`', `tools/freesound`'s and the Lattice's (`tools/test_forge_lattice.py`, whose
+`MergeFoe` cases CI runs too). `tools/item-pictures/test_pixels.py` ([[Item Pictures]]) and
+`tools/freesound/test_root.py` run in no workflow. The build tools' own tests beside them (`tools/*.test.mjs`) run with
+the TypeScript tests.
 
 ## Where tests live
 

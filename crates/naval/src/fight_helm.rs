@@ -42,8 +42,8 @@ impl Hurts {
 
 /// A player's ship of `hull` stepped a tick by its helm, as its hurts let it, at a fight's pace and swing and its
 /// class's way and swing: no sail sets with its rigging shot away, its sails' and oars' pull is held back, and a burst
-/// drives it. It answers its helm as the Sloop does (the Sloop's gain), so its class alone sets its way and swing apart.
-/// Answers the ship and whether its helm climbed for sail it could not set.
+/// drives it. It answers its helm as the Sloop does (the Sloop's gain), so its class alone sets its way and swing
+/// apart. Answers the ship and whether its helm climbed for sail it could not set.
 #[must_use]
 pub fn sail_hurt(
     ship: &Ship,

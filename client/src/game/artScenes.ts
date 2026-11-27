@@ -1,9 +1,9 @@
 // The Art's screen's picture, the screen's centre of drama as a subclass's figure is Destiny's: a scene drawn cell by
-// cell in the Art's glow ramp, each cell one of its four stops or none. Storm is a stormy sky split by forked bolts that
-// strike in turn; Divine a sun rising with wings of flame, embers drifting off it; Shadow a starfield round a crescent
-// holding a raven's eye, stars lighting in crosses. The still cells are worked out once for an Art and a size; each step
-// lays the moving ones over them, a few steps a second, so the menu's frames pay next to nothing. The scene fades out
-// toward the left in a dither, where the screen's words and tiles stand.
+// cell in the Art's glow ramp, each cell one of its four stops or none. Storm is a stormy sky split by forked bolts
+// that strike in turn; Divine a sun rising with wings of flame, embers drifting off it; Shadow a starfield round a
+// crescent holding a raven's eye, stars lighting in crosses. The still cells are worked out once for an Art and a size;
+// each step lays the moving ones over them, a few steps a second, so the menu's frames pay next to nothing. The scene
+// fades out toward the left in a dither, where the screen's words and tiles stand.
 
 import { GLOW_RAMPS, type GlowElement } from '../elementGlow.ts';
 import { seeded } from '../seeded.ts';
@@ -186,8 +186,8 @@ const storm: Make = (cols, rows, [focusX, focusY], size) => {
   };
 };
 
-/** Divine: a sun rising over a sea, its rays turning, two wings of flame flickering from its flanks, embers drifting up,
- *  and its light broken on the water. */
+/** Divine: a sun rising over a sea, its rays turning, two wings of flame flickering from its flanks, embers drifting
+ *  up, and its light broken on the water. */
 const divine: Make = (cols, rows, [focusX, focusY], size) => {
   const horizon = Math.round(focusY + size * 0.5);
   const radius = size * 0.5;

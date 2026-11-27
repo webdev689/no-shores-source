@@ -17,7 +17,8 @@ export interface CellGrid {
   readonly cellM: number;
 }
 
-/** Calls `each` with the index of every cell whose centre lies inside a ring of points in metres (even-odd, by rows). */
+/** Calls `each` with the index of every cell whose centre lies inside a ring of points in metres (even-odd, by
+ *  rows). */
 export function eachCellInRing(
   grid: CellGrid,
   ring: readonly (readonly [number, number])[],

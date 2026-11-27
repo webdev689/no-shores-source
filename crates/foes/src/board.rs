@@ -223,7 +223,8 @@ impl Board {
     }
 
     /// An opening on `target` that a foe without a turn would strike: only one foe at a time may, so a crowd cannot
-    /// pile in past its turns on a back turned. Answers whether this foe has it; letting it go (`wants` false) frees it.
+    /// pile in past its turns on a back turned. Answers whether this foe has it; letting it go (`wants` false) frees
+    /// it.
     pub fn opening(&mut self, target: FighterId, foe: FighterId, wants: bool) -> bool {
         let fight = self.fights.entry(target).or_default();
         if !wants {

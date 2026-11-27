@@ -146,8 +146,8 @@ const row = (roster: Roster, person: Person, words: string, dim: boolean, key: s
   actions: actionsFor(roster, person),
 });
 
-/** The Game column: invites to a company, the company (its leader first, or the player alone, who leads their own), then
- *  those in the same room. */
+/** The Game column: invites to a company, the company (its leader first, or the player alone, who leads their own),
+ *  then those in the same room. */
 export function gameRows(roster: Roster): Row[] {
   const self = roster.me;
   const company = roster.company ? roster.company.members : self ? [self] : [];

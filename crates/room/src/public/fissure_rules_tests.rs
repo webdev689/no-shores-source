@@ -1,7 +1,7 @@
-//! The Fissure's rules one by one: its waves' timer, size and living cap, and their heroic Elites; the shards needed and
-//! their cap; the reach a shard is taken and set within, one carried at a time and dropped by a carrier who leaves; the
-//! growth standing in no one's way; a heroic chest without the bonus; a foe struck from afar as a part taken; and its
-//! foes withdrawing into the crack at a walk.
+//! The Fissure's rules one by one: its waves' timer, size and living cap, and their heroic Elites; the shards needed
+//! and their cap; the reach a shard is taken and set within, one carried at a time and dropped by a carrier who leaves;
+//! the growth standing in no one's way; a heroic chest without the bonus; a foe struck from afar as a part taken; and
+//! its foes withdrawing into the crack at a walk.
 
 use super::fissure::{SPIRES, Shard, WARDEN_NAME};
 use super::fissure_tests::{chests, fissure, fissure_mut, lesser, seal_one};

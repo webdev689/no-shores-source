@@ -1,4 +1,5 @@
-//! The game's mail on the wire: each letter waiting for a player, where what it holds came from and that, carried with their gear.
+//! The game's mail on the wire: each letter waiting for a player, where what it holds came from and that, carried with
+//! their gear.
 
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, ForwardsUOffset, Vector, WIPOffset};

@@ -48,7 +48,8 @@ export function clearOf<Spot extends { readonly x: number; readonly y: number }>
 
 /** The veil over the display, by what holds the player: joining the room again, the room lost (and why), or their
  *  death in a room that stands them again unasked (the ticks they have lain); a link's veil is plain, death's is
- *  blood. Null while none of these holds, and for a death in a room that waits for the ask, whose own screen tells it. */
+ *  blood. Null while none of these holds, and for a death in a room that waits for the ask, whose own screen tells
+ *  it. */
 export function veilOf(
   frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining' | 'asksToRespawn'>,
 ): { readonly words: string; readonly link: boolean } | null {

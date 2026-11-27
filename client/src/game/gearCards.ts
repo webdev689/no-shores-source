@@ -128,7 +128,8 @@ export function traitsShown(
 export const FORGED_NOTE = 'Forged';
 
 /** An item's card; against `worn`, the piece it would replace, what changes. `nodesAside`, as Inspect sets another
- *  player's piece beside the player's own, whose nodes it never knows: neither's chosen nodes count in their numbers. */
+ *  player's piece beside the player's own, whose nodes it never knows: neither's chosen nodes count in their
+ *  numbers. */
 export function cardOf(item: GearItem, worn: GearItem | null = null, nodesAside = false): Card {
   const big = item.attack
     ? { label: 'Attack', value: item.attack }

@@ -107,9 +107,9 @@ impl Room {
 
     /// Stands each site's group when a player comes within SITE_NEAR of it while it stands none, none within
     /// CLEAR_AROUND, and the living foes leave it room: drawn as a patrol's other groups are, at the site's middle or
-    /// the lattice point nearest it within POSTS_APART that holds it, its beat over the lattice its mesh holds; given up
-    /// where none does. None stands within EVENT_CLEAR of a public event's ground. One mesh is baked a tick, so a site
-    /// may wait a tick for its own.
+    /// the lattice point nearest it within POSTS_APART that holds it, its beat over the lattice its mesh holds; given
+    /// up where none does. None stands within EVENT_CLEAR of a public event's ground. One mesh is baked a tick, so a
+    /// site may wait a tick for its own.
     pub(super) fn stand_sites(&mut self) {
         let events = self.event_grounds();
         for site in 0..self.foe_sites.len() {

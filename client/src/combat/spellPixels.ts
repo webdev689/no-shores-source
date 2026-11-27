@@ -181,9 +181,9 @@ export class Laid {
 }
 
 /**
- * Lays `picture` upright with its middle at `middle`, turned to an eye at `eye` about the upright as a figure's card is,
- * in `look`'s stops at `opacity` (below none, light added to what is behind), mirrored with `flip`, each cell `cell`
- * metres: mark vertices. Each row's run of one stop is one quad. A picture too near the eye is left out.
+ * Lays `picture` upright with its middle at `middle`, turned to an eye at `eye` about the upright as a figure's card
+ * is, in `look`'s stops at `opacity` (below none, light added to what is behind), mirrored with `flip`, each cell
+ * `cell` metres: mark vertices. Each row's run of one stop is one quad. A picture too near the eye is left out.
  */
 export function billboard(
   out: Laid,

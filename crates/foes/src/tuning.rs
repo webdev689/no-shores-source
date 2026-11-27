@@ -173,8 +173,9 @@ pub const BACK_TURNED: f64 = 110.0 * DEGREES;
 pub const CLOSING: f64 = 0.5;
 /// How fast a foe turns: DFO's 0.35 radians a classic tick of 1/16 s, a fighter squaring up.
 pub const TURN: f64 = 0.35 * 16.0 / 60.0;
-/// A target nearer than this across, and higher or lower than a blow reaches, is as far as the walk to it: past the ring
-/// of the longest reach (a staff's 2.2 m, and 1.5 m more), so a foe beneath a ledge never takes one on it for in reach.
+/// A target nearer than this across, and higher or lower than a blow reaches, is as far as the walk to it: past the
+/// ring of the longest reach (a staff's 2.2 m, and 1.5 m more), so a foe beneath a ledge never takes one on it for in
+/// reach.
 pub const OFF_FLOOR_NEAR: f64 = 4.0;
 /// How far apart in height two points stand on different storeys of a dungeon at the least: half a storey's 8 m
 /// (`dungeon::STOREY_M`, which the room's tests hold this to).

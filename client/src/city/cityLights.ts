@@ -1,7 +1,8 @@
 // The light a city's glowing solids give, and a layout's (its solids are among the city's works), as the land's fires
 // and lamps (../sky/lamps.ts): a brazier's, a hoop's, a camp's or a watchtower's fire burning on its coals; a
 // lantern's glass glowing, no flame seen, its light at the lantern; a sconce's and a wall brazier's open flame; the
-// Beacon's great fire burning round the foot of its glass; a sunstone breathing. A ruin has none: its glow is put out (the city crate's `ruins`).
+// Beacon's great fire burning round the foot of its glass; a sunstone breathing. A ruin has none: its glow is put out
+// (the city crate's `ruins`).
 import { coalsFire, type FirePlace, glowLamp, type LampPlace, lanternLamp, seedAt } from '../sky/lamps.ts';
 import { moduleLights } from './moduleLights.ts';
 import { moduleHeight, moduleName } from './modules.ts';

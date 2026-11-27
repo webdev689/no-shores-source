@@ -315,7 +315,8 @@ fn a_body_pressing_or_jumping_into_the_ways_barricades_and_walls_never_gets_up_t
     let plan = drowned_vale();
     let blocks: Blocks = plan.standing().into();
     let (stage, _) = plan.socket("ways", "checkpoint").expect("its stage");
-    // Into each barricade along its street from 3 m short of it on either side; north from the stage into the west wall.
+    // Into each barricade along its street from 3 m short of it on either side; north from the stage into the west
+    // wall.
     let mut pressings: Vec<([f64; 3], f64, String)> = bars(plan)
         .into_iter()
         .enumerate()
@@ -341,8 +342,8 @@ fn each_of_the_ways_barricades_cuts_its_street_between_two_crossings() {
     let standing = plan.standing();
     let blocks: Blocks = standing.clone().into();
     for (nth, (at, along)) in bars(plan).into_iter().enumerate() {
-        // Toward its street's crossings 6 m either way, or the lane inside the town's wall, stopped short of a Watcher's
-        // post standing in one.
+        // Toward its street's crossings 6 m either way, or the lane inside the town's wall, stopped short of a
+        // Watcher's post standing in one.
         let crossing = |sign: f64| [at[0] + along[0] * sign * 4.5, at[1] + along[1] * sign * 4.5, at[2]];
         for (from, to) in [(crossing(-1.0), crossing(1.0)), (crossing(1.0), crossing(-1.0))] {
             assert!(!walks_to(&blocks, from, to, 0.8), "bar-{} lets a body down its street from {from:?}", nth + 1);

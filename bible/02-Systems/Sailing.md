@@ -61,9 +61,10 @@ How a ship sails: the helm from oars to sails, its way and turn, its sails again
 and where it takes the ground. It is DFO's port of Come Sail Away ([[Come Sail Away's Sailing Comes Over]]),
 rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop in the [[World Editor]]; the captains
 sail the other hulls ([[Hulls]]) by the same laws. A new player is taught the helm in the opening, once the
-Harbourmaster hands over the Sloop: aboard, under way, steered, trimmed (its pace changed, sailing on at ×60 or a voyage planned at ×200), the held map raised and a
-ball put in a Tithe hulk moored off Overlook, then home to dock, each step ticked by the sea from what the ship did
-([[Quests]], "The lessons"; [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]).
+Harbourmaster hands over the Sloop: aboard, under way, steered, trimmed (its pace changed, sailing on at ×60 or a voyage
+planned at ×200), the held map raised and a ball put in a Tithe hulk moored off Overlook, then home to dock, each step
+ticked by the sea from what the ship did ([[Quests]], "The lessons";
+[[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]).
 
 ## How it works
 
@@ -157,12 +158,12 @@ named by its key in the manifest (`HullKind`), numbered 0 to 3 on the wire.
 No hull's rig drives it harder than the Sloop's: its canvas drives it as the Sloop's does (`canvas_drive`), so every
 hull makes the Sloop's way on every point of sail, 2.4 m/s on a beam reach, and a captain's rank's way alone makes it
 faster ([[Naval Combat]]), a player's hull's class its way and its swing in a fight and its way on a voyage
-([[Shipyard]]); its sails' kinds shape only how they are drawn and trimmed. Its square sails pull by the same law as the rest:
-under the responsive helm each draws at its crest (a square sail running dead before the wind), so the point of sail
-alone says how its heading takes it, and a Brig or a Frigate runs, reaches, beats and comes about through the wind's
-eye as the Sloop does, keeping its way. Its gain still shapes a captain's ship: a bigger rig gathers and loses way
-faster and steers at its way over its gain. A player's ship answers its helm with the Sloop's gain in a fight, so its
-class alone sets its way and swing apart ([[Shipyard]]). The game sets its square sails' trim only to draw them.
+([[Shipyard]]); its sails' kinds shape only how they are drawn and trimmed. Its square sails pull by the same law as the
+rest: under the responsive helm each draws at its crest (a square sail running dead before the wind), so the point of
+sail alone says how its heading takes it, and a Brig or a Frigate runs, reaches, beats and comes about through the
+wind's eye as the Sloop does, keeping its way. Its gain still shapes a captain's ship: a bigger rig gathers and loses
+way faster and steers at its way over its gain. A player's ship answers its helm with the Sloop's gain in a fight, so
+its class alone sets its way and swing apart ([[Shipyard]]). The game sets its square sails' trim only to draw them.
 
 ## Its look
 
@@ -200,14 +201,14 @@ picture's grain, the picture's lightness about its mean kept:
   its fittings and the insides of its bulwarks keep their timber.
 - **Its lanterns.** A Schooner's, a Brig's and a Frigate's stern lantern stands on a post at its taffrail: its glass
   between six iron posts under a cap and a ring, an empty named `Lantern` in its model at its middle, which the export
-  writes to its manifest (`lanterns`; the Sloop's model has none). Caged, it shows no flame ([[An Enclosed Light Hides Its Flame]]): the glass is lit from
-  inside as the city's lanterns are, by day as by night and brighter against the dark, glowing amber, brightest at
-  its middle, and a soft halo stands round it, brighter at night (`ShipModels`). Its glass and its light, a lamp
-  ([[Sky]], "Lamps at sea"), flicker alike as a lantern, seeded by the ship (`shipSeed`: its hull and its slot of that
-  hull's model), so no two ships drawn in a frame flicker in step; its light falls on its deck and hull, the sea round
-  it and the people aboard. Her other lanterns, at her quarters and her door ([[Hulls]], "Lanterns"), burn and light
-  alike. A ship settled more than three metres into the sea, sinking, a wreck, and a ship running dark ("Lanterns at
-  night") have their lanterns out
+  writes to its manifest (`lanterns`; the Sloop's model has none). Caged, it shows no flame
+  ([[An Enclosed Light Hides Its Flame]]): the glass is lit from inside as the city's lanterns are, by day as by night
+  and brighter against the dark, glowing amber, brightest at its middle, and a soft halo stands round it, brighter at
+  night (`ShipModels`). Its glass and its light, a lamp ([[Sky]], "Lamps at sea"), flicker alike as a lantern, seeded by
+  the ship (`shipSeed`: its hull and its slot of that hull's model), so no two ships drawn in a frame flicker in step;
+  its light falls on its deck and hull, the sea round it and the people aboard. Her other lanterns, at her quarters and
+  her door ([[Hulls]], "Lanterns"), burn and light alike. A ship settled more than three metres into the sea, sinking, a
+  wreck, and a ship running dark ("Lanterns at night") have their lanterns out
   ([[Every Light Is Redesigned and Animated, and Each Casts Light]], [[Lights as Claude Builds Them]]).
 - **Its stripe** is 0.6 m deep along the line through the mouths of its upper tier of guns, rising with its sheer.
 - **Its flag** flies at the head of its tallest mast (the highest point of its spars), a tenth of its waterline's
@@ -217,8 +218,9 @@ picture's grain, the picture's lightness about its mean kept:
   slate.
 
 Which hull a ship sails is the wire's word, a number (0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate,
-`hullName`): a `Hostile`'s `hull` at sea, a friendly ship's the room keeps, and a fleet vessel's, a captain's `hull_kind` in a fight's view, where `hull`
-is its hull points (`hullOfCaptain`). A number with no model, or none sent, is drawn as the Sloop.
+`hullName`): a `Hostile`'s `hull` at sea, a friendly ship's the room keeps, and a fleet vessel's, a captain's
+`hull_kind` in a fight's view, where `hull` is its hull points (`hullOfCaptain`). A number with no model, or none sent,
+is drawn as the Sloop.
 
 ## Its sails
 
@@ -235,12 +237,12 @@ Boat's sizes; a spanker is a gaff sail:
 - **Square sails.** A square sail is laid on its four corners, its columns from port to starboard and its rows from
   its foot up to its yard; laced along its head and sheeted at its two foot corners, it bellies forward, fullest
   amidst, 1.2 m full and 0.15 hanging. Its wind is read off its yard's face: full with the wind astern of it, half
-  full abeam and hanging with the wind ahead, never aback. Its yard is braced round its mast (`squareBrace`), its leeward arm aft: square with the wind
-  astern, 45 degrees with it abeam and held there closer to it, at the gaff's 100 degrees a second. The yard is drawn
-  turning with it: when its model loads, the round spar pieces lying across it within 0.8 m of the line through each
-  sail's head are its yard, and a bare one across a mast with no sail on it turns with that mast's lowest sail. Each
-  yard and its canvas turn by the same angle about the same upright line through the middle of the yard, so the
-  sail's head stays on its yard at every brace.
+  full abeam and hanging with the wind ahead, never aback. Its yard is braced round its mast (`squareBrace`), its
+  leeward arm aft: square with the wind astern, 45 degrees with it abeam and held there closer to it, at the gaff's
+  100 degrees a second. The yard is drawn turning with it: when its model loads, the round spar pieces lying across it
+  within 0.8 m of the line through each sail's head are its yard, and a bare one across a mast with no sail on it turns
+  with that mast's lowest sail. Each yard and its canvas turn by the same angle about the same upright line through the
+  middle of the yard, so the sail's head stays on its yard at every brace.
 - **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, a square sail
   gathered up to its yard in loose folds, the gaff and the yards home.
 - **Holed and torn.** In a fight ([[Naval Combat]], "How it looks") its canvas is drawn with holes: a cell of a
@@ -250,9 +252,9 @@ Boat's sizes; a spanker is a gaff sail:
   its head is set to; when its model loads, every spar whose forward end lies within 1.2 m of a mast is tagged with
   it, then every piece of its rig whose top lies within 2.5 m of a mast along it and 3 m over its foot (its shrouds,
   stays, ratlines and crosstrees), and whatever hangs within about 0.6 m of a mast's spar (a gaff's peak block, a boom's
-  end), so a fallen mast goes over its side with all its rig and its sails; only its bowsprit stays. A sail torn away falls
-  from its yard, head first, and floats astern; its flag comes down its mast when it strikes. The harm goes with the
-  fight.
+  end), so a fallen mast goes over its side with all its rig and its sails; only its bowsprit stays. A sail torn away
+  falls from its yard, head first, and floats astern; its flag comes down its mast when it strikes. The harm goes with
+  the fight.
 
 Any published hull is drawn by its number (`openHull`: its mesh and its sails' corners from `ships.json`), as the
 story draws the Brig and the Frigate.
@@ -263,8 +265,9 @@ the rules sail it in, where it is, which the page reads from the sky's law.
 Sail (`B`) puts it to sea at the camera's target, heading where the camera looks; the rules refuse it where the
 water is shallower than its draught, and the camera stands back off. Each frame owes it its time in whole ticks, one
 request at a time; time spent waiting on the land worker is caught up, a second at most. The ships layer draws it
-into the land's pass, lit as the land is and in the sun's shadows, casting its own ([[Game]], "Drawing"), so the water sees it ([[Water]]): none inside it, foam at its bow, and its
-wake in the ripples. Picking another landmass brings it in.
+into the land's pass, lit as the land is and in the sun's shadows, casting its own ([[Game]], "Drawing"), so the water
+sees it ([[Water]]): none inside it, foam at its bow, and its wake in the ripples. Picking another landmass brings it
+in.
 
 With `?room=` in the editor's address, Sail joins a fleet room on the [[Server]] instead, from open water 15 m deep
 or more: the room steps it by its orders, a tick at a time, and the browser predicts it by the same rules through
@@ -286,8 +289,9 @@ side's colours, its pose, its heel and its footprint on the water taken from its
   throws at way.
 - **Into a turn.** It heels as `turn_heel` has it, by its swing and a ship's own way under way, 12 m/s: the Sloop 3
   degrees with the helm hard over, and every other hull by the Sloop's beam over its own (`heelShare`), so the narrow
-  Schooner heels more and the broad Frigate less. Its pose on the swell is its own hull's, from its waterline. Its swing is its heading's turn a second, followed at 3 a second and taken at most as the
-  helm's 10 degrees, so a voyage turning onto its next leg heels it as a hard turn would.
+  Schooner heels more and the broad Frigate less. Its pose on the swell is its own hull's, from its waterline. Its swing
+  is its heading's turn a second, followed at 3 a second and taken at most as the helm's 10 degrees, so a voyage turning
+  onto its next leg heels it as a hard turn would.
 - **Its wake.** Every ship under way leaves a Kelvin wake and throws a bow wave, foam along its own hull line and
   spray, at its drawn size ([[Water]], "A ship on it"); the player's ship also stirs the water's ripples at its bow
   and quarters each frame, as the editor's does.
@@ -364,8 +368,8 @@ the player elsewhere (the company's Go to them waits); a travel left behind any 
    has the ship at sea (a tier's room just joined puts it there when its keeper has answered); one that gives no
    answer within 13 s of the yes, or whose room never shows the ship, is given up; one that would leave the ship where
    it lies (none the map asks) is refused, and one into a locked sea ("That sea is locked.",
-   [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]), and courses are sent again. A yes in a fight
-   sails the course as Set sail does.
+   [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]), and courses are sent again. A yes in
+   a fight sails the course as Set sail does.
 2. Black for at least 0.5 s, and longer until the room has answered, no continent near the ship's new place is
    still to open (`Charting.waiting`), and frames drawn since the answer have shown the new waters whole (nothing
    standing in, [[Game]]), the plants scattering at the veil's pace meanwhile; all waited on 15 s at most; the sea,
@@ -396,6 +400,6 @@ set and wake behind, from the yes until it has arrived.
 - Its helm stands under the gaff, as the model has it: at the helm the canvas swings close by.
 - Alone, the editor steps it; in a fleet room the [[Server]] does, on the open sea, which has no coast or shallows;
   in the sea room's fights, the room steps it by its orders.
-- No current or cargo yet; three figures stand in for the ship's hands on its deck ([[Crew]], [[Game]]). Hulls are kept apart only in a fight
-  ([[Naval Combat]]), as every fleet room is.
+- No current or cargo yet; three figures stand in for the ship's hands on its deck ([[Crew]], [[Game]]). Hulls are kept
+  apart only in a fight ([[Naval Combat]]), as every fleet room is.
 - It waits while the land worker makes a close-up (about every 400 m), then catches up.

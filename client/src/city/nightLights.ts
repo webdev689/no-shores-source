@@ -23,7 +23,8 @@ export const LIGHT_KINDS = ['lamp', 'lantern', 'mouth'] as const;
 /** The sea's level, metres: what a lantern's light lies on under it. */
 const SEA_M = 0;
 
-/** The glowing point of each light, at its flame; a lantern's and the mouth's over the water with their column on it. */
+/** The glowing point of each light, at its flame; a lantern's and the mouth's over the water with their column on
+ *  it. */
 export function glowsOf(lights: readonly CityLight[]): GlowPoint[] {
   return lights.map((light) => {
     const look = LIGHT_LOOKS[light.kind];

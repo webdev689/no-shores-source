@@ -19,7 +19,8 @@ use movement::{Block, Controls, standing};
 use navmesh::{AGENT, Bounds, NavMesh};
 use std::rc::Rc;
 
-/// The crew's own types, the five foes as the Test Ground first had them; a room stands them against the player (`foe`).
+/// The crew's own types, the five foes as the Test Ground first had them; a room stands them against the player
+/// (`foe`).
 pub const SKIRMISHER: u8 = 13;
 pub const SWORDSMAN: u8 = 14;
 pub const BRUTE: u8 = 15;

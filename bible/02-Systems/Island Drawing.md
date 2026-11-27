@@ -39,10 +39,10 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
 - **The modules.** Each kit's pack (the dungeon modules' pack format, format 1, its header's `style` the kit) is read
   by `readKitPack`, which refuses a pack it cannot trust whole, and kept once fetched; a failure is warned once and
   asked for again 30 s later. A pack comes from the R2 key `content/islands/modules.json` names, committed from the
-  island-modules run's log (`isleManifest.ts` globs for it, so the page builds without it and draws the islands bare); a page's `?islePacks=<prefix>` reads `<prefix><kit>.modules`
-  instead, for pictures before publishing (copy the build's packs into
-  `client/public/isle-packs/`, which git ignores). A placement's module number is its name's place in the contract's
-  names sorted by byte order, the isle crate's catalog order.
+  island-modules run's log (`isleManifest.ts` globs for it, so the page builds without it and draws the islands bare); a
+  page's `?islePacks=<prefix>` reads `<prefix><kit>.modules` instead, for pictures before publishing (copy the build's
+  packs into `client/public/isle-packs/`, which git ignores). A placement's module number is its name's place in the
+  contract's names sorted by byte order, the isle crate's catalog order.
 - **The ground.** `groundMesh` lays a vertex on each of the island's heights (2 m apart) at its cell's middle, exactly
   at its height, and two triangles a square whose corners all have one; the far mesh takes every fourth (8 m). Its
   colour is the shader's, as the land's is: the seabed under water, wet sand below the tide's reach, sand on the low
@@ -62,17 +62,18 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
   in doubles. The modules are instanced: a kit's pack is one vertex buffer read as the pack holds it, an island's
   placements one instance buffer sorted by module, one draw a module the island wears, each part in the climate's
   colour (the biome kit's own stone and growth, `partColours` in `isleShader.ts`, which holds the shaders); the rock
-  parts (cliffs, stacks, outcrops, boulders, shore rocks) wear the caverns' rock cast on their faces too. Within 1.5 km of its coast an island draws its fine
-  ground and every module, and casts shadows; to 6 km its coarse ground with its trees, cliffs and stacks; to 20 km
-  its coarse ground alone. An island out of view is not drawn at all: its box, made once (`isleBox`), holds its
-  whole ground and every module placed on it at the contract's size, however turned. Its offset from the eye is
-  written to the GPU once the eye moves, not once a pass. `groundAt(x, y)` is the nearest shown island's height
-  there, null off every island.
+  parts (cliffs, stacks, outcrops, boulders, shore rocks) wear the caverns' rock cast on their faces too. Within 1.5 km
+  of its coast an island draws its fine ground and every module, and casts shadows; to 6 km its coarse ground with its
+  trees, cliffs and stacks; to 20 km its coarse ground alone. An island out of view is not drawn at all: its box, made
+  once (`isleBox`), holds its whole ground and every module placed on it at the contract's size, however turned. Its
+  offset from the eye is written to the GPU once the eye moves, not once a pass. `groundAt(x, y)` is the nearest shown
+  island's height there, null off every island.
 - **The lights.** A module's `ember` glows by itself, moving with its own lamp ([[Sky]], "Lamps"). Each shown
   island's embers give light (`isleLights.ts`, [[Lights as Claude Builds Them]]), laid again as an island is shown or
   gone and as a pack comes: an ember 0.5 m wide or more is coals (a camp fire's), the game's fire burning on them and
   casting its light; a narrower one is a lantern's glass (a mine adit's, a passage's lamp and a dead lamp lit), no
-  flame seen ([[An Enclosed Light Hides Its Flame]]), its lamp at the glass. An ember stood cold casts nothing, nor does an open mouth's way on.
+  flame seen ([[An Enclosed Light Hides Its Flame]]), its lamp at the glass. An ember stood cold casts nothing, nor does
+  an open mouth's way on.
 - **The plants.** In the game an island's trees, shrubs and grass are not its modules but the land's own plants
   ([[Nature]]): `game/isleNature.ts` plants each where the island placed it, on its own foot, turned and scaled as
   placed, a tree as one of its climate's cast's trees and a shrub or grass as one of its low plants, each kind as often
@@ -81,15 +82,15 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
   Islands mode still draws them as modules.
 - **The World Editor's Islands mode** builds one island at a time through `room.wasm`'s door and draws it with the
   sea round it ([[World Editor]]).
-- **The held map** marks found islands, and every island standing in the ship's water: `HeldMap.setIsles(marks)`, a cove a small ring and an isle a ring with a
-  tower, in the lighter ink under the words ([[Held Map]]).
+- **The held map** marks found islands, and every island standing in the ship's water: `HeldMap.setIsles(marks)`, a cove
+  a small ring and an isle a ring with a tower, in the lighter ink under the words ([[Held Map]]).
 
 ## Cost
 
 A ruin isle in rainforest (about 1300 modules) drawn close takes one draw for the ground and one a module the island
-wears, some 40, however many it places. A ground pixel reads its tiles 20 times on a sea island (17 on a hollow's one floor, 23
-under a snow line), about as many as the land's terrain; a module's pixel 11, for the rock's picture. On the software
-GPU the pictures are taken on, a frame of three islands from above takes some 2.2 s.
+wears, some 40, however many it places. A ground pixel reads its tiles 20 times on a sea island (17 on a hollow's one
+floor, 23 under a snow line), about as many as the land's terrain; a module's pixel 11, for the rock's picture. On the
+software GPU the pictures are taken on, a frame of three islands from above takes some 2.2 s.
 
 ## Limits
 

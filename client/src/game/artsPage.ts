@@ -2,8 +2,8 @@
 // left the worn Art's name, its diamond large in a double frame, the three Arts' diamonds to wear another and its
 // words; in the middle its ANIMA, its two TENETS and its CORE in rows of the menu's tiles, framed in its element, the
 // Core's fragments written out under it (artsRows.ts). Each spell and fragment shows its card beside its row on hover
-// or focus; the arrows move between the tiles, Enter chooses, Escape closes the flyout and then the screen. Every change
-// is an ask the room answers; the screen shows the Art and Core the room last sent. It comes in as it opens, its
+// or focus; the arrows move between the tiles, Enter chooses, Escape closes the flyout and then the screen. Every
+// change is an ask the room answers; the screen shows the Art and Core the room last sent. It comes in as it opens, its
 // emblem opening from its middle; another Art worn flashes it in its colour. An Art its road has not earned stands
 // locked, saying which road earns it.
 

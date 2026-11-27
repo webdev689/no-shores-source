@@ -174,8 +174,8 @@ fn pick(here: &Here<'_, '_>, board: &Board, sight: &Sight, except: Option<[f64; 
     best.map(|(_, post)| post)
 }
 
-/// What a shooter's post comes to this tick: one to hold, none (it fights as on open ground), or none yet, its pick left
-/// to the next tick because another shooter of the room picked this one.
+/// What a shooter's post comes to this tick: one to hold, none (it fights as on open ground), or none yet, its pick
+/// left to the next tick because another shooter of the room picked this one.
 enum Held {
     Post(Post),
     Open,

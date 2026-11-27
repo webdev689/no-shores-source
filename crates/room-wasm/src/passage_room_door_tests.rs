@@ -1,6 +1,6 @@
 //! A passage zone's room agrees to the bit wherever it runs: this run of a player through an Ambush's three waves,
-//! standing where they came in and swinging at the nearest foe until the deal is done, is fingerprinted here natively; a browser's test of the
-//! same run through WebAssembly holds the same ask, script and fingerprint.
+//! standing where they came in and swinging at the nearest foe until the deal is done, is fingerprinted here natively;
+//! a browser's test of the same run through WebAssembly holds the same ask, script and fingerprint.
 
 use super::*;
 use crate::garrison_door_tests::FoesKept;

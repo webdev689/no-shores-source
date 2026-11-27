@@ -16,7 +16,8 @@ export type Opening =
     }
   | { readonly how: 'dungeon'; readonly patrolText: string; readonly number: number; readonly seas: number }
   | { readonly how: 'run'; readonly ask: string; readonly patrolText: string }
-  /** A passage zone's room from its ask (`open_passage`'s JSON: the island, the week, the zone, the route, the minute). */
+  /** A passage zone's room from its ask (`open_passage`'s JSON: the island, the week, the zone, the route, the
+   *  minute). */
   | { readonly how: 'passage'; readonly ask: string }
   | { readonly how: 'breach'; readonly ask: string }
   | {

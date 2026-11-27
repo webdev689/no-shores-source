@@ -98,7 +98,8 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
   ];
   const rise = 0.6 + 0.9 * Math.sqrt(size);
   const many = (count: number) => Math.max(1, Math.round(count * shareOf(size)));
-  // Its first core tongue stands as tall as its light burns, so the flame drawn and the light it casts flicker together.
+  // Its first core tongue stands as tall as its light burns, so the flame drawn and the light it casts flicker
+  // together.
   const burning = (flicker(seed, seconds) - 0.8) / 0.2;
 
   const tongueCount = many(TONGUES * run);

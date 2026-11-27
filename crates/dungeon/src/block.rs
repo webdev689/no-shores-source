@@ -1,6 +1,7 @@
 //! One storey of one block, as DFO's Forge lays it: 16 by 16 cells of 3.2 m, rock but where rooms are carved by a
 //! seeded split of the square, round the flights and the landings its plan laid first, and joined by the cheapest ways
-//! through the rock (`ways.rs`). The outer ring stays rock but where an opening passes, so a block closes its own edges.
+//! through the rock (`ways.rs`). The outer ring stays rock but where an opening passes, so a block closes its own
+//! edges.
 
 use crate::descent::{At, StoreyPlan};
 use crate::lane::Lane;

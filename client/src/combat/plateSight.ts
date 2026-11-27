@@ -12,8 +12,8 @@ type Point = readonly [number, number, number];
  *  plate takes to fade all the way in or out, in seconds. */
 export const CONE = { degrees: 5, band: 2, fadeSeconds: 0.25 } as const;
 /** Another foe takes the cone's plate only once it stands this much nearer the crosshair, in degrees, or the cone would
- *  show this much more of it, so two foes side by side, or a view wobbling between them, do not trade it back and forth;
- *  and a fading one never keeps it from a clearer one. */
+ *  show this much more of it, so two foes side by side, or a view wobbling between them, do not trade it back and
+ *  forth; and a fading one never keeps it from a clearer one. */
 export const AIM_SWAP_DEGREES = 1;
 export const AIM_SWAP_SHARE = 0.25;
 /** Plates farther than this from the eye, across the ground, are not drawn, in metres. */
@@ -38,7 +38,8 @@ export function coneShare(off: number): number {
 }
 
 /** How much of a plate shows: as much as the cone shows at `off` degrees from the crosshair (null for a foe that is
- *  not the one aimed at, which the cone shows none of), or as much as the fight `held` it (0 to 1), whichever is more. */
+ *  not the one aimed at, which the cone shows none of), or as much as the fight `held` it (0 to 1), whichever is
+ *  more. */
 export function coneWant(off: number | null, held: number): number {
   return Math.max(off === null ? 0 : coneShare(off), Math.max(0, Math.min(1, held)));
 }
@@ -83,7 +84,8 @@ export function bodyDegrees(
 ): number {
   const [east, south] = [feet[0] - camera.eye[0], feet[1] - camera.eye[1]];
   const ahead = east * camera.forward[0] + south * camera.forward[1];
-  // How high over the eye the view's ray passes the body's upright line nearest, as an angle; its middle off to the side.
+  // How high over the eye the view's ray passes the body's upright line nearest, as an angle; its middle off to the
+  // side.
   const over =
     ahead > 0 ? ((east * east + south * south) * camera.forward[2]) / ahead : feet[2] + height / 2 - camera.eye[2];
   const crossed = Math.min(feet[2] + height, Math.max(feet[2], camera.eye[2] + over));

@@ -232,7 +232,8 @@ export function shipKeys(device: Device = BINDS.device, binds: Binds = BINDS.now
 }
 
 /** The keycaps of the Art's abilities (the Anima's, then each Tenet's), of the two loadouts and of a rider's boost,
- *  for the keys or the pad last used, as `boundCap` writes them: the fight's display draws them as the ship's bar draws its own. */
+ *  for the keys or the pad last used, as `boundCap` writes them: the fight's display draws them as the ship's bar draws
+ *  its own. */
 export function hudKeys(device: Device = BINDS.device, binds: Binds = BINDS.now): HudKeys {
   const cap = (id: BindId) => boundCap(id, device, binds);
   const arts = [cap('anima'), cap('tenetOne'), cap('tenetTwo')] as const;

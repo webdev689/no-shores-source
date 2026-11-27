@@ -121,7 +121,8 @@ export class LandingCourse {
   }
 
   /** The landing due now, taken once: once what the sea offers (`landfall`) reaches it. Let go if the ship is bound
-   *  elsewhere (`bound`, kept while it is stopped short to be resumed), or at anchor with no voyage and out of reach. */
+   *  elsewhere (`bound`, kept while it is stopped short to be resumed), or at anchor with no voyage and out of
+   *  reach. */
   due(landfall: Landfall, bound: Point2 | null): LandingAim | null {
     const { aim, sent } = this;
     if (!aim || !sent) return null;

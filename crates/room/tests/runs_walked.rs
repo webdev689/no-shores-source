@@ -1,7 +1,7 @@
 //! Continent 1's nodes as the bake lays them, walked by the movement rules: a body walks each of Saltmere's runs from
 //! its mouth along its line to its door, and pressing on past the door gets it nowhere; up every ramp, the instances'
-//! too, onto the terrace it serves; along every ruin's spoke from its plaza onto its tier; up every climb to its lookout on the massif's top; and over every bridge, a
-//! path's or a gorge's, both ways.
+//! too, onto the terrace it serves; along every ruin's spoke from its plaza onto its tier; up every climb to its
+//! lookout on the massif's top; and over every bridge, a path's or a gorge's, both ways.
 
 use layout::field::distance;
 use layout::paths::off_line;

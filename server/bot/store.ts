@@ -355,7 +355,8 @@ export interface SweepLimits {
   readonly sessionMaxS: number;
 }
 
-/** Remove what has outlived its use: sign-ins never finished, tickets never collected, idle sessions, old audit rows. */
+/** Remove what has outlived its use: sign-ins never finished, tickets never collected, idle sessions, old audit
+ *  rows. */
 export async function sweep(database: Db, nowS: number, limits: SweepLimits): Promise<void> {
   await database
     .prepare('DELETE FROM oauth_states WHERE created_at < ?')

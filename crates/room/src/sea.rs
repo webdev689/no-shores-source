@@ -147,8 +147,8 @@ pub(crate) fn whole(&[x, y]: &[f64; 2]) -> Option<Point> {
 }
 
 impl Sea {
-    /// An empty sea round the layout's continents, every ship with `deck`, its hostile ships' chances drawn from `seed`, the
-    /// Grey Tithe patrolling the lanes between those of `ports` that are port cities.
+    /// An empty sea round the layout's continents, every ship with `deck`, its hostile ships' chances drawn from
+    /// `seed`, the Grey Tithe patrolling the lanes between those of `ports` that are port cities.
     #[must_use]
     pub fn new(layout: &Layout, deck: Deck, seed: u32, ports: &[Port]) -> Self {
         let harbours = crate::harbour::Harbours::new(layout, ports);
@@ -354,9 +354,10 @@ impl Sea {
     /// One tick: each ship out of a fight sails on along its course by its pace's distance, turning onto each leg as
     /// it comes to it, and comes to rest at its course's end; each player off the helm takes the steps due; each fight
     /// steps, its player's ship where the fight has it, and each clash; the hostiles sail, come and go, a bold one that
-    /// meets a player begins their fight, calling them to the helm, one that meets a friendly ship begins a clash, and a
-    /// player who comes within sight of a clash joins it; the friendly ships off their routes sail on. A fight that ended lets its player go the next tick, at rest where it
-    /// left them; its last view waits for the next snapshot (`fights_sent`).
+    /// meets a player begins their fight, calling them to the helm, one that meets a friendly ship begins a clash, and
+    /// a player who comes within sight of a clash joins it; the friendly ships off their routes sail on. A fight that
+    /// ended lets its player go the next tick, at rest where it left them; its last view waits for the next snapshot
+    /// (`fights_sent`).
     pub fn tick(&mut self) {
         self.clock += 1;
         for (player, aboard) in &mut self.aboard {
@@ -457,8 +458,8 @@ impl Sea {
         self.keep_lessons();
     }
 
-    /// Sets the world time the room's clock started at, seconds since the Unix epoch: its fights' weather is the world's
-    /// then.
+    /// Sets the world time the room's clock started at, seconds since the Unix epoch: its fights' weather is the
+    /// world's then.
     pub fn set_world_start(&mut self, seconds: f64) {
         self.weather.world_start_s = seconds;
     }

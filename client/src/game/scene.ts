@@ -358,7 +358,8 @@ export class GameScene {
     const placed = airOf(more, view.climate);
     const skyEye = [shot.eye[0] + placed.at[0], shot.eye[1] + placed.at[1], shot.eye[2]] as const;
     const { look } = this.sky.frame(skyEye, placed.climate, lamps, ground);
-    // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
+    // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to
+    // read.
     this.shadow.update(shot.eye, shot.yaw, above, look.key);
     perfZone('shadows');
     this.shadow.cast(encoder, (cast) => {

@@ -64,8 +64,9 @@ To keep a layout painted on the site, put the downloaded file in `content/world/
 to Claude. To carry on painting later, Open… the downloaded file.
 
 The browser also keeps the painting after every stroke and fill, until a saved or downloaded file holds all of it.
-Open… asks before it replaces painting not yet saved, and refuses a file that is not a layout. Coming back to the editor, it offers to restore that painting; Cancel opens the saved layout instead. If the
-browser cannot keep it, the status says so.
+Open… asks before it replaces painting not yet saved, and refuses a file that is not a layout. Coming back to the
+editor, it offers to restore that painting; Cancel opens the saved layout instead. If the browser cannot keep it, the
+status says so.
 
 Each continent's row shows its area as painted and where it stands against the allowed range. The map carries a
 kilometre grid, a scale bar and a readout of the cursor's position. The Problems list shows every rule a painted
@@ -134,15 +135,16 @@ and after every stroke, place change, undo or redo; the land's worker samples it
 so the page never waits.
 Except while walking, a 1.8 m figure stands at the target with a scale bar beside it.
 
-A stroke shows as it is drawn, the close-up stepping aside until it ends; the rivers and lakes follow when it ends. Places are drawn on the 2D map and shown in
-both views; in 3D a place tool's click asks for the 2D map. The Problems list gives every rule the landmass's edits
-break, its city's and nodes' among them. Every place change, a city's and a node's too, is one undo step.
+A stroke shows as it is drawn, the close-up stepping aside until it ends; the rivers and lakes follow when it ends.
+Places are drawn on the 2D map and shown in both views; in 3D a place tool's click asks for the 2D map. The Problems
+list gives every rule the landmass's edits break, its city's and nodes' among them. Every place change, a city's and a
+node's too, is one undo step.
 
 The port city and the nodes are drawn over both views as lines, not on the cells. The city is a marker with its name
 and its wall, a dashed circle 3,456 m out. A node is its section's outline in its kind's colour (social gold, patrol
-green, mission blue, dungeon purple, boss red, outpost teal) with its name; its spawns show as white dots once it is 40 pixels
-across, and under 10 pixels it shows as a dot. Names are laid city first, then the nodes largest on screen first;
-a name that would cover another is left out. In 3D they lie on the land as it is drawn, and a line that passes
+green, mission blue, dungeon purple, boss red, outpost teal) with its name; its spawns show as white dots once it is
+40 pixels across, and under 10 pixels it shows as a dot. Names are laid city first, then the nodes largest on screen
+first; a name that would cover another is left out. In 3D they lie on the land as it is drawn, and a line that passes
 behind the camera is broken there.
 
 The land is carved as the game stands on it. Each landmass opened for shaping is settled in its worker with the

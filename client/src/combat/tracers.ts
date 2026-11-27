@@ -96,7 +96,8 @@ export function keptShare(since: number, fade: number): number {
   return KEPT[Math.floor((since / fade) * 4)] ?? 0;
 }
 
-/** The pieces of a line kept from `start` to `end` (metres along it) at `kept`: whole, or every piece the order keeps. */
+/** The pieces of a line kept from `start` to `end` (metres along it) at `kept`: whole, or every piece the order
+ *  keeps. */
 export function piecesAlong(start: number, end: number, kept: number): [number, number][] {
   if (kept >= 1) return end > start ? [[start, end]] : [];
   const pieces: [number, number][] = [];
@@ -561,7 +562,8 @@ export function othersArrows(
   return shots.filter((shot) => shot.owner !== player && !BALLS.has(shot.ranged) && !latticeOf(shot.owner));
 }
 
-/** Where a shot leaves a figure's weapon seen from outside: ahead of its chest along `bearing`, a little to its right. */
+/** Where a shot leaves a figure's weapon seen from outside: ahead of its chest along `bearing`, a little to its
+ *  right. */
 export function figureMuzzle(feet: Point, bearing: number): Point {
   const [ahead, right, up] = [0.5, 0.18, 1.3];
   return [

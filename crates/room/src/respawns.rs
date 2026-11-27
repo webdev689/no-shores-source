@@ -52,7 +52,8 @@ impl Room {
         self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
     }
 
-    /// Lays the points a patrol zone's or a world boss's fallen stand again at, from its ways; any other room lays none.
+    /// Lays the points a patrol zone's or a world boss's fallen stand again at, from its ways; any other room lays
+    /// none.
     pub(crate) fn lay_near(&mut self, ways: &[Vec<[f64; 2]>]) {
         let world_boss =
             self.clearing.as_ref().is_some_and(|clearing| clearing.clear == gear::rewards::Clear::WorldBoss);

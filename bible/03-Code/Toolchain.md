@@ -103,9 +103,10 @@ a folder a publisher writes and with an extension that folder takes.
 
 For the modules (`tools/modules/`, [[Modules]]): on Python 3.13,
 `pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt` (bpy 5.3.0 and what it needs, each
-wheel by its hash, for x86-64 Linux and Python 3.13 only). `python -I tools/modules/bake.py <folder>` bakes every module and writes `content/modules/modules.json`;
-the bake takes in the Lattice's builders and the [[Sprite Forge]]'s bodies. The `modules` workflow bakes twice,
-checks the bytes match and the committed manifest is the bake's, and publishes to R2.
+wheel by its hash, for x86-64 Linux and Python 3.13 only). `python -I tools/modules/bake.py <folder>` bakes every module
+and writes `content/modules/modules.json`; the bake takes in the Lattice's builders and the [[Sprite Forge]]'s bodies.
+The `modules` workflow bakes twice, checks the bytes match and the committed manifest is the bake's, and publishes to
+R2.
 
 For the flora (`tools/flora/`, [[Flora]]): `pip install bpy==5.3.0` on Python 3.13, nothing else (numpy comes with
 it). Cycles renders on the CPU, so it bakes anywhere: `python -I tools/flora/bake.py <folder>` bakes every biome,

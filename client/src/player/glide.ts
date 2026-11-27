@@ -1,7 +1,8 @@
 /** A place in the world: east, south and up, in metres. */
 export type Place = readonly [number, number, number];
 
-/** Past this many ticks between the draw clock and its place (a pause, or a figure seen again), the clock jumps there. */
+/** Past this many ticks between the draw clock and its place (a pause, or a figure seen again), the clock jumps
+ *  there. */
 const RESET_TICKS = 12;
 /** The share of that gap the clock closes each tick, so it keeps the frames' pace and drifts onto the snapshots'. */
 const EASE = 0.03;

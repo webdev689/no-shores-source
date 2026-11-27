@@ -345,9 +345,9 @@ impl Character {
         Ok(None)
     }
 
-    /// Buys a cosmetic its seller shows today, at its price in Aurem, from the level it is sold at: a coat as its horse,
-    /// to the pack, one of each. The first horse is given, never sold, to one whose road no longer leads to the Tack's
-    /// goal that gives it (`horse_goal_left`), worn where no horse is, as the Sloop is (`buy_ship`).
+    /// Buys a cosmetic its seller shows today, at its price in Aurem, from the level it is sold at: a coat as its
+    /// horse, to the pack, one of each. The first horse is given, never sold, to one whose road no longer leads to the
+    /// Tack's goal that gives it (`horse_goal_left`), worn where no horse is, as the Sloop is (`buy_ship`).
     pub(crate) fn buy_cosmetic(&mut self, number: u16, here: Here) -> Result<Option<Done>, Refusal> {
         let found = cosmetics().get(usize::from(number)).ok_or(Refusal::NoSuchCosmetic)?;
         if !here.social {

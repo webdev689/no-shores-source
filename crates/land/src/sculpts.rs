@@ -28,7 +28,8 @@ pub(crate) const BUCKET_M: f64 = 32.0;
 /// How much a floor's or outcrop's edge wanders out from its stated reach, as a share: never in, so what was placed
 /// stays on it.
 pub const WANDER: f64 = 0.35;
-/// The highest a floor's ceiling stands, metres: over any massif, and finite so a level blended under it stays a number.
+/// The highest a floor's ceiling stands, metres: over any massif, and finite so a level blended under it stays a
+/// number.
 const CEILING_M: f64 = 1000.0;
 /// How far a floor reaches past its edge for its top's roughness and the ceiling it sets on other sculpts, metres:
 /// three cliffs' runs, where its ceiling stands at three times its massif's height, over the top of any neighbour of

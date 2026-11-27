@@ -1,6 +1,7 @@
 //! Shape, after Destiny 1's Xur: a figure who comes to Overlook each week from Friday to Sunday evening, stands in one
 //! place on the plaza all that week, and sells Legendary and Atheric gear for Shapes, a currency the Abyss Dungeon of
-//! the week alone gives, as Destiny 1's weekly strikes gave Strange Coins; no kill gives any. When he comes, where he stands and what he sells are the same for everyone, from the clock.
+//! the week alone gives, as Destiny 1's weekly strikes gave Strange Coins; no kill gives any. When he comes, where he
+//! stands and what he sells are the same for everyone, from the clock.
 
 use crate::asks::{Done, Here, Refusal};
 use crate::catalogue::{NamedDef, catalogue};

@@ -1,8 +1,9 @@
 // The plates over other players' heads, as the owner's pictures of Destiny's show them: a square with their level, in
-// gold past level 20, or a speech bubble's three dots while a menu is open on their screen; and their name beside it. Green for the viewer's company, blue for anyone else. They show as DFO showed names over
-// players: every player within the plates' reach whose head the place's blocks and land do not hide, shrinking with
-// distance as a foe's plate does, laid so none covers another. The player under the crosshair within a person's reach
-// wears the interact mark round their body while Use is offered on them (the game's social layer says so beside it).
+// gold past level 20, or a speech bubble's three dots while a menu is open on their screen; and their name beside it.
+// Green for the viewer's company, blue for anyone else. They show as DFO showed names over players: every player within
+// the plates' reach whose head the place's blocks and land do not hide, shrinking with distance as a foe's plate does,
+// laid so none covers another. The player under the crosshair within a person's reach wears the interact mark round
+// their body while Use is offered on them (the game's social layer says so beside it).
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import { BarLayout } from '../plus/barLayout.ts';
 import { EMBLEM_PIXELS, svgOf } from '../plus/emblems.ts';

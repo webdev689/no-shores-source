@@ -102,10 +102,11 @@ export class FootView {
 
   /**
    * One frame of the fight on foot: its blood run on by `seconds`, its marks taken, and its display shown over a canvas
-   * `viewport` CSS pixels big (the display lays out in the drawn interface's own), drawn `size` device pixels. Answers the drawers that lie under the figures (the blood)
-   * and over them (the marks; the arcs and the see-through marks over the water; and the light of marks and arcs while
-   * the attack feel's light is on and there are any). On a struck ship's deck (`onBoarded`), the fight is in its own frame
-   * and drawn through the world's `shot` as its deck's `turn` lays it into the world.
+   * `viewport` CSS pixels big (the display lays out in the drawn interface's own), drawn `size` device pixels. Answers
+   * the drawers that lie under the figures (the blood) and over them (the marks; the arcs and the see-through marks
+   * over the water; and the light of marks and arcs while the attack feel's light is on and there are any). On a struck
+   * ship's deck (`onBoarded`), the fight is in its own frame and drawn through the world's `shot` as its deck's `turn`
+   * lays it into the world.
    */
   frame(
     foot: FootShown,

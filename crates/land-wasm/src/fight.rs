@@ -1,7 +1,7 @@
 //! A fight over the open landmass: the player's ship (the Sloop unless the begin request names its hull) and one
-//! hostile captain in its rank's hull, or the captains the request sets upon it (the naval crate's `Fight`). It stays here between calls, as the open landmass does; a
-//! request begins one, steps it, or ends it. Requests and answers are JSON: the fight's own numbers never cross, so a
-//! request carries only the player's orders.
+//! hostile captain in its rank's hull, or the captains the request sets upon it (the naval crate's `Fight`). It stays
+//! here between calls, as the open landmass does; a request begins one, steps it, or ends it. Requests and answers are
+//! JSON: the fight's own numbers never cross, so a request carries only the player's orders.
 
 use super::OPEN;
 use super::sail::{MOST_WAY, helm_from, ship_from, ticks_from};

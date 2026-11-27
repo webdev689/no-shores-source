@@ -127,9 +127,9 @@ const FLOORS: readonly (readonly [readonly [number, number, number], TileName])[
   [[0.82, 0.8, 0.72], 'stone'],
 ];
 
-/** The land's ground tiles (`TILE_LAYERS`' numbers) a ground wears on its low and its high ground: a climate's its grass
- *  turning to its dirt, as the land's; a paved floor the paving; a floor of one ground the tile of the ground its colour
- *  is nearest. */
+/** The land's ground tiles (`TILE_LAYERS`' numbers) a ground wears on its low and its high ground: a climate's its
+ *  grass turning to its dirt, as the land's; a paved floor the paving; a floor of one ground the tile of the ground its
+ *  colour is nearest. */
 export function groundTilesOf(look: GroundLook): [number, number] {
   const layer = (name: TileName) => TILE_LAYERS.indexOf(name);
   if (look.paved) return [layer('paving'), layer('paving')];

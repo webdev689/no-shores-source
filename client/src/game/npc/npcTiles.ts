@@ -28,7 +28,8 @@ import type { MenuContext } from '../menuPage.ts';
 import { shapesSvg } from './npcMarks.ts';
 import { type Price, type Row, type Ware, type WarePicture, priceWord, wareCard } from './npcWares.ts';
 
-/** A tile's picture box, in pixels: the menu's cell's; and its tile and holder, a step larger where the menu is wide. */
+/** A tile's picture box, in pixels: the menu's cell's; and its tile and holder, a step larger where the menu is
+ *  wide. */
 const TILE_PX = 48;
 const TILE = 64;
 const TILE_WIDE = 88;

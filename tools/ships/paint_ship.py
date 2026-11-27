@@ -4,10 +4,10 @@
 
 Each face goes to a part material: `sail` stays canvas, `glass` (a window's pane) stays glass; an empty slot is her
 spars (mast, bowsprit, pins, wheel); any other named slot is her hull, or her deck where the face looks up; a cannon is
-iron, and any other object without a material is spar. Her UVs are metres in Blender's frame, each face projected on the axis it faces most, so a picture
-of the game's painter repeats over her at its own scale: hull and deck along her length, a spar along its own. With
---pictures (the bytes `node tools/ships/ship_pictures.ts` writes), each part's material shows its picture, packed in
-the model. Run again, it keeps her parts and lays her UVs and pictures anew.
+iron, and any other object without a material is spar. Her UVs are metres in Blender's frame, each face projected on the
+axis it faces most, so a picture of the game's painter repeats over her at its own scale: hull and deck along her
+length, a spar along its own. With --pictures (the bytes `node tools/ships/ship_pictures.ts` writes), each part's
+material shows its picture, packed in the model. Run again, it keeps her parts and lays her UVs and pictures anew.
 """
 import argparse
 import re

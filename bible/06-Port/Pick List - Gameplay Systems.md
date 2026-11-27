@@ -185,11 +185,11 @@ settings.
 
 ## Notes
 
-- **A few shared seams decide most rows.** These are DFU's item templates (100 systems files import `item/itemTemplates`),
-  DFU's entity model (`skills`/`statMods`/`races`/`armorMaterials`, 124 files), Daggerfall's enemy and townsperson
-  tables (`characters/enemy`, `mobile`, name banks: 90), `src/formats` (150, including `dfRandom` and `mapsFile`),
-  `combat/formulas`, `gameDate` and `textManager` (181). Give the new game its own item table, stat and skill model,
-  bestiary, calendar and map grid. Most Cut rows then move to Clean with only small edits.
+- **A few shared seams decide most rows.** These are DFU's item templates (100 systems files import
+  `item/itemTemplates`), DFU's entity model (`skills`/`statMods`/`races`/`armorMaterials`, 124 files), Daggerfall's
+  enemy and townsperson tables (`characters/enemy`, `mobile`, name banks: 90), `src/formats` (150, including `dfRandom`
+  and `mapsFile`), `combat/formulas`, `gameDate` and `textManager` (181). Give the new game its own item table, stat and
+  skill model, bestiary, calendar and map grid. Most Cut rows then move to Clean with only small edits.
 - **157 `src/systems` files are already statically reachable from `server-account/` and `server/`.** They include the
   item law, itemTemplates, inventory, enchanting, loot, survival, the wild laws, the legacy law and sigil. The Rust
   judge must carry DFU's template table as data or replace it.
@@ -225,4 +225,5 @@ settings.
     4.8k), `snowfallRuntime` (2.6k) and `raidingParties` (2.3k).
   - DFU translations: `effects`, `enchantments`, `quest/`, `guild/`, `talk/` and `faction/`.
 - **Mods made for DFO** (`enemyExpansion/`, `raidingParties`, `warmAshesShips`, Low Poly Trees). The owner decided
-  ([[Which Made-for-DFO Mods Come Over]]): Raiding Parties and Warm Ashes come over as design, Enemy Expansion stays, and No Shores builds its own trees.
+  ([[Which Made-for-DFO Mods Come Over]]): Raiding Parties and Warm Ashes come over as design, Enemy Expansion stays,
+  and No Shores builds its own trees.

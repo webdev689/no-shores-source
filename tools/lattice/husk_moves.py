@@ -33,8 +33,8 @@ def idle(frame, view, yaw):
 DRAG = {'thigh_R': (12, 0, 0), 'shin_R': (-18, 0, 0), 'foot_R': (24, 0, 0)}   # its swing held low, the toe down
 GIVE = (0.03, 0.015)
 # Each frame's upper body: the pelvis's roll onto the leg it stands on, the head (pitch, cock, turn) lagging the
-# lurch with one sideways snap at frame 5, the left shoulder's hitch, the right arm's reach, how hard the frame shudders,
-# and whether the right hand clenches.
+# lurch with one sideways snap at frame 5, the left shoulder's hitch, the right arm's reach, how hard the frame
+# shudders, and whether the right hand clenches.
 WALK_BODY = [
     (-10, (6, 18, 6), 0, 0, 0, False), (-8, (7, 22, 4), 0, 2, 0, False), (-4, (5, 24, 2), 2, 4, 0, False),
     (2, (4, 22, 0), 4, 4, 0, True), (6, (6, 18, -2), 2, 2, 0, True), (9, (14, 38, -10), 0, 0, 0, True),

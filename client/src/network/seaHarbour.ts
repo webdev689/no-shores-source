@@ -53,8 +53,8 @@ export interface SeenIsle {
 }
 
 /** A friendly ship of the traffic the room keeps at sea, off its route: its traffic id, where it is, its heading
- *  (radians clockwise from north), its hull (0 the Sloop to 3 the Frigate), and whether she runs dark, her lanterns out,
- *  running from the Tithe ship that attacked her. */
+ *  (radians clockwise from north), its hull (0 the Sloop to 3 the Frigate), and whether she runs dark, her lanterns
+ *  out, running from the Tithe ship that attacked her. */
 export interface SeenFriendly {
   readonly traffic: number;
   readonly x: number;

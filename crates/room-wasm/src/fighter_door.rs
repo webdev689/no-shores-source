@@ -27,8 +27,8 @@ pub(crate) fn keep_course(blocks: movement::Blocks) {
     COURSE.with(|course| *course.borrow_mut() = blocks);
 }
 
-/// Keeps a course for predicting a fighter without a room: the blocks, six numbers each (`BLOCK_FLOATS`). Answers whether they made
-/// one.
+/// Keeps a course for predicting a fighter without a room: the blocks, six numbers each (`BLOCK_FLOATS`). Answers
+/// whether they made one.
 pub fn set_course(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);
     if !floats.len().is_multiple_of(BLOCK_FLOATS) {

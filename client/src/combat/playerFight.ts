@@ -49,10 +49,10 @@ export class PlayerFight {
    * One frame: `steps` the fight's movement rules, the room's clock run while `running`, the fight's buttons taken
    * only while `hands` (the pointer held), an aimed shot laid on `markOf`'s point (the crosshair's), and the first
    * person's hands zoomed with the view by `zoomOf` once the player has stepped, moving `handsSeconds` on. The buttons:
-   * a swing or a shot with the weapon out, the click that draws it swinging too, on foot, the hands free; a guard on foot; a dodge and a drink
-   * whenever pressed (the rules refuse them in the air or the saddle). A bow, a crossbow or a gun drawn: the swing's
-   * button aims it and the guard's fires it, and no guard rises behind it. Bearing the Lodestone (`bearer`), the Arts'
-   * keys ground it.
+   * a swing or a shot with the weapon out, the click that draws it swinging too, on foot, the hands free; a guard on
+   * foot; a dodge and a drink whenever pressed (the rules refuse them in the air or the saddle). A bow, a crossbow or a
+   * gun drawn: the swing's button aims it and the guard's fires it, and no guard rises behind it. Bearing the Lodestone
+   * (`bearer`), the Arts' keys ground it.
    */
   frame(
     controls: InputFrame,

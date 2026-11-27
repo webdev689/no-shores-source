@@ -91,7 +91,8 @@ const VERTEX_LAYOUT: GPUVertexBufferLayout = {
   ],
 };
 const BLENDED = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
-/** The over-the-picture fragments: the see-through marks where nothing hides them, or marks only where something does. */
+/** The over-the-picture fragments: the see-through marks where nothing hides them, or marks only where something
+ *  does. */
 export type OverEntry = 'over_fragment' | 'hidden_fragment';
 
 /** Where `origin` (world metres) lies in the ground's dither, wrapped to its period. */

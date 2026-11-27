@@ -98,11 +98,11 @@ impl Heights {
     }
 
     /// The ground round a course of blocks laid over the open sea, as a ship's deck is held: open, at 0 m under the
-    /// blocks that stand bodies on their tops, in every cell of `cell` metres whose middle a block covers, and a wall in
-    /// every other. So a body walks, falls and vaults anywhere over the blocks, never climbs (the prologue's wreck, the
-    /// one course laid over the sea, is played without climbing), and is held at their edge: the sea is never reached.
-    /// The grid starts at the blocks' west and north edges, so blocks laid in squares of `cell` from there are held to
-    /// the square.
+    /// blocks that stand bodies on their tops, in every cell of `cell` metres whose middle a block covers, and a wall
+    /// in every other. So a body walks, falls and vaults anywhere over the blocks, never climbs (the prologue's wreck,
+    /// the one course laid over the sea, is played without climbing), and is held at their edge: the sea is never
+    /// reached. The grid starts at the blocks' west and north edges, so blocks laid in squares of `cell` from there are
+    /// held to the square.
     #[must_use]
     pub fn rim(blocks: &[Block], cell: f64) -> Self {
         let west = blocks.iter().map(|block| block.min_x).fold(f64::INFINITY, f64::min);

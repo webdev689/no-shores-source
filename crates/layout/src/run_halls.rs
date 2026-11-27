@@ -1,9 +1,9 @@
-//! The large buildings a building run passes through, of the hall kit along its run's line: a keep (a gatehouse over its
-//! mouth, walled courts and roofed great halls over its beats in turn, windowed and battlemented, roofed passages
+//! The large buildings a building run passes through, of the hall kit along its run's line: a keep (a gatehouse over
+//! its mouth, walled courts and roofed great halls over its beats in turn, windowed and battlemented, roofed passages
 //! between, a walled ward with a turret at each corner and two towers at its door), a mine (a head-frame and its spoil
 //! at the mouth, timbered galleries boarded over, caverns roofed with rubble slabs on rock ribs) and an undercroft (a
-//! ruined chapel at its mouth, vaulted passages, pillared vaults, an ossuary at its end). What a body climbs in a keep's
-//! ward and at an undercroft's mouth is run_climbs'.
+//! ruined chapel at its mouth, vaulted passages, pillared vaults, an ossuary at its end). What a body climbs in a
+//! keep's ward and at an undercroft's mouth is run_climbs'.
 
 use crate::brief::RunKind;
 use crate::field::distance;

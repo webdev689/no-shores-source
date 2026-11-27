@@ -13,8 +13,8 @@ const PART_BYTE = 24;
 const SHELL_BYTE = 25;
 const YARD_BYTE = 26;
 const MAST_BYTE = 27;
-/** A spar stands on a mast when its forward end lies within this of the mast along the ship, metres: the mast itself, its
- *  yards and tops, and a gaff's or boom's jaws; a bowsprit is far forward of any. */
+/** A spar stands on a mast when its forward end lies within this of the mast along the ship, metres: the mast itself,
+ *  its yards and tops, and a gaff's or boom's jaws; a bowsprit is far forward of any. */
 const ON_MAST_M = 1.2;
 /** Any other piece of its rig (a shroud, a stay, ratlines, crosstrees) is the mast's whose top lies within this of it
  *  along the ship and this far over its foot, metres: a rope is made fast to the mast it holds up. */
@@ -48,8 +48,8 @@ const SLICES_UP = 1000;
  *  width (each yard is modelled as two halves). */
 const YARD_REACH_M = 0.8;
 const YARD_SPAN_SHARE = 0.3;
-/** A yard's piece is round, its thickness between these, and lies across the ship, a piece of a sail's yard this long at
- *  least and a bare yard's this; a bare yard stands within this of its mast along the ship, and this high. */
+/** A yard's piece is round, its thickness between these, and lies across the ship, a piece of a sail's yard this long
+ *  at least and a bare yard's this; a bare yard stands within this of its mast along the ship, and this high. */
 const YARD = { thickM: 0.02, thinM: 0.5, pieceM: 1, bareM: 2.5, mastM: 1, overM: 7 } as const;
 /** Square sails whose heads stand this close along the ship hang from one mast. */
 const MAST_M = 1.5;

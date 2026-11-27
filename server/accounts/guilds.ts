@@ -33,7 +33,8 @@ export async function guildOf(database: Db, account: string): Promise<KeptGuild 
     .first<KeptGuild>();
 }
 
-/** Founds a guild with its founder its one member, under the banner they chose or, with none, the one its name draws. */
+/** Founds a guild with its founder its one member, under the banner they chose or, with none, the one its name
+ *  draws. */
 async function found(database: Db, own: string, given: Record<string, unknown> | null, now: number): Promise<Answer> {
   const [name, tag] = [given?.['name'], given?.['tag']];
   const unfit = refusalOf('guild', name) ?? refusalOf('tag', tag);

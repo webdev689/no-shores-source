@@ -1,5 +1,5 @@
-// The Sloop's deck as the ships manifest holds it (tools/ships/deck.py measures it from its mesh): the grid of heights a
-// walker stands on, in its own frame (x to its starboard, y to its stern, the origin amidships, metres over its
+// The Sloop's deck as the ships manifest holds it (tools/ships/deck.py measures it from its mesh): the grid of heights
+// a walker stands on, in its own frame (x to its starboard, y to its stern, the origin amidships, metres over its
 // waterline), and the spot behind its wheel where its helm is kept. The sea room stands its walkers on the same grid.
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import { shipAxes } from './shipAxes.ts';

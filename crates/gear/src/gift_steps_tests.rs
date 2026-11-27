@@ -1,6 +1,7 @@
 //! The pledged house's gift and the steps that teach the keepers' gifts: the house pledged to gives its own torso
-//! piece at Magic as the pledge is taken, once a character for each house, kept by name; and "Use your gifts", after "Put them on", asks the
-//! Mage to open a Vestige, a piece taken from the vault, a dye worn and a letter taken, each ticked as the room answers.
+//! piece at Magic as the pledge is taken, once a character for each house, kept by name; and "Use your gifts", after
+//! "Put them on", asks the Mage to open a Vestige, a piece taken from the vault, a dye worn and a letter taken, each
+//! ticked as the room answers.
 
 use crate::asks::{Ask, Here};
 use crate::character::{At, CARRIED_MOST, Character, VAULT_MOST};

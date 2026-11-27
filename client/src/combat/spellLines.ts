@@ -141,8 +141,8 @@ export function boltLine(
   if (core > 0) lineRibbon(out, eye, points, core, colourOf(look, HOT, opacity), CORE_LEAST);
 }
 
-/** How wide a line lying on the ground at `place` is drawn for an eye at `eye`: `width`, or more far off, where the ground
- *  is seen aslant, so it still stands a few pixels across. */
+/** How wide a line lying on the ground at `place` is drawn for an eye at `eye`: `width`, or more far off, where the
+ *  ground is seen aslant, so it still stands a few pixels across. */
 export function groundWidth(eye: Point, place: Point, width: number): number {
   const apart = Math.hypot(eye[0] - place[0], eye[1] - place[1], eye[2] - place[2]);
   const aslant = Math.max(0.05, (eye[2] - place[2]) / (apart || 1));

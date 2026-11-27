@@ -29,7 +29,8 @@ export {
 } from './swingCourse.ts';
 export { PART, SWING_FLOATS } from './swingMesh.ts';
 
-/** How the arcs look, as the Test Ground's panel sets them: how bright, and how long a streak trails; 1 each as made. */
+/** How the arcs look, as the Test Ground's panel sets them: how bright, and how long a streak trails; 1 each as
+ *  made. */
 export interface ArcLook {
   readonly brightness: number;
   readonly trail: number;
@@ -77,9 +78,10 @@ const rampOf = (swing: Swing): number => {
   return look === 0 ? RAMP.metal : look;
 };
 
-/** The swings' arcs: each blow's begun when it is first seen, drawn as it sweeps, flared where it strikes something, and
- *  let go once its streak has faded. An arc keeps the blow's own time, not the page's: between the rules' words it runs
- *  on for at most a snapshot's span, and it waits while the fight waits, so a paused fight never replays a swing. */
+/** The swings' arcs: each blow's begun when it is first seen, drawn as it sweeps, flared where it strikes something,
+ *  and let go once its streak has faded. An arc keeps the blow's own time, not the page's: between the rules' words it
+ *  runs on for at most a snapshot's span, and it waits while the fight waits, so a paused fight never replays a
+ *  swing. */
 export class SwingArcs {
   private arcs: Arc[] = [];
 

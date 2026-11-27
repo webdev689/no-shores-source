@@ -4,8 +4,8 @@ import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE, viewOf } from '../
 import type { MapView } from './mapCamera.ts';
 import { MAP_FACES_SHADER, MAP_FLOATS, MAP_INK_SHADER } from './mapShaders.ts';
 
-/** The ink's measures, our own: the cut over the floor looked at (m), full ink to this far under it (m), fading over the
- *  next (m) to the least; a storey not looked at's strength when all show; the depth's range (m); and the compass's
+/** The ink's measures, our own: the cut over the floor looked at (m), full ink to this far under it (m), fading over
+ *  the next (m) to the least; a storey not looked at's strength when all show; the depth's range (m); and the compass's
  *  radius and its gap from the paper's corner (CSS px). */
 export const INK = {
   cutOver: 2.6,

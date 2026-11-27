@@ -16,7 +16,8 @@ import { nodeRoom, passageRoom, seaRoom, startedAtSea } from './roomNames.ts';
 
 type Point = readonly [number, number];
 
-/** Every island's regions (`content/world/regions.json`), their points as pairs, for the rule the island's tiles keep. */
+/** Every island's regions (`content/world/regions.json`), their points as pairs, for the rule the island's tiles
+ *  keep. */
 export const REGIONS = regionsTable.flatMap(({ island, regions }) =>
   regions.map(({ name, centre: [x = 0, y = 0], anchorage: [east = 0, south = 0], nodes }) => ({
     island,

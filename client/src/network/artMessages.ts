@@ -11,7 +11,8 @@ type Point = readonly [number, number, number];
 /** The player's own Arts as the room last sent them: the Art worn (1 Storm, 2 Divine, 3 Shadow, 0 none), each Art's
  *  Core in the Arts' order (three slots, each a fragment's place in its Art's list or null), how far the Anima has
  *  charged and each Tenet recharged, 0 to 1 (1 ready), as the room's tick that sent them had it; and what each Art's
- *  road has earned in the Arts' order (1 the Art, 2 its first Tenet, 4 its second), none from a room that sends none. */
+ *  road has earned in the Arts' order (1 the Art, 2 its first Tenet, 4 its second), none from a room that sends
+ *  none. */
 export interface ArtState {
   readonly art: number;
   readonly cores: readonly (readonly (number | null)[])[];

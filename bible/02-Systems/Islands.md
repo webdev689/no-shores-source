@@ -118,19 +118,21 @@ The sea room holds its islands (`sea_islands.rs`):
   room's tier. It is rolled at the middle of the island's water's band raised by the room's seas, and paid
   straight into the player's ship materials, a module carried as any item. The wrecks spent for them are told them in
   their gear's `scavenged`, so the page offers them no more.
-- **Resource nodes.** Each island carries the resource of the island whose waters it lies in ([[Gear]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]): two to four
-  nodes inland, a third to three fifths of the way from its middle to its coast on gentle shores, 20 m apart and 15 m
-  from every other place, laid on a draw of their own and kept clear by the dressing. Its room stands them all at once;
-  each is gathered by holding E as a patrol's is, by a player landed there, once by each character a day: it stays
-  spent for them, landing again or in another room of the island, until the day turns at 09:00 UTC (the day's record,
-  `gather_on`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]). They are drawn as the resource's picture
-  alone, with no place built round them.
+- **Resource nodes.** Each island carries the resource of the island whose waters it lies in ([[Gear]],
+  [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]): two to four nodes inland, a third to three
+  fifths of the way from its middle to its coast on gentle shores, 20 m apart and 15 m from every other place, laid on a
+  draw of their own and kept clear by the dressing. Its room stands them all at once; each is gathered by holding E as a
+  patrol's is, by a player landed there, once by each character a day: it stays spent for them, landing again or in
+  another room of the island, until the day turns at 09:00 UTC (the day's record, `gather_on`,
+  [[The Audit's Leftovers Are Fixed as Claude Suggested]]). They are drawn as the resource's picture alone, with no
+  place built round them.
 - **The door** stands where the dungeon of its style is entered: E there gives the dungeons' trip its room,
   `sea-dungeon-<continent>-<style>-<the island's seed folded to 32 bits, 8 hex digits>` and the sea's tier
   (`--elite`, `--abyss`), and the door's place in the world and the bearing its front faces (`isleLaw.ts`,
   `DungeonDoor`), and the trip goes in (`enterSeaDungeon`): shared at Normal, a run at Elite or Abyss ([[Game]], "A
   sea island's dungeon"). Its room opens only behind the door of an island the sea holds, for accounts the sea has
-  landed there ([[Server]], "The sea"; [[The Server Is the Authority Over Everything]]). Leaving it, the player goes back to the sea at their ship.
+  landed there ([[Server]], "The sea"; [[The Server Is the Authority Over Everything]]). Leaving it, the player goes
+  back to the sea at their ship.
 
 ## On the page
 
@@ -139,8 +141,9 @@ The sea room holds its islands (`sea_islands.rs`):
   number and seed, let go of once the room tells of it no more), and every
   voyage's legs are bent round each island in sight, and each the sea's chart marks in the ship's water that the room
   has not told of (as far as an island not built reaches), since the route planner's grid is far coarser than an
-  island and a travel's last leg is refused across any island standing (`isleLaw.ts`, `keptClear`, `detour`); a leg for a point within an island's keeping (its anchorage) comes in along the line out
-  from its middle through that point. An island come into sight bends the voyage still ahead round it.
+  island and a travel's last leg is refused across any island standing (`isleLaw.ts`, `keptClear`, `detour`); a leg for
+  a point within an island's keeping (its anchorage) comes in along the line out from its middle through that point. An
+  island come into sight bends the voyage still ahead round it.
 - A click on an island, or on the water within 400 m of its reach, asks to go ashore on it ("Go ashore on the cove?"),
   and so does L within 700 m past its coast ([[Game]], "Landings"); yes docks in sight, the view switched to the
   Oversea view once the ship sets sail: it sails at ×60 to the island's offing on its landing's bearing, planned on
@@ -148,10 +151,11 @@ The sea room holds its islands (`sea_islands.rs`):
   where another ship lies there), and once it lies
   there, once nothing else is under way (the map put away, the deck left, no fight), the player walks ashore on its
   beach behind the veil ("Going ashore on a cove"). Steered, sent elsewhere, chasing or in a fight, the ship gives the
-  landing up; left by its player, it gives up its voyage there too. The sea is left only once the island's room has opened: one that does not leaves the player aboard, told so,
-  and online the sea room is joined again, as the island's room may have taken the character from it.
-  Ashore, their ship is drawn anchored where it lies ([[Game]], "On foot"). The leave held ([[Interface]], "The leave
-  held") takes them back aboard, where the ship lies, and it sails out to the island's offing ([[Game]], "Landings").
+  landing up; left by its player, it gives up its voyage there too. The sea is left only once the island's room has
+  opened: one that does not leaves the player aboard, told so, and online the sea room is joined again, as the island's
+  room may have taken the character from it. Ashore, their ship is drawn anchored where it lies ([[Game]], "On foot").
+  The leave held ([[Interface]], "The leave held") takes them back aboard, where the ship lies, and it sails out to the
+  island's offing ([[Game]], "Landings").
 - On foot E scavenges a wreck within 3 m not spent for them ("Scavenge the wreck") and tries the door ("Enter the
   caverns").
 

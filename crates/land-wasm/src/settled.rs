@@ -129,8 +129,8 @@ pub fn window_json(request: &[u8]) -> String {
     cut.unwrap_or_else(|error| json!({ "error": error }).to_string())
 }
 
-/// The boxes of the open landmass's city a body runs into within a rect, as `[west, north, east, south, top, bottom]`; none
-/// with no city.
+/// The boxes of the open landmass's city a body runs into within a rect, as `[west, north, east, south, top, bottom]`;
+/// none with no city.
 #[must_use]
 pub fn boxes_json(request: &[u8]) -> String {
     let found = read(request).and_then(|request| rect_of(&request)).map(|bounds| {

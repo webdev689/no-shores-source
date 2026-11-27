@@ -86,7 +86,8 @@ const SWELLS: readonly ShipPlace[] = [
   { ...AT_SEA, pitch: -0.09, roll: 0.12 },
 ];
 
-/** The corners round the figure at the Brig's helm: a body's breadth with sword and shield, feet to the top of the head. */
+/** The corners round the figure at the Brig's helm: a body's breadth with sword and shield, feet to the top of the
+ *  head. */
 function figureCorners(place: ShipPlace): [number, number, number][] {
   const [forward, starboard, up] = helmInShip();
   const corners: [number, number, number][] = [];

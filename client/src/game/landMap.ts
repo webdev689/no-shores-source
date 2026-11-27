@@ -197,8 +197,8 @@ export function landSheetOf(
   };
 }
 
-/** The lengths of the land's rivers whose bounds reach onto the sheet, as the ground draws them (their courses cut twice,
- *  `nature/ground.ts`), each as wide as its flow makes it (the land crate's `river_width_m`). */
+/** The lengths of the land's rivers whose bounds reach onto the sheet, as the ground draws them (their courses cut
+ *  twice, `nature/ground.ts`), each as wide as its flow makes it (the land crate's `river_width_m`). */
 function riversOn(
   rivers: readonly RiverCourse[],
   local: (point: readonly [number, number]) => Point2,

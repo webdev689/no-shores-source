@@ -132,8 +132,8 @@ fn ways_of(paths: &[Path], runs: &[runs::Run]) -> Vec<Path> {
 
 /// Plans a node's layout on the ground from its brief: for a patrol area, `links` are the instances its gates lead
 /// to; for an instance, the patrol area it is entered from. `biome` is its landmass's, which sets how high its massif
-/// stands and the shape of its outcrops where its brief names none; `resource` its island's resource, which its resource
-/// sites hold. `avoid` are the other nodes' claims, which its runs past its edge keep clear of.
+/// stands and the shape of its outcrops where its brief names none; `resource` its island's resource, which its
+/// resource sites hold. `avoid` are the other nodes' claims, which its runs past its edge keep clear of.
 #[must_use]
 #[expect(clippy::too_many_arguments, reason = "a node's brief, its land and its neighbours, each read once")]
 pub fn plan(

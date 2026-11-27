@@ -209,7 +209,8 @@ function hang(site: Site, cell: number, piece: string, top: readonly [number, nu
   return put(site, cell, [[piece, { origin: top, turns }]]);
 }
 
-/** The two walls across a way from `first` to `last`: north and south of a way along x, west and east of one along y. */
+/** The two walls across a way from `first` to `last`: north and south of a way along x, west and east of one along
+ *  y. */
 const wallsAcross = (first: number, last: number, alongX: boolean): Wall[] =>
   (alongX ? [3, 1] : [2, 0]).map((side, end) => [end ? last : first, side]);
 

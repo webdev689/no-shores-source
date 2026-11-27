@@ -68,9 +68,9 @@ The style kit and its frame are the [[Interface]]'s roles, and the [[Game]]'s he
 and the boss bar, the plates over foes and ships' plates do what Enhanced Plus does with them ([[Interface]],
 [[Enemies]], [[Plates Stay Light and Bars Do What Enhanced Plus Does]]). The main menu's profile mark
 (`profileBadge.js` and its style in `enhancedStyle.js`) is the menu's account mark, in its top line
-([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]). The pad's cursor and the gauntlet came over as a pick of
-their own ([[Pick - Pad Cursor and Gauntlet]]); the themes, the rest of the pad, the touch layer and the windows have
-not.
+([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]). The pad's cursor and the gauntlet came over as a
+pick of their own ([[Pick - Pad Cursor and Gauntlet]]); the themes, the rest of the pad, the touch layer and the windows
+have not.
 
 DFO's timer hourglass (`.px-hourglass`) comes over at the owner's word, read at 1c0fd681
 ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]): drawn in the kit

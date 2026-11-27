@@ -25,7 +25,8 @@ export function shipLanterns(
 ): GlowPoint[] {
   const glows: GlowPoint[] = [];
   if (lampsLit(daylight) <= 0) return glows;
-  // Each ship's slot of its hull's model, counted as `ShipModels` counts them, so a point flickers with its ship's lamps.
+  // Each ship's slot of its hull's model, counted as `ShipModels` counts them, so a point flickers with its ship's
+  // lamps.
   const slots = new Map<number, number>();
   for (const ship of ships) {
     const lanterns = lanternsOf(ship.hull);

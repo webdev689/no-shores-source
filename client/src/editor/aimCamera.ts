@@ -15,7 +15,8 @@ export const AIM_CAM_TAU = 0.22;
 const DRIFT_TAU = 0.25;
 /** Taken again on the other side, the view goes out there once it has eased this near home. */
 const SWAP_SHARE = 0.05;
-/** The eye's way round the ship is felt every this many radians of bearing (5°), and every this many metres of height. */
+/** The eye's way round the ship is felt every this many radians of bearing (5°), and every this many metres of
+ *  height. */
 const ROUND_STEP = Math.PI / 36;
 const ROUND_RISE_M = 0.5;
 

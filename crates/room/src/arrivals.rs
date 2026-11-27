@@ -137,8 +137,8 @@ impl Room {
             }
             let heading = self.heading_in(at, id);
             let abeam = ABREAST * nth.div_ceil(2) as f64 * if nth % 2 == 1 { 1.0 } else { -1.0 };
-            // shortcut: abeam of the first ship over, not of its own middle; middles tens of metres apart let their foes
-            // down on a longer slant. Place it from its own middle if that is seen.
+            // shortcut: abeam of the first ship over, not of its own middle; middles tens of metres apart let their
+            // foes down on a longer slant. Place it from its own middle if that is seen.
             let at = [first[0] + abeam * libm::cos(heading), first[1] + abeam * libm::sin(heading), at[2]];
             let leaves = last + LINGER;
             let seen = ArrivalSeen {

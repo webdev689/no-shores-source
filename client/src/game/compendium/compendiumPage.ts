@@ -300,7 +300,8 @@ export class Compendium {
           gap: 20,
           children: [
             this.books(ui, category.books, book, wide),
-            // Narrow, the book chosen is named over its chapter rather than drawn large beside it, so all stays in view.
+            // Narrow, the book chosen is named over its chapter rather than drawn large beside it, so all stays in
+            // view.
             !narrow && book && this.chosen(book, wide),
             {
               width: 'grow',

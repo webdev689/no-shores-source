@@ -98,8 +98,9 @@ one player alone. There is no list of who is in a channel. Claude's calls are in
   `/whisper`, `/tell` and a name (a Whisper); `/r`, `/reply`; `/mute` and `/unmute` and a name; `/help` or `/?` lists
   them; `//` says the rest as typed. A channel's command with nothing after it sets the field to that channel. One
   that is none says "There is no /x command. /help lists them." and keeps the line in the field.
-- **Whisper** and **Mute** in a player's interact menu ([[Interface]], "Players"): Whisper opens the field set to whisper
-  to them, and Mute mutes them (Unmute once muted). Settings lists the muted under the blocked, each with Unmute.
+- **Whisper** and **Mute** in a player's interact menu ([[Interface]], "Players"): Whisper opens the field set to
+  whisper to them, and Mute mutes them (Unmute once muted). Settings lists the muted under the blocked, each with
+  Unmute.
 
 ## Limits
 

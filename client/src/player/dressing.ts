@@ -18,7 +18,8 @@ const NOT_GARMENT =
 const HANG = /_(drape|plated_skirted|plated|skirted)$/;
 /** A weapon or shield put away, drawn on the back or the hip: it wears what the one in hand wears. */
 const PUT_AWAY = /^(sheath|slung)_/;
-/** The lights a left hand carries. The lantern is drawn in first person only: the forge's bodies have no layer for it. */
+/** The lights a left hand carries. The lantern is drawn in first person only: the forge's bodies have no layer for
+ *  it. */
 export const LIGHTS = ['torch_l', 'lantern'];
 
 /** What a body can wear: the sets of each armour piece, its garments, and what each hand can hold. */

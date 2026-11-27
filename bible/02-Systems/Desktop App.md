@@ -83,18 +83,19 @@ with a dev server or a local build); an installed copy takes only this machine's
   `discord.com`. A link or address anywhere else opens in the player's browser, once a second at most, and only a web
   address with no name or password in it does. No page opens a window of its own. The game's origin alone is granted
   the pointer's lock, the whole screen, the keyboard's lock (the keys the system would take, kept for the game while it
-  is whole-screen), and copying to the clipboard; nothing else is granted to any page, and a site that asks for a certificate of the player's gets none.
+  is whole-screen), and copying to the clipboard; nothing else is granted to any page, and a site that asks for a
+  certificate of the player's gets none.
 
 ### The bridge
 
 The preload (`preload.cts`) puts `noShoresDesktop` on the game's origin before its script runs, and on no other page
-the window passes through; the shell answers only the game's own pages under `/play/`. The game's side is `client/src/desktop.ts`, read by the shell too, so the two speak
-one set of words: what the shell tells (the app's version and platform, the graphics as chosen, launched and running,
-and the update) and what the game asks (its adapter, that it drew, a graphics API, a restart, a download, the
-pointer's lock). The page hands the shell's words to the game's worker at the start and as they change, and the
-worker's asks to the shell (`thread/pageHost.ts`, `pageAway.ts`); in a browser there is no bridge, and every ask does
-nothing. The shell hears only the game's window, from its top page on the game's pages, and checks every ask's
-shape before acting on it (`bridge.ts` `askOf`).
+the window passes through; the shell answers only the game's own pages under `/play/`. The game's side is
+`client/src/desktop.ts`, read by the shell too, so the two speak one set of words: what the shell tells (the app's
+version and platform, the graphics as chosen, launched and running, and the update) and what the game asks (its adapter,
+that it drew, a graphics API, a restart, a download, the pointer's lock). The page hands the shell's words to the game's
+worker at the start and as they change, and the worker's asks to the shell (`thread/pageHost.ts`, `pageAway.ts`); in a
+browser there is no bridge, and every ask does nothing. The shell hears only the game's window, from its top page on the
+game's pages, and checks every ask's shape before acting on it (`bridge.ts` `askOf`).
 
 The game tells its adapter as WebGPU gives it, or that none was given or its device would not start
 (`gpu.ts` `gpuReportOf`), and that it has drawn as it starts. Where the page may not take the pointer's lock without a
@@ -129,8 +130,9 @@ driver, install the card's Vulkan driver, or update macOS; opening the app again
 failure is dropped once the card, its driver or the app's Chromium changes, so the next start tries that backend again;
 choosing an API again in Settings drops its failures, for the next start (Restart now). Direct3D 11 and the second and
 third ways to Vulkan may draw a blank window that no check sees: once the game has drawn, the player is asked once a
-launch whether they can see it (with no backend left, a blank window is told what to do), the answer kept for that card, driver and
-Chromium; Go back counts as a failure, and no answer in 20 seconds starts the next backend for that launch alone.
+launch whether they can see it (with no backend left, a blank window is told what to do), the answer kept for that card,
+driver and Chromium; Go back counts as a failure, and no answer in 20 seconds starts the next backend for that launch
+alone.
 
 ### The launcher
 
@@ -184,11 +186,11 @@ it packs (`desktop.yml`), so a trial pack's update file names none (`updates.ts`
 A merge into `main` releases the app once the same commit has passed the check, when what its installers are built
 from changed since the last release (`desktop/` but its tests, `client/src/desktop.ts`, the icon's art in
 `site/src/art`, the pixel kit it is drawn with in `client/src/art`, the logo it draws in
-`client/src/cinema/logoPicture.ts`, and `desktop.yml`): `ci.yml` calls `desktop.yml`, whose `ready` job asks `.github/deploy-ready.sh`, as the rooms and the
-bot do, and each release is recorded as a deployment to the `desktop` environment for the next to compare with. The
-owner's yes to the merge covers it ([[The Desktop App Releases With Each Merge That Changes It]]). Run by hand from
-`main`, it releases all the same. A merge of the game alone releases nothing: the app plays the game the site serves.
-Each release:
+`client/src/cinema/logoPicture.ts`, and `desktop.yml`): `ci.yml` calls `desktop.yml`, whose `ready` job asks
+`.github/deploy-ready.sh`, as the rooms and the bot do, and each release is recorded as a deployment to the `desktop`
+environment for the next to compare with. The owner's yes to the merge covers it
+([[The Desktop App Releases With Each Merge That Changes It]]). Run by hand from `main`, it releases all the same. A
+merge of the game alone releases nothing: the app plays the game the site serves. Each release:
 
 1. Its commit must have passed the CI check. Its version is the commit's UTC time, `year.monthday.hourminute`
    (`2026.1125.1230`; `release/version.ts`), never bumped by hand ([[Versions Are Not Counters]]), and must be after
@@ -198,9 +200,9 @@ Each release:
    a Debian package for Linux, packed apart and their feeds made one (`release/publish.ts` `mergeFeeds`), as a Debian
    package marks the folder it is packed from, which would set an AppImage packed beside it updating as a package.
    The icon is drawn by the site's own code, as the Discord server's is (`release/icon.ts`). A Mac signing key set
-   without the notarizing key stops the release, as a Mac refuses an app signed but not notarized. Electron's fuses are set: no running as Node, no Node options or inspector from outside, the
-   app's archive checked against its hash and the only code loaded; on a Mac the app is then signed ad hoc again, as
-   setting them breaks the signature it had.
+   without the notarizing key stops the release, as a Mac refuses an app signed but not notarized. Electron's fuses are
+   set: no running as Node, no Node options or inspector from outside, the app's archive checked against its hash and
+   the only code loaded; on a Mac the app is then signed ad hoc again, as setting them breaks the signature it had.
 3. Only when every installer is there (`release/publish.ts`) are they put on R2 under `desktop/`, then `latest.json`,
    then the feeds, so no copy reads a feed that names a file not yet there.
 

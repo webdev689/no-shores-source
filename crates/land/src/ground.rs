@@ -479,7 +479,8 @@ impl Ground {
                 let across = 1.0 - (distance / half) * (distance / half);
                 return ground.min(river.level - river.depth * across * across);
             }
-            // From the channel's edge (its surface, or the land where that lies lower, as in a lake it crosses) to the land.
+            // From the channel's edge (its surface, or the land where that lies lower, as in a lake it crosses) to the
+            // land.
             let edge = ground.min(river.level);
             return edge + (ground - edge) * smooth(half, half + BANK_M, distance);
         }

@@ -1,7 +1,7 @@
 // The activities' screens, wired by the game: what the menu's Journal reads for its timers, quests and bounties, the
-// card E opens at a dungeon's entrance and the Playlist a port's island's tile opens, drawn as a layer of the interface. It
-// keeps the last word of the character any room sent, so the screens read the same at sea as ashore, and builds their
-// words from the rules (`activityWords.ts`), never judging a rule itself.
+// card E opens at a dungeon's entrance and the Playlist a port's island's tile opens, drawn as a layer of the
+// interface. It keeps the last word of the character any room sent, so the screens read the same at sea as ashore, and
+// builds their words from the rules (`activityWords.ts`), never judging a rule itself.
 import type { Layer } from '../ui/stack.ts';
 import { enterAskedRun } from './runAsked.ts';
 import { enterTestRun } from './characters/testLaunch.ts';

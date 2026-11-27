@@ -2,7 +2,8 @@
 //! section and over ground a body walks, the figure arriving with the player keeping up; each race's way between its
 //! checkpoints inside its section, over ground a body walks and past no box, run within its clock with a tenth to
 //! spare at a run, and what it takes at a run and at a gallop (printed); each puzzle's points on ground the player
-//! reaches from its place; each defence's waves standing in full and coming at the ward; and each horde's at the player.
+//! reaches from its place; each defence's waves standing in full and coming at the ward; and each horde's at the
+//! player.
 
 use super::*;
 use crate::asks::Asked;
@@ -217,8 +218,8 @@ fn ground_walk(
     None
 }
 
-/// A run over the ground between a race's checkpoints as a body runs it, from the first's reach, through each between, to
-/// entering the last's; and how far along it each after the first was entered.
+/// A run over the ground between a race's checkpoints as a body runs it, from the first's reach, through each between,
+/// to entering the last's; and how far along it each after the first was entered.
 fn race_run(node: &bake::NodeFile, checkpoints: &[Place]) -> Option<(Vec<[f64; 2]>, Vec<f64>)> {
     let marks: Vec<Box<dyn Fn([f64; 2]) -> bool + '_>> = checkpoints
         .iter()
@@ -426,8 +427,8 @@ fn every_hordes_waves_stand_in_full_round_its_place_on_its_nodes_ground_and_come
     }
 }
 
-/// Where a walk at a body's walking pace along a way to an unseen step's middle ends: `Ok` met unseen, this far from the
-/// middle; `Err` seen, this far; none where no body stands on the way.
+/// Where a walk at a body's walking pace along a way to an unseen step's middle ends: `Ok` met unseen, this far from
+/// the middle; `Err` seen, this far; none where no body stands on the way.
 fn walked_in(node: &bake::NodeFile, key: [usize; 3], place: &Place, way: &[[f64; 2]]) -> Option<Result<f64, f64>> {
     let (mut room, player) = on_step_where(node, key, way[0])?;
     run_baked(&mut room, 3);

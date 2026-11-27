@@ -130,9 +130,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **A beginning, a middle and an end, with more ways** ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]],
   [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]]). A dungeon has a beginning, the way in's
   room on the top storey of the first block; a middle, the blocks between; and an end, on the deepest storey of the
-  last block a walk reaches, where the Reeve and the return portal stand. The main way (`main_way`) is the walk from the way in's
-  cell to the end room's nearest, each step back to the lowest-numbered cell one step nearer the way in; side ways,
-  loops, vaults and the storeys round it are found by looking round.
+  last block a walk reaches, where the Reeve and the return portal stand. The main way (`main_way`) is the walk from the
+  way in's cell to the end room's nearest, each step back to the lowest-numbered cell one step nearer the way in; side
+  ways, loops, vaults and the storeys round it are found by looking round.
 - **Its size.** A dungeon is two to five blocks of 51.2 m, each count as likely, drawn on its own lane
   (`size:<seed>`). An Elite Dungeon is four or five (`ELITE_BLOCKS`), each as likely, drawn on the same lane
   (`Dungeon::forge_within`), so a seed's other draws are as a patrol's dungeon's would be. The blocks stand in a
@@ -191,10 +191,10 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   is the cheapest way: rock costs 3, a room 2, a corridor 1, so ways reuse ways. A way never crosses the rim but at a
   doorway, never cuts a stone, and never takes a cell its plan keeps (a flight, the rock beside it, a gallery's open
   air and the rock round it). Over 2000 dungeons a dungeon holds 4.4 loops on average and 24 at most, counted over
-  its rooms and open cells, a flight's cell one on both its storeys. A storey that is not one walk, has two dead ends (rooms of one doorway) or more, has no
-  room and no gallery, or (the way in's) no room against rock for its exit door, tries again on the next of sixteen
-  seeds, and past them takes its simplest form, one room of 3 by 3: about one storey in a hundred. A dungeon is one
-  walk, since each storey is, each flight joins its two and the doorways join the blocks.
+  its rooms and open cells, a flight's cell one on both its storeys. A storey that is not one walk, has two dead ends
+  (rooms of one doorway) or more, has no room and no gallery, or (the way in's) no room against rock for its exit door,
+  tries again on the next of sixteen seeds, and past them takes its simplest form, one room of 3 by 3: about one storey
+  in a hundred. A dungeon is one walk, since each storey is, each flight joins its two and the doorways join the blocks.
 - **Every side way leads somewhere.** A storey has one dead end at most, and each dead end holds the way in, the end,
   a vault, a landmark, or its storey's chest (`chest_rooms`, the rooms its chests stand in first). A way that ends
   does so at a landing and its flight, or at a doorway onto the next block. About a quarter of the rooms are dead ends.
@@ -213,13 +213,14 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Ceilings** (`ceiling`): a room's form, only a look; it stands at its own height whatever its form. Under an
   arched roof a square room or an octagon takes a dome, and a hall of alcoves or a rectangle whose longer side is at
   least half again its shorter a vault along it; a cave and every cavern takes rough rock; any other room is flat.
-- **Torches**, 2.1 m up a wall over its own floor and 0.35 m off it, each lighting 8 m. Two flank the portal first, so the end of the
-  way is lit and marked before it opens: on its wall 1.55 m either side of its middle, past its arch (1.3 m) and a
-  sconce's reach (0.2 m), or, where its cell is the room's corner that way, in the middle of that side wall. Then on each room's quiet cells on every third
-  diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; at
-  each landing, so a flight is lit from both its ends, a landing two flights share once; and on every fourth corridor cell of a block storey, row by
-  row, but one already lit. Each of these stands in the middle of its cell's wall, none
-  over the exit door or the portal, and none within 2.4 m of another of its room's, which would read as a pair.
+- **Torches**, 2.1 m up a wall over its own floor and 0.35 m off it, each lighting 8 m. Two flank the portal first, so
+  the end of the way is lit and marked before it opens: on its wall 1.55 m either side of its middle, past its arch (1.3
+  m) and a sconce's reach (0.2 m), or, where its cell is the room's corner that way, in the middle of that side wall.
+  Then on each room's quiet cells on every third diagonal, one for every sixteen cells of its rectangle, and on any of
+  its cells where none of those has a wall; at each landing, so a flight is lit from both its ends, a landing two
+  flights share once; and on every fourth corridor cell of a block storey, row by row, but one already lit. Each of
+  these stands in the middle of its cell's wall, none over the exit door or the portal, and none within 2.4 m of another
+  of its room's, which would read as a pair.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
   to 1.6 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A hewn room (no cave) at least 4 cells each
   way stands a pillar 0.7 m square at every second inner corner whose four cells are its own.
@@ -244,14 +245,15 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   hangs over head height and fills nothing. None stands on a doorway's cell (one beside a corridor, so no frame is
   blocked), the way in's cell, the portal's or the Reeve's post, against a torch's wall, or within 0.5 m of a torch's
   flame; and no prop or fixture with a solid stands within 3.2 m of the Reeve's post, so his cache and the fight round
-  him find open floor (a doorway's jambs and a great room's pillars stand where the Forge lays them). A piece stands only where the room's free cells, those holding no solid, stay one
-  walk and number as many as its band of foes (`posts_for`: one for each ten cells, two to four).
+  him find open floor (a doorway's jambs and a great room's pillars stand where the Forge lays them). A piece stands
+  only where the room's free cells, those holding no solid, stay one walk and number as many as its band of foes
+  (`posts_for`: one for each ten cells, two to four).
 - **The way on** (`way_on`): the doorway the main way leaves a room by. Before its purpose furnishes a room on the
   main way (but the end), a pair of braziers flanks its way on: on the room's wall either side of it where both cells
   there are its quiet cells with rock on that wall, else in the corridor's cell past it (`flank_outside`), past the
   jambs either side of the opening, 0.05 m clear of them, where no room, flight or gallery's open air opens off
-  that cell across the way and no torch burns within 0.5 m. A room off the main way has no way on, and its side ways take none. Over 2000 dungeons
-  braziers flank 6 ways on in 10.
+  that cell across the way and no torch burns within 0.5 m. A room off the main way has no way on, and its side ways
+  take none. Over 2000 dungeons braziers flank 6 ways on in 10.
 - **Lights.** Beside its torches a purpose lights its room: braziers (a solid 0.6 m square and 1 m high) either side
   of the end's door or the way on, or nearest the middle; candles on its tables', lecterns', altars' and coffins'
   tops; crystals against the caverns' walls (a solid 0.6 m by 0.4 m, 0.9 m high), and glowing fungus in a Fungus
@@ -260,8 +262,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Landmarks** (`place_landmarks`): set pieces a dungeon is remembered by, three a style, each with its solids and
   glows (`content/dungeon/landmarks.json`, which the crate's `build.rs` reads as it builds). A dungeon of
   two or three blocks stands one, of four or five two, none twice, each in a room of its look's style but never the
-  way in's, the end or a vault. Rooms are tried from the middle of the walk outward, each style's landmarks in an order drawn
-  on the lane `landmark:<seed>`.
+  way in's, the end or a vault. Rooms are tried from the middle of the walk outward, each style's landmarks in an order
+  drawn on the lane `landmark:<seed>`.
 - **A landmark's place.** It covers whole cells of its room. A free one stands nearest the room's middle at a drawn
   quarter turn, clear of the room's rim where any spot is, else with its edges on the rock. A wall one stands its
   back row on rock along its whole width, faces away from it with its other sides in the room, nearest that wall's
@@ -314,9 +316,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   place that is no Elite Dungeon. An Elite Dungeon's answers its encounters too (above, "Encounters"): each seal's
   kind, room, pieces, pads (min x, min y, max x, max y, top, bottom), drowned cells and doorways' middles (x, y, z);
   the anchors; and
-  how near a piece a player stands on it. The room door's `dungeon` and `layout` ask it. Five dungeons' answers are pinned by
-  their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine: four patrols', one of
-  five blocks whose last is a style deeper, and one laid by a seed and a style.
+  how near a piece a player stands on it. The room door's `dungeon` and `layout` ask it. Five dungeons' answers are
+  pinned by their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine: four
+  patrols', one of five blocks whose last is a style deeper, and one laid by a seed and a style.
 
 ## In the rooms
 
@@ -353,9 +355,10 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   one at the Court, each at the doorway cell the walk from the way in enters its room by, facing in. One is won as its
   band falls, its seal breaks or the Court's Boss wakes (with no seal, once a living player has stood in the Court with
   it); a player who respawns stands at the one won farthest along by its room's walk, the Court's always last
-  (a seal's room may lie farther by walk than the end), before any at the arrival, and every player is told "Checkpoint reached" as it moves on. In a run a band whose fall
-  won its room's checkpoint does not stand again while anyone is in the room; in a shared dungeon it stands again as
-  any group does, and the checkpoint falls back to the one won before it.
+  (a seal's room may lie farther by walk than the end), before any at the arrival, and every player is told "Checkpoint
+  reached" as it moves on. In a run a band whose fall won its room's checkpoint does not stand again while anyone is in
+  the room; in a shared dungeon it stands again as any group does, and the checkpoint falls back to the one won before
+  it.
 - **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Under feet at z
   (`height_under`) it is the highest span floor or flight's slope at or below a step (0.5 m) over them, or a solid's
   top where the solid's bottom is; with none, a wall 10 m over the feet's storey. So a body walks down a flight and up
@@ -370,9 +373,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   to a body but on its own flight or on the landing at its end on that storey, as the page draws it (`open_from`), so a
   body beside a flight, past its foot or before its head stands its half-width off its side. Inside a solid, as a shove
   might leave it, its nearness is less than nothing by its depth, so it walks out and never deeper; its feet, lifted to
-  the solid's top, are held as on the floor under it, so a solid near a lower room's ceiling never holds it in. Movement climbs
-  blocks, never a ground's walls, so no solid is climbed; an Elite Dungeon's Ascents' pads are its room's blocks, and
-  are climbed, their tops kept under the ceiling. Each cell keeps the solids
+  the solid's top, are held as on the floor under it, so a solid near a lower room's ceiling never holds it in. Movement
+  climbs blocks, never a ground's walls, so no solid is climbed; an Elite Dungeon's Ascents' pads are its room's blocks,
+  and are climbed, their tops kept under the ceiling. Each cell keeps the solids
   within a half-width of it, so a move looks at a few. The browser predicts on the same ground (`fighter_dungeon`).
 - **What a line meets** (`line_walled`): rock at any height of its storey (each end's, as feet there are held, so a
   line high in a tall lower room meets that room's rock), rock or a slab between storeys wherever
@@ -389,9 +392,10 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   where it is one, rock a wall 10 m over the top storey) with the rock between each span and the one over it as a
   block with a bottom (`slabs`), and over a column's top span, unless it is the top storey's floor open as a line
   sees it, rock from its ceiling to 10 m over the top storey, as a rock column stands, so the firing spots of the top
-  storey see no lane over a lower room; every solid on its own floor as its colliders, each a body's height at least over
-  that floor, since the ground walls a solid however low, and an Ascent's pads with them, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It lays no
-  links: no foe paths up a solid's or a pad's side or off its top.
+  storey see no lane over a lower room; every solid on its own floor as its colliders, each a body's height at least
+  over that floor, since the ground walls a solid however low, and an Ascent's pads with them, and kept to the floor
+  joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It lays no links: no foe paths up a solid's
+  or a pad's side or off its top.
 - **Its garrison** ([[Enemies]]): the end foe (the Reeve, a Miniboss, or an Elite Dungeon's Boss, held back until its
   seals are broken: "Encounters") alone on the end room's cell nearest its middle; a band of
   two to four in each other room past the way in's, one foe for each ten of its cells (`posts_for`), on its free cells
@@ -422,14 +426,14 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   ([[Gear]], "A find"). Each player's gear counts the chests they have opened of all it stands, and the screen names
   them under the place's name ("Chests 2 of 5"). It makes one of its props of the holding families in four
   searchable, 16 at most, none in a seal's room nor one that rock and solids leave no body room to stand beside. All
-  are drawn again as the cache shuts, when the end foe stands again, never at an Abyss wipe. Each player opens each once, as a patrol's
-  ([[Server]], "Chests and containers").
+  are drawn again as the cache shuts, when the end foe stands again, never at an Abyss wipe. Each player opens each
+  once, as a patrol's ([[Server]], "Chests and containers").
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
   draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for
   the Caverns and the Mines. An Elite Dungeon's node keeps its open-air approach and lays one entrance, to the
-  dungeon `elite_laid` lays, drawn from its id as a patrol's are (`lay_elite_entrance`). The six Daggerfall's blocks stand keep their numbers on the wire (0 to 5), raised as
-  those blocks raise them:
+  dungeon `elite_laid` lays, drawn from its id as a patrol's are (`lay_elite_entrance`). The six Daggerfall's blocks
+  stand keep their numbers on the wire (0 to 5), raised as those blocks raise them:
 
 | Model | Stood by | Raised (m) |
 |---|---|---|
@@ -449,23 +453,26 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 
 Every Elite Dungeon run, at Normal, as the week's two and from both playlists, is more than a run of fights: seals to
 break before its Boss stands, and a Court round the Boss
-([[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]; Claude's calls in [[The Playlist and Its Dungeons as Claude Shapes Them]], "Encounters"). A room
-lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea island's dungeon has any.
+([[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]; Claude's calls in
+[[The Playlist and Its Dungeons as Claude Shapes Them]], "Encounters"). A room lays them where its end foe is a Boss
+(`laid_dungeon`); no patrol's or sea island's dungeon has any.
 
 - **The plan** (`plan_encounters`) is laid from the dungeon alone, so the room and the page lay the same: its draws on
   a lane of its own, named for the dungeon's cells, its way in and its portal (`encounters:<hash>:<way in>:<portal>`),
   its maths + - * / and comparisons. A dungeon of four blocks holds two seals and one of five three, each in its own
-  room, never two of a kind. The rooms past the way in's, but the end, every landmark's and every vault's (which stands its gold chest), are taken in walk order
-  and split into as many stretches as there are seals. For each, while no Ascent is laid, an Ascent is tried first in
-  every room of its stretch (never the first room of the walk where there are four or more), nearest the stretch's
-  middle first; else each kind not yet laid, in an order drawn once, in the room nearest the middle, then outward, and
-  the first that fits is laid there. A room too small, too low or too cluttered for a kind is passed over. Every one
-  of the 18 lays its full count; nine lay an Ascent, and a test holds it to nine or more.
+  room, never two of a kind. The rooms past the way in's, but the end, every landmark's and every vault's (which stands
+  its gold chest), are taken in walk order and split into as many stretches as there are seals. For each, while no
+  Ascent is laid, an Ascent is tried first in every room of its stretch (never the first room of the walk where there
+  are four or more), nearest the stretch's middle first; else each kind not yet laid, in an order drawn once, in the
+  room nearest the middle, then outward, and the first that fits is laid there. A room too small, too low or too
+  cluttered for a kind is passed over. Every one of the 18 lays its full count; nine lay an Ascent, and a test holds it
+  to nine or more.
 - **Where pieces stand.** A piece stands on a spot of its room: a cell's middle or one of its four quarters' (0.8 m
-  each way toward a corner), never on the way in's or the portal's cell, nor a doorway's (but an anchor), each 0.9 m from
-  every solid and 1.4 m from every prop's and fixture's middle, so no brazier or candle stands on a piece. Only the
+  each way toward a corner), never on the way in's or the portal's cell, nor a doorway's (but an anchor), each 0.9 m
+  from every solid and 1.4 m from every prop's and fixture's middle, so no brazier or candle stands on a piece. Only the
   solids, props and fixtures of its room's storey count, for a piece, a plate's line of sight and an Ascent's pads and
-  leaps alike: another storey's stand over or under its floor. Runes stand 2 m apart at the least, plates 6.4 m (two cells).
+  leaps alike: another storey's stand over or under its floor. Runes stand 2 m apart at the least, plates 6.4 m (two
+  cells).
 - **Counted by the living in the room.** Every seal counts the living players standing in its room's cells: one down
   or away is not counted, for plates, waves or the stone.
 - **The Litany** (a puzzle): four to six runes, drawn, on its floor. While it runs they show in turn, each a second,
@@ -478,28 +485,29 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
 - **The Weighing** (split up): three plates as far apart as the room allows among the spots in plain view from the
   doorway its room is entered by (the one nearest the way in on the walk: no solid on the line from that doorway's
   middle, a body's width and a hand wide) and ahead of a body coming in by it, within about 70 degrees either side of
-  the way in from the open cell before it (`PLATES_AHEAD`, a cosine of 0.35), so the puzzle is seen on coming in; or the two farthest while fewer than
-  three living players stand in its room. A plate stood on by a living player within 1 m stays held 3 s after the last steps
-  off, and for a lone player the walk between its two plates besides (`plate_linger`), so a lone player walking, not
-  only sprinting, can hold both. It is held each tick every plate in play is, and broken once held 20 s in all; a wave
-  comes at its doorways 3 s after it starts, then every 12 s.
+  the way in from the open cell before it (`PLATES_AHEAD`, a cosine of 0.35), so the puzzle is seen on coming in; or the
+  two farthest while fewer than three living players stand in its room. A plate stood on by a living player within 1 m
+  stays held 3 s after the last steps off, and for a lone player the walk between its two plates besides
+  (`plate_linger`), so a lone player walking, not only sprinting, can hold both. It is held each tick every plate in
+  play is, and broken once held 20 s in all; a wave comes at its doorways 3 s after it starts, then every 12 s.
 - **The Ascent** (a climb): four to six pads, each 1.6 m square. The first stands on a cell beside the doorway a
   company comes in by, reaching back to that doorway's cell, 1.6 m high, mantled from the dry doorway. Each next stands
   a leap from the one before, 4.4 m to 5.2 m edge to edge along the line between their middles, through open air (no
   solid, and no cell but the room's own, within a body's width and a hand of that line, as the dungeon's solids and
-  rock are walls to a body however high it leaps: no leap crosses a cave's bitten corner), and every two pads stand 4.4 m apart edge to edge at the least: a run off the edge falls short and only a
-  running jump crosses. Each rises 0.4 m over the one before, at most to the room's lowest ceiling less a body's height
-  and 0.6 m (a jump's rise and a margin), the last 0.3 m; every pad after the first stands 1.9 m or more, over a
-  mantle's reach (1.8 m) from the floor, so a room whose ceiling is under 4.3 m lays none (ceilings come in 0.4 m
-  steps, so 4.4 m at the least). The pads' middles are searched on a
-  0.8 m grid over the room's cells but its doorways', torches', the way in's and the portal's, clear of every solid,
-  the longest run kept. Its pads are blocks a body stands on, jumps between and climbs ([[Movement]]), and walls on the
-  navmesh. Its floor (its room's cells but its doorways') is foul water while the seal holds: while it runs, once a
-  second it takes 12% of their health from every living player standing on it (`Drowned`, told to that player). Every
-  living player in its room standing on the seal stone, on the top pad's middle, together for 2 s in all breaks it.
-  Every Ascent of the 18 is proven: a body run by the movement crate from the doorway, taking its run at each leap from
-  the far side of its pad and jumping at the edge, reaches the stone without touching the foul floor; and from each pad
-  the next is reached by a running jump and never by a run with no jump without touching the floor.
+  rock are walls to a body however high it leaps: no leap crosses a cave's bitten corner), and every two pads stand
+  4.4 m apart edge to edge at the least: a run off the edge falls short and only a running jump crosses. Each rises
+  0.4 m over the one before, at most to the room's lowest ceiling less a body's height and 0.6 m (a jump's rise and a
+  margin), the last 0.3 m; every pad after the first stands 1.9 m or more, over a mantle's reach (1.8 m) from the floor,
+  so a room whose ceiling is under 4.3 m lays none (ceilings come in 0.4 m steps, so 4.4 m at the least). The pads'
+  middles are searched on a 0.8 m grid over the room's cells but its doorways', torches', the way in's and the portal's,
+  clear of every solid, the longest run kept. Its pads are blocks a body stands on, jumps between and climbs
+  ([[Movement]]), and walls on the navmesh. Its floor (its room's cells but its doorways') is foul water while the seal
+  holds: while it runs, once a second it takes 12% of their health from every living player standing on it (`Drowned`,
+  told to that player). Every living player in its room standing on the seal stone, on the top pad's middle, together
+  for 2 s in all breaks it. Every Ascent of the 18 is proven: a body run by the movement crate from the doorway, taking
+  its run at each leap from the far side of its pad and jumping at the edge, reaches the stone without touching the foul
+  floor; and from each pad the next is reached by a running jump and never by a run with no jump without touching the
+  floor.
 - **The Holdfast** (a defence): a relic over the spot nearest its room's middle whose ring, 3 m round, lies on the
   room's floor all four ways. It is held each tick a living player stands in the ring, and broken once held 45 s in
   all. A wave comes at its doorways 2 s after it starts, then every 12 s. Each living foe in the ring drains a twentieth
@@ -509,7 +517,8 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   garrison does (a wave's foes do not hold it), then runs until broken (`SealBroken`, told to every player with how
   many are broken). A wave is one of the dungeon's own Major or Elite foes for each living player in its room, two to
   four, drawn from its garrison's table at its foes' levels, standing at the room's doorways and hunting the nearest
-  living player on its storey (one on another is never near, `seals::near`); a seal's waves stand no more while eight of them live, nor past the room's most foes.
+  living player on its storey (one on another is never near, `seals::near`); a seal's waves stand no more while eight of
+  them live, nor past the room's most foes.
 - **Spoilless.** Every foe an encounter stands (its waves, a wrong rune's, a ward's) drops nothing when killed, as a
   defence tried again stands foes that drop nothing (`quests.spoilless`): kills there pay their experience, and the
   seal's breaking and the cache stay the reward. An unfinished seal's waves keep coming, so they could otherwise be
@@ -517,15 +526,16 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
 - **The Court** (`court.rs`). The Boss is held back off its post, its post never counted cleared, until every seal is
   broken; then it stands (`BossWoke`), and its health is made a match for the living players then, half again for each
   beyond the first, as a public event's great foes are (`toughen`). At two thirds of its health, and again at one
-  third, a blow that would take it to that share or past is held there and the Boss is warded (`WardRaised`): a wave of the dungeon's
-  foes for each living player, two to four, stands at its anchors, and another 15 s on while the ward still stands.
-  While warded the Boss runs back to its post, by the navmesh from off its floor (a flight or another storey), and stands there (`hold_ward`), striking where it stands, and every 8 s
-  from the ward rising it slams: a ring 4 m round it shown 2 s, then 30% of their health from every living player
-  inside it (`BossSlammed`). Its three anchors stand in the end room 2.4 m or more from its post, each the spot
-  farthest from the post and those taken before. A living player within 1 m of an anchor fills it; each filled for
-  3 s, the ward breaks (`WardBroken`). With three or more living players, an anchor left empties 6 s after its last
-  player leaves unless all three are filled; with one or two it keeps what it holds. A fallen Boss never stands again
-  in its run, though the other posts do, so its Court is fought once a run (`stands_again`).
+  third, a blow that would take it to that share or past is held there and the Boss is warded (`WardRaised`): a wave of
+  the dungeon's foes for each living player, two to four, stands at its anchors, and another 15 s on while the ward
+  still stands. While warded the Boss runs back to its post, by the navmesh from off its floor (a flight or another
+  storey), and stands there (`hold_ward`), striking where it stands, and every 8 s from the ward rising it slams: a ring
+  4 m round it shown 2 s, then 30% of their health from every living player inside it (`BossSlammed`). Its three anchors
+  stand in the end room 2.4 m or more from its post, each the spot farthest from the post and those taken before. A
+  living player within 1 m of an anchor fills it; each filled for 3 s, the ward breaks (`WardBroken`). With three or
+  more living players, an anchor left empties 6 s after its last player leaves unless all three are filled; with one or
+  two it keeps what it holds. A fallen Boss never stands again in its run, though the other posts do, so its Court is
+  fought once a run (`stands_again`).
 - **The Reckoning.** From the first ward broken, while the Boss stands, every 40 s: a ring of light 2.5 m wide at one
   anchor, in turn, shown 10 s, then 70% of their health from every living player it reaches outside it (one on
   another storey, however close across, is outside), a blow from
@@ -602,9 +612,9 @@ as standing none (`readDungeon`).
   Where a pillar's, a torch's or the portal's kit pieces are laid (`kitsOf`), the mesh leaves out its own pillar,
   bracket or arch, and draws its own wherever they are not; the jambs, the portal's face and the exit door stay the
   mesh's.
-- **Its packs** (`dungeonModules.ts`, [[Dungeon Modules]]): the packs of every style its looks wear are fetched behind the veil before it
-  is first drawn (`stylePacks`). A style whose pack is not published, or fails to come within 15 s, is drawn as
-  above, with one warning; a pack that failed is asked for again when the next dungeon is entered.
+- **Its packs** (`dungeonModules.ts`, [[Dungeon Modules]]): the packs of every style its looks wear are fetched behind
+  the veil before it is first drawn (`stylePacks`). A style whose pack is not published, or fails to come within 15 s,
+  is drawn as above, with one warning; a pack that failed is asked for again when the next dungeon is entered.
 - **Its kits** (`dungeonKits.ts`) are placed from the layout alone, as `content/dungeon/kits.json` says: a door in
   every doorway, one taller than its frame (the lower of its two ceilings) squeezed above 2.4 m so its top meets the
   frame, what stands under 2.4 m as built and none stretched up; a pillar's base, its shaft stretched to its capital,
@@ -634,11 +644,11 @@ as standing none (`readDungeon`).
 - **Its ceilings** (`dungeonCeilings.ts`): a room's ceiling is flat, a barrel vault across its narrower side, a dome
   over its middle, or rough rock over a cave. A vault rises up to 1.6 m and a dome up to 2.2 m, each at most 0.6 of
   its half span; under a storey (a room on any storey but the top) at most to 0.4 m under that storey's floor, so a
-  room 5.6 m high rises 2.0 m at most. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m
-  (`dungeonCaveWall.ts`). Behind what stands against a rock wall the rock is drawn flat, from the floor up to its
-  top and along its span and 0.15 m past either end, easing back to its bulge over a further 0.3 m: each kit piece,
-  and the portal's and the exit door's arches (±1.3 m of the wall's middle, 3.1 m high, the most an arch spans and
-  rises). The wall is cut at those edges, each piece within one of its lattice's triangles, so everywhere else the
+  room 5.6 m high rises 2.0 m at most. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge
+  up to 0.22 m (`dungeonCaveWall.ts`). Behind what stands against a rock wall the rock is drawn flat, from the floor up
+  to its top and along its span and 0.15 m past either end, easing back to its bulge over a further 0.3 m: each kit
+  piece, and the portal's and the exit door's arches (±1.3 m of the wall's middle, 3.1 m high, the most an arch spans
+  and rises). The wall is cut at those edges, each piece within one of its lattice's triangles, so everywhere else the
   rock bulges exactly as its lattice lays it.
   Where two cells' ceilings differ along an edge, the higher one's side is closed up to it.
 - **Its light** (`dungeonLight.ts`): each torch, fixture and landmark's glow burns in its own colour and reach
@@ -658,10 +668,10 @@ as standing none (`readDungeon`).
   past the 23rd). A space is a mask: its storey's bit and its joins' bits. A surface's space is its storey's (the one
   its height lies on, as `storeyUnder` gives it) and the joins its cell lies in (`space_at` in the shader, from each
   cell's word: its look, `CELL_ROCK`, and its joins' bits from `JOINS_SHIFT`); a figure's the same (`lightAt`). A
-  light (`Light.space`, a u32 lane of its own, its bits as they are) reaches its storey and each join of its storey with a cell
-  within its reach. The shader skips a light whose mask shares no bit with the surface's, still water's gleams too.
-  The 32 lights are picked by distance among those that reach a space the eye may see (`seenFrom`): its storey's, and
-  within 16 m of a join the join's and the storey beside it. The clusters pick no light by storey, so the
+  light (`Light.space`, a u32 lane of its own, its bits as they are) reaches its storey and each join of its storey with
+  a cell within its reach. The shader skips a light whose mask shares no bit with the surface's, still water's gleams
+  too. The 32 lights are picked by distance among those that reach a space the eye may see (`seenFrom`): its storey's,
+  and within 16 m of a join the join's and the storey beside it. The clusters pick no light by storey, so the
   storeys cost a mask test a listed light.
 - **The camera on a flight** keeps under its sloped ceiling: the ceiling over a point of a flight is its slope there
   and 3.2 m (`ceilingAt`).
@@ -683,8 +693,8 @@ as standing none (`readDungeon`).
   brazier's embers, on each candle's wick, and along a hearth (`torchFlame`, `fixtureFlames`), each seeded by its
   light's number, so a flame and the light it casts flicker together ([[Lights as Claude Builds Them]]). A caged
   lantern (the hanging fixture, the passages' lamp and dead lamps) burns no fire: its glass glows and flickers with
-  its light ([[An Enclosed Light Hides Its Flame]]). The dungeon's scene draws the flames over the finished picture (`DUNGEON_FLAMES`), hidden by
-  whatever stands nearer; past where its tongues read, a flame is its glow alone.
+  its light ([[An Enclosed Light Hides Its Flame]]). The dungeon's scene draws the flames over the finished picture
+  (`DUNGEON_FLAMES`), hidden by whatever stands nearer; past where its tongues read, a flame is its glow alone.
 - **Glows and water** (`dungeonShaders.ts`): an ember, a lantern's glass, a kit piece's or a landmark's flame, a
   crystal, a fungus cap and the open portal move with the light nearest them its cluster lists, an ember and glass
   flickering with their light, the rest breathing (`nearest_seed`). A crystal's and a lantern's glass glow by each
@@ -732,11 +742,11 @@ as standing none (`readDungeon`).
   while a ward stands, brighter under a beam and filling as it is stood on, a ring round the Boss and a dome of light
   over it; the slam's ring 4 m round the Boss, filling as it comes; a red ring round the Boss through Fury; a
   Reckoning's ring of light under a
-  tall beam (12 m, or up to its anchor's ceiling where that is lower) while it is shown, and a flash from the light as it lands. Each beam fades as the camera's eye comes near
-  it along the ground, gone within 1.5 m and whole from 4 m, so one beside the camera never stands across the view;
-  the rings on the floor stay (`encounterMarks`' `eye`). Under the compass the public event's banner
-  shows the seals broken of how many and, away from every seal, the nearest unbroken one by its room's middle in the
-  banner's one line to the next; in a seal's room, that seal with its task in a line
+  tall beam (12 m, or up to its anchor's ceiling where that is lower) while it is shown, and a flash from the light as
+  it lands. Each beam fades as the camera's eye comes near it along the ground, gone within 1.5 m and whole from 4 m, so
+  one beside the camera never stands across the view; the rings on the floor stay (`encounterMarks`' `eye`). Under the
+  compass the public event's banner shows the seals broken of how many and, away from every seal, the nearest unbroken
+  one by its room's middle in the banner's one line to the next; in a seal's room, that seal with its task in a line
   ("Step on the runes in the order they light", "Hold all three plates together" or "Hold both plates together",
   "Climb to the seal stone together", "Hold the relic's ring") and its progress (an Ascent's "2 of 4" on the stone, a
   Holdfast's "Relic 40%", red under 30%; an Ascent's "Foul water harms" in red); once the Boss wakes, the Court
@@ -747,14 +757,14 @@ as standing none (`readDungeon`).
   middle of the view, large and brief, the Court calls "Get clear!" as its slam is shown and "Into the light!" as the
   Reckoning's warning starts, the light first where both are ([[Interface]], "A raid's call"). While an Ascent's foul
   water harms the player (from its harm told to them, held while their feet stay on its floor, at most 5 cm up), the
-  view's edge turns sick green, fading as they leave it. The compass marks each unbroken seal's room, then the end room once the Boss
-  wakes, until it falls. It slides in afresh as the Boss wakes, a seal breaks or a ward rises or breaks; the music
-  stings as a seal breaks or a ward is won and as the Boss wakes, its mood holds tense while a seal runs and at its peak
-  in the Court, and the Boss's score plays its part by the wards broken (its last stand still by its health). A ward
-  rising rings its own sound at the Boss; a Reckoning's last three seconds tick and it lands with thunder at its light;
-  the slam thuds at the Boss; the foul floor's harm sounds on the player it harms. A wrong rune, a drained relic and a
-  relic falling below three tenths (once each time, as the banner reddens) play the refused sound. The page's fighter predicts on the pads
-  (`fighter_dungeon`).
+  view's edge turns sick green, fading as they leave it. The compass marks each unbroken seal's room, then the end room
+  once the Boss wakes, until it falls. It slides in afresh as the Boss wakes, a seal breaks or a ward rises or breaks;
+  the music stings as a seal breaks or a ward is won and as the Boss wakes, its mood holds tense while a seal runs and
+  at its peak in the Court, and the Boss's score plays its part by the wards broken (its last stand still by its
+  health). A ward rising rings its own sound at the Boss; a Reckoning's last three seconds tick and it lands with
+  thunder at its light; the slam thuds at the Boss; the foul floor's harm sounds on the player it harms. A wrong rune, a
+  drained relic and a relic falling below three tenths (once each time, as the banner reddens) play the refused sound.
+  The page's fighter predicts on the pads (`fighter_dungeon`).
 - **The return portal** (`layout.portal`): an arch of the end room's trim round a face, dark while the cache is shut
   and glowing, lighting the room, while it is open; E "Leave" within 2.5 m while it is open. The room keeps, with the
   body a player leaves with, whether they left by a way out: within 3.5 m of the exit door or the open portal, and

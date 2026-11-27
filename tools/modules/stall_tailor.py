@@ -135,7 +135,8 @@ def stall_tailor(module):
                   stripes=8)
     fittings.counter(module, -2.4, 2.4, FRONT_Y - 0.9, high=1.0)
     folded_stacks(module, FRONT_Y - 0.55, 1.0)
-    # Where a hanging shop sign's bracket is fixed, high on the east front post, facing along the front away from its middle.
+    # Where a hanging shop sign's bracket is fixed, high on the east front post, facing along the front away from its
+    # middle.
     module.socket('sign', (HALF_X - 0.15, FRONT_Y, 3.6), (1, 0))
     # The atelier's goods and work.
     bolt_rack(module, -5.3, -1.4, HALF_Y - 1.1)

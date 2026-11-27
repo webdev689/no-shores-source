@@ -28,8 +28,9 @@ DFO Online's procedural textures, brought over whole ([[Pick - Procedural Textur
 [[Every Island Is Seen Whole and Reached by Nodes]]). They paint every picture the forged buildings, props and room kit
 wear, and the ground's twelve tile sets, in code; the land, the islands at sea and the passages' hollows wear the
 ground's tiles, and the islands' rock the caverns' layered wall ([[Island Drawing]],
-[[The Islands and the Passages' Hollows Wear the Procedural Textures]]). The pictures are filed as Daggerfall files its textures, by archive
-and record, at Daggerfall's sizes and in its palette, so every model's mapping holds. No texture file is read.
+[[The Islands and the Passages' Hollows Wear the Procedural Textures]]). The pictures are filed as Daggerfall files its
+textures, by archive and record, at Daggerfall's sizes and in its palette, so every model's mapping holds. No texture
+file is read.
 
 ## The public calls
 

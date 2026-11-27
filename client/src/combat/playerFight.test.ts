@@ -39,8 +39,8 @@ function controls(held: Action[] = [], pressed: Action[] = []): InputFrame {
 }
 
 /** The player with a sword drawn (or `right`, once the room's gear wears it) in a fight in a room in the page, standing
- *  at `start` (the course's own), the first person's hands standing in: each frame's button, pose, pace and spare are kept,
- *  what the forge warms, and the room's last word on the gear. */
+ *  at `start` (the course's own), the first person's hands standing in: each frame's button, pose, pace and spare are
+ *  kept, what the forge warms, and the room's last word on the gear. */
 function fightingPlayer(right = 'sword_iron', start: { readonly x: number; readonly y: number } = course.start) {
   type State = { right?: string | null; pose?: unknown; pace?: unknown; spare?: unknown };
   type Shown = {

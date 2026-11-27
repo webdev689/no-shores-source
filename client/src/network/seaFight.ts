@@ -109,8 +109,8 @@ const CAPTAIN_SHIP = 1;
 /** A captain the room has not named: a Major of the Grey Tithe. */
 const TITHE_MAJOR: Commissioned = { name: 'Tithe Sloop', faction: 1, rank: 2 };
 
-/** The fight a sea room's numbers show, its captain `who` (a Major of the Grey Tithe unless told) and each other captain
- *  named by its faction (`nameOf`); throws where the numbers run short or name nothing. */
+/** The fight a sea room's numbers show, its captain `who` (a Major of the Grey Tithe unless told) and each other
+ *  captain named by its faction (`nameOf`); throws where the numbers run short or name nothing. */
 export function fightViewOf(
   numbers: ArrayLike<number>,
   who: Commissioned = TITHE_MAJOR,

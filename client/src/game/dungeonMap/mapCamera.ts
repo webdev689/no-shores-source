@@ -41,7 +41,8 @@ export const ORBIT = {
 const TURN = Math.PI * 2;
 const clamp = (value: number, least: number, most: number) => Math.min(most, Math.max(least, value));
 
-/** Where `point` lies on the paper (pixels from its middle, y down), and how near the eye it stands (m, more nearer). */
+/** Where `point` lies on the paper (pixels from its middle, y down), and how near the eye it stands (m, more
+ *  nearer). */
 export function toPaper(view: MapView, point: Point): [number, number, number] {
   const [a, b, height] = [point[0] - view.centre[0], point[1] - view.centre[1], point[2] - view.centre[2]];
   const [cosYaw, sinYaw, cosPitch, sinPitch] = [

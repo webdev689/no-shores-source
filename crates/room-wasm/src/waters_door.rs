@@ -112,7 +112,8 @@ fn sea_facts() -> Value {
     })
 }
 
-/// The water at a point as one grid byte: its continent's layout index; 255 on land; `NOT_OPEN` before the waters are opened.
+/// The water at a point as one grid byte: its continent's layout index; 255 on land; `NOT_OPEN` before the waters are
+/// opened.
 #[must_use]
 pub fn water_byte(x: f64, y: f64) -> u32 {
     OPEN.with(|open| {

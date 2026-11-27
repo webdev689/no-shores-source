@@ -56,8 +56,8 @@ export interface FightVessel {
 }
 
 /** A captain's ship in a fight: its name, its faction (1 the Grey Tithe) and rank (1 Minor to 5 Boss),
- *  its mode, whether it is hostile to the player (not of their side), its sides run out, and, from the land worker's fight, what its
- *  hurts and its going down do to its pose (metres settled, trim and list in radians). */
+ *  its mode, whether it is hostile to the player (not of their side), its sides run out, and, from the land worker's
+ *  fight, what its hurts and its going down do to its pose (metres settled, trim and list in radians). */
 export interface FightCaptain extends FightVessel {
   /** Its number in the fight, as its events name it (`ship`): the first captain 1, each other its own after. */
   readonly id: number;

@@ -1,6 +1,6 @@
-//! A fighter's statuses: the verbs Crit, Expose and Charge, and the buffs Haste, Linked and Veiled. Each is kept in whole
-//! ticks with the fighter who gave it, runs down a tick each time its fighter steps (so a browser predicting its own
-//! player runs it down alike), and weighs the blows its fighter strikes and takes.
+//! A fighter's statuses: the verbs Crit, Expose and Charge, and the buffs Haste, Linked and Veiled. Each is kept in
+//! whole ticks with the fighter who gave it, runs down a tick each time its fighter steps (so a browser predicting its
+//! own player runs it down alike), and weighs the blows its fighter strikes and takes.
 
 use crate::fighter::{Action, Cause, Fighter, FighterId};
 use crate::judge::{Blow, BlowKind};

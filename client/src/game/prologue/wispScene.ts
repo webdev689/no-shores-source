@@ -1,7 +1,8 @@
 // The wisp's coming, played as a short cutscene on the wreck once the bow is taught, the fight held: the camera
 // follows close behind it in from over the sea and round the quiet deck's mast (`chaseShot`), the Brig's crew crying
 // out at it, then stands off where nothing of the wreck stands between (`ringEye`) to watch it circle the player and
-// engulf them (a flash, a ring of Volt, a thunderclap), and eases back over the shoulder. As the flash comes the room gives the player the Storm. A hum and a crackle follow it about.
+// engulf them (a flash, a ring of Volt, a thunderclap), and eases back over the shoulder. As the flash comes the room
+// gives the player the Storm. A hum and a crackle follow it about.
 import { Cues } from '../../cinema/cues.ts';
 import { lookAt } from '../../cinema/rail.ts';
 import { Laid } from '../../combat/spellPixels.ts';
@@ -54,8 +55,8 @@ export interface WispFrame {
 export class WispScene {
   private readonly layout: WreckLayout;
   private course: WispCourse;
-  /** Where the ring camera stands for the course, worked out a frame after it where it can; the camera's ways from following the
-   *  wisp to the rings and from the rings back, each worked out once; and the shot it goes back to. */
+  /** Where the ring camera stands for the course, worked out a frame after it where it can; the camera's ways from
+   *  following the wisp to the rings and from the rings back, each worked out once; and the shot it goes back to. */
   private ringsFrom: Point | null = null;
   private leaving: ((share: number) => Aim) | null = null;
   private easingBack: ((share: number) => Aim) | null = null;

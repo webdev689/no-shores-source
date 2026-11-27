@@ -46,7 +46,8 @@ const BEAT_STREAM: u64 = 0x6265_6174;
 /// A group as the seed draws it: its foes by type and rank.
 pub(crate) struct Group {
     pub members: Vec<(u8, Rank)>,
-    /// Its first stands in its middle facing the nearest spawn, the rest round it: a Boss's, and an isle's at its landmark.
+    /// Its first stands in its middle facing the nearest spawn, the rest round it: a Boss's, and an isle's at its
+    /// landmark.
     pub leads: bool,
     /// It takes the post farthest from the spawns and holds it, walking no beat: a Boss's or a Miniboss's.
     pub farthest: bool,

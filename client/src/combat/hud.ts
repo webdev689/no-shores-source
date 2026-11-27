@@ -53,7 +53,8 @@ export interface HudFrame {
   /** Whether the room stands the fallen again only as they ask (the game's rooms, `footRevive.ts`), whose own death
    *  screen tells of it: then no veil does. */
   readonly asksToRespawn?: boolean;
-  /** The crosshair: a ranged one while it aims or is out in first person, the melee one while a melee weapon is drawn. */
+  /** The crosshair: a ranged one while it aims or is out in first person, the melee one while a melee weapon is
+   *  drawn. */
   readonly crosshair?: CrosshairFrame | null;
   /** The shots left, beside the crosshair, while the Ranged loadout is drawn; null while they are not shown. */
   readonly ammo?: number | null;
@@ -154,7 +155,8 @@ export class Hud {
   private readonly ironTold = new Set<number>();
   private staminaFlash = 0;
   private hurtFlash = 0;
-  /** What the last frame showed: its view, the veil, the shots, the compass's heading, the lock's mark, the target's share shown, the parry rings and the arrows at the edge. */
+  /** What the last frame showed: its view, the veil, the shots, the compass's heading, the lock's mark, the target's
+   *  share shown, the parry rings and the arrows at the edge. */
   private view = { width: 0, height: 0 };
   private veil: ReturnType<typeof veilOf> = null;
   private ammo: { readonly ammo: number | null | undefined; readonly most: number | null } = { ammo: null, most: null };
@@ -193,9 +195,9 @@ export class Hud {
   private bossSpan: { readonly top: number; readonly bottom: number } | null = null;
 
   /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's abilities stand at the bottom left;
-   *  with `forge`, the weapons beside them are drawn as its pictures. The page's own pieces `beside` answers (the game's
-   *  hints, CSS pixels) are kept clear of as the display's corners are. With `keys`, the Arts' and the loadouts' keycaps
-   *  show the keys `caps` answers each frame, a pad's button drawn on its cap by `face`. */
+   *  with `forge`, the weapons beside them are drawn as its pictures. The page's own pieces `beside` answers (the
+   *  game's hints, CSS pixels) are kept clear of as the display's corners are. With `keys`, the Arts' and the loadouts'
+   *  keycaps show the keys `caps` answers each frame, a pad's button drawn on its cap by `face`. */
   constructor(
     pictures: ((art: number) => ArtPictures | null) | null = null,
     forge: Cards | null = null,
@@ -520,7 +522,8 @@ export class Hud {
     return made && { ...made, id: 'fight-target', ...(this.targetShare < 1 ? { opacity: this.targetShare } : {}) };
   }
 
-  /** The Art's abilities and the weapons at the bottom left, the weapons over the Arts in a view too narrow for both. */
+  /** The Art's abilities and the weapons at the bottom left, the weapons over the Arts in a view too narrow for
+   *  both. */
   private armsNode(): Child {
     const { zoom, wide, stacked } = this.layout;
     // Riding, the horse's boost stands where the Art's abilities do: no Art is cast from the saddle.

@@ -193,7 +193,8 @@ export class AttackFeel {
   }
 
   /** `orbit` kicked as the fight's blows land, and through the eyes (`eyes`) carried with `player`'s own lunge. While
-   *  a crosshair shows (`aiming`), the kick moves the view but never turns it, so the crosshair stays where shots land. */
+   *  a crosshair shows (`aiming`), the kick moves the view but never turns it, so the crosshair stays where shots
+   *  land. */
   camera<Seen extends Orbit>(
     orbit: Seen,
     player: number,

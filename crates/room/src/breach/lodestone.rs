@@ -164,8 +164,8 @@ impl Room {
     }
 
     /// Each tick: the bearer fallen drops it where they lie; Hold True raised while their guard is up and rested, held
-    /// at most HOLD_MOST, cleansing the Rewritten inside it; and the stone left lying too long while needed unwrites the
-    /// company.
+    /// at most HOLD_MOST, cleansing the Rewritten inside it; and the stone left lying too long while needed unwrites
+    /// the company.
     pub(crate) fn keep_lodestone(&mut self, breach: &mut Breach) {
         let clock = self.clock;
         if let Some(bearer) = breach.lodestone.bearer() {

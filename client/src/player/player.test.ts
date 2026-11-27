@@ -161,7 +161,8 @@ test('between ticks a move over a lip is drawn eased too, and a new one starts f
 });
 
 test('going over a lip, the body’s centre passes behind the wall’s face, but its card stays in front', () => {
-  // The course's ledge: x 0 to 6, its face at y -1, its lip 2.3 m up. The player walks north at it, jumps and goes over.
+  // The course's ledge: x 0 to 6, its face at y -1, its lip 2.3 m up. The player walks north at it, jumps and goes
+  // over.
   const ledge = { face: -1, lip: 2.3 };
   let player = newPlayer(onCourse, 3, 1);
   let [centreBehind, cardBehind, wentOver] = [false, false, false];

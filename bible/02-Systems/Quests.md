@@ -62,9 +62,9 @@ code:
 
 The houses' roads and the opening that leads to them ([[Each House Has Its Own Road to Its Art]],
 [[The Houses' Roads as Claude Shapes Them]]), the base every other quest is built on
-([[The Factions Are the Baseline for Every Quest]]). The rules are the authority: a player's place in every road is kept in
-their character, every goal is judged by the room the player stands in, and every reward is given there. The page only
-shows what the rules say: the tracker, the lines, the marks, and the Art's locks.
+([[The Factions Are the Baseline for Every Quest]]). The rules are the authority: a player's place in every road is kept
+in their character, every goal is judged by the room the player stands in, and every reward is given there. The page
+only shows what the rules say: the tracker, the lines, the marks, and the Art's locks.
 
 ## The file
 
@@ -72,8 +72,11 @@ shows what the rules say: the tracker, the lines, the marks, and the Art's locks
 file. A quest has an `id`, a `name`, a `faction` (0 for the opening, else the house's number in
 `content/gear/factions.json`), the scene played as it begins (`begin`) and its `tasks`. A task has the words the tracker
 shows (`task`), its scenes (`start`, played as it begins; `end`, played as it is done), its `goals`, all met before the
-next task begins, and its `reward`, given as it is done. Any goal may name a `scene`, said as the room meets it. A quest may name the quests it comes `after` (by id); a house may have several. A quest may name the task a character kept before it held any place in it reads at (`kept`). The quest walked is the first in the file of the pledged house's (the opening's, unpledged) not done whose `after` are all done. A task may list the ids it had (`was`); a save at one reads as that task, its counts at nothing. A goal has its tracker words (`text`), a `count` (1 when left
-out) and its kind:
+next task begins, and its `reward`, given as it is done. Any goal may name a `scene`, said as the room meets it. A quest
+may name the quests it comes `after` (by id); a house may have several. A quest may name the task a character kept
+before it held any place in it reads at (`kept`). The quest walked is the first in the file of the pledged house's (the
+opening's, unpledged) not done whose `after` are all done. A task may list the ids it had (`was`); a save at one reads
+as that task, its counts at nothing. A goal has its tracker words (`text`), a `count` (1 when left out) and its kind:
 
 | Kind | Met by | Its fields |
 |---|---|---|
@@ -102,8 +105,8 @@ A `kill` goal with a `spawn` stands its foes at its place: a list of `[type, ran
 it comes in. A player on that goal coming within 150 m of the place stands the group there, at the node's island levels
 raised by its seas, as a garrison's group that never stands again once it falls; while the goal is unmet and none of
 the group stands, the next to come near stands it again; once no player in the room is on its goal and it fights no
-one, it is sent away. Anyone may fight it, and each kill counts for every player who struck it. The room bakes a navmesh square round each such place the first time it is wanted ([[Navmesh]]), so the
-group holds its
+one, it is sent away. Anyone may fight it, and each kill counts for every player who struck it. The room bakes a navmesh
+square round each such place the first time it is wanted ([[Navmesh]]), so the group holds its
 place, fights there and walks back to its post as a garrison's group does.
 
 A reward gives Aurem (`aurem`, any quest's), the Art (`art`, its Anima with it, worn at once), a Tenet (`tenet`: 1 or
@@ -112,11 +115,12 @@ worn where none is, never a second), the first ship (`ship`: the Sloop, never a 
 gift (`gift`, by its name: `weapons`, `armour`, `vestige`, `cloak`, `dye` or `letter`; below, "The opening"). Which Art
 is the quest's house's. A task's reward is given as it ends; a goal may carry one of its own (`reward` beside its other
 fields), given as it is met, of Aurem, the first horse or a gift alone: a house's gifts come with its tasks, in their
-order, and the ship with its own task ([[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]).
-A lesson's goal (`ride`, `sail`, `use`) has a count of 1.
-Beside it, every task that sends the player out (any goal but `talk`, `pledge`, `buy`, `wear` and `use`) pays a mission's
-clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Destiny 1 paid each mission done
-([[Gear]], "A clear"; [[The Balance and Economy Pass as Claude Shapes It]]).
+order, and the ship with its own task
+([[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]). A
+lesson's goal (`ride`, `sail`, `use`) has a count of 1. Beside it, every task that sends the player out (any goal but
+`talk`, `pledge`, `buy`, `wear` and `use`) pays a mission's clear at their level, 400 XP and 30 Aurem at level 5 raised
+as a kill is, as Destiny 1 paid each mission done ([[Gear]], "A clear";
+[[The Balance and Economy Pass as Claude Shapes It]]).
 
 ## The opening
 
@@ -148,10 +152,10 @@ carried, else posted; the cloak in the vault, else carried, else posted. Then **
 from the Harbourmaster**, its reward the Sloop (`"ship": true`), which a new player has none of until then
 ([[Shipyard]]), his lines sending the player out to a Tithe hulk moored offshore; **Learn the helm**, his lesson at
 sea; **Bring it home**, an `enter` goal of Overlook's social space ("Dock at Overlook"), his line said as it is done
-(`sailHome`); and **Put them on**, a wear goal for each of the Melee weapon, the four armour pieces and the Ranged weapon, each a count
-of 1, told of the pieces held after every answered ask and as every task begins, again until nothing more counts, so
-pieces worn during the round meet it as soon as it begins; plain clothes never do; then **Use your gifts**
-("Using the gifts" below). The Tack's Bay is worn unless one is, never a second,
+(`sailHome`); and **Put them on**, a wear goal for each of the Melee weapon, the four armour pieces and the Ranged
+weapon, each a count of 1, told of the pieces held after every answered ask and as every task begins, again until
+nothing more counts, so pieces worn during the round meet it as soon as it begins; plain clothes never do; then **Use
+your gifts** ("Using the gifts" below). The Tack's Bay is worn unless one is, never a second,
 and at her counter for nothing to one who pledged before the round reached her
 ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]],
 [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]). Then
@@ -194,9 +198,9 @@ done; the tracker names each step's keys as bound now on the keys or the pad pla
 on the keys below; and the page announces each step as the room ticks it, a notice at the foot under the Tack's or the
 Harbourmaster's mark, through the quest's news (`lessonsBetween`: "Riding", "Gallop"; "Sailing", "Steer").
 
-- **Ride the Bay**, wherever the room lets a rider ride, the last step at Overlook's counters: Get up on your horse (`,`), Ride at
-  a walk (W), Gallop (Shift), Spur it on (Space: a rider's jump is the boost), Get down (`,`), and Ride to the
-  Harbourmaster's stall, in the saddle. The room watches a rider each tick while their task asks a riding act
+- **Ride the Bay**, wherever the room lets a rider ride, the last step at Overlook's counters: Get up on your horse
+  (`,`), Ride at a walk (W), Gallop (Shift), Spur it on (Space: a rider's jump is the boost), Get down (`,`), and Ride
+  to the Harbourmaster's stall, in the saddle. The room watches a rider each tick while their task asks a riding act
   (`Room::keep_lessons`), measuring their stretches at a walk and at a gallop from the body's own pace, and forgets
   them once it asks none. The compass and the screen's mark point at the Harbourmaster's counter; the other steps
   read "Anywhere".
@@ -228,11 +232,12 @@ Every save keeps its place. A save on `arm-yourself` (a Melee weapon and the fou
 **Put them on** (its `was`), its counts at nothing. A save kept partway round the counters with no gift recorded is
 given, as it is read, the gift of each keeper it has heard, and the rest as it hears them. One who pledges
 before the round is done is given, as they pledge, every gift the opening's tasks still held, the Weaponsmith's choice
-kept free at her counter, as the Tack gives the Bay. A character past the round before the gifts (on **Take your ship from the Harbourmaster** or
-later, or pledged) is owed nothing new, as one past the Tack's goal is given no Bay. A character whose log stood at the
-houses before keeps its place by its task's id, and one kept with no place in the opening reads at "Hear the three
-houses" (its `kept`): neither is walked round again, nor owed a gift. The Test Ground's player reads as one kept
-before, on the houses, which its stall serves; the stranger is heard in a social space alone, never at the stall.
+kept free at her counter, as the Tack gives the Bay. A character past the round before the gifts (on **Take your ship
+from the Harbourmaster** or later, or pledged) is owed nothing new, as one past the Tack's goal is given no Bay. A
+character whose log stood at the houses before keeps its place by its task's id, and one kept with no place in the
+opening reads at "Hear the three houses" (its `kept`): neither is walked round again, nor owed a gift. The Test Ground's
+player reads as one kept before, on the houses, which its stall serves; the stranger is heard in a social space alone,
+never at the stall.
 
 ## A house's horde
 
@@ -267,45 +272,47 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
   do: each kill's XP and Aurem, and the task's clear ([[Gear]], "A clear").
 - **On the wire**: the gear message's `quest_horde`, its foes left and all of them while it runs (empty else); and
   while it runs the page lends the worn Art whole to its ability bar and cast keys (`ArtState.lent`), `arts_earned`
-  saying only what is earned, so the road's news never takes the loan for Tenets earned. The tracker shows the foes left of all of them beside
-  the goal ("17/29", as a puzzle's points lit of all), and the wait after a fall as a defence's; a notice under the
-  Art's emblem says "Storm unbounded", "Every ability ready" (the worn Art's name) as it begins, and "Storm bound
-  again", "Its abilities cost as before" as it ends. The ability bar shows the Art unbounded while the horde runs
-  ([[Arts]], "The ability bar"), all from the room's word.
+  saying only what is earned, so the road's news never takes the loan for Tenets earned. The tracker shows the foes left
+  of all of them beside the goal ("17/29", as a puzzle's points lit of all), and the wait after a fall as a defence's; a
+  notice under the Art's emblem says "Storm unbounded", "Every ability ready" (the worn Art's name) as it begins, and
+  "Storm bound again", "Its abilities cost as before" as it ends. The ability bar shows the Art unbounded while the
+  horde runs ([[Arts]], "The ability bar"), all from the room's word.
 
 ## Offered by a keeper
 
 A quest may be offered as an item by a keeper (its `offer`;
-[[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]): the keeper by their key (`keeper`, a house's or a counter's, never the stranger's), the task
-from which it waits (`at`, its first when left out), and its card's words: its `kind`, its `rarity` (the gear's
-numbers), its `words`, the keeper's `quote` (a line, held to [[Dialogue]]'s words) and the scene of their longer words
-(`story`). The opening is offered by the Weaponsmith from **Find your way round Overlook** (the stranger's task walks
-before), so her word and her gift come as it is acquired; each house's road by its leader, at the chapel, from its
-first task, in its own begin's words. While the quest walked waits on the task its offer names with nothing counted
-there and is not acquired, nothing of it counts, the room walks and marks none of its goals (`goals_unmet` is empty),
-and no word is asked of anyone but by Acquire at that keeper's counter (ask 85), which is a word with them and is
-asked once until the room answers, the keeper thanking the player for it; a save with a place past it, or a count at it, reads as acquired. The
-acquired are kept by quest id (`acquired`). Claude's calls:
+[[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]): the keeper by their key (`keeper`, a house's
+or a counter's, never the stranger's), the task from which it waits (`at`, its first when left out), and its card's
+words: its `kind`, its `rarity` (the gear's numbers), its `words`, the keeper's `quote` (a line, held to [[Dialogue]]'s
+words) and the scene of their longer words (`story`). The opening is offered by the Weaponsmith from **Find your way
+round Overlook** (the stranger's task walks before), so her word and her gift come as it is acquired; each house's road
+by its leader, at the chapel, from its first task, in its own begin's words. While the quest walked waits on the task
+its offer names with nothing counted there and is not acquired, nothing of it counts, the room walks and marks none of
+its goals (`goals_unmet` is empty), and no word is asked of anyone but by Acquire at that keeper's counter (ask 85),
+which is a word with them and is asked once until the room answers, the keeper thanking the player for it; a save with a
+place past it, or a count at it, reads as acquired. The acquired are kept by quest id (`acquired`). Claude's calls:
 [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]].
 
 ## In the rules
 
-- **Kept in the character** (`gear`, `quests.rs`), **by id**: for each quest by its `id`, the task reached by its task's `id` (so a quest or task added anywhere in the file keeps every save's place), each of that
-  task's goals' counts, and whether it is done; and for each Art, the fragment choices waiting. A new character begins
-  every quest at its first task; one that holds no place in a quest (kept before it was laid out) reads at the
-  quest's `kept` task, else its first; and one kept on a task this room does not hold (a task renamed keeps its old
-  id in `was`) reads at the quest's `kept` task too, else its first, so the opening's round, before `kept`, is never
-  walked twice. The keepers' gifts given are kept by name (`gifts`) and the Weaponsmith's slots still free (`free`), so
-  none is given twice whatever the place reads as.
-- **Read leniently**: a quest log of a shape this room cannot read reads as one kept before (above) and is written back as it was. A
-  fragment choice waiting for an Art none of whose fragments is left to own is paid at its price as soon as the room
-  answers any ask.
+- **Kept in the character** (`gear`, `quests.rs`), **by id**: for each quest by its `id`, the task reached by its task's
+  `id` (so a quest or task added anywhere in the file keeps every save's place), each of that task's goals' counts, and
+  whether it is done; and for each Art, the fragment choices waiting. A new character begins every quest at its first
+  task; one that holds no place in a quest (kept before it was laid out) reads at the quest's `kept` task, else its
+  first; and one kept on a task this room does not hold (a task renamed keeps its old id in `was`) reads at the quest's
+  `kept` task too, else its first, so the opening's round, before `kept`, is never walked twice. The keepers' gifts
+  given are kept by name (`gifts`) and the Weaponsmith's slots still free (`free`), so none is given twice whatever the
+  place reads as.
+- **Read leniently**: a quest log of a shape this room cannot read reads as one kept before (above) and is written back
+  as it was. A fragment choice waiting for an Art none of whose fragments is left to own is paid at its price as soon as
+  the room answers any ask.
 - **The quest walked**: with no pledge, the opening, until it is done; pledged, the pledged house's road, until it is
   done; else none. A switch walks the new house's road from where it was left; every road keeps its place.
 - **Goals are judged by events** the rooms tell the character's quest log: a counter spoken at, a pledge, a place
   reached, a foe's kill, a resource gathered, a spell cast, a ship beaten, an island landed on, a wreck searched, a
-  node entered, a smith's ware bought, a piece worn. Only the quest walked takes them, and only its task now. A goal stops counting at its count. When
-  every goal of the task is met its reward is given and the next task begins at once, its counts at nothing.
+  node entered, a smith's ware bought, a piece worn. Only the quest walked takes them, and only its task now. A goal
+  stops counting at its count. When every goal of the task is met its reward is given and the next task begins at once,
+  its counts at nothing.
 - **The Arts earned** (`gear`, `arts.rs`): for each Art, whether the Art, its first Tenet and its second are earned,
   one bit each. A character made before keeps all three of every Art. A new character has none, and wears none: the
   room casts nothing it has not earned, and refuses to wear an Art not earned. The Test Ground's player earns every one.
@@ -342,10 +349,12 @@ acquired are kept by quest id (`acquired`). Claude's calls:
   name, its task and each goal's words with its count, under an unmet goal's words its way ("Marks"), and beside an
   unmet lesson's step its keys ("The lessons").
 - **Lore**: a chapter the lore's file gives to a task is found as the task is done ([[Lore]]). Each house's road
-  gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
+  gives its house's book a chapter a task, the last as the road ends
+  ([[Each House's Lore Book Tells Its Art's Origin]]).
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
   done and the next task's `start` as it begins, a `talk` goal's `scene` as the keeper is spoken with. A page that loads
-  mid-road says nothing it has said before. How they are written: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
+  mid-road says nothing it has said before. How they are written:
+  [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, or whose keeper offers
   the quest walked while it waits, the offer reads "Speak with" and the keeper's name; pressed, it opens their screen
   ([[Interface]], "The social space's counters"), which asks 64 as it opens and says the goal's scene there as the room
@@ -396,14 +405,16 @@ acquired are kept by quest id (`acquired`). Claude's calls:
   aloud as a clock starts, at each half minute and in its last 10 s, and as a ward's health passes each quarter.
   Figures glide between the room's words, turning the short way round, a quarry walking back when it noticed and one
   arrived standing where it is;
-  the ward's plate stays in view as a fought foe's; a lit point offers no Use. With no Art worn (and while the story is told, which says nothing of houses) the Character page says "Pledge to a house; its road gives its
-  Art.", and the Arts' screen shows all three locked.
-- **The escort rides** ([[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]):
-  its figure sits on a horse in its goal's `horse` coat (Tobin a dun, Wren a black), in the player's own horse moves,
-  galloping (16 frames a second) while it goes and standing (4) while it waits, is held or has arrived; its hooves
-  are heard as another rider's are. A tail's quarry walks on foot. While the figure waits for the player near it to
-  mount, the step says "Get on your horse" under its words, or, with no horse worn, "No horse worn: the Tack in
-  Overlook gives one".
+  the ward's plate stays in view as a fought foe's; a lit point offers no Use. With no Art worn (and while the story is
+  told, which says nothing of houses) the Character page says "Pledge to a house; its road gives its Art.", and the
+  Arts' screen shows all three locked.
+- **The escort rides**
+  ([[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]): its
+  figure sits on a horse in its goal's `horse` coat (Tobin a dun, Wren a black), in the player's own horse moves,
+  galloping (16 frames a second) while it goes and standing (4) while it waits, is held or has arrived; its hooves are
+  heard as another rider's are. A tail's quarry walks on foot. While the figure waits for the player near it to mount,
+  the step says "Get on your horse" under its words, or, with no horse worn, "No horse worn: the Tack in Overlook gives
+  one".
 - **The varied steps**: the page draws the quest figures (`quest_figures`) as the cast's figures or the roster's, the
   ward (`quest_ward`) at its place with its health, and the puzzle's points (`quest_points`), each lit or not, with
   "Use" and its name within reach; the tracker shows the running clock (`quest_clock`); and a goal's line is said as
@@ -424,12 +435,19 @@ acquired are kept by quest id (`acquired`). Claude's calls:
   layout's paths between its places (each path's points within 6 m join it to another), straight where none comes
   within a place's reach, on the ground's height, and is no fighter. An ambush stands 6 m round it, on a mesh baked
   there. A ward has 700 health (a player's is 100), stands where it is put and fights no one, and only its player is
-  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto the nearest ground a walk reaches from its place's middle, as far out as the point stands from
-  it (6 m at least), or, where the middle is off the mesh, onto the mesh within 6 m
-  ([[What a Body Meets Keeps to What Is Drawn]]). A failed defence waits 10 s, then 20, then 40 (its foes after the first failure in a task drop nothing, and so do those of a wave or an escort's ambush (its one wave) the character stood before in the task, kept with their road, so a rejoin or a return pays no wave twice: [[The Audit's Leftovers Are Fixed as Claude Suggested]]); a tail noticed waits 10 s and walks back, whichever is longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only while the room's cap on foes leaves room for it, beside a public event's kept places ([[Public Events]]); wards count against no cap. A place's mesh is baked the first
-  time a kill group, a defence, a puzzle or an ambush needs it (about 140 to 270 ms that tick, natively).
-- **Figures, wards and points are the player's own**: they stand where the room's last word put them (a figure glided there), and
-  show only from the room the player is in, once it has spoken; other players do not see them.
+  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto the nearest ground a walk reaches from its place's
+  middle, as far out as the point stands from it (6 m at least), or, where the middle is off the mesh, onto the mesh
+  within 6 m ([[What a Body Meets Keeps to What Is Drawn]]). A failed defence waits 10 s, then 20, then 40 (its foes
+  after the first failure in a task drop nothing, and so do those of a wave or an escort's ambush (its one wave) the
+  character stood before in the task, kept with their road, so a rejoin or a return pays no wave twice:
+  [[The Audit's Leftovers Are Fixed as Claude Suggested]]); a tail noticed waits 10 s and walks back, whichever is
+  longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived
+  stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only
+  while the room's cap on foes leaves room for it, beside a public event's kept places ([[Public Events]]); wards count
+  against no cap. A place's mesh is baked the first time a kill group, a defence, a puzzle or an ambush needs it (about
+  140 to 270 ms that tick, natively).
+- **Figures, wards and points are the player's own**: they stand where the room's last word put them (a figure glided
+  there), and show only from the room the player is in, once it has spoken; other players do not see them.
 - **A word that ends two tasks at once** says each task's end and the next task's start in turn.
 - **The first word on the player's own character is where they stand**: it says nothing. A word that goes back is never
   news.
@@ -440,8 +458,8 @@ acquired are kept by quest id (`acquired`). Claude's calls:
   a pledge during the welcome) is never said.
 - **The tracker and the waypoint show on foot and at sea**; at sea a sea fight's task takes the tracker while it runs.
   The held map rings only nodes the player has found.
-- **A keeper's lines are said as the room meets the goal**, a moment after the press; speaking with a keeper no goal asks
-  for is refused ("They have nothing more to say to you now").
+- **A keeper's lines are said as the room meets the goal**, a moment after the press; speaking with a keeper no goal
+  asks for is refused ("They have nothing more to say to you now").
 - **"Within 150 m"** is measured from the place's middle. **Enter** and **Land** are told on joining and again when the
   kept character is given back to the room.
 - **The sea**: a ship counts as struck if its captain struck before it went down, a won deck as boarded, and a boarded

@@ -75,7 +75,8 @@ export interface GuildFace {
   /** The XP the guild's members gave it this week, and the player's own part, at most `most` (Destiny's 5,000). */
   readonly given?: number;
   readonly contribution?: number;
-  /** The week's four guild bounties, each with the guild's count, whether it is done and whether the player claimed it. */
+  /** The week's four guild bounties, each with the guild's count, whether it is done and whether the player claimed
+   *  it. */
   readonly bounties?: readonly GuildBountyShown[];
   /** Whether the player was in the guild before the week turned, as a claim needs; none from older accounts. */
   readonly beforeTheWeek?: boolean;
@@ -503,7 +504,8 @@ export class AccountLink {
     return typeof answer === 'string' ? answer : (answer as unknown as Details);
   }
 
-  /** Asks something of the Roster (`friend/ask`, `company/join`, `guild/promote`, `block`...); why not, if it cannot. */
+  /** Asks something of the Roster (`friend/ask`, `company/join`, `guild/promote`, `block`...); why not, if it
+   *  cannot. */
   async social(path: string, body: Readonly<Record<string, unknown>> = {}): Promise<string | null> {
     const answer = await this.answered(path, body);
     return typeof answer === 'string' ? answer : null;

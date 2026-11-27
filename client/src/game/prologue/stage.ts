@@ -187,7 +187,8 @@ export class Stage {
   }
 
   /** Gives the game back what the story laid over it: its own clear weather, silence from the story's sounds, its
-   *  HUD without a death or a fight's panel, and no birds, fire or prompt of the story's; its screen, once clear, goes. */
+   *  HUD without a death or a fight's panel, and no birds, fire or prompt of the story's; its screen, once clear,
+   *  goes. */
   leave(): void {
     this.hush();
     const { ambience, scene, birds, flames, hud, footView, screen } = this.parts;

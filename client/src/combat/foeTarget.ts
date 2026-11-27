@@ -1,8 +1,9 @@
-// Whom the player is fighting, after DFO's Enhanced HUD: the foe their blow last reached, the one their soft lock takes,
-// or one winding up a telegraphed blow at them. The target plate shows it for a while after the last exchange and then
-// fades, so a foe left behind stops being furniture at the top of the screen; it goes at once when the foe dies. The
-// foes fought, either way, keep their plates over their heads whatever the player looks at for as long as the target
-// plate would stand, fading as it fades, so a fight's plates go a few seconds after it moves on, as Destiny's do.
+// Whom the player is fighting, after DFO's Enhanced HUD: the foe their blow last reached, the one their soft lock
+// takes, or one winding up a telegraphed blow at them. The target plate shows it for a while after the last exchange
+// and then fades, so a foe left behind stops being furniture at the top of the screen; it goes at once when the foe
+// dies. The foes fought, either way, keep their plates over their heads whatever the player looks at for as long as the
+// target plate would stand, fading as it fades, so a fight's plates go a few seconds after it moves on, as Destiny's
+// do.
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { EVENT } from './cues.ts';

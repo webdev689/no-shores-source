@@ -82,16 +82,16 @@ varied across the continent into other biomes. Which biome each continent is: [[
 
 The player reaches an island only at its nodes ([[Every Island Is Seen Whole and Reached by Nodes]]). From the
 Overworld's bird's-eye view of the side of an island, they choose a node (a mission, a dungeon, a social space, a
-patrol area, a world boss, an outpost site) and are taken there. A node is one section of the land, and its edge warns the player to
-go back. The rest of the island and of its city is the same ground the [[Land]] generates, drawn in less detail with
-distance, never reached. Each island has one major port city; Saltmere's is Overlook.
+patrol area, a world boss, an outpost site) and are taken there. A node is one section of the land, and its edge warns
+the player to go back. The rest of the island and of its city is the same ground the [[Land]] generates, drawn in less
+detail with distance, never reached. Each island has one major port city; Saltmere's is Overlook.
 
 Patrol areas and missions open as a pass is done on each ([[Patrol Zones and Missions Open as Their Pass Is Done]]).
 `content/world/open.json` lists the open ones by id. Every other patrol area and mission is locked; social spaces,
-dungeons, world bosses and outpost sites never are. A locked node still shows where the player picks a landing, greyed with a lock
-([[Overworld]]), but neither a click on it nor a gate toward it ([[Layouts]], "Gates") takes anyone there, and its room
-turns every player away ([[Server]]). A pass opens a node by adding its id to the list; a test holds the list to
-patrol and mission nodes of the edits files, each once. The rooms read the list from the node files, so a change
+dungeons, world bosses and outpost sites never are. A locked node still shows where the player picks a landing, greyed
+with a lock ([[Overworld]]), but neither a click on it nor a gate toward it ([[Layouts]], "Gates") takes anyone there,
+and its room turns every player away ([[Server]]). A pass opens a node by adding its id to the list; a test holds the
+list to patrol and mission nodes of the edits files, each once. The rooms read the list from the node files, so a change
 reaches them at the next bake: a merge redeploys them, and locally `npm run bake` or `npm run server` bakes first.
 
 A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
@@ -118,12 +118,13 @@ Each patrol zone of an island holds a gate toward each other one: Saltmere's thr
 for their anchorages ([[Held Map]], "Choosing"). Each region has its own view over the island: docked or ashore, the
 island's tiles and the view's framing are the places of the region the ship lies off, whose centre is nearest it, and
 a click on a region's land asks to dock only in the port's region, elsewhere to go ashore on that region ([[Interface]],
-"The island's tiles"; [[Game]], "Landings"; [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]).
+"The island's tiles"; [[Game]], "Landings";
+[[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]).
 
 ## Waters
 
-The sea is split into nine waters, one an island ([[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]). The `world` crate judges them
-(`waters.rs`):
+The sea is split into nine waters, one an island ([[The Waters Come From the Islands]],
+[[The Sea as Claude Shapes It]]). The `world` crate judges them (`waters.rs`):
 
 - A point of sea belongs to the island whose coast (its continent's outline) is nearest, by straight-line distance in
   metres; a tie goes to the lower continent index. A point inside an outline or a static isle's circle, or on its
@@ -132,8 +133,9 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
 - Each water's holder and name come from the table `WATERS`, by continent id. Claude named the waters; the owner can
   change any name.
 - Home waters reach `HOME_REACH_M`, 10 km, from their island's coast; past it the Grey Tithe holds the open sea of
-  the Lantern Sea, at its band ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). `water_at` gives the point's holder; the table gives each
-  water's, as near its coast.
+  the Lantern Sea, at its band
+  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]).
+  `water_at` gives the point's holder; the table gives each water's, as near its coast.
 
 | Continent | Holder | Name |
 |---|---|---|
@@ -150,7 +152,8 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
 - The six ruined cities' waters (Cairnwatch's, Elmhaven's, Goldreach's, Mistfall's, Windmere's and Fenhallow's) are
   the Lattice's, and the Grey Tithe's ships sail them; the Grey Tithe holds the two living ports' waters past home,
   Sunspire's and Rimeholt's ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Every
-  point of a water is held as its island's water is, but the Lantern Sea's past 10 km. The doors name a holder "home", "grey-tithe" or "lattice".
+  point of a water is held as its island's water is, but the Lantern Sea's past 10 km. The doors name a holder "home",
+  "grey-tithe" or "lattice".
 - `borders()` says which waters touch: the pairs whose sea cells lie side by side on a 10 km grid. On today's layout
   there are 17: 1-2, 1-3, 1-4, 1-5, 1-8, 1-9, 2-5, 2-6, 2-9, 3-7, 3-8, 3-9, 4-5, 4-8, 5-6, 7-8 and 7-9.
 - `grid(cell_m)` judges the frame at each cell's middle, row by row from the north-west: one byte a cell, the
@@ -186,26 +189,27 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
   from its departure berth along the course to its arrival berth. Over a day no lying ship comes within 150 m of
   another ship at any of the three ports, and none within 225 m of a roadstead (`traffic_tests.rs`).
 - **Routes.** Between every pair of the port cities, first with second, first with third, second with third, so
-  each port trades with both others and the lanes cross the most waters; each pair sails up to three courses ([[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]).
-  The shortest is planned round land: A* over a mask of 5 km cells whose middles are at least 3 km clear of every
-  coast and isle (eight neighbours, no corner cut past an unclear cell, ties to the lower cell), from each roadstead's
-  nearest clear cell it reaches by a clear leg; then string-pulled, each leg running as far ahead as it can while it
-  stays more than 800 m from every coast edge and isle, checked exactly in whole metres (no edge met, and each end of
-  either segment clear of the other), so a hull drawn on it stays off the land. The other two leave each port 30
-  degrees either side of the shortest's first heading, to the clear cell nearest the point 100 km out, one
-  way leaving and the other arriving so each keeps to one side, every stretch planned as the shortest is; a side no
-  clear water makes, or more than 1.3 times the shortest's length, is left out. Today all nine courses sail: Overlook
-  to Sunspire 1,402, 1,421 and 1,468 km, Overlook to Rimeholt 1,601, 1,611 and 1,681 km, Sunspire to Rimeholt 2,950,
-  2,959 and 3,032 km. Out of Overlook they leave on five headings, two of its Sunspire courses sharing the narrow sea
-  east of it; out of Sunspire and Rimeholt on three each. Planning them takes about 0.2 s natively, twice the one
-  course each; a sea room's harbours take the ports' roadsteads alone (`Traffic::roadsteads`), planning no course.
+  each port trades with both others and the lanes cross the most waters; each pair sails up to three courses
+  ([[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]). The shortest is planned round land: A*
+  over a mask of 5 km cells whose middles are at least 3 km clear of every coast and isle (eight neighbours, no corner
+  cut past an unclear cell, ties to the lower cell), from each roadstead's nearest clear cell it reaches by a clear leg;
+  then string-pulled, each leg running as far ahead as it can while it stays more than 800 m from every coast edge and
+  isle, checked exactly in whole metres (no edge met, and each end of either segment clear of the other), so a hull
+  drawn on it stays off the land. The other two leave each port 30 degrees either side of the shortest's first heading,
+  to the clear cell nearest the point 100 km out, one way leaving and the other arriving so each keeps to one side,
+  every stretch planned as the shortest is; a side no clear water makes, or more than 1.3 times the shortest's length,
+  is left out. Today all nine courses sail: Overlook to Sunspire 1,402, 1,421 and 1,468 km, Overlook to Rimeholt
+  1,601, 1,611 and 1,681 km, Sunspire to Rimeholt 2,950, 2,959 and 3,032 km. Out of Overlook they leave on five
+  headings, two of its Sunspire courses sharing the narrow sea east of it; out of Sunspire and Rimeholt on three each.
+  Planning them takes about 0.2 s natively, twice the one course each; a sea room's harbours take the ports' roadsteads
+  alone (`Traffic::roadsteads`), planning no course.
 - **Schedule.** On each course a ship leaves each end every 3,000 s of world time, departure n at its course's start
   plus n × 3,000 s, the nine courses' starts a ninth of that apart, so two courses that share a stretch out of a port
   (each of Sunspire's and Rimeholt's ways out carries a course to each of the other two ports) never send ships out
-  together; each sails at 60 m/s, the slowest pace of the sea's ladder, to the other end. There it lies at its berth 600 s
-  (`DWELL_S`), heading as it came in, and is then gone. About five ships are within 60 km of Overlook's roadstead at
-  any moment, counting those lying there (5.2 on a day's mean). World time is seconds since the Unix epoch, passed in,
-  so every machine computes the same ships for the same time. The waters' table the door returns carries the pace
+  together; each sails at 60 m/s, the slowest pace of the sea's ladder, to the other end. There it lies at its berth
+  600 s (`DWELL_S`), heading as it came in, and is then gone. About five ships are within 60 km of Overlook's roadstead
+  at any moment, counting those lying there (5.2 on a day's mean). World time is seconds since the Unix epoch, passed
+  in, so every machine computes the same ships for the same time. The waters' table the door returns carries the pace
   (`friendly_speed_m_s`), so the page reckons ships on between answers at the rules' own pace.
 - **A ship.** Its id is `n << 8 | route << 1 | direction` (direction 0 from the route's first port). Its hull comes
   from a fixed hash of its id: a sloop 4 times in 10, a schooner 3, a brig 2, a frigate 1. It carries its position,

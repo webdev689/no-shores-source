@@ -1,12 +1,13 @@
 //! What an item is and where it is worn: the Melee and Ranged loadouts, the four armour pieces, the cloak, the horse
-//! and the four modules a ship is fitted with; the slot each is worn in; which hold a shield or leave a hand free; and which
-//! materials it is made and unmade with.
+//! and the four modules a ship is fitted with; the slot each is worn in; which hold a shield or leave a hand free; and
+//! which materials it is made and unmade with.
 
 use serde::{Deserialize, Serialize};
 
 /// What an item is: a Melee or a Ranged loadout, each one item however many hands it fills, an armour piece, the
-/// cloak, or one of a ship's modules. The numbers are the wire's; a kind kept from before the loadouts keeps its number where it lives on as one
-/// (a lone dagger became Double Daggers, an axe a Great axe), so what others were shown still reads.
+/// cloak, or one of a ship's modules. The numbers are the wire's; a kind kept from before the loadouts keeps its number
+/// where it lives on as one (a lone dagger became Double Daggers, an axe a Great axe), so what others were shown still
+/// reads.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Kind {

@@ -25,9 +25,9 @@ pub enum TraitColumn {
 }
 
 /// A trait a node may hold: its id, name and words, the column it is offered in, and what it fits: `melee`,
-/// `ranged`, `weapon` (either loadout), `armour`, `shield` (a loadout with a shield, for a shield's block perks), `ship`
-/// (any of a ship's modules) or one module's own (`guns`, `hull`, `sails`, `rigging`), or for a signature the one
-/// named item that carries it, and an intrinsic the one Atheric that has it.
+/// `ranged`, `weapon` (either loadout), `armour`, `shield` (a loadout with a shield, for a shield's block perks),
+/// `ship` (any of a ship's modules) or one module's own (`guns`, `hull`, `sails`, `rigging`), or for a signature the
+/// one named item that carries it, and an intrinsic the one Atheric that has it.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct TraitDef {
     pub id: String,
@@ -54,7 +54,8 @@ pub struct TraitDef {
 /// A named item: a Legendary, an Atheric or a cloak. Its layout is the traits each of its trait columns offers, in
 /// order; its resource is the island's its nodes ask for. A Breach's armour climbs further in Prestige. An Atheric
 /// weapon or module has an intrinsic, a trait always on while it is worn, beside its own node. Its look (`look`,
-/// `make`) is the set or metal it is drawn in and the make of its shield, bow or blade, which the room checks a dress by.
+/// `make`) is the set or metal it is drawn in and the make of its shield, bow or blade, which the room checks a dress
+/// by.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct NamedDef {
     pub id: String,

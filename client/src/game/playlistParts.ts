@@ -1,5 +1,5 @@
-// The Playlist screen's parts (`playlistScreen.ts` lays them): an entry's crest on the chart, and the chosen entry's card
-// with its level, what it drops, its rules, modifiers and rewards, and why it is shut.
+// The Playlist screen's parts (`playlistScreen.ts` lays them): an entry's crest on the chart, and the chosen entry's
+// card with its level, what it drops, its rules, modifiers and rewards, and why it is shut.
 import type { Child, Node, Text } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { INK, words } from './gearNodes.ts';

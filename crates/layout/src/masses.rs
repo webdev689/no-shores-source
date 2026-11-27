@@ -45,8 +45,8 @@ enum Answer {
 }
 
 /// Answers a layout's dead masses (the field's claim, the sculpt's floors, climbs and runs), the largest that can be
-/// answered first, seeking them again after each answer, up to `MOST_ANSWERS`: a climb goes in among the lookouts' and a
-/// valley among the floors. The climbs cut, so a ruin stands by each lookout.
+/// answered first, seeking them again after each answer, up to `MOST_ANSWERS`: a climb goes in among the lookouts' and
+/// a valley among the floors. The climbs cut, so a ruin stands by each lookout.
 pub fn reach_masses(field: &Field, sculpt: &mut Sculpt) -> Vec<[[f64; 7]; 2]> {
     let mut cut = Vec::new();
     for _ in 0..MOST_ANSWERS {

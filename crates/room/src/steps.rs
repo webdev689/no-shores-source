@@ -1,10 +1,10 @@
 //! The roads' steps a room runs a player at a time (`gear::quests::GoalKind::stepped`): a figure met at a place and
 //! walked to another, the player keeping up with it (an escort, with an ambush halfway) or following it unseen (a
-//! tail); a ward held through waves of foes; a horde fought with the house's Art unbounded; a puzzle's points used in order, or in any (ask 66); a place reached
-//! unseen, its watchers standing; and a race between checkpoints against the clock. A figure, a ward and a puzzle's
-//! points are the player's own, sent to them alone; a ward is a fighter on the players' side that thinks nothing and
-//! fights no one, kept out of every snapshot, which the waves' foes come at. What met counts on the player's quest log;
-//! what failed counts in the room, for the page to say its line.
+//! tail); a ward held through waves of foes; a horde fought with the house's Art unbounded; a puzzle's points used in
+//! order, or in any (ask 66); a place reached unseen, its watchers standing; and a race between checkpoints against the
+//! clock. A figure, a ward and a puzzle's points are the player's own, sent to them alone; a ward is a fighter on the
+//! players' side that thinks nothing and fights no one, kept out of every snapshot, which the waves' foes come at. What
+//! met counts on the player's quest log; what failed counts in the room, for the page to say its line.
 
 use crate::quests::{held_near, reached_near};
 use crate::{PlayerId, Room};
@@ -82,7 +82,8 @@ pub(crate) struct Figure {
     pub ambush: Option<Vec<FighterId>>,
 }
 
-/// A defence: its ward while it stands, where it stands, the wave standing and its foes, and when it may be tried again.
+/// A defence: its ward while it stands, where it stands, the wave standing and its foes, and when it may be tried
+/// again.
 #[derive(Debug, Default)]
 pub(crate) struct Defence {
     pub ward: Option<FighterId>,

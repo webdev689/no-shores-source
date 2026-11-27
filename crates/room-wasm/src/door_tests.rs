@@ -247,8 +247,8 @@ pub const CLASH_START_S: f64 = 1_790_153_100.0;
 
 #[test]
 fn a_sea_where_a_tithe_ship_attacks_a_friendly_ship_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {
-    // On this seed a bold Tithe ship comes out by the lane as the player sails from Sunspire, and attacks a friendly ship
-    // there half a minute out; the player turns for them and joins the fight beside the friendly ship.
+    // On this seed a bold Tithe ship comes out by the lane as the player sails from Sunspire, and attacks a friendly
+    // ship there half a minute out; the player turns for them and joins the fight beside the friendly ship.
     assert!(open_sea(TRAFFIC_SEA.as_bytes(), 6));
     room_world_start(CLASH_START_S);
     let player = room_join();

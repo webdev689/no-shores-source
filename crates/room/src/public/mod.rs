@@ -374,8 +374,8 @@ impl Room {
     }
 
     /// A player's account told: the part they took under their number until then is their account's, and so is a chest
-    /// laid under it. Told while a won event's result shows, they are laid the chest their account earned if it was laid
-    /// none: a player back under a new number as it was won had none.
+    /// laid under it. Told while a won event's result shows, they are laid the chest their account earned if it was
+    /// laid none: a player back under a new number as it was won had none.
     pub(crate) fn own_part(&mut self, player: PlayerId) {
         let who = self.who(player);
         let Some(mut public) = self.public.take() else { return };

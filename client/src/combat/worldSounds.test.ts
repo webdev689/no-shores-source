@@ -151,7 +151,8 @@ test("the player's sword cuts a foe where the foe stands, the listener at the ey
 test("at sea the ambience counts the listener's frame from the player's ship: a blow is placed in that frame, by the ear", () => {
   const { output, play, played, listener } = fakeSound();
   const ship = [-500, 700] as const;
-  // The ambience hears the sea round the player's ship each frame, the eye as its ear, before and after the fight's sounds.
+  // The ambience hears the sea round the player's ship each frame, the eye as its ear, before and after the fight's
+  // sounds.
   listen(output.audio, [0, 3, 2], 0, ship);
   const sounds = new WorldSounds(() => output, play);
   sounds.frame(frameOf({ events: [hit()] }));

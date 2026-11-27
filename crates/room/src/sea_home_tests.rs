@@ -6,8 +6,8 @@ use crate::hostiles::Hostile;
 use naval::fight::{HOSTILE_NEAR_M, PLAYER};
 use naval::ranks::{Commission, Rank};
 
-/// Overlook's island west and the Grey Tithe's east, home waters giving way to the Tithe's 10 km off Overlook's coast: a
-/// point 200 m inside their edge, and one 400 m outside it.
+/// Overlook's island west and the Grey Tithe's east, home waters giving way to the Tithe's 10 km off Overlook's coast:
+/// a point 200 m inside their edge, and one 400 m outside it.
 fn by_home_waters() -> (Sea, [f64; 2], [f64; 2]) {
     let text = r#"{ "continents": [
         { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },

@@ -239,7 +239,8 @@ test('the heroic task met is heard where the growth or the tithe-taker stood', (
 });
 
 test('beats kept while the tab was hidden: the last shows, their sounds and stings are dropped', () => {
-  // The game's frame clock moves at most 0.1 s a frame (gameFrame), however long the tab was hidden; the wall's runs on.
+  // The game's frame clock moves at most 0.1 s a frame (gameFrame), however long the tab was hidden; the wall's runs
+  // on.
   let wall = 0;
   const view = new PublicView('saltgrass-downs', undefined, null, () => wall);
   view.frame(fissure([]), [], [], bodies(), 0, [], () => 0);

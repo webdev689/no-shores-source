@@ -54,7 +54,8 @@ export const LAMP_COLOUR = [1, 0.62, 0.22] as const;
 /** A far lamp's size, metres across, `distance` metres from the eye. */
 export const lampSize = (distance: number): number => Math.max(LAMP_MIN_M, distance * LAMP_ANGLE);
 
-/** A far lamp's strength (0 to 1) `distance` metres from the eye: none within LAMP_NEAR_M, where the lantern is seen. */
+/** A far lamp's strength (0 to 1) `distance` metres from the eye: none within LAMP_NEAR_M, where the lantern is
+ *  seen. */
 export const lampAlpha = (distance: number): number => Math.min(1, Math.max(0, (distance - LAMP_NEAR_M) / LAMP_FADE_M));
 
 /** Up to LAMP_MOST of `points`, spread along the list (a ship's lanterns hang stern to stem in its order): the first,

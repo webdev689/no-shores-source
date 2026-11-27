@@ -1,6 +1,6 @@
 //! What a room counts toward the bounties (`gear::objectives`), the day's and a member's guild's week's
-//! (`guild_room.rs`): each foe felled for each player who shares its kill, each resource node gathered, and each dungeon
-//! cleared for each player the room keeps as its cache opens, on the island the room stands on.
+//! (`guild_room.rs`): each foe felled for each player who shares its kill, each resource node gathered, and each
+//! dungeon cleared for each player the room keeps as its cache opens, on the island the room stands on.
 
 use crate::{PlayerId, Room};
 use gear::objectives::Feat;

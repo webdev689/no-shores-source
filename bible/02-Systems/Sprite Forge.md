@@ -67,10 +67,11 @@ caster's element. They are published as `@art/arts/birds/<bird>-<view>-<beat>.pn
 It draws the weapons large for the weapon rows and gear screens (`weaponart.py`,
 [[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): each look a loadout's hand takes, in every metal
 the forge makes it in, each bow long and short, each shield buckler, round, kite and tower, plain or in a metal,
-the orcish short sword and each gun plain and gilded, 145 in all, its model alone at four times the man's pixels a metre (about 250), level with its
-business end to the right. Each is made, lit, graded (a bow's grip on the armour's leather, as the weapon run's) and
-laid grey for its dye as the man's layer in hand is, so the page colours it as it colours that layer. They are published as `@art/weapons/<layer>.png`; a left hand's twin
-(`dagger_iron_l`) is its right hand's picture.
+the orcish short sword and each gun plain and gilded, 145 in all, its model alone at four times the man's pixels a metre
+(about 250), level with its business end to the right. Each is made, lit, graded (a bow's grip on the armour's leather,
+as the weapon run's) and laid grey for its dye as the man's layer in hand is, so the page colours it as it colours that
+layer. They are published as `@art/weapons/<layer>.png`; a left hand's twin (`dagger_iron_l`) is its right hand's
+picture.
 
 The Lattice's foes are drawn by it, with their own looks and moves, from beside it: [[Lattice]].
 
@@ -78,8 +79,8 @@ The Lattice's foes are drawn by it, with their own looks and moves, from beside 
 
 `tools/forge/` holds the forge as DFO laid it out, so its paths work unchanged: the code in `tools/sprite-forge/`, the
 packer in `tools/forgeViewer/`, and the horse's sources in `src/assets/horse/`. The size, comment and assets checks
-skip the folder. What it makes stays out of git ([[Generated Files Stay Out of Git]]): strips go in `public/art/studio/`,
-tables in `src/systems/studioArt/`, packs in `packs/`.
+skip the folder. What it makes stays out of git ([[Generated Files Stay Out of Git]]): strips go in
+`public/art/studio/`, tables in `src/systems/studioArt/`, packs in `packs/`.
 
 `tools/forge_publish.py` publishes them to the `overlook-forge` bucket on R2 ([[Generated Files on Cloudflare R2]]):
 
@@ -134,23 +135,23 @@ A change to `layers.py` or `stage.py` leaves the code's digest in `keys/version.
 Where the change draws nothing new, run `python3 -I tools/sprite-forge/rendercache.py --record` to write it again.
 
 A layer takes its set's or metal's own grades by its name (`layers.set_of`), a pair's left twin (`_l`) and a short
-sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
-`python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
-The `forge` workflow renders the Arts' birds, the weapons drawn large and the material nodes, and adds them to what is
-published whenever `artbirds.py`, `weaponart.py`, the item forge's models
+sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a
+large render into shards. Then `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the
+manifest for a pull request. The `forge` workflow renders the Arts' birds, the weapons drawn large and the material
+nodes, and adds them to what is published whenever `artbirds.py`, `weaponart.py`, the item forge's models
 (`items/`, which the nodes are laid from), `itempics.py`, the nodes' rows or their pinned packages change on main, or
 when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends with the
-manifest; a second job uploads them with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes the
-manifest into `content/forge/renders.json`.
+manifest; a second job uploads them with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes
+the manifest into `content/forge/renders.json`.
 A run asked for may also draw figure strips first, for both bodies (`figures`: runs split by `;`, each `anims|layers`,
 either empty for all), with a limit of 300 minutes: a cloud session holds no Cloudflare key, so this is how a figure
 strip reaches R2 from one. A fresh checkout holds no strips, so every strip of each layer named is drawn.
 It may also draw the first person's dagger and sword blade layers (`firstperson`: runs split by `;`, each
 `weapon|metals`, the weapon `dagger` or `sword`, the metals empty for every make), for the right hand and the left's
 twin, into the studio's `forge/WEAPON02/layers` or `forge/WEAPON04/layers`, with a limit of 90 minutes when no
-figures are asked for (every make of both weapons is reckoned at about 40 on four cores, from one record's time); the hands are not drawn again, and the wear
-maps are not, as the game reads none. `fplayers.py --check` checks, without rendering, that every record is cut from
-the canvas it was rendered on.
+figures are asked for (every make of both weapons is reckoned at about 40 on four cores, from one record's time); the
+hands are not drawn again, and the wear maps are not, as the game reads none. `fplayers.py --check` checks, without
+rendering, that every record is cut from the canvas it was rendered on.
 The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without rendering.
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes

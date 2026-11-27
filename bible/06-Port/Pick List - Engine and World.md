@@ -236,6 +236,6 @@ renderer can key it as `archive_record`.
   landforms only shapes above the beach knee. The kernel and worker split and the far-LOD rings are ours, but they read
   DFU's output.
 - **Mods made for DFO.** World of Daggerfall, the Arena colosseum, the windmills, Low Poly Trees and Raiding Parties
-  are vendored DFU mods. The owner decided ([[Which Made-for-DFO Mods Come Over]]): the Arena and Raiding Parties come over as design and geometry on our
-  own formats and art, No Shores builds its own trees, and World of Daggerfall and the windmills stay while we design our own elements. Their DF
-  texture and ARCH3D references stay behind.
+  are vendored DFU mods. The owner decided ([[Which Made-for-DFO Mods Come Over]]): the Arena and Raiding Parties come
+  over as design and geometry on our own formats and art, No Shores builds its own trees, and World of Daggerfall and
+  the windmills stay while we design our own elements. Their DF texture and ARCH3D references stay behind.

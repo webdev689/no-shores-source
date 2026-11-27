@@ -146,7 +146,8 @@ export class SeaView {
     if (this.where.kind === 'helm') this.where = { ...this.where, going: 'up' };
   }
 
-  /** Flies the view up from over the ship to `rig`, over an island, its landings `side`, `docked` at its port or not. */
+  /** Flies the view up from over the ship to `rig`, over an island, its landings `side`, `docked` at its port or
+   *  not. */
   flyToSide(side: readonly Mark[], rig: Rig, docked = false): void {
     [this.side, this.sideRig, this.chosen, this.docked] = [side, rig, null, docked];
     this.close.set(false);

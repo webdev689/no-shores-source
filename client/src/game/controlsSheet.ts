@@ -170,7 +170,8 @@ export class ControlsSheet {
     addEventListener('mouseup', () => this.rebinding.mouseUp(), { capture: true });
   }
 
-  /** The sheet in a view `width` by `height` CSS pixels, its words at the larger step where `big`; none while closed. */
+  /** The sheet in a view `width` by `height` CSS pixels, its words at the larger step where `big`; none while
+   *  closed. */
   node(ui: Interface, view: { readonly width: number; readonly height: number; readonly big: boolean }): Node | null {
     this.ui = ui;
     if (!this.shown) return null;

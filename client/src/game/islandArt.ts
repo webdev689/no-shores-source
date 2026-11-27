@@ -1,10 +1,11 @@
 // The island's tiles painted as the website's pictures are: pixel scenes on the shared sheet (`art/`), in its lights,
-// dithered, each texel two of the screen's pixels across. Overlook's town stepping up its rock to its beacon, its quay's
-// lanterns and a ship at anchor; the Playlist's night, its four crests set over it as a constellation; a patrol zone's
-// hills under dawn, night or mist, a hamlet's windows and its three landing zones' lanterns; an Elite Dungeon's gate in
-// a hillside, braziers either side and its light within; a mission's broken walls in mist under a banner; a world
-// boss rising from a burning sea; an outpost's palisade and watchtower on its strand; and the island itself charted
-// with its shoals, its harbour's lantern and the ship. Each is seeded by its place, so no two are painted alike.
+// dithered, each texel two of the screen's pixels across. Overlook's town stepping up its rock to its beacon, its
+// quay's lanterns and a ship at anchor; the Playlist's night, its four crests set over it as a constellation; a patrol
+// zone's hills under dawn, night or mist, a hamlet's windows and its three landing zones' lanterns; an Elite Dungeon's
+// gate in a hillside, braziers either side and its light within; a mission's broken walls in mist under a banner; a
+// world boss rising from a burning sea; an outpost's palisade and watchtower on its strand; and the island itself
+// charted with its shoals, its harbour's lantern and the ship. Each is seeded by its place, so no two are painted
+// alike.
 import { DARK } from '../art/landmarks.ts';
 import { clouds, lantern, LIGHTS, moon, range, sea, sky, stars } from '../art/light.ts';
 import { beacon, isle, quay, town } from '../art/places.ts';
@@ -42,7 +43,8 @@ function seedOf(id: string): number {
   return state >>> 0;
 }
 
-/** Overlook by night: its town stepping up the rock to the beacon, the quay's lanterns on the water, a ship at anchor. */
+/** Overlook by night: its town stepping up the rock to the beacon, the quay's lanterns on the water, a ship at
+ *  anchor. */
 function port(sheet: Sheet, random: () => number): void {
   const { width, height } = sheet;
   const light = LIGHTS.night;

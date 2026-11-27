@@ -2,8 +2,9 @@
 // screen: a shield of worked metal, bevelled and studded, a gem at its head and its device raised over a lit field;
 // the glow behind it, the dial behind that on the chart, the light that sweeps it as it is lit, and the dot of a
 // reward waiting with the ring that spreads from it. Each is drawn once (the sweep once a step) and moved by the
-// screen, never drawn again a frame. Chevrons for the Elite Playlist, an eye of the deep for the Abyss Playlist, crossed swords for the Elite
-// Dungeon of the week, a crown over the deep for the Abyss's, and a gate under a crystal spire for a Breach.
+// screen, never drawn again a frame. Chevrons for the Elite Playlist, an eye of the deep for the Abyss Playlist,
+// crossed swords for the Elite Dungeon of the week, a crown over the deep for the Abyss's, and a gate under a crystal
+// spire for a Breach.
 import type { PlaylistKind } from './playlistWords.ts';
 
 type Context = OffscreenCanvasRenderingContext2D;
@@ -533,7 +534,8 @@ export function drawWaiting(context: Context, side: number): void {
   context.stroke();
 }
 
-/** Draws the ring that spreads from a waiting reward's dot, gold, `side` pixels square; the screen grows and fades it. */
+/** Draws the ring that spreads from a waiting reward's dot, gold, `side` pixels square; the screen grows and fades
+ *  it. */
 export function drawRipple(context: Context, side: number): void {
   const width = Math.max(1, side * 0.06);
   context.beginPath();

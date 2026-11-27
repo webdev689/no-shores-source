@@ -114,8 +114,8 @@ pub struct Hostiles {
     chasing: BTreeMap<PlayerId, u32>,
     /// The sea's tier, which raises the levels of the ships it sends as it raises foes on land.
     pub difficulty: gear::Difficulty,
-    /// The world time over the sea, seconds since the Unix epoch, as its room tells it each tick: by night a ship sights
-    /// a player only within night sight. Until told, its ships sight as by day.
+    /// The world time over the sea, seconds since the Unix epoch, as its room tells it each tick: by night a ship
+    /// sights a player only within night sight. Until told, its ships sight as by day.
     pub clock_s: Option<f64>,
 }
 

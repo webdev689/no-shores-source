@@ -500,7 +500,8 @@ export function stretchedNormal([x, y, z]: Vector, stretch: number): Vector {
 }
 
 /** A module's surface group as Blender made it, smooth where it was smooth, stretched up by `stretch` (a stair fitted
- *  to its rise), its picture laid from the axis each triangle faces most, as rock's is; none until its mesh has come. */
+ *  to its rise), its picture laid from the axis each triangle faces most, as rock's is; none until its mesh has
+ *  come. */
 function moduled(module: number, group: number, stretch: number, surface: Surface): Face[] {
   const mesh = moduleMesh(module, group);
   if (!mesh) return [];

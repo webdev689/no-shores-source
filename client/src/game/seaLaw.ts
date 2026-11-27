@@ -216,7 +216,8 @@ export function timeText(seconds: number): string {
  *  looks for that place either side of its own, metres. */
 const FOLLOW = { perSecond: 4, windowM: 3_000 } as const;
 
-/** The room's word on the player's ship: where it has it and the pace it sailed it at, held down near a hostile ship. */
+/** The room's word on the player's ship: where it has it and the pace it sailed it at, held down near a hostile
+ *  ship. */
 export interface RoomWord {
   readonly x: number;
   readonly y: number;

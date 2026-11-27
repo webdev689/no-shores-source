@@ -23,7 +23,8 @@ export function flagPictures(): readonly Picture[] {
 }
 let flags: Picture[] | null = null;
 
-/** The flag a picture layer flies (`Painted.flagLayer`), counted from the first flag's layer `first`; none past them. */
+/** The flag a picture layer flies (`Painted.flagLayer`), counted from the first flag's layer `first`; none past
+ *  them. */
 export function flagPicture(layer: number, first: number): Picture | null {
   return flagPictures()[layer - first] ?? null;
 }

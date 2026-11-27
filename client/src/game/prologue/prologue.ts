@@ -199,7 +199,8 @@ export class Prologue {
     this.end = 'played';
   }
 
-  /** What the beat that ended leaves for those after it; a played story ends at the title, and the story at the shore. */
+  /** What the beat that ended leaves for those after it; a played story ends at the title, and the story at the
+   *  shore. */
   private carry(ended: Beat): void {
     ended.leave?.();
     if (ended instanceof Sighted) this.carried.inbound = ended.inbound;

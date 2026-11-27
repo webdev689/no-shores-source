@@ -1,8 +1,9 @@
 // The Appearance screen, after Destiny's: the display at the left (the player's figure turning in the dye worn, no
 // horse: a horse and its barding are the Mount slot's), and at the right rows under engraved headings: EMBLEM five a
 // row, then DYE, every piece of each, those kept lit and worn with a click, the rest dim, the one worn set in
-// brass. A piece's tile is the Mount slot's barding tiles' too (`tileOf`). Hovering a piece, or reaching it with the keys, shows its card and previews it on the display. The arrows move
-// between the pieces, Enter wears one, Escape goes back to the Character page with the focus on its button.
+// brass. A piece's tile is the Mount slot's barding tiles' too (`tileOf`). Hovering a piece, or reaching it with the
+// keys, shows its card and previews it on the display. The arrows move between the pieces, Enter wears one, Escape goes
+// back to the Character page with the focus on its button.
 
 import { cosmeticRamp } from '../../forge/cosmetics.ts';
 import { ASKS } from '../../network/gearMessages.ts';

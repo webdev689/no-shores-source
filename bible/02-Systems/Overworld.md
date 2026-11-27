@@ -93,8 +93,8 @@ No Playlist is marked at sea or over an island: it stands among the island's til
 tiles").
 
 A locked node ([[World Map]], "Seen whole, reached by nodes") stands among the island's tiles with a padlock, its
-label reading why ("<name> is locked", or "Opens later" for a social space that opens later); its tile is dim and a click on it does
-nothing, so no landing is ever made there (`islandWords.ts`).
+label reading why ("<name> is locked", or "Opens later" for a social space that opens later); its tile is dim and a
+click on it does nothing, so no landing is ever made there (`islandWords.ts`).
 
 ## The island's side
 

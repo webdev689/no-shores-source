@@ -67,7 +67,8 @@ pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], (paths, outcrops): (&[Path], &[Outc
             let near_way = paths
                 .iter()
                 .any(|path| path.points.windows(2).any(|pair| off_line(site, pair[0], pair[1]) < WAY_CLEAR_M));
-            // Only where the cliff stands: a ruin on low ground past a gorge's mouth would sit in plain view of nothing.
+            // Only where the cliff stands: a ruin on low ground past a gorge's mouth would sit in plain view of
+            // nothing.
             let standing = carved_at(kit, carved, site) - kit.height(edge);
             if near_way
                 || !holds_a_ruin(kit, carved, site, outcrops)

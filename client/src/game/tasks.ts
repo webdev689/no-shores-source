@@ -76,7 +76,8 @@ export function justMet(before: Quest | null, after: Quest | null): number[] {
   });
 }
 
-/** Whether two quests read alike, word for word: compared field by field, so a frame that changes nothing makes nothing. */
+/** Whether two quests read alike, word for word: compared field by field, so a frame that changes nothing makes
+ *  nothing. */
 export function sameQuest(one: Quest | null, other: Quest | null): boolean {
   if (one === null || other === null) return one === other;
   if (one.name !== other.name || one.task !== other.task || one.steps.length !== other.steps.length) return false;
@@ -195,7 +196,8 @@ export class TaskTracker {
 const FRESH_S = 0.35;
 const MET_S = 0.7;
 
-/** A step's row: its box as the quest card's, ticked once met, its words, its keys and what is left of it; lit by `flash`, 1 to 0. */
+/** A step's row: its box as the quest card's, ticked once met, its words, its keys and what is left of it; lit by
+ *  `flash`, 1 to 0. */
 function stepNode(step: Step, size: number, flash: number): Node {
   const box = size === 2 ? 16 : 11;
   const colour = flash > 0 ? '#fbf8f0' : step.done ? '#9a9079' : '#e2dccd';

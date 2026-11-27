@@ -69,11 +69,11 @@ const ramps = (looks: readonly (readonly Rgb[])[]) => looks.flatMap((ramp) => ra
 
 /**
  * A card's look in WGSL, from its uniform's `status` (Veiled, Exposed, the clock, the dissolve's share), `look`
- * (Charged, the dissolve's element or an arrival's look, ARRIVING, the shake in pixels, the flash's stage) and `tint` (the flash's
- * colour; w 1 for a smear). `card_texel` is the picture's texel a fragment shows, shaken and, for a Cosmic death,
- * drawn in toward the chest in four whole steps; `card_shade` the colour it shows there, alpha 0 for none. Everything
- * is drawn on the figure's own pixels, so a Charge's arcs never leave its outline and a flash never fades through a
- * ghost.
+ * (Charged, the dissolve's element or an arrival's look, ARRIVING, the shake in pixels, the flash's stage) and `tint`
+ * (the flash's colour; w 1 for a smear). `card_texel` is the picture's texel a fragment shows, shaken and, for a Cosmic
+ * death, drawn in toward the chest in four whole steps; `card_shade` the colour it shows there, alpha 0 for none.
+ * Everything is drawn on the figure's own pixels, so a Charge's arcs never leave its outline and a flash never fades
+ * through a ghost.
  */
 export const STATUS_WGSL = /* wgsl */ `
 const STATUS_ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);

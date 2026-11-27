@@ -1,6 +1,6 @@
-// A bar's losses, read at a glance as DFO's Enhanced HUD read them: a strip holds where the bar stood for a moment after
-// a loss and then drains to it, and a real bite breaks off the bar as a piece that falls. Every bar that loses reads
-// its losses by this one law, a foe's or the player's on foot and a ship's at sea.
+// A bar's losses, read at a glance as DFO's Enhanced HUD read them: a strip holds where the bar stood for a moment
+// after a loss and then drains to it, and a real bite breaks off the bar as a piece that falls. Every bar that loses
+// reads its losses by this one law, a foe's or the player's on foot and a ship's at sea.
 
 /** How long the lost strip stands after a loss before it drains, in seconds; the longest it stands however the losses
  *  keep coming, so a bar losing a little every frame still drains; and how fast it drains, in shares a second. */

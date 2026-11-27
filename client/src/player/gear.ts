@@ -37,7 +37,8 @@ export const KINDS = [
   'greatsword',
   'double_pistolet',
 ] as const;
-/** The Ranged loadouts; every other kind but the armour and the cloak is a Melee one (the gear crate's `Kind::slot`). */
+/** The Ranged loadouts; every other kind but the armour and the cloak is a Melee one (the gear crate's
+ *  `Kind::slot`). */
 const RANGED: ReadonlySet<string> = new Set(['bow', 'crossbow', 'pistolet', 'double_pistolet', 'thunderlock']);
 const OWN_SLOTS: Readonly<Record<string, number>> = { head: 2, torso: 3, arms: 4, legs: 5, cloak: 6, horse: 11 };
 /** A horse's kind and the Mount slot it is worn in, by the gear crate's numbers (`horses.rs`). */
@@ -90,10 +91,10 @@ export const isWeapon = (kind: number): boolean => kind >= 1 && kind < KINDS.len
 export const SLOTS = ['melee', 'ranged', 'head', 'torso', 'arms', 'legs', 'cloak'] as const;
 export const MELEE = 0;
 export const RANGED_SLOT = 1;
-/** The rarities, by the gear crate's numbers: each one's name, its colour with the lit and shaded edges of a frame in it
- *  (Enhanced Plus's bevel), the channels its glow is drawn in, and the pips that mark it. The colours are the owner's:
- *  Normal white, Magic green, Rare yellow, Legendary red, Atheric cyan blue, as the Vestiges' crystals are. A Normal
- *  piece's frame and glow are the kit's plain stone, so it never outshines a finer one. */
+/** The rarities, by the gear crate's numbers: each one's name, its colour with the lit and shaded edges of a frame in
+ *  it (Enhanced Plus's bevel), the channels its glow is drawn in, and the pips that mark it. The colours are the
+ *  owner's: Normal white, Magic green, Rare yellow, Legendary red, Atheric cyan blue, as the Vestiges' crystals are. A
+ *  Normal piece's frame and glow are the kit's plain stone, so it never outshines a finer one. */
 export const RARITIES = [
   { name: 'Normal', colour: '#e9e4d9', lit: '#a49b85', shade: '#3a352a', rgb: '154,144,121', pips: '' },
   { name: 'Magic', colour: '#4ec66e', lit: '#98f0ae', shade: '#206c3e', rgb: '78,198,110', pips: '◆' },
@@ -228,7 +229,8 @@ export const FORGED = '(Forged)';
 
 /** An item's name: a named item's own (a faction's piece's is its set's); plain clothes' their own; a rolled armour
  *  piece or weapon its set's and its kind's word, by the look it is drawn in, the prologue's armour by its steel, a
- *  Breach's piece won at Hard Forged; a horse by its coat; the cloak its kind's. Ship modules are named by `gearName`. */
+ *  Breach's piece won at Hard Forged; a horse by its coat; the cloak its kind's. Ship modules are named by
+ *  `gearName`. */
 export function itemName(
   item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story' | 'plain'> &
     Partial<Pick<GearItem, 'breach' | 'hard'>>,
@@ -554,7 +556,8 @@ export function gearHands(
   const drawn = look.metal === 'plain' ? '' : look.metal;
   // A shield's make is the shield's kind, not its weapon's.
   const make = held.left === 'shield' ? null : look.make;
-  // A faction's metal and a Normal weapon's plain iron or steel fall along the ladder; any other first to its content's.
+  // A faction's metal and a Normal weapon's plain iron or steel fall along the ladder; any other first to its
+  // content's.
   const own = metal || item.rarity === 0 ? [] : sourceLooks(item).metals;
   const right = layerFor(wardrobe.right, held.right, make, drawn, false, own);
   if (held.left === 'hilt') return { right, left: null, grip: 'hilt' };

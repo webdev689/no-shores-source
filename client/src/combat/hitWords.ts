@@ -248,7 +248,8 @@ export class Words {
       if (frame >= word.life || !spot) return false;
       const pose = wordPose(frame, word.life, still);
       const [half, size] = [widthOf(word) / 2, sizeOf(word.said)];
-      // Its near edge stands its throw from the blow, so the blow itself stays clear; a crit's or a kill's twice as far.
+      // Its near edge stands its throw from the blow, so the blow itself stays clear; a crit's or a kill's twice as
+      // far.
       const thrown = word.side * (WORD_THROW_PX * (size === WORD_PX.loud ? 2 : 1) + half);
       const middle = Math.round(spot.x + word.across + thrown);
       const top = Math.round(spot.y - pose.rise - size / 2);

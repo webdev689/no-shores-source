@@ -39,10 +39,10 @@ pub struct Trim {
     pub bosun: f64,
     pub carpenter: f64,
     /// An Atheric module's own work (`fight_exotics.rs`): its balls' harm to a hull below the waterline; the share of
-    /// its hull mended a second; the share of it a ball that would sink it leaves, once a fight; whether a ship it sinks
-    /// reloads its guns; whether torn canvas costs it no way; the way each ball striking it gives it; the share of
-    /// turn its balls in a ship's rigging take; the share of way it takes from a ship near it. 1 for `holing`, else 0 or
-    /// false, changes nothing.
+    /// its hull mended a second; the share of it a ball that would sink it leaves, once a fight; whether a ship it
+    /// sinks reloads its guns; whether torn canvas costs it no way; the way each ball striking it gives it; the share
+    /// of turn its balls in a ship's rigging take; the share of way it takes from a ship near it. 1 for `holing`, else
+    /// 0 or false, changes nothing.
     pub holing: f64,
     pub mend: f64,
     pub last_stand: f64,

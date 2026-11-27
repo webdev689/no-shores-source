@@ -1,7 +1,7 @@
 //! What a player holds: every item, where each is (worn in a slot, carried, or in the vault), their Vestiges, their
-//! materials, their mail and their XP; and what follows from it: their level, Prestige, Defense, each loadout's Attack, and the
-//! traits their worn gear gives. Destiny 1's limits hold: nine carried in each slot beside the one worn, ten Vestiges,
-//! and a vault of twenty weapons, twenty armour and twenty Vestiges.
+//! materials, their mail and their XP; and what follows from it: their level, Prestige, Defense, each loadout's Attack,
+//! and the traits their worn gear gives. Destiny 1's limits hold: nine carried in each slot beside the one worn, ten
+//! Vestiges, and a vault of twenty weapons, twenty armour and twenty Vestiges.
 
 use crate::catalogue::catalogue;
 use crate::item::Item;

@@ -74,14 +74,14 @@ they play in holds it while they are there.
   signs in to its account; one not linked links to the ticket's account, which only a session of that account may
   take, and otherwise becomes a new account. A ticket given that is used, run out or no ticket answers 400 and starts
   nothing, and a page holding a session whose ticket did not come (the ticket limit, the accounts out of reach) does not
-  go to Discord but says why, so a sign-in never makes a new account whose session takes the guest's place. The state sent to Discord is used once and must match a cookie set as
-  the player left; the code is used once and taken only with the nonce of the tab that began it; each lapses after
-  ten minutes. So no one can finish another's sign-in, hand a player their own session, or link a player's Discord
-  to their own account. A session's token never travels in an address. The Discord app must list
-  `https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` as a redirect. Without the app's keys,
-  Discord sign-in says it is not set up. The app is the [[Discord Bot]]'s too, one application for both: the
-  accounts read `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`, and the bot's keys and its own redirect are in
-  its note ("One Discord application").
+  go to Discord but says why, so a sign-in never makes a new account whose session takes the guest's place. The state
+  sent to Discord is used once and must match a cookie set as the player left; the code is used once and taken only with
+  the nonce of the tab that began it; each lapses after ten minutes. So no one can finish another's sign-in, hand a
+  player their own session, or link a player's Discord to their own account. A session's token never travels in an
+  address. The Discord app must list `https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` as a
+  redirect. Without the app's keys, Discord sign-in says it is not set up. The app is the [[Discord Bot]]'s too, one
+  application for both: the accounts read `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`, and the bot's keys and its
+  own redirect are in its note ("One Discord application").
 - **What the Discord bot reads.** The bot reaches the accounts' `LinkedCharacters` through its service binding, never
   a web address: given a Discord user id, the linked account's username, its character's level as its room kept it
   to show (`shown.level`) and the faction it is pledged to, or null when that Discord account is linked to none
@@ -110,9 +110,9 @@ they play in holds it while they are there.
   character keeps it until that player leaves.
 - **Any page may ask.** The API answers any origin: a session travels only as a bearer token, never a cookie, so no
   page acts as a player without holding their token. A write that fails is logged and answered like any other: 409
-  when another ask changed the same rows first, 500 otherwise. Discord sends players back only to pages under those listed in
-  the Worker's `PAGES`, by origin and path: the game at `https://noshores.online/play/` (and `www.`), the copy still
-  published at `https://lattymoy.github.io/no-shores-source/`, and under `npm run accounts` the dev server's.
+  when another ask changed the same rows first, 500 otherwise. Discord sends players back only to pages under those
+  listed in the Worker's `PAGES`, by origin and path: the game at `https://noshores.online/play/` (and `www.`), the copy
+  still published at `https://lattymoy.github.io/no-shores-source/`, and under `npm run accounts` the dev server's.
 - **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
   rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is
   kept apart from any other's. A room reads the session's token as it connects, so a sign-in made after the page
@@ -150,10 +150,12 @@ they play in holds it while they are there.
   and gives it to the player, trimming their fight by it. One account is one player in a room: a second socket of theirs
   signed in (a rejoin before the room saw the first close, or a second tab) sends the first away as played elsewhere
   before it is given the character, so a run keeps the first one's body for it, and the rules refuse to note one account
-  for two players (`Room::own`; at sea `Sea::own`, so a second tab moves nothing floating or owed to the first). While the accounts hold what this room last saved of the first, and gave no errand's
-  answer onto it since, the room's own body of it is the newest, and the second takes that on, saved anew under its
-  hold; first the first one's chests are opened and what lies for them is posted to their mail, as at a leave. A rejoin's old socket is one the page let go of already, so it plays on; a second tab's page stops there and
-  joins no more, so two tabs never take the character back and forth.
+  for two players (`Room::own`; at sea `Sea::own`, so a second tab moves nothing floating or owed to the first). While
+  the accounts hold what this room last saved of the first, and gave no errand's answer onto it since, the room's own
+  body of it is the newest, and the second takes that on, saved anew under its hold; first the first one's chests are
+  opened and what lies for them is posted to their mail, as at a leave. A rejoin's old socket is one the page let go of
+  already, so it plays on; a second tab's page stops there and joins no more, so two tabs never take the character back
+  and forth.
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
   and let go; a release the accounts do not answer is asked again, then the last save is made on its own and the
@@ -162,10 +164,11 @@ they play in holds it while they are there.
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
   another learns it from its next save and lets the player go, saying their character joined another room (4001),
   and that page joins no more ([[Server]], "Joining again"). Each claim keeps the room that claims it (`room`, from
-  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]) and the account's username (null for a guest) and its guild's tag (null in none), which the room puts on the player's plate, and a look answers
-  the room that last held it; a room that lets a character go untouched (its gate shut, or it never gave it) was never
-  where it was, so the room before is its last again. The rooms judge where a character comes from by these alone
-  ([[Server]], "Where a character comes from").
+  its holder's name) and answers the room that held it before (`came_from`, null before any did;
+  [[The Server Is the Authority Over Everything]]) and the account's username (null for a guest) and its guild's tag
+  (null in none), which the room puts on the player's plate, and a look answers the room that last held it; a room that
+  lets a character go untouched (its gate shut, or it never gave it) was never where it was, so the room before is its
+  last again. The rooms judge where a character comes from by these alone ([[Server]], "Where a character comes from").
 - **Gated.** Before giving a character, the room asks its gate ([[Activities]]). It judges the character with the
   story the player already holds in the room carried forward, since the page may tell the room the prologue is done
   before the accounts answer; the story only moves forward. One the gate shuts, or a new one where the prologue is
@@ -174,14 +177,14 @@ they play in holds it while they are there.
 - **A run keeps to its company.** A run's room ([[Activities]]) gives a character to the first to come, then only
   to one it let in before or a companion of someone it let in, for as long as it lives: one of their company's
   members (`companions(account, room)`, longest there first, or the player alone), or one the run was found for with
-  them by Find a Company (`found_runs`, which admits them for a day after it was found). A group found is no company, and lets its members in together
-  to that one run alone. Any other is let go untouched, and the player sent away saying "This run is another
-  company's.".
+  them by Find a Company (`found_runs`, which admits them for a day after it was found). A group found is no company,
+  and lets its members in together to that one run alone. Any other is let go untouched, and the player sent away saying
+  "This run is another company's.".
 - **At sea.** The sea room claims and keeps the character too, for its ship's hurts (`ship`: its hull, canvas and men
   in ten-thousandths of whole), where the sea last kept it (`ship_at`, a player who leaves mid-fight kept at the
-  port city it would wash up at, as the fight has it), and what floats gathered into it; a deck boarded fights with it, and gives it back
-  as the boarder leaves it ([[Naval Combat]], "How a fight ends"). Before the claim is answered the sea plays a new
-  character whose ship has the hurts it keeps.
+  port city it would wash up at, as the fight has it), and what floats gathered into it; a deck boarded fights with it,
+  and gives it back as the boarder leaves it ([[Naval Combat]], "How a fight ends"). Before the claim is answered the
+  sea plays a new character whose ship has the hurts it keeps.
 - **Where a player logs back in** ([[A Player Logs Back In Where They Left the Overworld or a Social Space]]). The
   character keeps the last place it left of the overworld and the social spaces (`last`, `gear::last::Last`): the sea,
   written by the sea room as it keeps a ship at sea, or a social space's node with where the player stood, to the
@@ -190,22 +193,22 @@ they play in holds it while they are there.
   room writes it, so one who logs out in a patrol zone, a dungeon or on an island comes back to whichever of
   the two they were in last, but a character on a dive whose last room was a room of its dive's zone, not homeward,
   logs back into that zone, as does a public dive whose last room was the zone it went on from (reloaded on the way
-  between; a company's route there is its company's to find, so it comes back as above) ([[Passages]], "A dive"). `GET /v1/me` answers it beside the account (`place`:
-  `{ "kind": "sea" }`, `{ "kind": "social", "node", "at", "facing" }` in metres and radians,
-  `{ "kind": "passage", "room" }` the zone's first public room or its company's route's own, or null; `lastPlace.ts`). After the title the
-  page goes there (`relog.ts`): aboard, where the sea room puts the ship it kept; into the dive's zone, which takes
-  the dive back as its rejoin (`PassageGame.resumeIn`; a zone the page cannot lay or join leaves them at Overlook); or
-  into that social space, joining
-  its room with `?relog=1`, and the room stands a player whose character last stood in it where they left it, on the
-  floor they stood on (`stand_where_left`; where a body no longer fits there, at a spawn). Only logging back in asks
+  between; a company's route there is its company's to find, so it comes back as above) ([[Passages]], "A dive").
+  `GET /v1/me` answers it beside the account (`place`: `{ "kind": "sea" }`,
+  `{ "kind": "social", "node", "at", "facing" }` in metres and radians, `{ "kind": "passage", "room" }` the zone's first
+  public room or its company's route's own, or null; `lastPlace.ts`). After the title the page goes there (`relog.ts`):
+  aboard, where the sea room puts the ship it kept; into the dive's zone, which takes the dive back as its rejoin
+  (`PassageGame.resumeIn`; a zone the page cannot lay or join leaves them at Overlook); or into that social space,
+  joining its room with `?relog=1`, and the room stands a player whose character last stood in it where they left it, on
+  the floor they stood on (`stand_where_left`; where a body no longer fits there, at a spawn). Only logging back in asks
   it: travelling there, taking a gate or coming back from an activity arrives at the arrival. A link dropped and
   joined again keeps the ask, so one who logged back in stands again at the spot last saved. One who has just played
   the story through, one with none kept, or one whose social space is not open on the landmass arrives at Overlook.
   The sea's tier is Normal, as every voyage's begins. Offline, where no room keeps a character, the page keeps the
-  place itself in the browser (`noshores.place`, within a second of each change and as the page hides or goes, `keepPlace`), the ship
-  where it lay and the player's spot across, not its height, and resumes from it the same way, the player on the
-  ground under the spot. A page reloaded the moment it leaves a room may read the place before that room has saved
-  it, and so resumes at the one before.
+  place itself in the browser (`noshores.place`, within a second of each change and as the page hides or goes,
+  `keepPlace`), the ship where it lay and the player's spot across, not its height, and resumes from it the same way,
+  the player on the ground under the spot. A page reloaded the moment it leaves a room may read the place before that
+  room has saved it, and so resumes at the one before.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
   that is not kept, or in a run, which keeps no one unkept, is sent away. A socket with no session, its token none in
   five seconds or no session at all, is sent away from any room that keeps characters ([[Server]], "The host"). The
@@ -244,8 +247,9 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   decline; the founder makes members admins and back, either removes those below them, and the founder hands the
   founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. Every
   such write holds only while both are still in that guild at the ranks read, so a rank never lands in another guild
-  and a guild never loses its founder. An invite unanswered is kept 30 days. A founder leaves only once another founds it, or alone, which
-  ends it; a member leaves only at the rank read, so a founding handed to them as they leave keeps its founder. A hundred at most. Its banner, description and level, and the Guild tab's own read (`GET /v1/guild`), are
+  and a guild never loses its founder. An invite unanswered is kept 30 days. A founder leaves only once another founds
+  it, or alone, which ends it; a member leaves only at the rank read, so a founding handed to them as they leave keeps
+  its founder. A hundred at most. Its banner, description and level, and the Guild tab's own read (`GET /v1/guild`), are
   in [[Guilds]].
 - **Blocking** ends a friendship and its ask and the invites either way. What the one blocked asks after is answered
   as sent and never arrives. A block either way between a player and anyone in a company keeps them out of it, by
@@ -258,7 +262,8 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the owner to read in the database, ten a day a player. [[Names]] says how the owner reads and acts on a name.
 - **The room's own**: the Game column lists the players with a name in the same room beside the company, the guests
   only counted. Another player's details show what they wear always, and where they are only to their friends, company
-  and guild, and their guild's motto and description. A friend ask still waiting and a guild's invite show no one where the player asked is.
+  and guild, and their guild's motto and description. A friend ask still waiting and a guild's invite show no one where
+  the player asked is.
 - **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild); 600 an
   hour of one account's outpost asks and its rooms' errands together, and 600 an hour of its plot reads apart.
 - **Outposts** ([[Outposts]]): `GET /v1/outposts` gives a member their guild's outposts, its treasury and ledger, the
@@ -285,13 +290,13 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   Playlist (each `--sea` base's run named `--sea`, gone into from the sea),
   `playlist-elite` and `playlist-abyss` for the playlists, one queue each for the whole game, whichever
   port the Playlist was opened beside, and `node-gullwing-vale--breach-normal` and `--breach-hard` for the Drowned
-  Vale, the one zone a Breach's gate stands in (`BREACH_ZONES`). A socket's first message is its session's token; one that is no session, or that sends none within five
-  seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with 4003 and "Sign in to find a company.". At most 64
-  sockets with a token wait in one (a search past them is answered 503; a Launch is taken past searches, as it is gone
-  at the next look, but past 64 Launches with a token it is answered 503 too, `launchesFull`), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never shut out
-  those that sign in; its clock stops once it holds none. It
-  checks a base's shape alone, not that a rule lays it: the accounts' Worker does not load the rules, and the room
-  judges the run.
+  Vale, the one zone a Breach's gate stands in (`BREACH_ZONES`). A socket's first message is its session's token; one
+  that is no session, or that sends none within five seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with
+  4003 and "Sign in to find a company.". At most 64 sockets with a token wait in one (a search past them is answered
+  503; a Launch is taken past searches, as it is gone at the next look, but past 64 Launches with a token it is answered
+  503 too, `launchesFull`), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never
+  shut out those that sign in; its clock stops once it holds none. It checks a base's shape alone, not that a rule lays
+  it: the accounts' Worker does not load the rules, and the room judges the run.
 - **Bands.** A seeker is matched by the level their room last kept (`shown.level`, 1 for none yet), in bands of ten:
   1 to 10, 11 to 20 and 21 to 30 (`bandOf`). A playlist's are five levels each from the level it opens at
   (`playlistBand`, `playlists.ts`): the Elite's 10 to 14 up to 30 alone, the Abyss's 20 to 24 up to 30 alone; a
@@ -313,15 +318,16 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while it holds a
   socket.
 - **One search an account.** A second search, in another tab, replaces the first, which is closed with 4003 and
-  "You are finding a company in another tab."; of two looked up at once, the newer socket stays. While an account's run is being started, a second search of theirs
-  is closed with those words, so no account is in two groups. Closing the socket leaves the queue.
+  "You are finding a company in another tab."; of two looked up at once, the newer socket stays. While an account's run
+  is being started, a second search of theirs is closed with those words, so no account is in two groups. Closing the
+  socket leaves the queue.
 - **A run found** is named `<base>--run-<instance>`, a playlist's
   `node-<Elite Dungeon>--<elite|abyss>--playlist-<foes' level>--run-<instance>`, its Elite Dungeon drawn by the
-  server's own randomness (`playlistRun`) and its foes' level its band's, and kept for those found (`found_runs`: it admits them for a day
-  after it was found, and rows older than that are cleared as later runs are found), so its room lets them in
-  together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their socket closed.
-  Beyond the level and the prologue the finder judges no gate and keeps no clock: the room is the authority, and the
-  page offers Find a Company only where the gate is open.
+  server's own randomness (`playlistRun`) and its foes' level its band's, and kept for those found (`found_runs`: it
+  admits them for a day after it was found, and rows older than that are cleared as later runs are found), so its room
+  lets them in together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their socket
+  closed. Beyond the level and the prologue the finder judges no gate and keeps no clock: the room is the authority, and
+  the page offers Find a Company only where the gate is open.
 - **The page's side** (`findCompany`): it opens `AccountLink.finderAt(base)`, the accounts' own address by `ws://`
   or `wss://`, sends the session's token once open, and takes only a run of the base it asked for (for a playlist,
   a playlist's run at its tier). Offline, or with

@@ -112,7 +112,8 @@ function flagAt(
   box(device, -3, -1.5, 6.5, 2);
 }
 
-/** The ring and its glyph (in `ink`, the ring's colour unless given), the glyph in the mended face, which holds the ones Pixelify lacks. */
+/** The ring and its glyph (in `ink`, the ring's colour unless given), the glyph in the mended face, which holds the
+ *  ones Pixelify lacks. */
 function ring(
   glyph: string,
   colour: string,

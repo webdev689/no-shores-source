@@ -42,8 +42,8 @@ function dyeColour(dye: string): Tint {
 
 const factionDye = (key: string): string => factions.factions.find((each) => each.key === key)?.dye ?? '';
 
-/** Each cloth's colour (0 to 1 a channel): undyed linen, crimson, verdant, black and straw, and each faction's own dye, so
- *  a chapel's hangings are its capes' colour. */
+/** Each cloth's colour (0 to 1 a channel): undyed linen, crimson, verdant, black and straw, and each faction's own dye,
+ *  so a chapel's hangings are its capes' colour. */
 export const CLOTH_COLOURS: Readonly<Record<ClothMaterial, Tint>> = {
   linen: [0.8, 0.75, 0.63],
   crimson: [0.56, 0.11, 0.12],
@@ -217,7 +217,8 @@ export type PictureWant = {
 /**
  * The city's pictures, in one array of at most PICTURE_LAYERS layers. `wants` are the models' pictures as their
  * tables file them, with how much the city wears each; `usesOf` says what a turned picture is named for. The ground
- * and the solids' pictures come first (chalk's only where `chalky`: the plan holds chalk solids), then the rest by how much the city wears them.
+ * and the solids' pictures come first (chalk's only where `chalky`: the plan holds chalk solids), then the rest by how
+ * much the city wears them.
  */
 export function pictureBook(
   climate: CityClimate,

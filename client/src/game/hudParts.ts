@@ -130,7 +130,8 @@ export function hudPress(
   };
 }
 
-/** A value that eases to each new value it is set to over `seconds`, as a CSS transition does from wherever it stood. */
+/** A value that eases to each new value it is set to over `seconds`, as a CSS transition does from wherever it
+ *  stood. */
 export class Tween {
   private from: number;
   private to: number;

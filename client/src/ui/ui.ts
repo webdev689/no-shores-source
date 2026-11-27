@@ -411,7 +411,8 @@ export class Interface {
     }
   }
 
-  /** The pointer, or the pad's cursor, goes down at `x`, `y` with `button`: the left presses, the right right-clicks. */
+  /** The pointer, or the pad's cursor, goes down at `x`, `y` with `button`: the left presses, the right
+   *  right-clicks. */
   private down(x: number, y: number, button: number, shift: boolean, free: boolean): void {
     this.pointer = { x, y };
     if (!free) return;

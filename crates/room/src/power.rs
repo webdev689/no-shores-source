@@ -149,8 +149,8 @@ impl Room {
         }
     }
 
-    /// Whether a player's blow takes a perk at its Forged grade: a piece giving it, of those `perk_on` reads, was won at
-    /// Hard (`Item::forges`).
+    /// Whether a player's blow takes a perk at its Forged grade: a piece giving it, of those `perk_on` reads, was won
+    /// at Hard (`Item::forges`).
     pub(crate) fn forged_on(&self, blow: &Blow, id: &str) -> bool {
         let loadout = match blow.kind {
             BlowKind::Shot(_) => Slot::Ranged,

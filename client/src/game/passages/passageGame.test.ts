@@ -51,7 +51,8 @@ const planOf = (number: number) =>
   ({ zone: { number, onward: [], name: `Zone ${number}` }, pieces: [] }) as unknown as PassagePlan;
 
 /** The parts of the game this test reaches past its face: the room module's door, the mouth whose card is open and
- *  where its door stands, the zone stood in, the card, and the card's choice and the lamp's Home as E would make them. */
+ *  where its door stands, the zone stood in, the card, and the card's choice and the lamp's Home as E would make
+ *  them. */
 interface Inside {
   door: unknown;
   mouth: number | null;

@@ -105,11 +105,12 @@ one plays it in a room of its own, `node-<site>--guild-<key>`, apart from every 
   stands at. Standing there a member delivers (greyed for a material they carry none of), takes and empties; a
   founder or admin builds on the plan (the footprint's ghost green where the law and the treasury let it stand, red
   with the law's or the accounts' words where not), raises tiers, takes down (the hold saying how much comes
-  back) and sounds the War Horn, or reads that it has sounded this week; the founder alone abandons. A structure's own panel holds its own
-  presses: a Counting House its strongbox, a Camp or Dockyard the stores, the War Horn its sounding. A change to a plot
-  tells the outpost's room, when the player stands in it, and says so on the window. The plan is one stop for Tab, its
-  arrows moving a cursor. The Treasury page reads the ledger in the world's words (placed, took up) under its column
-  heads, and lets a member at an outpost put Aurem in, saying why when the treasury cannot hold it ([[Interface]]).
+  back) and sounds the War Horn, or reads that it has sounded this week; the founder alone abandons. A structure's own
+  panel holds its own presses: a Counting House its strongbox, a Camp or Dockyard the stores, the War Horn its sounding.
+  A change to a plot tells the outpost's room, when the player stands in it, and says so on the window. The plan is one
+  stop for Tab, its arrows moving a cursor. The Treasury page reads the ledger in the world's words (placed, took up)
+  under its column heads, and lets a member at an outpost put Aurem in, saying why when the treasury cannot hold it
+  ([[Interface]]).
 - **Reaching a site.** Over an island, each region's view among the island's tiles holds one Outposts tile, which
   opens that region's sites to choose from, each saying whether the player's guild holds an outpost there; choosing one
   lands there ([[Interface]], "The island's tiles";

@@ -21,8 +21,8 @@ code:
 What the player holds in first person, from the [[Sprite Forge]]'s first-person pictures, as DFO plays it
 ([[The Player Plays as in DFO]]). The [[Test Ground]] hands `FirstPerson` the attack button and the player's state each
 frame: what is in each hand, the gauntlets and boots worn, whether the hands are drawn, walking or running, the metres
-walked, a cast, a climb, a ride and the look's bearing and tilt. It answers the blow that lands or the shot that leaves, and from
-which hand, and reports the swing or shot under way, so the figure seen from outside plays a matching move.
+walked, a cast, a climb, a ride and the look's bearing and tilt. It answers the blow that lands or the shot that leaves,
+and from which hand, and reports the swing or shot under way, so the figure seen from outside plays a matching move.
 
 ## How it works
 

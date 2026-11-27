@@ -31,7 +31,8 @@ export interface ShipAbility {
   readonly said: string;
 }
 
-/** What the readout shows: the player's ship, the ship the card is on, and its last volley's count; any of them none. */
+/** What the readout shows: the player's ship, the ship the card is on, and its last volley's count; any of them
+ *  none. */
 export interface SeaFightModel {
   readonly ship: {
     readonly name: string;

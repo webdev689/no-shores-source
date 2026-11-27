@@ -45,7 +45,8 @@ export function syllableOf(voice: VoiceProfile, emphasis: boolean, roll: () => n
   };
 }
 
-/** The pan of a voice whose speaker stands `x` CSS pixels across a screen `width` wide: -1 at the left, 1 at the right. */
+/** The pan of a voice whose speaker stands `x` CSS pixels across a screen `width` wide: -1 at the left, 1 at the
+ *  right. */
 export function panOf(x: number, width: number): number {
   if (width <= 0) return 0;
   return Math.max(-1, Math.min(1, (x / width) * 2 - 1));

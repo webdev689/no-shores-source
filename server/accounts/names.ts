@@ -1,7 +1,7 @@
 /**
  * The one judge of every name and line a player sets for others to read: usernames, guild names, guild tags, guild
- * mottos and guild descriptions. Each kind keeps its own shape; none may hold a blocked word, and no name may claim to speak for the game.
- * Look-alikes need the database, so each caller finds them by a name's `skeleton`.
+ * mottos and guild descriptions. Each kind keeps its own shape; none may hold a blocked word, and no name may claim to
+ * speak for the game. Look-alikes need the database, so each caller finds them by a name's `skeleton`.
  */
 
 import { BLOCKED } from './blockedWords.ts';

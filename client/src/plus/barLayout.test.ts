@@ -102,7 +102,8 @@ test('a plate over a figure high on the screen, or lifted over another, stands u
 });
 
 test('a plate sent under another by the compass comes to rest, whatever pixel the other stands on', () => {
-  // A foot where (foot + GAP + height) - height rounds short of foot + GAP: the push under the nearer plate ends here too.
+  // A foot where (foot + GAP + height) - height rounds short of foot + GAP: the push under the nearer plate ends here
+  // too.
   const foot = 102.39246158445737;
   assert.ok(foot + 2 + 26 - 26 < foot + 2, 'the rounding the push must not be caught by');
   const high = [bar(1, 400, 10, foot), bar(2, 400, 20, foot + 1)];

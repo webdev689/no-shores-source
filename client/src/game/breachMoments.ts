@@ -173,7 +173,8 @@ export function momentSounds(
 }
 
 /** The Broken Stair's slabs that rose or sank between the room's ticks `from` and `to`, each heard where it stands
- *  (within the world's sounds' reach); none on the first tick seen (`from` null) or across a gap of more than a second. */
+ *  (within the world's sounds' reach); none on the first tick seen (`from` null) or across a gap of more than a
+ *  second. */
 export function slabSounds(
   plan: BreachPlan,
   from: number | null,
@@ -205,7 +206,8 @@ export function mooringSounds(
 }
 
 /** Where a moment is heard: where the one it tells of stands, the place its number names (a bell's, a mooring, a rift,
- *  a Keeper's shore, a desk, the player marked or seen), the gate for the Waking's own, or else at the player's feet. */
+ *  a Keeper's shore, a desk, the player marked or seen), the gate for the Waking's own, or else at the player's
+ *  feet. */
 function placeOf(plan: BreachPlan, seen: BreachSeen, event: FightEvent, places: MomentPlaces): Point {
   const { feet, where } = places;
   const player = (id: number) => (id === places.own ? feet : (where(id) ?? feet));

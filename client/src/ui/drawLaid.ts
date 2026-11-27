@@ -29,7 +29,8 @@ const faded = (css: string, fade: number): Colour => {
   return [red, green, blue, alpha * fade];
 };
 
-/** The quad a glyph or an outline's edge is laid in before the quads copy it: kept, so a frame's thousands make none. */
+/** The quad a glyph or an outline's edge is laid in before the quads copy it: kept, so a frame's thousands make
+ *  none. */
 const QUAD = { x: 0, y: 0, width: 0, height: 0 };
 const quadAt = (x: number, y: number, width: number, height: number): Box => {
   QUAD.x = x;

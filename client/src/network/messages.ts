@@ -45,7 +45,8 @@ export interface SeenPlayer extends Look {
   readonly fighter: Float64Array | null;
   readonly standing: Standing;
   /** In a snapshot built on another, the player's own fighter as only its numbers that changed since, a bit set for
-   *  each (`snapshots.ts` lays them over the fighter it holds); then `fighter` is null and `body` stands for nothing. */
+   *  each (`snapshots.ts` lays them over the fighter it holds); then `fighter` is null and `body` stands for
+   *  nothing. */
   readonly changes?: { readonly bits: Uint8Array; readonly numbers: Float64Array };
 }
 
@@ -89,7 +90,8 @@ export interface SeenHostile {
 }
 
 /** A player's fight at sea as the room last stepped it: the naval crate's numbers (crates/naval/src/wire.rs), its other
- *  captains put back in the view (`withOthers`), which `fightViewOf` reads, and its captain's faction, rank and hull. */
+ *  captains put back in the view (`withOthers`), which `fightViewOf` reads, and its captain's faction, rank and
+ *  hull. */
 export interface SeenSeaFight {
   readonly player: number;
   readonly view: Float64Array;
@@ -291,7 +293,8 @@ export type FromRoomMessage =
       readonly revives: number;
       /** At a guild's outpost, how many plots its room has stood; 0 in any other room. */
       readonly outpost: number;
-      /** On land, whether the room is a darkness zone, where no one respawns by their own ask; and who is reviving whom. */
+      /** On land, whether the room is a darkness zone, where no one respawns by their own ask; and who is reviving
+       *  whom. */
       readonly darkness: boolean;
       readonly reviving: readonly Reviving[];
       /** On land, every airship and crown bringing foes. */

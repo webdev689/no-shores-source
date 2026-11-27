@@ -89,7 +89,8 @@ export function nodeRoom(name: string): {
 }
 
 /** A test room's node by its name's parts (`testRoom`): a Breach's gate's zone copy, or a test run named as its real
- *  run is but for its last part. A run marked `--sea`, a patrol's dungeon's, a guild's and one at Normal have no test. */
+ *  run is but for its last part. A run marked `--sea`, a patrol's dungeon's, a guild's and one at Normal have no
+ *  test. */
 function testNode(parts: string[]): ReturnType<typeof nodeRoom> {
   const instance = TEST.exec(parts.pop() ?? '')?.[1];
   const [id = ''] = parts;

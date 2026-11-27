@@ -1,6 +1,6 @@
 // Pictures of the key strip and the leave held, headless (`tools/uiShot.mjs`), over a plain dusk in place of the
-// world: on foot at rest with the leave half held, a melee weapon drawn, sailing over the ship's console, the pad's buttons,
-// and under a quest's tracker. The game never imports it.
+// world: on foot at rest with the leave half held, a melee weapon drawn, sailing over the ship's console, the pad's
+// buttons, and under a quest's tracker. The game never imports it.
 import { BINDS } from '../player/input.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';

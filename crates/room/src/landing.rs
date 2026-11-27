@@ -1,8 +1,8 @@
-//! A patrol zone's landing, where a player arrives: no foe starts a fight with a player standing in it until they strike
-//! from it, and a fight brought into it goes on with the foes that brought it, no other joining, so it is somewhere to
-//! arrive, not to hide. An officer ashore standing there is left be as its player is, and starts no fight from it. A
-//! player the foes leave be is struck by no blow aimed at another. The guards stand beyond it (`garrison.rs`,
-//! SPAWN_CLEAR).
+//! A patrol zone's landing, where a player arrives: no foe starts a fight with a player standing in it until they
+//! strike from it, and a fight brought into it goes on with the foes that brought it, no other joining, so it is
+//! somewhere to arrive, not to hide. An officer ashore standing there is left be as its player is, and starts no fight
+//! from it. A player the foes leave be is struck by no blow aimed at another. The guards stand beyond it
+//! (`garrison.rs`, SPAWN_CLEAR).
 
 use crate::Room;
 use combat::Happening;

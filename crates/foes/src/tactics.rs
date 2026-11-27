@@ -2,9 +2,9 @@
 //! target as the director allows fight it hand to hand and shoot at it; the rest stand on a ring just outside their
 //! reach and circle round to its flanks. A holder walks in and strikes, hops back after its blow and hands its turn to
 //! whoever waited longest; one that waited past its patience goes in anyway, one over the count at most, and a target
-//! that turns its back or walks inside the ring is open to anyone. The waiting stand apart, a ring farther out for those
-//! a ring has no room for. A hurt foe backs off, a coward runs, and a shooter kites. Each turn it answers blows at it
-//! first, then takes the openings it is given, as its group asks: broken, raging, defending or screened.
+//! that turns its back or walks inside the ring is open to anyone. The waiting stand apart, a ring farther out for
+//! those a ring has no room for. A hurt foe backs off, a coward runs, and a shooter kites. Each turn it answers blows
+//! at it first, then takes the openings it is given, as its group asks: broken, raging, defending or screened.
 
 use crate::board::Board;
 use crate::brain::{Brain, Homeward, Plan};
@@ -480,9 +480,9 @@ fn stroke(here: &Here<'_, '_>, sight: &Sight) -> Stroke {
 fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -> Ask {
     let tick = here.tick();
     let away = sight.toward + PI;
-    // A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: raised near the
-    // ring's line, and kept up across the ring's give and the step back in from just past it, so a target swaying about
-    // the ring's edge never has it drop and rise again tick by tick.
+    // A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: raised near
+    // the ring's line, and kept up across the ring's give and the step back in from just past it, so a target swaying
+    // about the ring's edge never has it drop and rise again tick by tick.
     // Raging, it never guards.
     let shield = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE && !brain.raging;
     let guarding = shield && matches!(here.fighter.action, Action::Guard { .. });

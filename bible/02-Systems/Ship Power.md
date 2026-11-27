@@ -45,8 +45,8 @@ are in [[Crew]].
 - **Its modules** are items of four kinds (`Kind::Guns`, `Hull`, `Sails`, `Rigging`), each fitted in its own slot
   and carried nine to a slot beside it, kept in the vault with the ship's other modules (twenty). Each has a rarity,
   a level, experience and the gear's grid of nodes (`grid.rs`): its guns a weapon's grid (handling, finish, perks),
-  the other three armour's (perks). Every module fitted earns all the experience the ship earns. A Fruit of Dagon grows no
-  module. A new ship, and one kept from before modules, is fitted once with a level 1 Normal module in each slot that
+  the other three armour's (perks). Every module fitted earns all the experience the ship earns. A Fruit of Dagon grows
+  no module. A new ship, and one kept from before modules, is fitted once with a level 1 Normal module in each slot that
   wears none.
 - **Its materials** (`ship::materials`): Timber, Canvas, Iron and Heartwood, the rare one, each to 200. A module's
   nodes cost Aurem and its own two common materials (guns iron and timber, hull timber and iron, sails canvas and
@@ -66,8 +66,9 @@ are in [[Crew]].
   voyage's tier, as a kill's chances are. A module is coloured as a Vestige from a foe of its source's rank ([[Gear]],
   "Vestiges"): a piece its ship's, a chest the rank it is rolled at, a cove's wreckage a Minor's, an isle's an
   Elite's, a Breach's a Boss's; never past what its level could drop.
-- **The Shipwright** sells six modules a day (the clock's, from 09:00 UTC: [[Activities]]), three Rare and three Magic, at the buyer's ship's level, at the
-  Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors' third).
+- **The Shipwright** sells six modules a day (the clock's, from 09:00 UTC: [[Activities]]), three Rare and three Magic,
+  at the buyer's ship's level, at the Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors'
+  third).
 
 ## At sea
 
@@ -75,8 +76,8 @@ are in [[Crew]].
   (`room::ship_power::fitting`): its balls on each captain are times `power::by_player` of its Attack, its level and
   the captain's level; a captain's balls on it are times `power::on_player` of its Defense and the two levels, in place
   of what the captain's level makes of its guns. A ship matched to the water's level fights a captain as a matched
-  player fights a foe; four levels under, its balls do nothing. A ship with no fitting (the fleet room, the tests) fights
-  as it always has.
+  player fights a foe; four levels under, its balls do nothing. A ship with no fitting (the fleet room, the tests)
+  fights as it always has.
 - **Its trim** (`ship::trim`): its fitted modules' chosen perks and its posted officers' posts and perks, as factors on
   its guns' reload and scatter, its harm on a ship's hull, canvas and men (and on one below a third of its hull), its
   way and turning in a fight, what its hull, canvas and men take (its hull below a third, below its waterline, its men
@@ -113,9 +114,9 @@ are in [[Crew]].
 
   A ship sinks to the ball that takes the last of its hull: that ball's shooter sank it. Only a player's ship is
   fitted, so a captain's carries none of these. The trim's numbers cross in the gear message beside the rest.
-- **Its hands.** The player's ship carries its hull's men, the Sloop ten ([[Crew]], [[Shipyard]]): balls cut them down as a captain's are, a thinned crew
-  reloads its guns slower (whole, at the pace one player alone always loaded them), and the sea keeps the share left
-  until a port city repairs it ([[Naval Combat]], "How a fight ends").
+- **Its hands.** The player's ship carries its hull's men, the Sloop ten ([[Crew]], [[Shipyard]]): balls cut them down
+  as a captain's are, a thinned crew reloads its guns slower (whole, at the pace one player alone always loaded them),
+  and the sea keeps the share left until a port city repairs it ([[Naval Combat]], "How a fight ends").
 - **What a fight pays.** A captain going down pays as twenty-one kills of a foe of its rank would (so an hour at
   sea sits in the band beside a patrol zone's: [[Activities]], "The band"), at its level, raised by
   the sea's tier (`reward_sinking`, `SINKING_KILLS`): its XP to the ship, its fitted modules and every officer aboard,

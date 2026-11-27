@@ -92,7 +92,8 @@ export const GIVES: Readonly<Record<string, readonly [label: string, seconds: nu
   vanish: ['Veil lasts', 4],
 };
 
-/** A spell's or fragment's numbers with a fragment of its Art written as a name and a list, as the room changes them. */
+/** A spell's or fragment's numbers with a fragment of its Art written as a name and a list, as the room changes
+ *  them. */
 type Numbered = { readonly key: string; readonly [field: string]: string | number | undefined };
 
 /** How each fragment set in the Core changes a spell's or another fragment's numbers, as the room's cast_spell folds

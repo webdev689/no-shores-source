@@ -76,8 +76,8 @@ are written with paving last, since the first group carries the parts and paving
 
 - **The Old Stones** (`old-stones`, a shrine's): a dais of two broken tiers of cut stone, 1.4 m each, a flight up
   each side of the lower and up the east and west of the upper, a ring of eleven megaliths round the top, some fallen
-  to lie at their tier's foot with rubble and a rock in the gap they left, and one leaning, an altar at its middle. Its paving is laid in rows of slabs of their own lengths over a bed of
-  rubble that shows where a slab is gone.
+  to lie at their tier's foot with rubble and a rock in the gap they left, and one leaning, an altar at its middle. Its
+  paving is laid in rows of slabs of their own lengths over a bed of rubble that shows where a slab is gone.
 - **The cavern chamber** (`cavern-chamber`, every cavern's): under the cave roof, 28 m square. A shelf of merged
   boulders 2.2 m high runs along its back, climbed by worn steps at one end, with a dolmen, its stones and a cauldron
   on it. Two waisted columns of dripstone stand floor to roof. Stalagmites crowd its sides, boulders give cover in its
@@ -117,8 +117,8 @@ are written with paving last, since the first group carries the parts and paving
     hanging off their edges, a row tipped up further back; chalk broken out across the turf; crystal teeth leaning in
     low over it, clusters grown out of its walls under the lip, four spires standing a metre or two over the ground out
     of its heart, its floor wide and lit by seven lights so the crack is seen into from a height, veins of light crept
-    out through the grass and crusts of crystal at its ends. Its mouth, the outline of the crack at the ground, is in the
-    manifest (`mouth`), so the page opens the land there.
+    out through the grass and crusts of crystal at its ends. Its mouth, the outline of the crack at the ground, is in
+    the manifest (`mouth`), so the page opens the land there.
   - Its scar (`lattice-fissure-sealed`): a low ridge of dark soil heaved up along where the crack was, grey-white
     chalk broken and heaped on it, dull stubs of dark crystal standing out of it, their glow dying with the crack; the
     slabs settled back nearly flat, the teeth broken off and lying in the grass, and the crusts at its ends dulled.
@@ -138,8 +138,9 @@ are written with paving last, since the first group carries the parts and paving
     `client/src/city/chestModules.ts` and listed after the manifest's modules: `chest` and `chest-heroic`, each with
     its lid (`chest-lid`, `chest-heroic-lid`), a module of its own with its hinge at its origin, and the chest's `hinge`
     socket where that hinge sits on it.
-- **What brings foes** ([[Enemies]], "Arrivals"; [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]; [[Foe Arrivals as Claude Builds Them]]), drawn by the page as it
-  flies or forms, never placed by a layout:
+- **What brings foes** ([[Enemies]], "Arrivals";
+  [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]];
+  [[Foe Arrivals as Claude Builds Them]]), drawn by the page as it flies or forms, never placed by a layout:
   - The Grey Tithe's airship (`tithe-airship`, `airship.py`): the Brig's own hull, built by the ships' builder
     (`shipkit.py` takes `tools/ships/ship_hull.py` in, its painted parts read as the kit's timber, canvas and iron),
     its masts and sails left off; two outrigger beams through its bulwarks braced to its sides with iron, a drum
@@ -156,8 +157,8 @@ are written with paving last, since the first group carries the parts and paving
     `-4`, facing aft), each lift's (`lift-1`, `-2`), each stack's top (`stack-1`, `-2`) and its hatch (`hatch`). Its
     canvas is the Tithe's grey. 17,992 triangles.
   - The Lattice's crown (`lattice-crown`, `crown.py`): a heart of its light held in seven great spars reaching down
-    like a claw, seven shorter splayed nearly level between them, a cluster pointing down and points standing up, a halo of
-    small shards round its waist and a long shard dripping from each spar's end, all the Lattice's own shards
+    like a claw, seven shorter splayed nearly level between them, a cluster pointing down and points standing up, a halo
+    of small shards round its waist and a long shard dripping from each spar's end, all the Lattice's own shards
     (`latticekit`). Its origin is its heart: it reaches some 4 m down. 1,544 triangles.
 - **The Drowned Vale's** ([[Breaches]], "Its art"): the Sunken Gate's hollow (`breach-gate`), the run's nine spaces
   (`breach-descent`, `-mending`, `-choir`, `-ways`, `-stair`, `-hall`, `-shore-was`, `-shore-is`, `-court`) and its
@@ -223,9 +224,9 @@ Their rock (`organic`) is likewise roughed out along normals worked out once in 
 (`_double_normals`), where the other modules' rock keeps Blender's, read as each point moves. `python -I
 tools/modules/test_kit.py` checks both on small meshes, and the workflow runs it before it bakes. A module's random
 draws are seeded by its place in the catalogue, so a new module goes at the catalogue's end; the event props, after the
-hub's, and the outposts' structures keep seeds of their own. The `modules` workflow bakes on every change to the module tools, to the Lattice's
-builders and the forge files they take in, to the ships' builder (`tools/ships/*.py`, which the airship's hull takes
-in), or to `tools/r2.py`; it fails if the bake does not make the committed
+hub's, and the outposts' structures keep seeds of their own. The `modules` workflow bakes on every change to the module
+tools, to the Lattice's builders and the forge files they take in, to the ships' builder (`tools/ships/*.py`, which the
+airship's hull takes in), or to `tools/r2.py`; it fails if the bake does not make the committed
 manifest or if a second bake does not make the same bytes, keeping both bakes of a failed run, as far as each went, for
 a week (`modules-differed`) to set beside each other and another machine's, and a second job, which installs nothing,
 publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
@@ -272,11 +273,11 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   lamp takes none of it; on the land, props are lit by the lamps as the land is. Any other module's flames (an
   outpost's fire pit's and braziers') light round them, each a fire's lamp reaching 9 m at its glow
   ([[Lights as Claude Builds Them]]), and a crystal's lamps breathe. A fire (glow) moves with its own lamp and a
-  crystal's core breathes with its ([[Sky]], "Lamps"); a fire and stained glass are their own light, the glass leaded panes laid across the face it looks out of; still water's face ripples slowly and
-  glints with the key light and the lamps; a prop marked dark (`dark`, its doorway's opening) is drawn as that
-  opening, filled flat and dark, each of its vertices snapped to the opening's corner on its side. Under a sky
-  that sets how far off all is dark (`darkM`, a Breach's run's 120 m), every prop fades into the fog's colour from a
-  third of that way. A module that
+  crystal's core breathes with its ([[Sky]], "Lamps"); a fire and stained glass are their own light, the glass leaded
+  panes laid across the face it looks out of; still water's face ripples slowly and glints with the key light and the
+  lamps; a prop marked dark (`dark`, its doorway's opening) is drawn as that opening, filled flat and dark, each of its
+  vertices snapped to the opening's corner on its side. Under a sky that sets how far off all is dark (`darkM`, a
+  Breach's run's 120 m), every prop fades into the fog's colour from a third of that way. A module that
   opens draws each point of its chasm under the ground at the depth where the eye's line to it crosses the land at
   its foot, 2 to 4% of that distance nearer (`chasm_depth`), so the land round the mouth gives way and anything nearer
   keeps its place; a point whose crossing falls outside the mouth is not drawn.

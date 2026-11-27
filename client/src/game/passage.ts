@@ -38,8 +38,8 @@ const LOCKED = 'That sea is locked.';
 /** How far off a locked sea a route keeps, metres: a cell of the grid it is judged on, past its edge's error. */
 const LOCK_MARGIN_M = CHART_CELL_M;
 
-/** How far the room's word may lie off its course straight on before it is laid where the room has it and the course set
- *  again from there, metres. */
+/** How far the room's word may lie off its course straight on before it is laid where the room has it and the course
+ *  set again from there, metres. */
 const DRIFT_M = 30;
 
 /** How far along the way in to a berth (`points`, from its offing in) a ship at `ship` lies: the points still ahead
@@ -302,8 +302,8 @@ export class Passage {
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 
-  /** Sails it `seconds` on: at the room's pace and drawn to where the room has it once it has taken its course; the helm's
-   *  course straight on set again as it nears its end, while the way beyond lies clear. The pace it is sailed at
+  /** Sails it `seconds` on: at the room's pace and drawn to where the room has it once it has taken its course; the
+   *  helm's course straight on set again as it nears its end, while the way beyond lies clear. The pace it is sailed at
    *  eases to the world's own time while the view is close on it (`watched`), and back to the voyage's once not. */
   advance(seconds: number, watched = false): void {
     this.easePace(seconds, watched);

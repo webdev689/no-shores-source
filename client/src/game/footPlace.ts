@@ -92,7 +92,8 @@ interface AtOutpost {
 }
 
 /** Calls `rejoin` where the player, at an outpost site in their own guild's outpost's room or the wild site's, founds,
- *  joins or leaves a guild (`here` none while nothing may take them elsewhere), so they join the room they belong in. */
+ *  joins or leaves a guild (`here` none while nothing may take them elsewhere), so they join the room they belong
+ *  in. */
 export function rejoinOnGuild(here: () => AtOutpost | null, rejoin: (standing: AtOutpost) => void): void {
   addEventListener(GUILD_CHANGED, () => {
     const standing = here();
@@ -103,7 +104,8 @@ export function rejoinOnGuild(here: () => AtOutpost | null, rejoin: (standing: A
 }
 
 /** The address of the room a player arriving at a node joins (null offline), at the entrance they come out of, at
- *  the gate toward the patrol area they cross from, or logging back in (`joinAsk`): at an outpost site, the room of the outpost of `guild`, or the wild site for none. */
+ *  the gate toward the patrol area they cross from, or logging back in (`joinAsk`): at an outpost site, the room of the
+ *  outpost of `guild`, or the wild site for none. */
 export function nodeAddress(
   context: FootContext,
   node: NodeInfo,
@@ -172,7 +174,8 @@ export interface Held {
   reviving: readonly Reviving[];
   /** An Elite Dungeon's encounters as its room last said; null in any other room. */
   encounter: EncounterSeen | null;
-  /** At a guild's outpost, how many plots its room has stood (0 in any other room): its plot is read again on a change. */
+  /** At a guild's outpost, how many plots its room has stood (0 in any other room): its plot is read again on a
+   *  change. */
   plots: number;
   /** In a passage zone, its deal as it stands for the player (none in any other room). */
   passage: PassageSeenState | null;

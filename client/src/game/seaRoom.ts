@@ -1,6 +1,6 @@
 // The sea room as the ship sails in it, a server's or, playing alone, one in the rooms' worker: its course sent when
-// set, its orders in a fight, and off the helm each step of the walk on deck; and every ship, hostile and fight the room
-// last showed, with its word on the player's body on deck.
+// set, its orders in a fight, and off the helm each step of the walk on deck; and every ship, hostile and fight the
+// room last showed, with its word on the player's body on deck.
 import {
   askBytes,
   chaseBytes,

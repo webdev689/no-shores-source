@@ -68,49 +68,52 @@ raised by the voyage's seas), at home round the event's ground. Each but the gro
 player nearest its home as it stands, wherever they are, and fights a player within a leash of the event's reach (its
 ground's radius, or its farthest point from its middle past it: the growth's spot, the approach, where the raid's waves
 form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post at its store), on ground
-the room's mesh covers, or anywhere within 14 m of it ([[A Foe Gives Up Only When the Player Is Far Away]]); past that it gives them up and walks back. A zone's room that holds events stands 48 foes alive
-at most and keeps 16 of them for its event (the most it stands at once: a Fissure's living foes short of a wave, its
-fullest wave and its growth or Warden); its garrison stands again, calls and arrives, its territories stand,
-a road's kill goal stands its group, and a road's ward, waves, ambush and watchers stand, only while the foes not of the
-event stay within 32, as in any patrol ([[Enemies]], "Limits"). The growth, the Warden and Marrow
-stand half their health more for each player at the event beyond the first (the most seen at the Fissure; those on the
-raid's ground as Marrow comes). The Fissure's growth and the raid's tithe-taker the room handles itself: their brains
-are left be, so neither moves on its own nor strikes; the growth stands where it rose, and the tithe-taker walks the
-navmesh at his own pace, keeping his way from tick to tick; their statuses still wear off. A raid's approach, where its
-waves form and its raiders' home (the stores' middle) are put on the navmesh as it begins, at its nearest point.
+the room's mesh covers, or anywhere within 14 m of it ([[A Foe Gives Up Only When the Player Is Far Away]]); past that
+it gives them up and walks back. A zone's room that holds events stands 48 foes alive at most and keeps 16 of them for
+its event (the most it stands at once: a Fissure's living foes short of a wave, its fullest wave and its growth or
+Warden); its garrison stands again, calls and arrives, its territories stand, a road's kill goal stands its group, and a
+road's ward, waves, ambush and watchers stand, only while the foes not of the event stay within 32, as in any patrol
+([[Enemies]], "Limits"). The growth, the Warden and Marrow stand half their health more for each player at the event
+beyond the first (the most seen at the Fissure; those on the raid's ground as Marrow comes). The Fissure's growth and
+the raid's tithe-taker the room handles itself: their brains are left be, so neither moves on its own nor strikes; the
+growth stands where it rose, and the tithe-taker walks the navmesh at his own pace, keeping his way from tick to tick;
+their statuses still wear off. A raid's approach, where its waves form and its raiders' home (the stores' middle) are
+put on the navmesh as it begins, at its nearest point.
 
 
 **The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle, forming under a crown of
-its crystal over the crack ([[Enemies]], "Arrivals"; [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]; [[Foe Arrivals as Claude Builds Them]]): three foes and one more for
-each player seen at it beyond the first (six at most), drawn from Husks, Flickers, an Idol and a Ravager. Another
-comes when two or fewer of its foes stand, but never sooner than 30 seconds after the last, or 40 seconds after the
-last, while fewer than ten stand: the shards come at a pace a group must keep up with. Each of its
-foes felled drops a crystal shard where it fell, an Elite or greater two. A player walks within 1.5 m of a shard to
-take it, carries one at a time and sets it within 6 m of the middle. A shard lies 30 seconds; a carrier who falls or
-leaves drops theirs where they last stood. It needs 16 shards and 6 more for each player seen at it at once
-beyond the first, 40 at most; once sealed, more players coming never raise it. Its four crystal spires (the module's
-parts) are boxes a body runs into while it stands open; its mouth is open ground. Sealed, it closes: every foe of it
-still standing shatters, sharing no kill, and it is won.
+its crystal over the crack ([[Enemies]], "Arrivals";
+[[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]];
+[[Foe Arrivals as Claude Builds Them]]): three foes and one more for each player seen at it beyond the first (six at
+most), drawn from Husks, Flickers, an Idol and a Ravager. Another comes when two or fewer of its foes stand, but never
+sooner than 30 seconds after the last, or 40 seconds after the last, while fewer than ten stand: the shards come at a
+pace a group must keep up with. Each of its foes felled drops a crystal shard where it fell, an Elite or greater two. A
+player walks within 1.5 m of a shard to take it, carries one at a time and sets it within 6 m of the middle. A shard
+lies 30 seconds; a carrier who falls or leaves drops theirs where they last stood. It needs 16 shards and 6 more for
+each player seen at it at once beyond the first, 40 at most; once sealed, more players coming never raise it. Its four
+crystal spires (the module's parts) are boxes a body runs into while it stands open; its mouth is open ground. Sealed,
+it closes: every foe of it still standing shatters, sharing no kill, and it is won.
 - **Heroic.** At 40% of the seal a crystal growth (an Idol's Elite health, named "Crystal Growth") rises at its spot
   for 45 seconds, rising over its first 2.4 and sinking over its last 3, as the page draws it, then is gone. A body
-  walks through it: a box round it would stop every blow and shot at it. Broken in time, the event turns heroic: half of the shards
-  still needed are added, every wave after holds an Elite (a Bulwark or a Ravager by turns), and the seal complete
-  brings out the Warden (a Bulwark Miniboss, "The Warden of the Fissure"), posted where it climbs out 4 m from the
-  middle under a crown of its own, clear of the spires that stand until it falls, who must fall to win; then the rest
-  shatter.
+  walks through it: a box round it would stop every blow and shot at it. Broken in time, the event turns heroic: half of
+  the shards still needed are added, every wave after holds an Elite (a Bulwark or a Ravager by turns), and the seal
+  complete brings out the Warden (a Bulwark Miniboss, "The Warden of the Fissure"), posted where it climbs out 4 m from
+  the middle under a crown of its own, clear of the spires that stand until it falls, who must fall to win; then the
+  rest shatter.
 - **Bonus:** sealed with at least half of the 8 minutes left; a Warden falling later keeps it.
 
 **The raid.** Its banners are planted and its first wave is brought by a Grey Tithe airship, set down 14 m beyond its
 approach, away from the hamlet ([[Enemies]], "Arrivals"), and marches in: two Collectors, two Runners and a
 Crossbowman, the Runners and the Crossbowman Minors. The second brings two Collectors, an Enforcer, a Crossbowman and a
 Runner; the third two Collectors, an Enforcer, and a Marksman and a Reeve, both Elite; every other foe is a Major. One
-Runner more comes in each for each player on the ground beyond the first (three at most). A party of two or fewer on the ground meets each wave a rank
-lower where a type comes lower: the Runners, Collectors and Crossbowmen as Minors, the Marksman as a Major Crossbowman.
-A wave is broken when its foes have all fallen; the next comes 30 seconds later, or 30 seconds after that while the
-room has no room for it, each by airship, standing some 10 seconds after it is called. Each Collector is sent to the standing store nearest it, to defend its ground there, 1.9 m from the store's
-middle on the side the raiders come from; one standing within 2.5 m of its store plunders it, alone in 20 seconds.
-A store plundered sends its Collectors to the next and loses the bonus. Every store plundered, the raid fails; the
-last wave broken with a store standing, the Tithe give up and march out, and it is won.
+Runner more comes in each for each player on the ground beyond the first (three at most). A party of two or fewer on the
+ground meets each wave a rank lower where a type comes lower: the Runners, Collectors and Crossbowmen as Minors, the
+Marksman as a Major Crossbowman. A wave is broken when its foes have all fallen; the next comes 30 seconds later, or
+30 seconds after that while the room has no room for it, each by airship, standing some 10 seconds after it is called.
+Each Collector is sent to the standing store nearest it, to defend its ground there, 1.9 m from the store's middle on
+the side the raiders come from; one standing within 2.5 m of its store plunders it, alone in 20 seconds. A store
+plundered sends its Collectors to the next and loses the bonus. Every store plundered, the raid fails; the last wave
+broken with a store standing, the Tithe give up and march out, and it is won.
 - **Heroic.** With the second wave comes the Tithe-Taker, an Elite who never strikes, or as soon after it as the room
   has room for him, by airship, his round's time counted from when he stands. He walks from where the waves form to
   each standing store, nearest first, counts it for 10 seconds, and walks back out, at the pace that makes his round
@@ -126,45 +129,46 @@ last wave broken with a store standing, the Tithe give up and march out, and it 
 crack, the Tithe back to where they formed, at 4 m a second, each gone once it gets there or within 8 seconds.
 
 **Taking part, and the chests.** A player took part who stood on the ground for 30 seconds of the event, or struck one
-of its foes, or set a shard; their part is kept by their account, so leaving and coming back loses none of it. On a win each of them gets a chest of their own, 3 m from the ground's middle on their
-side, seen by them alone: tier 1 won, 2 won with the bonus, 3 heroic, 4 heroic with the bonus. They open it within 2.5
-m (`Asked::OpenChest`, ask 21 by the chest's number among their drops); it pays at once and is gone, so it never pays
-twice. One not opened is opened for its player as its 2 minutes run out, or as they leave the room: the server opens
-a leaver's chests (`room_parting`) before it keeps their character. A chest is of the event's level, raised by the voyage's seas,
-and its XP and Aurem are the seas' reward times as much, as a kill's are. It holds, by tier: 1,500, 2,200, 3,200 and
-4,500 XP and 120, 180, 260 and 360 Aurem at level 5, each growing with the event's level as a kill's worth does, the
-XP growing the worn Art and the faction pledged while its cape is worn as a kill's XP does; 2, 3, 5 and 7 of each
-Fragment and 3, 4, 6 and 8 of the island's resource, the same at any level; one Essence of each stock from the first
-heroic chest a player opens each day, at any level, and none from any other, as Destiny 1's first gold event of the
-day sent an Ascendant material (`FIRST_HEROIC_ESSENCE`, kept with the day's record);
-and a Vestige always, of the event's level, a foe's colours from a plain chest (a Major's) and a Boss's from a heroic
-one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better; a Normal one comes as its item,
-kept in its slot's nine, else the vault, else the mail ([[Gear]], "Commons drop as themselves"). Opened by its player,
-the chest pours its Vestige out toward them, to be taken by walking over it ([[Gear]], "Drops"). One opened for them as
-it lapses puts its Vestige in the ten, else the vault, and with no room there either on the ground where the chest
-stood, as any drop does; a leaver's goes to the vault however full, since the ground they leave would lose it.
+of its foes, or set a shard; their part is kept by their account, so leaving and coming back loses none of it. On a win
+each of them gets a chest of their own, 3 m from the ground's middle on their side, seen by them alone: tier 1 won,
+2 won with the bonus, 3 heroic, 4 heroic with the bonus. They open it within 2.5 m (`Asked::OpenChest`, ask 21 by the
+chest's number among their drops); it pays at once and is gone, so it never pays twice. One not opened is opened for its
+player as its 2 minutes run out, or as they leave the room: the server opens a leaver's chests (`room_parting`) before
+it keeps their character. A chest is of the event's level, raised by the voyage's seas, and its XP and Aurem are the
+seas' reward times as much, as a kill's are. It holds, by tier: 1,500, 2,200, 3,200 and 4,500 XP and 120, 180, 260 and
+360 Aurem at level 5, each growing with the event's level as a kill's worth does, the XP growing the worn Art and the
+faction pledged while its cape is worn as a kill's XP does; 2, 3, 5 and 7 of each Fragment and 3, 4, 6 and 8 of the
+island's resource, the same at any level; one Essence of each stock from the first heroic chest a player opens each day,
+at any level, and none from any other, as Destiny 1's first gold event of the day sent an Ascendant material
+(`FIRST_HEROIC_ESSENCE`, kept with the day's record); and a Vestige always, of the event's level, a foe's colours from a
+plain chest (a Major's) and a Boss's from a heroic one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and
+keeping the better; a Normal one comes as its item, kept in its slot's nine, else the vault, else the mail ([[Gear]],
+"Commons drop as themselves"). Opened by its player, the chest pours its Vestige out toward them, to be taken by walking
+over it ([[Gear]], "Drops"). One opened for them as it lapses puts its Vestige in the ten, else the vault, and with no
+room there either on the ground where the chest stood, as any drop does; a leaver's goes to the vault however full,
+since the ground they leave would lose it.
 
 **The wire.** A snapshot of a zone's room carries `public_event` ([[Server]]), but one built on a base leaves it
-out while it stands as the base's counted on, the page counting its countdowns on alike ("Limits"): the event running or showing its
-result (kind 1 the Fissure, 2 the raid, 0 none) and its phase (0 waiting, 1 running, 2 won, 3 failed), its ground and
-radius, its countdown in ticks; the next's kind, ground and ticks until it starts; its stage of how many; its progress
-toward what it needs (shards set of shards needed, or the stores' health left per mille); its heroic task (0 not yet,
-1 offered, 2 met, 3 missed) and its window's ticks; whether its bonus holds; the ticks until a raid's next wave comes
-in (0 while none is on its way); and its marks, each a 24-byte struct, its place in f32: the fissure (how far open),
-the growth (rising, standing, sinking, broken), each store (whole, plundered; always, even waiting), each shard lying
-(its life left) and carried (by whom), the tithe-taker (arriving, counting, leaving), each banner and the approach.
-New fight events: 16 begun, 17 next stage, 18 a shard taken, 19 a shard set, 20 heroic met, 21 heroic missed, 22 won,
-23 failed, 24 a store plundered, 25 a chest opened. A heroic window still open as the event is won or failed is told
-missed before the result, so the result is the last beat of its tick. A foe carries the name it stands under, if any;
-a drop of kind 3 is
+out while it stands as the base's counted on, the page counting its countdowns on alike ("Limits"): the event running or
+showing its result (kind 1 the Fissure, 2 the raid, 0 none) and its phase (0 waiting, 1 running, 2 won, 3 failed), its
+ground and radius, its countdown in ticks; the next's kind, ground and ticks until it starts; its stage of how many; its
+progress toward what it needs (shards set of shards needed, or the stores' health left per mille); its heroic task (0
+not yet, 1 offered, 2 met, 3 missed) and its window's ticks; whether its bonus holds; the ticks until a raid's next wave
+comes in (0 while none is on its way); and its marks, each a 24-byte struct, its place in f32: the fissure (how far
+open), the growth (rising, standing, sinking, broken), each store (whole, plundered; always, even waiting), each shard
+lying (its life left) and carried (by whom), the tithe-taker (arriving, counting, leaving), each banner and the
+approach. New fight events: 16 begun, 17 next stage, 18 a shard taken, 19 a shard set, 20 heroic met, 21 heroic missed,
+22 won, 23 failed, 24 a store plundered, 25 a chest opened. A heroic window still open as the event is won or failed is
+told missed before the result, so the result is the last beat of its tick. A foe carries the name it stands under, if
+any; a drop of kind 3 is
 a chest, with its tier. The browser reads it all in `client/src/network/publicMessages.ts`.
 
 **Agreement.** Every path is tested natively in `crates/room/src/public/`. Two scripted players, reading only their
 snapshots, play a whole Fissure and a whole raid through the room's door
 (`crates/room-wasm/src/public_door_tests.rs`), at level 6 with Rare gear at 6: they win the Fissure, heroic, and
-meet the raid's heroic task and fight it to its countdown's end, losing its last wave ("Limits"), under `main`'s fight (its harm ×1.5 and ×0.75, its foes' pace and
-their swings at seven eighths, and the swings' chain the room keeps whatever stroke is asked)
-([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
+meet the raid's heroic task and fight it to its countdown's end, losing its last wave ("Limits"), under `main`'s fight
+(its harm ×1.5 and ×0.75, its foes' pace and their swings at seven eighths, and the swings' chain the room keeps
+whatever stroke is asked) ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
 [[The Audit's Leftovers Are Fixed as Claude Suggested]], [[The Balance and Economy Pass as Claude Shapes It]],
 [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]); the same script, run through
 WebAssembly by `server/public.test.ts`, comes to the same fingerprints ([[Agree to the Bit]]).
@@ -175,10 +179,12 @@ The snapshot's `public_event` is kept by the fight (`Fighting.public`), and its 
 fight's, which read every event as a blow. Each frame on foot, `game/publicView.ts` turns them into what the player
 sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event alone.
 
-- **On its ground only** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]): the banner and the tracker's steps show while the player stands inside the event's
-  ring (`inEvent`), running or showing its result; elsewhere neither shows, and the held map marks the event while it
-  runs, with its name and the time it has left ([[Held Map]]). Between events no banner shows anywhere. The compass
-  still marks the event's ground, and the tracker still counts a chest left lying.
+- **On its ground only**
+  ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]): the banner
+  and the tracker's steps show while the player stands inside the event's ring (`inEvent`), running or showing its
+  result; elsewhere neither shows, and the held map marks the event while it runs, with its name and the time it has
+  left ([[Held Map]]). Between events no banner shows anywhere. The compass still marks the event's ground, and the
+  tracker still counts a chest left lying.
 - **The banner** (`combat/publicBanner.ts`), drawn as nodes of the game's own interface as every part of the HUD is,
   stands in the compass's column under the compass and over the boss bar and the target's plate, so neither stands on
   it, 440 px wide at most or three quarters of a narrower view (in a view under 480 px high, two lines across three
@@ -192,11 +198,12 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   struck through once lost. In the last minute the clock is red and pulses. A player carrying a shard reads
   "Carrying a shard: take it to the fissure"; a store under attack puts
   "Store under attack" before the objective. Over, for
-  its 12 s: "Event complete" with the chest's tier, or "Event failed" and why. Its tone (gold, heroic orange, won green, failed red) runs
-  down its left edge; it slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed, the heroic
-  chance opening with an orange flare), and as the player steps onto the ground. A screen reader hears each beat and
-  each stepping on (`announce`), never the ticking clocks. In a view under 1024 px wide the tracker gives way to it while an event runs or has just ended (it
-  holds the same objective), and at a phone's width (600 px) the place's name does too.
+  its 12 s: "Event complete" with the chest's tier, or "Event failed" and why. Its tone (gold, heroic orange, won green,
+  failed red) runs down its left edge; it slides in afresh at each beat (begun, a stage, heroic met or missed, won,
+  failed, the heroic chance opening with an orange flare), and as the player steps onto the ground. A screen reader
+  hears each beat and each stepping on (`announce`), never the ticking clocks. In a view under 1024 px wide the tracker
+  gives way to it while an event runs or has just ended (it holds the same objective), and at a phone's width (600 px)
+  the place's name does too.
 - **The tracker** (`tasks.ts`) holds the steps while one runs: the shards still to carry or the Warden; the wave and
   the stores still standing; the heroic task; the bonus while it holds. After, "Open your chest (1:48)" while a chest
   lies, over the two minutes it lies, its clock never read out. The page counts it, and the next event's last minute, on
@@ -222,17 +229,17 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   room stands them; the Tithe's banner is drawn in its grey canvas. The page's own movement and fight stand the
   fissure's four spires (`game/fissureSpires.ts`) at the event's ground while it runs, as the room does, and takes them
   away once the room is lost. The crystal's lamps go
-  with them, and a warm one at each raid banner's head. The fissure's chasm is seen through its mouth: each point of it under the ground is drawn at the depth where
-  the eye's line crosses the land at the foot, a little nearer, so the land there gives way and nearer land or houses
-  keep theirs. Its crack flares at each beat, its width eases to the room's, and a shard set arcs into it over 0.4 s.
-  The Fissure won bursts the Lattice's death wave at four times a man's size where it seals (`sealWave`), in its
-  picture's own texels; each Lattice foe coming while it runs climbs out of its wave played backwards. A raid won
-  topples its banners; a failed Fissure closes into the plain turf. A Lattice figure is shaded darker than a man, its
-  crystal's bright points glowing of themselves at night
-  ([[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]). The ground trembles (the camera's shake) as the Lattice pours out, a shard is set and the seal bursts.
-  A room lost leaves no event on the screen but its stores, whose walls still stand; a page come mid-event replays no
-  beat; and one back from a hidden tab slides the last beat in, but plays none of the sounds, stings, chimes or
-  tremors kept meanwhile.
+  with them, and a warm one at each raid banner's head. The fissure's chasm is seen through its mouth: each point of it
+  under the ground is drawn at the depth where the eye's line crosses the land at the foot, a little nearer, so the land
+  there gives way and nearer land or houses keep theirs. Its crack flares at each beat, its width eases to the room's,
+  and a shard set arcs into it over 0.4 s. The Fissure won bursts the Lattice's death wave at four times a man's size
+  where it seals (`sealWave`), in its picture's own texels; each Lattice foe coming while it runs climbs out of its wave
+  played backwards. A raid won topples its banners; a failed Fissure closes into the plain turf. A Lattice figure is
+  shaded darker than a man, its crystal's bright points glowing of themselves at night
+  ([[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]). The ground trembles (the camera's
+  shake) as the Lattice pours out, a shard is set and the seal bursts. A room lost leaves no event on the screen but its
+  stores, whose walls still stand; a page come mid-event replays no beat; and one back from a hidden tab slides the last
+  beat in, but plays none of the sounds, stings, chimes or tremors kept meanwhile.
 - **Sounds**, all samples the game already holds, none longer than 4.5 s, each held 5 s at most and faded
   (`HEARD_MOST_S`, `combat/worldSounds.ts`): the ground splitting (`amb.ice.crack`) or the Tithe sighted (`foe.alert`)
   as one begins and at each stage; a shard taken (`element.cosmic`, and the player's own chimes) and set
@@ -253,9 +260,10 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   as the rules' test plays it (`network/publicBots.ts`, the same `decide`; the browser's test proves they reach the
   rules' fingerprints), and `&heroic=0` leaves the heroic task alone. The bots and the page's own player stand at the
   test's level 6 with Rare gear: two bots seal the Fissure either way and, since each raid wave lands by airship some
-  10 s after it is called, hold the raid's stores either way (`server/public.test.ts`). The page puts `__play` on the window for a picture script: its `speed`, `putPlayer`,
-  `read`, and `until` (a test of each tick's snapshot that stops the frame's ticks once met), and `__qaLook` turns
-  the camera without arriving again, so the room plays on. None of it is in a production build.
+  10 s after it is called, hold the raid's stores either way (`server/public.test.ts`). The page puts `__play` on the
+  window for a picture script: its `speed`, `putPlayer`, `read`, and `until` (a test of each tick's snapshot that stops
+  the frame's ticks once met), and `__qaLook` turns the camera without arriving again, so the room plays on. None of it
+  is in a production build.
 
 ## Limits
 

@@ -127,7 +127,8 @@ SLABS = [
     ('torso', 'chest', lambda p, n: p[:, 2] + 2 * p[:, 1] - 3 * np.abs(p[:, 0]), (0.2, 0.11, 0.11)),    # the hump
     ('arm_L', 'uarm_L', lambda p, n: p[:, 2] + n[:, 0], (0.09, 0.09, 0.11)),                            # deltoids
     ('arm_R', 'uarm_R', lambda p, n: p[:, 2] - n[:, 0], (0.09, 0.09, 0.11)),
-    ('torso', 'pelvis', lambda p, n: -np.abs(p[:, 2] - 1.02) - 2 * p[:, 1] - np.abs(p[:, 0]), (0.18, 0.07, 0.07)),  # belly
+    ('torso', 'pelvis', lambda p, n: -np.abs(p[:, 2] - 1.02) - 2 * p[:, 1] - np.abs(p[:, 0]),
+     (0.18, 0.07, 0.07)),  # belly
     ('torso', 'chest', lambda p, n: -np.abs(p[:, 2] - 1.3) - 2 * p[:, 1] - 3 * np.abs(p[:, 0] - 0.1), (0.1, 0.05, 0.07)),
     ('torso', 'chest', lambda p, n: -np.abs(p[:, 2] - 1.3) - 2 * p[:, 1] - 3 * np.abs(p[:, 0] + 0.1), (0.1, 0.05, 0.07)),
 ]

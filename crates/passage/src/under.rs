@@ -152,7 +152,8 @@ fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 6]], at: [f64; 2], arrive: [f64;
 /// The zone's layings under ground in its style, each from the next seed, the first first; a lamp's zone only where
 /// a room but the way in's is tall enough to stand the lamp in and the lamp stands clear of the Forge's solids, a
 /// Hold's where a room holds its ring whole, and any where its floor gives its deal every spot it wants, every way on
-/// its mouth and its foes a post, its seeds tried once in turn, else its first seed's alone. None for a style the Forge does not know.
+/// its mouth and its foes a post, its seeds tried once in turn, else its first seed's alone. None for a style the Forge
+/// does not know.
 pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<impl Iterator<Item = (Dungeon, Sites)>> {
     let style = dungeon::style_of(style)?;
     let blocks = zone.size.blocks();

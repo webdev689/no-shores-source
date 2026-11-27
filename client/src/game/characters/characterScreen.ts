@@ -1,8 +1,8 @@
 // The character screen's workings: it asks the accounts for the four as it opens, chooses with the keys, the pad and
 // the pointer, plays the chosen character (asking again a few times while the one in play is still held by a room),
-// deletes one held for two seconds, and opens a developer's Test Room, whose Launch keeps the test room for the arrival.
-// Choosing sets this browser's state from the slot, and the title goes on: into the story for a new character, past it
-// for one that has played it; Escape goes back to the title.
+// deletes one held for two seconds, and opens a developer's Test Room, whose Launch keeps the test room for the
+// arrival. Choosing sets this browser's state from the slot, and the title goes on: into the story for a new character,
+// past it for one that has played it; Escape goes back to the title.
 import { type AccountLink, type Kept, OUT_OF_REACH } from '../../network/accounts.ts';
 import type { Characters, Held } from '../../network/characters.ts';
 import { BINDS } from '../../player/input.ts';

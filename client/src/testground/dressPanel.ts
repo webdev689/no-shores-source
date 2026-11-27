@@ -113,8 +113,9 @@ function garmentList(
 
 /**
  * The chosen figure's dress: its body, race and skin tone, hair, armour by piece, garments, what each hand holds and
- * whether it is drawn, each garment's dye, and one of the forge's dressed looks to start from. `changed` follows each edit.
- * The player's own hands (`own`) hold what their gear wears, so theirs pick a loadout to wear and a light instead.
+ * whether it is drawn, each garment's dye, and one of the forge's dressed looks to start from. `changed` follows each
+ * edit. The player's own hands (`own`) hold what their gear wears, so theirs pick a loadout to wear and a light
+ * instead.
  */
 export function dressNodes(
   ui: Interface,

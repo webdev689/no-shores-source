@@ -144,8 +144,8 @@ fn keep(opened: Opened) {
     OPEN.with(|open| *open.borrow_mut() = Some(opened));
 }
 
-/// Opens a new room on a course: the spawn's x and y, then the blocks, six numbers each (`BLOCK_FLOATS`), little-endian floats.
-/// Answers whether the numbers made a course.
+/// Opens a new room on a course: the spawn's x and y, then the blocks, six numbers each (`BLOCK_FLOATS`), little-endian
+/// floats. Answers whether the numbers made a course.
 pub fn open(bytes: &[u8]) -> bool {
     open_course(bytes, Room::new)
 }
@@ -236,8 +236,9 @@ struct SeaRequest {
     islands: Option<std::collections::BTreeMap<String, String>>,
 }
 
-/// Opens the sea round the continents of a layout, its hostile ships' chances drawn from `seed`: the text is a layout file,
-/// or a layout with its ports (`SeaRequest`), whose lanes the Grey Tithe patrols. Answers whether the text was either.
+/// Opens the sea round the continents of a layout, its hostile ships' chances drawn from `seed`: the text is a layout
+/// file, or a layout with its ports (`SeaRequest`), whose lanes the Grey Tithe patrols. Answers whether the text was
+/// either.
 pub fn open_sea(text: &[u8], seed: u32) -> bool {
     let Ok(text) = std::str::from_utf8(text) else { return false };
     let opened = match serde_json::from_str::<SeaRequest>(text) {

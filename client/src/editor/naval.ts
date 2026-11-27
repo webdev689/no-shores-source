@@ -273,8 +273,8 @@ export class Naval {
     return this.farewell && this.farewell.until > now ? this.farewell.said : [];
   }
 
-  /** The fight's readout at `now` (`fightDisplay`): its plate and its abilities' bar, the card on the nearest captain with `board`'s
-   *  key while it can be boarded, and its last volley's tally; none out of a fight. */
+  /** The fight's readout at `now` (`fightDisplay`): its plate and its abilities' bar, the card on the nearest captain
+   *  with `board`'s key while it can be boarded, and its last volley's tally; none out of a fight. */
   display(now: number, board: Parameters<typeof fightDisplay>[3]): ReturnType<typeof fightDisplay> | null {
     return this.fight ? fightDisplay(this.fight.view, this.feel, now, board, this.fight.own) : null;
   }

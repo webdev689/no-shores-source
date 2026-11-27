@@ -15,8 +15,8 @@ use land::ground::Ground;
 /// and across it: the walks run from the courts to the base, and on along the plaza's ends to the platform's edges.
 pub(crate) const BASE_FACE_M: f64 = -105.0;
 pub(crate) const PLATFORM_EDGE_M: f64 = 154.0;
-/// The walls that close the walks where the platform runs on round the base: seaward of the base's face, from the base's
-/// corner towers out to the platform's edges, their thickness and height; a sealed gate in each.
+/// The walls that close the walks where the platform runs on round the base: seaward of the base's face, from the
+/// base's corner towers out to the platform's edges, their thickness and height; a sealed gate in each.
 pub(crate) const SEALED_M: [f64; 4] = [-108.0, 76.0, 2.0, 10.0];
 const SEALED_GATE_ACROSS_M: f64 = 115.0;
 /// On the east, the wall closes the Stair Yard past the Harbour Stair's head, where the city's switchback meets the

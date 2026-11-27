@@ -286,8 +286,8 @@ function runsOf(picture: PixelPicture, asked: boolean): readonly number[] {
   return runs;
 }
 
-/** Writes a mark vertex into `out` at `index`, by index rather than pushed (a frame lays tens of thousands), and answers
- *  where the next goes. */
+/** Writes a mark vertex into `out` at `index`, by index rather than pushed (a frame lays tens of thousands), and
+ *  answers where the next goes. */
 function put(
   out: number[],
   index: number,

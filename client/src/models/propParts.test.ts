@@ -170,7 +170,8 @@ test('columns join only while every top in the box stands within the keep of its
 
 type Corner = readonly [number, number, number];
 
-/** How far a point lies from a triangle, metres: its nearest point found as Ericson finds it, by the region it lies in. */
+/** How far a point lies from a triangle, metres: its nearest point found as Ericson finds it, by the region it lies
+ *  in. */
 function offTriangle(point: Corner, first: Corner, second: Corner, third: Corner): number {
   const minus = (one: Corner, two: Corner): Corner => [one[0] - two[0], one[1] - two[1], one[2] - two[2]];
   const dot = (one: Corner, two: Corner): number => one[0] * two[0] + one[1] * two[1] + one[2] * two[2];

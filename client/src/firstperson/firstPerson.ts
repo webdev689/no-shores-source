@@ -179,7 +179,8 @@ export class FirstPerson {
   private lower = 0;
   private readonly climbHands = new ClimbHands();
   private climbShown: ClimbShown = { grips: [], reach: null };
-  /** The screen's width over its height when last drawn with a size, the lens the hands on a wall are pinned through. */
+  /** The screen's width over its height when last drawn with a size, the lens the hands on a wall are pinned
+   *  through. */
   private aspect = DESIGN_WIDTH / DESIGN_HEIGHT;
   /** How far a shield or a torch has ducked out of a strike's way, 0 held to 1 gone below the screen. */
   private duck = 0;
@@ -262,9 +263,9 @@ export class FirstPerson {
     this.hands.loaded();
   }
 
-  /** Moves the first person on by `seconds`: the swings and shots, the cast, the bob, the chain, the climb, the ride and
-   *  the held things. Answers the blow that lands now and whether a shot leaves, and from which hand, so the figure seen
-   *  from outside can match them. */
+  /** Moves the first person on by `seconds`: the swings and shots, the cast, the bob, the chain, the climb, the ride
+   *  and the held things. Answers the blow that lands now and whether a shot leaves, and from which hand, so the figure
+   *  seen from outside can match them. */
   update(seconds: number, input: AttackInput, state: FirstPersonState): HandsEvents {
     this.plan = state.drawn ? handsPlan(state.right, state.left) : null;
     this.zoom = state.zoom ?? 1;

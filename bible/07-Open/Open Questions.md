@@ -93,7 +93,8 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   a new browser sees them again; whether they should be kept with the character in its room ([[Prologue]]).
 - **What others see.** The room puts the cosmetics and faction colours a player has earned into the dress others see,
   and keeps a worn set or metal only of its piece's own content
-  ([[The Room Keeps Only Looks of a Piece's Own Content]]); the garments drawn are still each page's own word ([[Server]]).
+  ([[The Room Keeps Only Looks of a Piece's Own Content]]); the garments drawn are still each page's own word
+  ([[Server]]).
 - **The Abyss Dungeons' crossbows.** The forge draws no adamantium or ebony crossbow, so they show the nearest metal it
   draws (mithril); their own art waits (the owner: "Not now").
 - **The balance pass's open point** ([[The Balance and Economy Pass as Claude Shapes It]]): Conduit (Deepwatch) brings
@@ -166,8 +167,8 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **Patrol zones**: whether sections may overlap (0.3 m on continent 2, greystone-tors and hollow-crypt; 4.2 m before,
   highwater-fells and wreckwood); none of Saltmere's landings has a boardwalk, why unchecked. Saltmere's heights
   ([[Zones Rise and Fall, Above and Below Ground]]), for the owner to look at before the other islands' eight patrol
-  zones take heights and runs; no Saltmere way needs a switchback down a cliff as built (`map_planned.rs`), so whether they are wanted as a
-  cliff climb of their own, and where.
+  zones take heights and runs; no Saltmere way needs a switchback down a cliff as built (`map_planned.rs`), so whether
+  they are wanted as a cliff climb of their own, and where.
 - **The fight on foot** ([[Combat]]): whether the one-second reset of the swings' chain and the foes' pace feel right
   in play; whether a stroke that would not reach the locked foe is passed over, as now (at the edge of reach every
   swing thrusts), or the chain kept strictly and a short stroke left to miss; whether players may harm one another;
@@ -193,9 +194,9 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   1.5×, ours caps them); ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss
   shown once; a mark for a Major; the display scaled with the screen; one look for both kinds of death in the Game.
 - **The interface**: whether Graphics gains settings of its own (it holds the resolution alone), a grass setting among
-  them; whether the key strip's 11 px reads well on the owner's screen; the pad has no button for the chat, and reporting a line; a smith's purchase moves the number on,
-  so the other wares still shown may redraw; creation's turn keys turning the figure on the spot; emptying a Core
-  slot and resting the ability bar with the vitals (#69).
+  them; whether the key strip's 11 px reads well on the owner's screen; the pad has no button for the chat, and
+  reporting a line; a smith's purchase moves the number on, so the other wares still shown may redraw; creation's turn
+  keys turning the figure on the spot; emptying a Core slot and resting the ability bar with the vitals (#69).
 - **The held map on land** has no fog of war, so a whole land shows the first time; whether to fog it.
 - **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): a join that loads another landmass; more emblems
   and where they come from.
@@ -248,7 +249,8 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   - A node the quest names keeps a red-brown ring, though the owner's "Remove the tiny nodes on the held map" leaves
     no node marked.
   - A sea is locked while its island has no name in `content/world/islands.json`, so naming an island unlocks its
-    sea; a locked sea is not sailed or travelled into ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]).
+    sea; a locked sea is not sailed or travelled into
+    ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]).
   - A sea's name falls back to a plain word's size where its arch fits nowhere.
 - **The sea map, travel and home waters** (#221), for the owner:
   - Lantern Sea islands carry continent-1's resource, brineglass, Saltmere's own.

@@ -63,7 +63,8 @@ pub fn script_comments(text: &str) -> Vec<Comment> {
     comments
 }
 
-/// Skips a quoted string or a template literal (with its `${ }` parts), returning where it ends and the lines it crossed.
+/// Skips a quoted string or a template literal (with its `${ }` parts), returning where it ends and the lines it
+/// crossed.
 fn skip_string(chars: &[char], start: usize, quote: char) -> (usize, usize) {
     let mut position = start + 1;
     let mut crossed = 0;

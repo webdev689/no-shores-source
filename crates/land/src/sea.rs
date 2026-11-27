@@ -80,9 +80,9 @@ impl Swell {
 
     /// The swell where the sea stands as `here` says: the sets about the two bearings nearest the wind's and the two
     /// lengths round its own, each weighted by how near, the whole as high as `here` makes it. A set's waves keep their
-    /// phases wherever and whenever they are summed, so the sea never jumps as the weather moves; only their weights do,
-    /// and those change over kilometres and hours. The weights' squares sum to 1, so a blend of two sets is as high as
-    /// one; the sideways carry takes the squares, so the crests never fold.
+    /// phases wherever and whenever they are summed, so the sea never jumps as the weather moves; only their weights
+    /// do, and those change over kilometres and hours. The weights' squares sum to 1, so a blend of two sets is as high
+    /// as one; the sideways carry takes the squares, so the crests never fold.
     #[must_use]
     pub fn under(seed: u32, here: &SeaHere) -> Self {
         let seed = seed_of(seed, "swell");

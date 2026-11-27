@@ -1,9 +1,9 @@
 // What the player gained between two words from the room on their gear: Aurem and Shapes, XP, each faction's
 // reputation, each Art's progress and fragments, fragments, essence and Fruit of Dagon, each island's resource, the
 // ship's materials and XP, ammunition from an Ammo box, Ammo crates, every item, Vestige, emblem and cosmetic new to
-// them, every ship and ship's dress new to them, and the letters sent to their mail. What they spent or moved is not a gain, nor the ammunition a crate they
-// used gave back. Currency, XP, reputation and an Art's progress are short lines, as Destiny shows them over the
-// items' rows. Prestige is not a gain: it is what the armour worn is worth.
+// them, every ship and ship's dress new to them, and the letters sent to their mail. What they spent or moved is not a
+// gain, nor the ammunition a crate they used gave back. Currency, XP, reputation and an Art's progress are short lines,
+// as Destiny shows them over the items' rows. Prestige is not a gain: it is what the armour worn is worth.
 // The feed at the right of the screen shows these as Destiny shows what is picked up.
 
 import cosmetics from '../../../content/gear/cosmetics.json' with { type: 'json' };

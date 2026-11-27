@@ -437,8 +437,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     });
   };
 
-  /** Each frame at sea: the islands the room tells of kept and built, and a landing walked ashore once the ship anchors or
-   *  a beaten player washed up on a found island's beach. */
+  /** Each frame at sea: the islands the room tells of kept and built, and a landing walked ashore once the ship anchors
+   *  or a beaten player washed up on a found island's beach. */
   const isleFrame = () => {
     // Off the island's beach, at sea or in a node, the island is the sea's again; under the veil ashore it is kept.
     if (playing.flow.mode === 'sea' || (playing.foot && !playing.foot.node.id.startsWith('isle-'))) ashore = null;
@@ -522,7 +522,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const gearHere = () =>
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
   const fed = () => sailed.heard(playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
-  /** A gate shut sends the player back to their ship; one who keeps none yet, to Overlook, where the Harbourmaster is. */
+  /** A gate shut sends the player back to their ship; one who keeps none yet, to Overlook, where the Harbourmaster
+   *  is. */
   const shutOut = (why: string) => {
     const home = sailed.shipless() ? playing.landmass.nodes.find((node) => node.id === FIRST_NODE) : undefined;
     if (!home || playing.foot?.node.id === FIRST_NODE) return travel({ kind: 'shut', why }, goSea);

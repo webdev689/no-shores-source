@@ -60,9 +60,9 @@ fn ahead(from: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
 /// The parts of a sculpt as carved so far: its claim, floors, climbs and raised floors.
 type Laid<'a> = (&'a [[f64; 2]], &'a [[f64; 5]], &'a [[f64; 7]], &'a [[f64; 7]]);
 
-/// Each coven's and cave's cavern, where one fits: from the first bearing (of the four quarters) along which the area's floor (as
-/// the sculpt carved so far lays it, `laid`, with its massif's height and seed) gives onto rock that holds the tunnel
-/// and the hollow well inside the claim, on dry land and clear of every other floor past a cliff's run.
+/// Each coven's and cave's cavern, where one fits: from the first bearing (of the four quarters) along which the area's
+/// floor (as the sculpt carved so far lays it, `laid`, with its massif's height and seed) gives onto rock that holds
+/// the tunnel and the hollow well inside the claim, on dry land and clear of every other floor past a cliff's run.
 #[must_use]
 pub fn find(field: &Field, areas: &[Area], levels: &[f64], laid: Laid, (rise, seed): (f64, u32)) -> Vec<Cavern> {
     let (claim, floors, climbs, raised) = laid;

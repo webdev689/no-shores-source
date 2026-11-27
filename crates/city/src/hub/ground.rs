@@ -1,6 +1,7 @@
-//! The ground the hub's courts are laid with: its ways as flagstone walks over the cobbles, apart from the ground beside
-//! them, every corner where they meet, cross or turn curved so none is sharp; and the gardens' lawn and the smiths'
-//! yard's earth laid under them, so a walk's own edge bounds the ground, and under the small pieces and round the rest.
+//! The ground the hub's courts are laid with: its ways as flagstone walks over the cobbles, apart from the ground
+//! beside them, every corner where they meet, cross or turn curved so none is sharp; and the gardens' lawn and the
+//! smiths' yard's earth laid under them, so a walk's own edge bounds the ground, and under the small pieces and round
+//! the rest.
 
 use super::Laid;
 use super::dress::{OVERHEAD_M, Rect, corners, inside, rect_gap};
@@ -287,8 +288,8 @@ fn strips([first, second, corner]: [[f64; 2]; 3], out: [f64; 2], depth: f64) -> 
     laid
 }
 
-/// The border of flagstones round a flat round of `radius` at `middle`: short pieces round it, from just inside its edge
-/// out past the ground's steps where it is kept off the round.
+/// The border of flagstones round a flat round of `radius` at `middle`: short pieces round it, from just inside its
+/// edge out past the ground's steps where it is kept off the round.
 fn border(middle: [f64; 2], radius: f64, level: f64) -> Vec<Solid> {
     let outer = radius - 0.2 + BORDER_M;
     let count = (std::f64::consts::TAU * outer / BORDER_PIECE_M).ceil();

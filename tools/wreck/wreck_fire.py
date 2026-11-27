@@ -3,8 +3,8 @@ written for the game, which burns the same fires over it (client/src/cinema/flam
 
 A fire is round, or burns along a line: a yard, a rail, a strip of fallen canvas. Places are in a ship's frame over her
 floor (`lift`), at a height in her frame (`z`), or in the wreck's frame, at a height (`z`) or on what stands there
-(`lift`); `along` is the line's far end in the same frame. A fire laid on a floor burns on whatever stands there (a heap, a rail, the deck), never inside it, and never on
-a heap that clears in play.
+(`lift`); `along` is the line's far end in the same frame. A fire laid on a floor burns on whatever stands there (a
+heap, a rail, the deck), never inside it, and never on a heap that clears in play.
 """
 import math
 

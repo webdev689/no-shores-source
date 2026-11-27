@@ -61,8 +61,8 @@ export class Sailing extends Afloat {
     if (isRungKey(key)) this.presses.push(key);
   }
 
-  /** Owes it `seconds` more and, unless a step is with the rules, sends the whole ticks owed (a second's at most), the last
-   *  ending at `time`, with the helm the keys held and the next press ask. */
+  /** Owes it `seconds` more and, unless a step is with the rules, sends the whole ticks owed (a second's at most), the
+   *  last ending at `time`, with the helm the keys held and the next press ask. */
   advance(seconds: number, held: ReadonlySet<string>, time: number, fail: (error: unknown) => void): void {
     this.owed = Math.min(this.owed + seconds, MOST_TICKS * TICK_SECONDS);
     if (this.pending) return;

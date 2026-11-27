@@ -160,8 +160,8 @@ impl ::foes::Routes for MeshRoutes<'_> {
             return Some(to);
         }
         let path = self.mesh.find_path_kept(way, from, reachable);
-        // With no way from where it stands, off the mesh, it makes back for the mesh, never straight through what stands
-        // between it and its goal.
+        // With no way from where it stands, off the mesh, it makes back for the mesh, never straight through what
+        // stands between it and its goal.
         let back = || {
             self.mesh
                 .nearest_point_within(from, BACK_TO_MESH)

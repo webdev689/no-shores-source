@@ -289,8 +289,9 @@ const BELL = 880;
 const fromBell = (steps: readonly number[]) => steps.map((semitones) => BELL * 2 ** (semitones / 12));
 /** A Legendary gain's glints, as dust catching the light: each a multiple of the bell an octave up. */
 const GLINTS = [2, 3, 2.5, 4, 3.5, 2, 3, 2.5];
-/** A gain's chime, the Brass bells the owner picked: one voice at three sizes, a single bell for a Normal or Magic gain,
- *  a rising run for a Rare, and for a Legendary or Atheric a longer run over a held, shimmering chord and its glints. */
+/** A gain's chime, the Brass bells the owner picked: one voice at three sizes, a single bell for a Normal or Magic
+ *  gain, a rising run for a Rare, and for a Legendary or Atheric a longer run over a held, shimmering chord and its
+ *  glints. */
 export function chime(rarity: number): void {
   lastCueAt = performance.now();
   if (rarity <= 1) return bell(BELL, 0.22, 0.45);
@@ -351,7 +352,8 @@ export function quietPress(): void {
   lastCueAt = performance.now();
 }
 
-/** A press the game draws, let go at `when` (`performance.now()`): it sounds, unless a sound of its own played since. */
+/** A press the game draws, let go at `when` (`performance.now()`): it sounds, unless a sound of its own played
+ *  since. */
 export function drawnPress(when: number): void {
   if (lastCueAt < when) play('press');
 }

@@ -72,7 +72,8 @@ export class Breach {
   /** In a zone, each player's run until the accounts answer; in a run, each player's name as the keeper gives it. */
   private readonly asked = new Map<number, string>();
   private readonly names = new Map<number, string>();
-  /** In a zone, the players the accounts said were launched as they came, held in their company without asking again. */
+  /** In a zone, the players the accounts said were launched as they came, held in their company without asking
+   *  again. */
   private readonly launched = new Set<number>();
 
   constructor(name: string, deps: BreachDeps) {

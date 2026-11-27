@@ -233,7 +233,8 @@ fn a_ship_puts_to_sea_only_by_a_port_citys_roadstead_and_a_new_character_lies_at
             sea.harbour.told.iter().rev().find(|(to, numbers)| *to == player && numbers[0] == crate::harbour::MOORED);
         assert_eq!(moored.map(|(_, numbers)| numbers[2..4].to_vec()), Some(vec![10_000.0; 2]), "told last");
     }
-    // Nor does the page's own start off Overlook's harbour, within reach of its roadstead, place it: the roadstead does.
+    // Nor does the page's own start off Overlook's harbour, within reach of its roadstead, place it: the roadstead
+    // does.
     let off_harbour = sea.join();
     sea.course(off_harbour, &[[11_500.0, 11_000.0], [12_000.0, 12_000.0]], 10).unwrap();
     assert!(sea.restore_character(off_harbour, &sailor().to_json()));

@@ -1,9 +1,9 @@
 // The dialogue box, bottom centre in the Enhanced Plus kit: the speaker's name, in their own colour, over their
-// words, typed as they are heard. A speaker with no name is a voice from nowhere, its words alone in the middle of the screen. Drawn by the game
-// as a layer of its interface under every other, so the HUD, the menu and every window stand over the words; a
-// screen reader hears each line once it is typed whole. Once a line is typed and waits for a press, a small prompt to
-// continue stands in the box, naming the key or button bound to it. The pacing is the conversation's (conversation.ts);
-// this file shows it, sounds it, and hands it the press that moves it on.
+// words, typed as they are heard. A speaker with no name is a voice from nowhere, its words alone in the middle of the
+// screen. Drawn by the game as a layer of its interface under every other, so the HUD, the menu and every window stand
+// over the words; a screen reader hears each line once it is typed whole. Once a line is typed and waits for a press, a
+// small prompt to continue stands in the box, naming the key or button bound to it. The pacing is the conversation's
+// (conversation.ts); this file shows it, sounds it, and hands it the press that moves it on.
 import { TONES } from '../plus/tones.ts';
 import { announce } from '../ui/announce.ts';
 import type { Child, Node, Span } from '../ui/node.ts';

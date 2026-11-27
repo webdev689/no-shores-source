@@ -70,7 +70,8 @@ export function packModule(
   return { vertices, indices: Uint32Array.from([...plain, ...crystal]), crystalFrom: plain.length };
 }
 
-/** A module's lips as the shader reads them, station by station along its x: (x, the lower lip's y, the higher's, 0). */
+/** A module's lips as the shader reads them, station by station along its x: (x, the lower lip's y, the higher's,
+ *  0). */
 export function packLips(module: number): Float32Array | null {
   const [north, south] = moduleMouth(module) ?? [];
   if (!north || !south || north.length !== south.length || north.length < 2) return null;

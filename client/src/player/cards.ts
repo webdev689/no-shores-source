@@ -339,10 +339,10 @@ export class Cards {
   }
 
   /** A figure's frame in a move and a view, composed `haste` if it is not kept or under way, and hurried if it is
-   *  under way and now shown; the frame once composed, or 'coming' while it is composed. A move carries the props, instrument or spark the forge draws
-   *  in it; a weapon glowing in `glow` its outline, and a cast's spark recoloured to it. A frame shown before it is
-   *  composed has the rest of its move's frames in that view asked for with it, in the order they play, so its loop
-   *  plays through once the first comes. */
+   *  under way and now shown; the frame once composed, or 'coming' while it is composed. A move carries the props,
+   *  instrument or spark the forge draws in it; a weapon glowing in `glow` its outline, and a cast's spark recoloured
+   *  to it. A frame shown before it is composed has the rest of its move's frames in that view asked for with it, in
+   *  the order they play, so its loop plays through once the first comes. */
   private ask(
     dress: Dress,
     anim: string,

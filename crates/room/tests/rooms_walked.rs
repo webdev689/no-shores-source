@@ -1,5 +1,5 @@
-//! Saltmere's walk-in buildings in its three zones, as the bake lays them, walked by the movement rules: a body walks in
-//! through every ground-floor door, and up to every upper floor.
+//! Saltmere's walk-in buildings in its three zones, as the bake lays them, walked by the movement rules: a body walks
+//! in through every ground-floor door, and up to every upper floor.
 
 use layout::book::Measure;
 use layout::seat::Seated;
@@ -104,8 +104,8 @@ fn a_body_walks_in_at_every_door_and_up_to_every_upper_floor() {
                     ));
                 }
             }
-            // An upper floor: some walk from the ground floor, on a metre's grid to half a metre inside the footprint and
-            // each quarter, stands on it.
+            // An upper floor: some walk from the ground floor, on a metre's grid to half a metre inside the footprint
+            // and each quarter, stands on it.
             let eaves = measure.plan.iter().map(|wing| wing.eaves).fold(0.0, f64::max);
             if eaves < measure.min[1] + STOREY_M + LEAST_ROOM_M {
                 continue;

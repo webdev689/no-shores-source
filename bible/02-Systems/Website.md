@@ -79,9 +79,9 @@ DFO Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Websi
   ship, Thule's flagship over a captain's broken, burning ship at a red dusk, the captain sinking toward a faint
   light, a ruined port overtaken by crystal, Saltmere's shore at first light, a ship under full sail, the three Arts'
   flames in braziers on the quay, gear under a lantern, a ship's bell on the quay; and of play itself
-  (`gameScenes.ts`): the keepers at their counters in the arcades of Overlook's court, a duel by firelight with the fighters' edges lit by the
-  brazier between them, and a dungeon's gate in a hillside. Every scene fills its frame; only the lights layer and the
-  logo have clear cells. The logo is drawn cell for cell from
+  (`gameScenes.ts`): the keepers at their counters in the arcades of Overlook's court, a duel by firelight with the
+  fighters' edges lit by the brazier between them, and a dungeon's gate in a hillside. Every scene fills its frame; only
+  the lights layer and the logo have clear cells. The logo is drawn cell for cell from
   the game's own picture of it, shown at whole-number scale; the tab's icon is its first letter. The Discord server's
   icon (`server-icon`) is that letter on a night with the moon's halo behind it, 112 pixels drawn nine times over,
   the letter kept clear of the round crop Discord gives every server icon; the bot's layout sets it.
@@ -100,10 +100,10 @@ DFO Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Websi
   an account).
 - **The World** is the premise as written, under headings of its places, with "Even history itself cannot be
   trusted." set apart between them.
-- **Nothing from another site.** The face is Pixelify Sans, bundled from its package ([[Pixelify Sans Is Overlook's Font]]);
-  the copyright sign alone takes the device's own sans, since Pixelify draws it as a speck. A built page carries a
-  content policy that lets it load only its own styles, fonts and pictures, and runs no script. The panel's page is
-  the one exception, below.
+- **Nothing from another site.** The face is Pixelify Sans, bundled from its package
+  ([[Pixelify Sans Is Overlook's Font]]); the copyright sign alone takes the device's own sans, since Pixelify draws it
+  as a speck. A built page carries a content policy that lets it load only its own styles, fonts and pictures, and runs
+  no script. The panel's page is the one exception, below.
 - **Look.** Night colours with lantern-gold accents, framed pictures and cards. It fits from 360 px wide to a wide
   desktop without scrolling sideways; the lanterns stop flickering for a player who asks for reduced motion.
 

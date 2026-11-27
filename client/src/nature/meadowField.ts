@@ -53,7 +53,8 @@ export interface Cell {
   readonly grid: Float32Array;
   readonly clear: Uint32Array;
   version: number;
-  /** The highest and lowest ground in it, metres, for culling, and its most grass share: a cell with none is not drawn. */
+  /** The highest and lowest ground in it, metres, for culling, and its most grass share: a cell with none is not
+   *  drawn. */
   low: number;
   high: number;
   grass: number;

@@ -44,10 +44,12 @@ DFO's sailing (its port of Come Sail Away, [[Come Sail Away's Sailing Comes Over
   naval scenes and display draw them ([[The Sea Fight Looks and Aims as DFO's Does]]).
   - Brought over: the aim down the sights, its eased camera, its reach, its sight and aim line, its arcs, rings,
     posts and strike marks in DFO's three tones, and the wheel's quiet and zoom ([[Naval Combat]], "The aim, as
-    DFO's"); its eye's station, its look and its arcs replaced by [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]].
-  - Ported: `src/ui/naval/navalHud.js` (the plate, battery rose (replaced by the ship's bar, [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]), target card, tally and aim line, on screen in every
-    sea fight and the World Editor's), `src/render/navalRender.js` (the aim's ribbons, foam rings, posts and strike
-    marks; the puffs' blends), `src/systems/naval/navalEffects.js` (the fight's puffs, the smoke and the balls'
+    DFO's"); its eye's station, its look and its arcs replaced by
+    [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]].
+  - Ported: `src/ui/naval/navalHud.js` (the plate, battery rose (replaced by the ship's bar,
+    [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]), target card, tally and aim line, on screen in
+    every sea fight and the World Editor's), `src/render/navalRender.js` (the aim's ribbons, foam rings, posts and
+    strike marks; the puffs' blends), `src/systems/naval/navalEffects.js` (the fight's puffs, the smoke and the balls'
     trails on the wind), `src/scenes/naval/aimCamera.js` and `src/player/seaZoom.js` ([[Naval Combat]], "How it
     looks").
 - **Pirates at sea**: DFO's director, trimmed to pirates alone

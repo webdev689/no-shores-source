@@ -122,8 +122,8 @@ function recipeFor(ctx: RecipeContext): Job | ReturnType<typeof paintThing> {
 
 /**
  * The picture for `archive`'s `record`, frame `frame` (an animated record's frames differ only where it moves), or
- * null where nothing is painted: a record or frame the catalog does not hold, or an archive no recipe knows. `uses` say what
- * the record is named for, which chooses within an archive that holds many kinds.
+ * null where nothing is painted: a record or frame the catalog does not hold, or an archive no recipe knows. `uses` say
+ * what the record is named for, which chooses within an archive that holds many kinds.
  */
 export function paintPicture(archive: number, record: number, frame: number, uses: PictureUses): Picture | null {
   const size = pictureSize(archive, record);

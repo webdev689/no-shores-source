@@ -129,17 +129,17 @@ generated and shaped, before any city stands on it:
    1.1 m high, the landward side too, since past the landmark's base the ground may be a terrace far below. Its
    section is its own edge, so its floor is walked right to the parapet and only climbing over it warns; its four
    spawns stand 40 m apart, 4 m inside the seaward parapet, looking down over the city. It is laid out as the Tower's
-   courtyard (`courtyard`), as every city's but Overlook's is (Overlook's is its hub, below): on the landward side a portico up three steps (a podium, six columns, an entablature and
-   a pediment) before a great timber door in an arch, and either side of it an arcade with a lamp in each alcove; in
-   the middle a stepped plinth with an obelisk 18 m high capped in gold, a brazier either side and two toward the
-   ends; lanterns on the seaward parapet and stone benches facing the sea, midway between the spawns; and bands of
-   stone in the paving, a processional way, a border and a ring round the plinth. Its stations stand in the
-   arcades' alcoves, as the Tower's merchants stand in its booths (`stations`): in each alcove a counter under its
-   hung lamp, the keeper's place behind it facing the plaza, and shelves of their goods against the back wall. By the
-   portico, the Mage on one side and the Harbourmaster on the other; then a vault on each side; on the Mage's side the
-   Armorsmith's armour stands, the Weaponsmith's racks, the Tailor's bolts of cloth and the Tack's saddles; on the
-   other the three factions' counters, each between two banner stands with its light on the counter (the
-   Stormcallers', the Lamplighters' and the Veiled's), and a chandler's stall
+   courtyard (`courtyard`), as every city's but Overlook's is (Overlook's is its hub, below): on the landward side a
+   portico up three steps (a podium, six columns, an entablature and a pediment) before a great timber door in an arch,
+   and either side of it an arcade with a lamp in each alcove; in the middle a stepped plinth with an obelisk 18 m high
+   capped in gold, a brazier either side and two toward the ends; lanterns on the seaward parapet and stone benches
+   facing the sea, midway between the spawns; and bands of stone in the paving, a processional way, a border and a ring
+   round the plinth. Its stations stand in the arcades' alcoves, as the Tower's merchants stand in its booths
+   (`stations`): in each alcove a counter under its hung lamp, the keeper's place behind it facing the plaza, and
+   shelves of their goods against the back wall. By the portico, the Mage on one side and the Harbourmaster on the
+   other; then a vault on each side; on the Mage's side the Armorsmith's armour stands, the Weaponsmith's racks, the
+   Tailor's bolts of cloth and the Tack's saddles; on the other the three factions' counters, each between two banner
+   stands with its light on the counter (the Stormcallers', the Lamplighters' and the Veiled's), and a chandler's stall
    ([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]], [[Factions]]). Eight quiet
    places stand clear of every solid for a visitor who keeps no counter (`visitor_spots`): by each brazier, landward
    of the two outer benches and before the portico's two ends, where Shape stands one week each. In Overlook's hub
@@ -166,13 +166,14 @@ generated and shaped, before any city stands on it:
    Walk's market and the portico, the Hall of the Arts inside the Beacon's base with the three factions' chapels, the
    Stair Yard, and sealed gates: one where the platform runs on round the base either side, and one at the harbour
    way's head, where the city's switchback meets the Stair Yard's edge, a stone wall from the east sealed wall along
-   that edge with the gate in it across the switchback's top landing ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Below it the harbour way runs down the
-   switchback and ramps to the quay and its pier, where two ships lie moored at their posts, seen and not walked (a
-   player's ship docked in a place lies there instead, [[Game]], "On foot"). Each
+   that edge with the gate in it across the switchback's top landing
+   ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Below it the
+   harbour way runs down the switchback and ramps to the quay and its pier, where two ships lie moored at their posts,
+   seen and not walked (a player's ship docked in a place lies there instead, [[Game]], "On foot"). Each
    keeper stands in a stall of their own placed by its sockets; the Harbourmaster's and the chandlery stand in the
-   Beacon Walk's market, in its outer bays between the lamp posts, backs on the base's face and facing the walk. Its ways are laid as
-   flagstone walks, every corner where they meet curved, and its gardens' ground as lawn and the Forge Yard's as earth
-   under them ([[The Hub's Paths Are Smooth and Rounded]]); each court is a scene of its own pieces
+   Beacon Walk's market, in its outer bays between the lamp posts, backs on the base's face and facing the walk. Its
+   ways are laid as flagstone walks, every corner where they meet curved, and its gardens' ground as lawn and the Forge
+   Yard's as earth under them ([[The Hub's Paths Are Smooth and Rounded]]); each court is a scene of its own pieces
    ([[The Hub's Pieces Tell a Story, and Its Paths Are Paved Apart]]), its trees and bushes the land's own plants
    ([[The Hub's Plants Are the World's Low-Poly Ones]], [[Nature]]). Its townsfolk walk its ways ([[Game]]), and in it
    a fall of 6 m or more kills ([[Reach]]).
@@ -188,12 +189,12 @@ generated and shaped, before any city stands on it:
    ends beside it within its block, 2 m clear of every building's box (so of its doorways too) and 0.6 m of every
    prop's, and 22 m from every other light, by one rule in the plan's order, the same on every machine.
 
-**Open and locked.** Only Overlook's social space opens for now (`content/world/social.json`, read by the city crate and the page;
-[[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and the
-room opens none on it. In the page, Sunspire's and Rimeholt's social spaces, the two other ports, say "Opens later"
+**Open and locked.** Only Overlook's social space opens for now (`content/world/social.json`, read by the city crate and
+the page; [[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and
+the room opens none on it. In the page, Sunspire's and Rimeholt's social spaces, the two other ports, say "Opens later"
 over their landing (the same file's `later`) and cannot be chosen; the six desolate cities' social spaces show no mark
-and cannot be landed at; and a page asked to start at any of them starts in Overlook. Shape visits Overlook alone (the same file's `shapeVisits`),
-the only social node whose file carries his places.
+and cannot be landed at; and a page asked to start at any of them starts in Overlook. Shape visits Overlook alone (the
+same file's `shapeVisits`), the only social node whose file carries his places.
 
 **Its people.** Each keeper stands behind their counter in their own dress (`client/src/game/keepers.ts`), Elder
 Maren Hale behind the Lamplighters'; the Harbourmaster and the chandler as the townsfolk are. While the room says Shape
@@ -233,13 +234,13 @@ over the opening at its -y end. Each is made from its size and a seed alone. It 
 (`rock::parts`), and each box is drawn as a lump inside it: the box's sides cut into cells about 0.75 m across, each
 corner pulled onto the round-cornered body inside the box and then in along its normal by the land's exact noise
 (broad bulges 5 m across and crags 1.6 m across), by up to a quarter of the box's half each way and 1.2 m on its
-sides, up to 56 % and 2.8 m underneath; a side set against the ground, a face or the rock stays flat and full. So `rock::boxes`, each part's
-box turned and stood at the rock's place, holds every vertex drawn, and a body walks under a roof, through an arch or
-a tunnel mouth, and up an overhang's face only until its head meets the lip (`crates/city/tests/rock_walks.rs`). The
-browser makes the same vertices to the bit (`rules/rockMesh.ts` writes the exact noise again; both pin the same
-fingerprints). A city's boxes (`boxes_within`) and a layout's (`crates/layout/src/collide.rs`) take a rock's parts'
-boxes, a part turned off the world's axes in strips that keep within 0.45 m of it
-([[What a Body Meets Keeps to What Is Drawn]]).
+sides, up to 56 % and 2.8 m underneath; a side set against the ground, a face or the rock stays flat and full. So
+`rock::boxes`, each part's box turned and stood at the rock's place, holds every vertex drawn, and a body walks under a
+roof, through an arch or a tunnel mouth, and up an overhang's face only until its head meets the lip
+(`crates/city/tests/rock_walks.rs`). The browser makes the same vertices to the bit (`rules/rockMesh.ts` writes the
+exact noise again; both pin the same fingerprints). A city's boxes (`boxes_within`) and a layout's
+(`crates/layout/src/collide.rs`) take a rock's parts' boxes, a part turned off the world's axes in strips that keep
+within 0.45 m of it ([[What a Body Meets Keeps to What Is Drawn]]).
 
 ## How it is drawn
 
@@ -250,12 +251,13 @@ them, for nature to keep off. Every position is measured from the city's middle,
 precision 3 km out.
 
 **Built a few steps a frame.** The game hands a city over with `beginCity`: its drawing is worked out in small steps
-(`cityBuildSteps`: a cell's pieces, a model forged, a piece's masses and its crystal, a solid, 4,096 vertices laid) and put on the
-GPU a buffer a step, and before each frame is recorded (`prepare`) the build takes steps for 2 ms while an older city
-stands drawn, 24 ms while none does (behind the veil, which waits on it). The city drawn before is drawn, lit and kept clear until the new one is whole,
-then the new one in its place, so nothing half-built shows. A landmass's city is built so once it opens, and its
-layouts' city again whenever the layouts within 4 km change ([[Layouts]]). A city begun again before it is whole is
-let go. The [[World Editor]] builds in one go (`setCity`); either way the same city is made, to the byte.
+(`cityBuildSteps`: a cell's pieces, a model forged, a piece's masses and its crystal, a solid, 4,096 vertices laid) and
+put on the GPU a buffer a step, and before each frame is recorded (`prepare`) the build takes steps for 2 ms while an
+older city stands drawn, 24 ms while none does (behind the veil, which waits on it). The city drawn before is drawn, lit
+and kept clear until the new one is whole, then the new one in its place, so nothing half-built shows. A landmass's city
+is built so once it opens, and its layouts' city again whenever the layouts within 4 km change ([[Layouts]]). A city
+begun again before it is whole is let go. The [[World Editor]] builds in one go (`setCity`); either way the same city is
+made, to the byte.
 
 | Biome | Climate set |
 |---|---|
@@ -276,10 +278,10 @@ tiers, and a 4 x 4 dither pattern gives each pixel to exactly one, so nothing po
 
 The landmark, the works and the plaza's solids are drawn at every distance, meshed from their specs, their
 pictures laid at 24 texels a metre, coarser than the forged models' 40, so their courses read as ashlar from the
-plaza and across the city. Natural rock is drawn as its lumps' triangles, each lit flat so it reads as faceted crags, its
-picture laid from the axis each triangle faces most; it wears its material's picture as any solid does, rubble for
-rock, which a layout's stone turns to its own (the Downs' chalk). A block's model stands at its cell's corner plus its placement, at the cell's level,
-turned by its yaw ([[RMB Blocks]]).
+plaza and across the city. Natural rock is drawn as its lumps' triangles, each lit flat so it reads as faceted crags,
+its picture laid from the axis each triangle faces most; it wears its material's picture as any solid does, rubble for
+rock, which a layout's stone turns to its own (the Downs' chalk). A block's model stands at its cell's corner plus its
+placement, at the cell's level, turned by its yaw ([[RMB Blocks]]).
 
 **The ground.** Every levelled cell has a plate at its level at every distance, so the 1 km land's smoothing never
 shows a terrace floating or buried. A block's cell wears its ground tiles in the climate's terrain set, turned as
@@ -329,15 +331,15 @@ in the paving stands 5 mm over it. The glow is lit warm and unshaded, brighter a
 game's fire on them, as tall as they are wide and a fifth more, casting its own light; a lantern (narrower than 0.65
 m: a station's, a courtyard's, a mail rack's, a lamp post's at each of its glows) shows no flame, its glass glowing
 and flickering with its lamp at the glass ([[An Enclosed Light Hides Its Flame]]); a sconce's candle and a wall
-brazier burn the game's fire round their glowing flame, lit by a fire's lamp; the Beacon's 22 m glass burns eight great fires round its foot and lights one great
-lamp; a lantern room wider than 2 m (a lighthouse's) is its glass alone; a dome (a sunstone) breathes. A city's lights
-are laid once it is whole, its modules' meshes come. Faces are lit as the land is, with a little light thrown back
-onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen. In the game the solids cast
-into the sun's near and far shadow maps, the near cells' models into the near one, and each building's masses (its
-hull past where the masses are drawn) into the far one, a few boxes standing in for a model whose shadow at the far
-map's 1.2 m texels is the same; every face and plate is lit through both ([[Game]]). An open building's windows let
-the sun into its rooms through their clear panes: its models cast through a pass that reads their pictures
-(`MODEL_CLEAR_CAST_SHADER`), every other model through one that reads none.
+brazier burn the game's fire round their glowing flame, lit by a fire's lamp; the Beacon's 22 m glass burns eight great
+fires round its foot and lights one great lamp; a lantern room wider than 2 m (a lighthouse's) is its glass alone; a
+dome (a sunstone) breathes. A city's lights are laid once it is whole, its modules' meshes come. Faces are lit as the
+land is, with a little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening
+and sheen. In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near
+one, and each building's masses (its hull past where the masses are drawn) into the far one, a few boxes standing in for
+a model whose shadow at the far map's 1.2 m texels is the same; every face and plate is lit through both ([[Game]]). An
+open building's windows let the sun into its rooms through their clear panes: its models cast through a pass that reads
+their pictures (`MODEL_CLEAR_CAST_SHADER`), every other model through one that reads none.
 
 | Material | Temperate | Desert | Mountain | Swamp |
 |---|---|---|---|---|

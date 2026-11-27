@@ -256,7 +256,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       parts.pieces.drawInto(...args)
     );
     const fight = { ...fought, under: { drawInto: under } };
-    // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
+    // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is
+    // up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
     holdOnPlayer(footView.playerPlates, offered, heard.held('use'), clock, {
       width: size.width / interfaceScale(devicePixelRatio),

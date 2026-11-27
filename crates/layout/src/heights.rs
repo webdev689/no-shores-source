@@ -65,11 +65,11 @@ pub fn levels(areas: &[Area], brief: &Brief) -> Vec<f64> {
         .collect()
 }
 
-/// The level of each point of each way, as a share of the massif's height (`rise` metres): the floor's (`held_at`) where
-/// the point lies on an area's basin; else the lower of its way's two areas' levels (`joined`), raised wherever a higher point lies
-/// near enough along the ways that the way would climb steeper than `STEEPEST` from it, so it ramps up to it instead,
-/// and lowered likewise toward a place lower than it. Points of different ways within 10 m are joined, so ways side by
-/// side stand within a walkable slope of one another.
+/// The level of each point of each way, as a share of the massif's height (`rise` metres): the floor's (`held_at`)
+/// where the point lies on an area's basin; else the lower of its way's two areas' levels (`joined`), raised wherever a
+/// higher point lies near enough along the ways that the way would climb steeper than `STEEPEST` from it, so it ramps
+/// up to it instead, and lowered likewise toward a place lower than it. Points of different ways within 10 m are
+/// joined, so ways side by side stand within a walkable slope of one another.
 #[must_use]
 pub fn graded(
     paths: &[Path],

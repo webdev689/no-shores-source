@@ -205,9 +205,9 @@ impl Waters {
     }
 
     /// Lists, for each bucket, every edge that can be nearest to some point in it. From the bucket's middle the
-    /// nearest edge is `d` away, so every point in it has a coast within `d + h` (h the half diagonal), and an edge more
-    /// than `d + 2h` from the middle is farther than that from every point in it. Isles are judged the same way against
-    /// the nearest land of either kind.
+    /// nearest edge is `d` away, so every point in it has a coast within `d + h` (h the half diagonal), and an edge
+    /// more than `d + 2h` from the middle is farther than that from every point in it. Isles are judged the same way
+    /// against the nearest land of either kind.
     fn fill_buckets(&mut self) {
         let half_diagonal = BUCKET_M * std::f64::consts::FRAC_1_SQRT_2 + 1.0;
         let all: Vec<u32> = (0..self.edges.len() as u32).collect();
@@ -264,9 +264,9 @@ impl Waters {
         best
     }
 
-    /// Whether a point off the coast lies on the land side of its nearest edge. Where the nearest coast is a corner, the
-    /// point lies in the corner's outward or inward wedge, where both edges' lines agree; on the line running on from
-    /// one edge that edge says nothing, so the two signed distances from the edges' lines are summed and the other
+    /// Whether a point off the coast lies on the land side of its nearest edge. Where the nearest coast is a corner,
+    /// the point lies in the corner's outward or inward wedge, where both edges' lines agree; on the line running on
+    /// from one edge that edge says nothing, so the two signed distances from the edges' lines are summed and the other
     /// decides.
     fn on_land(&self, point: [f64; 2], fraction: f64, edge: Edge) -> bool {
         let sign = self.orientation[edge.continent];

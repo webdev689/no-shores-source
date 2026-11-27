@@ -12,7 +12,8 @@ export const CHOP_WAVES = 12;
  * of quarters, so moving the anchor never moves the pattern.
  */
 export const ANCHOR_M = 1024;
-/** The land crate's coast blend (ground.rs COAST_BLEND_M) and the floor it keeps either side (SHORE_FLOOR_M), metres. */
+/** The land crate's coast blend (ground.rs COAST_BLEND_M) and the floor it keeps either side (SHORE_FLOOR_M),
+ *  metres. */
 export const COAST_BLEND_M = 1000;
 export const SHORE_FLOOR_M = 0.5;
 /** How far from the coast its distance is kept (relief.rs COAST_REACH_M), metres; further cells hold this. */

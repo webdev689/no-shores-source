@@ -7,7 +7,8 @@ const SIZE_KEY = 'noshores.interfaceSize';
 const AUTO_CHOSEN = 'auto';
 /** The whole sizes offered, the screen's pixels to an interface pixel. */
 const STEPS = [1, 2, 3, 4] as const;
-/** The least view, in interface pixels, a size is offered for: the smallest the menus are laid out for on a computer. */
+/** The least view, in interface pixels, a size is offered for: the smallest the menus are laid out for on a
+ *  computer. */
 const LEAST = { width: 960, height: 540 } as const;
 
 /** The choices as Settings offers them, by the value each is kept as. */

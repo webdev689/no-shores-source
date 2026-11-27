@@ -50,9 +50,9 @@ export function reloadCue(ranged: number): string | null {
   return isGun(ranged) ? 'gun.reload' : null;
 }
 
-/** A shot stopped on what the tracers say it met: a body's is the fight's word on the hit, so none here; a ball on stone
- *  rings, an arrow sticks in the ground, any shot splashes in water. A ball in the ground and an arrow on stone have no
- *  cue of their own. */
+/** A shot stopped on what the tracers say it met: a body's is the fight's word on the hit, so none here; a ball on
+ *  stone rings, an arrow sticks in the ground, any shot splashes in water. A ball in the ground and an arrow on stone
+ *  have no cue of their own. */
 export function struckCue(surface: Surface, ball: boolean): string | null {
   if (surface === 'water') return 'shot.splash';
   if (surface === 'stone') return ball ? 'ball.hit' : null;

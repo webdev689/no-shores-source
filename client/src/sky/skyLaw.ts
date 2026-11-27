@@ -1,4 +1,5 @@
-/** The heavens and the weather over a place at a moment, as crates/sky reads them (crates/land-wasm/src/sky_door.rs). */
+/** The heavens and the weather over a place at a moment, as crates/sky reads them
+ *  (crates/land-wasm/src/sky_door.rs). */
 export interface SkyReading {
   readonly latitudeDeg: number;
   /** Unit directions, east, south and up. */

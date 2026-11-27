@@ -351,8 +351,8 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
         .collect()
 }
 
-/// The friendly ships the room keeps that a player's ship at `own` keeps in sight, as a hostile ship is kept; none before
-/// it is at sea.
+/// The friendly ships the room keeps that a player's ship at `own` keeps in sight, as a hostile ship is kept; none
+/// before it is at sea.
 fn friendlies_seen(own: Option<[f64; 2]>, all: &[room::friendlies::Friendly]) -> Vec<room::friendlies::Friendly> {
     all.iter().filter(|friend| own.is_some_and(|at| friend.kept_by(at))).copied().collect()
 }

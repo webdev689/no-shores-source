@@ -66,7 +66,8 @@ export type StoryHeard =
   | { readonly kind: 'silence'; readonly cut: boolean }
   | { readonly kind: 'fight'; readonly score: Boss | null; readonly least: Mood };
 
-/** A moment: a fight won, lost or simply over (its cadence), in the score that was playing; a boss waking or falling. */
+/** A moment: a fight won, lost or simply over (its cadence), in the score that was playing; a boss waking or
+ *  falling. */
 export type Sting =
   | { readonly kind: 'victory'; readonly cue: Cue }
   | { readonly kind: 'cadence'; readonly cue: Cue }
@@ -193,7 +194,8 @@ export const QUIET: Memory = {
   landedAt: -Infinity,
 };
 
-/** Where the calm pieces are chosen: the sea, the social space, an island by its climate's family, or a Breach's run. */
+/** Where the calm pieces are chosen: the sea, the social space, an island by its climate's family, or a Breach's
+ *  run. */
 export type Where = 'sea' | 'social' | Family | 'breach';
 export const whereOf = (place: Place, breach: HeardBreach | null = null): Where =>
   breach?.run ? 'breach' : place.kind === 'sea' ? 'sea' : place.kind === 'social' ? 'social' : FAMILY_OF[place.climate];

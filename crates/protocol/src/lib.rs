@@ -365,7 +365,8 @@ pub fn course_bytes(points: &[[f64; 2]], pace: u16) -> Vec<u8> {
     builder.finished_data().to_vec()
 }
 
-/// A course to travel by as its bytes: what a browser sends the sea room from the held map, written from Rust for tests.
+/// A course to travel by as its bytes: what a browser sends the sea room from the held map, written from Rust for
+/// tests.
 #[must_use]
 pub fn travel_bytes(points: &[[f64; 2]], pace: u16) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();

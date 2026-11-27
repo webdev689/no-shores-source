@@ -1,5 +1,5 @@
-//! The lore lying in a room's node (`gear::lore`): each chapter the file lays at one of its places, shown to each player
-//! who has not found it, and found by them within reach of it, alive.
+//! The lore lying in a room's node (`gear::lore`): each chapter the file lays at one of its places, shown to each
+//! player who has not found it, and found by them within reach of it, alive.
 
 use crate::{PlayerId, Room, Standing};
 use gear::lore::{Found, LoreDef};

@@ -106,7 +106,8 @@ modules are built on.
 ## How it works
 
 One Cloudflare Worker, `noshores-bot`, with its own D1 (`BOT_DB`), an R2 bucket for pictures (`BOT_MEDIA`), one
-Durable Object holding Discord's Gateway, and a service binding to the [[Accounts]] (`ACCOUNTS`). `npm run bot` runs it here on port 8789, for the website's panel on 5174.
+Durable Object holding Discord's Gateway, and a service binding to the [[Accounts]] (`ACCOUNTS`). `npm run bot` runs it
+here on port 8789, for the website's panel on 5174.
 
 | Part | What it does |
 |---|---|
@@ -146,8 +147,8 @@ message that breaks a filter, and warns or times out through moderation once a b
 breaks of that filter are only deleted.
 
 **Raid guard** counts joins in the Gateway object's memory. Enough inside the window starts raid mode, kept in
-`raid_mode` so a restart does not end it: joiners are reported (the first five one post each in the alert channel, then one
-post for every 25 more), timed out or kicked, and the verification level is
+`raid_mode` so a restart does not end it: joiners are reported (the first five one post each in the alert channel, then
+one post for every 25 more), timed out or kicked, and the verification level is
 raised and given back when the clock ends it. Very new accounts can be dealt with at any time.
 
 ## Community modules
@@ -220,8 +221,8 @@ at once. At minute 5 of every ten the bot sweeps each server where the module is
 1000 at a time, asks the accounts' `pledges` once a page, and gives each member their pledged house's role and takes
 every other house role the setting names; an unlinked or unpledged member loses them all. Bots, members still pending
 screening, and roles the setting does not name are never touched. A sweep makes at most 50 changes a server; a role
-Discord refuses, or one deleted since the setting named it, is passed over for the rest of the sweep and logged once. While the binding, its `pledges` or the accounts cannot answer, no role
-changes.
+Discord refuses, or one deleted since the setting named it, is passed over for the rest of the sweep and logged once.
+While the binding, its `pledges` or the accounts cannot answer, no role changes.
 
 **Developer roles** name the roles a developer holds ([[Developers Launch Activities From a Test Room, in Max Gear]]);
 the layout names the Founder and the Developer. The accounts ask through their own binding to the bot's `Members`
@@ -251,8 +252,8 @@ to confirm, does it.
 - **The bot gives only what it holds.** A role's permissions and a channel's are cut to the bot's own; what is cut is
   named in the checklist, with an invite link that grants it (below).
 - **The server's settings are set once**: verification, notifications, the media filter, Discord's notices, only the
-  owner and the bot pinging everyone, and the icon (`noshores.online/art/server-icon.png`, only where the server has none).
-  The rules, updates and safety channels, the description and the welcome screen wait for Community.
+  owner and the bot pinging everyone, and the icon (`noshores.online/art/server-icon.png`, only where the server has
+  none). The rules, updates and safety channels, the description and the welcome screen wait for Community.
 - **Modules are set while the layout wrote them last**: a module's settings are saved by the layout (`updated_by` is
   `layout`) only while no one has saved them in the panel since; the Gateway is told at once.
 - **Messages go out through their modules**: the welcome guide and the code of conduct through announcements, the ping

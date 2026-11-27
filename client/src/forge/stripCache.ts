@@ -9,9 +9,9 @@ interface Held<Kept> {
 }
 
 /**
- * Decoded strips kept by path, up to `budget` bytes: each a move's whole sheet, a megabyte or more, so a crowd's dresses
- * would hold gigabytes kept for ever. Past the budget, the least lately asked for are let go and fetched again if
- * asked; one still arriving is never let go, and one that failed is forgotten after a while so it is tried again.
+ * Decoded strips kept by path, up to `budget` bytes: each a move's whole sheet, a megabyte or more, so a crowd's
+ * dresses would hold gigabytes kept for ever. Past the budget, the least lately asked for are let go and fetched again
+ * if asked; one still arriving is never let go, and one that failed is forgotten after a while so it is tried again.
  */
 export class StripCache<Kept = Strip> {
   private readonly held = new Map<string, Held<Kept>>();

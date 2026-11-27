@@ -20,7 +20,8 @@ LETTERS = 'abcdefghijklmnopqrstuvwxyz'
 
 
 def sprite(path):
-    """A sprite's rows and colours, refused if a pixel is half drawn: a pixel sprite with a soft edge was not drawn as one."""
+    """A sprite's rows and colours, refused if a pixel is half drawn: a pixel sprite with a soft edge was not drawn as
+    one."""
     image = Image.open(path).convert('RGBA')
     colours, rows = [], []
     for y in range(image.height):

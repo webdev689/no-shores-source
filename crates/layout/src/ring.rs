@@ -10,8 +10,8 @@ const CLIFF_FOOT_M: f64 = 4.0;
 /// How far a cell of the section keeps from the sea, metres: past a cell's width (the field measures the sea's
 /// distance in whole cells, 8 m the nearest), so no cell touching the sea is taken and its edge stands back from it.
 const SHORE_KEEP_M: f64 = CELL_M + 0.5;
-/// How far round a walked point (a run's line, a beat, a climb, a lookout, a stair, a tunnel, a way) the section's cells
-/// reach at the least, metres: past the ring's cut corners, so a body walking or fighting there stands inside it.
+/// How far round a walked point (a run's line, a beat, a climb, a lookout, a stair, a tunnel, a way) the section's
+/// cells reach at the least, metres: past the ring's cut corners, so a body walking or fighting there stands inside it.
 const WALKED_M: f64 = 4.0;
 /// How far round a walked point outside the ring its corners are kept as they are, metres: past where the ring's
 /// simplification (12.8 m) reaches from a kept corner.

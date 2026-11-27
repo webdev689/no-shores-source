@@ -1,6 +1,6 @@
 // The mouse's buttons and the arrow keys drawn as small pixel pictures, for the key strip and the sheet of every
-// control: a mouse with the button named lit in brass, and an arrow on its keycap (the pad's are `padIcons.ts`). Each is a map of letters, a row of
-// texels a line, so a picture is read as it looks.
+// control: a mouse with the button named lit in brass, and an arrow on its keycap (the pad's are `padIcons.ts`). Each
+// is a map of letters, a row of texels a line, so a picture is read as it looks.
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';

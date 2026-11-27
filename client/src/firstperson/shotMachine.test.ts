@@ -2,7 +2,8 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { Carry, Recoil, SHOOTER_FEEL, ShotMachine, reloadDip } from './shotMachine.ts';
 
-/** Steps `machine` by `seconds` until `until` holds or `limit` seconds pass; answers the seconds taken and the events. */
+/** Steps `machine` by `seconds` until `until` holds or `limit` seconds pass; answers the seconds taken and the
+ *  events. */
 function run(machine: ShotMachine, seconds: number, limit: number, until: () => boolean) {
   const events: { at: number; event: string }[] = [];
   let elapsed = 0;

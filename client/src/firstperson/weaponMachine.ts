@@ -63,7 +63,8 @@ const STRIKE_FRAMES = 5;
 export const HIT_FRAME = 2;
 /** How fast a strike's frames run, faster than DFO's: the frames before the blow in the last three quarters of the
  *  time up to it, the first held before; the blow's frame as it lands; the rest over a little over half that time
- *  after it. The blow still lands when the fight's rules land it. The figure seen from outside runs at this pace too. */
+ *  after it. The blow still lands when the fight's rules land it. The figure seen from outside runs at this pace
+ *  too. */
 export const STRIKE_PACE = { windup: 0.75, recover: 0.55 } as const;
 /** A blow or an end due within this many seconds of now comes now: whole ticks summed as seconds are never exact. */
 const DUE = 1e-6;

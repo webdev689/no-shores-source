@@ -45,7 +45,8 @@ export function stageOf(room: { readonly width: number; readonly height: number 
   return { narrow, width, height };
 }
 
-/** The height a keeper's whole figure is drawn at in a room: its foot well under the room's, so it shows to the waist. */
+/** The height a keeper's whole figure is drawn at in a room: its foot well under the room's, so it shows to the
+ *  waist. */
 export function figureHeight(room: { readonly width: number; readonly height: number }): number {
   const stage = stageOf(room);
   return Math.round(stage.height * (stage.narrow ? NARROW_TALL : FIGURE_TALL));
@@ -243,7 +244,8 @@ export function keeperFrame(
 }
 
 /** The crest at the top right: `emblem` in its diamond with a bar running from it `width` wide, `share` of it full
- *  in `glow` (none, a plain rule), `named` over its far end; the player's currencies (`purse`) under it, at its right. */
+ *  in `glow` (none, a plain rule), `named` over its far end; the player's currencies (`purse`) under it, at its
+ *  right. */
 export function crestNode(
   emblem: Node,
   bar: { readonly share: number | null; readonly named: string; readonly said?: string },

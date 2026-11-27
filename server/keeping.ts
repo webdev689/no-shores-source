@@ -1,11 +1,11 @@
 /**
- * Each player's character, kept by the accounts while they play in a room on land or at sea. A browser sends its session's
- * token once it has joined; the room claims the character with it, gives it to the player, saves it soon after it
- * changes and now and then besides (which keeps the room's hold), and lets it go with a last save when they leave. A
- * player who sends no token in time, or whose token is no session, is sent away, since one who never signs in would
- * hold a place in the room for good; one whose claim the accounts do not answer plays a character that is not kept.
- * Should another room take the character (the same player joined elsewhere), this room's next save learns it, and the
- * player is let go. A run's room is kept to one company of four accounts at most (`forCompany`), and keeps no one
+ * Each player's character, kept by the accounts while they play in a room on land or at sea. A browser sends its
+ * session's token once it has joined; the room claims the character with it, gives it to the player, saves it soon
+ * after it changes and now and then besides (which keeps the room's hold), and lets it go with a last save when they
+ * leave. A player who sends no token in time, or whose token is no session, is sent away, since one who never signs in
+ * would hold a place in the room for good; one whose claim the accounts do not answer plays a character that is not
+ * kept. Should another room take the character (the same player joined elsewhere), this room's next save learns it, and
+ * the player is let go. A run's room is kept to one company of four accounts at most (`forCompany`), and keeps no one
  * unkept. A node's room judges where each character comes from (`judgingArrivals`).
  */
 
@@ -38,7 +38,8 @@ export const ACCOUNTS_TROUBLE = 'Something went wrong. Try again.';
 export interface KeptRoom {
   /** A player's character as kept with the account's vault and Aurem apart (`RoomDoor.keptApart`). */
   keptApart(player: number): { body: string; vault: string } | null;
-  /** Whether what a player's arrival in the next room is judged by moved since this was last asked; asking clears it. */
+  /** Whether what a player's arrival in the next room is judged by moved since this was last asked; asking clears
+   *  it. */
   judgedMoved(player: number): boolean;
   /** Opens a leaving player's chests and posts what lies for them to their mail (`partFrom`). */
   mailLying(player: number): void;
@@ -368,8 +369,8 @@ export class Keeper {
   }
 
   /** Why this room turns a character away ('' when it lets it in): its gate, in a run its four accounts and its
-   *  company, its gate, and where it came from; undefined when the accounts cannot say who the company is. Nothing waits
-   *  between this and keeping it. */
+   *  company, its gate, and where it came from; undefined when the accounts cannot say who the company is. Nothing
+   *  waits between this and keeping it. */
   private async judged(
     player: number,
     { account, body, from }: Claimed,

@@ -6,8 +6,8 @@
 use crate::players::Player;
 use crate::{PlayerId, Room};
 
-/// How near a way out of a dungeon a player stands as they leave by it, metres: the page's `DOOR_REACH_M` and a metre for
-/// the view it saw them by.
+/// How near a way out of a dungeon a player stands as they leave by it, metres: the page's `DOOR_REACH_M` and a metre
+/// for the view it saw them by.
 const WAY_OUT_REACH: f64 = 3.5;
 use gear::left::{Left, share, whole_of};
 

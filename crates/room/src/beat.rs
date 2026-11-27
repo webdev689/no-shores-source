@@ -1,8 +1,8 @@
 //! A garrison group's beat: a round of points over its room's navmesh, drawn from the node's seed, that the group
 //! walks at a stroll, its leader on the way and the rest on a half ring behind it, pausing at each point and starting
 //! again from the first. The way between points is the navmesh's and keeps as clear of the spawns as the posts do,
-//! and SPREAD inside the section's edge. The group halts while any of its foes is stirred, fights or walks back to its place, and
-//! waits for one that has fallen behind.
+//! and SPREAD inside the section's edge. The group halts while any of its foes is stirred, fights or walks back to its
+//! place, and waits for one that has fallen behind.
 
 use super::{SPAWN_CLEAR, SPREAD};
 use crate::Floor;
@@ -214,7 +214,8 @@ impl crate::Room {
     /// and each of them is given its place: its leader the beat's, the rest round it in turn.
     pub(super) fn walk_beats(&mut self) {
         for post in 0..self.garrison.len() {
-            // A group gathered elsewhere, as its encounter gives ground or it defends, keeps to the places it has there.
+            // A group gathered elsewhere, as its encounter gives ground or it defends, keeps to the places it has
+            // there.
             if self.garrison[post].anchor.is_some() {
                 continue;
             }

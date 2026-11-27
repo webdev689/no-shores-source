@@ -1,5 +1,6 @@
 //! Which cities are ports. Three port cities remain: Overlook in home waters, Sunspire and Rimeholt in the Grey
-//! Tithe's; the other six cities are desolate and destroyed, no longer ports. The city crate, the traffic and the page all read this list.
+//! Tithe's; the other six cities are desolate and destroyed, no longer ports. The city crate, the traffic and the page
+//! all read this list.
 
 /// The port cities by city id: Overlook (home), Sunspire (the Grey Tithe's first island) and Rimeholt (the Grey
 /// Tithe's seat).

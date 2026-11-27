@@ -1,8 +1,8 @@
 // Dry: the fight in the desert, on the savanna and across the steppe. A Phrygian with its major third (A, B flat, C
 // sharp, D, E, F, G) in 7/8, two, two and three, at a quarter of 150: a caravan riding hard. A double reed's tune over
-// an oud's ostinato and a darbuka's doum and tek, the strings' counter-line slow under it; the danger near is the cellos
-// rubbing A against B flat over a frame drum and a hiss of sand; the peak lays the brass under the tune, the choir in
-// open fifths and stabs. It is written in takes of eight bars (form.ts): vamps, the tune's halves, the
+// an oud's ostinato and a darbuka's doum and tek, the strings' counter-line slow under it; the danger near is the
+// cellos rubbing A against B flat over a frame drum and a hiss of sand; the peak lays the brass under the tune, the
+// choir in open fifths and stabs. It is written in takes of eight bars (form.ts): vamps, the tune's halves, the
 // gallop's halves, a break of calls and a breakdown, each in a feel of its own (a groove, fills, the oud's figure, a
 // bass, a voicing, the rub, the heart and the sand), the tune answered or turned to new chords in some. The cadence
 // falls D, C, B flat, A; the victory rises F, G, A into A major; the defeat leaves the reed alone over the cellos.

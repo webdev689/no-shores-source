@@ -170,22 +170,24 @@ joined) comes first, however long it takes. A frame is whole when nothing stood 
 or a ruin's wrecks not yet built, plants or an island's kit still loading, a hull drawn as the Sloop, a place's sound
 not yet come. A
 figure showing its last frame while its next composes stands in for nothing, nor does one that failed and waits to be
-tried again. Behind the veil no frame is seen, so the plants scatter 30 ms of each, not the 6 ms they take in play. Lifted at 20 s, the page warns what was not ready. A
-trip that failed with nowhere left to go shows its words without LOADING, waiting on the player; one with a way back
-keeps LOADING as it goes back. A travel by the held map ([[Sailing]]) shows the same screen over its black, which waits
-on the same whole frames, drawn after the room has moved the ship. Nothing puts the veil up mid-play: the
-plants' pipelines are made once per device and format, and the lit keepers' marks and the first-person glow make theirs off the
-frame as the game starts, so a continent or an island opened while sailing compiles none.
+tried again. Behind the veil no frame is seen, so the plants scatter 30 ms of each, not the 6 ms they take in play.
+Lifted at 20 s, the page warns what was not ready. A trip that failed with nowhere left to go shows its words without
+LOADING, waiting on the player; one with a way back keeps LOADING as it goes back. A travel by the held map
+([[Sailing]]) shows the same screen over its black, which waits on the same whole frames, drawn after the room has moved
+the ship. Nothing puts the veil up mid-play: the plants' pipelines are made once per device and format, and the lit
+keepers' marks and the first-person glow make theirs off the frame as the game starts, so a continent or an island
+opened while sailing compiles none.
 
 A trip that fails, its room full or out of reach, puts the player back where they stood before it, joined again:
-aboard their ship, on the island's beach (online or alone, [[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]), in the dungeon, or in the node at its
-arrival spot ([[The Audit's Leftovers Are Fixed as Claude Suggested]]; `travel.ts`, `tripBack.ts`). Should that fail too, or should
-the trip be one that sent them out of where they stood (a gate shut on them, their company fallen), they are taken
-to the hub, Overlook's social space, its landmass opened first where another is. The veil says why while they go
-("You could not reach The Saltgrass Downs:" and the reason), and once it lifts the same words stand as a toast for
-8 s. Only when the hub fails too does the trip stay on the veil, saying why, and Enter tries it again; so does the
-first arrival, which has nowhere to go back to. A room past its sockets takes the join only to close it, saying the
-room is full, as a browser's WebSocket never reads a refused join's status.
+aboard their ship, on the island's beach (online or alone,
+[[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]), in the dungeon, or in the
+node at its arrival spot ([[The Audit's Leftovers Are Fixed as Claude Suggested]]; `travel.ts`, `tripBack.ts`). Should
+that fail too, or should the trip be one that sent them out of where they stood (a gate shut on them, their company
+fallen), they are taken to the hub, Overlook's social space, its landmass opened first where another is. The veil says
+why while they go ("You could not reach The Saltgrass Downs:" and the reason), and once it lifts the same words stand as
+a toast for 8 s. Only when the hub fails too does the trip stay on the veil, saying why, and Enter tries it again; so
+does the first arrival, which has nowhere to go back to. A room past its sockets takes the join only to close it, saying
+the room is full, as a browser's WebSocket never reads a refused join's status.
 
 ## Arriving
 
@@ -210,14 +212,14 @@ offline the browser's `noshores.place`; with none, or a social space not open, t
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
 is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook, and so
 does a patrol or mission still locked, played alone too, as the server refuses it
-([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]), and a social space still locked: only Overlook's opens for now ([[Cities]], "Open and locked"), so a ruined city's is
-never arrived at. Should one open, it is named "Ruins of" and the city's name ([[Cities]], "Ruins"), on the veil too
-(the game waits for the rules' module to say which cities are ports, `mainPortsOf`), and on foot the line under its
-name says "Ruins" (`placeWords`). Online, a node's room lets a kept character in only by a way that leads there
-([[Server]], "Where a character comes from"; [[The Server Is the Authority Over Everything]]), so any other room than
-Overlook's sends it back to its ship, the veil saying "You cannot reach this place from where you were.". With
-`&spawn=<east>,<south>[,<bearing in degrees>]` too, the player stands at that point instead of the node's spawn,
-offline: a way to look at one place.
+([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]), and a social space still locked: only Overlook's opens
+for now ([[Cities]], "Open and locked"), so a ruined city's is never arrived at. Should one open, it is named "Ruins of"
+and the city's name ([[Cities]], "Ruins"), on the veil too (the game waits for the rules' module to say which cities are
+ports, `mainPortsOf`), and on foot the line under its name says "Ruins" (`placeWords`). Online, a node's room lets a
+kept character in only by a way that leads there ([[Server]], "Where a character comes from";
+[[The Server Is the Authority Over Everything]]), so any other room than Overlook's sends it back to its ship, the veil
+saying "You cannot reach this place from where you were.". With `&spawn=<east>,<south>[,<bearing in degrees>]` too, the
+player stands at that point instead of the node's spawn, offline: a way to look at one place.
 
 ## On foot
 
@@ -228,15 +230,15 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   true size, sails set and filled, posed on the swell, its footprint on the water, as at sea (below); so ships coming
   and going are seen from each port's plaza and harbour. They are lit as the ships layer lights every ship, by its
   own sun, and cast no shadow.
-- **Ships lying by the island** (`moorings.ts`; [[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]).
-  On every node of the island the player's ship is docked at (for a sea island, its beach alone; never its passage
-  zones, which stand apart from its coast) the ship is drawn
-  where it lies, and every ship parked there as the land room's snapshot tells (its `ships`, the player's own among
-  them, left out where it lies within 5 m of their own as the page draws it, and drawn from the snapshot once the page
-  no longer knows it docked, after a reload; none in a passage zone), each in its own hull, its sails furled, riding
-  the swell, its footprint still on the water. A dungeon and a Breach's run draw no ship lying by them. At a
-  social space the city's sloops lie at its pier, in the places of its plan's moorings no player's ship lies within
-  15 m of.
+- **Ships lying by the island** (`moorings.ts`;
+  [[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]). On every node of the
+  island the player's ship is docked at (for a sea island, its beach alone; never its passage zones, which stand apart
+  from its coast) the ship is drawn where it lies, and every ship parked there as the land room's snapshot tells (its
+  `ships`, the player's own among them, left out where it lies within 5 m of their own as the page draws it, and drawn
+  from the snapshot once the page no longer knows it docked, after a reload; none in a passage zone), each in its own
+  hull, its sails furled, riding the swell, its footprint still on the water. A dungeon and a Breach's run draw no ship
+  lying by them. At a social space the city's sloops lie at its pier, in the places of its plan's moorings no player's
+  ship lies within 15 m of.
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes
   there, cut by the land's worker and handed to the movement door and the fight's rules, the same ground to the bit
   as the node's room ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
@@ -248,8 +250,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   mouse looks round (on foot, walking a deck, a scene of the story that wants it) takes the mouse back at once, the
   keys and mouse played last (`Input.onShut`). A browser may still refuse it where the player freed the mouse with
   Escape first; the [[Desktop App]] takes it for the page.
-- **The room.** The node's room is the authority, always. Alone, the room crate runs in the game's worker, ticked by its clock,
-  on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
+- **The room.** The node's room is the authority, always. Alone, the room crate runs in the game's worker, ticked by its
+  clock, on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
 - **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
   weapon, 1 draws the Melee loadout and 2 the Ranged, 3 drinks a healing charge ([[Combat]], "Healing charges";
   [[Three Healing Charges, Refilled by Blows and Kills]]), the right button swings or aims, the left button or F
@@ -265,16 +267,16 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the top left, the
   Arts and weapons at the bottom left, each foe's name and bar, the parry rings, the words, the arrows to foes out of
-  view, the marks of telegraphed blows, the tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the
-  place's name and the status line at the top right, the key strip at the bottom right, the menus and the veil;
-  while a boss's bar shows, the status line stands under it ([[Interface]]).
+  view, the marks of telegraphed blows, the tracers, where blows land and kills fall, the blood and the flashes. The
+  game's own display stands over it: the place's name and the status line at the top right, the key strip at the bottom
+  right, the menus and the veil; while a boss's bar shows, the status line stands under it ([[Interface]]).
 - **The attack feel.** The [[Test Ground]]'s four effects over the blows play on foot at their defaults: each blow's
   swing arc where its blade goes, its striker's figure hiding what passes behind it (none through the eyes), with the
   smear its strike leaves behind the striker's card; the hit-stop holding the fighters a blow lands on; the camera's
-  kick (moving the view but never turning it while a ranged crosshair shows); and the lunge driving a striker's figure into its
-  blow. Only the drawing moves, never the rules or their clock (`combat/attackFeel.ts`). A player who asks for reduced
-  motion keeps a still view: no kick, no shake, no lunge carrying the eye and no Anima push-in; the Anima's edge frame
-  still shows. The feel's light is on too: the brightest marks and arcs light what stands round them ("Drawing").
+  kick (moving the view but never turning it while a ranged crosshair shows); and the lunge driving a striker's figure
+  into its blow. Only the drawing moves, never the rules or their clock (`combat/attackFeel.ts`). A player who asks for
+  reduced motion keeps a still view: no kick, no shake, no lunge carrying the eye and no Anima push-in; the Anima's edge
+  frame still shows. The feel's light is on too: the brightest marks and arcs light what stands round them ("Drawing").
 - **The player's own hits at once.** As the page predicts the player's swing, it judges the blow as the room judges it
   among the fighters the player sees (`room-wasm`'s `hits_of`). On the tick the blow lands, each foe it hits flashes, is
   heard struck and is held, and the room's word on that hit does none of these again (`feltNow`). Its damage, number,
@@ -317,42 +319,43 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **Over what a player can use** (`overheadMarks`, `marksOver`; [[What a Player Can Use Wears Its Mark Over It]]),
   drawn among the fight's marks, after DFO's marks over the people who do something: over each keeper who deals with
   the player their own mark as their screen shows it, their sign in its brass diamond (the Harbourmaster's an anchor)
-  or a faction's emblem in the diamond edged in its Art's colour; over the bounty board in Overlook's hub its gold "!" in the keepers' diamond, over its
-  gable (`countersOf`); over Shape on his spot his own; and, as the room's word on the gear names them online,
-  over each chapter of the lore lying there for the player a closed book in a brass binding, 0.9 m over where it
-  lies ([[Lore]]); over each chest standing for the player a chest, wood under an arched lid banded in iron with a
-  brass lock, over its lid, and over each container they may search a glass in a brass rim on a wooden handle, over
-  its top ([[Chests and Searchable Containers as Claude Builds Them]]); and, as the room names them online or alone, over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
-  over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
-  0.32 m across, turned to the eye, never narrower on the screen than 0.017 radians
-  either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
-  still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid (each mark weighed
-  once against the twelve kept, `Nearest`, none sorted). A keeper's mark
-  is lit while the keeper has something for the player (`keeperLit`;
-  [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a step of the quest walked asks to speak with them or to buy one of their wares, once the story and the welcome are
-  past (`Quests.wants`), or, the Postmaster's sealed letter, letters wait. A lit mark is laid apart (`litMarksSeen`):
-  at any distance, every one of them, whole, beating (a fifth wider and back every 1.3 s), farthest first, and drawn
-  over the finished picture after the water with no depth (`MarkDraw.drawAbove`), so it is seen from everywhere in the
-  space, through walls and crowds; only the weather's fall and the blows' light are laid over it. Never narrower than
+  or a faction's emblem in the diamond edged in its Art's colour; over the bounty board in Overlook's hub its gold "!"
+  in the keepers' diamond, over its gable (`countersOf`); over Shape on his spot his own; and, as the room's word on the
+  gear names them online, over each chapter of the lore lying there for the player a closed book in a brass binding,
+  0.9 m over where it lies ([[Lore]]); over each chest standing for the player a chest, wood under an arched lid banded
+  in iron with a brass lock, over its lid, and over each container they may search a glass in a brass rim on a wooden
+  handle, over its top ([[Chests and Searchable Containers as Claude Builds Them]]); and, as the room names them online
+  or alone, over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring,
+  0.2 m over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As
+  DFO's, a mark's foot stands 0.2 m over the crown, 0.32 m across, turned to the eye, never narrower on the screen than
+  0.017 radians either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its
+  own, holding still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid (each
+  mark weighed once against the twelve kept, `Nearest`, none sorted). A keeper's mark is lit while the keeper has
+  something for the player (`keeperLit`; [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a step
+  of the quest walked asks to speak with them or to buy one of their wares, once the story and the welcome are past
+  (`Quests.wants`), or, the Postmaster's sealed letter, letters wait. A lit mark is laid apart (`litMarksSeen`): at any
+  distance, every one of them, whole, beating (a fifth wider and back every 1.3 s), farthest first, and drawn over the
+  finished picture after the water with no depth (`MarkDraw.drawAbove`), so it is seen from everywhere in the space,
+  through walls and crowds; only the weather's fall and the blows' light are laid over it. Never narrower than
   0.017 radians, it keeps its size on the screen however far. It holds still under reduced motion, goes out once the
-  player has spoken with the keeper or taken their letters, and is not lit while its keeper is away from the counter. A whole mark
-  gives the fight's light layer no light, so a sign's brass never lights its own diamond. Its colours are laid in
-  layers as a drop's are, the widest first, each a little nearer the eye, so a mark is a few dozen quads; a fading one
-  is laid flat, so no layer shows through another. Where something stands before a mark, a keeper's stall, the Hall's
-  walls or a hill, it is drawn through it, faded to 0.45 and laid flat 3 cm nearer the eye than any layer of the mark,
-  after the scene and only where the scene stands a thousandth of its distance nearer still (`marksHidden`,
-  `MarkDraw.drawHiddenOver`;
-  [[A Mark Over What a Player Can Use Is Seen Through Walls]]).
+  player has spoken with the keeper or taken their letters, and is not lit while its keeper is away from the counter. A
+  whole mark gives the fight's light layer no light, so a sign's brass never lights its own diamond. Its colours are
+  laid in layers as a drop's are, the widest first, each a little nearer the eye, so a mark is a few dozen quads; a
+  fading one is laid flat, so no layer shows through another. Where something stands before a mark, a keeper's stall,
+  the Hall's walls or a hill, it is drawn through it, faded to 0.45 and laid flat 3 cm nearer the eye than any layer of
+  the mark, after the scene and only where the scene stands a thousandth of its distance nearer still (`marksHidden`,
+  `MarkDraw.drawHiddenOver`; [[A Mark Over What a Player Can Use Is Seen Through Walls]]).
 - **On the ground**: each resource node stands as the forge's picture of its island's resource (`nodeCards`,
   [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,
   before the place its resource comes from, while the room stands it for the player, and as it looks spent once they
-  gathered it, until it returns for them; a place the room stands no node at shows only its dressing. The picture alone marks a
-  node: no ring, no beam, no mark over it. Each chest standing for them in a patrol stands as a public event's plain
-  chest and its lid, the owner's chest from DFO built in code ([[Pick - Chest]], `foundChestProps`), its front looking
-  the way its place faces; one the room says it paid them for swings its lid open to 77 degrees over 0.6 s, its
-  Vestige poured out as its mouth opens ([[Gear]], "Drops"), and stands open 4 seconds before it goes, the interface's open sound and the chest's
-  clunk heard as an event chest's; one that moves on goes at once (`finds.ts`). Each drop lying for them, online or alone, hovers, a Vestige as its crystal, under its
-  rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
+  gathered it, until it returns for them; a place the room stands no node at shows only its dressing. The picture alone
+  marks a node: no ring, no beam, no mark over it. Each chest standing for them in a patrol stands as a public event's
+  plain chest and its lid, the owner's chest from DFO built in code ([[Pick - Chest]], `foundChestProps`), its front
+  looking the way its place faces; one the room says it paid them for swings its lid open to 77 degrees over 0.6 s, its
+  Vestige poured out as its mouth opens ([[Gear]], "Drops"), and stands open 4 seconds before it goes, the interface's
+  open sound and the chest's clunk heard as an event chest's; one that moves on goes at once (`finds.ts`). Each drop
+  lying for them, online or alone, hovers, a Vestige as its crystal, under its rarity's line (`combat/drops.ts`;
+  [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
   ([[Interface]], "The social space's counters"), and at the bounty board its bounties, offered as "The Bounty Board:
@@ -365,11 +368,12 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   wardrobe, sarcophagus or tomb, by its model's family), each within 2 m of its foot up or down; held a second, or a
   second and a half, on the same ring and sound, it asks the room to open it, before any other use but a public
   event's chest (`findUse`). The finds are read from the room's word on the gear online or alone, as a public event's
-  chests are, so a page playing alone stands, marks and opens them too. Letting go of E before the ring is full asks the room to stop, as does leaving
-  or the page losing its focus; a step or a blow stops it there, and a refusal ends it. A node is not offered on
-  horseback, nor while its resource is full, and a chest or a container not on horseback. On a patrol or an Elite Dungeon's node within 2.5 m of an entrance's door
-  E goes into its dungeon, and in a dungeon within 2.5 m of its exit door it goes out ([[#A dungeon]]). None is offered while a menu is up or
-  the player lies dead, past the edge or felled by a foe.
+  chests are, so a page playing alone stands, marks and opens them too. Letting go of E before the ring is full asks the
+  room to stop, as does leaving or the page losing its focus; a step or a blow stops it there, and a refusal ends it. A
+  node is not offered on horseback, nor while its resource is full, and a chest or a container not on horseback. On a
+  patrol or an Elite Dungeon's node within 2.5 m of an entrance's door E goes into its dungeon, and in a dungeon within
+  2.5 m of its exit door it goes out ([[#A dungeon]]). None is offered while a menu is up or the player lies dead, past
+  the edge or felled by a foe.
 
 ## A dungeon
 
@@ -387,19 +391,19 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   asked with the patrol's id, its name and the entrance's number, or an Elite Dungeon's node's own name. Taken, it
   opens the entrance's card ([[Interface]], "At a dungeon's entrance"), whose Enter, or E again, goes in; before the
   room module is read it goes straight in. A run Find a Company found is gone into by its own name, and only where it
-  is one of that entrance's run's at its tier now. The veil says "Entering" the dungeon; the page leaves the node's room and joins the dungeon's. A patrol's dungeon at
-  Normal is its one shared room, `node-<patrol id>--dungeon-<number>`. At Elite or Abyss it is a run: the run of a
-  company member already in that dungeon at that tier, found in a fresh Roster, or a new one
-  (`node-<patrol id>--abyss--dungeon-<number>--run-<instance>`). An Elite Dungeon's entrance opens the week's Elite or
-  Abyss Dungeon's run where its node was reached at that tier and it is this week's (`eliteRun`, by what is on at the
-  minute), the veil saying "Entering Saltworm Warrens, the Abyss Dungeon of the week"; otherwise the Elite Dungeon's
-  run at Normal. Alone, the shared room opens in the page from the patrol's node file with `room_open_dungeon`, and
-  any other from its name with `room_open_run`, a patrol's run with the patrol's node file too. The player stands at its way in, facing into its room. A trip in keeps
-  the seas of the room the player stands in, and every way out of a dungeon comes out at its room's own seas, so a
-  company stays together at its seas: an Elite Dungeon's run at Normal, gone into from Elite seas, comes out at
-  Normal, as a member who came in by the Roster does. "Go to them" for a
-  member in a dungeon goes into the very room they are in, at their seas, the veil saying "Joining your company at"
-  its name.
+  is one of that entrance's run's at its tier now. The veil says "Entering" the dungeon; the page leaves the node's room
+  and joins the dungeon's. A patrol's dungeon at Normal is its one shared room, `node-<patrol id>--dungeon-<number>`. At
+  Elite or Abyss it is a run: the run of a company member already in that dungeon at that tier, found in a fresh Roster,
+  or a new one (`node-<patrol id>--abyss--dungeon-<number>--run-<instance>`). An Elite Dungeon's entrance opens the
+  week's Elite or Abyss Dungeon's run where its node was reached at that tier and it is this week's (`eliteRun`, by what
+  is on at the minute), the veil saying "Entering Saltworm Warrens, the Abyss Dungeon of the week"; otherwise the Elite
+  Dungeon's run at Normal. Alone, the shared room opens in the page from the patrol's node file with
+  `room_open_dungeon`, and any other from its name with `room_open_run`, a patrol's run with the patrol's node file too.
+  The player stands at its way in, facing into its room. A trip in keeps the seas of the room the player stands in, and
+  every way out of a dungeon comes out at its room's own seas, so a company stays together at its seas: an Elite
+  Dungeon's run at Normal, gone into from Elite seas, comes out at Normal, as a member who came in by the Roster does.
+  "Go to them" for a member in a dungeon goes into the very room they are in, at their seas, the veil saying "Joining
+  your company at" its name.
 - **A sea island's dungeon** is entered by E at its door on the island ([[Islands]], "The door") by its room's name
   (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`, with `--elite` or `--abyss` after it for
   its tier), shared at Normal and a run above it. It is laid by its seed and style and named "The <Style> of the
@@ -411,8 +415,8 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   is handed the dungeon's ask (`fighter_dungeon`), which keeps its rock, jambs and pillars as walls a body stays
   0.35 m off and cannot climb, and for a course an Elite Dungeon's Ascents' pads (none in any other); the movement
   door finds the floor at 0 m. The camera keeps short of the
-  rock beside each open cell and under the ceiling over it, and the shots stop on the rock. The place's name on the heads-up
-  display is the dungeon's, over "Dungeon" and the island's name. Foes are never asked of a dungeon's room.
+  rock beside each open cell and under the ceiling over it, and the shots stop on the rock. The place's name on the
+  heads-up display is the dungeon's, over "Dungeon" and the island's name. Foes are never asked of a dungeon's room.
 - **Going out.** Within 2.5 m of the exit door E offers "Leave", and within 2.5 m of the return portal on the end
   room's far wall while it stands open (while the cache does, once the end foe has fallen). Taken, the veil says
   "Leaving" the dungeon, by the way out kept as the player went in: the node's room is joined at the entrance the
@@ -432,19 +436,20 @@ node's entrances, and a sea island's from its door at sea, each through the Game
 
 **Its scene** (`DungeonScene`) has no land, sky, sea or sun: the dungeon and what stands in it, in one pass over a
 near-black, then the blows' arcs, the see-through marks and their light over the picture, and last death's grey, as
-the game's scene draws them. Wherever the player goes that is no dungeon, its pictures and the scene's targets are let go. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): each open cell's floor and ceiling; a
-wall wherever an open cell meets rock or the grid's edge, a trim band at its foot (0.4 m) and at its head (0.3 m); a
-wall from a lower ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a
-lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; the exit
-door; the return portal, an arch of the end room's trim standing off its wall round a face of its wall darkened, which
-while the portal stands open glows bright, breathing and shimmering, and lights the room as a torch does; and the
-forged props the dungeon lays, each standing and turned as the city stands a prop. Every surface wears a picture the procedural
-textures paint: the brackets and the cache's bands the textures' ironwork (archive 93), the cache's wood the island's
-timber; only a flame and the open portal glow in a colour, as the city's braziers do. Its pictures are filed by role as the Forge files them: a room whose number leaves 2 over three wears the
-style's second set and any other its main one, as every corridor does; record 0 for a wall (1 in a room whose number
-is odd), 2 the floor, 3 the ceiling and 4 the trim, each set turned to the island's climate and painted by the
-procedural textures as the city paints its own ([[Procedural Textures]]). Their UVs run in world metres, one picture to
-3.2 m. The exit door wears the door picture its entrance's model wears.
+the game's scene draws them. Wherever the player goes that is no dungeon, its pictures and the scene's targets are let
+go. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): each open cell's floor and ceiling; a wall wherever
+an open cell meets rock or the grid's edge, a trim band at its foot (0.4 m) and at its head (0.3 m); a wall from a lower
+ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a lintel from 2.8 m up to
+the frame's height; a square pillar, trimmed, at each of a great room's corners; the exit door; the return portal, an
+arch of the end room's trim standing off its wall round a face of its wall darkened, which while the portal stands open
+glows bright, breathing and shimmering, and lights the room as a torch does; and the forged props the dungeon lays, each
+standing and turned as the city stands a prop. Every surface wears a picture the procedural textures paint: the brackets
+and the cache's bands the textures' ironwork (archive 93), the cache's wood the island's timber; only a flame and the
+open portal glow in a colour, as the city's braziers do. Its pictures are filed by role as the Forge files them: a room
+whose number leaves 2 over three wears the style's second set and any other its main one, as every corridor does; record
+0 for a wall (1 in a room whose number is odd), 2 the floor, 3 the ceiling and 4 the trim, each set turned to the
+island's climate and painted by the procedural textures as the city paints its own ([[Procedural Textures]]). Their UVs
+run in world metres, one picture to 3.2 m. The exit door wears the door picture its entrance's model wears.
 
 - **The light.** The 32 lights that reach nearest the eye each light round them in their kind's own colour and
   reach, a fire's flickering and a glow's breathing, none in step, fading to nothing at their reach, a face turned
@@ -452,8 +457,8 @@ procedural textures as the city paints its own ([[Procedural Textures]]). Their 
   breathing blue-green to 7 m, a lantern warm to 8 m, a hearth's fire to 9.5 m, the open portal cold, and the torch
   or lantern in the player's left hand at their hand
   ([[Every Light Is Redesigned and Animated, and Each Casts Light]]). A faint light lies everywhere in the mood of the
-  style of each cell (`MOODS`): the crypt's cold grey-blue, the halls' grey, the cells' sickly green, the sanctum's pale gold,
-  the caverns' teal and the mines' dusty brown, enough that a room past every light still shows its walls. Each
+  style of each cell (`MOODS`): the crypt's cold grey-blue, the halls' grey, the cells' sickly green, the sanctum's pale
+  gold, the caverns' teal and the mines' dusty brown, enough that a room past every light still shows its walls. Each
   torch is an iron bracket off its wall, plate, arm and cup, its flame a fire burning out of the cup, flickering with
   its light ([[Dungeons]], "Its flames"); the props and the fixtures are lit by the same light as the walls.
 - **The fixtures** (`dungeonFixtures.ts`), each shaped by where it stands: a brazier, an iron bowl on three legs heaped
@@ -498,30 +503,31 @@ sails out from its berth ("Landings").
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times its length), so one reads from the raised
   view, and every hull the same four times its own, so a Frigate reads larger than a Sloop. Every other player's ship
   is drawn in its own hull and dress, as the sea's snapshot says; one lying parked while its player is ashore (its pace
-  0) lies at rest as any ship still does, its sails furled and no way on its footprint. A captain's ship is drawn as the hull the wire carries for it, in its side's colours, and as the
+  0) lies at rest as any ship still does, its sails furled and no way on its footprint. A captain's ship is drawn as the
+     hull the wire carries for it, in its side's colours, and as the
   Sloop until the wire carries one ([[Sailing]], "Its look"); in a fight and in a fleet room too, each read through
   `hullOfCaptain` (at sea and in a fleet its `hull`, in a fight's view its `hull_kind`). Every hull's model and its
   shell tags are made ready behind the sea's veil (`SeaHull.warm`), so the first of each seen holds no frame. At the
   helm every
   ship is its true size ([[Held Map]]).
-- **Its size coming in** (`shownScale`). Every view near the ship (close in, the helm's, Manage's, the walk's and a fight's)
-  is laid on it at its true size, and the view eases down to it from the sea's. On the way the ship's share of the picture
-  eases from the size the sea's view shows it to its true size on the view near it, by the same ratio each step of
-  the way, and every ship is drawn at the scale that gives, never under its true size. So as the eye comes down to sea
-  level it grows steadily and never shrinks or jumps: with the camera at its lowest, looking 30 degrees down, the Sloop
-  grows from 141 to 383 pixels long on a 720-pixel picture. Every hull
+- **Its size coming in** (`shownScale`). Every view near the ship (close in, the helm's, Manage's, the walk's and a
+  fight's) is laid on it at its true size, and the view eases down to it from the sea's. On the way the ship's share of
+  the picture eases from the size the sea's view shows it to its true size on the view near it, by the same ratio each
+  step of the way, and every ship is drawn at the scale that gives, never under its true size. So as the eye comes down
+  to sea level it grows steadily and never shrinks or jumps: with the camera at its lowest, looking 30 degrees down, the
+  Sloop grows from 141 to 383 pixels long on a 720-pixel picture. Every hull
   grows so, whatever size the sea's view draws it at, while its true size at the closest shows it at least as large
-  as the sea's view did. A view near the ship that shows it smaller at its true size (Manage with its wheel taken out) is
-  eased down to instead. On each view near the ship every ship is its true size, its pose on the swell, its footprint on the
-  water and everyone aboard with it.
-- **Two views** ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). The Oversea view is DFO's raised camera over the ship (`stepCamera`):
-  drag to orbit, the wheel to zoom it between its lowest and highest, the arrow keys to turn. The ship first lies
-  facing the island, and the view looks 30 degrees down, so the island stands in it. The Sealevel view
-  (`seaClose.ts`) brings the eye down along the camera's own look to 25 m from the point 4.5 m over its waterline that
-  the World Editor looks at, every ship drawn as its size coming in has it, from whatever height the Oversea view
-  stood at. V (the pad's left) or the console's switch moves between them, eased over about a second; the wheel never
-  does, and at sea level it changes nothing. Docking switches to the Oversea view ("Landings"), and going ashore the
-  view eases back up as it flies off. Clicks and marks
+  as the sea's view did. A view near the ship that shows it smaller at its true size (Manage with its wheel taken out)
+  is eased down to instead. On each view near the ship every ship is its true size, its pose on the swell, its footprint
+  on the water and everyone aboard with it.
+- **Two views** ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). The Oversea
+  view is DFO's raised camera over the ship (`stepCamera`): drag to orbit, the wheel to zoom it between its lowest and
+  highest, the arrow keys to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the
+  island stands in it. The Sealevel view (`seaClose.ts`) brings the eye down along the camera's own look to 25 m from
+  the point 4.5 m over its waterline that the World Editor looks at, every ship drawn as its size coming in has it, from
+  whatever height the Oversea view stood at. V (the pad's left) or the console's switch moves between them, eased over
+  about a second; the wheel never does, and at sea level it changes nothing. Docking switches to the Oversea view
+  ("Landings"), and going ashore the view eases back up as it flies off. Clicks and marks
   are taken on the picture as shown.
 - **The pace follows the view** (`easedPace`). In the Oversea view a voyage sails at the pace it was set at: ×200
   planned on the held map, ×60 set by a click (`PLANNED_PACE`, `CLICK_PACE`). Once the view comes down to sea level,
@@ -530,29 +536,32 @@ sails out from its berth ("Landings").
   while watched close; as the view rises it eases back up to the voyage's pace the same way. The voyage's pace itself is
   not changed, and its time left is read at it. Each step goes to the sea room with the ship's
   course; the room takes one course each half second, so it sails the ship at the latest step it has, and the game sails
-  the ship at the room's pace until it takes the next. Once the room's word on the ship comes and its pace is not the one the ship is
-  sailed at, a step it refused, the game asks it again with the ship's course, until the two agree (`paceToAskAgain`); a
-  slower word with a hostile ship within 2.75 km is the room holding the ship, not a refusal. While the pace is eased, and
-  the room sails the ship at it, the voyage's line adds "Sailing at true speed while you watch close."
+  the ship at the room's pace until it takes the next. Once the room's word on the ship comes and its pace is not the
+  one the ship is sailed at, a step it refused, the game asks it again with the ship's course, until the two agree
+  (`paceToAskAgain`); a slower word with a hostile ship within 2.75 km is the room holding the ship, not a refusal.
+  While the pace is eased, and the room sails the ship at it, the voyage's line adds "Sailing at true speed while you
+  watch close."
 - **Sailing.** In the Oversea view a click on the sea plans a route round the land (`planSeaRoute`): on the open
   landmass's 2 km mask when both ends lie in its window, else on the whole frame's, and sails it at ×60. A destination
   set on the held map sails at ×200. There is no pace to choose. At sea level a click on the sea sets no course: the
   helm's keys sail there. A click on the land, a port's icon or a sea island asks first ("Landings", below). A
   route that cannot be planned says why; resumed, a voyage sails at the pace it was set at.
 - **The chase** (`seaChase.ts`). A click on a sighted hostile ship's mark, or Enter while its mark is chosen, sets
-  the course to intercept it: where the ship meets the hostile ship at their ways (its rank's way and a ship's 12 m/s, both on
-  the voyage's clock), planned round the land as any route, again each half second. The voyage's line says "Chasing
-  the Tithe Brig." until it is met, lost from sight, or another course is set (a click, the helm's keys, Stop or
-  Resume, going ashore). Its way is the one the room sends with it (`Hostile.way`). The room is told whom the ship
-  chases: within 750 m of the hostile ship the fight begins, whatever its temper. Evading is turning away from a bold ship, sighted
-  ahead on the ship's course where the bold ship can meet it: held, the course meets the bold ship; turned away, the ship outruns it.
+  the course to intercept it: where the ship meets the hostile ship at their ways (its rank's way and a ship's 12 m/s,
+  both on the voyage's clock), planned round the land as any route, again each half second. The voyage's line says
+  "Chasing the Tithe Brig." until it is met, lost from sight, or another course is set (a click, the helm's keys, Stop
+  or Resume, going ashore). Its way is the one the room sends with it (`Hostile.way`). The room is told whom the ship
+  chases: within 750 m of the hostile ship the fight begins, whatever its temper. Evading is turning away from a bold
+  ship, sighted ahead on the ship's course where the bold ship can meet it: held, the course meets the bold ship; turned
+  away, the ship outruns it.
 - **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the Sealevel view alone; in the Oversea view they
   do nothing, the click sailing there:
   - A and D turn the ship at the helm's 10 degrees a second. Under way it takes a course straight on along its new
     heading; at rest it turns where it lies, and the room turns it too ([[Server]], "The sea").
-  - W sets the ship sailing straight on, at ×60 eased down to its true speed while watched. That course reaches up to 20 km, stops 500 m short of the first coast that way, and
-    is set again once under 5 km of it is left. Where a coast stops it short, or less than 200 m lies clear, the ship comes
-    to rest facing the coast, and the voyage's line says "Land lies ahead."
+  - W sets the ship sailing straight on, at ×60 eased down to its true speed while watched. That course reaches up to
+    20 km, stops 500 m short of the first coast that way, and is set again once under 5 km of it is left. Where a coast
+    stops it short, or less than 200 m lies clear, the ship comes to rest facing the coast, and the voyage's line says
+    "Land lies ahead."
   - S heaves the ship to, as Stop does.
   - Shift gives no burst at sea: only a fight's helm has one ([[Naval Combat]], "How it works").
   - Straight on, the voyage's line says "Sailing straight on"; resumed, the ship sails on straight along its heading.
@@ -564,8 +573,8 @@ sails out from its berth ("Landings").
   own water or another, asks whether to travel there, and yes travels there as the picture fades out and in: the flow
   stays at sea throughout, its keys held until the ship has arrived ([[Sailing]], "Travel by the held map").
 - **Manage** pans the view down over 1.4 s to the ship at its true size, from its starboard quarter 39 m off,
-  looking 0.5 radians down at its middle; a drag turns the view round it, the wheel brings it from 18 m to 78 m. The player
-  stands at its wheel, its stand-in hands go about its deck, and a panel of the [[Interface]] shows it: its hull
+  looking 0.5 radians down at its middle; a drag turns the view round it, the wheel brings it from 18 m to 78 m. The
+  player stands at its wheel, its stand-in hands go about its deck, and a panel of the [[Interface]] shows it: its hull
   and canvas whole (the naval rules' build, read through the room's own module), its guns a side and their loads,
   its length, beam and draught, and its men where it has a crew; and its heading, pace and voyage. B, or the panel's
   Back to the sea, pans back up.
@@ -575,13 +584,14 @@ sails out from its berth ("Landings").
   helm (E) takes it again, and once the room agrees the view pans back up. A fight that begins calls the player
   straight back to the helm.
 - **Boarding** ([[Naval Combat]], "The fight on a struck deck, on the page"). In a fight, a captain who struck alongside
-  (within 30 m, both under 2 m/s) is boarded with E. Once the sea room has the player on the captain's deck the view is theirs
-  on foot there, as on land, among the captain's crew and beside every other boarder, the deck riding the captain's ship on the swell; the
-  place line names the ship, and once its crew has fallen it shows its minute's seconds left and its hold's take. E, or the
-  minute's end, brings the view back to the fight at the player's own helm; beaten aboard, they wash up.
-- **Its hands.** Three figures stand in for the ship's hands ([[Crew]]): a human, a felid and a human in plain dress, each walking
-  between spots on the Sloop's deck at 1.3 m/s and standing at each 2 to 7 s, on a leg the deck leaves clear and away from
-  its wheel; seeded, so they walk the same however the frames fall.
+  (within 30 m, both under 2 m/s) is boarded with E. Once the sea room has the player on the captain's deck the view is
+  theirs on foot there, as on land, among the captain's crew and beside every other boarder, the deck riding the
+  captain's ship on the swell; the place line names the ship, and once its crew has fallen it shows its minute's seconds
+  left and its hold's take. E, or the minute's end, brings the view back to the fight at the player's own helm; beaten
+  aboard, they wash up.
+- **Its hands.** Three figures stand in for the ship's hands ([[Crew]]): a human, a felid and a human in plain dress,
+  each walking between spots on the Sloop's deck at 1.3 m/s and standing at each 2 to 7 s, on a leg the deck leaves
+  clear and away from its wheel; seeded, so they walk the same however the frames fall.
 - **Seen from any view** ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Its hands always go
   about its deck. The player stands at its wheel, but at the helm, where the eye is theirs. Off the helm the player
   walks its deck, with its helmsman at the wheel under way. In a fight they all stand on it as the fight lies it.
@@ -592,13 +602,14 @@ sails out from its berth ("Landings").
   the ship is: its captain behind its wheel (the spot its hull's export measures), facing its bow, and its hands
   walking and pausing about its deck as the Sloop's do, clear of the wheel. A hull carries its own number of hands:
   the Sloop 3, the Schooner 4, the Brig 5, the Frigate 6. On a Grey Tithe ship the Tithe-Mate stands at the
-  wheel in the roster's dress, and on a Grey Tithe Boss's Captain Brannoc Thule; its hands wear the dress of the deck crew its boarders meet ([[Naval Combat]], "Its deck"),
-  its lead first unless the lead is at the wheel, then its plain hands in turn. Everyone aboard keeps their weapons
-  sheathed. Another player's ship and a friendly ship, the room's too, carry a plain master and plain hands, as the player's own
-  stand-ins look; seen from land, the friendly ships passing carry theirs too. A figure is drawn only while it would
-  stand 4 pixels tall or more on the picture (`figureReach`): about 250 m off on a 720-pixel picture through the sea's
-  field, as many times farther as its ship is drawn larger. The nearest are drawn first, 40 at most a frame across
-  every other ship. In a fight they follow the fight ([[Naval Combat]], "How it looks").
+  wheel in the roster's dress, and on a Grey Tithe Boss's Captain Brannoc Thule; its hands wear the dress of the deck
+  crew its boarders meet ([[Naval Combat]], "Its deck"), its lead first unless the lead is at the wheel, then its plain
+  hands in turn. Everyone aboard keeps their weapons sheathed. Another player's ship and a friendly ship, the room's
+  too, carry a plain master and plain hands, as the player's own stand-ins look; seen from land, the friendly ships
+  passing carry theirs too. A figure is drawn only while it would stand 4 pixels tall or more on the picture
+  (`figureReach`): about 250 m off on a 720-pixel picture through the sea's field, as many times farther as its ship is
+  drawn larger. The nearest are drawn first, 40 at most a frame across every other ship. In a fight they follow the
+  fight ([[Naval Combat]], "How it looks").
 - **No nodes are marked at sea**, nor the Playlist. A port has an icon, over its harbour, with its name and distance,
   once the ship is within 60 km of it, which a click asks to dock at ("Landings"); only a port city's harbour is a port,
   so a ruin's has none (`portOf`). Every hostile ship within
@@ -616,50 +627,50 @@ sails out from its berth ("Landings").
   the water the ship is in, its band and holder ("The Fen Deeps, levels 22-26, Grey Tithe"; "The Lantern Sea, Overlook's
   home waters" within 10 km of its coast, "The Lantern Sea, levels 1-4, Grey Tithe" past it; a ruined city's "The
   Lattice"). A notice (DFO's toast) says for 6 s when the line changes, the ship entering another water or crossing
-  the Lantern Sea's 10 km either way ("Entering The Mistwrack, levels 16-19, The Lattice.") and when a hostile ship is first sighted ("A Tithe Brig
-  sighted, 12 km off."), the nearest first.
+  the Lantern Sea's 10 km either way ("Entering The Mistwrack, levels 16-19, The Lattice.") and when a hostile ship is
+  first sighted ("A Tithe Brig sighted, 12 km off."), the nearest first.
 - **The Grey Tithe's ships** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at its
-  voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of the ship, and the voyage's line says so;
-  the game sails its ship at the pace the room sailed it at, drawn to where the room has it. A bold one that comes
-  within 750 m meets the ship: the ship heaves to, its voyage kept, and the view pans down to the fight, every ship in it
-  easing to its true size as on any view near the ship (above), its plate over it (its faction's emblem, its name over a bar
-  of its hull coloured by its rank), then back up when it ends. A bold one that comes on a friendly ship of the traffic
-  attacks it, the two drawn at sea where the room has them, the friendly one in its own colours, never as a hostile
-  mark; the page draws that ship on its route no more once the room has taken it (its traffic id in the snapshot's
-  `taken`). Coming within 750 m of such a fight, or of one with other players in it, joins it the same way, every
-  captain in it under their own plate, the friendly one's in the players' blue beside the player's. Afloat after, it
-  sails on where the room has it, for its port.
-- **The sea's word** (`seaWord.ts`, [[Naval Combat]], "How a fight ends"). Each line stands as a notice (DFO's toast, `plus/notices.ts`)
-  for 6 s, several at once: who joins the fight ("Player 4 joined the fight.", "The Tithe Schooner joined the fight.", its hull as the
-  room tells it), a captain's colours struck ("The Tithe Brig's colours are down: …"), the boarding ("Boarders away:
-  the Tithe Brig's crew stands to meet them."), a piece of what floats gathered that gave nothing ("Gathered a chest:
-  nothing you had room for."; what one held goes to the Acquired feed, [[Interface]]), and washing up
-  ("Your ship went down: you washed up at Sunspire; your ship lies at its roadstead.", or "Beaten aboard the ship: …").
-  Washed up, the fight's view goes back up, the ship lies where the room moored it, and once the landmass of that
-  port city is open the player walks into its social space behind the veil, in the same words ("You washed up at
+  voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of the ship, and the voyage's line
+  says so; the game sails its ship at the pace the room sailed it at, drawn to where the room has it. A bold one that
+  comes within 750 m meets the ship: the ship heaves to, its voyage kept, and the view pans down to the fight, every
+  ship in it easing to its true size as on any view near the ship (above), its plate over it (its faction's emblem, its
+  name over a bar of its hull coloured by its rank), then back up when it ends. A bold one that comes on a friendly ship
+  of the traffic attacks it, the two drawn at sea where the room has them, the friendly one in its own colours, never as
+  a hostile mark; the page draws that ship on its route no more once the room has taken it (its traffic id in the
+  snapshot's `taken`). Coming within 750 m of such a fight, or of one with other players in it, joins it the same way,
+  every captain in it under their own plate, the friendly one's in the players' blue beside the player's. Afloat after,
+  it sails on where the room has it, for its port.
+- **The sea's word** (`seaWord.ts`, [[Naval Combat]], "How a fight ends"). Each line stands as a notice (DFO's toast,
+  `plus/notices.ts`) for 6 s, several at once: who joins the fight ("Player 4 joined the fight.", "The Tithe Schooner
+  joined the fight.", its hull as the room tells it), a captain's colours struck ("The Tithe Brig's colours are down:
+  …"), the boarding ("Boarders away: the Tithe Brig's crew stands to meet them."), a piece of what floats gathered that
+  gave nothing ("Gathered a chest: nothing you had room for."; what one held goes to the Acquired feed, [[Interface]]),
+  and washing up ("Your ship went down: you washed up at Sunspire; your ship lies at its roadstead.", or "Beaten aboard
+  the ship: …"). Washed up, the fight's view goes back up, the ship lies where the room moored it, and once the landmass
+  of that port city is open the player walks into its social space behind the veil, in the same words ("You washed up at
   Sunspire; your ship lies at its roadstead."), standing there as on arriving (`flow.ts`, `wash-up`). Manage's panel
-  shows the ship's hull, canvas and men (men only once its build has a crew) as the sea keeps them, its voyage's state under
-  "Now", and a Repair part: R asks for its repair, which the panel shows with its seconds left ("Repairing it: 13 s
-  left"), "The ship is whole", or where it is had ("Repair: free, lying at rest within 3 km of a port city", the rules' own
-  reach from the waters' table; out of the sea, "Repairs are made at sea, by a port city"). The chase's meeting reach
-  and the voyage's hold reach come from that table too (`SeaFacts`); it holds every ship's name as well, which the
-  page's own names (`shipBars.ts` `shipName`) are tested against. A voyage set at Elite or Abyss sails in that
-  difficulty's sea room (`sea--elite`, `sea--abyss`), the game leaving one for the other as the voyage sets out. The ship's
-  voyage sails at the way its kept canvas leaves it, as the room sails it (`seaLaw.ts` `followed`). Back at sea
+  shows the ship's hull, canvas and men (men only once its build has a crew) as the sea keeps them, its voyage's state
+  under "Now", and a Repair part: R asks for its repair, which the panel shows with its seconds left ("Repairing it:
+  13 s left"), "The ship is whole", or where it is had ("Repair: free, lying at rest within 3 km of a port city", the
+  rules' own reach from the waters' table; out of the sea, "Repairs are made at sea, by a port city"). The chase's
+  meeting reach and the voyage's hold reach come from that table too (`SeaFacts`); it holds every ship's name as well,
+  which the page's own names (`shipBars.ts` `shipName`) are tested against. A voyage set at Elite or Abyss sails in that
+  difficulty's sea room (`sea--elite`, `sea--abyss`), the game leaving one for the other as the voyage sets out. The
+  ship's voyage sails at the way its kept canvas leaves it, as the room sails it (`seaLaw.ts` `followed`). Back at sea
   after a session, it lies where the room last kept it.
 - **Friendly ships** sail between the three port cities all the time ([[World Map]], "Traffic";
   `friendlyShips.ts`). The game asks the waters' rules where they are at world time, seconds since the Unix epoch by
-  the browser's clock (the sea room sends none), four times a second within the sea view's reach of the ship (its far plane),
-  and between answers reckons each on along its leg at the pace the waters' table gives (60 m/s); a new answer's gap,
-  as at a turn onto its next leg, is closed over about a second. One arrived lies at anchor at its berth off its
-  destination's roadstead ([[World Map]], "Berths"), no way on it, until it is gone. A ship the room has taken off its route (the snapshot's `taken`) is
-  left out: the sea draws it where the room has it. Of each hull only as many as the ships layer has slots for are drawn,
-  16 less the room's own of that hull, the nearest first; only those are rigged, posed and footprinted. Each is drawn
-  by the ships layer as its hull in friendly colours, its sails set and filled by the steady wind (furled while it
-  lies at anchor), posed on the swell,
-  at the size every ship is drawn: the Overworld's from the raised view and its true size on every view near the player's ship
-  (`shownScale`). Its footprint joins the water's with the nearest. The compass marks every one within 900 m in
-  Overlook's blue (`#2f5d9a`).
+  the browser's clock (the sea room sends none), four times a second within the sea view's reach of the ship (its far
+  plane), and between answers reckons each on along its leg at the pace the waters' table gives (60 m/s); a new answer's
+  gap, as at a turn onto its next leg, is closed over about a second. One arrived lies at anchor at its berth off its
+  destination's roadstead ([[World Map]], "Berths"), no way on it, until it is gone. A ship the room has taken off its
+  route (the snapshot's `taken`) is left out: the sea draws it where the room has it. Of each hull only as many as the
+  ships layer has slots for are drawn, 16 less the room's own of that hull, the nearest first; only those are rigged,
+  posed and footprinted. Each is drawn by the ships layer as its hull in friendly colours, its sails set and filled by
+  the steady wind (furled while it lies at anchor), posed on the swell,
+  at the size every ship is drawn: the Overworld's from the raised view and its true size on every view near the
+  player's ship (`shownScale`). Its footprint joins the water's with the nearest. The compass marks every one within
+  900 m in Overlook's blue (`#2f5d9a`).
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 
@@ -680,10 +691,10 @@ pad's B or Cancel no, and a click elsewhere puts it by, as does a fight, the hel
 sea.
 
 Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,
-and on an island cut into regions off the region that holds the port, to dock there; anywhere else, to go ashore. Yes within reach docks in sight at once, or once nothing else holds the
-player (another landmass opening); out of reach the ship makes for the harbour (or the coast nearest the point clicked)
-at ×60 and docks in sight once it is within reach, which the console names ("Bound for Overlook's harbour, to dock").
-Another course
+and on an island cut into regions off the region that holds the port, to dock there; anywhere else, to go ashore. Yes
+within reach docks in sight at once, or once nothing else holds the player (another landmass opening); out of reach the
+ship makes for the harbour (or the coast nearest the point clicked) at ×60 and docks in sight once it is within reach,
+which the console names ("Bound for Overlook's harbour, to dock"). Another course
 given meanwhile (a click, W, a chase), a fight, or the player leaving the sea (to join a company member elsewhere, say)
 lets the landing go ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]);
 leaving the sea lets its voyage go with it, so nothing sails on to the berth once the player is back aboard. A stop
@@ -723,17 +734,19 @@ region it lies off, from anywhere else, or with the ship off another island, it 
 
 Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
 framed on the places of the region it lies off, the one whose centre is nearest it (on an island with no regions, the
-nodes of its side), the city's social space among them when docking, so each region has its own view ([[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
-`islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid with space between them. First the
-island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner (only where the region holds
-the port); then every patrol zone, Elite Dungeon, mission and world boss of that region, with any place no
-region lists, and one Outposts tile for the region's outpost sites; gone ashore, the places alone. The room a place
-lands in holds to the same rule: from the sea it takes only a player whose ship lies off the region that lists the
-place ([[Server]], "Arrivals"). A click on a
+nodes of its side), the city's social space among them when docking, so each region has its own view
+([[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). No node is marked on the map: the
+island's tiles hold them ([[Interface]], "The island's tiles", `islandPanel.ts`, `islandWords.ts`;
+[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid
+with space between them. First the island's own, with its chart and Back to the sea; docked, the port's snapshot and the
+Playlist's banner (only where the region holds the port); then every patrol zone, Elite Dungeon, mission and world boss
+of that region, with any place no region lists, and one Outposts tile for the region's outpost sites; gone ashore, the
+places alone. The room a place lands in holds to the same rule: from the sea it takes only a player whose ship lies off
+the region that lists the place ([[Server]], "Arrivals"). A click on a
 tile does what it does: a place lands there (the player stands at its first spawn, facing inland from the ship, or at a
 social space out from its landmark over the city, as on arriving), choosing its node first; an Elite Dungeon opens its
-card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist; the Outposts tile opens the region's sites, choosing one landing there.
-Tab, the arrows
+card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist; the Outposts tile
+opens the region's sites, choosing one landing there. Tab, the arrows
 and the pad's cross walk the tiles, and Enter or the pad's A presses the one they reach; else Enter does what the lit
 tile does (the one under the pointer, else the first place's). Escape, the pad's B, or Back to the sea, flies back
 down; over the Outposts tile's sites, they close them first, back to the tiles.
@@ -741,7 +754,8 @@ down; over the Outposts tile's sites, they close them first, back to the tiles.
 A sea island's landing docks in sight at once, from wherever the ship lies: it sails for the island's offing, out on
 the bearing it is landed on, planned on water as any route and bent round every island in sight, then in to its
 anchorage, which the console names ("Bound for a cove, to go ashore"); the same courses, a fight and leaving the sea
-let it go. Anchored there, the player walks ashore on its beach, into its room ([[Islands]], "On the page"). A player washed up on a found island walks ashore there.
+let it go. Anchored there, the player walks ashore on its beach, into its room ([[Islands]], "On the page"). A player
+washed up on a found island walks ashore there.
 
 ## Rooms
 
@@ -749,13 +763,13 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 (`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
 
 - **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder difficulty
-  `node-<node id>--elite` or `--abyss` (a social space is one room at any difficulty), and stands at the spawn the room's
-  first word puts them at, each joiner at the next of the node's spawns in turn (until it comes, at the first). The
-  room judges the edge. Each tick's controls go to it with the fight's buttons and arms, the figure's look, the dress
-  when it changed, the gear's asks and a respawn when asked; the player is predicted on the same ground and corrected
-  by each snapshot, held still while the room says they are dead. The warning, the count and death are the room's
-  word. Every other player in the room is shown where the room last saw them, in their own dress, and every foe where
-  it last stood.
+  `node-<node id>--elite` or `--abyss` (a social space is one room at any difficulty), and stands at the spawn the
+  room's first word puts them at, each joiner at the next of the node's spawns in turn (until it comes, at the first).
+  The room judges the edge. Each tick's controls go to it with the fight's buttons and arms, the figure's look, the
+  dress when it changed, the gear's asks and a respawn when asked; the player is predicted on the same ground and
+  corrected by each snapshot, held still while the room says they are dead. The warning, the count and death are the
+  room's word. Every other player in the room is shown where the room last saw them, in their own dress, and every foe
+  where it last stood.
   A room whose socket closes, for a deploy or a dropped network, is joined again by itself ([[Server]], "The
   browser's side"): meanwhile the heads-up display says "Reconnecting…" and the player plays on alone, nothing sent;
   joined again, they are a new player there, standing where the room puts them, their dress and session sent again.
@@ -784,15 +798,17 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   lies, on its voyage. A sea room that sends the player away is lost: a fight in it is over, its view going back up, and
   they are called to the helm and sail on alone, the voyage's line saying so. A fight the room no longer lists for the
   player (joined again with no frame between) is over the same way. While the room is well, the line says nothing of it
-  (`roomWords`). Playing alone, the same sea room runs in the game's worker, so its hostile ships and fights are the same law.
+  (`roomWords`). Playing alone, the same sea room runs in the game's worker, so its hostile ships and fights are the
+  same law.
 
 ## Drawing
 
 `GameScene` reads the sky over the eye each frame with the lamps lit round it, a torch or lantern in the player's left
 hand and its own fires' (`fires`) among them ([[Sky]]), then draws the open landmass in rings round the eye, the
-exact ground round the player or the ship, every drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then
-what a drawer draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each
-tested by hand against the scene's depth, so the water's sky and its surface near a coast never cover them.
+exact ground round the player or the ship, every drawer into the same pass, then the water's sky, haze and surface over
+all of it ([[Water]]), then what a drawer draws over the water: on foot, the blows' arcs, then the fight's see-through
+marks far to near, each tested by hand against the scene's depth, so the water's sky and its surface near a coast never
+cover them.
 
 In the pass the city and the layouts' buildings draw first (`coversGround`): they are opaque and pulled nearer than
 the ground they stand on ([[Cities]]), so the ground they cover, the costliest pixels of the pass, fails the depth
@@ -842,11 +858,12 @@ into a command buffer of its own after the scene's, and the copy goes into the s
 
 The game adds the open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView`
 ([[Cities]]), drawn in its continent's climate once the forged models' tables and the RMB blocks its plan names have
-come from the pages' `world/` folder; the blocks are kept for every later city. Its nodes' layouts within 4 km of the eye are drawn by another `CityView`
-([[Layouts]], "In the browser"), and each drawn node's section and spawns are its layout's. Its nature is the nature layer's
-`NatureView` ([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
-(`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture. The
-land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
+come from the pages' `world/` folder; the blocks are kept for every later city. Its nodes' layouts within 4 km of the
+eye are drawn by another `CityView` ([[Layouts]], "In the browser"), and each drawn node's section and spawns are its
+layout's. Its nature is the nature layer's `NatureView` ([[Nature]]), grown round the eye from the exact ground round
+the player, off the city's pads and solids (`cleared`). Ships and figures are drawn into the same pass; the first
+person's hands over the finished picture. The land is tinted with its biome's woods past where its trees are drawn, so
+forests read from the sea.
 
 **The ground's pictures.** The land wears its climate's ground tiles ([[Procedural Textures]], `groundTiles`), painted
 off the game's thread by the city's painter: the terrain set's grass on the low ground, its dirt on the highlands and
@@ -858,9 +875,9 @@ from above): stones show through the grass first as a slope steepens, bare rock 
 snow settles in the hollows before it covers the rises. A grain is mostly its texel's light over its tile's, with
 a little of its hue, so a dark tile's thin channels never speckle the ground with colours it does not show. Bare rock
 takes its climate's stone's hue at rock's own light (sandstone in a desert, grey on a temperate coast), and the
-layouts' rubble is brought to the same colour. The grain fades into the class's colour with distance as the tile's levels average away. Until a tile is
-painted, and in the World Editor, the class is its plain colour. The layouts' paths and streets are painted on it
-too ([[Layouts]], "In the browser"), in the dirt's and the town paving's grain.
+layouts' rubble is brought to the same colour. The grain fades into the class's colour with distance as the tile's
+levels average away. Until a tile is painted, and in the World Editor, the class is its plain colour. The layouts' paths
+and streets are painted on it too ([[Layouts]], "In the browser"), in the dirt's and the town paving's grain.
 
 **The middle ground.** Between the exact ground round the player (2 km, every 4 m) and the 1 km land, the scene keeps
 the ground sampled every 16 m over 8 km round the player (`keepMiddle`), sampled again once the player moves 1.5 km,
@@ -883,8 +900,8 @@ whose half-diagonal is under two of a map's texels casts nothing into that map: 
 the far, where a crate's shadow would be a texel. The land, the city, the
 plants, the figures and the ships (the wrecks too) are then lit through both, softened over eight taps, a ship with the
 land's light thrown back onto its sides: the near map's sharp shadows hold inside its square and give way to the far
-map's toward its rim, and those fade out toward the far square's own, about 2 km ahead. So from the plaza the city below is
-shadowed as far as its masses stand. From more than 400 m over the ground, at sea or over an island's side, no
+map's toward its rim, and those fade out toward the far square's own, about 2 km ahead. So from the plaza the city below
+is shadowed as far as its masses stand. From more than 400 m over the ground, at sea or over an island's side, no
 shadows are drawn.
 
 **The far map is kept** from frame to frame (`shadowCache.ts`). Its square stays where it was drawn until where the eye
@@ -925,8 +942,8 @@ the card it showed, unless it is seen in another view or from its other side, wh
 own figure, the people aboard ships and the prologue's actors are posed every frame.
 
 At sea the footprints of the player's ship and the 47 ships nearest it (other players', hostile ships, friendly ships
-and a fight's captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round each bow under
-way.
+and a fight's captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round
+each bow under way.
 Under way the player's ship stirs the water's ripples at its bow and quarters, as the World Editor's does, and the
 ripples follow it.
 In death the world drains to grey once death is told (a fall plays out in colour first, the camera holding and turning

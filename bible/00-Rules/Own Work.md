@@ -10,8 +10,8 @@ models, words or data, and nothing of Bethesda's.
 The exceptions are the sprite forge, its renders and the CC0 motion in its moves from Quaternius's and KayKit's
 libraries, which the owner brought over exactly ([[DFO's Sprite Forge Comes Over Exactly]],
 [[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]); Daggerfall's palette and dye colours, read into a table
-([[The Player Plays as in DFO]]); Come Sail Away's sailing as DFO ported it ([[Come Sail Away's Sailing Comes Over]]), and its ships' lanterns
-([[Ships' Lanterns Come Over From DFO]]);
+([[The Player Plays as in DFO]]); Come Sail Away's sailing as DFO ported it ([[Come Sail Away's Sailing Comes Over]]),
+and its ships' lanterns ([[Ships' Lanterns Come Over From DFO]]);
 the forged models, procedural textures and RMB town blocks of DFO's branch `ccr-cab30c1a-oddrwb`, with the
 Daggerfall measures, texture archives and palette they are built on
 ([[Every Island Is Seen Whole and Reached by Nodes]]); DFO's blood with DaggerBlood's numbers and Daggerfall's

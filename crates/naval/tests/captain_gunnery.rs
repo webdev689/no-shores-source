@@ -21,8 +21,8 @@ impl Waters for Open {
 
 const WIND: [f64; 2] = [3.0, 1.0];
 
-/// How many of a bold captain of `rank`'s balls strike the player's Sloop's hull, and how many it fires, over `minutes` of
-/// a fight on each of `seeds`, the Sloop under all plain sail and weaving: hard over one way for 4 s, steady 8 s,
+/// How many of a bold captain of `rank`'s balls strike the player's Sloop's hull, and how many it fires, over `minutes`
+/// of a fight on each of `seeds`, the Sloop under all plain sail and weaving: hard over one way for 4 s, steady 8 s,
 /// hard over the other 4 s, steady 8 s; or holding its course, with `weaving` false; until the fight ends.
 fn struck_share(rank: Rank, weaving: bool, minutes: u32, seeds: u32) -> (u32, u32) {
     let (mut fired, mut struck) = (0, 0);

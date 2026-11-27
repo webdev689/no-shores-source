@@ -1,7 +1,7 @@
 //! A layout's map: the spaces a body stands in (its areas, the lookouts its climbs reach, its runs' beats, its
-//! caverns) and the connections between them (its ways, its climbs, its ledges' stairs, its runs' passages, its tunnels). Each space's level and roof are read off the
-//! land and the solids as laid, so the map says what a body finds there. Missions, events and raids place their
-//! fights, checkpoints and bosses on it.
+//! caverns) and the connections between them (its ways, its climbs, its ledges' stairs, its runs' passages, its
+//! tunnels). Each space's level and roof are read off the land and the solids as laid, so the map says what a body
+//! finds there. Missions, events and raids place their fights, checkpoints and bosses on it.
 
 use crate::areas::Area;
 use crate::brief::AreaKind;

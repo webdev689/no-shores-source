@@ -157,7 +157,8 @@ def build(module):
         shapes.rod(module, (x, OUTER_Y, 2.5), (x, OUTER_Y - 0.18, 2.5), 0.03, 'iron', sides=6)
     module.socket('counter', (0.0, OUTER_Y - 0.95, 0.0), (0, -1))
     module.socket('keeper', (0.0, FRONT_Y + 0.55, FLOOR_M), (0, -1))
-    # Where a hanging shop sign's bracket is fixed, high on the east front quoins, facing along the front away from its middle.
+    # Where a hanging shop sign's bracket is fixed, high on the east front quoins, facing along the front away from its
+    # middle.
     module.socket('sign', (HALF_X + 0.2, OUTER_Y + 0.3, 3.6), (1, 0))
 
 

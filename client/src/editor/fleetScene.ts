@@ -140,7 +140,8 @@ export class FleetScene {
   }
 
   /** Every other ship afloat, heights as drawn: a captain's in its hull and its faction's colours, another player's
-   *  Sloop a little darker than the player's; each one's sails stepped `seconds` on in the wind blowing toward `bearing`. */
+   *  Sloop a little darker than the player's; each one's sails stepped `seconds` on in the wind blowing toward
+   *  `bearing`. */
   ships(
     view: LandView,
     shown: number,

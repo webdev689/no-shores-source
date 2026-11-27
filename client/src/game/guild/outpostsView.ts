@@ -147,7 +147,8 @@ export function outpostsNode(ui: Interface, holds: Holds, given: Given, acts: Ou
   };
 }
 
-/** Raising an outpost at the site the player stands at: the founder's or an admin's press, its cost and what allows it. */
+/** Raising an outpost at the site the player stands at: the founder's or an admin's press, its cost and what allows
+ *  it. */
 function raiseNode(ui: Interface, given: Given, name: string, site: string, acts: OutpostActs): Node {
   const { face, outposts, size } = given;
   const runs = face.rank <= 1;

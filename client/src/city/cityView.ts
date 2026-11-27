@@ -80,7 +80,8 @@ type Owned = { destroy(): void };
 type Drawn = {
   /** The city's drawing less its solids and its lights at night, which are let go once on the GPU. */
   readonly data: Omit<CityData, 'solids' | 'night'>;
-  /** Where its light map lies (west, north from the city's middle, metres east and south), or null for a city not lit. */
+  /** Where its light map lies (west, north from the city's middle, metres east and south), or null for a city not
+   *  lit. */
   readonly pools: readonly [number, number, number, number] | null;
   readonly painter: CityPainter;
   readonly group: GPUBindGroup;

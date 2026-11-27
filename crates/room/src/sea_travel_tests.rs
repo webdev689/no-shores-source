@@ -174,7 +174,8 @@ fn a_travel_is_refused_as_any_course_is() {
 }
 
 /// Home waters to the west, where a traveller lies within their reach; a desert's to the east, where another player's
-/// ship has an island rolled round it, out of the traveller's sight: the sea, the traveller, and where the island stands.
+/// ship has an island rolled round it, out of the traveller's sight: the sea, the traveller, and where the island
+/// stands.
 fn an_island_out_of_sight() -> (Sea, PlayerId, [f64; 2]) {
     let text = r#"{ "continents": [
         { "id": "continent-1", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },

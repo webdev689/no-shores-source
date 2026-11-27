@@ -12,7 +12,7 @@ showing an item's growth as a square filling round its locked nodes and a gauge 
 [[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]].
 
 A line in a note or a code comment is at most 120 characters, as the formatters hold code; a longer one wraps,
-unless it cannot (a table row, a heading, fenced code, a URL, one unbreakable word). `tools/rewrap/rewrap.py` wraps one without
-changing a word.
+unless it cannot (a table row, a heading, fenced code, a URL, one unbreakable word). `tools/rewrap/rewrap.py` wraps one
+without changing a word.
 
 **Checked by.** Review, and the width by the comments and vault checks ([[Checks]]).

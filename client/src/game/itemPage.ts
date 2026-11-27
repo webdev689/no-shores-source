@@ -493,7 +493,8 @@ export function itemPage(
     const run = () => context.ask(press.ask);
     let charged = 0;
     if (press.held)
-      // Dismantling or feeding, the item's own picture charges as the press is held, a piece as long as its rarity asks.
+      // Dismantling or feeding, the item's own picture charges as the press is held, a piece as long as its rarity
+      // asks.
       charged = holds.press(ui, id, run, {
         charges: press.burst ? ITEM_ART : id,
         burst: press.burst ?? null,

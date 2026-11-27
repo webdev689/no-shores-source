@@ -62,7 +62,8 @@ const RING = {
  *  and its foot over the shard. */
 const PILLAR = { heightM: 7, colour: [1, 0.28, 0.36] as const, strength: 0.9, least: 0.35, liftM: 0.5 } as const;
 /** Where a carried shard is held, metres, from the carrier's feet (third person: out to the off hand's side and
- *  before the figure's card, toward the eye, the drawer adding its own height), or from the eye in first person (forward, left, down, low in the view's left). */
+ *  before the figure's card, toward the eye, the drawer adding its own height), or from the eye in first person
+ *  (forward, left, down, low in the view's left). */
 const HAND = { left: 0.42, before: 0.3 } as const;
 const HAND_FIRST = { forward: 0.55, left: 0.3, down: 0.42 } as const;
 /** How near a chest the player stands to open it (crates/room/src/public/chest.rs CHEST_REACH, CHEST_HEIGHT). */
@@ -134,9 +135,10 @@ export interface EncounterHere {
 }
 
 /** An Elite Dungeon's frame: its marks laid into `marks`, its banner with the beat it slides in for, the places
- *  the compass marks, its call over the middle of the view, whether the player stands in its foul water, the music's mood (its Court at its peak, its Boss's part by the wards broken, a seal running
- *  tense), the sting a moment plays (a seal broken or a ward won, a cadence as the Boss wakes), and what `cues` hears
- *  of it (a ward rising rings its own). None outside one. */
+ *  the compass marks, its call over the middle of the view, whether the player stands in its foul water, the music's
+ *  mood (its Court at its peak, its Boss's part by the wards broken, a seal running tense), the sting a moment plays (a
+ *  seal broken or a ward won, a cadence as the Boss wakes), and what `cues` hears of it (a ward rising rings its own).
+ *  None outside one. */
 function encounterFrame(
   { layout, seen }: EncounterHere,
   events: readonly FightEvent[],
@@ -207,7 +209,8 @@ export class PublicView {
   } | null = null;
   /** The chests the player asked to open, when, and as they last lay. */
   private readonly opened = new Map<number, { readonly at: number; readonly chest: ChestLike }>();
-  /** The last frame's wall time, and whether the room's event was there: with none (its room lost), no chest is shown. */
+  /** The last frame's wall time, and whether the room's event was there: with none (its room lost), no chest is
+   *  shown. */
   private last: number | null = null;
   private present = true;
 
@@ -517,8 +520,8 @@ export class PublicView {
           heard.push({ cue: fissureEvent ? 'amb.ice.crack' : 'foe.alert', at: fissureEvent ? fissure : event.ground });
           break;
         case EVENT.publicStage:
-          // The Fissure's stage is the ground splitting again, and the Warden climbing out with a crash; the raid's, the
-          // Tithe sighted.
+          // The Fissure's stage is the ground splitting again, and the Warden climbing out with a crash; the raid's,
+          // the Tithe sighted.
           if (!fissureEvent) heard.push({ cue: 'foe.alert', at: event.ground });
           else
             heard.push(

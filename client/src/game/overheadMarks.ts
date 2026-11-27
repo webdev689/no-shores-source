@@ -129,7 +129,8 @@ export const SEARCH_PICTURE: PixelPicture = {
 };
 
 const faction = new Map<number, PixelPicture>();
-/** The mark of the keeper at a station of `kind`: their sign, else their faction's emblem; none for a kind with none. */
+/** The mark of the keeper at a station of `kind`: their sign, else their faction's emblem; none for a kind with
+ *  none. */
 export function markOfKind(kind: string): PixelPicture | null {
   const sign = keeperPicture(kind);
   if (sign) return sign;
