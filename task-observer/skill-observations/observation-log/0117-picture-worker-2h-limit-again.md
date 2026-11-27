@@ -30,3 +30,14 @@ commands_verified: none
 - Seen after: the merged picture work failed `format (TypeScript)` (publicBanner.test.ts), since the kill came before
   its own check; the controller formatted it and checked again before the push.
 - Status: open (proposal for the owner).
+
+## Seen again, 2026-11-26 (deeper dungeons, wave two)
+
+- Both wave-two workers (storey-generator, storey-client) were killed by the 2-hour background limit. The generator
+  had 22 files uncommitted mid-debugging (PROBE eprintln lines in a test, two #[ignore] probe tests with println and
+  Instant::now that fail clippy); the client had committed but wrote no report and ran no verification skill.
+- run-worker.sh's own "resume once to commit" never ran: the harness kills the wrapper with the worker, so the
+  wrapper's end steps die with it. The controller finished both by hand (about an hour of work).
+- Third occurrence (0116, 0117, this): a barrier, not a rewording. Proposed: run-worker.sh runs the worker under
+  `timeout 105m`, then always runs its commit-and-report resume (also bounded), so the wrapper ends before the 2-hour
+  kill; and the controller starts each worker with the wrapper's own limit, not the harness's.

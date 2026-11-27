@@ -28,3 +28,12 @@ commands_verified: none
   and checks `df -h /` before starting workers (each worker target grows to ~8-13 GB); the brief tells workers to
   give background full checks a long timeout (7200000).
 - Status: open
+
+## Seen again, 2026-11-26 (deeper dungeons)
+
+- Five worker worktrees (dungeon-chests, dungeon-map, storey-engine, storey-generator, storey-client) each kept its
+  own target/ (2.7 to 8.7 GB, 31 GB together) after its branch was merged. The controller's full check then died on
+  "No space left on device", and the next run failed at link on the half-written incremental cache (undefined hidden
+  symbols) until `cargo clean -p room -p room-wasm -p protocol -p dungeon`.
+- Proposed barrier: the controller's merge step (or a `merged-worker.sh <name>`) deletes the worktree's target/ as soon
+  as its branch is merged, and run-worker.sh warns at start when free space is under ~15 GB.

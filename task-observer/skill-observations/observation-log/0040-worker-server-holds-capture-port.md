@@ -27,3 +27,12 @@ The port check before the loop used `ss`, which this container lacks, so it prin
 by reading the preview log before showing the owner; retaken after `pkill -f "vite preview --outDir"`. Third time
 for this shape: it wants the barrier proposed above (webgpu-shot.cjs printing, or asserting, the build it reached),
 not another line in the recipe.
+
+## Seen again, 2026-11-26 (deeper dungeons; third with 0198)
+
+- The storey-client worker, killed by the 2-hour limit, left `vite preview --port 5191` running from its worktree. The
+  controller's `npx vite --port 5191 --strictPort` failed silently behind `nohup`, curl still answered 200, and one
+  picture run (about 20 minutes) drove the worker's old build, timing out on its entrance prompt.
+- Third occurrence: a barrier. webgpu-shot.cjs should refuse a plan whose server is not this checkout's: on start, read
+  the listening process's cwd (`/proc/<pid>/cwd` of the port's owner, `ss -ltnp`) and fail unless it is the repo the
+  driver runs from; and stop-worker.sh / run-worker.sh's exit should kill any vite the worker started.
