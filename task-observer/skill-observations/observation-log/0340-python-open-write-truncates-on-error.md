@@ -1,5 +1,5 @@
 ---
-id: 307
+id: 340
 title: "A Python open(p,'w').write(build()) truncated a note when the build raised"
 status: open
 type: internal

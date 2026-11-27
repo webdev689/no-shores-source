@@ -1,5 +1,5 @@
 ---
-id: 304
+id: 337
 title: "Reached for gh api to list a run's jobs, though the cloud session allows gh only for search"
 status: open
 type: internal

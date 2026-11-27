@@ -1,5 +1,5 @@
 ---
-id: 305
+id: 338
 title: "Dungeon pictures cannot be taken: dungeon-plan.ts drives the page, but eval steps now run in the game's worker"
 status: open
 type: internal
