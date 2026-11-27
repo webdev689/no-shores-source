@@ -12,6 +12,7 @@ import { pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { DropsShown } from '../combat/drops.ts';
+import { itemDropPictures } from '../combat/itemDrops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
@@ -303,7 +304,12 @@ async function start(): Promise<void> {
   const playerFight = new PlayerFight(fighting, combatRules, player);
   const hud = new Hud(abilityPictures, forge);
   const effects = new FightEffects();
-  const dropsShown = new DropsShown();
+  const dropsShown = new DropsShown(
+    itemDropPictures(
+      () => forge,
+      () => player.you.dress,
+    ),
+  );
   // The foes' figures, apart from the panel's figures; they and other players are drawn gliding between the room's
   // snapshots.
   const foes = new FoeFigures(roster);

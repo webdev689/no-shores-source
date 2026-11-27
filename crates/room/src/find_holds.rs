@@ -116,15 +116,17 @@ impl Room {
             Standing::Chest(_) => self.finds.chest_find(number),
             Standing::Holder(_) => Find::Search,
         };
-        let paid = found.character.find(kind, (level, difficulty), resource, source, &dice);
+        let spoils = crate::drops::laid(&mut found.character, |character| {
+            character.find(kind, (level, difficulty), resource, source, &dice).vestiges
+        });
         found.gear_changed = true;
         let body = [found.fighter.body.x, found.fighter.body.y, found.fighter.body.z];
         match standing {
-            Standing::Chest([x, y, z, _]) => self.pour(player, paid.vestiges, [x, y, z], None),
+            Standing::Chest([x, y, z, _]) => self.pour(player, spoils, [x, y, z], None),
             Standing::Holder([west, north, east, south, _, top, _]) => {
-                for vestige in paid.vestiges {
+                for what in spoils {
                     let from = [(west + east) / 2.0, (north + south) / 2.0, top];
-                    self.lay(player, crate::Dropped::Vestige(vestige), body, from);
+                    self.lay(player, what, body, from);
                 }
             }
         }

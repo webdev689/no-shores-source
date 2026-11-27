@@ -203,16 +203,16 @@ test('a Vestige lies twice its size and ammunition 0.6 of its own, raised to hov
 });
 
 test('in flight a drop is its picture and glow; at rest a pillar of its colour rises, a rarer one taller', () => {
-  const boxFlying = new DropsShown(() => false).frame([drop({ kind: DROPPED.ammoBox })], 10, EYE).marks;
+  const boxFlying = new DropsShown(undefined, () => false).frame([drop({ kind: DROPPED.ammoBox })], 10, EYE).marks;
   const solid = heightsOf(boxFlying, false).length;
   const mostFilled = Math.max(...AMMO_BOX_TURN.map((frame) => filled(frame.rows)));
   assert.ok(solid < mostFilled * 6, 'its rectangles of one colour, fewer quads than pixels');
-  const shown = new DropsShown(() => false);
+  const shown = new DropsShown(undefined, () => false);
   const flying = shown.frame([drop({ rarity: 4 })], 10, EYE).marks;
   const flyingTop = Math.max(...heightsOf(flying, false));
   assert.ok(Math.max(...heightsOf(flying, true)) < flyingTop + 1, 'no pillar in flight');
   const pillarTop = (rarity: number) => {
-    const rested = new DropsShown(() => false).frame([drop({ rarity, flying: 0 })], 0, EYE).marks;
+    const rested = new DropsShown(undefined, () => false).frame([drop({ rarity, flying: 0 })], 0, EYE).marks;
     return Math.max(...heightsOf(rested, true)) - Math.max(...heightsOf(rested, false));
   };
   for (let rarity = 0; rarity < PILLAR_M.length; rarity += 1)
@@ -220,7 +220,7 @@ test('in flight a drop is its picture and glow; at rest a pillar of its colour r
       Math.abs(pillarTop(rarity) - (PILLAR_M[rarity] ?? 0)) < 0.2,
       `${rarity}: ${pillarTop(rarity)} m over its picture`,
     );
-  const ammo = new DropsShown(() => false).frame([drop({ kind: DROPPED.ammoBox, flying: 0 })], 0, EYE).marks;
+  const ammo = new DropsShown(undefined, () => false).frame([drop({ kind: DROPPED.ammoBox, flying: 0 })], 0, EYE).marks;
   const ammoTop = Math.max(...heightsOf(ammo, true)) - Math.max(...heightsOf(ammo, false));
   assert.ok(ammoTop > AMMO_PILLAR_M - 0.2 && ammoTop < PILLAR_M[0], `a short pillar: ${ammoTop} m`);
   const lit = Array.from({ length: ammo.length / MARK_FLOATS }, (unused, vertex) =>
@@ -234,13 +234,13 @@ test('in flight a drop is its picture and glow; at rest a pillar of its colour r
 });
 
 test('each drop is told of where it lands and in its rarity, once; one told of at rest is not', () => {
-  const shown = new DropsShown(() => false);
+  const shown = new DropsShown(undefined, () => false);
   assert.deepEqual(shown.frame([drop({ rarity: 2 })], 0, EYE).landed, []);
   assert.deepEqual(shown.frame([drop({ rarity: 2 })], CRYSTAL_FEEL.restS, EYE).landed, [{ at: REST, rarity: 2 }]);
   assert.deepEqual(shown.frame([drop({ rarity: 2 })], CRYSTAL_FEEL.restS + 1, EYE).landed, [], 'once');
-  const late = new DropsShown(() => false);
+  const late = new DropsShown(undefined, () => false);
   assert.deepEqual(late.frame([drop({ id: 9, rarity: 4, flying: 0 })], 0, EYE).landed, []);
-  const ammo = new DropsShown(() => false);
+  const ammo = new DropsShown(undefined, () => false);
   ammo.frame([drop({ kind: DROPPED.ammoBox })], 0, EYE);
   const box = ammo.frame([drop({ kind: DROPPED.ammoBox })], AMMO_FEEL.restS, EYE);
   assert.deepEqual(box.landed, [{ at: REST, rarity: null }], 'ammunition in none');
@@ -250,7 +250,7 @@ test('a drop bursts as it lands, a ring on the ground; reduced motion keeps no r
   const onGround = (marks: readonly number[]) =>
     heightsOf(marks, true).filter((height) => Math.abs(height - REST[2]) < 0.06).length;
   const landing = (still: boolean, seconds: number) => {
-    const shown = new DropsShown(() => still);
+    const shown = new DropsShown(undefined, () => still);
     shown.frame([drop({ rarity: 3 })], 0, EYE);
     shown.frame([drop({ rarity: 3 })], CRYSTAL_FEEL.restS, EYE);
     return shown.frame([drop({ rarity: 3 })], CRYSTAL_FEEL.restS + seconds, EYE).marks;
@@ -260,7 +260,7 @@ test('a drop bursts as it lands, a ring on the ground; reduced motion keeps no r
   assert.equal(onGround(landing(true, 0.1)), 0, 'none with motion reduced');
   assert.ok(landing(true, 2).length < landing(false, 2).length, 'nor motes');
   const pillar = (seconds: number) => {
-    const marks = new DropsShown(() => true).frame([drop({ rarity: 3, flying: 0 })], seconds, EYE).marks;
+    const marks = new DropsShown(undefined, () => true).frame([drop({ rarity: 3, flying: 0 })], seconds, EYE).marks;
     const top = Math.max(...heightsOf(marks, false));
     // Its colours a metre and more over the picture: the pillar's alone.
     return Array.from({ length: marks.length / MARK_FLOATS }, (unused, vertex) => vertex * MARK_FLOATS)
@@ -268,10 +268,10 @@ test('a drop bursts as it lands, a ring on the ground; reduced motion keeps no r
       .map((start) => marks.slice(start + 3, start + 6).join());
   };
   assert.deepEqual(pillar(0.3), pillar(0.9), 'and its pillar holds still');
-  const late = new DropsShown(() => false).frame([drop({ rarity: 3, flying: 0 })], 0, EYE).marks;
+  const late = new DropsShown(undefined, () => false).frame([drop({ rarity: 3, flying: 0 })], 0, EYE).marks;
   assert.equal(onGround(late), 0, 'one told of at rest never bursts');
   const ringOf = (kind: number) => {
-    const shown = new DropsShown(() => false);
+    const shown = new DropsShown(undefined, () => false);
     const lying = drop({ kind, rarity: 0 });
     const feel = kind === DROPPED.vestige ? CRYSTAL_FEEL : AMMO_FEEL;
     shown.frame([lying], 0, EYE);

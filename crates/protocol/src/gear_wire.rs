@@ -435,15 +435,18 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .iter()
         .map(|drop| {
             let (at, from) = (Some(builder.create_vector(&drop.at)), Some(builder.create_vector(&drop.from)));
-            let (kind, rarity, slot, tier) = match &drop.what {
-                Dropped::Vestige(vestige) => (0, vestige.rarity as u8, vestige.slot as u8, 0),
-                Dropped::AmmoBox => (1, 0, 0, 0),
-                Dropped::Crate => (2, 0, 0, 0),
-                Dropped::Chest { tier, .. } => (3, 0, 0, *tier),
+            let (kind, rarity, slot, tier, item) = match &drop.what {
+                Dropped::Vestige(vestige) => (0, vestige.rarity as u8, vestige.slot as u8, 0, None),
+                Dropped::AmmoBox => (1, 0, 0, 0, None),
+                Dropped::Crate => (2, 0, 0, 0, None),
+                Dropped::Chest { tier, .. } => (3, 0, 0, *tier, None),
+                Dropped::Item(item, _) => (4, item.rarity as u8, item.bucket as u8, 0, Some(item)),
             };
+            // An item lying is none of the player's yet: it crosses as one carried, for its picture and its card.
+            let item = item.map(|item| item_offset(&mut builder, item, At::Carried, 0));
             let flying = u8::try_from(drop.rests.saturating_sub(room.clock())).unwrap_or(u8::MAX);
             let poured = drop.poured;
-            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying, tier, poured };
+            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying, tier, poured, item };
             messages::GearDrop::create(&mut builder, &args)
         })
         .collect();

@@ -64,11 +64,14 @@ impl Room {
         for player in paid {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
-            let vestiges = found.character.reward_clear(clear, level.unwrap_or(0), self.difficulty, self.source, &dice);
+            let (difficulty, source) = (self.difficulty, self.source);
+            let spoils = crate::drops::laid(&mut found.character, |character| {
+                character.reward_clear(clear, level.unwrap_or(0), difficulty, source, &dice)
+            });
             found.gear_changed = true;
             let body = found.fighter.body;
             // Rank 0, none: a clear leaves no ammunition.
-            self.drop_spoils(player, vestiges, 0, [body.x, body.y, body.z], &dice);
+            self.drop_spoils(player, spoils, 0, [body.x, body.y, body.z], &dice);
         }
     }
 }

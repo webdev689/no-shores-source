@@ -4,9 +4,10 @@
 // and an Ammo box or crate its Blender model, at 0.6 of its own, each turn baked into frames and turned to the eye.
 // Each lies in its rarity's light (dropLight.ts): a glow about it, a burst as it lands, then a pillar over it and motes
 // rising. Each is drawn as the marks are, the light added to what stands behind it. An Ammo box stepped onto with the
-// ammunition full, which the room leaves lying, is told of.
+// ammunition full, which the room leaves lying, is told of. An item found as itself flies and hovers as a Vestige does,
+// at a Vestige's size, its own picture turning as a flat thing turns (`itemDrops.ts`).
 
-import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
+import { DROPPED, type GearDrop, type GearItem } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
 import { motionReduced } from '../plus/kit.ts';
 import {
@@ -211,9 +212,12 @@ const topOf = (frames: readonly PixelPicture[]): number =>
 const BOX_TOP_M = topOf(AMMO_BOX_TURN);
 const CRATE_TOP_M = topOf(AMMO_CRATE_TURN);
 
-/** How a drop moves: a Vestige as a crystal, poured out of a chest or thrown, ammunition as ammunition. */
+/** Whether a drop is ammunition, which stands under a white line, rather than a Vestige or an item. */
+const isAmmo = (kind: number): boolean => kind !== DROPPED.vestige && kind !== DROPPED.item;
+
+/** How a drop moves: a Vestige or an item as a crystal, poured out of a chest or thrown, ammunition as ammunition. */
 const feelOf = (drop: Pick<GearDrop, 'kind' | 'poured'>): Feel =>
-  drop.kind !== DROPPED.vestige ? AMMO_FEEL : drop.poured ? POURED_FEEL : CRYSTAL_FEEL;
+  isAmmo(drop.kind) ? AMMO_FEEL : drop.poured ? POURED_FEEL : CRYSTAL_FEEL;
 
 /** What a drop is drawn as turned `turn` radians: its frame of a Vestige's crystal or of ammunition's turn, and the
  *  halo a crystal glows in. */
@@ -344,7 +348,8 @@ function put(
 }
 
 /** A picture standing on `base`, turned to the eye, each rectangle of one colour two triangles, as marks' vertices
- *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat). */
+ *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat), `across` of its
+ *  width showing (a flat thing turning: none edge on, below none its other face, mirrored). */
 export function markPicture(
   out: number[],
   picture: PixelPicture,
@@ -352,6 +357,7 @@ export function markPicture(
   eye: Point,
   scale = 1,
   opacity = 1,
+  across = 1,
 ): void {
   const [right, ahead] = acrossFrom(eye, base);
   const runs = runsOf(picture, opacity >= 1);
@@ -364,8 +370,8 @@ export function markPicture(
     const x = base[0] + (nearX ?? 0) * layer;
     const y = base[1] + (nearY ?? 0) * layer;
     const z = base[2] + (nearZ ?? 0) * layer;
-    const left = (runs[start] ?? 0) * scale;
-    const end = (runs[start + 1] ?? 0) * scale;
+    const left = (runs[start] ?? 0) * scale * across;
+    const end = (runs[start + 1] ?? 0) * scale * across;
     const foot = z + (runs[start + 2] ?? 0) * scale;
     const top = z + (runs[start + 3] ?? 0) * scale;
     const red = runs[start + 4] ?? 0;
@@ -472,6 +478,8 @@ const keyOf = (drop: GearDrop) => `${drop.kind}-${drop.id}`;
  * lies and in what rarity, for its sound.
  */
 export class DropsShown {
+  /** An item's own picture, null until it is drawn (`itemDropPictures`); none, and an item shows its light alone. */
+  private readonly itemPicture: (item: GearItem) => PixelPicture | null;
   /** When each drop's flight began, on the page's clock. */
   private readonly began = new Map<string, number>();
   private readonly rested = new Set<string>();
@@ -482,7 +490,8 @@ export class DropsShown {
   /** Whether the player asked for reduced motion: no ring, no motes, no pulse. */
   private readonly still: () => boolean;
 
-  constructor(still: () => boolean = motionReduced) {
+  constructor(itemPicture: (item: GearItem) => PixelPicture | null = () => null, still: () => boolean = motionReduced) {
+    this.itemPicture = itemPicture;
     this.still = still;
   }
 
@@ -511,13 +520,16 @@ export class DropsShown {
       // Still in the chest as its lid opens.
       if (since < feel.waitS) continue;
       const motion = motionAt(feel, drop.from, drop.at, drop.id * 7 + drop.kind, since - feel.waitS);
-      const { body, halo } = pictureOf(drop, motion.turn);
-      const ammo = drop.kind !== DROPPED.vestige;
+      const item = drop.kind === DROPPED.item;
+      const { body, halo } = item
+        ? { body: (drop.item && this.itemPicture(drop.item)) ?? { rows: [], colours: [] }, halo: null }
+        : pictureOf(drop, motion.turn);
+      const ammo = isAmmo(drop.kind);
       const scale = ammo ? AMMO_SCALE : VESTIGE_SCALE;
       const tallM = body.rows.length * (body.pixelM ?? PIXEL_M) * scale;
       const { middle } = motion;
       const base: Point = [middle[0], middle[1], middle[2] - tallM / 2];
-      markPicture(marks, body, base, eye, scale);
+      markPicture(marks, body, base, eye, scale, 1, item ? Math.cos(motion.turn) : 1);
       if (halo) markPicture(marks, halo, base, eye, scale, ADDED);
       const colour = ammo ? PALE : (RARITY_COLOURS[drop.rarity] ?? WHITE);
       const floor = drop.at[2] + GLOW_FLOOR_M;
@@ -544,8 +556,9 @@ export class DropsShown {
       const rise = Math.min(1, motion.since / RISE_S);
       const tall = (ammo ? AMMO_PILLAR_M : (PILLAR_M[drop.rarity] ?? AMMO_PILLAR_M)) * rise;
       const strength = rise * pillarPulse(ammo ? null : drop.rarity, seconds, still) * (ammo ? AMMO_LIGHT : 1);
-      const top =
-        (drop.kind === DROPPED.crate ? CRATE_TOP_M : drop.kind === DROPPED.ammoBox ? BOX_TOP_M : CROWN_M) * scale;
+      const top = item
+        ? tallM / 2
+        : (drop.kind === DROPPED.crate ? CRATE_TOP_M : drop.kind === DROPPED.ammoBox ? BOX_TOP_M : CROWN_M) * scale;
       const crown: Point = [middle[0], middle[1], middle[2] + top + LIFT_M];
       // With motion reduced its glint holds where it is.
       markPillar(marks, crown, tall, colour, strength, still ? 0 : seconds, eye);

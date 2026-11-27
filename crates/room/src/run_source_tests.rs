@@ -57,9 +57,13 @@ fn an_elite_dungeons_clear_lays_its_vestiges_and_items_from_its_content() {
             })
             .collect();
         assert!(lying.iter().all(|vestige| vestige.source == Source::Elite), "{place}");
-        let found = &room.players[&player].character.items;
-        let rolled: Vec<_> = found.values().filter(|(item, _)| item.named.is_none() && item.level > 1).collect();
-        assert!(rolled.iter().all(|(item, _)| item.source == Source::Elite), "{place}");
+        let rolled: Vec<&gear::Item> = (room.drops.iter())
+            .filter_map(|drop| match &drop.what {
+                crate::Dropped::Item(item, _) if drop.player == player && item.named.is_none() => Some(item),
+                _ => None,
+            })
+            .collect();
+        assert!(rolled.iter().all(|item| item.source == Source::Elite), "{place}");
         paid = (paid.0 + lying.len(), paid.1 + rolled.len());
     }
     assert!(paid.0 > 0 && paid.1 > 0, "the clears laid Vestiges and items: {paid:?}");

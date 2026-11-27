@@ -1,15 +1,15 @@
 //! What a kill lays on the ground for each player who earned it, seen by them alone for two minutes: their Vestige, an
 //! Ammo box by the foe's rank, and a Miniboss's or a Boss's Ammo crate when they carry five already. Each is thrown out
 //! of the fallen foe in a fan toward the player, comes to rest where the fan puts it, and is taken by walking within
-//! reach once it rests. A chest's Vestige is poured out of it as its lid opens, as project-final's cache pours its
-//! loot. A Vestige not taken goes to its player's mail as its time runs out or as they leave. And the shots a player
-//! spends, kept with their gear.
+//! reach once it rests. An item found as itself lies as a Vestige does. A chest's Vestige is poured out of it as its
+//! lid opens, as project-final's cache pours its loot. A Vestige not taken goes to its player's mail as its time runs
+//! out or as they leave, an item where a found item goes. And the shots a player spends, kept with their gear.
 
 use crate::{PlayerId, Room};
-use gear::Vestige;
 use gear::activities::Modifier;
 use gear::dice::{Dice, Purpose};
 use gear::mail::{Posted, Source};
+use gear::{Character, Item, Vestige};
 use movement::TUNING;
 use movement::blocks::ground_at;
 
@@ -34,6 +34,9 @@ pub const FAN_HALF: f64 = 1.2;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Dropped {
     Vestige(Vestige),
+    /// An item found as itself, laid for its player as a Vestige is, and its foe's level: a finer one let go with no
+    /// room comes as a Vestige of that level (`keep_found`).
+    Item(Item, u8),
     AmmoBox,
     Crate,
     /// A won public event's chest, of its tier (1 to 4), from an event at its level.
@@ -58,12 +61,13 @@ pub struct Drop {
 }
 
 impl Room {
-    /// Lays what a kill at `from` left one player: their Vestiges, an Ammo box by the foe's rank (the foes crate's
-    /// number), and from a Miniboss or a Boss an Ammo crate, which goes straight into their five while there is room.
+    /// Lays what a kill at `from` left one player: their Vestiges and items (`laid`), an Ammo box by the foe's rank
+    /// (the foes crate's number), and from a Miniboss or a Boss an Ammo crate, which goes straight into their five
+    /// while there is room.
     pub(crate) fn drop_spoils(
         &mut self,
         player: PlayerId,
-        vestiges: Vec<Vestige>,
+        mut spoils: Vec<Dropped>,
         rank: u8,
         from: [f64; 3],
         dice: &Dice,
@@ -71,7 +75,6 @@ impl Room {
         // Juggler leaves no ammunition: no box, and no crate, kept or thrown.
         let juggling = self.modded(Modifier::Juggler);
         let Some(found) = self.players.get_mut(&player) else { return };
-        let mut spoils: Vec<Dropped> = vestiges.into_iter().map(Dropped::Vestige).collect();
         if !juggling && dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) {
             spoils.push(Dropped::AmmoBox);
         }
@@ -85,15 +88,15 @@ impl Room {
         }
     }
 
-    /// Pours a chest's Vestiges out of it for the player who opened it, standing at its foot `from`: up out of its
-    /// mouth as its lid opens, onto the floor `onto` where the chest keeps it clear, else fanned toward them as a
-    /// kill's are, each where its throw puts it.
-    pub(crate) fn pour(&mut self, player: PlayerId, vestiges: Vec<Vestige>, from: [f64; 3], onto: Option<[f64; 3]>) {
+    /// Pours a chest's Vestiges and items out of it for the player who opened it, standing at its foot `from`: up
+    /// out of its mouth as its lid opens, onto the floor `onto` where the chest keeps it clear, else fanned toward
+    /// them as a kill's are, each where its throw puts it.
+    pub(crate) fn pour(&mut self, player: PlayerId, spoils: Vec<Dropped>, from: [f64; 3], onto: Option<[f64; 3]>) {
         let Some(found) = self.players.get(&player) else { return };
         let body = [found.fighter.body.x, found.fighter.body.y];
-        for (vestige, angle) in vestiges.iter().cloned().zip(fan(from, body, vestiges.len())) {
+        for (what, angle) in spoils.iter().cloned().zip(fan(from, body, spoils.len())) {
             let at = onto.unwrap_or_else(|| self.rest_at(from, angle));
-            self.put(player, Dropped::Vestige(vestige), (at, from), true);
+            self.put(player, what, (at, from), true);
         }
     }
 
@@ -129,6 +132,9 @@ impl Room {
         let (id, flies) = match &what {
             Dropped::Vestige(vestige) if poured => (vestige.id, POURED_REST_TICKS),
             Dropped::Vestige(vestige) => (vestige.id, VESTIGE_REST_TICKS),
+            // An item flies as a Vestige does.
+            Dropped::Item(..) if poured => (found.character.take_id(), POURED_REST_TICKS),
+            Dropped::Item(..) => (found.character.take_id(), VESTIGE_REST_TICKS),
             Dropped::AmmoBox | Dropped::Crate | Dropped::Chest { .. } => (found.character.take_id(), AMMO_REST_TICKS),
         };
         found.gear_changed = true;
@@ -137,7 +143,8 @@ impl Room {
     }
 
     /// Takes every drop at rest a player has walked over and has room for, and lets go of those that have lain their
-    /// time, a Vestige to their mail, telling their player so their page stops showing them.
+    /// time, a Vestige to their mail and an item kept as a found item is, telling their player so their page stops
+    /// showing them.
     pub(crate) fn pick_up_drops(&mut self) {
         let clock = self.clock;
         let mut kept = Vec::with_capacity(self.drops.len());
@@ -148,6 +155,7 @@ impl Room {
                 found.gear_changed = true;
                 match drop.what {
                     Dropped::Vestige(vestige) => found.character.post(Source::LeftLying, Posted::Vestige(vestige)),
+                    Dropped::Item(item, level) => keep_lying(&mut found.character, (item, level), Source::LeftLying),
                     // A chest never goes unopened: it pays its player as it goes.
                     Dropped::Chest { tier, level } => expired.push((drop.player, (tier, level), drop.at)),
                     Dropped::AmmoBox | Dropped::Crate => {}
@@ -162,6 +170,7 @@ impl Room {
                 && near
                 && match &drop.what {
                     Dropped::Vestige(vestige) => character.pick_up(vestige.clone()),
+                    Dropped::Item(item, _) => character.pick_up_item(item.clone()),
                     Dropped::AmmoBox => character.take_ammo_box(),
                     Dropped::Crate => character.take_crate(),
                     Dropped::Chest { .. } => false,
@@ -179,8 +188,9 @@ impl Room {
         }
     }
 
-    /// Sends every Vestige still lying for a player to their mail and takes all their drops off the ground. Their host
-    /// calls it as they leave, before it reads their character for its last save, so the save keeps the Vestiges.
+    /// Sends every Vestige still lying for a player to their mail, keeps every item as a found item is, and takes all
+    /// their drops off the ground. Their host calls it as they leave, before it reads their character for its last
+    /// save, so the save keeps the Vestiges and items.
     pub fn mail_lying(&mut self, player: PlayerId) {
         // A chest is never lost: opened for them first, whatever their host called before.
         self.open_chests_of(player);
@@ -189,19 +199,24 @@ impl Room {
         self.drops = others;
         for drop in theirs {
             found.gear_changed = true;
-            if let Dropped::Vestige(vestige) = drop.what {
-                found.character.post(Source::LeftBehind, Posted::Vestige(vestige));
+            match drop.what {
+                Dropped::Vestige(vestige) => found.character.post(Source::LeftBehind, Posted::Vestige(vestige)),
+                Dropped::Item(item, level) => keep_lying(&mut found.character, (item, level), Source::LeftBehind),
+                Dropped::AmmoBox | Dropped::Crate | Dropped::Chest { .. } => {}
             }
         }
     }
 
-    /// Takes every drop off the ground, each Vestige still lying to its player's mail, as a wipe starts a run over.
+    /// Takes every drop off the ground, each Vestige still lying to its player's mail and each item kept as a found
+    /// item is, as a wipe starts a run over.
     pub(crate) fn mail_all_lying(&mut self) {
         for drop in std::mem::take(&mut self.drops) {
             let Some(found) = self.players.get_mut(&drop.player) else { continue };
             found.gear_changed = true;
-            if let Dropped::Vestige(vestige) = drop.what {
-                found.character.post(Source::LeftLying, Posted::Vestige(vestige));
+            match drop.what {
+                Dropped::Vestige(vestige) => found.character.post(Source::LeftLying, Posted::Vestige(vestige)),
+                Dropped::Item(item, level) => keep_lying(&mut found.character, (item, level), Source::LeftLying),
+                Dropped::AmmoBox | Dropped::Crate | Dropped::Chest { .. } => {}
             }
         }
     }
@@ -217,6 +232,26 @@ impl Room {
             found.character.spend_shot();
             found.gear_changed = true;
         }
+    }
+}
+
+/// What `find` gives a player to lay on the ground: the Vestiges it answers, then the items it finds as themselves.
+pub(crate) fn laid(character: &mut Character, find: impl FnOnce(&mut Character) -> Vec<Vestige>) -> Vec<Dropped> {
+    let (vestiges, items) = character.laying(find);
+    spoils(vestiges, items)
+}
+
+/// Vestiges, then items each with its foe's level, as drops to lay.
+pub(crate) fn spoils(vestiges: impl IntoIterator<Item = Vestige>, items: Vec<(Item, u8)>) -> Vec<Dropped> {
+    let items = items.into_iter().map(|(item, level)| Dropped::Item(item, level));
+    vestiges.into_iter().map(Dropped::Vestige).chain(items).collect()
+}
+
+/// An item left lying, kept as a found item is (its nine, else the vault, else a Normal one posted); a finer one
+/// with no room comes as a Vestige of its colour, posted as a Vestige left lying is, so nothing found is lost.
+fn keep_lying(character: &mut Character, (item, level): (Item, u8), source: Source) {
+    if let Some(vestige) = character.keep_found(item, level) {
+        character.post(source, Posted::Vestige(vestige));
     }
 }
 

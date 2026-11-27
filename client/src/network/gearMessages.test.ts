@@ -65,8 +65,14 @@ test('a players own gear the server wrote reads back whole, every column spelled
     [
       [DROPPED.ammoBox, [1, 2, 0], [1, 2, 0], 60],
       [DROPPED.vestige, [3, 2, 0], [3, 2, 0], 94],
+      [DROPPED.item, [5, 2, 0], [5, 2, 0], 94],
     ],
-    "each just laid flies the room's rest for its kind, AMMO_REST_TICKS and VESTIGE_REST_TICKS",
+    "each just laid flies the room's rest for its kind, AMMO_REST_TICKS and VESTIGE_REST_TICKS, an item a Vestige's",
+  );
+  assert.deepEqual(
+    gear.drops.map(({ item }) => item && [item.kind, item.rarity, item.level]),
+    [undefined, undefined, [8, 0, 5]],
+    'a Normal bow found as itself lies as the item, and nothing else holds one',
   );
   assert.equal(gear.xp, 190_000n);
   assert.equal(gear.resources[4], 3, 'three of the node’s resource');

@@ -251,14 +251,18 @@ impl Room {
             let share = weekly.map_or(share, |weekly| character.week_share(week, weekly));
             let reward = character.reward_share(worth, (rank, level), Some(hand), (self.difficulty, share));
             let looted = deck || spoilless;
-            let mut vestiges = if looted {
-                Vec::new()
-            } else {
-                character.loot_share((rank, level), (self.difficulty, share), self.source, &dice)
-            };
-            if let Some(share) = bountiful.filter(|_| !looted) {
-                vestiges.extend(character.loot_more(share, rank, level, self.source, &dice));
-            }
+            let source = self.source;
+            let spoils = crate::drops::laid(character, |character| {
+                let mut vestiges = if looted {
+                    Vec::new()
+                } else {
+                    character.loot_share((rank, level), (self.difficulty, share), source, &dice)
+                };
+                if let Some(share) = bountiful.filter(|_| !looted) {
+                    vestiges.extend(character.loot_more(share, rank, level, source, &dice));
+                }
+                vestiges
+            });
             // A ship's deck is no island: what is felled there counts toward no land bounty and earns no boon.
             if !deck {
                 character.boon_xp(week, reward.xp, Some(hand));
@@ -269,7 +273,7 @@ impl Room {
                 self.fought_garrison(player);
             }
             if !spoilless {
-                self.drop_spoils(player, vestiges, rank, at, &dice);
+                self.drop_spoils(player, spoils, rank, at, &dice);
             }
             self.tell_kill(player, brain.foe_type.name, rank, [at[0], at[1]]);
             if !deck {
