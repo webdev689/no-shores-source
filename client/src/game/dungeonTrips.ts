@@ -197,12 +197,12 @@ export function dungeonTrips(
         found === undefined ? roomOf(base, tier, always) : async () => found;
       if (node.kind !== 'dungeon') {
         // Gone into at its drawn tier, and out again to the patrol at the seas the player stands in.
-        const at = tier ?? seas;
+        const metAt = tier ?? seas;
         const ask = { patrol: node.id, name: node.name, number };
-        const base = dungeonRoom(node, at, number);
+        const base = dungeonRoom(node, metAt, number);
         if (!fits(base)) return;
-        const room = roomFor(base, at, false);
-        const work = into(outside, { number, ask }, at, room, toNode(node, seas, number, entrance), entrance);
+        const room = roomFor(base, metAt, false);
+        const work = into(outside, { number, ask }, metAt, room, toNode(node, seas, number, entrance), entrance);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon-${number}`, name }, work);
         return;
       }

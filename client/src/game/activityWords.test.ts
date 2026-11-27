@@ -149,8 +149,8 @@ test('an entrance’s card says its run’s tier, level, modifiers and pay, and 
   for (let day = 0; day < 12; day++) {
     const later = { ...drawn, minute: drawn.minute + day * 1440 };
     for (const number of [0, 1, 2]) {
-      const at = entranceCardOf({ ...vale, seas: 'normal', number }, later, gates, today).seas;
-      tiers.add(at);
+      const metAt = entranceCardOf({ ...vale, seas: 'normal', number }, later, gates, today).seas;
+      tiers.add(metAt);
       assert.notEqual(entranceCardOf({ ...vale, number }, later, gates, today).seas, 'normal');
     }
   }

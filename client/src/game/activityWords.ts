@@ -236,18 +236,18 @@ export function entranceCardOf(
     // Met at a tier drawn among those the character's level opens, each as likely, never under the patrol's seas.
     const least = Math.max(0, TIERS.indexOf(seas));
     const tier = drawnTier(`${node.id}--dungeon-${number}`, dayOf(drawn.minute), openTiers(gates?.seas), least);
-    const at = TIERS[tier] ?? seas;
+    const metAt = TIERS[tier] ?? seas;
     const ofTheDay = drawn.ofTheDay.some((one) => one.patrol === node.id && one.number === number);
     const dayPays = takenToday(drawn, record, tier) ? `Taken today. ${PLAIN_PAYS}` : DAY_PAYS;
     return {
       name,
       tier: tierWords(SEAS[tier] ?? '', tier),
-      rules: at === 'abyss' ? [revivesWords(drawn)] : [],
+      rules: metAt === 'abyss' ? [revivesWords(drawn)] : [],
       modifiers: ofTheDay && tier > 0 ? shown(drawn, [drawn.dayModifier]) : [],
       pays: ofTheDay ? dayPays : PLAIN_PAYS,
       shut: gates?.day[tier] ?? null,
       finds: null,
-      seas: at,
+      seas: metAt,
     };
   }
   const run = eliteRun(node.id, seas, drawn);
