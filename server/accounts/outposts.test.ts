@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { LEVELS } from '../../client/src/game/guild/guildLaw.ts';
 import { RAISE_AUREM } from '../../client/src/game/guild/outpostLaw.ts';
 import { accounts } from './accountsForTests.ts';
 import { characters } from './characters.ts';
@@ -33,9 +34,9 @@ async function world() {
     (await made.deps.database
       .prepare('SELECT id, treasury, xp FROM guilds')
       .first<{ id: string; treasury: number; xp: number }>())!;
-  /** Stands a player's character in their guild's outpost room at the site. */
-  const standAt = async (name: string) =>
-    kept.claim(tokens[name] ?? '', `${outpostRoom(SITE, (await guild()).id)}:${name}`);
+  /** Stands a player's character in their guild's outpost room at a site, the one the tests share unless named. */
+  const standAt = async (name: string, site = SITE) =>
+    kept.claim(tokens[name] ?? '', `${outpostRoom(site, (await guild()).id)}:${name}`);
   const fund = async (amount: number) =>
     kept.deposit(await accountOf('Ada'), amount, `${outpostRoom(SITE, (await guild()).id)}:fund-${Math.random()}`);
   const read = async (name: string) => (await made.ask('GET', '/v1/outposts', undefined, tokens[name])).body;
@@ -426,4 +427,20 @@ test('a Counting House taken down settles its strongbox first, so what it earned
   await standAt('Ada');
   assert.equal((await ask('Ada', 'outpost/remove', { site: SITE, id: 3 })).status, 200);
   assert.equal(((await read('Ada'))['outposts'] as { strongbox: number }[])[0]?.strongbox, 3 * 30);
+});
+
+test("a guild at level 7 holds three outposts, one at each of a region's three slots, and no fourth", async () => {
+  const { ask, standAt, fund, read, raiseXp } = await world();
+  await raiseXp(LEVELS[6] ?? 0);
+  await fund(30_000);
+  const raiseAt = async (site: string) => {
+    await standAt('Ada', site);
+    return ask('Ada', 'outpost/raise', { site, turn: 0 });
+  };
+  // The Beacon Shore's three slots (content/world/regions.json), and one of the Weirlands'.
+  for (const site of ['tern-strand-outpost', 'ternwing-hythe-outpost', 'driftweed-strand-outpost'])
+    assert.equal((await raiseAt(site)).status, 200, site);
+  const sites = ((await read('Ada'))['outposts'] as { site: string }[]).map((outpost) => outpost.site);
+  assert.deepEqual(sites.sort(), ['driftweed-strand-outpost', 'tern-strand-outpost', 'ternwing-hythe-outpost']);
+  assert.equal((await raiseAt('saltwind-ness-outpost')).body['error'], 'At its level your guild holds 3 outposts.');
 });
