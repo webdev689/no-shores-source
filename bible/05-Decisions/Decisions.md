@@ -410,6 +410,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Overlook's City Below Is Lit at Night, in Detail]]
 - [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
 - [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]
+- [[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]
+- [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
 
 ## Claude's calls
 

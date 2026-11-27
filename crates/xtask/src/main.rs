@@ -6,6 +6,7 @@
 #![allow(clippy::print_stdout, reason = "a command-line tool reports to the terminal")]
 
 mod checks;
+mod decisions;
 mod files;
 mod shaders;
 mod toolchain;
@@ -19,8 +20,10 @@ commands:
           check rest | rust | page: one of the parts CI runs side by side (rest holds the repo checks);
           check rust 1/2: that share of the Rust tests, with cargo-nextest
   shaders only the shaders: every one the client compiles, written out and validated as WGSL
-  repo    only the repo checks: layout, file size, comments, layers, html, assets, versions, crates, vault links
-          and dialogue";
+  repo    only the repo checks: layout, file size, comments, layers, html, assets, versions, crates, vault links,
+          dialogue, client tests, pins, schema and python
+  decisions [base]
+          the owner's decisions over the files changed against base (origin/main): read them before the change";
 
 fn main() -> ExitCode {
     let command = std::env::args().nth(1);
@@ -48,6 +51,10 @@ fn main() -> ExitCode {
             } else {
                 ExitCode::FAILURE
             }
+        }
+        Some("decisions") => {
+            let base = std::env::args().nth(2).unwrap_or_else(|| "origin/main".to_owned());
+            if decisions::report(&base) { ExitCode::SUCCESS } else { ExitCode::FAILURE }
         }
         Some("shaders") => {
             if toolchain::run_matching("shaders").is_ok() {

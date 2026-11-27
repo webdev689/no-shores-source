@@ -14,25 +14,13 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   to two a living player, the Court's capped, a Litany in rooms three cells each way, no passage Hold in the cells,
   and a dungeon's navmesh keeping off free-standing rocks as far as a body does). Tested offline; its check passed
   here but for `shipTags.test.ts`'s R2 fetches.
-- **Merging on the owner's yes once CI passes on its head**: #236 (a player's feedback: M the map and N the leave,
-  Tab and the side buttons bound anywhere, the controls sheet's words first, a master volume and an interface size, the
-  held map's legend hidden on L, a landing icon's card on hover, the mouse back as a window shuts, and the sea map's
-  names laid out far less often and faster; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]];
-  `main` taken in). A merge deploys the page, the site, the rooms and the bot, and releases the
-  desktop app.
-- **Merging on the owner's yes ("merge and deploy all") as CI passes**:
-  - #235: hostile ships come out 1 km off at the helm, still seen and kept from 5 km.
-  - #242: helpers capped at two, their briefs corrected, `headroom learn` suggesting only (review 4, 5, 13).
-  - #243: the game's test hooks and the picture tools work everywhere or say why not (review 10).
-  - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
-  - #245: new repo checks, each landing with what it refuses fixed (review 8).
+- **Merging on the owner's yes once CI passes on its head**: #249 ("Use your gifts" counts a step done before it, so
+  none is asked again; a lesson's steps tick in the tracker alone, with no notice at the foot; tested offline, the
+  notices not yet seen in a running game). A merge deploys the page, the site, the rooms and the bot.
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
-- **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
+- **To come**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
-- **Merge order**: #235 and #245 both move the sea clash pin: whichever merges second moves its line in
-  `content/fingerprints.txt`. #242 and #244 share lines in `install-all.sh`, `check_tools.py`, CLAUDE.md
-  and the Toolkit.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -157,6 +145,9 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   The audit's low findings left: a Court in a 2 by 2 end room stands its anchors inside the slam (an anchor keeps
   what it holds, so stepping out costs nothing); a passage Hold's ring can stand a mouth 5.5 m off under ground; a
   lamp's zone whose 64 seeds all miss lays its lamp unchecked; a vein's gathers each call a wave, never waiting.
+- **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
+  and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
+  the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
 - **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
   browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
   2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about

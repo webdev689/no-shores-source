@@ -70,7 +70,6 @@ fn with_no_sea_open_there_is_no_word_on_an_island() {
 /// module, block and post stands where the room has it on every machine, not only the ground.
 const PLANS_PINNED: [(u64, &str); 2] = [(41, "desert"), (QUARRY_SEED, "rainforest")];
 const QUARRY_SEED: u64 = 2;
-const PLANS: &str = "baa11ec6b5b25530";
 
 #[test]
 fn the_plans_bits_are_the_ones_the_page_pins() {
@@ -79,7 +78,7 @@ fn the_plans_bits_are_the_ones_the_page_pins() {
     let hash = text
         .bytes()
         .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
-    assert_eq!(format!("{hash:016x}"), PLANS);
+    assert_eq!(format!("{hash:016x}"), crate::door_tests::pinned("isle.plans"));
 }
 
 #[test]

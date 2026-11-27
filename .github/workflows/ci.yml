@@ -56,6 +56,13 @@ jobs:
     needs: earlier
     if: ${{ !cancelled() && needs.earlier.outputs.passed != 'yes' }}
     name: check (${{ matrix.part }})
+    # On main a newer merge's part cancels the older run's same part: only the newest main deploys, so the older one
+    # would hold a runner for nothing. A pull request's older run is cancelled whole, above.
+    concurrency:
+      group: >-
+        ${{ github.event_name == 'pull_request' && format('part-{0}-{1}', github.run_id, matrix.part) ||
+        format('main-part-{0}', matrix.part) }}
+      cancel-in-progress: ${{ github.event_name != 'pull_request' }}
     strategy:
       fail-fast: false
       matrix:
@@ -123,6 +130,10 @@ jobs:
             kept="/tmp/overlook-ships/${key//\//-}"
             [ -s "$kept" ] || curl -sSf --retry 5 -o "$kept" "$base$key"
           done
+      # The schema check holds every FlatBuffers table's fields to main's tip.
+      - name: Fetch main for the schema check
+        if: matrix.part == 'rest'
+        run: git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
       - name: cargo xtask check ${{ matrix.part }}
         run: cargo xtask check ${{ matrix.part }}
       # How the Lattice's renders lay into the forge's tables, on the runner's own Python: the wave's frame-cutting
@@ -135,7 +146,8 @@ jobs:
   # check passed.
   check:
     needs: [earlier, part]
-    if: ${{ !cancelled() }}
+    # A run whose parts a newer merge cancelled checks nothing, so nothing after it deploys.
+    if: ${{ !cancelled() && needs.part.result != 'cancelled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

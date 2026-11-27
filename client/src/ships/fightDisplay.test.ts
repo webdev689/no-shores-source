@@ -185,9 +185,10 @@ test('where a ship lies is said from the bow as a sailor says it, a quarter of a
 });
 
 test("the tell and the reach of a side run out are the captains' own", async () => {
-  const rules = await readFile(new URL('../../../crates/naval/src/captain/aim.rs', import.meta.url), 'utf8');
-  assert.match(rules, new RegExp(`pub const RUN_OUT_S: f64 = ${RUN_OUT_S};`));
-  assert.match(rules, new RegExp(`pub const RUN_IN_DEG: f64 = ${RUN_IN_DEG}\\.0;`));
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs).
+  const written = await readFile(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  const rules = JSON.parse(written) as { runOutS: number; runInDeg: number };
+  assert.deepEqual([rules.runOutS, rules.runInDeg], [RUN_OUT_S, RUN_IN_DEG]);
 });
 
 test("the burst on the bar is the player's own, from the rules' view", () => {

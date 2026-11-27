@@ -22,6 +22,7 @@ elif [ -f "$copy" ]; then
 else
   echo "task-observer: GitHub clone failed and no pinned copy yet; skipped"; rm -rf "$tmp"; exit 0
 fi
+python3 "$here/patch-new-observation.py" "$tmp/task-observer/scripts/new-observation.sh" || { rm -rf "$tmp"; exit 1; }
 # The skill folder must keep references/ and scripts/ beside SKILL.md (an incomplete install silently skips episodes).
 rm -rf ~/.claude/skills/task-observer && cp -r "$tmp/task-observer" ~/.claude/skills/ && rm -rf "$tmp"
 cp "$here/task-observer-start.py" ~/.claude/hooks/task-observer-start.py

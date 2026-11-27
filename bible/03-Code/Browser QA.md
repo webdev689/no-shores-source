@@ -28,7 +28,7 @@ How a session tests the game in a browser and takes pictures of it headless. The
 Page screenshots of a WebGPU canvas are blank, and presenting to one loses the device headless.
 `node tools/claude-toolkit/webgpu-shot.cjs <steps.json>` gives the game's canvas a texture of its own, in the game's
 worker as on the page, and writes each picture from it (a page without that worker, laid under the HUD). Its header
-says the steps.
+says the steps. Run it on an idle machine, never beside cargo builds.
 
 - **Serving.** Capture a built page, `npm run build` then `npx vite preview --port 5173`, never the dev server: an
   edit reloads a dev server's page mid-run and loses the rest of it. Port 5173 is the only origin R2 answers; where
@@ -136,4 +136,5 @@ one that did nothing says why on the console, which the driver prints.
 
 Read each picture twice: once for the change, and once as a player would see it. List every fault in the frame
 (light, weather, clipping, missing or floating pieces), whether or not the change caused it, and say which ones the
-change predates.
+change predates. A UI change is judged beside its target (the owner's reference picture or the approved twin
+surface), in a picture made with the real code, assets and container.
