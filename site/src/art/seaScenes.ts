@@ -2,10 +2,10 @@
 // flagship over a broken ship, and a captain's own ship under full sail. Each is drawn from fixed seeds, the same at
 // every build.
 import { seeded } from '../../../client/src/seeded.ts';
-import { clouds, LIGHTS, mist, moon, range, sea, sky, stars } from './light.ts';
-import { ruins } from './places.ts';
-import { burning, ship } from './ships.ts';
-import { dot, glow, halo, line, lightOn, makeSheet, patternOn, type Sheet } from './sheet.ts';
+import { clouds, LIGHTS, mist, moon, range, sea, sky, stars } from '../../../client/src/art/light.ts';
+import { ruins } from '../../../client/src/art/places.ts';
+import { burning, ship } from '../../../client/src/art/ships.ts';
+import { dot, glow, halo, line, lightOn, makeSheet, patternOn, type Sheet } from '../../../client/src/art/sheet.ts';
 
 export const WIDE = 320;
 export const TALL = 180;

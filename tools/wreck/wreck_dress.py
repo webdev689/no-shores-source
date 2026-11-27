@@ -56,6 +56,16 @@ BLOCKERS = (
 )
 
 
+def floor_under(frames, box):
+    """The floor a heap over `box` (x0, y0, x1, y1) of the wreck's frame is piled on: the middle height of the faces
+    looking up under it, sampled every 0.3 m, so a spar or a rail lying across it is not taken for its deck."""
+    x0, y0, x1, y1 = box
+    columns, rows = int((x1 - x0) / 0.3), int((y1 - y0) / 0.3)
+    tops = sorted(top for top in (frames.ground.z(x0 + 0.15 + 0.3 * column, y0 + 0.15 + 0.3 * row)
+                                  for column in range(columns) for row in range(rows)) if top is not None)
+    return tops[len(tops) // 2] if tops else 3.0
+
+
 def gate_boxes(frames):
     """Each gate's box in the wreck's frame (west, south, east, north), by the zone it closes: the ground its heap
     is piled over, which the game holds closed until the zone's wave falls."""
@@ -78,8 +88,7 @@ def gates(frames, seed):
         rng = seeded(seed + zone)
         piece = Piece()
         if ship == 'wreck':
-            base = frames.ground.z((box[0] + box[2]) / 2, (box[1] + box[3]) / 2) or 3.0
-            heap(piece, box, base, HEAP_M, rng)
+            heap(piece, box, floor_under(frames, box), HEAP_M, rng)
         else:
             lay_heap(piece, frames, ship, box, rng)
         group = collection(f'Gate.{zone}')

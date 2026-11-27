@@ -1,13 +1,16 @@
 // A dungeon's look, as DFO's Forge builds a floor's mesh (src/world/forge/forgeMesh.js): each open cell's floor and
 // ceiling; a wall with a trim band at its foot and head wherever it meets rock or the grid's edge; a wall from a lower
 // ceiling up to its own; each doorway's frame, a square pillar at each of a great room's corners, a bracket and a
-// flame at each torch, the exit door and the return portal. Points are the dungeon's own: x east, y south, z up from the floor. Each
-// face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in world
-// metres, one picture to 3.2 m, so faces side by side meet without a seam.
+// flame at each torch, the exit door and the return portal. Points are the dungeon's own: x east, y south, z up from
+// the top storey's floor, each storey drawn from its own (`dungeonStoreyPlanes.ts`) and joined by `dungeonJoins.ts`.
+// Each face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in
+// world metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { ARCH_M, caveWall, type FlatSpan } from './dungeonCaveWall.ts';
 import { besideOf, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
-import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
+import { type Joined, joinedOn, joinsMesh } from './dungeonJoins.ts';
+import { CORRIDOR, type DungeonLayout, ROCK, SIDE_STEPS, STAIR, VOID } from './dungeonLayout.ts';
+import { raised, type StoreyPlane, storeyPlanes } from './dungeonStoreyPlanes.ts';
 import { uvOf } from './dungeonUv.ts';
 
 /** The trim bands' heights at a wall's foot and head. */
@@ -16,8 +19,8 @@ export const HEAD_M = 0.3;
 /** The record each face takes in a dungeon set, by its role. */
 export const ROLE = { wall: 0, wallAlt: 1, floor: 2, ceiling: 3, trim: 4 } as const;
 /** Archives that stand for no picture of their own: a flame's glow, drawn as a colour; the portal's face, which wears
- *  the end room's wall; candle wax; an ember's, a lantern's glass a crystal's and a fungus cap's glow; and still water,
- *  dark and catching the lights. */
+ *  the end room's wall; candle wax; an ember's, a lantern's glass a crystal's and a fungus cap's glow; still water,
+ *  dark and catching the lights; the daylight down an open mouth; and a vault chest's gold. */
 export const COLOUR = {
   glow: -2,
   portal: -3,
@@ -28,6 +31,8 @@ export const COLOUR = {
   fungus: -8,
   water: -9,
   foulWater: -10,
+  daylight: -11,
+  gold: -12,
 } as const;
 /** The textures' ironwork (archive 93), for the torches' brackets and the cache's bands. */
 export const IRON: Picture = [93, 0];
@@ -42,7 +47,7 @@ type Picture = readonly [number, number];
 const PLATE = { half: 0.06, low: -0.25, high: 0.05, thick: 0.03 };
 const ARM = { half: 0.02, low: -0.17, high: -0.13 };
 const CUP = { half: 0.06, low: -0.15, high: -0.07 };
-const FLAME = { half: 0.06, low: -0.07, waist: -0.01, high: 0.2 };
+const FLAME = { low: -0.07, high: 0.2 };
 
 /** A quad by its corners round its edge, facing `normal`, its UVs by its plane. */
 export function face(mesh: MeshBuilder, picture: Picture, corners: readonly Point[], normal: Point, top: number): void {
@@ -102,7 +107,7 @@ export function lookAt(layout: DungeonLayout, cell: number): { set: number; wall
 
 /** A wall on a cell's side from `low` up to `high`, facing into the cell, with trim at its foot and its head where
  *  asked; its picture's top meets the cell's ceiling, so a wall's courses line up along a room. */
-function wall(
+export function wall(
   mesh: MeshBuilder,
   look: { set: number; wall: number },
   where: { column: number; row: number; side: number; cell: number },
@@ -158,12 +163,12 @@ function pillar(
 function doorFrame(
   mesh: MeshBuilder,
   look: { set: number; wall: number },
-  jambs: readonly (readonly [number, number, number, number, number])[],
+  jambs: readonly (readonly [number, number, number, number, number, number])[],
   lintel: number,
   height: number,
 ): void {
-  for (const [minX, minY, maxX, maxY, top] of jambs)
-    box(mesh, [look.set, look.wall], [minX, minY, 0], [maxX, maxY, top], false);
+  for (const [minX, minY, maxX, maxY, bottom, top] of jambs)
+    box(mesh, [look.set, look.wall], [minX, minY, bottom], [maxX, maxY, top], false);
   const [first, second] = jambs;
   if (!first || !second || !(height > lintel + 1e-4)) return;
   const acrossX = Math.abs(first[0] - second[0]) > Math.abs(first[1] - second[1]);
@@ -238,8 +243,8 @@ function doorFrame(
   );
 }
 
-/** A torch's iron bracket on its wall, the edge of its cell on its side, unless its style's sconce holds it; and its
- *  flame. */
+/** A torch's iron bracket on its wall, the edge of its cell on its side, unless its style's sconce holds it. Its flame
+ *  is a fire (`torchFlame`). */
 function torch(
   mesh: MeshBuilder,
   [x, y, z, side]: readonly [number, number, number, number],
@@ -264,39 +269,11 @@ function torch(
     across(ARM.half, x, y, plate[0], plate[1], ARM.low, ARM.high);
     box(mesh, iron, [x - CUP.half, y - CUP.half, z + CUP.low], [x + CUP.half, y + CUP.half, z + CUP.high]);
   }
-  const glow: Picture = [COLOUR.glow, 0];
-  const ring: Point[] = [
-    [x - FLAME.half, y, z + FLAME.waist],
-    [x, y - FLAME.half, z + FLAME.waist],
-    [x + FLAME.half, y, z + FLAME.waist],
-    [x, y + FLAME.half, z + FLAME.waist],
-  ];
-  const tip: Point = [x, y, z + FLAME.high];
-  const foot: Point = [x, y, z + FLAME.low];
-  ring.forEach((corner, index) => {
-    const next = ring[(index + 1) % ring.length] ?? corner;
-    const out: Point = [corner[0] + next[0] - 2 * x, corner[1] + next[1] - 2 * y, 0];
-    mesh.tri(
-      glow,
-      [corner, next, tip],
-      [out[0], out[1], 0.3],
-      [
-        [0, 0],
-        [1, 0],
-        [0.5, 1],
-      ],
-    );
-    mesh.tri(
-      glow,
-      [next, corner, foot],
-      [out[0], out[1], -0.3],
-      [
-        [0, 0],
-        [1, 0],
-        [0.5, 1],
-      ],
-    );
-  });
+}
+
+/** A wall torch's flame, burning out of its cup: drawn as a fire, not in the mesh. */
+export function torchFlame([x, y, z]: readonly number[]): { at: Point; sizeM: number } {
+  return { at: [x ?? 0, y ?? 0, (z ?? 0) + FLAME.low], sizeM: FLAME.high - FLAME.low };
 }
 
 /** A door's opening on its wall: its foot's middle, its width and height, and the side of its cell it stands on. */
@@ -361,6 +338,11 @@ export type Kitted = {
   readonly portal: boolean;
   readonly floorless: ReadonlySet<number>;
   readonly flats: ReadonlyMap<number, readonly FlatSpan[]>;
+  /** The flights' arches a kit piece stands for, by `stair * 2` at the head and `+ 1` at the foot; the flights whose
+   *  side courses kit pieces lay; and the galleries' edges, `cell * 4 + side`, whose balustrade a kit piece is. */
+  readonly arches?: ReadonlySet<number>;
+  readonly courses?: ReadonlySet<number>;
+  readonly rails?: ReadonlySet<number>;
 };
 const UNKITTED: Kitted = {
   pillars: new Set(),
@@ -370,15 +352,49 @@ const UNKITTED: Kitted = {
   flats: new Map(),
 };
 
-/** The whole floor's mesh, the exit door wearing `door`, and the return portal; `furnish` lays what stands in it,
- *  and `kitted` says what it draws instead of the mesh. */
+/** The whole dungeon's mesh, storey by storey from each one's floor, the flights and the open air joining them, the
+ *  exit door wearing `door`, and the return portal; `furnish` lays what stands on each storey, from its floor, and
+ *  `kitted` says what it draws instead of the mesh. */
 export function dungeonMesh(
   layout: DungeonLayout,
   door: Picture,
-  furnish: (mesh: MeshBuilder) => void = () => undefined,
+  furnish: (mesh: MeshBuilder, plane: StoreyPlane) => void = () => undefined,
   kitted: Kitted = UNKITTED,
 ): ForgedModel {
   const mesh = meshBuilder();
+  const planes = storeyPlanes(layout);
+  const joined = joinedOn(layout);
+  for (const plane of planes) {
+    const local = kittedOn(kitted, plane, layout.columns * layout.rows);
+    storeyMesh(raised(mesh, plane.floor), plane.layout, local, joined(plane.storey));
+  }
+  joinsMesh(mesh, layout, kitted);
+  doorFace(raised(mesh, layout.exitDoor.z ?? 0), layout.exitDoor, layout.wayIn.side, door);
+  portal(raised(mesh, layout.portal.z ?? 0), layout, !kitted.portal);
+  for (const plane of planes) furnish(raised(mesh, plane.floor), plane);
+  return mesh.model();
+}
+
+/** What the mesh draws instead on one storey, by the storey's own numbers. */
+function kittedOn(kitted: Kitted, plane: StoreyPlane, cells: number): Kitted {
+  const first = plane.storey * cells;
+  const mine = (cell: number) => cell >= first && cell < first + cells;
+  const numbered = (all: ReadonlySet<number>, numbers: readonly number[]) =>
+    new Set(numbers.flatMap((number, index) => (all.has(number) ? [index] : [])));
+  return {
+    pillars: numbered(kitted.pillars, plane.pillars),
+    torches: numbered(kitted.torches, plane.torches),
+    portal: kitted.portal,
+    floorless: new Set([...kitted.floorless].filter(mine).map((cell) => cell - first)),
+    flats: new Map(
+      [...kitted.flats].filter(([key]) => mine(Math.floor(key / 4))).map(([key, spans]) => [key - first * 4, spans]),
+    ),
+  };
+}
+
+/** A storey's floors, walls, ceilings, doorways, pillars and torches, from its floor: a flight's cells and open air
+ *  are drawn by `joinsMesh`, and a cell under open air keeps only its floor here. */
+function storeyMesh(mesh: MeshBuilder, layout: DungeonLayout, kitted: Kitted, { opened, landings }: Joined): void {
   const { cell, columns, rows, cells, ceilings } = layout;
   const heightOf = ceilingHeights(layout);
   // A cell whose ceiling is not flat over it: a vaulted or domed room's, or a cave's.
@@ -399,7 +415,8 @@ export function dungeonMesh(
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
       const index = row * columns + column;
-      if (!openAt(layout, column, row)) continue;
+      const kind = cells[index] ?? ROCK;
+      if (kind === ROCK || kind === STAIR || kind === VOID) continue;
       const look = lookAt(layout, index);
       const ceiling = ceilings[index] ?? 0;
       const height = heightOf(index);
@@ -411,6 +428,7 @@ export function dungeonMesh(
         [west, north + cell, z],
       ];
       if (!kitted.floorless.has(index)) face(mesh, [look.set, ROLE.floor], square(0), [0, 0, 1], 0);
+      if (opened.has(index)) continue;
       if (curved(index)) curvedCeiling(mesh, [look.set, ROLE.ceiling], west, north, cell, height);
       else face(mesh, [look.set, ROLE.ceiling], square(ceiling), [0, 0, -1], ceiling);
       SIDE_STEPS.forEach(([east, south], side) => {
@@ -423,7 +441,9 @@ export function dungeonMesh(
           to: [edgeX + south * half, edgeY - east * half] as const,
           facing: [-east, -south, 0] as const,
         };
-        const next = besideOf(layout, column, row, side);
+        const beside = besideOf(layout, column, row, side);
+        // A flight is open only to its landing: from anywhere else it is rock.
+        const next = beside !== null && cells[beside] === STAIR && !landings.has(index * 4 + side) ? null : beside;
         if (next === null) {
           if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling, flatsOf(index * 4 + side));
           else wall(mesh, look, where, [0, ceiling], trims);
@@ -447,8 +467,4 @@ export function dungeonMesh(
     if (!kitted.pillars.has(index)) pillar(mesh, lookAt(layout, cellOf(x, y)), x, y, height, layout.pillarHalf);
   });
   layout.torches.forEach((each, index) => torch(mesh, each, cell, !kitted.torches.has(index)));
-  doorFace(mesh, layout.exitDoor, layout.wayIn.side, door);
-  portal(mesh, layout, !kitted.portal);
-  furnish(mesh);
-  return mesh.model();
 }

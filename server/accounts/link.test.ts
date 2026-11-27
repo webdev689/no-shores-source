@@ -51,7 +51,9 @@ test('a page takes back only a code from Discord, never a session, and asks Disc
   assert.equal(link.token, null);
   await link.session();
   const held = link.token;
-  const to = new URL(await link.discord('https://page.test/game/'));
+  const away = await link.discord('https://page.test/game/');
+  assert.ok(typeof away !== 'string', away as string);
+  const to = new URL(away.to);
   assert.equal(to.pathname, '/v1/discord/start');
   assert.equal(to.searchParams.get('back'), 'https://page.test/game/');
   assert.match(to.searchParams.get('ticket') ?? '', /^[0-9a-f]{64}$/);

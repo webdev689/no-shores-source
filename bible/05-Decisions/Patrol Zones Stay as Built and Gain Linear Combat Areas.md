@@ -36,7 +36,10 @@ The owner's answers to the questions that followed:
 ## What it settles
 
 - **All 27 patrol zones stay as built**, three on each island, laid out as [[Layouts]] describes. It replaces
-  [[Each Island Has One Patrol Zone, Built of 500 m Combat Spaces]].
+  [[Each Island Has One Patrol Zone, Built of 500 m Combat Spaces]]. Replaced in part by
+  [[Each Island Keeps One Patrol Zone, the One by Its Port City]] and
+  [[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]: Saltmere keeps its three
+  zones, every other island one.
 - **A comprehensive audit**, and the bugs it verifies are fixed.
 - **A comprehensive, detailed pass** makes the zones more varied and more detailed.
 - **Linear combat areas break off the zones**: some in open space, some through larger buildings. They prepare the

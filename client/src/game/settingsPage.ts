@@ -1,8 +1,10 @@
 // The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at,
 // and in the desktop app its graphics API and version), Audio (the volumes, and the recorded sounds' credits behind a
-// press of their own), Controls (every control, bound anew there as in the sheet K opens) and Account (the account and
+// press of their own), Controls (how dialogue moves on, and every control, bound anew there as in the sheet K opens)
+// and Account (the account and
 // the players blocked or muted), down a rail with Switch character (online), Exit to Menu and Exit to Desktop at its
-// foot, each held. The resolution and the volumes are kept in this browser, the binds with the account.
+// foot, each held. The resolution, the volumes and the dialogue's pace are kept in this browser, the binds with the
+// account.
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -19,14 +21,18 @@ import type { PlainContext } from './menuPage.ts';
 import { PRESS_PADDING, answerNode, headingNode, hintNode } from './menuPages.ts';
 import { REBINDING, type Rebinding } from './rebinding.ts';
 import { RESOLUTIONS, resolution, setResolution } from './renderScale.ts';
+import { interfaceSize, screenPixels, setInterfaceSize, sizesOffered } from '../ui/interfaceSize.ts';
 import { soundCredits } from '../soundSamples.ts';
+import { PACES, dialoguePace, setDialoguePace } from '../speech/pace.ts';
 import {
   ambienceVolume,
   interfaceVolume,
+  masterVolume,
   musicVolume,
   play,
   setAmbienceVolume,
   setInterfaceVolume,
+  setMasterVolume,
   setMusicVolume,
   setWorldVolume,
   worldVolume,
@@ -43,7 +49,20 @@ export type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
 
 /** The address's asks that take the page past the title as it loads: the place to arrive at and how, and where the
  *  story starts. */
-const PAST_THE_TITLE = ['at', 'spawn', 'view', 'arrival', 'prologue', 'run', 'wisp', 'bow', 'armed', 'lash'];
+const PAST_THE_TITLE = [
+  'at',
+  'spawn',
+  'foes',
+  'minute',
+  'view',
+  'arrival',
+  'prologue',
+  'run',
+  'wisp',
+  'bow',
+  'armed',
+  'lash',
+];
 /** How long the page waits for its window to close before it says the browser kept it open, milliseconds. */
 const CLOSE_WAIT_MS = 500;
 /** How wide a tab's parts stand at most in its panel, CSS pixels, and at the larger words; Controls takes the panel's
@@ -63,7 +82,9 @@ const PANEL_LEAST = 200;
 const LIST = 'settings-list';
 /** The page's drop-down lists, each shut as the page is shown again. */
 const RESOLUTION_LIST = 'resolution';
-const LISTS = [RESOLUTION_LIST, API_LIST];
+const SIZE_LIST = 'interface-size';
+const DIALOGUE_LIST = 'dialogue-pace';
+const LISTS = [RESOLUTION_LIST, SIZE_LIST, API_LIST, DIALOGUE_LIST];
 /** Switch character's held press. */
 export const SWITCH = 'settings-switch-character';
 /** The credits' press in Audio and their way back. */
@@ -324,27 +345,35 @@ function held(
   };
 }
 
-/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, kept in this browser; and in the
- *  desktop app, the app's own graphics and version. The launcher shows the same. */
+/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, and the interface's size, each kept
+ *  in this browser; and in the desktop app, the app's own graphics and version. The launcher shows the same. */
 export function graphicsNode(ui: Interface): Node {
   const { node, chosen } = choice(ui, RESOLUTION_LIST, resolution(), RESOLUTIONS);
   if (chosen !== resolution()) setResolution(chosen);
   const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
+  const screen = screenPixels();
+  const offered = sizesOffered(screen.width, screen.height);
+  const sized = choice(ui, SIZE_LIST, interfaceSize(), offered);
+  if (sized.chosen !== interfaceSize()) setInterfaceSize(sized.chosen);
+  const sizeSaid = offered.find((option) => option.value === sized.chosen)?.words ?? sized.chosen;
   return column([
     headingNode('Display'),
     { height: 4 },
     settingRow('Resolution', { ...node, label: `Resolution, ${said}` }),
     hintNode('Auto lowers the resolution while the game runs slow. The interface stays sharp.'),
+    settingRow('Interface size', { ...sized.node, label: `Interface size, ${sizeSaid}` }),
+    hintNode('Each step draws the interface larger by a whole pixel, so it stays sharp.'),
     ...desktopNodes(ui, settingRow),
   ]);
 }
 
-/** Audio: the volumes of the interface, the world, the music and the ambience, each kept in this browser, and the
- *  press to the sound credits. */
+/** Audio: the master volume over all, the volumes of the interface, the world, the music and the ambience, each kept
+ *  in this browser, and the press to the sound credits. */
 function audioNode(context: PlainContext, toCredits: () => void): Node {
   return column([
     headingNode('Volume'),
     { height: 4 },
+    volumeRow(context, 'Master', masterVolume, setMasterVolume),
     volumeRow(context, 'Interface sounds', interfaceVolume, setInterfaceVolume),
     volumeRow(context, 'World sounds', worldVolume, setWorldVolume),
     volumeRow(context, 'Music', musicVolume, setMusicVolume),
@@ -381,16 +410,24 @@ function volumeRow(
   );
 }
 
-/** Controls: every control as the sheet K opens lists it, each key or button chosen bound anew, and Reset to
- *  defaults; its words at the face's 11 px, as the other tabs' are. */
+/** Controls: whether a line of dialogue waits for a press or moves on by itself (`pace.ts`); every control as the
+ *  sheet K opens lists it, each key or button chosen bound anew, and Reset to defaults; its words at the face's 11 px,
+ *  as the other tabs' are. */
 function controlsNode({ ui, room, sizes }: PlainContext, rebinding: Rebinding): Node {
   const reset = button(ui, 'settings-reset', 'Reset to defaults', () => rebinding.reset(), { padding: PRESS_PADDING });
   const said = bindingWords(rebinding);
   // The room the rail and its gap leave, less the panel's own padding and frame.
   const rail = sizes.name > 1 ? RAIL_WIDE + 20 : RAIL + 14;
   const inside = Math.max(0, room.width - rail - 2 * 24 - 4);
+  const { node: pace, chosen } = choice(ui, DIALOGUE_LIST, dialoguePace(), PACES);
+  if (chosen !== dialoguePace()) setDialoguePace(chosen === 'auto' ? 'auto' : 'click');
+  const paceSaid = PACES.find((option) => option.value === chosen)?.words ?? chosen;
   return column(
     [
+      headingNode('Dialogue'),
+      settingRow('Dialogue', { ...pace, label: `Dialogue, ${paceSaid}` }),
+      hintNode('Auto moves each line on by itself. Lines said in a fight always do.'),
+      { height: 14 },
       headingNode('Controls', reset),
       said === '' ? hintNode('Choose a key or button, then press its new one.') : answerNode(said),
       { gap: 24, wrap: true, children: bindingColumns(ui, rebinding, 1, inside) },

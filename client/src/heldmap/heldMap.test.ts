@@ -4,6 +4,7 @@ import { Stack } from '../ui/stack.ts';
 import { fakeInterface, wordsIn } from '../ui/uiForTests.ts';
 import { HeldMap } from './heldMap.ts';
 import { Kept, layoutKey } from './heldMapKept.ts';
+import type { HeldMapScene } from './heldMapScene.ts';
 import { MapAsk } from './heldMapAsk.ts';
 import { GLYPH_HALF } from './landGlyphs.ts';
 import { letterScale } from './mapLayout.ts';
@@ -17,7 +18,7 @@ const scene = {
   knownIslands: 3,
   course: [],
 };
-const keyOf = (changed: Partial<Parameters<typeof layoutKey>[4]> = {}, others: Partial<{ fonts: string }> = {}) =>
+const keyOf = (changed: Partial<HeldMapScene> = {}, others: Partial<{ fonts: string }> = {}) =>
   layoutKey(
     { ...view },
     structuredClone(stage),
@@ -34,8 +35,6 @@ test('the held map lays out again only when something its layout reads has chang
     layoutKey(view, { ...stage, ink: { ...stage.ink, width: 900 } }, 'loaded', 1, scene, null),
     keyOf({}, { fonts: 'loading' }),
     layoutKey(view, stage, 'loaded', 2, scene, null),
-    keyOf({ ship: [101, 200] }),
-    keyOf({ heading: 2 }),
     keyOf({ knownIslands: 4 }),
     keyOf({ places: [] }),
     layoutKey(view, stage, 'loaded', 1, scene, 'overlook'),
@@ -43,6 +42,8 @@ test('the held map lays out again only when something its layout reads has chang
   ];
   for (const [index, changed] of changes.entries()) assert.notEqual(changed, keyOf(), `change ${index} lays out again`);
   assert.equal(keyOf({ course: [[1, 1]] }), keyOf(), 'the course sailed is drawn, not lettered');
+  // Under way the ship moves every frame: its arrow is painted where it is, the layout keeping room for it.
+  assert.equal(keyOf({ ship: [101, 200], heading: 2 }), keyOf(), 'the ship sailing on lays out nothing');
 });
 
 test('a frame whose key is unchanged does no layout; a changed one lays out again', () => {
@@ -52,7 +53,7 @@ test('a frame whose key is unchanged does no layout; a changed one lays out agai
   assert.equal(kept.made(keyOf(), layout), 'layout 1');
   for (let frame = 0; frame < 60; frame++) assert.equal(kept.made(keyOf(), layout), 'layout 1');
   assert.equal(laidOut, 1, 'sixty still frames, one layout');
-  assert.equal(kept.made(keyOf({ heading: 2 }), layout), 'layout 2');
+  assert.equal(kept.made(keyOf({ knownIslands: 4 }), layout), 'layout 2');
 });
 
 /** A map up over the view with a place chosen, its GPU drawing left out: what its card shows and hears alone. */

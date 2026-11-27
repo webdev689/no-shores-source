@@ -2,14 +2,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { EVENT } from '../../combat/cues.ts';
-import type { GearState } from '../../network/gearMessages.ts';
-import type { FightEvent } from '../../network/messages.ts';
-import { WORN } from '../../player/gear.ts';
-import type { Dress } from '../../player/dressing.ts';
-import type { InputFrame } from '../../player/input.ts';
-import type { FighterView } from '../../rules/fighters.ts';
-import { setGearScreenOpen } from '../gearScreen.ts';
 import { rosterOf } from '../../rules/roster.ts';
 import { figureOf } from '../../player/dressing.ts';
 import type { Actor } from './actors.ts';
@@ -21,54 +13,12 @@ import { YOU_ID } from './helm.ts';
 import type { Nameplate } from './nameplate.ts';
 import { Overboard } from './overboard.ts';
 import { headOnView } from './stage.ts';
-import type { Story } from './story.ts';
-import { reminder } from './tutorial.ts';
 import { Wake } from './wake.ts';
-import { courseOf, readWreck, topAt } from './wreckLayout.ts';
+import { courseOf, topAt } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { WreckFight } from './wreckFight.ts';
 import type { WreckScenery } from './wreckScenery.ts';
-import { ARMS_ITEM } from './wreckTeaching.ts';
-
-const layout = readWreck();
-const SIZE = { width: 960, height: 540 };
-
-/** A story whose every part takes any call and writes it down, by its path and what it was handed; a call whose path
- *  `answers` names gives back what it holds there, and a part `values` names is what it holds. Its player wears
- *  `dress`. */
-function recorded(
-  answers: Readonly<Record<string, unknown>> = {},
-  values: Readonly<Record<string, unknown>> = {},
-  dress: unknown = { body: 'female' },
-): { story: Story; calls: string[] } {
-  const calls: string[] = [];
-  // The storm's lightning is still unless a test says otherwise.
-  const answered: Readonly<Record<string, unknown>> = { 'lightning.step': { flash: 0, bolt: null }, ...answers };
-  const part = (path: string): unknown =>
-    path in values
-      ? values[path]
-      : new Proxy(() => undefined, {
-          get: (target, key) => (key === 'then' ? undefined : part(`${path}.${String(key)}`)),
-          set: () => true,
-          apply: (target, self, args: unknown[]) => {
-            calls.push(`${path}(${args.filter((arg) => typeof arg !== 'object').join(', ')})`);
-            return answered[path];
-          },
-        });
-  const story = new Proxy({ dress } as object, {
-    get: (target, key) => (key === 'dress' ? Reflect.get(target, key) : part(String(key))),
-  });
-  return { story: story as Story, calls };
-}
-
-const scenery = { drawer: { drawInto: () => undefined } } as unknown as WreckScenery;
-const tick = (seconds: number) => ({
-  seconds,
-  clock: 0,
-  controls: { held: () => false, locked: false } as unknown as InputFrame,
-  size: SIZE,
-  viewport: SIZE,
-});
+import { FOOT_VIEW, layout, recorded, scenery, SIZE, tick } from './wreckForTests.ts';
 
 test('a wreck whose run fails to open throws from its next frame, so the story goes on past it', async () => {
   const { story } = recorded();
@@ -160,9 +110,9 @@ test('the deep shows the wreck above and the Brig with its own hands, and speaks
     ['male', 'male', 'male', 'male', 'female'],
   );
   beat.frame(tick(16));
-  assert.ok(!calls.includes('stage.play(deep, true)'), 'the voice waits for the flash to fade');
+  assert.ok(!calls.includes('stage.play(deep)'), 'the voice waits for the flash to fade');
   beat.frame(tick(1.2));
-  assert.ok(calls.includes('stage.play(deep, true)'));
+  assert.ok(calls.includes('stage.play(deep)'));
 });
 
 test('the throw overboard and the wake cut short say and sound nothing more', () => {
@@ -200,6 +150,23 @@ test('the deep cut short says nothing more and flashes no more', () => {
   beat.frame(tick(0.1));
   assert.ok(beat.done);
   assert.ok(!calls.some((call) => call.startsWith('stage.play') || call.includes('flash')));
+});
+
+test('the deep fades to black and ends only once its voice has said its last line, which may wait for a press', async () => {
+  let said: () => void = () => undefined;
+  const voice = new Promise<void>((resolve) => (said = resolve));
+  const { story, calls } = recorded({ 'stage.play': voice });
+  const beat = new Deep(story, layout, scenery);
+  for (let step = 0; step < 30; step++) beat.frame(tick(1));
+  assert.equal(beat.done, false, 'its time run, the voice still waits');
+  assert.ok(!calls.includes('stage.parts.screen.fade(1, 2)'), 'its words are not hidden under the black');
+  said();
+  await voice;
+  beat.frame(tick(0.1));
+  assert.ok(calls.includes('stage.parts.screen.fade(1, 2)'), 'said, the black comes');
+  assert.equal(beat.done, false);
+  beat.frame(tick(2));
+  assert.equal(beat.done, true);
 });
 
 test('the deep left while its heart beats stops it, however it was left', () => {
@@ -325,6 +292,23 @@ test('the wake cut short leaves the eyes open, though the director frames it onc
   assert.match(dark ?? '', /^stage\.parts\.screen\.darken\(0\)/, `${dark}`);
 });
 
+test('the wake cut short or left at any moment leaves the view sharp, though the director frames it once more', () => {
+  const lastBlur = (calls: string[]) => calls.filter((call) => call.startsWith('stage.parts.screen.blur(')).at(-1);
+  for (const into of [0, 0.4, 2, 6, 12]) {
+    const skipped = recorded();
+    const beat = new Wake(skipped.story, layout, scenery, new Promise(() => undefined));
+    if (into > 0) beat.frame(tick(into));
+    beat.skip();
+    beat.frame(tick(0.016));
+    assert.equal(lastBlur(skipped.calls), 'stage.parts.screen.blur(0)', `skipped ${into} s in`);
+    const left = recorded();
+    const leaving = new Wake(left.story, layout, scenery, new Promise(() => undefined));
+    if (into > 0) leaving.frame(tick(into));
+    leaving.leave();
+    assert.equal(lastBlur(left.calls), 'stage.parts.screen.blur(0)', `left ${into} s in`);
+  }
+});
+
 test('the beats from black wait for the wreck, and the wake and the shore fade in by their own darkening', () => {
   const coming = { ...scenery, coming: true } as unknown as WreckScenery;
   const { story } = recorded();
@@ -392,8 +376,6 @@ function stillRun(
     holdWaves: () => undefined,
   } as unknown as WreckRun;
 }
-
-const FOOT_VIEW = { 'stage.parts.footView.frame': { under: {}, over: {} } };
 
 test('a death on the way through the wreck says the player will rise at the last checkpoint', async () => {
   const { story, calls } = recorded(FOOT_VIEW);
@@ -596,171 +578,4 @@ test("in Thule's coming the fight's display (its bars, compass and keys) is hidd
   const after = hidden();
   fight.frame(tick(0.05));
   assert.equal(hidden(), after, 'shown again once the fight is on');
-});
-
-/** A run the teaching can be walked through: its arms, the boarder, the player's action and the frame's events as
- *  `state` holds them; each frame's options, each boarder stood and each word on the waves written down. */
-function taughtRun(state: {
-  arms: string;
-  boarder: string;
-  view: FighterView | null;
-  action: string;
-  events: FightEvent[];
-  fell?: readonly number[];
-}): {
-  run: WreckRun;
-  frames: { frozen?: boolean; paused: boolean }[];
-  stood: number[];
-  waves: boolean[];
-  dropped: (readonly number[])[];
-} {
-  const [frames, stood, waves] = [[] as { frozen?: boolean; paused: boolean }[], [] as number[], [] as boolean[]];
-  const dropped: (readonly number[])[] = [];
-  /** A forge that draws the iron sword and shield and no armour, as gear dresses a figure. */
-  const sets = { helm: [], pauldrons: [], cuirass: [], gauntlets: [], greaves: [], boots: [] };
-  const wardrobe = { sets, garments: [], right: ['sword_iron'], left: ['shield_kite_iron'], hairStyles: [] };
-  const shot = { eye: [0, 0, 5], yaw: 0, pitch: 0, fov: 1, near: 0.1, far: 500 } as unknown as Shot;
-  const run = {
-    frame: (controls: unknown, seconds: number, clock: number, options: { frozen?: boolean; paused: boolean }) => {
-      frames.push(options);
-      const events = state.events;
-      state.events = [];
-      const own = { action: { kind: state.action }, health: 50, x: 0, y: 0 };
-      return {
-        fight: { own, player: 1, events, foes: [] },
-        shot,
-        hints: { title: '', hints: [] },
-        standing: { kind: 'inside' },
-        figures: [],
-      };
-    },
-    arena: false,
-    boss: null,
-    outcome: null,
-    heads: () => new Map(),
-    beginBoss: () => undefined,
-    fight: {
-      player: 1,
-      parryOpen: true,
-      own: { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0, aim: 0 },
-    },
-    get gear() {
-      const where = state.arms === 'worn' ? WORN : 0;
-      return { items: state.arms === 'lying' ? [] : [{ ...ARMS_ITEM, at: where }] } as unknown as GearState;
-    },
-    forge: { wardrobe: () => wardrobe },
-    storyArms: {
-      get arms() {
-        return state.arms;
-      },
-      bow: 'none',
-      dropBow(fell: readonly number[]) {
-        dropped.push(fell);
-        this.bow = 'lying';
-      },
-    },
-    get boarderPlace() {
-      return state.boarder === 'fallen' ? (state.fell ?? [1, 2, 3]) : null;
-    },
-    get boarder() {
-      return state.boarder;
-    },
-    get boarderView() {
-      return state.view;
-    },
-    standBoarder: () => {
-      stood.push(1);
-      state.boarder = 'standing';
-    },
-    holdWaves: (held: boolean) => waves.push(held),
-  } as unknown as WreckRun;
-  return { run, frames, stood, waves, dropped };
-}
-
-test('the teaching on the wreck: bare hands until the arms are worn, a boarder once ready, its blows frozen to teach', async () => {
-  const body = { x: 0, y: 0, z: 2, vx: 0, vy: 0, vz: 0, mode: 'ground' };
-  const armed = armouredDress(FIRST_LOOK);
-  const walker = {
-    you: { dress: armed as Dress | null },
-    player: { body, yaw: 0, loadout: 0 },
-    inFirstPerson: false,
-    ridesIn: () => undefined,
-  };
-  const { story, calls } = recorded(FOOT_VIEW, { walker }, armed);
-  const state = {
-    arms: 'lying',
-    boarder: 'none',
-    view: null as FighterView | null,
-    action: 'idle',
-    events: [] as FightEvent[],
-  };
-  const { run, frames, stood, waves, dropped } = taughtRun(state);
-  const fight = new WreckFight(story, layout, scenery, Promise.resolve(run), {} as Nameplate);
-  await Promise.resolve();
-  const step = (seconds = 0.1, controls: Partial<InputFrame> = {}) =>
-    fight.frame({ ...tick(seconds), controls: { ...tick(0).controls, pressed: () => false, ...controls } });
-  const onFor = (seconds: number) => {
-    for (let held = 0; held < seconds; held += 0.5) step(0.5);
-  };
-  step();
-  assert.equal(walker.you.dress?.outfit.right, null, 'woken bare-handed');
-  state.arms = 'carried';
-  onFor(2);
-  setGearScreenOpen(true);
-  state.arms = 'worn';
-  step();
-  assert.equal(frames.at(-1)?.paused, true, "over the menu the player's presses rest");
-  setGearScreenOpen(false);
-  assert.equal(walker.you.dress?.outfit.right, 'sword_iron', 'once worn, the sword their gear has in hand');
-  assert.equal(story.dress.outfit.right, 'sword_iron', 'and in the story after the wreck');
-  onFor(2);
-  Object.assign(body, { x: 3, vx: 7, mode: 'air', vz: 1 });
-  walker.player.yaw = 1.2;
-  onFor(2);
-  Object.assign(body, { vx: 0, mode: 'ground', vz: 0 });
-  for (const action of ['attack', 'guard']) {
-    state.action = action;
-    step();
-  }
-  state.action = 'idle';
-  state.events = [{ kind: EVENT.healed, striker: 1, defender: 1 } as FightEvent];
-  onFor(2);
-  assert.ok(waves.every(Boolean), 'the waves wait');
-  assert.deepEqual(stood, [1], 'a boarder stands once the player is ready');
-  // Its first blow, 6 ticks from landing: frozen, the prompt up, the world drained.
-  const blow = (left: number) =>
-    ({ target: 1, x: 0, y: -2, action: { kind: 'attack', elapsed: 20 - left, strike: 20 } }) as unknown as FighterView;
-  state.view = blow(6);
-  const frozen = step();
-  assert.equal(frames.at(-1)?.frozen, true, 'the fight frozen');
-  assert.ok(fight.still, 'its world held still with it');
-  assert.ok(calls.includes('stage.parts.screen.showPrompt(Press F to parry)'));
-  assert.ok((frozen?.drain ?? 0) > 0, 'the world drains toward grey');
-  step(0.1, { locked: true, pressed: (key) => key === 'dodge' });
-  assert.equal(frames.at(-1)?.frozen, true, 'a dodge does not answer it');
-  step(0.1, { locked: true, pressed: (key) => key === 'guard' });
-  assert.equal(frames.at(-1)?.frozen, false, 'F answers it, and the blow plays on');
-  assert.ok(!fight.still);
-  state.view = null;
-  state.events = [{ kind: EVENT.parried, striker: 2, defender: 1 } as FightEvent];
-  step();
-  state.view = blow(9);
-  step();
-  assert.ok(calls.includes('stage.parts.screen.showPrompt(Press V to dodge)'), 'the next blow frozen for the dodge');
-  step(0.1, { locked: true, pressed: (key) => key === 'dodge' });
-  state.view = null;
-  state.events = [{ kind: EVENT.perfect, striker: 2, defender: 1 } as FightEvent];
-  step();
-  step();
-  assert.ok(calls.includes(`stage.parts.hud.toast(${reminder()})`), 'then the reminder');
-  state.boarder = 'fallen';
-  onFor(2);
-  assert.deepEqual(dropped, [[1, 2, 3]], 'the boarder down, its bow drops where it fell, once');
-  Object.assign(state, { boarder: 'standing', fell: [4, 5, 6] });
-  step();
-  state.boarder = 'fallen';
-  onFor(1);
-  assert.deepEqual(dropped, [[1, 2, 3]], 'a boarder brought down after it drops none');
-  assert.equal(waves.at(-1), true, 'the waves wait for the bow and the Storm');
-  assert.deepEqual(stood, [1], 'no other boarder');
 });

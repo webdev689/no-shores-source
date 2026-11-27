@@ -14,7 +14,7 @@ import type { Difficulty } from '../heldmap/heldMap.ts';
 import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
-import { crosshairPoint, shotBodies } from '../player/crosshair.ts';
+import { crosshairPoint, type GroundAt, shotBodies } from '../player/crosshair.ts';
 import type { Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
@@ -44,7 +44,7 @@ import { PublicView } from './publicView.ts';
 import { openNodeAlone } from './footNode.ts';
 import { hearRoom, type InDungeon, roomNameAt, unheard, useOnFoot } from './footTrips.ts';
 import { type Fallen, fallenMarks, fallenOf, reviveHere } from './footRevive.ts';
-import { ceilingAt, openAt } from './dungeonLayout.ts';
+import { feltAt } from './dungeonLayout.ts';
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
@@ -82,12 +82,12 @@ export class Foot {
   readonly text: string;
   /** The seas of the room the player joined, which a trip into or out of its dungeons keeps. */
   readonly seas: Difficulty;
-  /** The ground's height under a world point as drawn: the land's, or a dungeon's floor. */
-  readonly groundAt: (x: number, y: number) => number | null;
+  /** The ground's height under a world point as drawn: the land's, or a dungeon's floor under a height there. */
+  readonly groundAt: GroundAt;
   /** The floor a placed figure stands on: in a social space on a podium or a landing (`floorOver`). */
   readonly floor: (x: number, y: number) => number;
-  /** The ceiling over a world point in a dungeon, which the camera stays under; none on a node's land. */
-  private readonly roof: ((x: number, y: number) => number | null) | null;
+  /** The ground and the ceiling (none on a node's land) the camera keeps between: a dungeon's, the feet's storey's. */
+  private readonly camera: { readonly ground: GroundAt; readonly roof: GroundAt | null };
   private readonly module: WebAssembly.Module;
   private readonly context: FootContext;
   private readonly link: RoomLink;
@@ -154,11 +154,9 @@ export class Foot {
     [this.run, this.launchedFor] = [opened.run ?? null, opened.launchedFor ?? null];
     this.module = people.module;
     people.held.entrances.namesFrom(people.module, node);
-    const layout = opened.dungeon?.layout;
-    this.groundAt = layout
-      ? (x, y) => (openAt(layout, Math.floor(x / layout.cell), Math.floor(y / layout.cell)) ? 0 : null)
-      : (opened.groundAt ?? context.groundAt);
-    this.roof = layout ? (x, y) => ceilingAt(layout, x, y) : null;
+    const felt = opened.dungeon?.layout && feltAt(opened.dungeon.layout, () => context.walker.player.body.z);
+    const land = opened.groundAt ?? context.groundAt;
+    [this.groundAt, this.camera] = felt ? [felt.line, felt] : [land, { ground: land, roof: null }];
     this.link = parts.link;
     this.fight = parts.fight;
     this.player = new PlayerFight(parts.fight, parts.combat, context.walker);
@@ -336,11 +334,11 @@ export class Foot {
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, looking = false, hands, aspect, eye: cutscene = null }: FootAsk,
+    { paused, looking = false, hands, aspect, eye: cutscene = null, riders = [], walk = null }: FootAsk,
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
-    const { groundAt } = this;
+    const [groundAt, sea, { ground: cameraGround, roof }] = [this.groundAt, !this.dungeon, this.camera];
     const { fight, foes, effects } = this;
     const bearer = bearing(this.held.breach, fight.player);
     dressInGear(walker, forge, this.held.gear, this.dressed, bearer !== null);
@@ -361,9 +359,10 @@ export class Foot {
     const followed = this.follow.following;
     const named = followed === null ? '' : (this.otherPlayers.plateOf(followed)?.name ?? '');
     this.followable = down && (company?.length ?? 0) > 0 ? named : null;
-    const aimed = () => playerCamera(this.follow.viewed(walker.player), movement, blocks, AIM, groundAt, this.roof);
+    const aimed = () => playerCamera(this.follow.viewed(walker.player), movement, blocks, AIM, cameraGround, roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
-    const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
+    const moved = walk ?? (still ? IDLE : { ...controls, locked: true });
+    const shown = this.player.frame(moved, this.steps, seconds, clock, {
       running: true,
       hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, shotBodies(foes.placed, fight.foes), groundAt),
@@ -371,7 +370,7 @@ export class Foot {
       handsSeconds: feel.shownSeconds(fight.player, seconds),
       bearer,
     });
-    walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
+    walker.player = cameraFollowed(walker.player, movement, this.boxes, cameraGround, seconds);
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
     this.arrivals.told(events, clock);
@@ -385,7 +384,7 @@ export class Foot {
     const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const { x: fallX, y: fallY, z: fallZ } = walker.player.body;
-    const orbit = shotOfOrbit(kicked, WALK_LENS, groundAt, CAMERA_CLEARANCE_M);
+    const orbit = shotOfOrbit(kicked, WALK_LENS, cameraGround, CAMERA_CLEARANCE_M);
     const shot = this.follow.following === null ? this.falling.shot(orbit, [fallX, fallY, fallZ], seconds) : orbit;
     const eye = figuresEye(cutscene, shot.eye, firstPerson);
     const { x: eyeX, y: eyeY, nearest } = eye;
@@ -411,15 +410,14 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const [muzzle, gearNow, floor, doors] = [walker.muzzle, this.gear?.gear ?? null, this.floor, this.held.entrances];
     const { trips, speak } = this.context;
-    // The finds stand alone too, as a public event's chests do: the room's word on the gear, online or alone.
+    // The finds and drops stand alone too, as a public event's chests do: the room's word on the gear, online or alone.
     const gearHeard = this.held.gear ?? this.held.alone;
     const found = this.finds.frame(gearHeard, clock, !!this.dungeon, paused);
     const marked = markedHere(gearNow, countersOf(this.node), floor, trips.props(), speak, doors.entrances);
     marked.push(...found.marks, ...fallenMarks(fight.others));
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
-    // Drops are drawn online or alone, as a public event's chests are.
-    const laid = ((this.held.gear ?? this.held.alone)?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
+    const laid = (gearHeard?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const dropped = dropsLaid(this.drops, laid, clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),
@@ -446,6 +444,7 @@ export class Foot {
       muzzleOf: () => (muzzle ? screenMuzzle(kicked, aspect, muzzle) : figureMuzzle(feet, walker.you.facing)),
       origin: shot.eye,
       groundAt,
+      sea,
       drawn: { foes: foes.placed, others: this.otherPlayers.placed },
       more: dropped.marks,
       riders: [{ id: fight.player, feet, facing, mounted, boosting }, ...ridersOf(others, fight.others)],
@@ -470,10 +469,11 @@ export class Foot {
       },
       others: this.otherPlayers.placed,
       foes: foes.placed,
-      ground: { blocks: this.boxes, groundAt },
+      ground: { blocks: this.boxes, groundAt, sea },
       landed: dropped.landed,
       crates: this.held.gear?.crates ?? null,
       heard: [...shownPublic.sounds, ...found.sounds],
+      riders,
     });
     const playerFall = { id: fight.player, feet, tumbling: !!walker.fall?.tumbling };
     const heard = { ...playerFall, lying: walker.fall?.tumbling === false };
@@ -494,10 +494,11 @@ export class Foot {
       patrol: this.node,
       entrances: this.held.entrances,
       module: this.module,
+      feet: walker.player.body.z,
     };
     const placeUse = this.outpost
       ? this.outpost.uses(x, y, (asked) => fight.askGear(asked), walker.player.facing, controls.held('use'))
-      : (this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null);
+      : ((this.uses ?? this.context.passageUses?.())?.(x, y, (asked) => fight.askGear(asked)) ?? null);
     const counters = countersOf(this.node);
     // A fallen ally beside the player comes first, as Destiny's revive does, but for a Breach's Lodestone lying
     // counting down; then a public event's chest, then a find.
@@ -511,7 +512,8 @@ export class Foot {
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
     const gathered = this.using?.held ?? this.hold.share(clock, able && !mounted, gearHeard);
-    this.prompt.show(this.using?.words ?? null, revive.share ?? gathered, this.using?.idle === true);
+    const using = this.using;
+    this.prompt.show(using?.words ?? null, revive.share ?? gathered, using?.idle === true, using?.under ?? null);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;

@@ -95,7 +95,30 @@ patrol and mission nodes of the edits files, each once. The rooms read the list 
 reaches them at the next bake: a merge redeploys them, and locally `npm run bake` or `npm run server` bakes first.
 
 A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
-`&view=` picture it ([[Toolkit]], "Browser QA").
+`&view=` picture it ([[Browser QA]]).
+
+## Regions
+
+Every island is cut into three regions
+([[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]],
+[[Passages as Claude Builds Them]], "The regions"), each holding its own nodes, as
+`content/world/regions.json` lists them: its name, its centre (a point its nodes lie round: its patrol zone's where it
+has one), its anchorage, and its nodes, each in the region whose centre is nearest. The anchorage lies on the bearing
+from the centre that leaves the island's outline soonest, walked out in whole kilometres on bearings 5 degrees apart
+(the first such bearing from east, turning south, on a tie), 3 km past the first point off the land. The bake's tests
+hold the table to these rules. Each point of an island's land lies in the region of that island whose centre is
+nearest. Saltmere's three are the Beacon Shore (Overlook and the Saltgrass Downs), the Weirlands (the Gullwing
+Vale) and the Grey Reach (the Driftwood Moors), a patrol zone in each; every other island keeps one patrol zone, the
+one by its port city, in its first region, and its other two regions hold nodes alone. Each region holds three
+outpost sites, its outpost slots ([[Outposts]], "The slots"). An instance's gate leads only
+from a patrol zone of its own region ([[Layouts]], "How a layout is planned"); one in a region with no patrol zone is
+landed at from the sea.
+Each patrol zone of an island holds a gate toward each other one: Saltmere's three link each to both others
+([[Layouts]], "Gates"). At sea the held map lights the regions of the island whose waters the ship is in and sails
+for their anchorages ([[Held Map]], "Choosing"). Each region has its own view over the island: docked or ashore, the
+island's tiles and the view's framing are the places of the region the ship lies off, whose centre is nearest it, and
+a click on a region's land asks to dock only in the port's region, elsewhere to go ashore on that region ([[Interface]],
+"The island's tiles"; [[Game]], "Landings"; [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]).
 
 ## Waters
 
@@ -108,10 +131,13 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
   finite number has no water.
 - Each water's holder and name come from the table `WATERS`, by continent id. Claude named the waters; the owner can
   change any name.
+- Home waters reach `HOME_REACH_M`, 10 km, from their island's coast; past it the Grey Tithe holds the open sea of
+  the Lantern Sea, at its band ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). `water_at` gives the point's holder; the table gives each
+  water's, as near its coast.
 
 | Continent | Holder | Name |
 |---|---|---|
-| continent-1 | Home: no hostile ship | The Lantern Sea |
+| continent-1 | Home within 10 km of its coast, no hostile ship; the Grey Tithe past it | The Lantern Sea |
 | continent-2 | The Lattice | The Cairn Straits |
 | continent-3 | The Lattice | The Elmwater |
 | continent-4 | Grey Tithe | The Sunscorch Coves |
@@ -124,7 +150,7 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
 - The six ruined cities' waters (Cairnwatch's, Elmhaven's, Goldreach's, Mistfall's, Windmere's and Fenhallow's) are
   the Lattice's, and the Grey Tithe's ships sail them; the Grey Tithe holds the two living ports' waters past home,
   Sunspire's and Rimeholt's ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Every
-  point of a water is held as its island's water is. The doors name a holder "home", "grey-tithe" or "lattice".
+  point of a water is held as its island's water is, but the Lantern Sea's past 10 km. The doors name a holder "home", "grey-tithe" or "lattice".
 - `borders()` says which waters touch: the pairs whose sea cells lie side by side on a 10 km grid. On today's layout
   there are 17: 1-2, 1-3, 1-4, 1-5, 1-8, 1-9, 2-5, 2-6, 2-9, 3-7, 3-8, 3-9, 4-5, 4-8, 5-6, 7-8 and 7-9.
 - `grid(cell_m)` judges the frame at each cell's middle, row by row from the north-west: one byte a cell, the
@@ -143,7 +169,9 @@ Friendly ships sail between the port cities all the time, seen from land and sea
 The numbers are Claude's, under the owner's "Friendly ships should dynamically travel. Visible on land and sea".
 
 - **Main ports.** Three port cities remain: Overlook in home waters, Sunspire and Rimeholt in the Grey Tithe's
-  ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). `ports.rs` holds the list
+  ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). Sunspire's and Rimeholt's seas are locked
+  until their islands are named; the merchants still sail the lanes to them
+  ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]). `ports.rs` holds the list
   (`MAIN_PORTS`, `is_main_port`) for the traffic, the city crate and the page; the other six cities are no ports.
 - **Ports.** The caller passes in the cities (the crate reads no files); the traffic keeps those that are port cities,
   on a continent the layout holds, with a roadstead clear inside the frame, in the order given.
@@ -156,8 +184,7 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
   to their own sides. A berth that would come within 200 m of one another course laid there first moves out 200 m at a
   time, at most 900 m out, within the roadstead's 1 km of open water (`BERTH_M`). Each of a course's two ways then runs
   from its departure berth along the course to its arrival berth. Over a day no lying ship comes within 150 m of
-  another ship at any of the three ports, and none within 225 m of a roadstead (`traffic_tests.rs`); before the
-  berths two or more hulls lay on Overlook's roadstead at once a third of the time.
+  another ship at any of the three ports, and none within 225 m of a roadstead (`traffic_tests.rs`).
 - **Routes.** Between every pair of the port cities, first with second, first with third, second with third, so
   each port trades with both others and the lanes cross the most waters; each pair sails up to three courses ([[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]).
   The shortest is planned round land: A* over a mask of 5 km cells whose middles are at least 3 km clear of every
@@ -175,7 +202,7 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
 - **Schedule.** On each course a ship leaves each end every 3,000 s of world time, departure n at its course's start
   plus n × 3,000 s, the nine courses' starts a ninth of that apart, so two courses that share a stretch out of a port
   (each of Sunspire's and Rimeholt's ways out carries a course to each of the other two ports) never send ships out
-  together; each sails at 60 m/s, the pace dial's slowest step, to the other end. There it lies at its berth 600 s
+  together; each sails at 60 m/s, the slowest pace of the sea's ladder, to the other end. There it lies at its berth 600 s
   (`DWELL_S`), heading as it came in, and is then gone. About five ships are within 60 km of Overlook's roadstead at
   any moment, counting those lying there (5.2 on a day's mean). World time is seconds since the Unix epoch, passed in,
   so every machine computes the same ships for the same time. The waters' table the door returns carries the pace
@@ -196,8 +223,9 @@ source of each.
 
 | Door | TypeScript | What it answers |
 |---|---|---|
-| `waters_open` | `open(layoutText, ports)` | The table: each water's continent index, id, name, holder and island's level band; the borders; the port cities' ids; each port city's id, name and roadstead; each route's ports, length and path |
+| `waters_open` | `open(layoutText, ports)` | The table: each water's continent index, id, name, holder and island's level band; the borders; the port cities' ids; each port city's id, name and roadstead; each route's ports, length and path; the sea's facts (the reach a hostile meets within, the furthest one holds a voyage, a port's repair reach, home waters' reach, how far short a travel lays the ship, the ships' names) |
 | `waters_at` | `waterAt(point)` | The water at a point as one grid byte; null on land |
+| `waters_holder` | `waterAt(point)` | Who holds the sea at a point as one byte (0 home, 1 the Grey Tithe, 2 the Lattice, 255 none): the Lantern Sea past 10 km the Grey Tithe's |
 | `waters_grid` | `grid(cellM)` | Columns and rows as u32s, then a byte a cell; cells finer than 1,000 m, or not a finite number, are refused |
 | `waters_ships` | `shipsNear(centre, radiusM, timeS)` | The ships near a point, 11 f64s each: id, route, from port, to port, hull, x, y, way x, way y, metres sailed, route length |
 | `waters_ship` | `ship(id, timeS)` | One ship by id, packed the same; nothing when it is not sailing |

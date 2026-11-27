@@ -56,11 +56,14 @@ code:
   - crates/room/src/friendlies.rs#Friendlies
   - crates/room/src/threat.rs#held_pace
   - client/src/game/seaCombat.ts#SeaCombat
+  - crates/naval/src/night.rs#night_sight
+  - crates/room/src/clash.rs#light_fight
   - client/src/ships/shipCrew.ts#captainInFight
   - crates/naval/src/ranks.rs#SCALES
   - crates/naval/src/ranks.rs#Commission
   - crates/room/src/sighting.rs#rank_for
   - crates/room/src/sighting.rs#sight_for
+  - crates/room/src/sighting.rs#come_out_for
   - crates/room/src/chart.rs#Charted
   - crates/room/src/clash.rs#Clash
   - crates/naval/src/fight.rs#among
@@ -80,6 +83,7 @@ code:
   - client/src/network/seaHarbour.ts#harbourOf
   - crates/naval/src/fight.rs#ambush
   - client/src/game/prologue/fightAtSea.ts#StoryFight
+  - client/src/ships/fightLamps.ts#FightLamps
 ---
 # Naval Combat
 
@@ -308,6 +312,25 @@ much hull, canvas, men and fire from a ship, whatever hull fires it. Each gun re
 balls fly from its own mouths, a ball meets its own hull's and sails' boxes, and it rams, is rammed and is kept apart
 by its own hull's box. A captain sizing up a ship reckons their hit share against that ship's hull.
 
+## Night sight
+
+By night a ship is seen as far as her lanterns show her ([[Ships' Lanterns Come Over From DFO]], [[Sailing]],
+"Lanterns at night"): a lit ship to 650 m and a dark one only to 220 m, never farther than by day (`night_sight`). Night
+is when the daylight is 0.375 or less, as the lamps are half up through the dusk ([[Sky]]).
+
+- **The captains' lookouts.** Each room tells its fights the daylight where they lie (`light_fight`), and a captain
+  sees a ship as she shows: its 750 m by day, 650 m for a lit one at night, 220 m for a Tithe ship or a friendly one
+  running dark; the one it fights it keeps on to 1.35 times that.
+- **The player's.** The page asks the same rule, compiled to WebAssembly, of the sky where the eye is
+  (`SkyLaw.nightSight`): by night the compass marks a ship, the sea marks a hostile ship and the voyage names one, a
+  chase picks one, and the held map marks another player's ship, only within that sight of the player's ship; by day
+  each as far as ever.
+- **The sea's.** It holds as a ship is sighted at sea
+  ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]): a player joins a
+  clash of a Tithe ship and a merchant from 750 m by day, and by night within 220 m of the Tithe ship and 650 m of the
+  merchant, 220 m once she runs dark (`clash::sighted`); and a hostile ship at sea comes for a player, whose ship always
+  shows her lanterns, only within 650 m by night (`come_for`), each read under the daylight where it lies.
+
 ## How a fight ends
 
 At sea ([[Server]], "The sea"), each a rule the owner chose
@@ -316,7 +339,7 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
 - **Sinking, and what floats** (`flotsam.rs`). A captain's ship that goes down lays, where it went, 3 pieces for a
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought it, kept for that player alone as
   a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one of
-  their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
+  their pieces, anywhere along the way it sailed that tick, gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
   floating are theirs again (`Sea::own`), and so is what a fight they fought still owes them (its flotsam, ship XP and
   bounties when a captain goes down), once however often they joined it. A ship drops as one foe of its rank at its
   level does (its water's, raised by the sea's tier), by the gear loop's own law ([[Gear]], "Drops"): the first piece
@@ -394,7 +417,8 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
 - **Kept damage.** A player's ship's hull, canvas and men are kept as shares of whole, with their berth at sea and in
   their character (`ship`, in ten-thousandths), across sessions, until repaired; it starts every fight with them, and
   its voyage sails at its pace times the canvas it keeps (never under half), in the room and the page alike. Where
-  the sea last kept it is kept too (`ship_at`, to the metre): back at sea it lies there, whatever the page first
+  the sea last kept it is kept too (`ship_at`, to the metre, and `ship_heading`, in thousandths of a radian; none for
+  a ship left mid-fight, which lies at a port): back at sea it lies there, turned as it lay, whatever the page first
   said, and the page is told (`MOORED`). The sea sails no course of the ship's before the accounts have answered for the player's
   character: a course asked meanwhile waits, and sails once they answer with none kept (or the page sends an input
   before its token); given back later, even mid-fight, the ship is moored where it was kept, that fight over for it. A fight's waters run past the world's
@@ -473,14 +497,23 @@ fire.
 Only the look of it: the rules say what happened, in the fight's events and its view, and `FightFeel` turns each into
 puffs (`Effects`, after DFO's `navalEffects.js`), harm kept on the ship it struck (`ShipHarm`, on its rig), flotsam,
 sounds and, on the player's own ship, jars of the eye. Smoke, spray and foam are soft round puffs blended over what
-is behind them, smoke swelling as it thins and carried by a 4 m/s wind; flash, flame, embers and glints are light
-added unlit; splinters, shreds and planks are solid and lit. The puffs are drawn after the water, far to near, hidden
+is behind them, lit by the sky and the lamps near (a night fight's smoke is dark but where the guns flash), smoke
+swelling as it thins and carried by a 4 m/s wind; flash, flame, embers and glints are light added unlit; splinters,
+shreds and planks are solid and lit. The puffs are drawn after the water, far to near, hidden
 where the scene stands nearer (`puffView.ts`), at most 2,048 a frame, the nearest kept, and fading softly to nothing
 over the last 2.5 to 0.3 m to the eye (`nearFade.ts`), as the fires' smoke does; their floats are written each frame
 into arrays the view keeps (`PuffScratch`), so laying them makes nothing new. Each glow gives its stepped halo through
-the light layer, as the land's bright things do. DFO's lights on the hulls round a flash (26 m for 0.12 s) or a burning ship (16 m, three at
-most) are kept as the effects' `light` marks but not drawn: the ships' shader takes no point lights yet, and the
-light layer drew their whole reach as a disc over the sky and sea. At most 900 puffs
+the light layer, as the land's bright things do. DFO's lights round a flash (26 m for 0.12 s), a magazine's blast
+(52 m for 0.6 s) and a burning ship (16 m, three at most, flickering from 0.6 of its full to its full with the
+lamps' `flicker`, seeded by its ship) are the effects' `light` marks, cast as the sky's lamps for as long as each
+lasts, steady as lamps, their marks' brightness moving them (`FightLamps`, taken up with the ships' lanterns a frame
+later, and by the story's fight on its own; [[Sky]], "Lamps at sea";
+[[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]): they light the hulls,
+the sea round them and the people on deck, lit as the daylight fades as every lamp is, and are never drawn as puffs,
+whose halo of their whole reach would band the sky and sea
+([[Every Light Is Redesigned and Animated, and Each Casts Light]]). Among the sixteen they, the ships' lanterns and
+the city's lamps take their places by nearness to the eye, counting their reach, so a broadside beside the eye
+outshines the lanterns farther off. At most 900 puffs
 live at once; past that, spray, foam and glints go first, then splinters, shreds and embers, then flashes and planks,
 and smoke last.
 The view's own numbers stand in where no event says more: a ship's canvas's share left holes its sails, a ship `struck`
@@ -571,32 +604,42 @@ as hostile to the player, so the task does not count it among the ships left to 
 ## At sea
 
 The sea room ([[Server]]) sails hostile ships among the players' on the [[Overworld]]: DFO's director, trimmed to
-the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
+the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]). A ship lying parked while its player is
+ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chases or meets it.
 
-- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s; a roll that
-  falls due while they fight comes as the fight ends. A travel to other waters waits the next roll at least half a
+- **The Harbourmaster's hulk** (`sea_lessons.rs`): a captain on the opening's gunnery lesson who sails within 900 m of
+  the struck Tithe Sloop moored off Overlook is put into a fight of their own with it, as one met at sea is: it lies
+  hove to, fires nothing, is never scuttled nor boarded, leaves the fight once they are 1,500 m off it (900 m once
+  their ball is in), and lays and pays nothing as it goes down ([[Quests]], "The lessons").
+
+- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 30 to 70 s
+  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]); a roll that
+  falls due while they fight comes as the fight ends. Every travel, in the ship's own water or to another, waits the next roll at least half a
   minute, never sooner than it would have come, so travelling on brings no more ships than sailing. While fewer than three hostile ships sail within their sight of
   them, a roll brings a hostile ship by the band of the water the player is in, so their water sets how many come
   (`hostile_chance`): 0.18 in the first island's band (1 to 4), rising evenly by 0.0225 a band to 0.36 in the last (26
   to 30); a water with no band rolls as the first. (DFO's open sea brought one 0.24 of the time in every water.)
   The water at the player's ship decides who comes ([[The Waters Come From the Islands]], [[World Map]], "Waters"):
-  none in Overlook's home waters (the roll is spent), a Tithe ship in every other, the Lattice's waters too
+  none in Overlook's home waters, within 10 km of its coast (the roll is spent), a Tithe ship in every other, the
+  Lantern Sea past them and the Lattice's waters too
   ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Its rank comes by the lowest level of its water's band:
 
   | Band starts at | Minor | Major | Elite | Miniboss |
   |---|---|---|---|---|
   | 1 (and none) | 0.50 | 0.40 | 0.10 | 0 |
-  | 4 | 0.45 | 0.42 | 0.13 | 0 |
-  | 7 | 0.40 | 0.43 | 0.17 | 0 |
-  | 10 | 0.35 | 0.45 | 0.20 | 0 |
+  | 4 | 0.34 | 0.44 | 0.22 | 0 |
+  | 7 | 0.30 | 0.47 | 0.23 | 0 |
+  | 10 | 0.27 | 0.49 | 0.24 | 0 |
   | 13 | 0.25 | 0.45 | 0.25 | 0.05 |
   | 16 | 0.20 | 0.45 | 0.27 | 0.08 |
   | 19 | 0.15 | 0.45 | 0.30 | 0.10 |
   | 22 | 0.13 | 0.43 | 0.32 | 0.12 |
   | 26 | 0.10 | 0.40 | 0.35 | 0.15 |
 
-  A row for each island's band; the rows at 4, 7, 16 and 22 lie evenly between the five they came from, so each rank
-  moves one way from band to band (Minors fewer, Elites and Minibosses more).
+  A row for each island's band, each rank moving one way from band to band (Minors fewer, Elites and Minibosses
+  more); the rows at 16 and 22 lie evenly between those beside them, and those at 4, 7 and 10 send few enough Minors
+  and enough Elites that an hour at sea keeps within the band from level 5
+  ([[The Sea and the Abyss Run Again Are Retuned Into the Band]], [[Activities]], "The band").
 
   No Boss comes by a roll: the Boss Frigate sails only at the Grey Tithe's sea strike, which is not built. Its level is
   drawn evenly from the band, as a garrison foe's is, and raised by the sea's tier as a foe's on land: two levels in an
@@ -608,20 +651,26 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the game's worker's from its
   own), so each sea sends its ships in an order of its own, as DFO draws its rolls.
 - **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at
-  rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100, so one met head-on stays in
-  sight half a minute and more. Each keeps the largest sight it has been given, from the pace of the player nearest
-  it, and goes once no player is within 1.1 times it.
-- **Where.** Between 0.9 and 1 of its sight out from the player, within 60 degrees of their heading while under way and
-  anywhere at rest; a bold ship, under way above ×10, within its meeting cone off their course shrunk to 0.8 of it
-  (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
+  rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100 and 86.4 km at ×200, so one
+  met head-on stays in sight half a minute and more. Each keeps the largest sight it has been given, from the pace of
+  the player nearest it, and goes once no player past home waters is within 1.1 times it.
+- **Where.** Between 0.9 and 1 of `max(1 000 m, 30 s × (12 + 2.4) m/s × pace)` out from the player (`come_out_for`):
+  1 km at the helm and at rest, 2.2 km at ×5 and its sight from ×12 on
+  ([[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]); within 60 degrees of their heading while under
+  way and anywhere at rest; a bold ship, under way above ×10, within its meeting cone off their course shrunk to 0.8 of
+  it (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
   ten tries that fit, it takes the one nearest a friendly lane (a leg of a route between the port cities,
   `world::traffic`) within 50 km, heading along it the way nearer its slant toward the player; with no lane that near,
-  the one nearest a coast, heading across the player's waters on a slant. A hostile ship sails at the Sloop's 2.4 m/s times its rank's way (Minor 0.9, Major 1, Elite 1.1,
-  Miniboss 1.2). Blocked by land or the edge of home waters, which no hostile ship enters (one a clash left inside them may
-  sail out), it takes the open heading nearest its last, a twenty-fourth of a turn at a time
-  either way, so it follows the coast round; with none open it goes about. Its temper is its
-  seed's: an Elite and a Miniboss are always bold, any other one in four.
-- **Coming for the player.** A bold ship that has sighted a player who is not fighting comes for them (`come_for`):
+  the one nearest a coast, heading across the player's waters on a slant. A hostile ship sails at the Sloop's 2.4 m/s
+  times its rank's way (Minor 0.9, Major 1, Elite 1.1, Miniboss 1.2). Blocked by land or the edge of home waters, which
+  no hostile ship enters (one a clash left inside them takes only steps away from their coast, so it sails out), it
+  takes the open heading nearest its last, a twenty-fourth of a turn at a time either way, so it follows the coast
+  round; with none open it goes about. Its temper is its seed's: an Elite and a Miniboss are always bold, any other one
+  in four.
+- **Home waters end a fight.** Every captain afloat and unstruck in a fight whose players all lie inside home waters
+  breaks off and leaves it, as one out of reach does ([[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]).
+- **Coming for the player.** A bold ship that has sighted a player who is not fighting (by night only within 650 m,
+  "Night sight") and not in home waters comes for them (`come_for`; home waters shelter a player whole, [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]):
   it steers to intercept, heading to where their ship will be when it can reach it at its way on that player's
   clock (lead pursuit; straight at them where it cannot reach them, as when they sail away faster), turning at most
   at a Sloop's helm rate, 10 degrees a second of its clock. It keeps after the one it came for while they stay in
@@ -634,7 +683,8 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
 - **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of it
   begins the fight with it whatever its temper (outside home waters), as a bold ship that meets a player does; a wary
   one runs as captains run. The room lets go of the chase once it has left the sea.
-- **Its clock.** As DFO's sea keeps the world's time, a hostile ship sails on the clock of the player nearest it: their
+- **Its clock.** As DFO's sea keeps the world's time, a hostile ship sails on the clock of the player nearest it past
+  home waters, who keeps it at sea (a player inside them sets neither its clock nor its sight): their
   voyage's pace as it is held (144 m/s at ×60), the world's own while they lie at rest, and real time where another
   player sails within 1.2 km of that one, a shared sea.
 - **The voyage held.** As DFO holds a fast journey, a voyage eases down as a hostile ship comes near along its way: its
@@ -658,16 +708,18 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   friendly ship afloat (at once, one that strikes) sails on for its route's far port at the traffic's 5 m/s by what
   is left of its route (back to its leg first, then corner by corner), round any coast in its way, home waters or not, kept while a player is within 1.1 times its sight and gone at its port or once none is. Two that
   parted meet again only once they have been 750 m apart. None meets a friendly ship lying in Overlook's home waters,
-  which hold no hostile ship. A fight with no ship a player keeps at sea leaves the sea, as a ship does. Two Tithe
+  which hold no hostile ship. A fight with no ship a player past home waters keeps at sea leaves the sea, as a ship does. Two Tithe
   ships never meet.
-- **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight, or of a fight with players in
-  it, joins it: their ship heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
+- **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight
+  (by night as far as her lanterns show her, "Night sight"), or of a fight with players in it, joins it: their ship
+  heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
   its captains choose whom to fight by their own law, the one each fights reckoned nearer ("How a fight ends"). It is
   won once every Tithe ship is beaten: each pays as a Tithe ship beaten, nothing is paid or lost for the friendly ship
   (`SeaFight::friends`), and one sunk lays nothing that floats. Afloat as the fight ends, it sails on for its port.
 - **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets
   them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's ship hove to
-  (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships, so the Sloop's stem
+  (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships (a press, the fire,
+  a load, a climb or a burst, is kept until a step uses it, however many orders come in the tick), so the Sloop's stem
   may ram the captain's, on waters made from the coasts (open sea, the swell on it, dry land on them), until every
   captain has sunk or gone; its last view is shown once, in the next snapshot however many ticks the room caught up before it (`Fights::sent`),
   and the players sail on from where it left them, keeping their
@@ -676,7 +728,7 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, C to
-  brace, and Shift to burst; the sea's own wait for its end, and the sea bar is hidden. Where the editor's panel lists its lines,
+  brace, and Shift to burst; the sea's own wait for its end, and the ship's console is hidden. Where the editor's panel lists its lines,
   the game's HUD shows the fight's readout, its task in the tracker and DFO's messages as notices ([[Interface]]).
   Every captain in it is drawn with their name over a bar of their hull, their plate as far over their highest sail as the
   Sloop's stands over its own (`plateOverM`). Then the view pans back up. Hostile ships at sea
@@ -820,6 +872,8 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 - A captain's odds and the hulls' hull points (`captain::odds::hit_share_at`) count its gunners' scatter and window,
   not what they misjudge each volley, so a captain reckons itself a better shot than it is when it chooses to fight
   or run, and each hull's hull points are scaled to an exact gunner's fire.
+- By night a bold hostile ship still meets a player within 750 m, and a player still joins a fight with players in it
+  from 750 m, as by day: night sight holds for a hostile ship choosing whom to come for, not for its meeting them.
 - Every Tithe captain sails their rank's hull, a friendly ship the traffic's; there is no iron ram bow (the Tithe Ram)
   and no Fluyt yet, and no other classes.
 - A player's view of a fight shows its captains; the other players' Sloops in it are drawn from the sea's ships, where

@@ -25,6 +25,7 @@ code:
   - server/accounts/finding.ts#Queue
   - client/src/game/companyFinder.ts#findCompany
   - crates/gear/src/playlist.rs#Playlist
+  - crates/gear/src/band.rs#patrol
   - crates/room/src/playlist_run.rs#playlist_run
   - server/accounts/playlists.ts#playlistRun
   - client/src/game/playlistWords.ts#playlistScreenOf
@@ -84,7 +85,7 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 | Activity | What | Tier and level | Opens |
 |---|---|---|---|
 | Dungeon of the day | One patrol dungeon on each island, drawn each day | The seas', at its island's band | Normal at any level; Elite seas from 10, Abyss seas from 20 |
-| Bounties | The town's six and the pledged faction's three, from the board, drawn each day | | After the prologue; a faction's once pledged to it |
+| Bounties | The town's eight (the passages' two among them) and the pledged faction's three, from the board, drawn each day | | After the prologue; a faction's once pledged to it |
 | Elite Dungeons | The 18 named dungeons | Normal, at their island's band | After the prologue |
 | Elite Dungeon of the week | One of the 18, with one modifier | Elite, foes at 26 | Campaign's end, level 24 |
 | Abyss Dungeon of the week | Another of the 18, with three modifiers | Abyss, foes at 30 | Campaign's end, level 28 |
@@ -93,7 +94,8 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 | Breaches | The Drowned Vale, launched to the Sunken Gate ([[Breaches]]) | Normal, foes at 26; Hard, at 30 | Campaign's end, level 24; Hard at 28, once Normal is won |
 
 - **Draws** are `gear::activities`, seeded by the clock's day or week number alone, so every room and page sees the
-  same. Each island's dungeon of the day is one of its patrols' nine, evenly; the day's modifier is one of the eight,
+  same. Each island's dungeon of the day is one of its patrol zones' dungeons (Saltmere's nine, three on every
+  other island), evenly; the day's modifier is one of the eight,
   and Burn's Art one of the three. The week's two are two of the 18 Elite Dungeons, never the same one; the Elite's
   has one modifier, the Abyss's three of different kinds.
 - **The dungeon of the day** carries one modifier of the day at Elite and Abyss.
@@ -115,7 +117,12 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 - **Its encounters**: two or three seals in rooms along its walk (the Litany, the Weighing, the Ascent, the Holdfast),
   its Boss standing only once every seal is broken, and a Court of wards, anchors, the Reckoning and Fury round it
   ([[Dungeons]], "Encounters").
-- **Its node** keeps its open-air approach and gains the entrance.
+- **Its node** keeps its open-air approach and gains the entrance. A run at Normal may also be started at sea, from
+  the island's tiles ([[Interface]], "The island's tiles"): a click on its tile opens the entrance's card from the sea
+  (`ActivityScreens.seaCard`), whose Enter goes into the company's run of it started at sea where one plays it, else a
+  new one (`dungeonTrips` `fromSea`), and whose Find a Company searches `node-<id>--sea`. Named `--sea` ([[Server]],
+  "Runs"), it is gone into from the sea alone and left back to it, never by the entrance ([[Server]], "Where a character
+  comes from"). The card closes once the player leaves the sea.
 - **For four players**, matched together ([[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]).
 
 ## Runs and companies
@@ -132,7 +139,8 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
   room keeps their character, a player's inputs are taken in their order and stand still (`Room::hold`). It is forgotten
   a minute after its last player leaves.
 - **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band (tens of
-  levels, from the level their room last kept), from the entrance's card, and for each playlist by its own bands
+  levels, from the level their room last kept), from the entrance's card (one at Normal also from the sea, its run
+  marked `--sea`), and for each playlist by its own bands
   from the Playlist ("The Playlist"). A run starts with four, or with fewer after
   a minute's wait, never with two where one blocks the other, and those found go into it together ([[Accounts]],
   "Find a Company"). A group found is no company: it shares that one run alone.
@@ -144,10 +152,11 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 The owner's decision is [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]]; how it is shaped is
 Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
 
-- **Where.** A Playlist mark stands beside the harbour of each port city, Overlook, Sunspire and Rimeholt, at sea and
-  over its island's side however the island is reached, open whether or not the city's social space is ([[Overworld]],
-  "Marks"). Choosing it opens the Playlist screen for that port ([[Interface]], "The Playlist") rather than sailing
-  or landing. The screen and its queues are the same from every port.
+- **Where.** The Playlist's banner stands among the island's tiles docked at each port city, Overlook, Sunspire and
+  Rimeholt, open whether or not the city's social space is
+  ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]], [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]; [[Interface]], "The
+  island's tiles"); it is marked nowhere at sea or on the map. A click on it opens the Playlist screen for that port ([[Interface]],
+  "The Playlist"). The screen and its queues are the same from every port.
 - **What it holds.** The Elite Playlist and the Abyss Playlist, then the Elite Dungeon of the week and the Abyss
   Dungeon of the week. The Journal's lines for the week's two say they are queued from the Playlist beside any port.
 - **A playlist's run** (`gear::playlist`, `room::playlist_run`) is one of the 18 Elite Dungeons, laid as its run at
@@ -227,7 +236,7 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
 
 - **Each character keeps its day and its week** with the account (`Character.activity`): `today` holds the tiers of
   the dungeon of the day it has cleared, its bounties, each by its board place with its count, and the places it
-  turned in (`turned_in`), the town's six under those keys and the factions' under keys of their own
+  turned in (`turned_in`), the town's eight (its six and the passages' two) under those keys and the factions' under keys of their own
   (`faction_bounties`, `faction_turned_in`), so a room built before them carries them through a rollback; `this_week`
   holds whether it cleared each of the week's two dungeons, whether it holds the Abyss boon, the playlists' clears
   counted, and each Breach's finds paid at each tier (`breaches`, one bit each: its encounters in order, then its hidden
@@ -260,6 +269,76 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
   kills and cache alone.
 - **A clear again** in the same period pays its kills and its cache as any run, no more.
 
+## The band
+
+Every activity's rewards an hour are measured and kept within one band, as the owner asked ("measure it for sure. We
+need to keep all our content within this band", [[Passages Web Out From the Patrol Zone Across Its Island]]).
+
+- **What is measured** (`gear::band`): an hour of each activity at every fifth level from 5 to 30 where it is open,
+  for one player, as XP, Aurem, Vestiges and items as themselves by colour, materials (fragments, the island's
+  resources, the ship's materials) and Essence: a patrol zone (its garrison fought and its nodes gathered while each
+  group waits to stand again, its four public events an hour and their chests, the day's first heroic chest), a
+  patrol's dungeons, the Elite and Abyss Playlists, the week's Elite and Abyss Dungeons run again, the sea (its ships
+  sighted, fought and sunk, their salvage) and the passages at each depth whose foes stand at a player's level or over
+  it (their kills, caches and lamps, the haul's finds less a death's share, one in twenty at the first depth to one in
+  four at the twentieth). Each is reckoned from the rules' own pay, on average, never by dice; the day's and the
+  week's rewards are spread over fourteen hours of play a week.
+- **The times** are named constants, each saying where it was measured: one scripted player in the room crate
+  (`room::band_measure_tests::measure_the_pace`, held whole, walking to the nearest foe, a dungeon by the same walk a
+  passage zone under ground takes, and swinging every half second) took 12 s a foe in a patrol zone's garrison, 28 s
+  in a patrol's dungeon over 17 foes and 27 s in an Elite Dungeon over 22; playing a passage zone's deal to done
+  (`room::deal_measure_tests::measure_the_deals`) it took 202 s a zone over about six foes, 38 s a foe, in 43 of 45
+  zones, the two left each a foe that climbed a hollow's cliff ([[Passages]], "Limits"); a passage zone's foe pays
+  three quarters of a kill (`lamps::KILL_SHARE`); a Boss's and a Miniboss's fights are `measure_blows`'; the sea's
+  sightings and fights are the balance pass's. A run's level gap over its player lengthens its time by the share
+  of a blow the gap leaves (`power::gap`). A lamp's zone, one in five of a dive, stands its guard alone; a vault is
+  dealt only under ground, half the zones.
+- **Loot** is weighed by colour, each twice the one below, as each colour drops half or less as often.
+- **The band**, against a patrol zone's hour at the same level: XP and Aurem 0.7 to 2, loot 0.75 to 5
+  (`PAY_BAND`, `LOOT_BAND`), the owner's order asking harder content to drop more. A test fails for any activity
+  outside it, and another if the passages drop the most loot at any level or pay the most XP at every level. Every
+  activity stands inside it, as the owner chose ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]): the
+  sea's low bands send few Minor ships and more Elites ([[Naval Combat]]), so the sea at level 5 pays 0.78 of the patrol
+  zone's XP; and the week's dungeon run again by a player who has taken its first clear that week pays a share of its
+  kills' and its cache's XP, Aurem and chances (`Weekly::run_again_share`): the Abyss's four fifths, the Elite's whole,
+  so the Abyss's at level 30 pays 1.72 of the XP. Beside a patrol zone's kills
+  ([[Kills Drop Four Times as Often, and a Miniboss Half the Time]]), a ship's piece holds a module often enough
+  (`ship::found::holds`) that the sea's loot stands at 0.88 to 1.31 of the patrol zone's. The passages stand at 0.79
+  to 1.55 of its XP, 0.73 to 1.43 of its Aurem and 0.79 to 1.61 of its loot.
+- **Not counted**: bounties and the Abyss boon, which pay alike whatever is played, and the cold lantern, a bounty's.
+  Shapes come from the week's Abyss alone and are not loot here.
+
+Rows of what the measuring prints (`cargo test -p gear --release measure_the_band -- --ignored --nocapture`), which
+holds every level from 5 to 30 in fives and every depth measured:
+
+| Level | Activity | XP | Aurem | Vestiges, Normal to Atheric | Items, Normal to Atheric | Materials | Essence | XP, Aurem, loot against the patrol zone |
+|---|---|---|---|---|---|---|---|---|
+| 5 | Patrol zone | 20098 | 1610 | 13.34/4.30/1.42/0.00/0.00 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
+| 5 | Sea | 15590 | 1176 | 0.89/0.27/0.08/0.00/0.00 | 11.51/3.44/1.05/0.00/0.00 | 64 | 0.0 | 0.78, 0.73, 0.88 |
+| 5 | Passages, depth 4 | 15948 | 1179 | 12.46/3.90/1.25/0.00/0.00 | 0.24/0.09/0.03/0.00/0.00 | 36 | 0.0 | 0.79, 0.73, 0.93 |
+| 10 | Patrol zone | 30105 | 2384 | 13.34/4.30/1.42/0.00/0.00 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
+| 10 | Patrol dungeon | 33205 | 2470 | 21.40/7.00/2.33/0.00/0.00 | 5.47/2.03/0.78/0.00/0.00 | 0 | 0.0 | 1.10, 1.04, 2.08 |
+| 10 | Sea | 24692 | 1853 | 0.94/0.28/0.09/0.00/0.00 | 11.93/3.60/1.11/0.00/0.00 | 66 | 0.0 | 0.82, 0.78, 0.92 |
+| 10 | Elite Playlist | 33059 | 2410 | 19.07/6.52/2.32/0.00/0.00 | 5.20/2.14/0.91/0.00/0.00 | 0 | 0.3 | 1.10, 1.01, 1.97 |
+| 10 | Passages, depth 10 | 30716 | 2296 | 14.35/4.64/1.53/0.00/0.00 | 0.74/0.28/0.11/0.00/0.00 | 34 | 0.1 | 1.02, 0.96, 1.14 |
+| 10 | Passages, depth 11 | 37737 | 2772 | 17.17/5.64/1.87/0.00/0.00 | 0.73/0.27/0.10/0.00/0.00 | 34 | 0.1 | 1.25, 1.16, 1.36 |
+| 10 | Passages, depth 12 | 29394 | 2168 | 11.61/3.83/1.28/0.00/0.00 | 0.49/0.18/0.07/0.00/0.00 | 22 | 0.1 | 0.98, 0.91, 0.93 |
+| 20 | Patrol zone | 50204 | 3994 | 12.96/4.12/1.33/0.47/0.18 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
+| 20 | Patrol dungeon | 55359 | 4139 | 20.69/6.76/2.24/0.77/0.27 | 5.17/1.91/0.77/0.31/0.12 | 0 | 0.0 | 1.10, 1.04, 2.12 |
+| 20 | Sea | 59691 | 4321 | 1.14/0.37/0.12/0.04/0.01 | 13.49/4.41/1.48/0.52/0.19 | 79 | 0.0 | 1.19, 1.08, 1.16 |
+| 20 | Elite Playlist | 52526 | 3867 | 18.33/6.23/2.20/0.82/0.32 | 4.81/1.96/0.89/0.40/0.18 | 0 | 0.3 | 1.05, 0.97, 2.11 |
+| 20 | Abyss Playlist | 61791 | 4575 | 20.66/7.02/2.48/0.93/0.36 | 5.42/2.21/1.00/0.46/0.20 | 0 | 0.4 | 1.23, 1.15, 2.38 |
+| 20 | Passages, depth 16 | 70722 | 5194 | 18.15/6.13/2.12/0.71/0.00 | 1.36/0.60/0.29/0.13/0.00 | 31 | 0.4 | 1.41, 1.30, 1.49 |
+| 20 | Passages, depth 17 | 77261 | 5683 | 17.80/6.00/2.07/0.70/0.25 | 1.30/0.57/0.28/0.14/0.06 | 31 | 0.4 | 1.54, 1.42, 1.61 |
+| 30 | Patrol zone | 70302 | 5604 | 12.96/4.12/1.33/0.47/0.18 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
+| 30 | Patrol dungeon | 77513 | 5809 | 20.69/6.76/2.24/0.77/0.27 | 5.17/1.91/0.77/0.31/0.12 | 0 | 0.0 | 1.10, 1.04, 2.12 |
+| 30 | Sea | 97754 | 7006 | 1.27/0.43/0.14/0.05/0.02 | 14.50/4.90/1.71/0.62/0.23 | 87 | 0.0 | 1.39, 1.25, 1.31 |
+| 30 | Elite Playlist | 71992 | 5324 | 18.33/6.23/2.20/0.82/0.32 | 4.81/1.96/0.89/0.40/0.18 | 0 | 0.3 | 1.02, 0.95, 2.11 |
+| 30 | Abyss Playlist | 95990 | 7099 | 24.38/8.28/2.92/1.09/0.42 | 6.41/2.62/1.18/0.54/0.24 | 0 | 0.4 | 1.37, 1.27, 2.80 |
+| 30 | Elite Dungeon of the week | 100603 | 7449 | 31.08/10.48/3.67/1.43/0.52 | 8.29/3.38/1.53/0.70/0.31 | 0 | 0.4 | 1.43, 1.33, 3.57 |
+| 30 | Abyss Dungeon of the week | 121175 | 9052 | 33.16/11.18/3.91/1.50/0.57 | 8.84/3.61/1.63/0.74/0.33 | 0 | 0.7 | 1.72, 1.62, 3.81 |
+| 30 | Passages, depth 20 | 103504 | 7621 | 17.26/5.83/2.02/0.75/0.24 | 1.25/0.55/0.27/0.13/0.06 | 30 | 0.7 | 1.47, 1.36, 1.58 |
+
 ## Bounties
 
 The bounties count what the rooms see happen on an engine of their own (`gear::objectives`), which a guild's week
@@ -282,32 +361,35 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
 - **The bounty board** stands on the notice board's landing in the Watch Court of Overlook's hub, its face to the
   court ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
   plaza's keepers: the bake writes its counter on the plaza's node file, and the room serves its asks there. It is
-  no station and has no keeper. It holds the town's six bounties and each faction's three, every one drawn by the
+  no station and has no keeper. It holds the town's eight bounties and each faction's three, every one drawn by the
   day and the same for everyone
   ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]],
   [[The Bounty Board as Claude Shapes It]]).
-- **The town's six** (`gear::bounties::board`): places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair
-  two different ones of its pool. None names an island or a water, since the islands' bands run from 1 to 30. A
-  character takes any of them; each pays once when turned in, by its tier as Destiny 1's three tiers paid (2,500,
-  3,750 and 5,000 XP): a first tier's 1,000 XP and 60 Aurem at level 5, a second's half again, a third's twice, raised
-  as a kill is by the character's level, its XP to their Art and faction as a kill's; and all end at the daily reset.
-  Honest Work, Broadside and Into the Dark are of the first tier; Tithe Collector, A Cut Above, Bigger Fish and Deeper
-  Still the second; Big Game, Sea Wolf and Deep Delver the third (`Bounty.tier`, `bounty_pay`).
+- **The town's eight** (`gear::bounties::board`): places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, and
+  15 and 16 in the passages ([[Passages]]), after the factions' so that no place kept before the passages changes
+  meaning (`town_places`); each pair two different ones of its pool. None names an island or a water, since the
+  islands' bands run from 1 to 30. A character takes any of them; each pays once when turned in, by its tier as
+  Destiny 1's three tiers paid (2,500, 3,750 and 5,000 XP): a first tier's 1,000 XP and 60 Aurem at level 5, a
+  second's half again, a third's twice, raised as a kill is by the character's level, its XP to their Art and faction
+  as a kill's; and all end at the daily reset. Honest Work, Broadside and Into the Dark are of the first tier; Tithe
+  Collector, A Cut Above, Bigger Fish and Deeper Still the second; Big Game, Sea Wolf and Deep Delver the third; of
+  the passages', Down Below and Seam Worker the first, Errand Runner, Further In and Relic Hunter the second,
+  Lamplighter the third (`Bounty.tier`, `bounty_pay`).
 - **A faction's three** (`faction_board`): each faction draws three a day from four of its own, the one left out by
-  the day, at its own places after the town's (the Stormcallers' 6 to 8, the Lamplighters' 9 to 11, the Veiled's 12
-  to 14; `faction_places`). The Stormcallers': Storm Front (40 foes), Thunderhead (8 of Elite rank or higher), Squall
-  Line (4 ships) and Eye of the Storm (3 of Miniboss rank or higher). The Lamplighters': Lamp Oil (8 nodes), Calm
-  Waters (3 ships), Light the Way (2 dungeons) and Harbour Light (2 ships of Elite rank or higher). The Veiled's: Quiet
-  Knives (25 Grey Tithe foes), Below Stairs (a dungeon), Night Work (10 of Elite rank or higher) and No Witnesses (2
-  of Miniboss rank or higher). Only a player pledged to the faction takes one, and it counts only while they serve it,
-  pledged and wearing its cape (`Character::serves`). Turned in it pays XP as a town bounty of its tier and the
-  faction's own reputation in place of Aurem: `bountyReputation` (2,500) at the first tier, half again at the second,
-  twice at the third, whatever the level (`faction_bounty_reputation`); its XP earns reputation besides with the cape
-  worn, as every deed's does ([[Factions]]). After a switch of pledge one held counts no more but still turns in, to
-  the faction that posted it.
-- **On the wire** the gear message carries the town's six, then the pledged faction's three, then any other faction's
-  held that day, each with its place and the faction that posts it (none for the town), and a first tier's XP and
-  Aurem; the card shows each one's own pay.
+  the day, at its own places after the town's six (the Stormcallers' 6 to 8, the Lamplighters' 9 to 11, the Veiled's
+  12 to 14; `faction_places`). The Stormcallers': Storm Front (40 foes), Thunderhead (8 of Elite rank or higher),
+  Squall Line (4 ships) and Eye of the Storm (3 of Miniboss rank or higher). The Lamplighters': Lamp Oil (8 nodes),
+  Calm Waters (3 ships), Light the Way (2 dungeons) and Harbour Light (2 ships of Elite rank or higher). The Veiled's:
+  Quiet Knives (25 Grey Tithe foes), Below Stairs (a dungeon), Night Work (10 of Elite rank or higher) and No
+  Witnesses (2 of Miniboss rank or higher). Only a player pledged to the faction takes one, and it counts only while
+  they serve it, pledged and wearing its cape (`Character::serves`). Turned in it pays XP as a town bounty of its tier
+  and the faction's own reputation in place of Aurem: `bountyReputation` (2,500) at the first tier, half again at the
+  second, twice at the third, whatever the level (`faction_bounty_reputation`); its XP earns reputation besides with
+  the cape worn, as every deed's does ([[Factions]]). After a switch of pledge one held counts no more but still turns
+  in, to the faction that posted it.
+- **On the wire** the gear message carries the town's eight (its six, then the passages' two at their places), then
+  the pledged faction's three, then any other faction's held that day, each with its place and the faction that posts
+  it (none for the town), and a first tier's XP and Aurem; the card shows each one's own pay.
 - **Taking and turning in** happen at the board alone (`Ask::TakeBounty`, `Ask::TurnInBounty`), each by its place
   and the day of the board the page showed. The room refuses a day not its own, and a room whose day is behind the
   record refuses both, so a page or a room on either side of 09:00 cannot take or pay yesterday's bounty as today's.
@@ -364,7 +446,7 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   held, each counting to its reset. A shut line says why in its gate's words. "Taken" is the character's record as
   their gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken
   today. Its right column holds the day's bounties taken, as the gear last carried them, as the board's tiles with no
-  press, a slot for each bounty the board shows the player (the town's six, the pledged faction's three and any other
+  press, a slot for each bounty the board shows the player (the town's eight, the pledged faction's three and any other
   faction's held that day), each tile's card floated beside it
   while it is pointed at or holds the keys; or before the prologue the board's shut line alone. Gear of another day
   than the page's (a word heard before the reset, as at sea, where the character is sent only as it changes) shows no
@@ -373,7 +455,7 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
 - **At the bounty board**, E opens its screen in the menu ([[Interface]], "The social space's counters"), after
   Destiny's Bounty Tracker and laid as a keeper's: the board drawn on its lit stage under its mark and title; "When
   Overlook needs a hand, it posts a bounty here. The factions post their own.", the player's Aurem and their faction's
-  rank; "Available bounties" with the town's six in a row and the pledged faction's three under them (three locked
+  rank; "Available bounties" with the town's eight in a row (the passages' two after its six) and the pledged faction's three under them (three locked
   slots while pledged to none); and the time to the next board. Every town bounty wears one face and every faction's
   its faction's emblem; each has a short name of its own, carried with the board to the page. The card of the tile
   pointed at or holding the keys floats beside it (its name, its kind, its task, its count, what it pays, for a
@@ -439,6 +521,6 @@ with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a
 a Company's bands of ten levels, and a group found sharing one run without becoming a company; the Playlist's shape,
 its bands, modifiers, rewards and screen ([[The Playlist and Its Dungeons as Claude Shapes Them]]); five shared revives,
 restored by a wipe; the modifier set; the rewards above and the quarter-more boon; a foe felled on a ship's deck
-counting toward no bounty and earning no Abyss boon; six bounties a day paying XP and Aurem; the factions' bounties
-and the board's screen ([[The Bounty Board as Claude Shapes It]]); and the screen's names, Find a Company and the
-Journal's Timers.
+counting toward no bounty and earning no Abyss boon; eight bounties a day paying XP and Aurem, the passages' two
+among them; the factions' bounties and the board's screen ([[The Bounty Board as Claude Shapes It]]); and the
+screen's names, Find a Company and the Journal's Timers.

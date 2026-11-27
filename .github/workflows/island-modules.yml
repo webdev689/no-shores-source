@@ -10,6 +10,8 @@ on:
   push:
     paths:
       - tools/islands/**
+      # The passages' pieces are made once and built into the passages' island kit too (tools/islands/kits/passage.py).
+      - tools/dungeon/styles/passage/**
       - tools/r2.py
       - content/islands/kits.json
       - .github/workflows/island-modules.yml
@@ -45,6 +47,16 @@ jobs:
         run: |
           python -I tools/islands/build.py --out "$RUNNER_TEMP/again"
           for pack in "$RUNNER_TEMP"/modules/*.modules; do cmp "$pack" "$RUNNER_TEMP/again/$(basename "$pack")"; done
+      # A build that differs from the other is kept for a week, both builds as far as they went, so their packs can be
+      # set beside each other and another machine's.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: island-modules-differed
+          path: |
+            ${{ runner.temp }}/modules
+            ${{ runner.temp }}/again
+          retention-days: 7
       # Kept when the build fails too: the sheets show what a refused module looks like.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()

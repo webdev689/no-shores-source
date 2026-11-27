@@ -15,6 +15,7 @@ import { earnedOf } from './artMessages.ts';
 import { ASKS, DROPPED, gearOf } from './gearMessages.ts';
 import { FIGURE_STATES } from './questMessages.ts';
 import { inputBytes, readFromRoom } from './messages.ts';
+import { INTENT_FLOATS } from '../rules/fighters.ts';
 
 const written = async (name: string) =>
   new Uint8Array(
@@ -22,6 +23,12 @@ const written = async (name: string) =>
       throw new Error(`${name} is not written: run \`cargo test -p protocol\``);
     }),
   );
+
+/** Each ask's number by its name in the protocol (asks_written_tests.rs writes them). */
+const askNumber = async () => {
+  const asks = JSON.parse(new TextDecoder().decode(await written('asks.json'))) as Record<string, number>;
+  return (name: string) => asks[name];
+};
 
 test('a players own gear the server wrote reads back whole, every column spelled out', async () => {
   // gear_wire_tests.rs writes it: level 20 by XP, Harbourwarden worn, Goldgrass Seed gathered at the stall's node, an
@@ -36,7 +43,7 @@ test('a players own gear the server wrote reads back whole, every column spelled
     ...{ playlistTaken: [false, false], playlistClears: [0, 0] },
   };
   assert.deepEqual(gear.activity, nothing, 'a character that has done nothing yet');
-  assert.equal(gear.bounties?.length, 6, 'the day’s board');
+  assert.equal(gear.bounties?.length, 8, 'the day’s board');
   assert.equal(
     gear.bounties?.some((bounty) => bounty.held),
     false,
@@ -44,7 +51,7 @@ test('a players own gear the server wrote reads back whole, every column spelled
   );
   assert.deepEqual(
     gear.bounties?.map((bounty) => bounty.pool),
-    [0, 0, 1, 1, 2, 2],
+    [0, 0, 1, 1, 2, 2, 3, 3],
     'where each counts',
   );
   assert.ok(
@@ -53,8 +60,8 @@ test('a players own gear the server wrote reads back whole, every column spelled
   );
   assert.deepEqual(
     gear.bounties?.map((bounty) => [bounty.place, bounty.faction]),
-    [0, 1, 2, 3, 4, 5].map((place) => [place, 0]),
-    'the town’s six, by their places, pledged to none',
+    [0, 1, 2, 3, 4, 5, 15, 16].map((place) => [place, 0]),
+    'the town’s eight, by their places (the passages’ two after the factions’), pledged to none',
   );
   assert.equal(gear.bountyXp, 2_500, 'at level 20');
   assert.equal(typeof gear.day, 'number');
@@ -135,8 +142,8 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   });
   assert.deepEqual(
     here.bounties?.map((bounty) => [bounty.place, bounty.faction]),
-    [...[0, 1, 2, 3, 4, 5].map((place) => [place, 0]), [9, 2], [10, 2], [11, 2]],
-    'the town’s six, then the Lamplighters’ three at their own places',
+    [...[0, 1, 2, 3, 4, 5, 15, 16].map((place) => [place, 0]), [9, 2], [10, 2], [11, 2]],
+    'the town’s eight, then the Lamplighters’ three at their own places',
   );
   assert.deepEqual(here.cosmetics, [23, 24, 14, 0], 'Ember Plate bought and the Lamplighters’ gold earned');
   assert.deepEqual(here.worn, { dye: 0, coat: 0, barding: 24 });
@@ -146,8 +153,8 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   const wares = here.shape?.wares ?? [];
   assert.deepEqual(
     wares.map((ware) => [ware.rarity, ware.price, ware.level, ware.named === null]),
-    [0, 1, 2, 3, 4, 5].map((place) => [place < 4 ? 3 : 4, place < 4 ? 7 : 23, 20, place < 4]),
-    'four rolled Legendary, then two named Atheric (this week both weapons, 23), priced in Shapes',
+    [0, 1, 2, 3, 4, 5].map((place) => [place < 4 ? 3 : 4, [7, 7, 7, 7, 23, 13][place], 20, place < 4]),
+    'four rolled Legendary, then two named Atheric (this week a weapon, 23, and an armour piece, 13), priced in Shapes',
   );
   // Each is numbered as a page asks for it: an Atheric by its place in the catalogue, a rolled piece by its hash.
   const atheric = wares[4];
@@ -170,7 +177,7 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
 test('an ask crosses into an input with every field it names', () => {
   const ask = { kind: ASKS.buy, item: 7, column: 6, node: 1 } as const;
   const bytes = inputBytes(3, {
-    intent: new Float64Array(18),
+    intent: new Float64Array(INTENT_FLOATS),
     look: { anim: 'idle', frame: 0, facing: 0 },
     arms: 0,
     seen: 0n,
@@ -185,7 +192,7 @@ test('an ask crosses into an input with every field it names', () => {
   const named = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(
       inputBytes(4, {
-        intent: new Float64Array(18),
+        intent: new Float64Array(INTENT_FLOATS),
         look: { anim: 'idle', frame: 0, facing: 0 },
         arms: 0,
         seen: 0n,
@@ -197,7 +204,7 @@ test('an ask crosses into an input with every field it names', () => {
   const none = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(
       inputBytes(5, {
-        intent: new Float64Array(18),
+        intent: new Float64Array(INTENT_FLOATS),
         look: { anim: 'idle', frame: 0, facing: 0 },
         arms: 0,
         seen: 0n,
@@ -299,9 +306,7 @@ test("the ship's part of the gear message reads back: its power, materials, hand
 });
 
 test("the ship's, crew's, story's and bounties' asks carry the numbers the protocol reads them by", async () => {
-  const read = (file: string) => readFile(new URL(`../../../crates/protocol/src/${file}`, import.meta.url), 'utf8');
-  const wire = (await read('gear_wire.rs')) + (await read('lore_wire.rs')) + (await read('finds_wire.rs'));
-  const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
+  const number = await askNumber();
   assert.deepEqual(
     [
       ASKS.infuse,
@@ -347,6 +352,7 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
   Gear.addArtsEarned(builder, earned);
   Gear.addFragmentChoices(builder, choices);
   Gear.addQuestAt(builder, where);
+  Gear.addQuestOffered(builder, 13);
   Gear.addClaimed(builder, true);
   builder.finish(Gear.endGear(builder));
   const read = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
@@ -357,7 +363,7 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
     done: [1, 0, 0, 0],
     choices: [1, 0, 0],
     at: [120.5, -40, 30],
-    ...{ clock: null, fails: [], points: [], figures: [], ward: null, claimed: true },
+    ...{ clock: null, fails: [], points: [], figures: [], ward: null, horde: null, offered: 13, claimed: true },
   });
   assert.deepEqual(read.arts?.earned, [0b011, 0, 0]);
   assert.deepEqual(
@@ -383,6 +389,8 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
       points: [],
       figures: [],
       ward: null,
+      horde: null,
+      offered: 0,
       claimed: false,
     },
     "none walked, nor on the player's own character",
@@ -390,12 +398,13 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
   assert.equal(earnedOf(none.arts, 3), 0b111, 'a room that says nothing of it locks nothing');
 });
 
-test("a varied step reads back: its clock, each goal's failures, a puzzle's points, the figures walking and the ward", () => {
+test("a varied step reads back: its clock, each goal's failures, a puzzle's points, the figures walking, the ward and a horde", () => {
   const builder = new flatbuffers.Builder(256);
   const fails = Gear.createQuestFailsVector(builder, [0, 2]);
   const points = Gear.createQuestPointsVector(builder, [10, 0, 1, 0, -10, 0, 99]);
   const figures = Gear.createQuestFiguresVector(builder, [22, 5, 6, 7, 1.5, 4, 107, 1, 2, 3, 0, 1]);
   const ward = Gear.createQuestWardVector(builder, [40, -2, 0.25]);
+  const horde = Gear.createQuestHordeVector(builder, [12, 29]);
   Gear.startGear(builder);
   Gear.addQuest(builder, 3);
   Gear.addQuestClock(builder, 83.5);
@@ -403,6 +412,7 @@ test("a varied step reads back: its clock, each goal's failures, a puzzle's poin
   Gear.addQuestPoints(builder, points);
   Gear.addQuestFigures(builder, figures);
   Gear.addQuestWard(builder, ward);
+  Gear.addQuestHorde(builder, horde);
   builder.finish(Gear.endGear(builder));
   const read = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array()))).quest;
   assert.equal(read?.clock, 83.5);
@@ -420,15 +430,16 @@ test("a varied step reads back: its clock, each goal's failures, a puzzle's poin
     { look: 107, x: 1, y: 2, z: 3, facing: 0, state: FIGURE_STATES.walking },
   ]);
   assert.deepEqual(read?.ward, { x: 40, y: -2, health: 0.25 });
+  assert.deepEqual(read?.horde, { left: 12, all: 29 }, "a horde's foes left and all of them");
 });
 
 test("the roads' asks carry the numbers the protocol reads them by, with the keeper and the fragment they name", async () => {
-  const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
-  const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
+  const number = await askNumber();
   assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment], [number('SPEAK'), number('CHOOSE_FRAGMENT')]);
+  assert.equal(ASKS.acquire, number('ACQUIRE'));
   assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment, ASKS.usePoint], [64, 65, 66]);
   const bytes = inputBytes(6, {
-    intent: new Float64Array(18),
+    intent: new Float64Array(INTENT_FLOATS),
     look: { anim: 'idle', frame: 0, facing: 0 },
     arms: 0,
     seen: 0n,

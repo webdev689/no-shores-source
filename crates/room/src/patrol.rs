@@ -46,14 +46,17 @@ impl Room {
         })
     }
 
-    /// Keeps a patrol going for a tick: each node a player gathered `RETURN_MINUTES` ago returns for them, and they
-    /// are sent the nodes they may gather now.
+    /// Keeps a patrol or an island going for a tick: each node a player gathered returns for them, in a patrol
+    /// `RETURN_MINUTES` after, on an island once the day turns at 09:00 UTC; and they are sent the nodes they may
+    /// gather now.
     pub(crate) fn keep_patrol(&mut self) {
-        if !self.patrol {
+        if !self.patrol && self.isle.is_none() {
             return;
         }
-        let minute = self.minute;
-        let returned = |&(_, at): &(u8, u64)| minute.saturating_sub(at) >= RETURN_MINUTES;
+        let (minute, today, patrol) = (self.minute, self.day(), self.patrol);
+        let returned = |&(_, at): &(u8, u64)| {
+            if patrol { minute.saturating_sub(at) >= RETURN_MINUTES } else { gear::clock::day_of(at) < today }
+        };
         for found in self.players.values_mut() {
             if found.spent.iter().any(returned) {
                 found.spent.retain(|spent| !returned(spent));
@@ -73,6 +76,7 @@ impl Room {
         let under_way: Vec<PlayerId> =
             self.players.iter().filter(|(_, found)| found.gathering.is_some()).map(|(&id, _)| id).collect();
         let (isle, day) = (self.isle.as_ref().map(|isle| isle.seed), self.day());
+        let rich_seam = self.current(passage::Current::RichSeam).is_some();
         for player in under_way {
             let Some(gathering) = self.players.get(&player).and_then(|found| found.gathering) else { continue };
             let Some(fighter) = self.fighter(player).copied() else { continue };
@@ -100,8 +104,12 @@ impl Room {
             }
             let resource = node.resource;
             found.character.gather(usize::from(resource));
+            if rich_seam {
+                found.character.find_material(gear::character::Stuff::Resource(usize::from(resource)), 1);
+            }
             found.character.tell(&gear::quests::Event::Gather);
             self.saw(player, &gear::objectives::Feat::Gathered { resource });
+            self.vein_gathered(player, gathering.node);
         }
     }
 }

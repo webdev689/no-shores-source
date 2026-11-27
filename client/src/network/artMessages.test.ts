@@ -6,6 +6,7 @@ import { Gear, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { SPELLS, artsOf, spellNumber } from './artMessages.ts';
 import { ASKS } from './gearMessages.ts';
 import { inputBytes, readFromRoom } from './messages.ts';
+import { INTENT_FLOATS } from '../rules/fighters.ts';
 
 /** Bytes the Rust tests wrote (`cargo test -p protocol`). */
 const written = async (name: string) =>
@@ -71,7 +72,12 @@ test('every spell in the snapshot the server wrote reads back, a Dawnflare headi
 });
 
 test('a cast crosses in an input with its aim, and an Art’s asks with the fields the room reads', () => {
-  const parts = { intent: new Float64Array(18), look: { anim: 'cast', frame: 0, facing: 0 }, arms: 0, seen: 0n };
+  const parts = {
+    intent: new Float64Array(INTENT_FLOATS),
+    look: { anim: 'cast', frame: 0, facing: 0 },
+    arms: 0,
+    seen: 0n,
+  };
   const read = (bytes: Uint8Array) => Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes));
   const aimed = read(inputBytes(1, { ...parts, cast: { spell: SPELLS.duskDaggers, aim: [3, -12.5, 0.25] } }));
   assert.deepEqual([aimed.cast(), Array.from(aimed.castAimArray() ?? [])], [8, [3, -12.5, 0.25]]);
@@ -81,4 +87,21 @@ test('a cast crosses in an input with its aim, and an Art’s asks with the fiel
   assert.deepEqual([core?.kind(), core?.column(), core?.slot(), core?.node()], [41, 2, 1, 5]);
   assert.deepEqual([ASKS.wearArt, ASKS.grantArts], [40, 36]);
   assert.deepEqual([spellNumber(1, 0), spellNumber(2, 2), spellNumber(3, 1)], [1, 6, 8]);
+});
+
+test("a horde running lends the worn Art whole for the bar and the keys, the road's earned bits read as earned", () => {
+  const word = (horde: number[]) => {
+    const builder = new flatbuffers.Builder(64);
+    const earned = Gear.createArtsEarnedVector(builder, [0b001, 0, 0]);
+    const running = Gear.createQuestHordeVector(builder, horde);
+    Gear.startGear(builder);
+    Gear.addArt(builder, 1);
+    Gear.addArtsEarned(builder, earned);
+    Gear.addQuestHorde(builder, running);
+    builder.finish(Gear.endGear(builder));
+    return artsOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
+  };
+  const lent = word([17, 29]);
+  assert.deepEqual([lent.lent, lent.earned], [true, [0b001, 0, 0]], 'the loan beside what is earned');
+  assert.equal(word([]).lent, false, 'none while none runs');
 });

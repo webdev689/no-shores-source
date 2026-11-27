@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+"""push-guard: git's pre-push hook. install-all.sh copies it to the local clone's .git/hooks/pre-push; every worktree
+of that clone shares it. It refuses a push when
+1. the push would start a publishing workflow from a branch that is not main: a workflow whose `on.push` has paths
+   and no branch filter runs from any branch with the R2 keys. ALLOW_PUBLISH=1 git push ... lets it through.
+2. one of the quick checks fails on the worktree being pushed: `cargo xtask repo` always; `npm run -s schema` when
+   generated/messages is older than the schema; `npm run -s types` (every tsconfig) and eslint on the changed files
+   when TypeScript or JavaScript changed; `cargo check --workspace --all-targets` when Rust changed.
+   These are what CI's full check most often fails on after a merge git took cleanly; the tests stay CI's.
+The orphan data branch toolkit-data (toolkit-data.sh) and branch deletes are not checked."""
+import os, re, subprocess, sys
+
+ZERO = '0' * 40
+DATA = 'refs/heads/toolkit-data'
+
+
+def git(*a):
+    return subprocess.run(['git', *a], capture_output=True, text=True).stdout
+
+
+def changed(local, remote):
+    """Files the pushed commits change: against what the remote branch held, or for a new branch every commit no
+    remote has yet (what GitHub's paths filter sees as well)."""
+    if remote != ZERO and git('cat-file', '-t', remote).strip() == 'commit':
+        return set(git('diff', '--name-only', remote, local).split('\n')) - {''}
+    return set(git('log', '--format=', '--name-only', local, '--not', '--remotes').split('\n')) - {''}
+
+
+def glob_re(p):
+    """A GitHub Actions path glob: ** crosses folders (`a/**/b` takes `a/b` too), * does not, ? makes the character
+    before it optional."""
+    out, i = [], 0
+    while i < len(p):
+        if p.startswith('**/', i):
+            out, i = out + ['(?:.*/)?'], i + 3
+        elif p.startswith('**', i):
+            out, i = out + ['.*'], i + 2
+        elif p[i] == '*':
+            out, i = out + ['[^/]*'], i + 1
+        elif p[i] == '?' and out:
+            out[-1], i = '(?:' + out[-1] + ')?', i + 1
+        else:
+            out, i = out + [re.escape(p[i])], i + 1
+    return re.compile(''.join(out) + r'\Z')
+
+
+def matches(paths, files):
+    for f in files:
+        hit = False
+        for p in paths:                      # later patterns win, as on GitHub; '!' takes a file back out
+            neg = p.startswith('!')
+            if glob_re(p[1:] if neg else p).match(f):
+                hit = not neg
+        if hit:
+            return True
+    return False
+
+
+def publishing(local, files):
+    """The workflows at the pushed commit that this push would start on a branch other than main."""
+    import yaml
+    found = []
+    for wf in git('ls-tree', '--name-only', local, '.github/workflows/').split():
+        if not wf.endswith(('.yml', '.yaml')):
+            continue
+        try:
+            d = yaml.safe_load(git('show', f'{local}:{wf}')) or {}
+        except yaml.YAMLError:
+            continue
+        on = d.get('on', d.get(True)) or {}      # YAML 1.1 reads the key `on` as true
+        if isinstance(on, (str, list)):
+            if 'push' in ([on] if isinstance(on, str) else on):
+                found.append(wf)                 # a bare `on: push` runs on every push
+            continue
+        if 'push' not in on:
+            continue
+        push = on['push'] or {}
+        if any(k in push for k in ('branches', 'branches-ignore', 'tags', 'tags-ignore')):
+            continue
+        if 'paths' in push and not matches(push['paths'], files):
+            continue
+        if 'paths-ignore' in push and all(matches(push['paths-ignore'], [f]) for f in files):
+            continue
+        found.append(wf)
+    return found
+
+
+def gate(files):
+    """The quick checks, cheapest first; the first that fails refuses the push."""
+    code = lambda *ext: [f for f in files if f.endswith(ext) and os.path.isfile(f)]
+    js = code('.ts', '.tsx', '.mts', '.cts', '.js', '.mjs', '.cjs')
+    rust = [f for f in files if f.endswith(('.rs', 'Cargo.toml', 'Cargo.lock', '.fbs'))]
+    steps = [['cargo', 'xtask', 'repo']]
+    schema = [f for f in ('crates/protocol/messages.fbs', 'server/protocolVersion.ts') if os.path.exists(f)]
+    out = 'generated/messages/ts/version.ts'
+    if schema and (not os.path.exists(out) or max(os.path.getmtime(f) for f in schema) > os.path.getmtime(out)):
+        steps.append(['npm', 'run', '-s', 'schema'])
+    if js or any(f.endswith(('tsconfig.json', 'package.json', '.fbs')) for f in files):
+        steps.append(['npm', 'run', '-s', 'types'])
+    if js:
+        steps.append(['npx', '--no-install', 'eslint', '--', *js])
+    if rust:
+        steps.append(['cargo', 'check', '-q', '--workspace', '--all-targets'])
+    for s in steps:
+        print('pre-push: ' + ' '.join(s[:6]) + (' ...' if len(s) > 6 else ''), file=sys.stderr, flush=True)
+        r = subprocess.run(s, stdout=sys.stderr)
+        if r.returncode:
+            return f'`{" ".join(s)}` failed (exit {r.returncode}). Fix it, rerun that command, then push again.'
+    return None
+
+
+def main():
+    os.chdir(git('rev-parse', '--show-toplevel').strip() or '.')
+    head = git('rev-parse', 'HEAD').strip()
+    refused, gate_files = [], set()
+    for line in sys.stdin.read().splitlines():
+        try:
+            _, local, rref, remote = line.split()
+        except ValueError:
+            continue
+        if local == ZERO or rref == DATA:
+            continue
+        files = changed(local, remote)
+        if rref != 'refs/heads/main' and os.environ.get('ALLOW_PUBLISH') != '1':
+            for wf in publishing(local, files):
+                refused.append(f'{rref} would start the publishing workflow {wf} (it runs from any branch and '
+                               'publishes to R2). Push it to main through a pull request, or, with the owner\'s yes, '
+                               'ALLOW_PUBLISH=1 git push ...')
+        if local != head:
+            refused.append(f'{rref}: the quick checks run on the worktree, but {local[:9]} is not its HEAD '
+                           f'({head[:9]}). Push from the worktree that has it checked out.')
+        gate_files |= files
+    if not refused and gate_files:
+        why = gate(gate_files)
+        if why:
+            refused.append(why)
+    for r in refused:
+        print('pre-push: refusing the push: ' + r, file=sys.stderr)
+    return 1 if refused else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -2,6 +2,7 @@ import type { CityPainter } from '../city/painter.ts';
 import { painting } from '../city/painter.ts';
 import { standIn } from '../standIns.ts';
 import { Atmosphere, drawsNothing } from '../cinema/atmosphere.ts';
+import { Flames } from '../cinema/flames.ts';
 import { CLEAR, swellGained, type Weather } from '../cinema/weather.ts';
 import { LightLayer } from '../combat/lightLayer.ts';
 import { type Gpu, TEXTURE_USAGE, viewOf } from '../gpu.ts';
@@ -10,7 +11,7 @@ import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
 import { BoltView } from '../sky/bolts.ts';
 import { FallView } from '../sky/fall.ts';
-import { CITY_LAMPS, EVENT_LAMPS, type LampPlace, carriedLight, lampsRound } from '../sky/lamps.ts';
+import { CITY_LAMPS, EVENT_LAMPS, type LampPlace, carriedLight, lampsRound, relightFires } from '../sky/lamps.ts';
 import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
 import { type SkyLook, skyUniformFor } from '../sky/skyUniform.ts';
@@ -86,6 +87,24 @@ function cloudLight(look: SkyLook): readonly [number, number, number] {
   ) as unknown as readonly [number, number, number];
 }
 
+/** A place drawn alone in its own frame: its climate, and where that frame's origin lies in the world (metres). */
+export interface Alone {
+  readonly climate: string;
+  readonly at: readonly [number, number];
+}
+
+/** The air a frame is drawn in, and how far the eye's frame lies from the world's, where the sky is read: the open
+ *  sea's at sea; a place drawn alone (`bare`) its own climate's where it lies, with no sea round it; else the land's
+ *  under the eye. */
+export function airOf(
+  more: { readonly atSea?: boolean; readonly bare?: Alone | null },
+  landClimate: string | undefined,
+): { readonly climate: string; readonly sea: boolean; readonly at: readonly [number, number] } {
+  if (more.atSea) return { climate: 'sea', sea: true, at: [0, 0] };
+  if (more.bare) return { climate: more.bare.climate, sea: false, at: more.bare.at };
+  return { climate: landClimate ?? 'sea', sea: true, at: [0, 0] };
+}
+
 /**
  * One landmass drawn for the game: its 1 km land in rings round the eye, the exact ground round the player, the
  * drawers handed in, then the water's sky, haze and surface over all of it. The land is drawn in its window's metres,
@@ -108,6 +127,12 @@ export class GameScene {
   readonly sky: SkyDriver;
   /** Lamps a story lays besides the city's while it shows them: the wreck's fires. */
   lamps: readonly LampPlace[] = [];
+  /** Fires burning in the world (a camp's, a brazier's, the Beacon's), the land's lit as its views
+   *  burn them (`CITY_LAMPS.fires`): drawn over the water with the drawers, each casting its light as a lamp that
+   *  flickers with its flames, or flickering with its place's lamp. */
+  readonly fires: Flames;
+  /** The land's fires as last lit into `fires`: which change of them, and their ids by each fire's `fireKey`. */
+  private landFires: { changed: number; ids: Map<string, number[]> } = { changed: 0, ids: new Map() };
   /** The city's, the events' and the scene's own lamps together, written afresh each frame into one list. */
   private readonly joined: LampPlace[] = [];
   private readonly fall: FallView;
@@ -143,6 +168,7 @@ export class GameScene {
     this.drain = new DrainView(gpu);
     this.blur = new BlurView(gpu);
     this.upscale = new Upscale(gpu);
+    this.fires = new Flames(gpu);
   }
 
   /** Draws this landmass from now on, wearing its biome's ground tiles. */
@@ -259,10 +285,11 @@ export class GameScene {
   }
 
   /** Draws one frame from `shot` into the canvas, at the resolution chosen (`renderScale.ts`) and stretched over it,
-   *  with the drawers drawn with the land; `after` may draw over the finished picture at the canvas's own size (the
-   *  first person's hands) before it is shown, `hulls` are the ships on the water (world metres), which it keeps out
-   *  of and foams round, and the water's ripples follow `focus` (world metres; the eye unless said). The sky is the
-   *  weather's over the eye, in the open sea's air `atSea`, else the landmass's. Last, the whole picture blurs by a
+   *  with the drawers handed drawn with the land and its fires over the water; `after` may draw over the finished
+   *  picture at the canvas's own size (the first person's hands) before it is shown, `hulls` are the ships on the
+   *  water (world metres), which it keeps out of and foams round, and the water's ripples follow `focus` (world
+   *  metres; the eye unless said). The sky is the weather's over the eye, in the open sea's air `atSea`, else the
+   *  landmass's. Last, the whole picture blurs by a
    *  deviation of `blur` device pixels, drains toward grey by `drain` and darkens by `dark` (each 0 to 1), under
    *  whatever the interface draws over it. */
   draw(
@@ -270,7 +297,7 @@ export class GameScene {
     size: { width: number; height: number },
     time: number,
     seconds: number,
-    drawers: readonly Drawer[],
+    handed: readonly Drawer[],
     more: {
       readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void;
       readonly hulls?: readonly HullMask[];
@@ -284,10 +311,15 @@ export class GameScene {
       readonly blur?: number;
       readonly drain?: number;
       readonly dark?: number;
+      /** A place drawn alone (a passage's hollow): none of the open landmass's ground or sea under or round it, and its
+       *  sky its own climate's over where it lies in the world. */
+      readonly bare?: Alone | null;
     } = {},
   ): void {
     const terrain = this.terrain;
     if (!terrain) return;
+    this.burnLandFires();
+    const drawers: readonly Drawer[] = this.fires.count > 0 ? [...handed, this.fires] : handed;
     const { view, drawn } = terrain;
     if (painting(terrain.tiles)) standIn('ground pictures');
     for (const drawer of drawers) drawer.prepare?.(shot);
@@ -316,12 +348,16 @@ export class GameScene {
     const light = carriedLight(more.carried?.left);
     const lamps = lampsRound(
       shot.eye,
-      this.lamps.length > 0 || EVENT_LAMPS.current.length > 0 ? this.lampsJoined() : CITY_LAMPS.current,
+      this.lamps.length > 0 || EVENT_LAMPS.current.length > 0 || this.fires.count > 0
+        ? this.lampsJoined()
+        : CITY_LAMPS.current,
       light && more.carried ? { light, feet: more.carried.feet } : null,
       SKY_NOW.current.look.daylight,
       time,
     );
-    const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'), lamps, ground);
+    const placed = airOf(more, view.climate);
+    const skyEye = [shot.eye[0] + placed.at[0], shot.eye[1] + placed.at[1], shot.eye[2]] as const;
+    const { look } = this.sky.frame(skyEye, placed.climate, lamps, ground);
     // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
     this.shadow.update(shot.eye, shot.yaw, above, look.key);
     perfZone('shadows');
@@ -347,7 +383,7 @@ export class GameScene {
       },
     });
     for (const drawer of drawers) if (drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
-    drawn.drawInto(pass, this.shadow);
+    if (!more.bare) drawn.drawInto(pass, this.shadow);
     for (const drawer of drawers) if (!drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
     pass.end();
     this.copy.encode(encoder, targets.multidepth, targets.depth);
@@ -382,6 +418,7 @@ export class GameScene {
       shadow: this.shadow,
       drawn: targets,
       target,
+      sea: placed.sea,
     });
     perfZone('over water');
     for (const drawer of drawers) drawer.overWater?.(encoder, target, fromEye, targets.depth);
@@ -427,13 +464,24 @@ export class GameScene {
     this.gpu.device.queue.submit([encoder.finish()]);
   }
 
-  /** The city's, the events' and the scene's own lamps, in that order, in the list kept for them. */
+  /** Lights the land's fires again as its views have changed them, lighting only the new and putting out only the
+   *  gone; their smoke leans with the wind the sky last showed. */
+  private burnLandFires(): void {
+    const wind = SKY_NOW.current.look.wind;
+    this.fires.wind = [wind[0], wind[1]];
+    if (this.landFires.changed === CITY_LAMPS.firesChanged) return;
+    const ids = relightFires(this.fires, this.landFires.ids, CITY_LAMPS.fires);
+    this.landFires = { changed: CITY_LAMPS.firesChanged, ids };
+  }
+
+  /** The city's, the events' and the scene's own lamps and its fires', in that order, in the list kept for them. */
   private lampsJoined(): readonly LampPlace[] {
     const joined = this.joined;
     joined.length = 0;
     for (const lamp of CITY_LAMPS.current) joined.push(lamp);
     for (const lamp of EVENT_LAMPS.current) joined.push(lamp);
     for (const lamp of this.lamps) joined.push(lamp);
+    for (const lamp of this.fires.lamps) joined.push(lamp);
     return joined;
   }
 

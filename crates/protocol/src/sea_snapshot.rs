@@ -37,14 +37,9 @@ pub fn sea_snapshot_bytes(
     let players = Some(builder.create_vector(&each));
     let each: Vec<_> = ships
         .iter()
-        .map(|&(player, Ship { x, y, heading, rate, .. })| {
+        .map(|&(player, ship)| {
             let look = harbour.looks.iter().find(|(each, _)| *each == player).map(|(_, look)| *look);
-            let built = || (gear::ship::fleet::Dress::default().numbers(), [gear::ship::fleet::NO_WORD; 2]);
-            let (dress, name) = look.map_or_else(built, |look| (look.dress, look.name));
-            let (dress, name) = (Some(builder.create_vector(&dress)), Some(builder.create_vector(&name)));
-            let (hull, emblem) = look.map_or((0, 0), |look| (look.hull, look.emblem));
-            let args = messages::ShipArgs { player, x, y, heading, pace: rate, hull, dress, name, emblem };
-            messages::Ship::create(&mut builder, &args)
+            ship_offset(&mut builder, player, ship, look)
         })
         .collect();
     let ships = Some(builder.create_vector(&each));
@@ -63,7 +58,7 @@ pub fn sea_snapshot_bytes(
     let hostiles = Some(builder.create_vector(&each));
     let each: Vec<_> = fights
         .iter()
-        .map(|room::battle::FightSeen { player, numbers, captain: commission, may_board }| {
+        .map(|room::battle::FightSeen { player, numbers, captain: commission, may_board, lesson }| {
             let (view, others) = naval::wire::parted(numbers);
             let (view, faction, rank) =
                 (Some(builder.create_vector(&view)), commission.faction, commission.rank.number());
@@ -71,7 +66,16 @@ pub fn sea_snapshot_bytes(
             let hull = commission.hull().number();
             messages::SeaFight::create(
                 &mut builder,
-                &messages::SeaFightArgs { player: *player, view, faction, rank, others, hull, may_board: *may_board },
+                &messages::SeaFightArgs {
+                    player: *player,
+                    view,
+                    faction,
+                    rank,
+                    others,
+                    hull,
+                    may_board: *may_board,
+                    lesson: *lesson,
+                },
             )
         })
         .collect();
@@ -127,8 +131,8 @@ pub fn sea_snapshot_bytes(
     let each: Vec<_> = harbour
         .friendlies
         .iter()
-        .map(|&room::friendlies::Friendly { traffic, x, y, heading, hull, .. }| {
-            let args = messages::FriendlyArgs { traffic, x, y, heading, hull: hull.number() };
+        .map(|&room::friendlies::Friendly { traffic, x, y, heading, hull, dark, .. }| {
+            let args = messages::FriendlyArgs { traffic, x, y, heading, hull: hull.number(), dark };
             messages::Friendly::create(&mut builder, &args)
         })
         .collect();
@@ -144,6 +148,12 @@ pub fn sea_snapshot_bytes(
         })
         .collect();
     let charted = (!each.is_empty()).then(|| builder.create_vector(&each));
+    let each: Vec<_> = harbour
+        .chart_marks
+        .iter()
+        .map(|&([x, y], kind)| messages::ChartMark::create(&mut builder, &messages::ChartMarkArgs { x, y, kind }))
+        .collect();
+    let chart_marks = (!each.is_empty()).then(|| builder.create_vector(&each));
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -159,9 +169,26 @@ pub fn sea_snapshot_bytes(
         friendlies,
         plates,
         charted,
+        chart_marks,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)
+}
+
+/// A ship as a snapshot carries it: its player's number, where it lies, its heading and the pace it sailed at, and its
+/// looks, the Sloop as built for none.
+pub(crate) fn ship_offset<'built>(
+    builder: &mut flatbuffers::FlatBufferBuilder<'built>,
+    player: PlayerId,
+    Ship { x, y, heading, rate, .. }: Ship,
+    look: Option<room::sea::ShipLook>,
+) -> flatbuffers::WIPOffset<messages::Ship<'built>> {
+    let built = || (gear::ship::fleet::Dress::default().numbers(), [gear::ship::fleet::NO_WORD; 2]);
+    let (dress, name) = look.map_or_else(built, |look| (look.dress, look.name));
+    let (dress, name) = (Some(builder.create_vector(&dress)), Some(builder.create_vector(&name)));
+    let (hull, emblem) = look.map_or((0, 0), |look| (look.hull, look.emblem));
+    let args = messages::ShipArgs { player, x, y, heading, pace: rate, hull, dress, name, emblem };
+    messages::Ship::create(builder, &args)
 }
 
 /// What the sea's snapshot carries beside its ships and fights: each piece of what floats (its player, its number,
@@ -169,7 +196,7 @@ pub fn sea_snapshot_bytes(
 /// its repair has left, what each player is told this tick, and each deck boarded (each boarder's number at sea with
 /// theirs on its deck, its hull, and its deck room's snapshot), the islands the player sees or has found, each traffic
 /// id the room has taken off its route, the friendly ships it keeps at sea, the plate over each other player's ship
-/// the player is sent, and the sea's chart when it is sent (`charted`).
+/// the player is sent, and the sea's chart when it is sent (`charted`, and `chart_marks` for the player's water).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SeaHarbour {
     pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
@@ -185,6 +212,9 @@ pub struct SeaHarbour {
     /// Every ship in the room, the player's own among them, with its captain's name, for the held map: sent about once
     /// a second, empty between.
     pub charted: Vec<(PlayerId, [f64; 2], String)>,
+    /// With the chart, every hostile ship and standing island in the water the player's ship lies in: where it lies,
+    /// and 0 for a hostile ship or its island's kind's number and 1.
+    pub chart_marks: Vec<([f64; 2], u8)>,
 }
 
 /// A sea island as a player is told of it: its number and seed, where its middle is, its kind's number, its water's

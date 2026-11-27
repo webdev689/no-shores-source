@@ -1,5 +1,5 @@
 ---
-type: decision
+type: claude-calls
 date: 2026-11-20
 status: in force
 ---
@@ -55,7 +55,8 @@ Its rank, by the lowest level of its water's band:
   Major, 1.1 for an Elite and 1.2 for a Miniboss.
 - **Sighted** half a minute of the two closing head-on, 432 m a step of the voyage's pace, never under 5 km. It is
   kept until 1.1 times that; no roll launches while three sail in sight.
-- **Where it comes.** A bold ship comes within the cone from which it meets a voyage that holds its course: 0.8 of
+- **Where it comes** (how far out replaced by
+  [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]). A bold ship comes within the cone from which it meets a voyage that holds its course: 0.8 of
   the arcsine of its way over the ship's. A wary one comes within 60 degrees of the course, and at x10 and under both
   do. A pirate takes the place nearest a coast; a Tithe ship the place nearest a lane, along it.
 - **The chase**: a click on its mark sails to meet it, and within 750 m the fight begins.
@@ -92,8 +93,10 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
 ### Close in
 
 - **Its pace eases** down the voyage's steps to the world's own time while it is watched close (close in, the helm,
-  Manage, the deck), a step each 0.15 s, and back up as the view rises. The dial keeps its step.
-- **Its size grows** by the same ratio each notch of the wheel coming in, never under its true size ([[Game]], "Its
+  Manage, the deck), a step each 0.15 s, and back up as the view rises. The dial keeps its step (replaced: no dial;
+  the voyage keeps the pace it was set at, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
+- **Its size grows** by the same ratio each notch of the wheel coming in, never under its true size (replaced: the
+  wheel no longer brings the view in; it grows the same way as the view eases down to sea level, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]) ([[Game]], "Its
   size coming in").
 
 ### The ruins

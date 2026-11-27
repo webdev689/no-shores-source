@@ -93,8 +93,6 @@ fn a_wreck_is_scavenged_once_by_each_account_from_beside_its_heap() {
     stand_at(&mut room, player, [wreck[0] + 1.0, wreck[1]]);
     assert_eq!(scavenged(&mut room, player, 0), 0);
     assert_eq!(room.scavenged(player), vec![0]);
-    let hauls = room.take_hauls();
-    assert_eq!(hauls.iter().map(|haul| (haul.0, haul.1)).collect::<Vec<_>>(), vec![(player, 0)]);
     assert_eq!(scavenged(&mut room, player, 0), asks::OUT_OF_REACH, "spent for them");
     // The keeper saves the leaver's character and gives it back on their return, as it does across rooms.
     let kept = room.kept_character(player).expect("in");
@@ -170,12 +168,10 @@ fn a_wrecks_salvage_is_paid_into_the_scavengers_ship_materials() {
     stand_at(&mut room, player, [wreck[0] + 1.0, wreck[1]]);
     assert_eq!(scavenged(&mut room, player, 0), 0);
     let after = room.player(player).expect("in").character.materials.ship;
-    let (_, _, taken) = room.take_hauls()[0];
     let gained: u16 =
         gear::ship::materials::ShipMaterial::ALL.iter().map(|&each| after.of(each) - before.of(each)).sum();
-    let told: u16 = gear::ship::materials::ShipMaterial::ALL.iter().map(|&each| taken.materials.of(each)).sum();
     assert!(gained >= 1, "a cove's wreck pays a material: {gained}");
-    assert_eq!(gained, told, "what is told is what was paid in");
+    assert_eq!(room.scavenged(player), vec![0], "the page is told the wreck is spent");
 }
 
 #[test]
@@ -271,4 +267,28 @@ fn where_landings_are_checked_a_node_is_gathered_by_the_landed_alone_and_stands_
     };
     assert!(!again(room.minute), "another room of the island, the same day");
     assert!(again(room.minute + 1_440), "the next day");
+}
+
+#[test]
+fn an_islands_node_gathered_before_the_days_turn_stands_again_after_it_and_after_a_rejoin() {
+    let plan = plan(Kind::Cove);
+    const BRINEGLASS: u8 = 0;
+    let mut room = Room::island(&plan, AT, None, None, Some(BRINEGLASS));
+    room.set_minute(gear::clock::RESET_MINUTE - 10);
+    let node = isle::placed(plan.sites.nodes[0], AT);
+    let player = room.join().expect("a room with space");
+    room.own(player, "account-a");
+    stand_at(&mut room, player, [node[0] + 1.0, node[1]]);
+    room.answer(player, asks::Asked::Gather { node: 0 });
+    for _ in 0..=asks::GATHER_TICKS {
+        room.tick();
+    }
+    assert!(!room.nodes_for(player).any(|(index, _)| index == 0), "spent the day it was gathered");
+    room.set_minute(gear::clock::RESET_MINUTE + 10);
+    room.tick();
+    assert!(room.nodes_for(player).any(|(index, _)| index == 0), "stands again once the day turns");
+    room.leave(player);
+    let back = room.join().expect("a room with space");
+    room.own(back, "account-a");
+    assert!(room.nodes_for(back).any(|(index, _)| index == 0), "the room no longer holds it gathered");
 }

@@ -139,11 +139,13 @@ impl Room {
             self.ground_lodestone(player);
             return;
         }
+        // A horde lends the worn Art whole: a Tenet its road has not yet given is cast too (`steps_horde.rs`).
+        let lent = self.unbounded(player);
         let Some((cast, found)) = cast.zip(self.players.get_mut(&player)) else { return };
         let character = &found.character;
         let known = cast.spell >= 1
             && Some(cast.art()) == character.worn_art().map(|art| art.id)
-            && character.ability_earned(cast.art(), cast.ability());
+            && (lent || character.ability_earned(cast.art(), cast.ability()));
         let ready = found.casting.releasing.is_none() && found.casting.share(cast.ability()) >= 1.0;
         if known && ready && able(found) {
             found.casting.releasing = Some((cast, release));
@@ -158,9 +160,15 @@ impl Room {
         }
         let mut due = Vec::new();
         let slower = self.recharge_times();
+        let unbounded: Vec<PlayerId> = self.players.keys().copied().filter(|id| self.unbounded(*id)).collect();
         for (id, found) in &mut self.players {
             let Some(art) = found.character.worn_art() else { continue };
             let casting = &mut found.casting;
+            // Unbounded, what a cast spent last tick is full again, its word sent at once (`steps_horde.rs`).
+            if unbounded.contains(id) && (casting.anima < 1.0 || casting.tenets.iter().any(|tenet| *tenet < 1.0)) {
+                (casting.anima, casting.tenets) = (1.0, [1.0; 2]);
+                (found.gear_changed, found.gear_urgent) = (true, true);
+            }
             casting.anima = filled(casting.anima, tick_of(art.anima.recharge_s * slower));
             for (share, tenet) in casting.tenets.iter_mut().zip(&art.tenets) {
                 *share = filled(*share, tick_of(tenet.recharge_s * slower));

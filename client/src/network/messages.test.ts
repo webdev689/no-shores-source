@@ -162,15 +162,19 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   assert.ok(ball?.muzzle);
 });
 
-test('the sea’s snapshot the server wrote reads back the traffic ids its room took, its friendly ships and its chart', async () => {
+test('the sea’s snapshot the server wrote reads back the traffic ids its room took, its friendly ships, its chart and its marks', async () => {
   const sea = readFromRoom(await written('sea.bin'));
   assert.equal(sea?.kind, 'snapshot');
   if (sea?.kind !== 'snapshot') return;
   assert.deepEqual(sea.taken, [2_605, 777]);
-  assert.deepEqual(sea.friendlies, [{ traffic: 2_605, x: 1_500.5, y: 2_200.25, heading: 0.75, hull: 1 }]);
+  assert.deepEqual(sea.friendlies, [{ traffic: 2_605, x: 1_500.5, y: 2_200.25, heading: 0.75, hull: 1, dark: true }]);
   assert.deepEqual(sea.charted, [
     { player: 4, at: [4_000_000.5, 90_000.25], name: 'Wren' },
     { player: 9, at: [-5, 7], name: '' },
+  ]);
+  assert.deepEqual(sea.chartMarks, [
+    { at: [12_000.5, 34_000.25], kind: 'hostile' },
+    { at: [-3, 8], kind: 'ruin' },
   ]);
 });
 
@@ -233,6 +237,7 @@ test('the sea’s snapshot the server wrote reads back as its ships, its hostile
   const fights = sea?.kind === 'snapshot' ? sea.fights : [];
   assert.deepEqual([fights[0]?.player, fights[0]?.faction, fights[0]?.rank, fights[0]?.hull], [2, 1, 4, 2]);
   assert.deepEqual([fights[0]?.mayBoard, fights[1]?.mayBoard], [true, false], 'whether each may board, the sea’s word');
+  assert.deepEqual([fights[0]?.lesson, fights[1]?.lesson], [false, true], 'whether each is the lesson’s hulk');
   const named = { name: 'Tithe Sloop', faction: fights[0]?.faction ?? 0, rank: fights[0]?.rank ?? 0 };
   const fight = fightViewOf(fights[0]?.view ?? [], named);
   assert.deepEqual([fight.captain.name, fight.captain.faction, fight.captain.rank], ['Tithe Sloop', 1, 4]);

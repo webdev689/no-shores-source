@@ -24,15 +24,17 @@ fn carried(character: &gear::Character) -> Vec<(u8, u8, String, u32, bool)> {
 }
 
 #[test]
-fn a_pledged_players_gear_carries_the_towns_six_then_their_factions_three_each_by_its_place() {
+fn a_pledged_players_gear_carries_the_towns_eight_then_their_factions_three_each_by_its_place() {
     let unpledged = carried(&gear::Character::starting());
     let places: Vec<(u8, u8)> = unpledged.iter().map(|row| (row.0, row.1)).collect();
-    assert_eq!(places, (0..6).map(|place| (place, 0)).collect::<Vec<_>>(), "the town's six alone");
+    let town: Vec<(u8, u8)> = gear::bounties::town_places().map(|place| (place, 0)).collect();
+    assert_eq!(town.iter().map(|row| row.0).collect::<Vec<_>>(), [0, 1, 2, 3, 4, 5, 15, 16]);
+    assert_eq!(places, town, "the town's eight alone, the passages' two at their places after the factions'");
     let mut veiled = gear::Character::starting();
     veiled.allegiance.pledge = 3;
     let rows = carried(&veiled);
-    assert_eq!(rows.len(), 9);
-    for (row, place) in rows[6..].iter().zip(faction_places(3)) {
+    assert_eq!(rows.len(), 11);
+    for (row, place) in rows[8..].iter().zip(faction_places(3)) {
         let bounty = bounty_at(DAY, place).expect("on the board");
         assert_eq!((row.0, row.1, row.2.as_str()), (place, 3, bounty.name), "the Veiled's, at its own places");
     }
@@ -46,12 +48,12 @@ fn another_factions_bounty_held_today_is_carried_after_and_none_from_another_day
     switched.activity.today =
         gear::activity::Today { day: DAY, faction_bounties: [(held, 4)].into(), ..Default::default() };
     let rows = carried(&switched);
-    assert_eq!(rows.len(), 10, "the town's six, the Lamplighters' three and the Stormcallers' held");
+    assert_eq!(rows.len(), 12, "the town's eight, the Lamplighters' three and the Stormcallers' held");
     let last = rows.last().expect("a row");
     assert_eq!((last.0, last.1, last.3, last.4), (held, 1, 4, true));
     switched.activity.today.day = DAY - 1;
     let yesterdays = carried(&switched);
-    assert_eq!(yesterdays.len(), 9, "yesterday's is held no more");
+    assert_eq!(yesterdays.len(), 11, "yesterday's is held no more");
     assert!(yesterdays.iter().all(|row| !row.4));
 }
 
@@ -71,8 +73,8 @@ fn a_pledged_player_holding_the_towns_and_their_factions_bounties_sees_each_once
     };
     let rows = carried(&pledged);
     let places: Vec<u8> = rows.iter().map(|row| row.0).collect();
-    assert_eq!(places, [0, 1, 2, 3, 4, 5, 6, 7, 8], "each once, in the board's order");
-    assert!(rows[2].4 && rows[6].4, "the town's and their own held, each where it stands");
+    assert_eq!(places, [0, 1, 2, 3, 4, 5, 15, 16, 6, 7, 8], "each once, in the board's order");
+    assert!(rows[2].4 && rows[8].4, "the town's and their own held, each where it stands");
     pledged.activity.today.day = DAY - 1;
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.set_minute(FRIDAY_NINE);

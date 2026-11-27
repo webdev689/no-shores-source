@@ -11,8 +11,8 @@ import {
   labelPoints,
   levelColour,
   type MapWaters,
+  shutCells,
   washOf,
-  waterWords,
 } from './watersWash.ts';
 
 const HOLDERS = ['home', 'grey-tithe', 'lattice'] as const;
@@ -62,6 +62,19 @@ test('each holder washes its water in its own colour; the Lattice and the Tithe 
   }
 });
 
+test('home waters past their reach of the coast wash and hatch as the Grey Tithe’s', () => {
+  const grid = gridOf(Array.from({ length: 3 }, () => [0, 0, 0, 0, 0, 0, 0]));
+  // Each column 5 km further from the coast: the first three within 10 km, the rest past it.
+  const distance = Float32Array.from({ length: 21 }, (unused, index) => (index % 7) * 5_000);
+  const wash = washOf(grid, { distance, reachM: 10_000 });
+  // The middle row's cells whose neighbours all lie on one side of the reach.
+  const [near, far] = [7 + 1, 7 + 5];
+  assert.deepEqual([...wash.colour.subarray(near * 4, near * 4 + 4)], rgba(HOLDER_COLOURS.home, 255));
+  assert.deepEqual([...wash.colour.subarray(far * 4, far * 4 + 4)], rgba(HOLDER_COLOURS['grey-tithe'], 255));
+  assert.deepEqual([wash.hatch[near * 2 + 1], wash.hatch[far * 2 + 1]], [0, 255], 'hatched as the Tithe’s past it');
+  assert.equal(washOf(grid).hatch[far * 2 + 1], 0, 'with no reach given, home throughout');
+});
+
 test('the wash lies on the sea, and blends across a border rather than stepping', () => {
   const grid = gridOf([
     [0, 0, 2, 2],
@@ -91,9 +104,22 @@ test('a water is lettered from its sea cell farthest from land, other waters and
   assert.deepEqual(points.get(0), [2_500, 2_500], 'the middle of the open water');
   const [x, y] = points.get(2) ?? [0, 0];
   assert.equal(grid.water[Math.floor(y / 1_000) * grid.columns + Math.floor(x / 1_000)], 2, 'inside its own water');
-  assert.equal(
-    waterWords({ continent: 7, id: 'continent-8', name: 'The Fen Deeps', holder: 'grey-tithe', levels: [22, 26] }),
-    'The Fen Deeps, 22-26',
+});
+
+test('a locked sea and its island are shaded whole, softly at their edge, and an open one not at all', () => {
+  // Water 0 open beside water 2 locked, its island's land the last two columns: the first by its coast's island, the
+  // last inside its outline alone; three rows alike.
+  const row = [0, 0, 0, 2, 2, 2, LAND, LAND];
+  const grid = gridOf([row, row, row]);
+  const field = {
+    island: Uint8Array.from([0, 0, 0, 2, 2, 2, 2, 255, 0, 0, 0, 2, 2, 2, 2, 255, 0, 0, 0, 2, 2, 2, 2, 255]),
+  };
+  const outline = Uint8Array.from(Array.from({ length: 24 }, (unused, cell) => Number(cell % 8 === 7)));
+  const shade = [...shutCells(grid, field, new Set([2]), [outline])];
+  assert.deepEqual(shade.slice(8, 16), [0, 0, 85, 170, 255, 255, 255, 170], 'the middle row: open, soft edge, shut');
+  assert.ok(
+    [...shutCells(grid, field, new Set())].every((cell) => cell === 0),
+    'none locked, none shaded',
   );
 });
 

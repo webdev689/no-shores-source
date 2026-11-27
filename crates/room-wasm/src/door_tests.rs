@@ -236,9 +236,6 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
     assert!(open_sea(layout.as_bytes(), 7), "a layout alone, with no lanes");
 }
 
-/// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "0462cf65304bcb00";
-
 /// A new player handed the Sloop, as the Harbourmaster hands it over in the welcome: one the sea lets in.
 fn sailor() -> gear::Character {
     let mut character = gear::Character::starting();
@@ -276,7 +273,8 @@ fn a_sea_where_a_tithe_ship_attacks_a_friendly_ship_and_a_player_joins_them_snap
         }
     }
     assert!(clashed && three, "the Tithe ship attacked, and the player joined beside the friendly ship");
-    assert_eq!(format!("{hash:016x}"), SEA_CLASH_HASH);
+    // roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do, to the same value.
+    assert_eq!(format!("{hash:016x}"), pinned("sea.clash"));
 }
 
 #[test]
@@ -389,7 +387,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     assert_eq!(nodes.len(), 12 * 4, "every one of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
     let gear = messages::root_as_from_room(&sent).unwrap().gear().unwrap();
-    assert_eq!(gear.chests().unwrap().len(), 2 * 5, "a chest for each five places, five numbers each");
+    assert_eq!(gear.chests().unwrap().len(), 2 * 6, "a chest for each five places, six numbers each");
     assert_eq!(
         gear.searchables().unwrap().len(),
         3 * 8,
@@ -412,8 +410,8 @@ fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem_at_the_vendors_c
     let message = messages::root_as_from_room(&sent).unwrap();
     let wares = message.gear().unwrap().wares().unwrap();
     let starter = gear::vendor::Vendor::ALL.map(|vendor| vendor.starter_kinds().len());
-    assert_eq!(starter, [4, 2, 0], "the Armorsmith's four pieces, the Weaponsmith's two");
-    assert_eq!(wares.len(), 3 * gear::vendor::WARES + 6, "the Armorsmith's, the Weaponsmith's and the Shipwright's");
+    assert_eq!(starter, [4, 18, 0], "the Armorsmith's four pieces, the Weaponsmith's every Melee and Ranged kind");
+    assert_eq!(wares.len(), 3 * gear::vendor::WARES + 22, "the Armorsmith's, the Weaponsmith's and the Shipwright's");
     assert_eq!((wares.get(0).price(), wares.get(5).price()), (2_000, 600), "Rare, then Magic");
     let head = wares.get(gear::vendor::WARES);
     assert_eq!((head.id(), head.price(), head.rarity()), (6, 50, 0), "the starter stock after, numbered on, at 50");
@@ -656,7 +654,7 @@ fn a_leaving_players_vestige_still_lying_is_in_their_character_before_the_room_l
 }
 
 /// Two islands of the traffic, Overlook's and Sunspire's, 100 km squares 200 km apart on the line y = 150 km, their
-/// ports in their middles: the lane between them runs east through the Grey Tithe's waters past x = 300 km.
+/// ports in their middles: the lane between them runs east through the Grey Tithe's waters past x = 210 km.
 pub const TRAFFIC_SEA: &str = r#"{ "layout": { "continents": [
     { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
     { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }
@@ -708,3 +706,26 @@ fn a_browser_foresees_whom_its_swing_hits_as_the_room_judges_them() {
     assert!(foreseen(facing_back).is_empty(), "a guard facing the blow blocks it: no hit foreseen");
     assert!(foreseen(foe_at(-6.0, combat::Action::Idle)).is_empty(), "out of reach");
 }
+
+#[test]
+fn a_sea_opened_with_the_islands_names_locks_the_sea_of_every_island_not_named() {
+    let layout = r#"{ "continents": [
+        { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
+        { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }
+    ], "isles": [] }"#;
+    let text = format!(r#"{{ "layout": {layout}, "ports": [], "islands": {{ "continent-1": "Saltmere" }} }}"#);
+    assert!(open_sea(text.as_bytes(), 7));
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[250_000.0, 150_000.0]], 10)), TAKEN);
+    for _ in 0..room::sea::COURSE_EVERY_TICKS {
+        room_tick();
+    }
+    assert_eq!(input(player, &protocol::course_bytes(&[[350_000.0, 150_000.0]], 10)), REFUSED, "the fourth's sea");
+    assert!(open_sea(layout.as_bytes(), 7), "a layout alone locks nothing");
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[350_000.0, 150_000.0]], 10)), TAKEN);
+}
+
+#[path = "../../land/tests/support/pinned.rs"]
+mod pinned;
+pub(crate) use pinned::pinned;

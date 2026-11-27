@@ -7,6 +7,7 @@ import type { Swell } from '../rules/landRules.ts';
 import type { TrafficShip } from '../rules/watersRules.ts';
 import type { OpenWaters } from './pageWaters.ts';
 import type { SeaFrame } from './seaFrame.ts';
+import { HULL_LINES, type HullLines } from '../ships/hullLines.ts';
 import { hullSails, hullWaterline } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { plainCrew } from '../ships/shipCrew.ts';
@@ -205,6 +206,8 @@ export interface FriendlyStep {
   readonly slots: (hull: number) => number;
   /** The traffic ids the room has taken off their routes. */
   readonly taken?: ReadonlySet<number>;
+  /** Each hull's own line for its footprint; every ship's shared lines unless said. */
+  readonly lines?: Pick<HullLines, 'line'>;
 }
 
 /** The nearest `slots(hull)` of each hull among `ships` (nearest first), in their order. */
@@ -233,17 +236,23 @@ export function friendlyFrame(
   const ships = fleet.drawn(drawn, view.scale, water, water.swell?.bearing ?? 0, seconds, time);
   const away = (mask: HullMask) => Math.hypot(mask.x - view.centre[0], mask.y - view.centre[1]);
   const [first, ...rest] = hulls;
-  const others = [...rest, ...friendlyHulls(drawn, view.scale)].sort((one, other) => away(one) - away(other));
+  const others = [...rest, ...friendlyHulls(drawn, view.scale, step.lines)].sort(
+    (one, other) => away(one) - away(other),
+  );
   return { ships, hulls: (first ? [first, ...others] : others).slice(0, HULLS), marks: friendlyMarks(near) };
 }
 
 /** Each ship's footprint on the water, `scale` times its size: under way, or still at anchor. */
-export function friendlyHulls(ships: readonly FriendlySailing[], scale: number): HullMask[] {
+export function friendlyHulls(
+  ships: readonly FriendlySailing[],
+  scale: number,
+  lines: Pick<HullLines, 'line'> = HULL_LINES,
+): HullMask[] {
   return ships.map(({ id, x, y, heading, hull, lying }) => {
     const { lengthM, beamM } = hullWaterline(hull);
     const way = lying ? 0 : UNDER_WAY;
     const [halfLength, halfBeam] = [(lengthM / 2) * scale, (beamM / 2) * scale];
-    return { id: `friendly ${id}`, x, y, heading, halfLength, halfBeam, way };
+    return { id: `friendly ${id}`, x, y, heading, halfLength, halfBeam, way, line: lines.line(hull) };
   });
 }
 

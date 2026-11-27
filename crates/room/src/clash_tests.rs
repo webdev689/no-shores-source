@@ -25,7 +25,19 @@ pub fn at_sea(id: u32, commission: Commission, x: f64, bold: bool) -> Hostile {
 /// a `hull`, bound north.
 pub fn friend_at(traffic: u64, hull: sailing::HullKind, x: f64) -> Friendly {
     let sight_m = crate::sighting::SIGHT_LEAST_M;
-    Friendly { traffic, hull, seed: 5, level: 0, sight_m, x, y: 0.0, heading: 0.0, to: [x, -100_000.0], lane: None }
+    Friendly {
+        traffic,
+        hull,
+        seed: 5,
+        level: 0,
+        sight_m,
+        x,
+        y: 0.0,
+        heading: 0.0,
+        to: [x, -100_000.0],
+        lane: None,
+        dark: false,
+    }
 }
 
 #[test]
@@ -130,4 +142,65 @@ fn a_clash_keeps_the_weather_it_began_in() {
     let at_sea = (&mut Hostiles::default(), &mut Friendlies::default());
     step_clashes(&mut clashes, at_sea, &[[150.0, 0.0]], (&[], 1.0 / 60.0));
     assert_eq!((clashes[0].swell.bearing, clashes[0].wind), (swell.bearing, wind));
+}
+
+#[test]
+fn a_friendly_ship_running_from_the_tithe_ship_that_attacked_her_puts_her_lanterns_out() {
+    let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite };
+    let met = (at_sea(3, elite, 0.0, true), friend_at(9, sailing::HullKind::Sloop, 400.0));
+    let mut clash = Clash::begin(met, still(), &[], 0.0);
+    assert!(clash.friendlies().all(|ship| !ship.dark), "fighting back, she shows her lanterns");
+    let friend = clash.friends()[0].0;
+    if let Some(naval::fight::Sailor::Captain(command)) =
+        clash.fight.ships.get_mut(&friend).map(|ship| &mut ship.sailor)
+    {
+        command.mind.mode = Mode::Flee;
+    }
+    assert!(clash.friendlies().all(|ship| ship.dark), "running, she puts them out");
+}
+
+#[test]
+fn a_fight_is_told_the_daylight_where_it_lies_night_at_midnight_and_day_at_noon() {
+    let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite };
+    let met = (at_sea(3, elite, 0.0, true), friend_at(9, sailing::HullKind::Sloop, 400.0));
+    let mut fight = Clash::begin(met, still(), &[], 0.0).fight;
+    let midnight = sky::clock::EPOCH_UNIX_MS / 1000.0;
+    light_fight(&mut fight, midnight);
+    assert!(naval::night::is_night(fight.daylight), "midnight");
+    light_fight(&mut fight, midnight + sky::clock::DAY_S / 2.0);
+    assert!(!naval::night::is_night(fight.daylight), "noon");
+}
+
+#[test]
+fn by_night_a_player_joins_a_clash_only_within_sight_of_its_lanterns_and_by_day_from_750_m() {
+    let tithe = at_sea(3, Commission { faction: GREY_TITHE, rank: Rank::Major }, 0.0, true);
+    // The merchant lies 2 km east of the Tithe ship, so each is sighted alone.
+    let met = (tithe, friend_at(9, sailing::HullKind::Sloop, 2_000.0));
+    let joins = |at: [f64; 2], daylight: f64| {
+        let mut clashes = vec![Clash::begin(met, still(), &[], 0.0)];
+        clashes[0].fight.daylight = daylight;
+        sighted(&mut clashes, at).is_some()
+    };
+    assert!(joins([-219.0, 0.0], 0.0) && !joins([-221.0, 0.0], 0.0), "the Tithe ship dark: 220 m");
+    assert!(joins([2_649.0, 0.0], 0.0) && !joins([2_651.0, 0.0], 0.0), "the merchant lit: 650 m");
+    assert!(joins([-749.0, 0.0], 1.0) && joins([2_749.0, 0.0], 1.0), "by day each from 750 m");
+    assert!(!joins([-751.0, 0.0], 1.0) && !joins([2_751.0, 0.0], 1.0), "and no farther");
+}
+
+#[test]
+fn by_night_a_merchant_running_dark_is_joined_only_within_220_m() {
+    let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite };
+    let met = (at_sea(3, elite, 0.0, true), friend_at(9, sailing::HullKind::Sloop, 2_000.0));
+    let joins = |at: [f64; 2]| {
+        let mut clashes = vec![Clash::begin(met, still(), &[], 0.0)];
+        clashes[0].fight.daylight = 0.0;
+        let friend = clashes[0].friends()[0].0;
+        if let Some(naval::fight::Sailor::Captain(command)) =
+            clashes[0].fight.ships.get_mut(&friend).map(|ship| &mut ship.sailor)
+        {
+            command.mind.mode = Mode::Flee;
+        }
+        sighted(&mut clashes, at).is_some()
+    };
+    assert!(joins([2_219.0, 0.0]) && !joins([2_221.0, 0.0]), "running dark: 220 m");
 }

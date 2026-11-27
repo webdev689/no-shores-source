@@ -9,7 +9,8 @@ import { gauntletOver } from '../ui/gauntlet.ts';
 import type { Stack } from '../ui/stack.ts';
 import { seen } from '../ui/seen.ts';
 import { Interface } from '../ui/ui.ts';
-import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
+import { UiRenderer } from '../ui/uiRenderer.ts';
+import { interfaceScale } from '../ui/interfaceSize.ts';
 import { FrameGuard } from '../frameGuard.ts';
 import { drawnPress, drawnReach } from './uiSounds.ts';
 
@@ -38,6 +39,11 @@ export class DrawnInterface {
   /** Whether words are being typed into it, so keys are not the game's. */
   get typing(): boolean {
     return Boolean(this.ui?.typing);
+  }
+
+  /** What has the focus, if anything: a press the keys or the pad press themselves. */
+  get focused(): string | null {
+    return this.ui?.focusedId ?? null;
   }
 
   /** Whether the pointer is over it now, so a click is not the world's: where the page last heard the pointer, as the
@@ -87,6 +93,6 @@ export class DrawnInterface {
 
   private get view() {
     const ratio = devicePixelRatio;
-    return { width: this.canvas.width, height: this.canvas.height, scale: uiScale(ratio), ratio };
+    return { width: this.canvas.width, height: this.canvas.height, scale: interfaceScale(ratio), ratio };
   }
 }

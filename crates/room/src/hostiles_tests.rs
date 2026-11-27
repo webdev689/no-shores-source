@@ -1,5 +1,5 @@
 use super::*;
-use crate::sighting::{RANKS_AT_SEA, SIGHT_HOLD_S};
+use crate::sighting::{COME_OUT_LEAST_M, RANKS_AT_SEA, SIGHT_HOLD_S};
 use naval::ranks::{GREY_TITHE, Rank};
 use std::collections::BTreeMap as Map;
 use world::waters::Holder;
@@ -68,7 +68,7 @@ fn brought(chart: &OneWater, seeds: u32, hours: u32, at: [f64; 2], pace: u16) ->
 }
 
 #[test]
-fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_near_its_sight_out() {
+fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_about_a_kilometre_out() {
     let mut hostiles = Hostiles::default();
     let ship = [500_000.0, 500_000.0];
     for _ in 0..4 * 3600 {
@@ -84,11 +84,12 @@ fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_ne
         }
         assert!(hostiles.sailing.iter().filter(|hostile| hostile.sees(ship)).count() <= DENSITY);
     }
-    // About one roll in 100 s, a hostile ship on 0.24 of them: some 35 in four hours.
+    // A roll about every 50 s, a hostile ship on 0.24 of them, but none while three sail in sight, as the wary ones
+    // that linger often do: some 30 in four hours.
     assert!((15..70).contains(&launched.len()), "{} ships in four hours", launched.len());
     for &out in launched.values() {
         let way = way_of(Rank::Miniboss);
-        assert!((0.9 * SIGHT_LEAST_M - way..=SIGHT_LEAST_M + way).contains(&out), "launched {out} m out");
+        assert!((0.9 * COME_OUT_LEAST_M - way..=COME_OUT_LEAST_M + way).contains(&out), "launched {out} m out");
     }
 }
 
@@ -260,20 +261,20 @@ fn under_way_a_ship_comes_ahead_within_60_degrees_and_a_bold_one_within_its_meet
 
 #[test]
 fn a_hostile_ship_comes_nearest_a_lane_and_heads_along_it_else_nearest_a_coast() {
-    // The player 20 km off the coast at x = 0 and 20 km off the lane at y = 0, at rest.
-    let at = [20_000.0, 20_000.0];
+    // The player at rest four times its distance out off the coast at x = 0 and off the lane at y = 0.
+    let at = [4.0 * COME_OUT_LEAST_M; 2];
     let mean =
         |ships: &[Hostile], off: &dyn Fn(&Hostile) -> f64| ships.iter().map(off).sum::<f64>() / ships.len() as f64;
     let on_lane = brought(&OneWater { lane: true, ..HOSTILE_WATER }, 20, 4, at, 0);
     let coast = |hostile: &Hostile| hostile.x.abs();
     let lane = |hostile: &Hostile| hostile.y.abs();
-    assert!(mean(&on_lane, &lane) < 17_000.0, "{} m off the lane", mean(&on_lane, &lane));
+    assert!(mean(&on_lane, &lane) < 3.4 * COME_OUT_LEAST_M, "{} m off the lane", mean(&on_lane, &lane));
     let along =
         |hostile: &Hostile| (hostile.heading - TAU / 4.0).abs() < 1e-9 || (hostile.heading - 0.75 * TAU).abs() < 1e-9;
     assert!(on_lane.iter().all(along), "each heads along its lane");
     let no_lane = brought(&HOSTILE_WATER, 20, 4, at, 0);
-    assert!(mean(&no_lane, &coast) < 17_000.0, "with no lane near, it comes by the coast");
-    assert!(mean(&on_lane, &lane) < mean(&no_lane, &lane) - 2_000.0, "a lane draws it");
+    assert!(mean(&no_lane, &coast) < 3.4 * COME_OUT_LEAST_M, "with no lane near, it comes by the coast");
+    assert!(mean(&on_lane, &lane) < mean(&no_lane, &lane) - 0.4 * COME_OUT_LEAST_M, "a lane draws it");
 }
 
 #[test]
@@ -354,7 +355,61 @@ fn a_bold_ship_by_the_edge_of_home_waters_meets_no_player_inside_them() {
     let home = OneWater { holder: Holder::Home, open: |_, _| false, ..HOSTILE_WATER };
     let mut hostiles = Hostiles { sailing: vec![standing(1, [700.0, 0.0], 0.0, true)], ..Hostiles::default() };
     let inside = Voyager { home: true, ..voyager(5, [0.0, 0.0], 0, false) };
-    assert!(hostiles.tick(1.0, &[inside], &home).is_empty(), "home waters hold no hostile");
+    // A player past home waters, 4.5 km off, keeps the ship at sea and is too far to be met.
+    let keeper = voyager(6, [700.0, 4_500.0], 0, false);
+    assert!(hostiles.tick(1.0, &[inside, keeper], &home).is_empty(), "home waters hold no hostile");
     hostiles.chase(5, Some(1));
-    assert!(hostiles.tick(1.0, &[inside], &home).is_empty(), "nor one it chases");
+    assert!(hostiles.tick(1.0, &[inside, keeper], &home).is_empty(), "nor one it chases");
+    assert_eq!(hostiles.sailing.len(), 1, "still at sea, 700 m from the player inside");
+}
+
+#[test]
+fn each_player_rolls_for_a_hostile_ship_at_the_owners_rates() {
+    assert_eq!(super::FIRST_ROLL_S, 30.0, "half a minute after reaching the water");
+    assert_eq!(super::ROLL_EVERY_S, [30.0, 70.0], "then every 30 to 70 s");
+    assert_eq!(super::DENSITY, 3, "none while three sail in sight");
+}
+
+#[test]
+fn a_player_inside_home_waters_is_no_ships_quarry_and_keeps_none_at_sea() {
+    let home = Voyager { home: true, ..voyager(1, [3_000.0, 0.0], 0, false) };
+    let out = voyager(2, [9_000.0, 0.0], 0, false);
+    let mut hostiles = Hostiles { sailing: vec![standing(1, [4_000.0, 0.0], 0.0, true)], ..Hostiles::default() };
+    hostiles.tick(1.0, &[home, out], &HOSTILE_WATER);
+    let quarries: Vec<_> = hostiles.sailing.iter().map(|hostile| hostile.quarry).collect();
+    assert_eq!(quarries, [Some(2)], "it comes for the player past home waters, never the one inside them");
+    hostiles.tick(1.0, &[home], &HOSTILE_WATER);
+    assert!(hostiles.sailing.is_empty(), "a player inside home waters keeps no ship at sea");
+}
+
+#[test]
+fn a_player_inside_home_waters_sets_no_ships_clock_or_sight() {
+    let home = Voyager { home: true, ..voyager(1, [5_000.0, 0.0], 100, false) };
+    let out = voyager(2, [0.0, 3_000.0], 0, false);
+    let mut hostiles = Hostiles { sailing: vec![standing(1, [4_000.0, 0.0], 0.0, true)], ..Hostiles::default() };
+    hostiles.tick(1.0, &[home, out], &HOSTILE_WATER);
+    let ship = hostiles.sailing[0];
+    let sailed = apart([ship.x, ship.y], [4_000.0, 0.0]);
+    assert!(sailed <= way_of(ship.commission.rank) + 1e-9, "it sails at the clock of the player past them: {sailed} m");
+    assert_eq!(ship.sight_m, SIGHT_LEAST_M, "its sight from that player's pace, not the sheltered one's");
+}
+
+#[test]
+fn a_player_under_way_meets_nearly_twice_the_ships_rolls_every_60_to_140_s_brought() {
+    // Under way at x20 ships fall astern and go, so the cap of three in sight seldom holds a roll back: 340 ships over
+    // these five seas of four hours, where rolls every 60 to 140 s brought 177.
+    let ships = brought(&HOSTILE_WATER, 5, 4, [500_000.0, 500_000.0], 20);
+    assert!(ships.len() > 300, "{} ships", ships.len());
+}
+
+#[test]
+fn by_night_a_ship_comes_for_a_player_only_within_650_m_and_by_day_within_its_sight() {
+    // Its choice alone: in a tick a ship within 750 m would meet the player, and one by home waters would leave.
+    let quarry = |east: f64, daylight: f64| {
+        let ship = standing(1, [0.0, 0.0], 0.0, true);
+        come_for(&ship, &[voyager(5, [east, 0.0], 0, false)], (1.0, 1.0), daylight).1
+    };
+    assert_eq!((quarry(649.0, 0.0), quarry(651.0, 0.0)), (Some(5), None), "her lanterns: 650 m");
+    assert_eq!(quarry(4_000.0, 1.0), Some(5), "by day its whole sight");
+    assert_eq!(quarry(SIGHT_LEAST_M + 1.0, 1.0), None, "and no farther");
 }

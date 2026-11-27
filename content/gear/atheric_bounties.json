@@ -1,0 +1,20 @@
+[
+  {
+    "id": "lanternfall",
+    "item": "lanternfall",
+    "island": "continent-1",
+    "find": "Cold Lantern",
+    "words": "Cold, and heavier than it looks. Something in it still wants to burn.",
+    "level": 27,
+    "drops": [
+      {"lamp": 4, "chance": 0.12},
+      {"past": 14, "chance": 0.03}
+    ],
+    "steps": [
+      {"kind": "lamp", "count": 1, "words": "Bring the cold lantern to a lamp"},
+      {"kind": "kindle", "count": 5, "words": "Finish 5 Kindles in Saltmere's passages"},
+      {"kind": "fell", "count": 100, "weapon": "thunderlock", "words": "Defeat 100 foes there with a thunderlock"},
+      {"kind": "lamp", "count": 1, "lamp": 4, "words": "Kindle lamp 4 there while the Tithe come"}
+    ]
+  }
+]

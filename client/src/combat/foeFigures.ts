@@ -46,6 +46,8 @@ export interface FoeFeel {
 
 /** How far past the Fissure's ground a foe coming still climbs out of it, metres. */
 const POUR_REACH_M = 10;
+/** A Sever's tally post's name over it, as the room stands it (crates/room `passage_deal.rs`). */
+const TALLY_POST = 'Tally Post';
 /** A foe that dies dissolves once its fall is over (seconds after it died) when nothing gave its death an element. */
 const PLAIN_DISSOLVE_AFTER_S = (FIGHT_TICKS.death + 6) / 60;
 
@@ -181,11 +183,12 @@ export class FoeFigures {
       this.drawnIn = fight.joins;
     }
     const cards: CardAt[] = [];
-    // The Fissure's growth is a foe the room strikes like one, but only its crystal stands there: no figure.
+    // The Fissure's growth and a Sever's tally post are foes the room strikes like one, but only the crystal or the
+    // post stands there: no figure.
     const growths = (fight.publicHeld?.marks ?? []).filter((mark) => mark.kind === MARK.growth).map((mark) => mark.id);
     const tick = this.ticks.now(fight.roomTick, clock);
     for (const kept of fight.foes.values()) {
-      if (growths.includes(kept.id)) continue;
+      if (growths.includes(kept.id) || kept.name === TALLY_POST) continue;
       // A foe not yet let down from its airship, nor begun forming under its crown, is not seen (`foeArrivals.ts`).
       const arriving = arrivalLook(kept.arrival, kept.faction, tick);
       if (arriving.hidden) continue;

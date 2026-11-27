@@ -1,15 +1,22 @@
 use crate::models::FAMILIES;
 use crate::{
-    CELL_M, Cell, Dungeon, HUNG_M, PILLAR_HALF_M, POSTS_A_ROOM, Piece, Prop, SIDES, STYLES, Side, posts_for, prop_model,
+    CELL_M, Cell, Dungeon, EVERY_STYLE, HUNG_M, PILLAR_HALF_M, POSTS_A_ROOM, Piece, Prop, SIDES, Side, posts_for,
+    prop_model,
 };
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
-    (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
+    (0..count)
+        .map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), EVERY_STYLE[seed as usize % EVERY_STYLE.len()]))
 }
 
 /// The cell a point stands in.
-fn cell_at(dungeon: &Dungeon, x: f64, y: f64) -> usize {
-    (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize
+fn cell_at(dungeon: &Dungeon, x: f64, y: f64, z: f64) -> usize {
+    dungeon.cell_at([x, y, z])
+}
+
+/// Where a prop's foot stands, absolute.
+fn foot(prop: &crate::Prop) -> f64 {
+    prop.at[2] + prop_model(prop.model).map_or(0.0, |model| model.min[1])
 }
 
 /// The side a yaw faces.
@@ -38,7 +45,8 @@ fn plan(prop: &Prop) -> [f64; 4] {
 fn solids(dungeon: &Dungeon) -> Vec<(usize, [f64; 5])> {
     let boxes = dungeon.props.iter().filter_map(|prop| prop.solid);
     let all = boxes.chain(dungeon.fixtures.iter().filter_map(|fixture| fixture.solid));
-    all.map(|solid| (cell_at(dungeon, (solid[0] + solid[2]) / 2.0, (solid[1] + solid[3]) / 2.0), solid)).collect()
+    all.map(|solid| (cell_at(dungeon, (solid[0] + solid[2]) / 2.0, (solid[1] + solid[3]) / 2.0, solid[4]), solid))
+        .collect()
 }
 
 /// The cells a room's foes may not stand on: those holding a solid, and those under a landmark.
@@ -75,7 +83,7 @@ fn each_piece_stands_inside_its_cell_on_the_floor_under_the_ceiling_its_box_its_
         for prop in &dungeon.props {
             let model = prop_model(prop.model).unwrap();
             let [min_x, min_y, max_x, max_y] = plan(prop);
-            let cell = cell_at(&dungeon, (min_x + max_x) / 2.0, (min_y + max_y) / 2.0);
+            let cell = cell_at(&dungeon, (min_x + max_x) / 2.0, (min_y + max_y) / 2.0, foot(prop));
             let [middle_x, middle_y] = dungeon.centre(cell);
             let half = CELL_M / 2.0 + 1e-9;
             let inside = min_x >= middle_x - half
@@ -84,18 +92,19 @@ fn each_piece_stands_inside_its_cell_on_the_floor_under_the_ceiling_its_box_its_
                 && max_y <= middle_y + half;
             assert!(inside, "{} inside its cell", prop.model);
             let room = dungeon.room_at(cell).expect("in a room");
-            let height = dungeon.rooms[room].height;
+            let floor = crate::storey_floor(dungeon.rooms[room].storey);
+            let height = dungeon.rooms[room].height + floor;
             if model.piece == Piece::Hung {
                 assert!(prop.solid.is_none(), "a hanging fills nothing");
-                assert!((prop.at[2] + model.min[1] - HUNG_M).abs() < 1e-9, "hung over head height");
+                assert!((prop.at[2] + model.min[1] - floor - HUNG_M).abs() < 1e-9, "hung over head height");
                 assert!(prop.at[2] + model.max[1] <= height - 0.3 + 1e-9, "under the ceiling");
             } else {
                 let solid = prop.solid.expect("a standing piece is a solid");
                 for (own, want) in solid[..4].iter().zip([min_x, min_y, max_x, max_y]) {
                     assert!((own - want).abs() < 1e-9, "{}'s solid is its model's box where it stands", prop.model);
                 }
-                assert!((prop.at[2] + model.min[1]).abs() < 1e-12, "its foot on the floor");
-                assert!((solid[4] - model.height()).abs() < 1e-9 && solid[4] <= height - 0.3 + 1e-9);
+                assert!((prop.at[2] + model.min[1] - floor).abs() < 1e-12, "its foot on the floor");
+                assert!((solid[4] - floor - model.height()).abs() < 1e-9 && solid[4] <= height - 0.3 + 1e-9);
             }
             if !used.contains(&prop.model) {
                 used.push(prop.model);
@@ -111,17 +120,24 @@ fn no_piece_stands_on_a_doorway_the_way_in_the_portal_the_reeves_post_or_a_torch
         let post = dungeon.nearest_middle(dungeon.end(), 1)[0];
         let [post_x, post_y] = dungeon.centre(post);
         let torch_walls: Vec<(usize, Side)> =
-            dungeon.torches.iter().map(|torch| (cell_at(&dungeon, torch.at[0], torch.at[1]), torch.wall)).collect();
+            dungeon.torches.iter().map(|torch| (dungeon.cell_at(torch.at), torch.wall)).collect();
         let mut cells = Vec::new();
         let mut walls = Vec::new();
-        let pieces = dungeon.props.iter().map(|prop| (plan(prop), prop.solid));
+        let pieces = dungeon.props.iter().map(|prop| (plan(prop), prop.solid, foot(prop)));
         let fixtures = dungeon
             .fixtures
             .iter()
             .filter_map(|fixture| fixture.solid)
-            .map(|solid| ([solid[0], solid[1], solid[2], solid[3]], Some(solid)));
-        for ([min_x, min_y, max_x, max_y], solid) in pieces.chain(fixtures) {
-            let cell = cell_at(&dungeon, (min_x + max_x) / 2.0, (min_y + max_y) / 2.0);
+            // Braziers flanking a doorway from its corridor stand outside every room's furnishing.
+            .filter(|solid| {
+                dungeon
+                    .room_at(dungeon.cell_at([(solid[0] + solid[2]) / 2.0, (solid[1] + solid[3]) / 2.0, solid[4]]))
+                    .is_some()
+            })
+            .map(|solid| ([solid[0], solid[1], solid[2], solid[3]], Some(solid), solid[4]));
+        for ([min_x, min_y, max_x, max_y], solid, z) in pieces.chain(fixtures) {
+            let cell = cell_at(&dungeon, (min_x + max_x) / 2.0, (min_y + max_y) / 2.0, z);
+            let storey = dungeon.storey_of(cell);
             let room = dungeon.room_at(cell).expect("in a room");
             assert!(dungeon.rooms[room].quiet.contains(&cell), "never on a doorway's cell");
             assert!(cell != dungeon.way_in.cell && cell != dungeon.portal.cell, "never at the way in or the portal");
@@ -150,12 +166,15 @@ fn no_piece_stands_on_a_doorway_the_way_in_the_portal_the_reeves_post_or_a_torch
                 }
             }
             if solid.is_some() {
-                for torch in &dungeon.torches {
+                for torch in
+                    dungeon.torches.iter().filter(|torch| dungeon.storey_of(dungeon.cell_at(torch.at)) == storey)
+                {
                     let dx = (min_x - torch.at[0]).max(torch.at[0] - max_x).max(0.0);
                     let dy = (min_y - torch.at[1]).max(torch.at[1] - max_y).max(0.0);
                     assert!(dx * dx + dy * dy >= 0.25 - 1e-9, "half a metre from a torch's flame");
                 }
-                for &[pillar_x, pillar_y, _] in &dungeon.pillars {
+                let pillars = dungeon.pillars.iter().filter(|pillar| dungeon.storey_under(pillar[2]) == storey);
+                for &[pillar_x, pillar_y, _] in pillars {
                     let apart = (pillar_x - (min_x + max_x) / 2.0).abs() - (max_x - min_x) / 2.0 - PILLAR_HALF_M;
                     let across = (pillar_y - (min_y + max_y) / 2.0).abs() - (max_y - min_y) / 2.0 - PILLAR_HALF_M;
                     assert!(apart > 0.0 || across > 0.0, "clear of every pillar");
@@ -203,7 +222,7 @@ fn essentially_every_room_is_furnished_and_every_pattern_is_laid() {
         let mut holding = vec![false; dungeon.rooms.len()];
         for prop in &dungeon.props {
             let [min_x, min_y, max_x, max_y] = plan(prop);
-            let cell = cell_at(&dungeon, (min_x + max_x) / 2.0, (min_y + max_y) / 2.0);
+            let cell = cell_at(&dungeon, (min_x + max_x) / 2.0, (min_y + max_y) / 2.0, foot(prop));
             holding[dungeon.room_at(cell).unwrap()] = true;
             let [x, y] = dungeon.centre(cell);
             let (off_x, off_y) = ((min_x + max_x) / 2.0 - x, (min_y + max_y) / 2.0 - y);

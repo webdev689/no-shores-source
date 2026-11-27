@@ -37,6 +37,18 @@ test('a keeper figure whose drawing failed is asked for again a while on, and on
   assert.equal(shown.height, 200);
   assert.equal(shown.width, 100);
   assert.notEqual(build(3000)?.picture?.key, shown.picture.key, 'it breathes to its second frame');
-  assert.equal(build(3000, true)?.picture?.key, 'keeper tailor 0', 'still with less motion');
+  assert.equal(build(3000, true)?.picture?.key, 'keeper tailor 0 2', 'still with less motion');
   assert.equal(asked.count, 4, 'drawn once, then kept');
+});
+
+test('a keeper figure is cut off below its kept share and never laid past an atlas layer, the Harbourmaster too', async () => {
+  const { forge } = forgeFailing(0);
+  assert.equal(keeperFigure('harbourmaster', forge, 400, 1, 0, true), null, 'drawn first');
+  await settle();
+  const half = keeperFigure('harbourmaster', forge, 400, 1, 0, true, 0.5);
+  assert.deepEqual(half?.picture?.pixel, { width: 1, height: 1 }, 'its top texel row alone');
+  assert.equal(half?.height, 200, 'half the whole figure the screen asked for');
+  const tall = keeperFigure('harbourmaster', forge, 4000, 2, 0, true);
+  // 4000 CSS pixels at 2 device pixels would be 8000 device pixels: held to 1023 whole steps of 2 texels (2046).
+  assert.equal(tall?.height, 1023);
 });

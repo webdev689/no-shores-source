@@ -3,7 +3,7 @@ import { contentBytes } from '../contentCache.ts';
 import type { SailCorners } from './sails.ts';
 
 /** Bytes a vertex: its position (3 × float32, metres), normal (4 × snorm8), UV (2 × float32, metres) and part (4 ×
- *  uint8, the first its place in `SHIP_PARTS`). */
+ *  uint8, the first its place in `SHIP_PARTS`, the second `GLASS_SHELL` on a stern window's pane, else 0). */
 export const VERTEX_BYTES = 28;
 
 /** Its waterline as the export measured it: its length and beam, and its draught below it, metres. */
@@ -68,6 +68,14 @@ export function shipSails(name: string): SailCorners[] {
   // The manifest is the export's own, in the repository: its sails are as `SailCorners` says.
   const entry = (ships.ships as unknown as Readonly<Record<string, { readonly sails?: readonly SailCorners[] }>>)[name];
   return [...(entry?.sails ?? [])];
+}
+
+/** Where a published ship's lanterns stand in its own frame, metres, as its export found them; none for a ship
+ *  without a lantern. */
+export function shipLanterns(name: string): [number, number, number][] {
+  type Lit = { readonly lanterns?: readonly (readonly [number, number, number])[] };
+  const entry = (ships.ships as unknown as Readonly<Record<string, Lit>>)[name];
+  return (entry?.lanterns ?? []).map(([x, y, z]) => [x, y, z]);
 }
 
 /** A published ship's waterline as its export measured it, known before its mesh comes. */

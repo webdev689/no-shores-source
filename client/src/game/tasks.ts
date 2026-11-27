@@ -7,8 +7,9 @@ import { announce } from '../ui/announce.ts';
 import { cubicBezier } from '../ui/ease.ts';
 import type { Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
-import { edged } from '../combat/barDraw.ts';
+import { objectiveBox } from './quests/questCard.ts';
 import { header, keycap } from './hudParts.ts';
+import { percentWords } from '../ui/percent.ts';
 
 /** One step of a task: its words, the keys that do it (each on a keycap), what is left of it (a count, or in words:
  *  points lit of all), the seconds left on its clock, the share of something it keeps whole (a ward's health, 0 to
@@ -35,7 +36,7 @@ const leftOf = (step: Step): string | undefined =>
   step.clock !== undefined
     ? clockWords(step.clock)
     : step.share !== undefined
-      ? `${Math.round(Math.min(1, Math.max(0, step.share)) * 100)}%`
+      ? percentWords(step.share)
       : step.count === undefined
         ? undefined
         : String(step.count);
@@ -194,7 +195,7 @@ export class TaskTracker {
 const FRESH_S = 0.35;
 const MET_S = 0.7;
 
-/** A step's row: its box, ticked once met, its words, its keys and what is left of it; lit by `flash`, 1 to 0. */
+/** A step's row: its box as the quest card's, ticked once met, its words, its keys and what is left of it; lit by `flash`, 1 to 0. */
 function stepNode(step: Step, size: number, flash: number): Node {
   const box = size === 2 ? 16 : 11;
   const colour = flash > 0 ? '#fbf8f0' : step.done ? '#9a9079' : '#e2dccd';
@@ -205,9 +206,8 @@ function stepNode(step: Step, size: number, flash: number): Node {
     minHeight: size === 2 ? 30 : 20,
     fill: flash > 0 ? `rgba(243,207,134,${(0.32 * flash).toFixed(3)})` : undefined,
     children: [
-      step.done
-        ? { width: box, height: box, fill: TONES.brass, draw: edged(BRASS_EDGE) }
-        : { width: box, height: box, role: 'well', bevel: 1 },
+      // The quest card's box (quests/questCard.ts), ticked in brass once met.
+      objectiveBox(step.done === true, box, TONES.brass),
       {
         direction: 'column',
         padding: [0, 2, 0, 0],
@@ -262,6 +262,3 @@ function inFoot(quest: Quest, foot: Box, size: number): Node {
     ],
   };
 }
-
-/** A ticked box's brass bevel, a pixel deep. */
-const BRASS_EDGE = ['#f3cf86', '#7a5424', '#5c3f1a', '#c08a3e'];

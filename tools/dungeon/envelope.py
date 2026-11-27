@@ -1,5 +1,6 @@
 """The envelopes a module keeps, so nothing a body could walk into stands unblocked: each kit piece's room in its own
-frame, and a landmark's footprint, height, walk zone and floor. Plain Python, without Blender.
+frame, a landmark's footprint, height, walk zone and floor, and a passage piece's size and walk zone. Plain Python,
+without Blender.
 
 `problems(module, triangles, water)` takes a module's triangles, three (x, y, z) corners each in the dungeon's frame
 (x east, y south, z up, metres), and those of them that are water, and gives every rule it breaks as a readable line;
@@ -26,9 +27,14 @@ PORTAL_CLEAR_M = 0.05
 KIT_TRIANGLES = {
     'door': 1500, 'pillar.base': 500, 'pillar.shaft': 350, 'pillar.capital': 750, 'wall.base': 250,
     'wall.shaft': 150, 'wall.cap': 350, 'feature': 1500, 'ceiling': 600, 'floor': 300, 'sconce': 150,
-    'portal': 2500, 'exit': 2500,
+    'portal': 2500, 'exit': 2500, 'stair.head': 1500, 'stair.side': 150, 'balustrade': 600,
 }
 LANDMARK_TRIANGLES = 12000
+# The way up a flight under a stair head's arch, metres: a body's width either side of its middle and its height.
+STAIR_WAY_HALF_M = 1.25
+STAIR_WAY_HIGH_M = 2.9
+# The pieces laid end to end along an edge, each spanning it whole so its neighbours meet it in one run.
+SPANNING = ('stair.side', 'balustrade')
 # The walk zone: a body stands from just over the floor to over a head, metres. A solid stops a body whatever its
 # height, so anything seen here must lie over one, grown by WALK_GROW_M.
 WALK_LOW_M = 0.05
@@ -156,6 +162,17 @@ def kit_rules(piece, least, height, apex=False):
                         y=(None, 0.3), z=(None, 3.1))
                 + [("stand before the code's face (1.4 × 2.4 at y 0.04)", _box(x=(-0.7, 0.7), y=(0.02, FAR),
                                                                                 z=(0, 2.4)))])
+    if piece == 'stair.head':
+        return (_within('a stair head keeps |x| ≤ 1.6, y 0..0.3 (nothing over the flight), z 0..3.2',
+                        x=(-1.6, 1.6), y=(0, 0.3), z=(0, 3.2))
+                + [(f'stand in the way up the flight (|x| < {STAIR_WAY_HALF_M:g} below z {STAIR_WAY_HIGH_M:g})',
+                    _box(x=(-STAIR_WAY_HALF_M, STAIR_WAY_HALF_M), z=(-FAR, STAIR_WAY_HIGH_M)))])
+    if piece == 'stair.side':
+        return _within('a stair side keeps |x| ≤ 1.6, y 0..0.15, z -0.3..0.45', x=(-1.6, 1.6), y=(0, 0.15),
+                       z=(-0.3, 0.45))
+    if piece == 'balustrade':
+        return _within("a balustrade keeps the rules' solid: |x| ≤ 1.6, y 0..0.25, z 0..1", x=(-1.6, 1.6),
+                       y=(0, 0.25), z=(0, 1.0))
     raise KeyError(f'{piece!r} is no kit piece')
 
 
@@ -423,8 +440,51 @@ def kit_problems(module, piece, triangles):
         if above:
             found.append(f"{module}: {len(above)} corner(s) rise into the smallest dome's curve (radius "
                          f'{DOME_RADIUS_M:g}, rise {DOME_RISE_M:g}) over its top, e.g. {_quote(above[:EXAMPLES])}')
+    if piece in SPANNING:
+        xs = [corner[0] for corners in triangles for corner in corners]
+        if min(xs) > TOUCH_M - 1.6 or max(xs) < 1.6 - TOUCH_M:
+            found.append(f'{module}: spans x {min(xs):.3f}..{max(xs):.3f}, not the whole edge ±1.6: its neighbours '
+                         'would not meet it')
     if piece == 'sconce' and not any(reaches(corners, _box(*CUP)) for corners in triangles):
         found.append(f"{module}: nothing holds the code's flame: the cup stands at (0, 0.35, -0.15..-0.07)")
+    return found
+
+
+# A passage piece stands on a room's floor or an island's ground, and its foot may sink this far under it, metres.
+PASSAGE_SINK_M = 0.3
+# A zone stands one lamp, seen from far off across it, and only a few of the rest, each a door's worth at most.
+PASSAGE_TRIANGLES = {'passage.lamp': 9000}
+PASSAGE_TRIANGLES_ELSE = 3000
+
+
+def _over_passage(point, contract):
+    """Whether a point lies over one of a passage piece's solids grown by WALK_GROW_M, seen from above."""
+    x, y = point[0], point[1]
+    grow = WALK_GROW_M + TOUCH_M
+    return (any(x0 - grow <= x <= x1 + grow and y0 - grow <= y <= y1 + grow for x0, y0, x1, y1, _ in contract['boxes'])
+            or any(math.hypot(x - cx, y - cy) <= radius + grow for cx, cy, radius, _ in contract['discs']))
+
+
+def passage_problems(module, contract, triangles):
+    """Every rule a passage piece's triangles break: its size from its middle at its foot (x and y either way of 0, z
+    from PASSAGE_SINK_M under it), its budget, and nothing in the walk zone over no solid, at a corner or a
+    triangle's middle."""
+    width, depth, height = contract['size']
+    found = []
+    budget = PASSAGE_TRIANGLES.get(module, PASSAGE_TRIANGLES_ELSE)
+    if len(triangles) > budget:
+        found.append(f'{module}: {len(triangles)} triangles, over the {budget} a passage piece may have')
+    found += _broken(module, triangles, _within(f'its size is {width:g} × {depth:g} × {height:g}',
+                                                x=(-width / 2, width / 2), y=(-depth / 2, depth / 2),
+                                                z=(-PASSAGE_SINK_M, height)))
+    loose = []
+    for corners in triangles:
+        middle = tuple(sum(corner[axis] for corner in corners) / 3 for axis in range(3))
+        loose += [point for point in (*corners, middle)
+                  if WALK_LOW_M < point[2] < WALK_HIGH_M and not _over_passage(point, contract)]
+    if loose:
+        found.append(f'{module}: {len(loose)} point(s) in the walk zone (z 0.05..2.2) over no solid grown 0.05, '
+                     f'e.g. {_quote(loose[:EXAMPLES])}')
     return found
 
 
@@ -440,8 +500,10 @@ def problems(module, triangles, water=()):
     piece = catalog.piece_of(module)
     if piece is not None:
         return kit_problems(module, piece, triangles)
+    if module in catalog.PASSAGE_MODULES:
+        return passage_problems(module, catalog.PASSAGE_MODULES[module], triangles)
     landmark = catalog.landmark(module)
     if landmark is None:
-        return [f'{module}: neither a kit piece nor a landmark in content/dungeon']
+        return [f'{module}: neither a kit piece, a landmark nor a passage piece in content/dungeon']
     edges = water_edges(triangles, water)
     return landmark_problems(landmark, triangles) + ([_water_problem(module, edges)] if edges else [])

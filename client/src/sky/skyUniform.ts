@@ -161,6 +161,25 @@ fn sky_lamps(from_eye: vec3f, normal: vec3f) -> vec3f {
   return light;
 }
 
+// The motion code (flicker.ts \`motionCode\`) of the lamp nearest 'from_eye' within a third of its reach, for a glow
+// there to move with its own light; 0 where none is.
+fn sky_lamp_motion(from_eye: vec3f) -> f32 {
+  var code = 0.0;
+  var nearest = 1e9;
+  let count = min(u32(sky_state.lamp_count.x), ${LAMPS_MOST}u);
+  for (var lamp = 0u; lamp < count; lamp++) {
+    let place = sky_state.lamps[lamp * 2u];
+    let toward = place.xyz - from_eye;
+    let away = dot(toward, toward);
+    let motion = sky_state.lamps[lamp * 2u + 1u].w;
+    if (motion > 0.0 && away < nearest && away * 9.0 < place.w * place.w) {
+      nearest = away;
+      code = motion;
+    }
+  }
+  return code;
+}
+
 // A surface's colour darkened by the weather's wetness, 'wet' 0 dry to 1 soaked or a puddle.
 fn sky_soaked(albedo: vec3f, wet: f32) -> vec3f {
   return albedo * (1.0 - 0.4 * wet);
@@ -285,11 +304,14 @@ export interface SkyLook {
   readonly darkM?: number;
 }
 
-/** A lamp round the eye: where it is from the eye (metres east, south and up), how far it reaches, and its light. */
+/** A lamp round the eye: where it is from the eye (metres east, south and up), how far it reaches, its light, and
+ *  its motion code (./flicker.ts `motionCode`) for a glow near it to move by; none for a light no glow keeps to (one
+ *  carried). */
 export interface Lamp {
   readonly fromEye: readonly [number, number, number];
   readonly reachM: number;
   readonly light: readonly [number, number, number];
+  readonly motion?: number;
 }
 
 /** The sky before anything sets it: a clear afternoon, with no wind, fall or lamps. */
@@ -366,7 +388,7 @@ export function skyNumbers(
     shelterPlace,
     ...shown.flatMap((lamp) => [
       [...lamp.fromEye, lamp.reachM],
-      [...lamp.light, 0],
+      [...lamp.light, lamp.motion ?? 0],
     ]),
   ];
   rows.forEach((row, index) => numbers.set(row, index * 4));

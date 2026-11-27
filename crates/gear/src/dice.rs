@@ -46,12 +46,16 @@ pub enum Purpose {
     Recruit = 1_100,
     /// Whether a boarded deck's officer joins the winner, and who it is.
     Taken = 1_900,
+    /// A passage's cache: its fragments' stock and count, and whether a cold lantern is found (the question added).
+    Passage = 1_200,
     /// A Breach's clear: its Vestiges' slots, and its last encounter's chances at the dye and the horse.
     Breach = 2_000,
     /// How much of the island's resource a chest or a search holds, and whether a search holds any (the question
     /// added); and, apart, which places a patrol's chests and which containers are searchable stand at
     /// (`room::finds`).
     Find = 2_100,
+    /// Whether a world Vestige opens to a piece of the house pledged to, and which (`vestige::house_drop`).
+    HouseDrop = 3_000,
 }
 
 /// One player's dice for one tick of one room.

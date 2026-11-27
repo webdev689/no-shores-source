@@ -2,7 +2,8 @@
 //! Shipwright a ship's modules, each six pieces a day, three Rare and three Magic at the buyer's level (the
 //! Shipwright's at their ship's), the same for everyone that day. Their wares are paid in Aurem; Legendary and
 //! Atheric gear is never sold for Aurem, only earned, or had from Shape (`shape.rs`). Beside the day's wares each
-//! smith always sells a starter stock: Normal pieces at the buyer's level, `STARTER_PRICE` each.
+//! smith always sells a starter stock: Normal pieces at the buyer's level, `STARTER_PRICE` each, but a piece the
+//! Weaponsmith owes as her gift (`gifts.rs`).
 
 use crate::dice::Dice;
 use crate::item::{Item, NAMED_LEVEL};
@@ -49,13 +50,32 @@ pub const WARES: usize = 6;
 pub const STARTER_PRICE: u32 = 50;
 
 impl Vendor {
-    /// The kinds of its starter stock: the Armorsmith's four armour pieces, the Weaponsmith's sword and shield and
-    /// bow, the Shipwright none.
+    /// The kinds of its starter stock: the Armorsmith's four armour pieces, the Weaponsmith's every Melee loadout then
+    /// every Ranged one (her gift is one of each, `gifts.rs`), the Shipwright none.
     #[must_use]
     pub fn starter_kinds(self) -> &'static [Kind] {
         match self {
             Vendor::Armorsmith => &[Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs],
-            Vendor::Weaponsmith => &[Kind::SwordAndShield, Kind::Bow],
+            Vendor::Weaponsmith => &[
+                Kind::SwordAndShield,
+                Kind::Sword,
+                Kind::Greatsword,
+                Kind::DoubleSwords,
+                Kind::DaggerAndShield,
+                Kind::DoubleDaggers,
+                Kind::Mace,
+                Kind::MaceAndShield,
+                Kind::DoubleMace,
+                Kind::Flail,
+                Kind::Warhammer,
+                Kind::GreatAxe,
+                Kind::Staff,
+                Kind::Bow,
+                Kind::Crossbow,
+                Kind::Pistolet,
+                Kind::DoublePistolet,
+                Kind::Thunderlock,
+            ],
             Vendor::Shipwright => &[],
         }
     }

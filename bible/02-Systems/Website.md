@@ -20,11 +20,11 @@ code:
   - site/src/panel/preview.ts#previewNode
   - site/src/art/pictures.ts#PICTURES
   - site/src/art/scenes.ts#SCENES
-  - site/src/art/sheet.ts#pngOf
-  - site/src/art/sheet.ts#halo
-  - site/src/art/light.ts#LIGHTS
-  - site/src/art/ships.ts#ship
-  - site/src/art/places.ts#town
+  - site/src/art/png.ts#pngOf
+  - client/src/art/sheet.ts#halo
+  - client/src/art/light.ts#LIGHTS
+  - client/src/art/ships.ts#ship
+  - client/src/art/places.ts#town
   - site/src/art/heroScene.ts#heroLayers
   - site/src/art/logo.ts#iconSheet
   - site/src/art/logo.ts#serverIconSheet
@@ -67,7 +67,9 @@ DFO Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Websi
   at every build, and written as a small paletted PNG into the build, never into git
   ([[Generated Files Stay Out of Git]]). They are drawn the way DFO's are: skies dithered band into band through an
   8 by 8 pattern, land in ranges that pale with distance, light in rings round a moon, a lantern or a fire, and every
-  scene in one light of its own (`light.ts`): Overlook's night, fire at dusk, the Tithe's mist, the crystal's purple,
+  scene in one light of its own (`light.ts`; the sheet and the scenes' parts are in `client/src/art/`, which the
+  game's island tiles draw with too, [[Interface]], "The island's tiles"; the PNG writer is the site's `png.ts`):
+  Overlook's night, fire at dusk, the Tithe's mist, the crystal's purple,
   the first grey of morning. Ships (`ships.ts`) have a sprung hull with its wale and gunports, a stern castle, sails
   that belly, jibs, a spanker and their rigging, a wake and a double on the water, the small parts dropping away on a
   far ship; places (`places.ts`) are rock that rises to a hill, a town stepping up it in terraces with a switchback
@@ -116,8 +118,10 @@ bytes are kept by the browser for a year (`site/_headers`). `www.noshores.online
 `noshores-www` (`site/www/`), that sends every address to the same one on the bare domain, so the game's saves and the
 panel's sign-in live at one origin. A merge into `main` deploys it
 (`site.yml`) on the page's terms: once the same commit has passed the check and the rooms have deployed or had nothing
-to, so no game is served on a protocol no room speaks. Run by hand from the Actions tab it deploys again, but only a
-commit whose own CI check passed. Before it deploys, every CORS rule of the game's R2 bucket
+to, so no game is served on a protocol no room speaks. It deploys while that commit is still `main`'s head, or when its
+own run deployed the rooms: a merge landing between the two would otherwise leave the rooms on the new protocol and
+the page on the old, every join refused, until the newer merge's deploy. Run by hand from the Actions tab it deploys
+again, but only a commit whose own CI check passed. Before it deploys, every CORS rule of the game's R2 bucket
 (`overlook-forge`) that lets the published page read it is widened to the domain's two origins, and the accounts send
 a Discord sign-in back to the game there. Each deploy also writes `play/patch-notes.json` from the merged pull
 requests' "Patch notes" sections, which the [[Desktop App]]'s launcher shows (`site/patchNotes.ts`). The game is still

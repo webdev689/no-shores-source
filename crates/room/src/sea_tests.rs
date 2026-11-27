@@ -17,11 +17,11 @@ fn sea() -> Sea {
     Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[])
 }
 
-fn ship(sea: &Sea, player: PlayerId) -> Ship {
+pub(super) fn ship(sea: &Sea, player: PlayerId) -> Ship {
     sea.ships().find(|(each, _)| *each == player).map(|(_, ship)| ship).unwrap()
 }
 
-fn ticks(sea: &mut Sea, count: usize) {
+pub(super) fn ticks(sea: &mut Sea, count: usize) {
     for _ in 0..count {
         sea.tick();
     }
@@ -422,6 +422,7 @@ fn a_ship_met_at_sea_fights_under_its_own_faction_and_rank() {
     let captain = fought.fight.vessel(CAPTAIN).and_then(naval::fight::Vessel::command);
     assert_eq!(captain.map(|command| command.mind.commission), Some(commission));
     assert_eq!(sea.fight_views().into_iter().map(|seen| seen.captain).collect::<Vec<_>>(), [commission]);
+    assert!(sea.fight_views().iter().all(|seen| !seen.lesson), "a sailing captain's fight is no lesson's");
 }
 
 /// A player at rest at (50 km, 50 km), and 1 km north of them two ships 400 m apart heading north: a Major of the
@@ -466,6 +467,8 @@ fn a_bold_tithe_ship_attacks_a_friendly_ship_with_no_player_near_and_the_winner_
 #[test]
 fn a_player_who_comes_within_sight_of_a_clash_joins_it_beside_the_friendly_ship() {
     let (mut sea, player) = friendly_at_sea(true);
+    // By day, half an hour into the world's hour: by night the friendly ship's lookout would not see the Tithe's yet.
+    sea.set_world_start(1_800.0);
     sea.tick();
     next_course(&mut sea, player, &[[50_000.0, 49_200.0]], 5).unwrap();
     for _ in 0..60 * 60 {
@@ -609,6 +612,8 @@ const SET_AT_SEA: u32 = 900;
 /// heading `heading`, sighted from as far as a voyage at that pace sights it.
 fn come_for_on(course: &[[f64; 2]], at: [f64; 2], heading: f64, bold: bool) -> (Sea, PlayerId) {
     let mut sea = sea();
+    // At noon, so the ship sights him as far as by day.
+    sea.set_world_start(sky::clock::EPOCH_UNIX_MS / 1000.0 + sky::clock::DAY_S / 2.0);
     let player = sea.join();
     sea.course(player, course, 60).unwrap();
     let sight = crate::sighting::sight_for(60.0, 1.0);
@@ -643,6 +648,23 @@ fn a_bold_ship_sighted_within_its_meeting_cone_meets_a_voyage_that_holds_its_cou
     });
     assert!(met.is_some_and(|ticks| ticks < 60 * 60), "it met him within a minute: {met:?}");
     assert!(least <= 5, "the hold eased him only as it came near along his way: x{least}");
+}
+
+#[test]
+fn by_night_a_bold_ship_at_sea_does_not_come_for_a_voyage_beyond_its_lanterns() {
+    let off = 6.0_f64.to_radians();
+    let out = 0.95 * crate::sighting::sight_for(60.0, 1.0);
+    let at = [50_000.0 + libm::sin(off) * out, 400_000.0 - libm::cos(off) * out];
+    let quarry = |unix_s: Option<f64>| {
+        let (mut sea, _) = come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], at, PI * 1.5, true);
+        if let Some(unix_s) = unix_s {
+            sea.set_world_start(unix_s);
+        }
+        sea.tick();
+        sea.hostiles.sailing.iter().find(|hostile| hostile.id == SET_AT_SEA).and_then(|hostile| hostile.quarry)
+    };
+    assert!(quarry(None).is_some(), "by day it comes for him");
+    assert!(quarry(Some(sky::clock::EPOCH_UNIX_MS / 1000.0)).is_none(), "at midnight he lies past 650 m");
 }
 
 #[test]
@@ -688,53 +710,6 @@ fn a_fight_with_a_chased_wary_ship_who_will_not_engage_ends_once_it_is_out_of_re
         !sea.fights.fighting(player)
     });
     assert!(lasted.is_some(), "it broke off within its give-up time and the fight ended for the player too");
-}
-
-/// Overlook's island west and the Grey Tithe's east, home waters giving way to theirs about 300 km east: a point 200 m
-/// inside their edge, and one 400 m outside it.
-fn by_home_waters() -> (Sea, [f64; 2], [f64; 2]) {
-    let text = r#"{ "continents": [
-        { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
-        { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }
-    ], "isles": [] }"#;
-    let sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
-    let edge = (250_000..350_000)
-        .step_by(100)
-        .map(f64::from)
-        .find(|&x| sea.chart.home([x, 150_000.0]) && !sea.chart.home([x + 100.0, 150_000.0]));
-    let edge = edge.expect("the edge of home waters");
-    let (inside, outside) = ([edge - 200.0, 150_000.0], [edge + 400.0, 150_000.0]);
-    assert!(sea.chart.home(inside) && !sea.chart.home(outside));
-    (sea, inside, outside)
-}
-
-#[test]
-fn a_ship_in_home_waters_is_never_held_by_a_bold_hostile_outside_them() {
-    let (mut sea, at, off) = by_home_waters();
-    let player = sea.join();
-    sea.course(player, &[at, [at[0], at[1] - 10_000.0]], 60).unwrap();
-    sea.hostiles.sailing.push(Hostile::standing(1, 7, Commission::default(), off, 0.0, true));
-    sea.tick();
-    assert!(libm::hypot(off[0] - at[0], off[1] - at[1]) < HOSTILE_NEAR_M);
-    assert_eq!(ship(&sea, player).rate, 60, "its pace is its own");
-}
-
-#[test]
-fn nothing_meets_a_ship_in_home_waters_neither_a_wary_ship_that_would_take_it_nor_a_fight_by_their_edge() {
-    let (mut sea, at, off) = by_home_waters();
-    let player = sea.join();
-    sea.course(player, &[at], 10).unwrap();
-    sea.berths.get_mut(&player).unwrap().kept = [0.3, 1.0, 1.0];
-    let minor = Commission { faction: naval::ranks::GREY_TITHE, rank: Rank::Minor };
-    sea.hostiles.sailing.push(Hostile::standing(1, 7, minor, off, 0.0, false));
-    ticks(&mut sea, 2);
-    assert!(!sea.fights.fighting(player), "a wary Minor that would take a holed Sloop");
-    // Another player met just outside, their fight within sight of the one inside.
-    let other = sea.join();
-    sea.course(other, &[off], 10).unwrap();
-    sea.hostiles.sailing.push(Hostile::standing(2, 7, Commission::default(), [off[0] + 500.0, off[1]], 0.0, true));
-    ticks(&mut sea, 2);
-    assert!(sea.fights.fighting(other) && !sea.fights.fighting(player), "the fight by their edge");
 }
 
 #[test]

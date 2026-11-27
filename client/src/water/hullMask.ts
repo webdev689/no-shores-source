@@ -34,9 +34,22 @@ export const HULL_FOAM_WAY = 2;
 export const HULLS = 48;
 /** The stations along a hull line, stern first, bow last. */
 export const STATIONS = 16;
+
+/** Where station `station` (or a place between stations) stands along its hull, a share of its half length toward
+ *  its bow (-1 its stern, 1 its bow): closer together at its ends, where its line turns fastest (a stern post, a
+ *  cutwater), wider apart amidships, where it hardly turns. */
+export function stationShare(station: number): number {
+  return Math.sin((Math.PI / 2) * ((station / (STATIONS - 1)) * 2 - 1));
+}
+
+/** The place between its stations `share` of its half length toward its bow falls at: stationShare's inverse. */
+export function stationPlace(share: number): number {
+  return ((Math.asin(Math.min(1, Math.max(-1, share))) / (Math.PI / 2) + 1) / 2) * (STATIONS - 1);
+}
+
 /** A hull's line before its own has come: full amidships, fining to a point at its bow and a narrow transom aft. */
 export const FAIR_LINE = Float32Array.from({ length: STATIONS }, (_value, station) => {
-  const along = (station / (STATIONS - 1)) * 2 - 1;
+  const along = stationShare(station);
   return along > 0 ? Math.sqrt(Math.max(0, 1 - along * along)) : 0.45 + 0.55 * Math.sqrt(1 - along * along * 0.8);
 });
 /** The points of a ship's track the water reads its wake along (wakes.ts). */
@@ -46,9 +59,9 @@ export const TRACK = 8;
 export const HULL_VECTORS = 3 + STATIONS / 4 + TRACK + 1;
 
 /** Its half beam at `share` of its half length toward its bow (-1 its stern, 1 its bow), as a share of its widest,
- *  between the stations. Mirrors WGSL hull_half_beam. */
+ *  straight between the stations' places (stationPlace). Mirrors WGSL hull_half_beam. */
 export function lineAt(line: Float32Array, share: number): number {
-  const place = ((Math.min(1, Math.max(-1, share)) + 1) / 2) * (STATIONS - 1);
+  const place = stationPlace(share);
   const low = Math.min(STATIONS - 2, Math.floor(place));
   return (line[low] ?? 0) + ((line[low + 1] ?? 0) - (line[low] ?? 0)) * (place - low);
 }
@@ -110,9 +123,9 @@ const HULLS = ${HULLS}u;
 const HULL_VECTORS = ${HULL_VECTORS}u;
 const STATIONS = ${STATIONS}u;
 
-// A ship's half beam at a share of its half length toward its bow, between its line's stations (lineAt).
+// A ship's half beam at a share of its half length toward its bow, between its line's stations (lineAt, stationPlace).
 fn hull_half_beam(index: u32, share: f32) -> f32 {
-  let place = (clamp(share, -1.0, 1.0) + 1.0) * 0.5 * f32(STATIONS - 1u);
+  let place = (asin(clamp(share, -1.0, 1.0)) / ${(Math.PI / 2).toFixed(7)} + 1.0) * 0.5 * f32(STATIONS - 1u);
   let low = min(u32(place), STATIONS - 2u);
   let line = index * HULL_VECTORS + 3u;
   let first = frame.hulls[line + low / 4u][low % 4u];

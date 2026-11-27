@@ -1,29 +1,37 @@
 // What the helm's and the map's controls do, from the HUD's presses and the keys: the map raised at the helm or over
-// the land, Manage, the helm left and taken again, the voyage stopped or resumed, and a mark chosen at sea or over an
-// island's side.
-import type { Happening } from './flow.ts';
+// the land, Manage, the helm left and taken again, the voyage stopped or resumed, and a mark chosen at sea.
+import { DUNGEON_MAP } from './dungeonMap/dungeonMap.ts';
 import type { Playing } from './gameFrame.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { landSheetOf } from './landMap.ts';
+import type { LandSheet } from '../heldmap/landSheet.ts';
 
-/** What the controls ask of the game: a landing made, the flow moved on, and the ground under a point. */
+/** What the controls ask of the game: a mark at sea chosen (`seaLandings.ts`), the ground under a point, and the web's
+ *  map where the player stands in a passage zone (none elsewhere). */
 interface HelmGame {
-  readonly landAt: (id: string) => void;
-  readonly change: (happening: Happening) => void;
+  readonly mark: (id: string) => void;
   readonly groundAt: (x: number, y: number) => number | null;
+  readonly passageMap: () => LandSheet | null;
 }
 
 /** The helm's and the map's controls over `playing`, the pointer `input` locked to walk the deck. */
-export function helmControls(playing: Playing, input: { lock(): void }, { landAt, change, groundAt }: HelmGame) {
+export function helmControls(playing: Playing, input: { lock(): void }, game: HelmGame) {
+  const { groundAt } = game;
   /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the
-   *  pointer let go to pan it; none in a dungeon, under no land. */
+   *  pointer let go to pan it, or in a passage zone the web's, under ground too; none in a dungeon or a Breach's run,
+   *  under no land. */
   const openMap = () => {
     const { flow, sea, foot } = playing;
     if (flow.mode === 'sea' && sea) playing.helmMap.open(sea);
-    else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen && !foot.mapless) {
+    else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen) {
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
-      playing.helmMap.openLand(landSheetOf(foot.node, playing.landmass, groundAt));
+      const passage = game.passageMap();
+      // In a dungeon the same key opens its own map; in a passage zone, under ground or not, the web's.
+      if (!passage && foot.dungeon) DUNGEON_MAP.toggle();
+      else if (passage || !foot.mapless)
+        playing.helmMap.openLand(passage ?? landSheetOf(foot.node, playing.landmass, groundAt));
+      else return;
       document.exitPointerLock();
     }
   };
@@ -50,12 +58,9 @@ export function helmControls(playing: Playing, input: { lock(): void }, { landAt
     else playing.sea.stop();
   };
 
+  /** A mark clicked on the HUD: at sea, a port's or a hostile ship's; the island's tiles hold the landings. */
   const choose = (id: string) => {
-    if (playing.flow.mode === 'sea') playing.sea?.sailToMark(id);
-    if (playing.flow.mode !== 'landing' || !playing.sea) return;
-    const choice = playing.sea.view.choose(id, playing.flow.chosen);
-    if (choice === 'land') landAt(id);
-    else if (choice === 'choose') change({ kind: 'choose', node: id });
+    if (playing.flow.mode === 'sea') game.mark(id);
   };
 
   return { openMap, manage, leaveHelm, takeHelm, stopOrResume, choose };

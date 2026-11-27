@@ -8,6 +8,8 @@ Standing rigging is tarred, so it wears the iron part; everything else wears the
 """
 import math
 
+import bpy  # noqa: I001 - Blender's own modules load once bpy has
+
 from ship_hull import BODY_ROWS, PORT_HALF_M, PORT_LINTEL_M, PORT_SILL_M, inner
 from ship_mesh import Piece, cross, normalised
 from ship_rig import along_x, headsail_stays, heights, mast_at, section_at, sprit_line, top_rim
@@ -37,13 +39,18 @@ def build_details(hull, collection):
     bowsprit_gear(piece, hull)
     rudder(piece, hull)
     anchors(piece, hull)
-    stern_lantern(piece, hull)
+    flame = stern_lantern(piece, hull)
     windlass(piece, hull)
     bell(piece, hull)
     quarterdeck_gear(piece, hull)
     boat(piece, hull)
     stores(piece, hull)
-    return piece.build('Details', collection)
+    item = piece.build('Details', collection)
+    # The game lights her lantern where this empty stands: its flame, in the middle of its glass.
+    marker = bpy.data.objects.new('Lantern', None)
+    marker.location = flame
+    collection.objects.link(marker)
+    return item
 
 
 def outward(hull, x, z, side):
@@ -353,13 +360,20 @@ def anchors(piece, hull):
 
 
 def stern_lantern(piece, hull):
-    """A lantern on a post at her taffrail."""
+    """A lantern on a post at her taffrail: its glass between six iron posts under a cap and a ring. Answers where its
+    flame burns, in the middle of its glass."""
     x = hull.aft + 0.55
     base = hull.deck(x) + hull.numbers['quarterdeck_m'][1]
     piece.prism((x, 0.0, base), (x, 0.0, base + 1.35), 0.06, 'spar', sides=8)
+    piece.prism((x, 0.0, base + 1.3), (x, 0.0, base + 1.35), 0.2, 'iron', sides=6)
     piece.prism((x, 0.0, base + 1.35), (x, 0.0, base + 1.75), 0.17, 'iron', sides=6, end_radius=0.15)
-    piece.prism((x, 0.0, base + 1.75), (x, 0.0, base + 1.95), 0.17, 'iron', sides=6, end_radius=0.03)
+    for step in range(6):
+        angle = 2 * math.pi * step / 6
+        post = (x + 0.19 * math.cos(angle), 0.19 * math.sin(angle))
+        piece.prism((post[0], post[1], base + 1.33), (post[0], post[1], base + 1.77), 0.014, 'iron', sides=4)
+    piece.prism((x, 0.0, base + 1.75), (x, 0.0, base + 1.95), 0.2, 'iron', sides=6, end_radius=0.03)
     piece.ring((x, 0.0, base + 2.0), (1, 0, 0), 0.07, 0.025, 'iron', segments=8)
+    return (x, 0.0, base + 1.55)
 
 
 def windlass(piece, hull):

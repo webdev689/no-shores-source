@@ -1,10 +1,12 @@
 // A dungeon's scene: no land, sky, sea or sun, only what is handed in, drawn into one pass and shown, then what draws
-// over the finished picture and what gives light, as the game's scene draws them, at the resolution it draws at.
+// over the finished picture and what gives light, as the game's scene draws them, at the resolution it draws at; the
+// flames of the dungeon shown (`DUNGEON_FLAMES`) among them.
 import { LightLayer } from '../combat/lightLayer.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { fromEyeMatrix, type Shot } from './camera.ts';
 import { DepthCopy } from './depthCopy.ts';
 import { DrainView } from './drain.ts';
+import { DUNGEON_FLAMES } from './dungeonView.ts';
 import type { Drawer } from './scene.ts';
 import { type Gpu, TEXTURE_USAGE, viewOf } from '../gpu.ts';
 import { perfZone, PERF, timedEncoder } from '../perfMeter.ts';
@@ -49,12 +51,14 @@ export class DungeonScene {
     shot: Shot,
     size: { width: number; height: number },
     time: number,
-    drawers: readonly Drawer[],
+    handed: readonly Drawer[],
     sky: { readonly look: SkyLook; readonly lamps: readonly Lamp[] },
     after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void,
     drain = 0,
   ): void {
     const { device } = this.gpu;
+    const flames = DUNGEON_FLAMES.current;
+    const drawers: readonly Drawer[] = flames && flames.count > 0 ? [...handed, flames] : handed;
     skyUniformFor(device).write(sky.look, sky.lamps, shot.eye);
     const drawnAt = sceneSize(size, sceneScale());
     PERF.current?.scene(drawnAt.width, drawnAt.height, drawnAt.width / size.width);

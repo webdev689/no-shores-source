@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { allSelected, emptyField, erased, moved, replaced, typed } from './field.ts';
+import { allSelected, edited, emptyField, erased, moved, replaced, typed } from './field.ts';
 
 test('typing goes in at the caret, over the selection, and no further than the most', () => {
   const start = { text: 'hello', caret: 2, anchor: 2 };
@@ -34,4 +34,20 @@ test('a field kept to its most never cuts a pair in half', () => {
   assert.deepEqual(typed(emptyField('abc'), '😀', 4), { text: 'abc', caret: 3, anchor: 3 });
   assert.deepEqual(typed(emptyField('ab'), 'x😀', 4), { text: 'abx', caret: 3, anchor: 3 });
   assert.deepEqual(typed(emptyField('ab'), '😀', 4), { text: 'ab😀', caret: 4, anchor: 4 });
+});
+
+test('the browser’s typing a full field refuses keeps the caret where it was, as typing that fits moves it on', () => {
+  const full = { text: 'abcdef', caret: 2, anchor: 2 };
+  assert.deepEqual(edited(full, { from: 2, to: 2, text: 'X', caret: 3, anchor: 3 }, 6), full);
+  const room = { text: 'abcde', caret: 2, anchor: 2 };
+  assert.deepEqual(edited(room, { from: 2, to: 2, text: 'X', caret: 3, anchor: 3 }, 6), {
+    text: 'abXcde',
+    caret: 3,
+    anchor: 3,
+  });
+  assert.deepEqual(edited(room, { from: 2, to: 2, text: 'XY', caret: 4, anchor: 4 }, 6), {
+    text: 'abXcde',
+    caret: 3,
+    anchor: 3,
+  });
 });

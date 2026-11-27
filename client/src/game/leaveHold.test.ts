@@ -59,3 +59,20 @@ test('the leave is offered on foot only with nothing over the play', () => {
   for (const over of ['paused', 'sheet', 'map', 'chat', 'speaking'] as const)
     assert.equal(leaveOffered({ ...clear, [over]: true }), false, over);
 });
+
+test('in a passage zone with anything carried, the leave says the haul is lost under its place', () => {
+  const hold = new LeaveHold();
+  heldFor(hold, 0.5);
+  const said = (node: unknown): string[] => {
+    if (!node || typeof node !== 'object') return [];
+    const { text, children } = node as { text?: { words?: string }; children?: unknown[] };
+    return [...(text?.words ? [text.words] : []), ...(children ?? []).flatMap(said)];
+  };
+  const view = { width: 1280, height: 720 };
+  assert.ok(
+    said(hold.node(view, 'A chalk cut', 'What you carry is lost')).includes(
+      'Leave a chalk cut. What you carry is lost',
+    ),
+  );
+  assert.ok(said(hold.node(view, 'A chalk cut')).includes('Leave a chalk cut'));
+});

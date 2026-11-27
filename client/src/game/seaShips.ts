@@ -17,10 +17,11 @@ import type { Waterline } from '../ships/shipMesh.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
 import { poseOnSwell, slams, sprayOf, turnHeel } from '../ships/swellPose.ts';
-import { HullLines } from '../ships/hullLines.ts';
+import { HULL_LINES, type HullLines } from '../ships/hullLines.ts';
 import { HULLS, type HullMask } from '../water/hullMask.ts';
 import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { MarkDrawer } from '../editor/naval.ts';
+import { QA_SHIP } from './qaShip.ts';
 import { HELM_TURN } from './seaHelm.ts';
 
 /** The way a ship under way shows the water, m/s: its bow wave foams whole. */
@@ -111,7 +112,7 @@ function round(
       who: `friendly-${friend.traffic}`,
       lies: { ...friend, underWay: true },
       hull: shown(friend.hull),
-      look: { side: 'friendly' as ShipSide },
+      look: { side: 'friendly' as ShipSide, dark: friend.dark ?? false },
       crew: plainCrew(`friendly-${friend.traffic}`),
     })),
   ];
@@ -135,12 +136,15 @@ export class SeaShips {
 
   constructor(
     shown: (hull: number) => number = (hull) => hull,
-    lines: Pick<HullLines, 'line'> = new HullLines(),
+    lines: Pick<HullLines, 'line'> = HULL_LINES,
     ownSeen: () => SeenShip | null = () => null,
   ) {
     this.shown = shown;
     this.lines = lines;
-    this.ownSeen = ownSeen;
+    this.ownSeen = () => {
+      const own = ownSeen();
+      return own && QA_SHIP.look ? { ...own, ...QA_SHIP.look } : own;
+    };
   }
 
   /** The hull the player's own ship is drawn as: the one they sail, as the room says, the Sloop before it says. */

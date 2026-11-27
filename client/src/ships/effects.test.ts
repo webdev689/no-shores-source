@@ -103,6 +103,9 @@ test('a ship afire burns in unlit flames and embers under dark blended smoke', (
   for (let frame = 0; frame < 60; frame++) effects.burn([0, 0, 0], [0, 0, 2.4], 1, 1.5, frame / 30, 1 / 30);
   const marks = effects.marks(2);
   assert.ok(blended(marks, 'glow').length > 10);
+  // A flame reads at the fight's distance: born two metres and more across, as tall as DFO's fire stood on a deck.
+  const flames = blended(effects.marks(2), 'glow').filter((mark) => mark.colour[1] < 0.5);
+  assert.ok(Math.max(...flames.map((mark) => mark.radius)) > 0.95, 'a flame a metre round at its start');
   assert.ok(blended(marks, 'smoke').some((mark) => (mark.colour[0] ?? 1) < 0.3));
   assert.ok(marks.every((mark) => mark.z >= 2.4));
   const quiet = new Effects(8);
@@ -211,4 +214,14 @@ test('where a ship went down foam rings lie on the water and the air boils up in
   assert.ok(marks.some((mark) => mark.flat) && marks.some((mark) => !mark.flat));
   assert.ok(marks.every((mark) => Math.hypot(mark.x, mark.y) < 8));
   assert.equal(effects.marks(10).length, 0);
+});
+
+test("each puff of a broadside's smoke is turned its own way, and keeps its turn as it drifts but for a slow spin", () => {
+  const effects = new Effects(3);
+  effects.fire([0, 0, 0], [0, 5, 1.5], [0, 400, 3], 0);
+  const turns = (now: number) => blended(effects.marks(now), 'smoke').map((mark) => mark.yaw ?? NaN);
+  const [early, later] = [turns(1), turns(2)];
+  assert.ok(early.every(Number.isFinite), 'every puff has a turn');
+  assert.equal(new Set(early.map((turn) => turn.toFixed(3))).size, early.length, 'no two alike');
+  early.forEach((turn, index) => assert.ok(Math.abs((later[index] ?? 0) - turn) < 0.1, 'a slow spin, no jump'));
 });

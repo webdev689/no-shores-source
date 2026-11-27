@@ -53,6 +53,9 @@ export interface FightScore {
   readonly cadence?: Song;
   readonly victory?: Song;
   readonly defeat?: Song;
+  /** A second cadence and victory, heard in turn with the first. */
+  readonly secondCadence?: Song;
+  readonly secondVictory?: Song;
 }
 
 /** A boss's score: a song a phase, and its moments: the wake into the first, the last stand, its fall, the player's. */
@@ -133,13 +136,19 @@ export function songOf(scores: Scores, cue: Cue): Song | null {
   }
 }
 
-/** A sting's song, or null for the silence that stands in until one is written. */
-export function stingOf(scores: Scores, sting: Sting): Song | null {
+/** A sting's song, or null for the silence that stands in until one is written; a family's `nth` cadence or victory
+ *  is its first or its second in turn. */
+export function stingOf(scores: Scores, sting: Sting, nth = 0): Song | null {
   if (sting.kind === 'wake') return scores.bosses[sting.boss].wake ?? null;
   if (sting.kind === 'fallen') return scores.bosses[sting.boss].fallen ?? null;
   const { cue } = sting;
   if (cue.kind === 'boss') return sting.kind === 'defeat' ? (scores.bosses[cue.boss].defeat ?? null) : null;
-  if (cue.kind === 'family') return scores.families[cue.family]?.[sting.kind] ?? null;
+  if (cue.kind === 'family') {
+    const score = scores.families[cue.family];
+    const second =
+      sting.kind === 'cadence' ? score?.secondCadence : sting.kind === 'victory' ? score?.secondVictory : null;
+    return (second && nth % 2 === 1 ? second : score?.[sting.kind]) ?? null;
+  }
   if (cue.kind === 'breach') return scores.breach[cue.song][sting.kind] ?? null;
   return null;
 }
@@ -239,6 +248,9 @@ export class MusicDirector {
   private once: Song | null = null;
   /** A moment the game asks for outside the law's own (a public event begun, won or lost), played next frame. */
   private asked: 'cadence' | 'victory' | 'defeat' | null = null;
+  /** How many of each ending each family has played (by `family:kind`), so its two cadences and its two victories
+   *  come in its own turn. */
+  private readonly endings = new Map<string, number>();
 
   constructor({
     output = musicOutput,
@@ -294,7 +306,13 @@ export class MusicDirector {
     if (this.stinger?.song && this.stinger.finished(now)) this.stinger.stop();
     // The game's moment, unless the law has one of its own this frame.
     const moment: Sting | null = verdict.sting ?? (wanted ? askedSting(wanted, hearing) : null);
-    if (moment) this.sting(stingOf(scores, moment), moment.kind === 'wake', now);
+    if (moment) {
+      const family = moment.kind !== 'wake' && moment.kind !== 'fallen' && moment.cue.kind === 'family';
+      const key = family ? `${moment.cue.family}:${moment.kind}` : '';
+      const nth = this.endings.get(key) ?? 0;
+      if (family) this.endings.set(key, nth + 1);
+      this.sting(stingOf(scores, moment, nth), moment.kind === 'wake', now);
+    }
     const asked = songOf(scores, verdict.cue);
     const { kind } = verdict.cue;
     const calm =
@@ -331,6 +349,12 @@ export class MusicDirector {
    *  is lost (its defeat). */
   moment(kind: 'cadence' | 'victory' | 'defeat'): void {
     this.asked = kind;
+  }
+
+  /** Whether the player was in a fight as the music last heard them: a foe engaged, a blow struck, or a fight at sea
+   *  (`hear`). A line of the dialogue box said then moves on by itself (`pace.ts`). */
+  get fighting(): boolean {
+    return this.memory.lastFight === this.memory.clock;
   }
 
   /** A frame on foot in `node` of `world`, from the fight it showed. */

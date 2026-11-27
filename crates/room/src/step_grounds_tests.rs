@@ -2,7 +2,7 @@
 //! section and over ground a body walks, the figure arriving with the player keeping up; each race's way between its
 //! checkpoints inside its section, over ground a body walks and past no box, run within its clock with a tenth to
 //! spare at a run, and what it takes at a run and at a gallop (printed); each puzzle's points on ground the player
-//! reaches from its place; and each defence's waves standing in full and coming at the ward.
+//! reaches from its place; each defence's waves standing in full and coming at the ward; and each horde's at the player.
 
 use super::*;
 use crate::asks::Asked;
@@ -54,13 +54,31 @@ fn every_escorts_and_tails_way_runs_the_paths_inside_its_section_over_walkable_g
         let behind = |at: [f64; 2], facing: f64| ahead(at, facing + core::f64::consts::PI, gap);
         let (_, facing) = along_way(&way, 0.0);
         let (mut room, player) = on_step(node, key, behind(from.at, facing));
-        let most = (length / FIGURE_PACE * 1.5) as u32 * 60 + 600;
-        let mut ticks = 0;
+        let ridden = matches!(goal.goal, Goal::Escort(_));
+        if ridden {
+            crate::steps::steps_tests::riding(&mut room, player);
+        }
+        let pace = if ridden { FIGURE_RIDE } else { FIGURE_PACE };
+        let most = (length / pace * 1.5) as u32 * 60 + 600;
+        let (mut ticks, mut was, mut ambushed) = (0, None::<f64>, false);
+        let floor = crate::Floor::Land(Box::new(node.ground.clone()));
+        let boxes: Vec<movement::Block> = node.boxes.iter().map(movement::Block::from_floats).collect();
         while ticks < most && room.player(player).expect("in").character.quest_now() == Some((key[0], key[1])) {
             run_once(&mut room);
             ticks += 1;
             let Some(Step { kind: Stepping::Figure(figure), .. }) = room.quests.steps.get(&player) else { continue };
             let (at, facing, ambush) = ([figure.at[0], figure.at[1]], figure.facing, figure.ambush.clone());
+            // At a gallop it turns a corner smoothly, its hooves on the ground a body stands on there.
+            let turn = was.map_or(0.0, |was| libm::remainder(facing - was, core::f64::consts::TAU).abs());
+            assert!(turn <= FIGURE_TURN * movement::TICK_SECONDS + 1e-9, "{}: turned {turn} in a tick", goal.text);
+            let ground = movement::blocks::ground_at(&boxes, &floor, at[0], at[1], figure.at[2] + 1.0);
+            assert!((figure.at[2] - ground).abs() < 0.5, "{}: off the ground at {at:?}", goal.text);
+            was = Some(facing);
+            if ambush.as_ref().is_some_and(|ids| !ids.is_empty()) && !ambushed {
+                ambushed = true;
+                let halfway = (figure.along - way_length(&figure.way) / 2.0).abs();
+                assert!(halfway < 1.0, "{}: its ambush stands halfway, {halfway:.1} m off", goal.text);
+            }
             for id in ambush.unwrap_or_default() {
                 room.foes.remove(&id);
             }
@@ -68,6 +86,10 @@ fn every_escorts_and_tails_way_runs_the_paths_inside_its_section_over_walkable_g
             assert!(room.put_player(player, x, y));
         }
         assert!(met(&room, player, key), "{}: arrived in {} s of {length:.0} m", goal.text, ticks / 60);
+        if let Goal::Escort(escort) = &goal.goal {
+            assert_eq!(ambushed, !escort.ambush.is_empty(), "{}: its ambush stood", goal.text);
+            assert!(ticks as f64 / 60.0 < length / FIGURE_PACE / 2.0, "{}: at a gallop, not a walk", goal.text);
+        }
         eprintln!(
             "{}: {} to {}, {length:.0} m along the paths, arrived in {} s",
             goal.text,
@@ -314,6 +336,9 @@ fn every_puzzles_points_stand_on_ground_the_player_reaches_from_its_place_and_ar
 fn every_defences_waves_stand_in_full_and_come_at_its_ward() {
     for (key, goal) in steps_of(GoalKind::Defend) {
         let Goal::Defend(defend) = &goal.goal else { unreachable!("a defence") };
+        if defend.horde {
+            continue;
+        }
         let node = node_of(goal);
         let place = place_of(node, &defend.place);
         let (mut room, player) = on_step(node, key, place.at);
@@ -351,6 +376,50 @@ fn every_defences_waves_stand_in_full_and_come_at_its_ward() {
             for id in &standing {
                 room.foes.remove(id);
             }
+            run_once(&mut room);
+        }
+        assert!(met(&room, player, key), "{}: its last wave fallen, it is met", goal.text);
+    }
+}
+
+#[test]
+fn every_hordes_waves_stand_in_full_round_its_place_on_its_nodes_ground_and_come_at_the_player() {
+    let hordes =
+        steps_of(GoalKind::Defend).into_iter().filter(|(_, goal)| matches!(&goal.goal, Goal::Defend(it) if it.horde));
+    for (key, goal) in hordes {
+        let Goal::Defend(defend) = &goal.goal else { unreachable!("a horde") };
+        let node = node_of(goal);
+        let place = place_of(node, &defend.place);
+        let (mut room, player) = on_step(node, key, place.at);
+        // The node's own garrison is sent away, so each wave stands as the room's cap leaves it room alone.
+        let garrison: Vec<FighterId> = room.foes.keys().copied().collect();
+        room.send_away(&garrison);
+        run_baked(&mut room, 2);
+        // The player fights where the mesh holds them, as the horde stands round, not inside what stands at the middle.
+        let Some(Step { kind: Stepping::Horde(Horde { at: Some(spot), .. }), .. }) = room.quests.steps.get(&player)
+        else {
+            panic!("{}: its horde runs", goal.text)
+        };
+        assert!(room.put_player(player, spot[0], spot[1]));
+        for (wave, members) in defend.waves.iter().enumerate() {
+            let Some(Step { kind: Stepping::Horde(horde), .. }) = room.quests.steps.get(&player) else {
+                panic!("{}: its horde runs", goal.text)
+            };
+            let standing = horde.standing.clone();
+            assert_eq!(standing.len(), members.len(), "{}: wave {wave} stands in full", goal.text);
+            // Whole for each wave, so the waves before never fell them: a fallen player's horde starts again.
+            let whole = room.fighter(player).expect("in").health_max;
+            room.players.get_mut(&player).expect("in").fighter.health = whole;
+            let me = room.fighter(player).expect("in").body;
+            let came = (0..60 * 30).any(|_| {
+                run_once(&mut room);
+                let hurt = room.fighter(player).is_some_and(|fighter| fighter.health < whole);
+                let near = |foe: &crate::foes::Foe| apart([foe.fighter.body.x, foe.fighter.body.y], [me.x, me.y]) < 4.0;
+                hurt || standing.iter().filter_map(|id| room.foes.get(id)).any(near)
+            });
+            assert!(came, "{}: wave {wave} comes at the player", goal.text);
+            // Sent away, not only taken out, so the board lets go of their turns to strike for the next wave.
+            room.send_away(&standing);
             run_once(&mut room);
         }
         assert!(met(&room, player, key), "{}: its last wave fallen, it is met", goal.text);

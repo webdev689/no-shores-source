@@ -25,12 +25,18 @@ const reckoning = reckoningScore();
 const boarding = boardingScore();
 const families = { green: greenScore(), dry: dryScore(), wet: wetScore(), cold: coldScore() };
 const familySongs = Object.values(families).map((score) => score.song);
-const stings = Object.values(families).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);
+const stings = Object.values(families).flatMap(({ cadence, victory, defeat, secondCadence, secondVictory }) => [
+  cadence,
+  victory,
+  defeat,
+  secondCadence,
+  secondVictory,
+]);
 const vale = valeFights();
 const valeSongs = Object.values(vale).map((score) => score.song);
 const valeStings = Object.values(vale).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);
 const { scrivener, steward } = valeBosses();
-const { open, calm, night, ...band } = sea;
+const { open, calm, night, swell, glass, lantern, ...band } = sea;
 /** The calm pieces out of danger: the social space's, the islands', the sea's. */
 const calmPieces: readonly Song[] = [
   ...socialPieces(),
@@ -38,6 +44,9 @@ const calmPieces: readonly Song[] = [
   open,
   calm,
   night,
+  swell,
+  glass,
+  lantern,
   ...valeCalm(),
 ];
 const { ram, ...storyLooped } = storyScores();
@@ -268,9 +277,26 @@ test('each family fight plays all six layers in a metre and tempo of its own', (
   assert.equal(new Set(metres).size, familySongs.length, metres.join(', '));
 });
 
+test("no line of a family's tune's halves rubs a half step on the chord under it, over its own chords or turned ones", () => {
+  for (const song of familySongs)
+    for (const take of song.form?.takes ?? []) {
+      if (take.section !== 'a1' && take.section !== 'a2') continue;
+      const [from, to] = [take.first * song.ticksPerBar, (take.first + take.bars) * song.ticksPerBar];
+      const notes = song.notes.filter((note) => note.tick >= from && note.tick < to);
+      const bed = notes.filter((note) => note.role === 'bed');
+      // A line's note held a beat or more, against a bed note sounding through its start.
+      for (const line of notes.filter((note) => note.role === 'lead' && note.duration >= TICKS_PER_BEAT))
+        for (const under of bed.filter((note) => note.tick <= line.tick && note.tick + note.duration > line.tick))
+          assert.ok(
+            ![1, 11].includes(Math.abs(line.note - under.note) % 12),
+            `${song.name} take at bar ${take.first}: ${line.note} on ${under.note}, bar ${Math.floor((line.tick - from) / song.ticksPerBar)}`,
+          );
+    }
+});
+
 test("each family's cadence, victory and defeat is two to eight bars of its fight's metre, played once and done", () => {
   for (const score of Object.values(families))
-    for (const sting of [score.cadence, score.victory, score.defeat]) {
+    for (const sting of [score.cadence, score.victory, score.defeat, score.secondCadence, score.secondVictory]) {
       const bars = sting.durationTicks / sting.ticksPerBar;
       assert.ok(bars >= 2 && bars <= 8, `${sting.name} is ${bars} bars`);
       assert.equal(sting.ticksPerBar, score.song.ticksPerBar, `${sting.name} keeps its fight's metre`);
@@ -301,6 +327,24 @@ test("each calm piece runs a minute and a half to two and a half, every instrume
       [0, 7, 8, 7, 0],
       `${piece.name} closes on the leitmotif`,
     );
+  }
+});
+
+test('each island family has four calm pieces, the social space four, each sky two; none of a place shares a tempo or a lead', () => {
+  const sky = seaSongs();
+  const places: Readonly<Record<string, readonly Song[]>> = {
+    ...islandPieces(),
+    social: socialPieces(),
+    open: [sky.open, sky.swell],
+    still: [sky.calm, sky.glass],
+    night: [sky.night, sky.lantern],
+  };
+  for (const [place, pieces] of Object.entries(places)) {
+    assert.ok(pieces.length >= (place in islandPieces() || place === 'social' ? 4 : 2), `${place}: ${pieces.length}`);
+    const tempos = pieces.map((piece) => Math.round(60 / (piece.secondsPerTick * TICKS_PER_BEAT)));
+    const leads = pieces.map((piece) => piece.tracks.find((track) => track.channel === 3)?.program);
+    assert.equal(new Set(tempos).size, pieces.length, `${place}: tempos ${tempos}`);
+    assert.equal(new Set(leads).size, pieces.length, `${place}: leads ${leads}`);
   }
 });
 

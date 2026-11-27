@@ -6,6 +6,7 @@ import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import {
   CHEST_REACH_M,
   ChestsSeen,
+  chestsCounted,
   FIND_HEIGHT_M,
   FootFinds,
   OPEN_S,
@@ -19,20 +20,21 @@ import {
 } from './finds.ts';
 import { CHEST_PICTURE, SEARCH_PICTURE } from './overheadMarks.ts';
 
-const CHEST = { number: 7, at: [10, 0, 2] as const, facing: Math.PI / 2 };
+const CHEST = { number: 7, at: [10, 0, 2] as const, facing: Math.PI / 2, vault: false };
 /** A wardrobe (41003) a metre across, its foot on the ground. */
 const WARDROBE = { number: 9, box: [0, 20, 1, 21] as const, foot: 0, top: 1.8, model: 41003 };
 const gear = state({ chests: [CHEST], searchables: [WARDROBE] });
 
 test("the page's reach and holds are the room's", async () => {
-  const read = (path: string) => readFile(new URL(`../../../${path}`, import.meta.url), 'utf8');
-  const holds = await read('crates/room/src/find_holds.rs');
-  const number = (name: string) => Number(new RegExp(`pub const ${name}: \\w+ = ([\\d.]+);`).exec(holds)?.[1]);
-  assert.equal(number('CHEST_REACH'), CHEST_REACH_M);
-  assert.equal(number('SEARCH_REACH'), SEARCH_REACH_M);
-  assert.equal(number('FIND_HEIGHT'), FIND_HEIGHT_M);
-  assert.equal(number('OPEN_TICKS') / 60, OPEN_S);
-  assert.equal(number('SEARCH_TICKS') / 60, SEARCH_S);
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs).
+  const written = await readFile(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  type Holds = 'chestReach' | 'searchReach' | 'findHeight' | 'openTicks' | 'searchTicks';
+  const room = JSON.parse(written) as Record<Holds, number>;
+  assert.equal(room.chestReach, CHEST_REACH_M);
+  assert.equal(room.searchReach, SEARCH_REACH_M);
+  assert.equal(room.findHeight, FIND_HEIGHT_M);
+  assert.equal(room.openTicks / 60, OPEN_S);
+  assert.equal(room.searchTicks / 60, SEARCH_S);
 });
 
 test('E held by a chest within reach opens it by its number, a second', () => {
@@ -101,7 +103,7 @@ test('each container is named by its family, a container where the page knows no
 
 test('a chest the room paid the player for stays drawn open a while; one that moved on goes at once', () => {
   const seen = new ChestsSeen();
-  const other = { number: 8, at: [50, 0, 0] as const, facing: 0 };
+  const other = { number: 8, at: [50, 0, 0] as const, facing: 0, vault: false };
   const standing = state({ chests: [CHEST, other] });
   assert.deepEqual(
     seen.frame(standing, 0).drawn.map((each) => [each.number, each.opened]),
@@ -184,4 +186,10 @@ test('each chest standing for the player wears a chest over its lid, and each co
       'every cell coloured',
     );
   }
+});
+
+test("a dungeon's chests are counted as the player's opened of all it stands, and none elsewhere", () => {
+  assert.equal(chestsCounted(state({ chestsOpened: 2, chestsTotal: 5 })), 'Chests 2 of 5');
+  assert.equal(chestsCounted(state({ chestsOpened: 0, chestsTotal: 0 })), null, 'a patrol counts none');
+  assert.equal(chestsCounted(null), null);
 });

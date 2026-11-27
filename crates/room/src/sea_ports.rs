@@ -45,6 +45,10 @@ impl Sea {
         for ship in sank {
             // A boarded ship sunk under its boarders sends them back to their own ships.
             self.end_deck(ship.hostile.id);
+            // The Harbourmaster's hulk lays nothing, pays nothing and counts for no road or bounty as it goes down.
+            if super::lessons::hulks_captain(ship.hostile.id).is_some() {
+                continue;
+            }
             self.lay_flotsam(ship, (1, 0));
             let paid = crate::ship_power::pay_sinking(ship, self.hostiles.difficulty, &mut self.harbour.characters);
             self.pay_boarders(ship, &paid);
@@ -76,7 +80,7 @@ impl Sea {
 
     /// Tells a player's quest log of a ship beaten: their deck room's while they fight on a captain's deck, which
     /// holds their character then, else the one the sea keeps.
-    fn tell_sea(&mut self, player: PlayerId, event: &QuestEvent<'_>) {
+    pub(super) fn tell_sea(&mut self, player: PlayerId, event: &QuestEvent<'_>) {
         if let Some(deck) = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(&player)) {
             deck.room.tell_quest(deck.aboard[&player], event);
         } else if self.harbour.characters.get_mut(&player).is_some_and(|character| character.tell(event)) {
@@ -85,13 +89,17 @@ impl Sea {
     }
 
     /// Notes the account that keeps a player's character: what floats for that account, laid for them before they
-    /// dropped, is theirs again. False for a player not in the sea.
+    /// dropped, is theirs again. False for a player not in the sea, and for an account another player at sea already
+    /// has (one account is one player at sea, as in a room).
     pub fn own(&mut self, player: PlayerId, account: &str) -> bool {
         if !self.berths.contains_key(&player) {
             return false;
         }
         let before: Vec<PlayerId> =
             self.harbour.accounts.iter().filter(|(_, held)| *held == account).map(|(each, _)| *each).collect();
+        if before.iter().any(|each| *each != player && self.berths.contains_key(each)) {
+            return false;
+        }
         for piece in &mut self.harbour.flotsam.pieces {
             if before.contains(&piece.player) {
                 piece.player = player;
@@ -108,6 +116,7 @@ impl Sea {
                 || pieces.iter().any(|piece| piece.player == *each)
         });
         self.harbour.accounts.insert(player, account.to_owned());
+        self.unpark(account);
         self.moor_left(player);
         true
     }
@@ -200,8 +209,9 @@ impl Sea {
         self.keep_hurts(player, kept);
     }
 
-    /// The harbour's tick, the sea's ships sailed: every repair runs on, and what floats drifts and is gathered.
-    pub(super) fn tick_harbour(&mut self) {
+    /// The harbour's tick, the sea's ships sailed from where they lay through each turn of their courses (`sailed`):
+    /// every repair runs on, and what floats drifts and is gathered along every leg each sailed.
+    pub(super) fn tick_harbour(&mut self, sailed: &BTreeMap<PlayerId, Vec<[f64; 2]>>) {
         for (player, kept) in self.harbour.repairs.tick(TICK_SECONDS) {
             if let Some(berth) = self.berths.get_mut(&player) {
                 keep(berth, &mut self.harbour.characters, player, kept);
@@ -213,10 +223,16 @@ impl Sea {
         }
         // A boarder's ship gathers nothing while they stand on its enemy's deck, whose room holds their character.
         let on_deck = |player: &PlayerId| self.decks.boarded.iter().any(|deck| deck.aboard.contains_key(player));
-        let ships: Vec<(PlayerId, [f64; 2])> = self
-            .ships()
-            .filter(|(player, _)| !on_deck(player))
-            .map(|(player, ship)| (player, [ship.x, ship.y]))
+        let ships: Vec<(PlayerId, [[f64; 2]; 2])> = (self.ships().filter(|(player, _)| !on_deck(player)))
+            .flat_map(|(player, ship)| {
+                let way = sailed.get(&player).map_or(&[][..], Vec::as_slice);
+                let path = [way, &[[ship.x, ship.y]]].concat();
+                let legs: Vec<[[f64; 2]; 2]> = match path.as_slice() {
+                    [only] => vec![[*only; 2]],
+                    _ => path.windows(2).map(|leg| [leg[0], leg[1]]).collect(),
+                };
+                legs.into_iter().map(move |leg| (player, leg))
+            })
             .collect();
         let tick = self.clock as f64;
         for (event, player, held) in self.harbour.flotsam.tick(self.clock, &ships, &mut self.harbour.characters) {
@@ -278,8 +294,8 @@ impl Sea {
         &self.harbour.flotsam.pieces
     }
 
-    /// A player's character as it is kept between sessions, their ship's hurts in it: a new one, with its hurts, until
-    /// the accounts gave theirs; none for no player at sea.
+    /// A player's character as it is kept between sessions, their ship's hurts, where it lies and its heading in it: a
+    /// new one, with its hurts, until the accounts gave theirs; none for no player at sea.
     #[must_use]
     pub fn kept_character(&self, player: PlayerId) -> Option<String> {
         let berth = self.berths.get(&player)?;
@@ -290,9 +306,13 @@ impl Sea {
             (deck, at_sea) => deck.or_else(|| at_sea.cloned()),
         };
         let mut character = held.unwrap_or_else(gear::Character::starting);
+        // The sea never ends a dive: it is judged where the character next lands (`gear::dive::Dive::sailed`).
+        if let Some(dive) = character.passage.as_mut() {
+            dive.sailed = true;
+        }
         // In a fight, the ship is kept as the fight has it, and lies at the port city it would wash up at, as one who
-        // lost does: a player who leaves mid-fight comes back there.
-        let (kept, at) = match self.fights.hurts_of(player) {
+        // lost does: a player who leaves mid-fight comes back there, turned no way kept.
+        let (kept, at, heading) = match self.fights.hurts_of(player) {
             // Leaving a fight under a third of its hull counts as sunk: never more than it had. Its hands who fell on
             // a deck it stands on are lost as they are stepping off.
             Some((mut kept, at)) => {
@@ -301,10 +321,12 @@ impl Sea {
                 (
                     if kept[0] < LEFT_AS_SUNK { std::array::from_fn(|at| kept[at].min(SUNK_KEPT[at])) } else { kept },
                     in_frame(self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1)),
+                    None,
                 )
             }
             None => {
-                (berth.kept, berth.sailing.as_ref().map_or([f64::NAN; 2], |sailing| [sailing.ship.x, sailing.ship.y]))
+                let ship = berth.sailing.as_ref().map(|sailing| sailing.ship);
+                (berth.kept, ship.map_or([f64::NAN; 2], |ship| [ship.x, ship.y]), ship.map(|ship| ship.heading))
             }
         };
         let whole = f64::from(gear::character::SHIP_WHOLE);
@@ -314,6 +336,7 @@ impl Sea {
         // A ship at sea is where its player logs back in (`gear::last`).
         if kept_at.is_some() {
             character.last = Some(gear::last::Last::Sea);
+            character.ship_heading = heading.map(|radians| (radians * 1000.0).round() as i64);
         }
         Some(character.to_json())
     }
@@ -332,12 +355,15 @@ impl Sea {
         }
     }
 
-    /// Holds a course asked before the keeper answered for the player, the last one asked; whether it was held.
+    /// Holds a course asked before the keeper answered for the player, the last one asked; whether it was held. An
+    /// empty course (a stop, or a Face's turn) keeps the one held: there is no ship yet to stop.
     pub(super) fn hold_course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> bool {
         let Some(held) = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.get_mut(&player)) else {
             return false;
         };
-        *held = Some((points.to_vec(), pace));
+        if !points.is_empty() {
+            *held = Some((points.to_vec(), pace));
+        }
         true
     }
 
@@ -375,11 +401,15 @@ impl Sea {
 
     /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea,
     /// the text is not a character, or the sea's gate shuts to it (`shut`). Their ship lies where the room last kept
-    /// it, wherever the page first put it to sea: a fight they met from the page's spawn is over for them. With nowhere
-    /// kept (a new character) it puts to sea by the starting port alone (`Harbours::starting`): where the page put it,
-    /// or the course held for them, within reach of its roadstead, else at that roadstead. In a sea with no port cities
-    /// the course held for them sails.
+    /// it, turned as it lay there, wherever the page first put it to sea: a fight they met from the page's spawn is
+    /// over for them. With nowhere kept (a new character) it puts to sea by the starting port alone
+    /// (`Harbours::starting`): where the page put it, or the course held for them, within reach of its roadstead, else
+    /// at that roadstead. In a sea with no port cities the course held for them sails. Come back from a patrol zone of
+    /// a region of the island the ship lies off, not its own (`came_from`), it lies at that region's anchorage instead,
+    /// facing as before.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
+        // Taken first, so a restore refused never leaves it for a later one.
+        let came_from = self.harbour.came_from.remove(&player);
         let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
             return false;
         };
@@ -387,15 +417,21 @@ impl Sea {
             return false;
         }
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
-        let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
-        let start = self.harbour.harbours.starting();
-        let at = at.or(start);
+        let kept_at =
+            character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
+        let kept_at = kept_at.and_then(|at| self.open_at(at));
+        let lying = kept_at.or(self.harbour.harbours.starting());
+        let anchorage = came_from.and_then(|room| self.anchorage_left(&room, lying));
+        let at = anchorage.or(lying);
         if at.is_some() && self.fights.fighting(player) {
             self.leave_decks(player);
             self.fights.leave(player);
         }
         if let (Some([x, y]), Some(berth)) = (at, self.berths.get_mut(&player)) {
-            let heading = berth.sailing.as_ref().map_or(0.0, |sailing| sailing.ship.heading);
+            // The heading kept belongs to the ship kept somewhere, an anchorage it is moved to included: one put at the
+            // starting port instead faces as a new one.
+            let kept = character.ship_heading.filter(|_| kept_at.is_some()).map(|turned| turned as f64 / 1000.0);
+            let heading = kept.unwrap_or_else(|| berth.sailing.as_ref().map_or(0.0, |sailing| sailing.ship.heading));
             berth.sailing =
                 Some(super::Sailing { ship: Ship { x, y, heading, pace: 0, rate: 0 }, course: Default::default() });
             self.harbour.told.push((player, vec![MOORED, self.clock as f64, x, y, heading]));
@@ -414,6 +450,28 @@ impl Sea {
         self.harbour.characters.insert(player, character);
         self.harbour.changed.insert(player);
         true
+    }
+
+    /// Notes the room a kept player came to the sea from, as the keeper knew it, for their character's restore.
+    pub fn came_from(&mut self, player: PlayerId, room: &str) {
+        self.harbour.came_from.insert(player, room.to_owned());
+    }
+
+    /// The anchorage of the region of the patrol zone whose own room a player came from (`world::regions::zone_left`),
+    /// where their ship lies at `at` off another region of that zone's island: leaving a zone finds the ship off its
+    /// side of the island. None for any other room, a ship off the zone's region already, or off another island.
+    fn anchorage_left(&self, room: &str, at: Option<[f64; 2]>) -> Option<[f64; 2]> {
+        let region = world::regions::zone_left(room)?;
+        at.is_some_and(|at| self.off_another_region(region, at))
+            .then_some(region.anchorage)
+            .and_then(|at| self.open_at(at))
+    }
+
+    /// Whether a ship at `at` lies in the waters of `region`'s island, off another of its regions (the one whose
+    /// centre is nearest, within the island).
+    pub(super) fn off_another_region(&self, region: &world::regions::Region, at: [f64; 2]) -> bool {
+        self.chart.water_id(at) == Some(region.island.as_str())
+            && world::regions::off(&region.island, at).is_some_and(|off| off.name != region.name)
     }
 }
 
@@ -495,3 +553,11 @@ mod boarding_tests;
 #[cfg(test)]
 #[path = "sea_leaving_tests.rs"]
 mod leaving_tests;
+
+#[cfg(test)]
+#[path = "sea_berths_tests.rs"]
+mod berths_tests;
+
+#[cfg(test)]
+#[path = "sea_parked_tests.rs"]
+mod parked_tests;

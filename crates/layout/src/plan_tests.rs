@@ -40,7 +40,7 @@ fn a_camps_way_in_stays_open_on_the_path_grid_at_every_turn() {
         for offset in 0..16 {
             cases += 1;
             let at = [f64::from(offset % 4) * 2.0, f64::from(offset / 4) * 2.0];
-            let area = Area { kind: AreaKind::Camp, name: "A Camp".into(), at, radius, leads_to: None };
+            let area = Area { kind: AreaKind::Camp, name: "A Camp".into(), at, radius, leads_to: None, crosses: false };
             let mut seating = Seating::default();
             let mut kit = pieces::Kit { ground: &ground, book: &book, seed: 7, draws: 0, into: &mut seating };
             pieces::build(&mut kit, &area, toward, [0.0, -1.0]);

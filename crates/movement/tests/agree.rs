@@ -6,9 +6,6 @@ use movement::floats::fingerprint;
 use movement::{Block, Body, Controls, Flat, Mode, TICK_SECONDS, standing, step_body};
 use std::f64::consts::{FRAC_PI_2, PI};
 
-/// Both tests hold this value; a change to the moves changes it in both, on purpose.
-pub const RUN_HASH: &str = "e8369fd91758ace2";
-
 /// A ledge to catch and climb, a low thin wall to vault, a tower to climb, and a step.
 const COURSE: [Block; 4] = [
     Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 2.3, bottom: 0.0 },
@@ -74,5 +71,10 @@ fn the_script_holds_the_body_every_way_it_can_be_held() {
 
 #[test]
 fn the_scripted_run_moves_to_its_fingerprint() {
-    assert_eq!(format!("{:016x}", fingerprint(&run_script())), RUN_HASH);
+    // Both tests hold this value; a change to the moves changes it in both, on purpose.
+    assert_eq!(format!("{:016x}", fingerprint(&run_script())), pinned("movement.run"));
 }
+
+#[path = "../../land/tests/support/pinned.rs"]
+mod pinned;
+use pinned::pinned;

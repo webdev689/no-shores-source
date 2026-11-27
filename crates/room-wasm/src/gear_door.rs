@@ -49,8 +49,8 @@ pub fn gear(player: PlayerId) -> Vec<u8> {
             sea.deck_gear_change(player).and_then(|(room, boarder)| protocol::gear_wire::gear_bytes(room, boarder))
         }
         Opened::Sea(sea) => {
-            let minute = sea.minute;
-            sea.take_character_change(player).and_then(|character| sea_gear_bytes(character, minute))
+            let (minute, mark) = (sea.minute, sea.lesson_mark(player));
+            sea.take_character_change(player).and_then(|character| sea_gear_bytes(character, minute, mark))
         }
         Opened::Fleet(_) => None,
     })
@@ -65,8 +65,8 @@ thread_local! {
 
 /// A player's gear at sea, from the character the sea keeps for them: written by a room that holds them alone, so
 /// with no drops, nodes, wares or casting, none of which the sea has, at the sea's minute, so its day's bounties are
-/// today's.
-fn sea_gear_bytes(character: &gear::Character, minute: u64) -> Option<Vec<u8>> {
+/// today's, and with the sea's mark for their task (`Sea::lesson_mark`).
+fn sea_gear_bytes(character: &gear::Character, minute: u64, mark: Option<[f64; 3]>) -> Option<Vec<u8>> {
     GEAR_ROOM.with(|held| {
         let mut held = held.borrow_mut();
         if held.is_none() {
@@ -78,6 +78,7 @@ fn sea_gear_bytes(character: &gear::Character, minute: u64) -> Option<Vec<u8>> {
         room.leave(*player);
         *player = room.join()?;
         room.set_minute(minute);
+        room.mark_quest(mark);
         room.restore_character(*player, &character.to_json()).then(|| protocol::gear_wire::gear_bytes(room, *player))?
     })
 }
@@ -105,6 +106,17 @@ pub extern "C" fn room_none_kept(player: PlayerId) {
         Opened::Land { room, .. } => room.none_kept(player),
         Opened::Fleet(_) => {}
     });
+}
+
+/// Whether what a player's arrival in the next room is judged by (their dive and the lamps they lit) moved since this
+/// was last asked, on land (`Room::take_judged_move`): 1 if it did. Asking clears it. No dive moves at sea.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_judged_moved(player: PlayerId) -> u32 {
+    let moved = with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.take_judged_move(player),
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    });
+    u32::from(moved == Some(true))
 }
 
 /// A player's character as it is kept between sessions, as JSON's bytes, at sea with their ship's hurts in it (a new
@@ -145,21 +157,31 @@ pub fn kept(player: PlayerId) -> Vec<u8> {
     serde_json::json!({ "body": character.to_json(), "vault": vault }).to_string().into_bytes()
 }
 
-/// A kept character and the account's shared part, as the keeper gives them.
+/// A kept character and the account's shared part, as the keeper gives them, and the room it came from, if any.
 #[derive(Deserialize)]
 struct Joined {
     body: String,
     vault: Option<String>,
+    #[serde(default)]
+    from: Option<String>,
 }
 
 /// Gives a player their kept character with the account's shared part joined into it, from JSON's bytes as `kept`
-/// answers them (`vault` null for none kept yet); false if either is not one, or as `restore_character` is.
+/// answers them (`vault` null for none kept yet); false if either is not one, or as `restore_character` is. At sea the
+/// room it came from (`from`) places the ship off that node's region (`Sea::came_from`).
 pub fn restore_joined(player: PlayerId, bytes: &[u8]) -> bool {
     let Ok(joined) = serde_json::from_slice::<Joined>(bytes) else { return false };
     let Some(mut character) = gear::Character::from_json(&joined.body) else { return false };
     if let Some(vault) = joined.vault {
         let Some(shared) = gear::shared::Shared::from_json(&vault) else { return false };
         character.join_shared(shared);
+    }
+    if let Some(from) = joined.from {
+        with_open(|opened| {
+            if let Opened::Sea(sea) = opened {
+                sea.came_from(player, &from);
+            }
+        });
     }
     restore_character(player, character.to_json().as_bytes())
 }

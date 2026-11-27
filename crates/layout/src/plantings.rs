@@ -325,7 +325,14 @@ mod tests {
 
     #[test]
     fn an_orchard_is_in_rows() {
-        let farm = Area { kind: AreaKind::Farm, name: "Orchard Farm".into(), at: AT, radius: 95.0, leads_to: None };
+        let farm = Area {
+            kind: AreaKind::Farm,
+            name: "Orchard Farm".into(),
+            at: AT,
+            radius: 95.0,
+            leads_to: None,
+            crosses: false,
+        };
         let reach = 171.0;
         let ends =
             [[AT[0] - AXIS[0] * reach, AT[1] - AXIS[1] * reach], [AT[0] + AXIS[0] * reach, AT[1] + AXIS[1] * reach]];
@@ -376,8 +383,14 @@ mod tests {
 
     #[test]
     fn only_an_area_named_a_moor_is_planted_with_thickets() {
-        let wilds =
-            |name: &str| Area { kind: AreaKind::Wilds, name: name.into(), at: AT, radius: 65.0, leads_to: None };
+        let wilds = |name: &str| Area {
+            kind: AreaKind::Wilds,
+            name: name.into(),
+            at: AT,
+            radius: 65.0,
+            leads_to: None,
+            crosses: false,
+        };
         let floor = Basin { floors: vec![[AT[0], AT[1], AT[0], AT[1], 120.0]], terraces: Vec::new() };
         let zone = Zone { biome: Some("temperate-coast"), seed: 7, takes: &|_, _| true };
         let planted =
@@ -390,7 +403,14 @@ mod tests {
 
     #[test]
     fn a_hedgerow_stands_behind_the_walls_it_lines() {
-        let farm = Area { kind: AreaKind::Farm, name: "Ewe Fold".into(), at: AT, radius: 95.0, leads_to: None };
+        let farm = Area {
+            kind: AreaKind::Farm,
+            name: "Ewe Fold".into(),
+            at: AT,
+            radius: 95.0,
+            leads_to: None,
+            crosses: false,
+        };
         let end = [AT[0] + AXIS[0] * 400.0, AT[1] + AXIS[1] * 400.0];
         let track = Path { tier: Tier::Track, points: vec![AT, end], crossings: Vec::new(), heights: Vec::new() };
         // Its drystone walls either side in 8 m stretches past the farm's reach, as dressing.rs lays them, on a slant

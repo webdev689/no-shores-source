@@ -1,10 +1,13 @@
 // What moves on the held map: on land, from the room the player stands in (its every snapshot holds all its players),
 // every other player where they stand, in their nameplate's colours, and the zone's public event while it runs; at
-// sea, every other player's ship on the sea's chart, which its room sends about once a second.
+// sea, every other player's ship on the sea's chart, which its room sends about once a second, and with it every
+// hostile ship and standing island in the water the player's ship lies in.
 import type { MapMarks } from '../heldmap/landSheet.ts';
 import type { PublicEvent } from '../network/publicMessages.ts';
-import type { SeenCharted } from '../network/seaHarbour.ts';
+import type { IsleMark } from '../heldmap/heldMapScene.ts';
+import type { SeenCharted, SeenIsle, SeenMark } from '../network/seaHarbour.ts';
 import type { OtherPlayers } from '../player/others.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
 import { ofCompany } from './companyHud.ts';
 import { mapEventOf } from './publicLaw.ts';
 
@@ -25,8 +28,36 @@ export function mapMarksOf(
   };
 }
 
-/** Every other player's ship on the sea's `charted`, as the sea's map marks them; the player is `own`. */
-export function chartMarksOf(charted: readonly SeenCharted[], own: number, company = ofCompany()): MapMarks {
-  const others = charted.filter((ship) => ship.player !== own);
-  return { others: others.map((ship) => ({ at: ship.at, company: company(ship.name) })), events: [] };
+/** Every other player's ship on the sea's `charted`, and each hostile ship among its `marks`, as the sea's map marks
+ *  them; the player is `own`, their ship at `from`, whose lookout sees other players' ships as far as the sky lets it
+ *  (`sight`): by night only those within sight of her lanterns. */
+export function chartMarksOf(
+  charted: readonly SeenCharted[],
+  own: number,
+  marks: readonly SeenMark[] = [],
+  company = ofCompany(),
+  from: readonly [number, number] = [0, 0],
+  sight: (rangeM: number, lit: boolean) => number = SKY_NOW.current.sight,
+): MapMarks {
+  const seenTo = sight(Infinity, true);
+  const others = charted.filter(
+    (ship) => ship.player !== own && Math.hypot(ship.at[0] - from[0], ship.at[1] - from[1]) <= seenTo,
+  );
+  return {
+    others: others.map((ship) => ({ at: ship.at, company: company(ship.name) })),
+    events: [],
+    hostiles: marks.filter((mark) => mark.kind === 'hostile'),
+  };
+}
+
+/** The islands the sea's map marks: those the player has `found`, wherever they lie, and each standing in their ship's
+ *  water among the chart's `marks`, each once. */
+export function isleMarksOf(found: readonly SeenIsle[], marks: readonly SeenMark[]): IsleMark[] {
+  const marked = new Set<string>();
+  return [...found, ...marks].flatMap(({ at, kind }) => {
+    const key = `${at[0]},${at[1]}`;
+    if (kind === 'hostile' || marked.has(key)) return [];
+    marked.add(key);
+    return [{ at, kind, isle: kind !== 'cove' }];
+  });
 }

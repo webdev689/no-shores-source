@@ -48,7 +48,7 @@ function hall(
     pillars,
     pillarHalf: 0.35,
     props: [],
-    boxes: pillars.map(([x, y, top]) => [x - 0.35, y - 0.35, x + 0.35, y + 0.35, top] as const),
+    boxes: pillars.map(([x, y, top]) => [x - 0.35, y - 0.35, x + 0.35, y + 0.35, 0, top] as const),
     landmarks: [],
     glows: [],
   };

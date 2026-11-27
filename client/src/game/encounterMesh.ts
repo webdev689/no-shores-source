@@ -6,7 +6,7 @@
 // pads are the blocks the room's bodies climb, laid where the room lays them (`room_dungeon`).
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { type EncounterSeen, SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
-import type { DungeonLayout } from './dungeonLayout.ts';
+import { type DungeonLayout, floorOf, planeOf, storeyOf } from './dungeonLayout.ts';
 import { box, COLOUR, face, lookOf, ROLE } from './dungeonMesh.ts';
 
 /** A pad's trim band under its top, the seal stone's inset and height over the last pad, an anchor's slab, and the
@@ -97,14 +97,10 @@ export function waterMesh(layout: DungeonLayout, drowned: readonly number[]): Fo
     if (!seal) continue;
     const set = setOf(layout, seal.room);
     for (const cell of seal.drowned) {
-      const [x, y] = [(cell % layout.columns) * layout.cell, Math.floor(cell / layout.columns) * layout.cell];
-      face(
-        mesh,
-        [COLOUR.foulWater, set],
-        cornersAt(x, y, x + layout.cell, y + layout.cell, WATER_M),
-        [0, 0, 1],
-        WATER_M,
-      );
+      const flat = planeOf(layout, cell);
+      const [x, y] = [(flat % layout.columns) * layout.cell, Math.floor(flat / layout.columns) * layout.cell];
+      const level = floorOf(layout, storeyOf(layout, cell)) + WATER_M;
+      face(mesh, [COLOUR.foulWater, set], cornersAt(x, y, x + layout.cell, y + layout.cell, level), [0, 0, 1], level);
     }
   }
   return mesh.model();

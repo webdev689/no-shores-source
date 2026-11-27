@@ -62,6 +62,19 @@ export interface InputFrame {
   readonly locked: boolean;
 }
 
+/** `frame` with `id`'s press its alone: no control that shares a key or a button with it is pressed, nor, where
+ *  `held`, held (a bow drawn fires on the left button held). */
+export function pressTakenBy(frame: InputFrame, id: Action, held: boolean, binds: Binds = BINDS.now): InputFrame {
+  const taken = new Set([...binds[id].keys, ...binds[id].pad]);
+  const shares = (action: Action) => [...binds[action].keys, ...binds[action].pad].some((name) => taken.has(name));
+  const free = (action: Action) => !shares(action);
+  const heldToo = {
+    held: (action: Action) => free(action) && frame.held(action),
+    amount: (action: Action) => (free(action) ? (frame.amount?.(action) ?? Number(frame.held(action))) : 0),
+  };
+  return { ...frame, pressed: (action) => free(action) && frame.pressed(action), ...(held && heldToo) };
+}
+
 /** How far `plus` is pressed against `minus`, -1 to 1: a stick's lean, or a key's whole way. */
 export function axis(input: InputFrame, minus: Action, plus: Action): number {
   const level = (action: Action) => input.amount?.(action) ?? Number(input.held(action));
@@ -102,6 +115,7 @@ export class Input {
   /** What the pad's buttons acted as when a window took them, let go at the next frame. */
   private letGo = new Set<string>();
   private readonly padHeard = new Set<(pressed: ReadonlySet<Action>, buttons: ReadonlySet<string>) => void>();
+  private readonly shutHeard = new Set<() => void>();
   /** Where the player is, whose binds say which of the pad's buttons wait to be told a tap from a hold. */
   context: Context = 'foot';
   /** The pad's part of the last frame alone, for what hears the keys as they come and the pad each frame. */
@@ -132,6 +146,8 @@ export class Input {
       wentDown.clear();
     });
     canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+    // A side button also comes as a key of its name (`sideKey`), heard with the pointer free and kept from the game
+    // wherever a window keeps the keys.
     canvas.addEventListener('mousedown', (event) => {
       if (!this.locked) return;
       event.preventDefault();
@@ -175,9 +191,16 @@ export class Input {
    *  is let go at once. */
   window(top: string | null): void {
     if (top === this.windowUp) return;
+    const shut = top === null;
     this.windowUp = top;
     for (const name of this.pad.staleNow()) this.letGo.add(name);
     this.running = false;
+    if (shut) for (const listener of this.shutHeard) listener();
+  }
+
+  /** Hears the last window over the game close. */
+  onShut(listener: () => void): void {
+    this.shutHeard.add(listener);
   }
 
   /** Hears the controls the pad pressed each frame, a window's own among them while one is up, and the names of

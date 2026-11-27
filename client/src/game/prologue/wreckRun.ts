@@ -104,7 +104,7 @@ export class WreckRun {
   /** The story's sword and shield, and the boarder's bow, lying on the deck until taken up. */
   readonly storyArms: StoryArms;
   /** The boarder met one on one, by its number in the room, once one stands; and where it last stood. */
-  private boarderId = 0;
+  boarderId = 0;
   private boarderLast: Point | null = null;
   /** Thule's number in the room, once he stands. */
   private thule = 0;

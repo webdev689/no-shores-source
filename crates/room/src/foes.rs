@@ -133,7 +133,8 @@ impl<'mesh> MeshRoutes<'mesh> {
             return near;
         }
         // A goal high on a block whose top no step reaches has no floor near its level: the ground beneath it does.
-        let beneath = || self.mesh.nearest_point([goal[0], goal[1], self.floor.height_at(goal[0], goal[1])]);
+        let beneath =
+            || self.mesh.nearest_point([goal[0], goal[1], self.floor.height_under(goal[0], goal[1], goal[2])]);
         let near = self.mesh.nearest_point(goal).or_else(beneath);
         placed.push((goal, near));
         near
@@ -150,7 +151,11 @@ impl ::foes::Routes for MeshRoutes<'_> {
         let Some(reachable) = self.placed(to) else { return Some(to) };
         // Standing as near the goal as the mesh reaches, or nearer, the foe walks on to it straight, off the mesh:
         // turned back to the mesh's edge each time it stepped past it, it would shake there out of its target's reach.
-        let apart = |point: [f64; 3]| combat::sight::apart([point[0], point[1]], [to[0], to[1]]);
+        let apart = |point: [f64; 3]| {
+            let across = combat::sight::apart([point[0], point[1]], [to[0], to[1]]);
+            let storeys = matches!(self.floor, crate::Floor::Dungeon(_)) && ::foes::storeys_apart(point, to);
+            if storeys { f64::INFINITY } else { across }
+        };
         if apart(from) <= apart(reachable) + CORNER_REACHED {
             return Some(to);
         }

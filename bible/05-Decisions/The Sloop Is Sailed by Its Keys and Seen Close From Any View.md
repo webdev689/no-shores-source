@@ -24,8 +24,10 @@ The owner's answers to the questions that followed:
 
 - **The helm's keys at sea.** In the Overworld's view the Sloop is sailed by a click, as before, and by W, A, S and D
   as the fight's helm has them: A and D turn it while held, W sets it sailing straight ahead at the pace dial, S
-  heaves it to, and it holds its new heading until stopped or a click sets a voyage ([[Game]], "At sea").
+  heaves it to, and it holds its new heading until stopped or a click sets a voyage ([[Game]], "At sea") (replaced:
+  the keys sail it in the Sealevel view alone, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
 - **Its crew and the player at the helm are seen from any view** ([[Game]]).
-- **Zoomed all the way in**, the ship is seen at full detail ([[Game]]).
+- **Zoomed all the way in**, the ship is seen at full detail ([[Game]]) (replaced: the Sealevel view shows it close, and
+  the wheel zooms the Oversea view alone, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
 - **It has the World Editor's animations**: riding the real swell, heeling into a turn, its wake on the water and its
   sails by the wind ([[Sailing]]).

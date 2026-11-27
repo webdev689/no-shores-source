@@ -14,6 +14,7 @@ import type { Sea } from './sea.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { MapMarks } from '../heldmap/landSheet.ts';
 import { chartMarksOf } from './mapMarks.ts';
+import { ISLANDS } from './hudLaw.ts';
 
 /** How often the land's map gathers again what moves on it, seconds: each gathering may paint its parchment again
  *  and send it to the GPU, however many players move. */
@@ -78,6 +79,7 @@ export class HelmMap {
     );
     made.sailKey = () => boundWord('confirm');
     made.noKey = () => (BINDS.device === 'pad' ? 'B' : 'Escape');
+    made.regions.names = ISLANDS;
     made.onLowered((sail, travel) => {
       if (this.onLand) return;
       this.sea()?.view.fromHelm();
@@ -127,13 +129,14 @@ export class HelmMap {
     [this.landWanted, this.onLand, this.wanted] = [sheet, true, false];
   }
 
-  /** A key pressed: the map's own while it is up (on land N lowers it as Escape does); Escape turns back on the way
-   *  down to the helm before it is raised, and on land Escape or N before it rises, every other key held meanwhile;
-   *  answers whether the key was taken. */
+  /** A key pressed: the map's own while it is up (on land its own key, `n` here, lowers it as Escape does; `legend`
+   *  hides or shows its legend); Escape turns back on the way down to the helm before it is raised, and on land
+   *  Escape or its key before it rises, every other key held meanwhile; answers whether the key was taken. */
   key(key: string): boolean {
     if (this.map?.shown) {
       if (key === 'escape' || (key === 'n' && this.onLand)) this.map.escape();
       else if (key === 'enter') this.map.setSail();
+      else if (key === 'legend') this.map.legend.toggle();
       return true;
     }
     if (this.landWanted) {
@@ -163,6 +166,8 @@ export class HelmMap {
     if (this.wanted && here.view.atHelm && helm.free) {
       this.wanted = false;
       this.made.open(helm.viewport, here.position, helm.hands, this.context.shut());
+      // The sea hears that it was raised: only the page sees it, and the Harbourmaster's lesson asks it.
+      here.sighted?.ask('chart');
     }
     // The map's scene is gathered only while the map is up.
     const map = this.map;
@@ -174,7 +179,13 @@ export class HelmMap {
           knownIslands: shown.knownIslands,
           course: here.course,
           quest: this.context.quest?.() ?? [],
-          moving: chartMarksOf(here.sighted?.charted ?? [], here.sighted?.own ?? -1),
+          moving: chartMarksOf(
+            here.sighted?.charted ?? [],
+            here.sighted?.own ?? -1,
+            here.sighted?.chartMarks,
+            undefined,
+            here.position,
+          ),
         })
       : null;
     return map && drawn ? (encoder, view) => map.draw(encoder, view, drawn) : undefined;

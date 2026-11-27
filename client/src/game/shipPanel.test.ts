@@ -32,7 +32,7 @@ test('Manage shows its vessel and its voyage, and nothing marked Later', () => {
   const panel = shipPanelOf(
     build,
     { lengthM: 6.2258, beamM: 1.8561, draughtM: 0.6 },
-    { heading: 0, paceStep: 60, voyageNote: 'At anchor' },
+    { heading: 0, pace: 60, voyageNote: 'At anchor' },
   );
   assert.equal(panel.title, 'Your Sloop');
   assert.deepEqual(

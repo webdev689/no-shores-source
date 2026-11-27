@@ -2,11 +2,11 @@
 // for the page to flicker over it. The town stands to the right and low, so the logo, the first line and Play sit over
 // open sky at every width.
 import { seeded } from '../../../client/src/seeded.ts';
-import { clouds, LIGHTS, moon, range, sea, sky, stars } from './light.ts';
-import { beacon, isle, quay, town } from './places.ts';
-import { ship } from './ships.ts';
+import { clouds, LIGHTS, moon, range, sea, sky, stars } from '../../../client/src/art/light.ts';
+import { beacon, isle, quay, town } from '../../../client/src/art/places.ts';
+import { ship } from '../../../client/src/art/ships.ts';
 import { logoSheet } from './logo.ts';
-import { box, dot, land, makeSheet, patternOn, ridge, type Sheet } from './sheet.ts';
+import { box, dot, land, makeSheet, patternOn, ridge, type Sheet } from '../../../client/src/art/sheet.ts';
 
 export const HERO = { width: 640, height: 300, horizon: 212 } as const;
 

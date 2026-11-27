@@ -1,5 +1,6 @@
 import type { CityPlan as DrawnPlan } from '../city/plan.ts';
 import { type HeightAt, landHeightAt, type Point2 } from '../overworld/ground.ts';
+import type { MapRegion } from '../overworld/regions.ts';
 import { maskFromGrid, type SeaMask } from '../overworld/seaRoute.ts';
 import type { LandView } from '../rules/landRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
@@ -20,6 +21,8 @@ export interface Landmass {
   /** Its drawn nodes' layouts, whose sections and spawns the nodes take. */
   readonly layouts: readonly NodeLayout[];
   readonly outline: readonly Point2[];
+  /** Its three regions, each with the nodes it holds (none where the world's data has none). */
+  readonly regions?: readonly MapRegion[];
   readonly heightAt: HeightAt;
   readonly mask: SeaMask;
   /** Whether a point stands on ground the city or a layout has set (their pads): nature leaves it bare. */
@@ -52,6 +55,7 @@ export async function openLandmass(
     nodes: plan ? [socialNode(plan, id), ...drawn] : drawn,
     layouts,
     outline: continent.outline,
+    regions: world.regions?.filter((region) => region.island === id),
     heightAt: landHeightAt([view]),
     mask: maskFromGrid(view),
     cleared: clearedBy([...(plan?.pads ?? []), ...layouts.flatMap((layout) => layout.pads)]),

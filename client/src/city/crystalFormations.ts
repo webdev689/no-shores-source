@@ -3,9 +3,10 @@
 // every machine, and meshed as forged models are, so each is placed by instance as often as the ruin needs it, turned
 // and sized there. Each formation's foot is at its origin and it grows out along its own east (`FORMATIONS`).
 import { randomFromSeed } from '../models/random.ts';
-import { emptyMesh, type MeshData } from './mesh.ts';
+import type { MeshData } from './mesh.ts';
 import { type Solid, solidReach } from './plan.ts';
-import { meshSolid, solidTurn } from './solidMesh.ts';
+import { solidModel } from './solidModel.ts';
+import { solidTurn } from './solidMesh.ts';
 
 /** The faces round a spire; its body's share of its height, its body's top a share of its width (as the crate's). */
 const SPIRE_SIDES = 6;
@@ -172,20 +173,7 @@ export const FORMATION_HEIGHT: readonly number[] = FORMATIONS.map((solids) =>
 
 /** Each formation meshed in a forged model's frame (x east, y up, z north), in the crystal's layer. */
 export function formationMeshes(layer: number): MeshData[] {
-  return FORMATIONS.map((solids) => {
-    const mesh = emptyMesh();
-    for (const solid of solids) meshSolid(solid, [0, 0], { layer, width: 64, height: 64 }, mesh);
-    const turned = (values: number[]) => {
-      for (let first = 0; first < values.length; first += 3) {
-        const [south, up] = [values[first + 1], values[first + 2]];
-        values[first + 1] = up;
-        values[first + 2] = -south;
-      }
-    };
-    turned(mesh.positions);
-    turned(mesh.normals);
-    return mesh;
-  });
+  return FORMATIONS.map((solids) => solidModel(solids.map((solid) => ({ solid, layer }))));
 }
 
 /** Which formation of a kind, by a draw. */

@@ -101,7 +101,7 @@ fn a_drop_thrown_onto_a_low_landmark_rests_within_its_players_reach() {
     // Each a dungeon holding a lake, a pool, a dais or an altar's steps: solids nobody may stand on, low enough that a
     // throw passes over them.
     let mut tried = 0;
-    for (patrol, number) in [("aurora-wastes", 0), ("baobab-grasslands", 2), ("blackwater-marsh", 0)] {
+    for (patrol, number) in [("whitewind-tundra", 1), ("lion-grasslands", 2), ("bogmire-sloughs", 2)] {
         let (seed, style) = dungeon::of_patrol(patrol, number);
         let dungeon = Dungeon::forge(seed, style);
         let room = Room::dungeon(patrol, number, Some((10, 14))).expect("a patrol's dungeon");
@@ -113,7 +113,7 @@ fn a_drop_thrown_onto_a_low_landmark_rests_within_its_players_reach() {
                 // Felled a half-width off its west edge, the drop thrown straight across it, east.
                 let from = [min_x - TUNING.radius - 0.01, (min_y + max_y) / 2.0, 0.0];
                 let at = room.rest_at(from, core::f64::consts::FRAC_PI_2);
-                let depth = room.floor.depth_in_solid(at[0], at[1]);
+                let depth = room.floor.depth_in_solid(at[0], at[1], at[2]);
                 assert!(
                     depth <= PICK_UP_REACH - TUNING.radius,
                     "{patrol} {}: {at:?} lies {depth} m in",

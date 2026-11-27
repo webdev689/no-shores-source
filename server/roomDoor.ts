@@ -45,6 +45,11 @@ export interface RoomDoor {
    *  crates/room-wasm/src/run_door.rs reads it), and a patrol's dungeon's from its patrol's node file's text, whose lock
    *  it keeps; false for an ask that does not read, a dungeon no rule lays, or a patrol's without its file. */
   openRun(ask: string, patrolText?: string): boolean;
+  /** Opens a passage zone's room from its ask (JSON: its island, the week of its web, its zone, its route and the Unix
+   *  minute it opens, as crates/room-wasm/src/passage_room_door.rs reads it); false for a zone no week's web holds. */
+  openPassage(ask: string): boolean;
+  /** An island's passages' web for a week, as JSON (`web_json`); empty for an island with none. */
+  passageWeb(island: string, week: number): string;
   /** Opens a Breach's run from its ask (JSON: its gate's patrol zone, its tier 0 Normal or 1 Hard and the Unix minute
    *  it opens, as crates/room-wasm/src/breach_door.rs reads it); false for an ask naming no Breach or tier. */
   openBreach(ask: string): boolean;
@@ -79,8 +84,21 @@ export interface RoomDoor {
   /** The open sea's word on the standing island whose door leads into a dungeon's room (its name at Normal), as
    *  `seaIsland` gives it: empty if no island the sea holds has that door. */
   seaDungeon(room: string): string;
-  /** Holds the open sea's island by its number and seed while players stand ashore: whether it stands. */
-  holdAshore(id: number, seed: string): boolean;
+  /** The open room on land's word on a player for the seas (crates/room-wasm/src/parked_door.rs): JSON of their
+   *  `account`, and the ship their character sails as others see it, `hull`, `dress`, `name` and `emblem`, with their
+   *  `level`. Empty for a player it holds no account of, or with no room on land open. */
+  named(player: number): string;
+  /** The open sea's answer to a place's room naming its players ashore (crates/room-wasm/src/parked_door.rs): the word
+   *  is JSON of the players it holds (`named`, each as `named` gives them), the place's `continent` id, or a sea
+   *  island's `island` number and `seed` (which it holds), or neither for a run started at sea, and the host's time
+   *  (`seconds` since the Unix epoch), by which the sea times its namings; or another sea's word naming no one, of the
+   *  accounts back at that sea (`afloat`), whose ships parked here it lets go. The answer is JSON of the ships parked
+   *  at that island, each its `account`, `number`, `x`, `y`, `heading`, `hull`, `dress`, `name` and `emblem`. Empty
+   *  with no sea open. */
+  seaAshore(word: string): string;
+  /** Gives the open room on land the ships parked at its island, as its seas answered (`seaAshore`, each `number` as
+   *  the host gives it): its snapshots send every player all of them. Whether a room on land is open. */
+  parked(ships: string): boolean;
   /** The number of the open sea's landing of an account on its island of that number and seed (its ship at rest at
    *  the island's anchorage when last at sea), or 0 if it is not landed there. */
   seaLanded(id: number, seed: string, account: string): number;
@@ -154,6 +172,9 @@ export interface RoomDoor {
   /** A player's character as it is kept between sessions (JSON), at sea with their ship's hurts (a new one until the
    *  accounts gave theirs); null in a fleet or for no such player. */
   character(player: number): string | null;
+  /** Whether what a player's arrival in the next room is judged by (their dive and the lamps they lit) moved since this
+   *  was last asked; asking clears it. Never at sea or in a fleet. */
+  judgedMoved(player: number): boolean;
   /** A new character wearing a plain sword and armour (JSON): what scripted players start from. */
   kitted(): string;
   /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
@@ -162,8 +183,9 @@ export interface RoomDoor {
    *  each as JSON; null as `character` is. */
   keptApart(player: number): { body: string; vault: string } | null;
   /** Gives a player their kept character with the account's vault and Aurem (null for none kept yet) joined into it;
-   *  false if either is not one, or as `restoreCharacter`. */
-  restoreJoined(player: number, body: string, vault: string | null): boolean;
+   *  false if either is not one, or as `restoreCharacter`. At sea the room it came from (`from`) puts the ship off
+   *  that node's region. */
+  restoreJoined(player: number, body: string, vault: string | null, from?: string | null): boolean;
   /** Why the open room's gate shuts to a player's kept character (JSON), or to a new one (null), in its words, with
    *  the story they already hold in the room carried forward, or at sea the sea's tier; empty when it may enter, in a
    *  fleet, or for no character. */
@@ -266,6 +288,8 @@ interface RoomExports {
   room_open_node(address: number, length: number): number;
   room_open_dungeon(address: number, length: number, dungeon: number): number;
   room_open_run(address: number, length: number, patrolAddress: number, patrolLength: number): number;
+  room_open_passage(address: number, length: number): number;
+  room_passage_web(week: number, address: number, length: number): bigint;
   room_open_breach(address: number, length: number): number;
   room_breach_company(player: number, address: number, length: number): number;
   room_breach_inside(address: number, length: number): number;
@@ -279,7 +303,9 @@ interface RoomExports {
   room_open_island(address: number, length: number): number;
   room_sea_island(id: number): bigint;
   room_sea_dungeon(address: number, length: number): bigint;
-  room_hold_ashore(id: number, low: number, high: number): number;
+  room_sea_ashore(address: number, length: number): bigint;
+  room_named(player: number): bigint;
+  room_parked(address: number, length: number): number;
   room_sea_landed(id: number, low: number, high: number, address: number, length: number): number;
   room_isle_check_landings(): number;
   room_make_test(): number;
@@ -303,6 +329,7 @@ interface RoomExports {
   room_snapshot_for(player: number): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
+  room_judged_moved(player: number): number;
   room_kitted(): bigint;
   room_mail_lying(player: number): void;
   room_shut(player: number, address: number, length: number): bigint;
@@ -399,6 +426,11 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
         lend(patrol, (patrolAt) => exports.room_open_run(address, length, patrolAt, patrol.length));
       return openWith(opens, ask);
     },
+    openPassage: (ask) => openWith(exports.room_open_passage, ask),
+    passageWeb: (island, week) =>
+      new TextDecoder().decode(
+        take(openWithAnswer((address, length) => exports.room_passage_web(week >>> 0, address, length), island)),
+      ),
     openBreach: (ask) => openWith(exports.room_open_breach, ask),
     breachCompany: (player, word) =>
       openWith((address, length) => exports.room_breach_company(player >>> 0, address, length), word),
@@ -421,7 +453,9 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openIsland: (word) => openWith(exports.room_open_island, word),
     seaIsland: (id) => new TextDecoder().decode(take(exports.room_sea_island(id >>> 0))),
     seaDungeon: (room) => new TextDecoder().decode(take(openWithAnswer(exports.room_sea_dungeon, room))),
-    holdAshore: (id, seed) => exports.room_hold_ashore(id >>> 0, ...halves(seed)) === 1,
+    seaAshore: (word) => new TextDecoder().decode(take(openWithAnswer(exports.room_sea_ashore, word))),
+    named: (player) => new TextDecoder().decode(take(exports.room_named(player))),
+    parked: (ships) => openWith(exports.room_parked, ships),
     seaLanded: (id, seed, account) => {
       const bytes = new TextEncoder().encode(account);
       return lend(bytes, (address) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, bytes.length));
@@ -487,6 +521,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       const bytes = take(exports.room_character(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);
     },
+    judgedMoved: (player) => exports.room_judged_moved(player) === 1,
     kitted: () => new TextDecoder().decode(take(exports.room_kitted())),
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
@@ -496,10 +531,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
         ? null
         : (JSON.parse(new TextDecoder().decode(bytes)) as { body: string; vault: string });
     },
-    restoreJoined: (player, body, vault) =>
+    restoreJoined: (player, body, vault, from = null) =>
       openWith(
         (address, length) => exports.room_restore_joined(player, address, length),
-        JSON.stringify({ body, vault }),
+        JSON.stringify({ body, vault, from }),
       ),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     name: (player, name) => openWith((address, length) => exports.room_name(player, address, length), name),

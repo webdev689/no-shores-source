@@ -75,6 +75,7 @@ struct Spot {
     down: usize,
     turns: u8,
     back: Option<Side>,
+    storey: usize,
 }
 
 /// A list shuffled on a lane.
@@ -115,10 +116,12 @@ impl Dungeon {
         self.clear_pillars();
     }
 
-    /// The rooms a landmark may stand in, all but the way in's and the end, from the middle of the walk outward.
+    /// The rooms a landmark may stand in, all but the way in's, the end and the vaults, from the middle of the walk
+    /// outward.
     fn landmark_rooms(&self) -> Vec<usize> {
-        let mut along: Vec<usize> =
-            (0..self.rooms.len()).filter(|&room| room != self.way_in.room && room != self.end).collect();
+        let mut along: Vec<usize> = (0..self.rooms.len())
+            .filter(|&room| room != self.way_in.room && room != self.end && !self.vaults.contains(&room))
+            .collect();
         along.sort_by_key(|&room| (self.rooms[room].walk, room));
         let last = along.len().saturating_sub(1);
         let mut order: Vec<usize> = (0..along.len()).collect();
@@ -145,7 +148,7 @@ impl Dungeon {
             let back = landmark.wall.then_some(BACKS[usize::from(turn)]);
             for row in found.y..=(found.y + found.depth).saturating_sub(down) {
                 for column in found.x..=(found.x + found.width).saturating_sub(across) {
-                    spots.push(Spot { column, row, across, down, turns: turn, back });
+                    spots.push(Spot { column, row, across, down, turns: turn, back, storey: found.storey });
                 }
             }
         }
@@ -173,9 +176,10 @@ impl Dungeon {
 
     /// The cells a spot covers, row by row.
     fn covered(&self, spot: &Spot) -> Vec<usize> {
+        let first = spot.storey * self.plane();
         (spot.row..spot.row + spot.down)
             .flat_map(|row| (spot.column..spot.column + spot.across).map(move |column| (row, column)))
-            .map(|(row, column)| row * self.columns + column)
+            .map(|(row, column)| first + row * self.columns + column)
             .collect()
     }
 
@@ -216,7 +220,7 @@ impl Dungeon {
         };
         let found = &self.rooms[room];
         let clear = !found.cells.iter().any(|&cell| doorway(cell) && touches(cell))
-            && !self.torches.iter().any(|torch| cells.contains(&self.cell_at([torch.at[0], torch.at[1]])))
+            && !self.torches.iter().any(|torch| cells.contains(&self.cell_at(torch.at)))
             && !touches(self.way_in.cell)
             && !touches(self.portal.cell);
         rim && !(backed && spot.back.is_none() && pinched) && clear && self.walk_round(room, &cells)
@@ -246,12 +250,13 @@ impl Dungeon {
     fn placed(&self, room: usize, landmark: &'static Landmark, spot: &Spot) -> Placed {
         let footprint = [landmark.cells[0] as f64 * CELL_M, landmark.cells[1] as f64 * CELL_M];
         let origin = [spot.column as f64 * CELL_M, spot.row as f64 * CELL_M];
+        let floor = crate::storey_floor(spot.storey);
         let solids = landmark
             .solids
             .iter()
             .map(|&solid| {
                 let [min_x, min_y, max_x, max_y, top] = turned_box(solid, spot.turns, footprint);
-                [min_x + origin[0], min_y + origin[1], max_x + origin[0], max_y + origin[1], top]
+                [min_x + origin[0], min_y + origin[1], max_x + origin[0], max_y + origin[1], floor + top]
             })
             .collect();
         let glows = landmark
@@ -259,7 +264,7 @@ impl Dungeon {
             .iter()
             .map(|&[x, y, z, kind]| {
                 let [turned_x, turned_y] = turned([x, y], spot.turns, footprint);
-                [turned_x + origin[0], turned_y + origin[1], z, kind]
+                [turned_x + origin[0], turned_y + origin[1], floor + z, kind]
             })
             .collect();
         Placed { landmark, room, cells: self.covered(spot), origin, turns: spot.turns, solids, glows }
@@ -273,18 +278,21 @@ impl Dungeon {
 
     /// The pillars a landmark's footprint stands in place of: every one whose box meets it.
     pub(crate) fn clear_pillars(&mut self) {
-        let footprints: Vec<[f64; 4]> = self
+        let footprints: Vec<([f64; 4], usize)> = self
             .landmarks
             .iter()
             .map(|placed| {
                 let [wide, deep] = placed.landmark.cells.map(|cells| cells as f64 * CELL_M);
                 let (across, down) = if placed.turns.is_multiple_of(2) { (wide, deep) } else { (deep, wide) };
-                [placed.origin[0], placed.origin[1], placed.origin[0] + across, placed.origin[1] + down]
+                let storey = self.rooms[placed.room].storey;
+                ([placed.origin[0], placed.origin[1], placed.origin[0] + across, placed.origin[1] + down], storey)
             })
             .collect();
-        self.pillars.retain(|&[x, y, _]| {
-            footprints.iter().all(|&[west, north, east, south]| {
-                x + PILLAR_HALF_M <= west
+        let storeys = self.storeys;
+        self.pillars.retain(|&[x, y, top]| {
+            footprints.iter().all(|&([west, north, east, south], storey)| {
+                crate::storey_under(storeys, top) != storey
+                    || x + PILLAR_HALF_M <= west
                     || x - PILLAR_HALF_M >= east
                     || y + PILLAR_HALF_M <= north
                     || y - PILLAR_HALF_M >= south
