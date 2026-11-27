@@ -1,7 +1,7 @@
-import { QUIET, pushedIn, showAnimaEdge } from '../../combat/animaMoment.ts';
+import { pushedIn } from '../../combat/animaMoment.ts';
 import { Arrivals } from '../../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../../combat/attackFeel.ts';
-import { FightEffects } from '../../combat/fightEffects.ts';
+import { FightEffects, quietEdges } from '../../combat/fightEffects.ts';
 import { Fighting } from '../../combat/fighting.ts';
 import { crosshairOf } from '../../combat/reticle.ts';
 import { FoeFigures } from '../../combat/foeFigures.ts';
@@ -542,7 +542,7 @@ export class WreckRun {
       ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
     ];
     const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
-    showAnimaEdge(effects.anima);
+    effects.showEdges();
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
       if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
@@ -591,7 +591,7 @@ export class WreckRun {
   leave(): void {
     // Once: the story's end lets go of a run its beat already left, and the place after it keeps its own heights.
     if (!this.room) return;
-    showAnimaEdge(QUIET);
+    quietEdges();
     this.storyArms.leave();
     this.context.movement.setHeights(null);
     this.room?.close();

@@ -1,0 +1,142 @@
+name: figures
+
+# Draws the forge's figure strips for both bodies and publishes them to R2 beside what is published, only when a run
+# is asked for: by hand, or by a push that changes tools/forge/figures-request.txt on a branch other than main (its
+# first line the moves, its second the layers, empty for all), as a workflow not yet on main cannot be run by hand. A
+# job for each set of layers (layers.py --set), body and move draws in parallel, holding no secret, each from an index
+# begun empty, so its move's cell is reckoned from its own layers; the hair's and the beasts' few layers draw every
+# move in one job. One job lays them all into the tables (forge_publish.py `figures`) and publishes,
+# and its log ends with the forge's manifest on one line, which a commit then takes into content/forge/renders.json.
+on:
+  push:
+    # Never on main, where it runs only by hand: merging a branch that asked for a run must not start one there.
+    branches-ignore: [main]
+    paths:
+      - tools/forge/figures-request.txt
+  workflow_dispatch:
+    inputs:
+      anims:
+        description: 'The moves to draw, comma-separated'
+        required: true
+        default: ''
+      layers:
+        description: 'Only these layers, comma-separated; empty for every layer of every set'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      jobs: ${{ steps.plan.outputs.jobs }}
+      layers: ${{ steps.plan.outputs.layers }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Check the publisher lays figures in
+        run: python3 -I tools/test_forge_figures.py
+      - name: Plan a job a set, body and move
+        id: plan
+        env:
+          ANIMS: ${{ inputs.anims }}
+          LAYERS: ${{ inputs.layers }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            ANIMS=$(sed -n 1p tools/forge/figures-request.txt); LAYERS=$(sed -n 2p tools/forge/figures-request.txt)
+          fi
+          [[ "$LAYERS" =~ ^[a-z0-9_,]*$ ]] || { echo "::error::layers by their names, comma-separated"; exit 1; }
+          echo "layers=$LAYERS" >> "$GITHUB_OUTPUT"
+          echo "jobs=$(python3 -I tools/forge_publish.py jobs "$ANIMS")" >> "$GITHUB_OUTPUT"
+
+  # No token here: the strips read only the forge's public tables. On four cores a strip's frame takes about 1.3 s,
+  # and a set's layers in one move both bodies' are a few thousand frames, so a job has the hosted runner's most.
+  render:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.jobs) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.13'
+      - name: Install Blender's module
+        run: |
+          pip install --require-hashes --only-binary=:all: -r tools/forge/tools/sprite-forge/artbirds-requirements.txt
+      - name: Draw ${{ matrix.name }}
+        working-directory: tools/forge
+        env:
+          SET: ${{ matrix.set }}
+          BODY: ${{ matrix.body }}
+          ANIMS: ${{ matrix.anims }}
+          LAYERS: ${{ needs.plan.outputs.layers }}
+          OUT: ${{ runner.temp }}/figures/${{ matrix.name }}
+        run: |
+          start=$(date +%s)
+          mkdir -p "$OUT"
+          FORGE_LOOKS="$OUT/forgeLooks.json" python -I tools/sprite-forge/layers.py --set "$SET" --body "$BODY" \
+            --anims "$ANIMS" ${LAYERS:+--layers "$LAYERS"} --out "$OUT"
+          echo "::notice::${{ matrix.name }} drawn in $(( $(date +%s) - start )) s"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: figures-${{ matrix.name }}
+          path: ${{ runner.temp }}/figures/${{ matrix.name }}
+          # a set with no layer in the moves asked for draws nothing
+          if-no-files-found: warn
+          retention-days: 7
+
+  publish:
+    needs: [plan, render]
+    # Only once every job has drawn: a move laid in from some sets alone would show a figure missing its clothes.
+    if: ${{ !cancelled() && needs.render.result == 'success' }}
+    runs-on: ubuntu-latest
+    # It publishes the same tables as the forge and Lattice workflows: one publishes at a time.
+    concurrency:
+      group: forge
+      cancel-in-progress: false
+    timeout-minutes: 30
+    # The token reaches only the two steps that check it and publish; what they import is installed as the exact
+    # wheels the requirements name by their hashes, and the checkout keeps no git credential.
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.13'
+      - name: Check the token is set
+        id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+      - name: Install the publisher's packages
+        if: steps.token.outputs.set == 'true'
+        run: |
+          pip install --require-hashes --only-binary=:all: -r tools/forge/tools/sprite-forge/artbirds-requirements.txt
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: steps.token.outputs.set == 'true'
+        with:
+          pattern: figures-*
+          path: ${{ runner.temp }}/figures
+      # The tables as this branch's manifest names them, then the strips laid in, then beside what is published.
+      - name: Publish them
+        if: steps.token.outputs.set == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          python -I tools/forge_publish.py pull
+          python -I tools/forge_publish.py figures "$RUNNER_TEMP"/figures/figures-*
+          python -I tools/forge_publish.py add
+          node -p "JSON.stringify(require('./content/forge/renders.json'))"

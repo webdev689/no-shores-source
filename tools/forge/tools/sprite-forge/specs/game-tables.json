@@ -1,0 +1,427 @@
+{
+ "slot": {
+  "141": "ChestClothes",
+  "142": "ChestClothes",
+  "143": "ChestClothes",
+  "144": "ChestClothes",
+  "145": "ChestClothes",
+  "146": "ChestClothes",
+  "147": "Feet",
+  "148": "Feet",
+  "149": "Feet",
+  "150": "Feet",
+  "151": "LegsClothes",
+  "152": "LegsClothes",
+  "153": "LegsClothes",
+  "154": "Cloak",
+  "155": "Cloak",
+  "156": "LegsClothes",
+  "157": "ChestClothes",
+  "158": "ChestClothes",
+  "159": "ChestClothes",
+  "160": "ChestClothes",
+  "161": "ChestClothes",
+  "162": "LegsClothes",
+  "163": "ChestClothes",
+  "164": "ChestClothes",
+  "165": "ChestClothes",
+  "166": "ChestClothes",
+  "167": "ChestClothes",
+  "168": "ChestClothes",
+  "169": "ChestClothes",
+  "170": "ChestClothes",
+  "171": "ChestClothes",
+  "172": "ChestClothes",
+  "173": "ChestClothes",
+  "174": "LegsClothes",
+  "175": "LegsClothes",
+  "176": "ChestClothes",
+  "177": "ChestClothes",
+  "178": "ChestClothes",
+  "179": "ChestClothes",
+  "180": "ChestClothes",
+  "181": "ChestClothes",
+  "182": "ChestClothes",
+  "183": "ChestClothes",
+  "184": "ChestClothes",
+  "185": "ChestClothes",
+  "186": "Feet",
+  "187": "Feet",
+  "188": "Feet",
+  "189": "Feet",
+  "190": "LegsClothes",
+  "191": "Cloak",
+  "192": "Cloak",
+  "193": "LegsClothes",
+  "194": "ChestClothes",
+  "195": "ChestClothes",
+  "196": "ChestClothes",
+  "197": "ChestClothes",
+  "198": "ChestClothes",
+  "199": "LegsClothes",
+  "200": "ChestClothes",
+  "201": "ChestClothes",
+  "202": "ChestClothes",
+  "203": "ChestClothes",
+  "204": "ChestClothes",
+  "205": "ChestClothes",
+  "206": "ChestClothes",
+  "207": "ChestClothes",
+  "208": "ChestClothes",
+  "209": "ChestClothes",
+  "210": "ChestClothes",
+  "211": "LegsClothes",
+  "212": "LegsClothes",
+  "213": "LegsClothes",
+  "214": "ChestClothes",
+  "215": "ChestClothes",
+  "216": "ChestClothes"
+ },
+ "garments": {
+  "141": [
+   "straps",
+   "straps_disc",
+   "straps_cross",
+   "straps"
+  ],
+  "142": [
+   "armbands"
+  ],
+  "143": [
+   "kimono"
+  ],
+  "144": [
+   "fancy_armbands"
+  ],
+  "145": [
+   "sash"
+  ],
+  "146": [
+   "eodoric"
+  ],
+  "147": [
+   "shoes"
+  ],
+  "148": [
+   "tall_boots"
+  ],
+  "149": [
+   "boots",
+   "boots_laced",
+   "boots"
+  ],
+  "150": [
+   "sandals"
+  ],
+  "151": [
+   "casual_pants"
+  ],
+  "152": [
+   "breeches"
+  ],
+  "153": [
+   "short_skirt"
+  ],
+  "154": [
+   "casual_cloak",
+   "casual_cloak_hooded",
+   "casual_cloak_hooded",
+   "casual_cloak_short",
+   "casual_cloak_short",
+   "casual_cloak_hooded"
+  ],
+  "155": [
+   "formal_cloak",
+   "formal_cloak_hooded"
+  ],
+  "156": [
+   "khajiit_suit"
+  ],
+  "157": [
+   "dwynnen_surcoat"
+  ],
+  "158": [
+   "short_tunic"
+  ],
+  "159": [
+   "formal_tunic"
+  ],
+  "160": [
+   "toga"
+  ],
+  "161": [
+   "reversible_tunic"
+  ],
+  "162": [
+   "loincloth",
+   "loincloth_long",
+   "loincloth"
+  ],
+  "163": [
+   "plain_robes_hooded",
+   "plain_robes"
+  ],
+  "164": [
+   "priest_robes"
+  ],
+  "165": [
+   "shirt_short_deep",
+   "shirt_short_long_hem",
+   "shirt_short_deep vest",
+   "shirt_short_long_hem vest",
+   "shirt_short_v"
+  ],
+  "166": [
+   "shirt_short_v belt",
+   "shirt_short_v belt",
+   "shirt_short_v vest belt",
+   "shirt_short_v vest belt",
+   "shirt_short_v waist_sash",
+   "shirt_short_v waist_sash",
+   "shirt_short_v vest waist_sash",
+   "shirt_short_v vest waist_sash"
+  ],
+  "167": [
+   "shirt_long_deep",
+   "shirt_long_long_hem",
+   "shirt_long_deep vest",
+   "shirt_long_long_hem vest",
+   "shirt_long_v"
+  ],
+  "168": [
+   "shirt_long_v belt",
+   "shirt_long_v belt",
+   "shirt_long_v vest belt",
+   "shirt_long_v vest belt"
+  ],
+  "169": [
+   "shirt_short_round",
+   "shirt_short_round",
+   "shirt_short_round vest",
+   "shirt_short_round vest"
+  ],
+  "170": [
+   "shirt_short_round belt",
+   "shirt_short_round belt",
+   "shirt_short_round vest belt",
+   "shirt_short_round vest belt",
+   "shirt_short_round waist_sash",
+   "shirt_short_round waist_sash",
+   "shirt_short_round vest waist_sash",
+   "shirt_short_round vest waist_sash"
+  ],
+  "171": [
+   "shirt_long_round",
+   "shirt_long_round",
+   "shirt_long_round vest",
+   "shirt_long_round vest"
+  ],
+  "172": [
+   "shirt_long_round belt",
+   "shirt_long_round waist_sash",
+   "shirt_long_round vest belt",
+   "shirt_long_round vest waist_sash"
+  ],
+  "173": [
+   "open_tunic"
+  ],
+  "174": [
+   "wrap"
+  ],
+  "175": [
+   "long_skirt",
+   "long_skirt_slit"
+  ],
+  "176": [
+   "anticlere_surcoat"
+  ],
+  "177": [
+   "challenger_straps"
+  ],
+  "178": [
+   "shirt_short_round belt"
+  ],
+  "179": [
+   "shirt_long_round belt"
+  ],
+  "180": [
+   "vest"
+  ],
+  "181": [
+   "champion_straps"
+  ],
+  "182": [
+   "brassiere"
+  ],
+  "183": [
+   "formal_brassiere"
+  ],
+  "184": [
+   "peasant_blouse"
+  ],
+  "185": [
+   "eodoric"
+  ],
+  "186": [
+   "shoes"
+  ],
+  "187": [
+   "tall_boots"
+  ],
+  "188": [
+   "boots",
+   "boots_laced",
+   "boots"
+  ],
+  "189": [
+   "sandals"
+  ],
+  "190": [
+   "casual_pants"
+  ],
+  "191": [
+   "casual_cloak",
+   "casual_cloak_hooded",
+   "casual_cloak_hooded",
+   "casual_cloak_short",
+   "casual_cloak_short",
+   "casual_cloak_hooded"
+  ],
+  "192": [
+   "formal_cloak",
+   "formal_cloak_hooded"
+  ],
+  "193": [
+   "khajiit_suit"
+  ],
+  "194": [
+   "formal_eodoric"
+  ],
+  "195": [
+   "evening_gown"
+  ],
+  "196": [
+   "day_gown"
+  ],
+  "197": [
+   "casual_dress"
+  ],
+  "198": [
+   "strapless_dress"
+  ],
+  "199": [
+   "loincloth",
+   "loincloth_long",
+   "loincloth"
+  ],
+  "200": [
+   "plain_robes",
+   "plain_robes_hooded"
+  ],
+  "201": [
+   "priestess_robes"
+  ],
+  "202": [
+   "shirt_short_deep",
+   "shirt_short_long_hem",
+   "shirt_short_deep vest",
+   "shirt_short_long_hem vest",
+   "shirt_short_v"
+  ],
+  "203": [
+   "shirt_short_v belt",
+   "shirt_short_v belt",
+   "shirt_short_v vest belt",
+   "shirt_short_v vest belt",
+   "shirt_short_v waist_sash",
+   "shirt_short_v waist_sash",
+   "shirt_short_v vest waist_sash",
+   "shirt_short_v vest waist_sash"
+  ],
+  "204": [
+   "shirt_long_deep",
+   "shirt_long_long_hem",
+   "shirt_long_deep vest",
+   "shirt_long_long_hem vest",
+   "shirt_long_v"
+  ],
+  "205": [
+   "shirt_long_v belt",
+   "shirt_long_v belt",
+   "shirt_long_v vest belt",
+   "shirt_long_v vest belt"
+  ],
+  "206": [
+   "shirt_short_round",
+   "shirt_short_round",
+   "shirt_short_round vest",
+   "shirt_short_round vest"
+  ],
+  "207": [
+   "shirt_short_round belt",
+   "shirt_short_round belt",
+   "shirt_short_round vest belt",
+   "shirt_short_round vest belt",
+   "shirt_short_round waist_sash",
+   "shirt_short_round waist_sash",
+   "shirt_short_round vest waist_sash",
+   "shirt_short_round vest waist_sash"
+  ],
+  "208": [
+   "shirt_long_round",
+   "shirt_long_round",
+   "shirt_long_round vest",
+   "shirt_long_round vest"
+  ],
+  "209": [
+   "shirt_long_round belt",
+   "shirt_long_round waist_sash",
+   "shirt_long_round vest belt",
+   "shirt_long_round vest waist_sash"
+  ],
+  "210": [
+   "open_tunic"
+  ],
+  "211": [
+   "wrap"
+  ],
+  "212": [
+   "long_skirt",
+   "long_skirt_slit"
+  ],
+  "213": [
+   "tights"
+  ],
+  "214": [
+   "shirt_short_round belt"
+  ],
+  "215": [
+   "shirt_long_round belt"
+  ],
+  "216": [
+   "vest"
+  ]
+ },
+ "pieces": {
+  "102": "cuirass",
+  "103": "gauntlets",
+  "104": "greaves",
+  "105": "pauldrons",
+  "106": "pauldrons",
+  "107": "helm",
+  "108": "boots"
+ },
+ "full": [
+  "evening_gown",
+  "day_gown",
+  "casual_dress",
+  "strapless_dress",
+  "long_skirt",
+  "long_skirt_slit",
+  "formal_eodoric",
+  "plain_robes",
+  "plain_robes_hooded",
+  "priest_robes",
+  "priestess_robes"
+ ]
+}

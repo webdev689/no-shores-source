@@ -1,7 +1,7 @@
 """The placed people's props (people.py): what a pose sets out or holds that is no garment and no weapon, each built in
 its own frame and laid by the matrix its pose gives (`props`): a stool or a chest to sit on, a cane, a tray of cups,
 a yoke with its pails, a juggler's balls, an anvil and a smith's hammer, a broom, a snake charmer's basket, a bowl, a
-bottle and a book.
+bottle and a book; and the player's healing flask (quaff.py).
 
 Each frame's origin and up: the stool, the chest, the anvil and the basket stand on the ground at their origin; the
 cane and the broom rise from their foot along +Z; the tray lies on its palm; the yoke sits on the nape, along X; the
@@ -15,13 +15,14 @@ import materials
 from shapes import ellipsoid, loft, plate, tube_path
 
 LAYERS = ('stool', 'chest', 'cane', 'tray', 'yoke', 'balls', 'anvil', 'hammer', 'broom', 'snake_basket', 'bowl',
-          'bottle', 'book')
+          'bottle', 'book', 'flask')
 
 
 def materials_():
     """The props' own materials, by name (each graded in its own light, as an instrument is)."""
     return ('prop_wood', 'prop_darkwood', 'prop_iron', 'prop_pewter', 'prop_wicker', 'prop_straw', 'prop_snake',
-            'prop_red', 'prop_yellow', 'prop_blue', 'prop_rope', 'prop_glass', 'prop_leather', 'prop_paper')
+            'prop_red', 'prop_yellow', 'prop_blue', 'prop_rope', 'prop_glass', 'prop_leather', 'prop_paper',
+            'prop_flaskglass', 'prop_draught')
 
 
 def palette():
@@ -39,7 +40,17 @@ def palette():
                                                                                   rough=0.9, spec=0.1),
             'prop_glass': p('prop_glass', (0.06, 0.18, 0.07), rough=0.15, spec=0.7),
             'prop_leather': p('prop_leather', (0.28, 0.08, 0.05), rough=0.7, spec=0.2),
-            'prop_paper': p('prop_paper', (0.72, 0.66, 0.5), rough=0.95, spec=0.05)}
+            'prop_paper': p('prop_paper', (0.72, 0.66, 0.5), rough=0.95, spec=0.05),
+            'prop_flaskglass': p('prop_flaskglass', (0.55, 0.6, 0.62), rough=0.1, spec=0.8),
+            'prop_draught': _lit(p('prop_draught', (0.6, 0.03, 0.02), rough=0.3), (0.9, 0.08, 0.04), 1.5)}
+
+
+def _lit(m, rgb, strength):
+    """`m` glowing in `rgb` (linear) at `strength`, as by its own light: the healing draught."""
+    b = m.node_tree.nodes['Principled BSDF']
+    b.inputs['Emission Color'].default_value = (*rgb, 1)
+    b.inputs['Emission Strength'].default_value = strength
+    return m
 
 
 def _box(name, w, d, h, mat, z0=0.0, x=0.0):
@@ -143,6 +154,17 @@ def bottle(M):
     cork = loft('bottle_cork', (0, 0, 0.245), (0, 0, 0.27), [(0, 0.01, 0.01), (1, 0.01, 0.01)], M['prop_wood'],
                 subsurf=0)
     return [body, cork]
+
+
+def flask(M):
+    """The healing flask, 0.16 m tall (quaff.py `HEIGHT`): a round belly of red draught glowing through its glass, a
+    clear neck and a cork."""
+    belly = ellipsoid('flask_belly', (0, 0, 0.052), (0.05, 0.05, 0.052), M['prop_draught'], subsurf=0)
+    neck = loft('flask_neck', (0, 0, 0.095), (0, 0, 0.15), [(0, 0.02, 0.02), (0.3, 0.014, 0.014), (1, 0.015, 0.015)],
+                M['prop_flaskglass'], subsurf=0)
+    cork = loft('flask_cork', (0, 0, 0.145), (0, 0, 0.165), [(0, 0.012, 0.012), (1, 0.013, 0.013)], M['prop_wood'],
+                subsurf=0)
+    return [belly, neck, cork]
 
 
 BOOK = (0.13, 0.19, 12)   # a leaf's width and height, and how far each half rises from flat (degrees)

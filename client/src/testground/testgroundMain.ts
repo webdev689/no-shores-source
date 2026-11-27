@@ -8,7 +8,7 @@ import { type FighterView, fighterView } from '../rules/fighters.ts';
 import { rosterOf } from '../rules/roster.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { Glides } from '../player/glide.ts';
-import { pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
+import { pushedIn } from '../combat/animaMoment.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { DropsShown } from '../combat/drops.ts';
@@ -481,7 +481,7 @@ async function start(): Promise<void> {
       landed: dropped.landed,
       crates: gear?.crates ?? null,
     });
-    showAnimaEdge(effects.anima);
+    effects.showEdges();
     scene.setMarks(marks);
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (dress: Dress | null | undefined) => ({

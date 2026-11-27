@@ -25,6 +25,8 @@ code:
   - crates/combat/src/tuning.rs#DRINK_HEALS
   - crates/room/src/recharge.rs#kill_share
   - crates/room/src/recharge.rs#DEALT_SHARE
+  - client/src/combat/healLight.ts#HealLights
+  - client/src/combat/healLight.ts#healEdgeNode
 ---
 # Combat
 
@@ -290,6 +292,20 @@ A foe never drinks.
   ending at full health (a spell topped the player up) or with no charge left heals nothing: each keeps what it
   holds. A dodge does not leave a drink: one pressed in its last 8 ticks hops as it ends, and a drink pressed in a
   dodge never frees it early. Foes take no notice of a drink.
+- **How it looks.** The figure plays the forge's `quaff` by the drink's progress, four frames over its second: the
+  flask taken from the belt, raised to the chin, tipped up at the lips with the head back, lowered before the chest; on
+  the ground at a walk it plays `quaffwalk`, the same frames on the walk's legs, where the look is drawn whole in it,
+  else the standing quaff ([[Sprite Forge]]). The flask's red draught glows in the art. Where the forge draws no quaff,
+  or the look wears a layer the quaff leaves out, the figure stands or walks with its weapon put away. Another
+  player's figure shows the move their own page shows. As the room tells the heal, the drinker's light comes in the
+  healing charges' red, drawn in cells as Mend's is and gone in a second
+  (`combat/healLight.ts`): a faint ring glints at the feet for its first quarter, and six small motes and three small
+  crosses swirl up round the figure, each leaving the feet in its own time and turning round it once and a quarter to
+  just over the head, before the figure on the near side of the turn and behind it on the far, red, then pale red,
+  then a single cell of pale pink that goes out, never in the blood's dark. Through the drinker's own eyes the figure's light is
+  not drawn: a faint red light comes in from the screen's edge in six held steps, warm red at the rim paling inward,
+  with motes drifting up its sides in a gentle sway ([[First Person]], [[Interface]]). Reduced motion keeps only the
+  still glint and the edge held at one faint light: nothing circles, rises or pulses.
 - **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
   their meter toward the next charge by the share it took of the foe's most health and most shield together, times
   half the share its rank's kill gives; a companion's or a boarding hand's blow fills its leader's, as its XP is

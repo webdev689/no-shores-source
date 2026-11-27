@@ -79,9 +79,9 @@ meshes, fetched from R2 once into the machine's temporary folder (`overlook-ship
 
 ## Measuring
 
-- A long run measures whatever surrounds it. Run `cargo xtask check`, the picture driver and `webgpu-perf` on an
-  idle machine, with no cargo build, profiler or bake beside them, and rerun a timing failure idle before reading it
-  as a regression. A baseline runs before the first edit or in a worktree of its own, and no edit, merge or checkout
+- A long run measures whatever surrounds it. Run the tests, the picture driver and `webgpu-perf` on an idle machine,
+  with no cargo build, profiler or bake beside them, and rerun a timing failure idle before reading it as a
+  regression. A baseline runs before the first edit or in a worktree of its own, and no edit, merge or checkout
   touches a tree a background run reads. `cargo test --workspace --no-fail-fast` shows every failure, not the first.
 - A tuning claim, or a pin moved, sweeps the whole input domain over 10 or more seeds or minutes, measured on the full
   real data.

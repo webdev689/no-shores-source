@@ -1,10 +1,10 @@
 name: forge
 
 # Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds, the
-# weapons drawn large and the material nodes), and publishes them to R2 whenever their tools change on main or a run
-# is asked for on a branch; a run asked for may also draw figure strips for both bodies (`figures`) and the first
-# person's dagger and sword frames for both hands (`firstperson`). The job that
-# renders holds no secret and stages them, and a second job, which only uploads them, holds the repository's R2 token.
+# weapons drawn large, the material nodes and the first person's flask), and publishes them to R2 whenever their tools
+# change on main or a run is asked for on a branch; a run asked for may also draw the first person's dagger and sword
+# frames for both hands (`firstperson`); the figures workflow draws figure strips. The job that renders holds no secret
+# and stages them, and a second job, which only uploads them, holds the repository's R2 token.
 # R2's objects are named by their hashes, so a run changes nothing already published; the render's log ends with the
 # forge's manifest on one line, which a commit takes into content/forge/renders.json once the run has published.
 on:
@@ -19,13 +19,12 @@ on:
       - tools/forge/tools/sprite-forge/specs/item-ramps.json
       - tools/forge/tools/sprite-forge/specs/pictures/nodes.json
       - tools/forge/tools/sprite-forge/artbirds-requirements.txt
+      # The first person's healing flask.
+      - tools/forge/tools/sprite-forge/fpflask.py
+      - tools/forge/tools/sprite-forge/specs/FLASK*.json
       - .github/workflows/forge.yml
   workflow_dispatch:
     inputs:
-      figures:
-        description: "Figure strips to draw first, both bodies: runs split by ';', each 'anims|layers', empty for all"
-        required: false
-        default: ''
       firstperson:
         description: "First-person frames to draw, both hands: runs split by ';', each 'weapon|metals' (dagger or sword; metals empty for all)"
         required: false
@@ -43,10 +42,9 @@ jobs:
   # Installs others' code (pip), so it holds no secret: what it stages for R2 goes on as an artifact.
   build:
     runs-on: ubuntu-latest
-    # On four cores a run drawing figure strips takes hours (six blade layers, both bodies, about four: 10,220 frames
-    # at about 1.3 s), so it has the hosted runner's most; every make's first-person frames, both weapons and both
-    # hands, reckoned at about 40 minutes (a blade's, a few); the birds and the weapons, minutes.
-    timeout-minutes: ${{ inputs.figures && 360 || inputs.firstperson && 90 || 20 }}
+    # Every make's first-person frames, both weapons and both hands, reckoned at about 40 minutes (a blade's, a few);
+    # the birds and the weapons, minutes.
+    timeout-minutes: ${{ inputs.firstperson && 90 || 20 }}
     outputs:
       staged: ${{ steps.staged.outputs.staged }}
     steps:
@@ -70,9 +68,14 @@ jobs:
         run: |
           nodes=$(python -c "import json; print(','.join(json.load(open('tools/sprite-forge/specs/pictures/nodes.json'))['pictures']))")
           python -I tools/sprite-forge/itempics.py --set pictures --only "$nodes" --out public/art/studio/forge
+      # The first person's hands drinking the healing flask (fpflask.py), in the bare glove and every set's gauntlets.
+      - name: Render the first person's flask
+        working-directory: tools/forge
+        run: |
+          python -I tools/sprite-forge/fpheldforge.py --spec tools/sprite-forge/specs/FLASK.json \
+            --out public/art/studio/forge/held --objects
       # A held weapon's layers (fplayers.py): the weapon alone in each metal asked for, the right hand's and the left's
-      # twin, into the folder of the archive the game reads them from. The hands stay as published. Drawn before the
-      # figure strips, so a failure here costs minutes, not the strips' hours.
+      # twin, into the folder of the archive the game reads them from. The hands stay as published.
       - name: Draw the first-person frames asked for
         if: inputs.firstperson
         env:
@@ -89,29 +92,13 @@ jobs:
                 ${metals:+--metals "$metals"} --out "public/art/studio/forge/$archive/layers")
             done
           done
-      # Figure strips over the published tables (layers.py), each whose inputs changed drawn again.
-      - name: Draw the figure strips asked for
-        if: inputs.figures
-        env:
-          FIGURES: ${{ inputs.figures }}
-        run: |
-          python -I tools/forge_publish.py pull
-          IFS=';' read -ra runs <<< "$FIGURES"
-          for run in "${runs[@]}"; do
-            anims=${run%%|*}; layers=${run#*|}
-            for body in male female; do
-              (cd tools/forge && python -I tools/sprite-forge/layers.py --body "$body" ${anims:+--anims "$anims"} \
-                ${layers:+--layers "$layers"} --out public/art/studio/forge/layers)
-            done
-          done
-      # The published tables first (kept as the figures left them), then the new pictures beside what is published.
+      # The published tables first (kept as the first person left them), then the new pictures beside what is published.
       - name: Stage them
         env:
           R2_STAGE: ${{ runner.temp }}/stage
-          FIGURES: ${{ inputs.figures }}
           FIRSTPERSON: ${{ inputs.firstperson }}
         run: |
-          [ -n "$FIGURES$FIRSTPERSON" ] || python -I tools/forge_publish.py pull
+          [ -n "$FIRSTPERSON" ] || python -I tools/forge_publish.py pull
           python -I tools/forge_publish.py add
           node -p "JSON.stringify(require('./content/forge/renders.json'))"
       - name: Say whether anything is staged

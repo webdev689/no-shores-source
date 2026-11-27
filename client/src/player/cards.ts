@@ -293,6 +293,14 @@ export class Cards {
     return stacked.length > 0 && stacked.every((layer) => !!layers[layer]?.includes(walk)) ? walk : null;
   }
 
+  /** Whether `dress` draws `anim` whole: every layer it stacks at rest drawn in it too, so none drops out. */
+  drawsWhole(dress: Dress, anim: string): boolean {
+    const layers = this.looks.bodies[dress.body]?.layers ?? {};
+    if (!this.looks.bodies[dress.body]?.anims[anim]) return false;
+    const stacked = layersOf(figureOf(dress, layers, 'idle'), 'idle', this.looks);
+    return stacked.length > 0 && stacked.every((layer) => !!layers[layer]?.includes(anim));
+  }
+
   /** Whether a body draws an animation, and the weapon in hand draws it too. */
   draws(body: string, anim: string, held: string | null): boolean {
     const own = this.looks.bodies[body];
