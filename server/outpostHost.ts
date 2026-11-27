@@ -18,7 +18,7 @@ import { gateOf, gateTier } from '../client/src/game/guild/delveRoom.ts';
 import type { Plot } from '../client/src/game/guild/outpostLaw.ts';
 import { type Box, type Ground, placeOf, plotBoxes, socketOf } from '../client/src/game/guild/outpostPlaces.ts';
 import type { RoomDoor } from './roomDoor.ts';
-import type { Errand } from './errand.ts';
+import type { Errand } from './accounts/errand.ts';
 
 /** What the host asks the accounts for an outpost. */
 export type OutpostAccounts = Pick<Characters, 'outpost' | 'deposit' | 'deliver' | 'takeStores' | 'soundHorn'>;

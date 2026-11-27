@@ -1,4 +1,4 @@
-import type { Errand } from './errand.ts';
+import type { Errand } from './accounts/errand.ts';
 
 /** A block of a room's course: its footprint (x east, y south, metres), its top and its underside. */
 export interface CourseBlock {
