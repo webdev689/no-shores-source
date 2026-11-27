@@ -213,6 +213,8 @@ fn voyage_on(ahead: f64, bold: bool) -> (Sea, PlayerId) {
 #[test]
 fn a_voyage_eases_down_as_a_wary_ship_comes_near_along_its_way_and_is_never_held_by_it_to_the_worlds_time() {
     let (mut sea, player) = voyage_on(1_800.0, false);
+    // 200 m east of the way: passed abeam, never sailed into (`BUMP_M`).
+    sea.hostiles.sailing[0].x += 200.0;
     let mut sailed = Vec::new();
     for _ in 0..60 * 60 {
         sea.tick();
@@ -694,7 +696,10 @@ fn a_player_who_chases_a_wary_ship_to_within_750_m_begins_the_fight_with_it() {
     sea.chase(player, Some(SET_AT_SEA));
     assert!(fight_within_ten_minutes(&mut sea).is_some(), "the player brought the fight");
     let (mut unchased, _) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, false);
-    assert!(fight_within_ten_minutes(&mut unchased).is_none(), "a wary ship not chased sails by");
+    unchased.hostiles.sailing[0].x += 200.0;
+    assert!(fight_within_ten_minutes(&mut unchased).is_none(), "a wary ship not chased sails by, 200 m abeam");
+    let (mut sailed_into, _) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, false);
+    assert!(fight_within_ten_minutes(&mut sailed_into).is_some(), "but one sailed into meets him, chased or not");
 }
 
 #[test]

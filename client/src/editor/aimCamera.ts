@@ -169,13 +169,14 @@ export class AimCamera {
   private swingPx = 0;
   private swungHome: number | null = null;
 
-  /** A drag across the view while an aim is held, pixels to the right: far enough, the aim laid swings round to the
+  /** A drag of the view while an aim is held, pixels to the right and down: one more across than down counts, so a
+   *  hand laying range up and down swings nothing; far enough, the aim laid swings round to the
    *  other side the way the drag turns the view, aiming all the while. Its home turns to look along the keel that way
    *  (from starboard, astern for a drag to the right and ahead for one to the left; the mirror from port), so the view
    *  eases out over that end of the ship, its look turning as the drag did, and in to the other battery as an aim
    *  taken again does; nothing is laid on the way round, so nothing fires. */
-  drag(right: number): void {
-    if (this.held) this.swingPx += right;
+  drag(right: number, down = 0): void {
+    if (this.held && Math.abs(right) > Math.abs(down)) this.swingPx += right;
   }
 
   /** The frame `seconds` on. */

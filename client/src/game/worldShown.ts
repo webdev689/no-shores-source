@@ -12,21 +12,31 @@ import type { WorldData } from './worldData.ts';
 export const OFF_COAST = { clearM: 400, stepM: 50, farthestM: 5_000 } as const;
 
 /** Where a ship sails for a place at `centre` on the island of `outline`: out from it past the outline's coast
- *  nearest it, to the first point `OFF_COAST.clearM` clear of the outline; the coast itself where none lies that
- *  way. A place standing off its island's land is sailed for out from the island's middle through it instead. */
+ *  nearest it, to the first point `OFF_COAST.clearM` clear of the outline; a place standing off its island's land
+ *  out from the island's middle through it instead. Where land comes back across that way within reach (a narrow
+ *  inlet's far wall, a bay's far arm), the nearest such point any way round from the coast, of sixteen; the coast
+ *  itself only where none lies within reach. */
 export function offCoast(centre: Point2, outline: readonly Point2[]): Point2 {
   const shore = coastPoint(centre, outline);
   const from =
     insideRing(outline, centre) && Math.hypot(shore[0] - centre[0], shore[1] - centre[1]) > 1
       ? centre
       : ringCentre(outline);
+  const clearAlong = (way: readonly [number, number]): Point2 | null => {
+    for (let along = 0; along <= OFF_COAST.farthestM; along += OFF_COAST.stepM) {
+      const point: Point2 = [shore[0] + way[0] * along, shore[1] + way[1] * along];
+      if (!insideRing(outline, point) && coastDistance(point, outline) >= OFF_COAST.clearM) return point;
+    }
+    return null;
+  };
   const length = Math.hypot(shore[0] - from[0], shore[1] - from[1]) || 1;
-  const out = [(shore[0] - from[0]) / length, (shore[1] - from[1]) / length] as const;
-  for (let along = 0; along <= OFF_COAST.farthestM; along += OFF_COAST.stepM) {
-    const point: Point2 = [shore[0] + out[0] * along, shore[1] + out[1] * along];
-    if (!insideRing(outline, point) && coastDistance(point, outline) >= OFF_COAST.clearM) return point;
-  }
-  return shore;
+  const straight = clearAlong([(shore[0] - from[0]) / length, (shore[1] - from[1]) / length]);
+  if (straight) return straight;
+  const apart = (point: Point2) => Math.hypot(point[0] - shore[0], point[1] - shore[1]);
+  const round = Array.from({ length: 16 }, (_unused, nth) =>
+    clearAlong([Math.sin((nth * Math.PI) / 8), -Math.cos((nth * Math.PI) / 8)]),
+  ).filter((point): point is Point2 => point !== null);
+  return round.sort((one, other) => apart(one) - apart(other))[0] ?? shore;
 }
 
 /** What the held map shows at sea: its places, and its islands, a bit each by their place among the continents. */

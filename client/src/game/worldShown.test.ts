@@ -59,3 +59,20 @@ test('a place standing off its island is sailed for out from the island past it,
   ];
   assert.deepEqual(offCoast([50, 40], islet), [50, -OFF_COAST.clearM], 'an islet a hundred metres across');
 });
+
+test('a place by a narrow inlet whose far wall stands across the way out is sailed for out of its mouth instead', () => {
+  // An island 20 km square, an inlet 500 m wide cut 14 km into it from the east; a node just north of it, near its mouth.
+  const inlet: [number, number][] = [
+    [0, 0],
+    [20_000, 0],
+    [20_000, 9_750],
+    [6_000, 9_750],
+    [6_000, 10_250],
+    [20_000, 10_250],
+    [20_000, 20_000],
+    [0, 20_000],
+  ];
+  const sail = offCoast([18_000, 10_500], inlet);
+  assert.ok(sail[0] > 20_000 + OFF_COAST.clearM - 1, `out past the mouth: ${sail.join()}`);
+  assert.ok(Math.abs(sail[1] - 10_250) < 1, 'straight out along the inlet');
+});

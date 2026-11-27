@@ -227,6 +227,12 @@ test('a held aim dragged across 120 px swings round to the other side, out over 
   settled(camera, asked(1));
   camera.drag(-60);
   assert.equal(settled(camera, asked(1), 30).look?.bearing, 90, 'half as far, and the aim holds its side');
+  for (let flick = 0; flick < 10; flick++) camera.drag(-30, 40);
+  assert.equal(
+    settled(camera, asked(1), 30).look?.bearing,
+    90,
+    'a flick laying range, more down than across, swings none',
+  );
   // From starboard a drag to the left turns the look forward: the eye goes out astern, where the home now stands.
   camera.drag(-150);
   const [low, high] = hullBox(SLOOP_HULL);

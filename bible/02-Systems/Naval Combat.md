@@ -757,8 +757,9 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   again on the other side, the view eases home first and then to the other battery, never across the ship.
 - **Swinging to the other side**
   ([[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]): a drag
-  across of 120 px while the aim is held, its last fading over 0.3 s (the right stick leant whole, in half a second),
-  holds the other side and turns the aim's home round the ship to look along the keel the way the drag turns the
+  across of 120 px while the aim is held, its last fading over 0.3 s and each move counted only where it goes more
+  across than down, so a flick laying range swings nothing (the right stick leant whole, in half a second), holds the
+  other side and turns the aim's home round the ship to look along the keel the way the drag turns the
   view (`AimCamera.drag`): from starboard astern for a drag to the right and ahead for one to the left, the mirror
   from port, so the eye comes round over the bow or the stern. The view eases out there and in to the other battery
   as an aim taken again does, aiming all the while. Nothing is laid on the way round, so letting go then fires

@@ -280,7 +280,7 @@ export class SeaCombat {
   drag(right: number, down: number): void {
     const yaw = this.aiming ? this.orbit.yaw : this.orbit.yaw + right * DRAG_TURN;
     this.orbit = { yaw, pitch: this.pitched(this.orbit.pitch + down * DRAG_TURN) };
-    if (this.aiming) this.aimCamera.drag(right);
+    if (this.aiming) this.aimCamera.drag(right, down);
   }
 
   /** A pitch within the aim's clamp while aiming, else the orbit's. */

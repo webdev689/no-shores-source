@@ -127,7 +127,8 @@ A ship drawn with the land hides the water behind it and is seen through it belo
 through its inertia: each wave shrunk as a first-order lag shrinks it, its crest on time, its time constant 0.02 s a metre of its
 waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sailing]]). Its bow slams when the crest
 at its stem rises past it faster than 0.8 m/s, outrunning the lift it gives, and throws spray: some one a ship's two
-minutes in the highest sea, none in a lesser one.
+minutes in the highest sea, none in a lesser one. A ship first seen, or drawn at another size than the frame before as
+a view eases between the raised one and sea level, has closed on nothing, so no ease throws spray of its own.
 
 Its footprint is its own hull line at its waterline, read from its mesh where its faces cross it (16 stations, stern
 to bow, closer together at its ends, where the line turns fastest; a fair hull until its mesh comes, read once as its
