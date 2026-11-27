@@ -47,7 +47,7 @@ const words = (hints: readonly StripHint[], device: 'keys' | 'pad' = 'keys', bin
 const shown = (foot: Partial<OnFoot>) => words(footHints({ ...AT_REST, ...foot }));
 
 test('at rest on foot the strip shows the weapon, the body, the leave held and the key to every control', () => {
-  assert.deepEqual(shown({}), ['Z Draw', 'Shift Run', 'Space Jump', 'C Crouch', 'M Hold to leave', 'K All controls']);
+  assert.deepEqual(shown({}), ['Z Draw', 'Shift Run', 'Space Jump', 'C Crouch', 'N Hold to leave', 'K All controls']);
 });
 
 test("the strip's head names the moment: the stance on foot, what the player does at sea", () => {
@@ -139,7 +139,7 @@ test('hanging or climbing shows only the climb’s keys, the weapon drawn or not
   }
 });
 
-test('the map’s N shows in every stance on foot, before the leave’s M, and K stays last', () => {
+test('the map’s M shows in every stance on foot, before the leave’s N, and K stays last', () => {
   const stances: Partial<OnFoot>[] = [
     {},
     { drawn: true },
@@ -151,10 +151,10 @@ test('the map’s N shows in every stance on foot, before the leave’s M, and K
   ];
   for (const foot of stances) {
     const strip = words(withMapKey(footStrip({ ...AT_REST, ...foot })).hints);
-    assert.ok(strip.includes('N Map'), strip.join(', '));
+    assert.ok(strip.includes('M Map'), strip.join(', '));
     assert.equal(strip.at(-1), 'K All controls');
-    const leave = strip.indexOf('M Hold to leave');
-    if (leave >= 0) assert.equal(strip.indexOf('N Map'), leave - 1);
+    const leave = strip.indexOf('N Hold to leave');
+    if (leave >= 0) assert.equal(strip.indexOf('M Map'), leave - 1);
   }
 });
 
@@ -163,7 +163,7 @@ test('riding shows how to get down, gallop and boost', () => {
     ', Get down',
     'Shift Gallop',
     'Space Boost',
-    'M Hold to leave',
+    'N Hold to leave',
     'K All controls',
   ]);
 });
@@ -196,7 +196,7 @@ test("bearing the Lodestone the strip lists each key once: the swing its Strike,
     'Space Jump',
     'Left button Hold True',
     'R / Q / G Ground (charging)',
-    'M Hold to leave',
+    'N Hold to leave',
     'K All controls',
   ]);
   assert.deepEqual(shown({ mounted: true, bearer }), shown({ mounted: true }), 'riding, as ever');
@@ -223,7 +223,7 @@ test('at sea the keys shown follow what the player is doing, a fight first and i
   assert.equal(seaHints({ ...SAILING, walking: true, fighting: true }), HINTS.fight);
   assert.equal(seaHints({ ...SAILING, fighting: true, aiming: true }), HINTS.aim);
   for (const strip of [HINTS.oversea, HINTS.sealevel])
-    assert.ok(!words(strip).some((entry) => entry.startsWith('M ')), 'nothing to leave at sea');
+    assert.ok(!words(strip).some((entry) => entry.startsWith('N ')), 'nothing to leave at sea');
   assert.ok(words(HINTS.aim).includes('Right button Release to fire'));
   assert.ok(words(HINTS.fight).includes('Shift Burst'));
 });
@@ -309,6 +309,8 @@ test('where there is nothing to leave (the story, a struck deck at sea) the stri
 });
 
 test("the land's held map names its way to close on the keys and on the pad, which has no button for the map", () => {
-  assert.deepEqual(words(HINTS.landMap).at(-2), 'N / Esc Close');
+  assert.deepEqual(words(HINTS.landMap).at(-2), 'M / Esc Close');
+  // Each map names the key that hides its legend, as a player asked.
+  assert.ok(words(HINTS.landMap).includes('L Legend') && words(HINTS.map).includes('L Legend'));
   assert.deepEqual(words(HINTS.landMap, 'pad').at(-2), 'pad:B Close');
 });

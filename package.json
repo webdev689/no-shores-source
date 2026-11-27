@@ -15,6 +15,7 @@
     "site": "vite --config site/vite.config.ts",
     "site:build": "vite build --config site/vite.config.ts",
     "schema": "node tools/schema.mjs",
+    "fixtures": "npm run -s schema && npm run -s wasm && cargo test -q --locked -p protocol",
     "shaders": "node tools/shaders.mjs",
     "bake": "cargo run -q --release -p bake",
     "server": "npm run -s schema && npm run -s wasm && npm run -s bake && wrangler dev --config server/wrangler.jsonc",
