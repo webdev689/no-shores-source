@@ -57,7 +57,10 @@ Tools (all are expected to be used; your final reply must say how):
   twin surface in the game. Put the latest picture beside it and list first which structural elements (layout form,
   focal objects, how detail is revealed) the build has and lacks. A drawn change is done only with a picture made with
   the real code, assets and container (a menu page inside the real menu, startGearWindow, never alone), or a measured
-  pixel check (the share recoloured, the contrast).
+  pixel check (the share recoloured, the contrast). Stage every input of a picture from one staged target and keep
+  staging files under `target/` (bible/03-Code/Browser QA.md). The picture budget is sized from the brief's time aim (a
+  GPU picture with its staging takes about five minutes); every retake counts against it, and once it is spent, stop and
+  report.
 - Browser check scripts you write: a navigation step that didn't land fails the step; a click that must do something
   is retried until the server's reply shows it; another page's view is compared against what it showed before the
   action; run a new script 3 times side by side before trusting it.
