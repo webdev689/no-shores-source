@@ -70,8 +70,9 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   follows the company as the accounts hold it now, not as it was launched: one who joins the company later is held at
   its gate and let into its run as its members are (`launchedFor`). Launched again within its gate's day, the
   company's run is the one it launched (`BREACH_RELAUNCH_MS`), so it comes back through its gate, still open to it, to
-  the last checkpoint it reached; a run whose gate shut again, cleared or its day out, is forgotten by the accounts
-  (`forgetRun`), and the next Launch starts a new one. Reset checkpoints on the Playlist, asked by the company's leader
+  the last checkpoint it reached, its gate's opening keeping it with the accounts a day from then (`keepRun`); a run
+  whose gate shut again, cleared or its day out, is forgotten by the accounts (`forgetRun`, asked again each minute
+  they do not answer), and the next Launch starts a new one. A member who leaves the company leaves the run with it. Reset checkpoints on the Playlist, asked by the company's leader
   or a player alone (`company/reset`), forgets the company's runs of that Breach at that tier, so its next Launch starts
   the Breach fresh, from the Waking.
 - **The opening, in the patrol zone.** The bake writes where the layout stood the Sunken Gate (the `breach-gate`

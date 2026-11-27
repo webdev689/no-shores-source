@@ -58,13 +58,14 @@ shows what the room says.
   in the room. In a shared room it stands again as any group does, and its checkpoint falls back to the one won before
   it ([[Enemies]], "Standing again").
 - **Darkness zones** (`darkness_for`). A body lying on a cell of an Elite Dungeon's Court while its Boss stands, at
-  Elite or Abyss (`court_dark`; at Normal the Court is no darkness zone), or anywhere in an Abyss run with no revive
-  left, takes no ask to respawn: only an ally stands them up. One fallen outside the Court, come back down at the way
-  in, may still respawn. When every player the room judges (those it keeps, where it keeps anyone) is down while the
-  Court is dark, below Abyss, the last of them for 4 s (`RESPAWN`) so the company sees itself fall, each is told
-  `FellBack` (37), shots, blows waiting and spells are dropped, every player stands whole at the Court's checkpoint,
-  and the Court starts over (`court_start_over`: its waves gone, its ward, anchors and Fury as they first were, its
-  Boss stood again whole and awake). Every seal stays broken.
+  Elite or Abyss (`court_dark`; at Normal the Court is no darkness zone: a company down there stands again by its own
+  asks at the Court's checkpoint, and the Court runs on as it stood), or anywhere in an Abyss run with no revive left,
+  takes no ask to respawn: only an ally stands them up. One fallen outside the Court, come back down at the way in, may
+  still respawn. When every player the room judges (those it keeps, where it keeps anyone) is down while the Court is
+  dark, below Abyss, the last of them for 4 s (`RESPAWN`) so the company sees itself fall, each is told `FellBack` (37),
+  shots, blows waiting and spells are dropped, every player stands whole at the Court's checkpoint, and the Court starts
+  over (`court_start_over`: its waves gone, its ward, anchors and Fury as they first were, its Boss stood again whole
+  and awake). Every seal stays broken.
 - **An Abyss run** spends one of the company's five revives on every stand, revived or respawned; with none left no
   hold is taken up, and an Abyss wipe ends the run ([[Activities]], "Abyss's rules").
 - **Revived where they lay**: on the ground under the body, a ledge or a floor above as much as the terrain, facing as
