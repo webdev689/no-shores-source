@@ -55,9 +55,10 @@ test('each source says its own words, a source a later room adds its own, and a 
 });
 
 test('the page words each source by the number the gear crate gives it', async () => {
-  const mail = await readFile(new URL('../../../../crates/gear/src/mail.rs', import.meta.url), 'utf8');
-  const source = /pub enum Source \{([^}]*)\}/.exec(mail)?.[1] ?? '';
-  const numbered = [...source.matchAll(/(\w+) = (\d+),/g)].map(([, name, number]) => [Number(number), name] as const);
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs): each source's name and number.
+  const written = await readFile(new URL('../../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  const sources = (JSON.parse(written) as { mailSources: [string, number][] }).mailSources;
+  const numbered = sources.map(([name, number]) => [number, name] as const);
   assert.ok(numbered.length > 0, 'the crate’s sources read');
   assert.deepEqual(
     numbered.sort(([one], [other]) => one - other),

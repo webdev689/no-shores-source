@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { FightOrders, ShotName } from './fightRules.ts';
 import { startLand } from './landRules.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/land_wasm.wasm', import.meta.url);
 
@@ -72,21 +73,18 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   }
   assert.equal(view.player.guns.load, 'grape');
   assert.ok(Math.abs((bursts[2] ?? 0) - 0.75) < 0.01 && bursts[6] === 0, `the third leg's burst: ${bursts.join(' ')}`);
-  assert.equal(
-    prints.join(' '),
-    'e454e050d99fa04e 4e45e8c4510d7789 5e4368a929d3e57e 966aa293a1b8b24f e252828049982355 57367ddfff1fc024 ' +
-      '4d74479c465fc08e 3674caafaa897bf9 896c9ea4b9acae3c',
-  );
+  assert.equal(prints.join(' '), pinned('fight.legs'));
 });
 
-// Each hull's fight, as crates/land-wasm/src/fight_tests.rs HULL_FIGHTS pins it: its captain's rank, the hull they
-// sail, and the last leg's fingerprint.
+// Each hull's fight, as crates/land-wasm/src/fight_tests.rs HULL_FIGHTS fights it: its captain's rank, the hull they
+// sail, and the last leg's fingerprint, pinned in its order as `fight.hulls`.
+const PRINTS = pinned('fight.hulls').split(' ');
 const HULL_FIGHTS = [
-  [2, 0, '896c9ea4b9acae3c'],
-  [3, 1, '8228aad2d3c4ddea'],
-  [4, 2, 'f56ba4f8a141b009'],
-  [5, 3, '239869e9d951c4cf'],
-] as const;
+  [2, 0],
+  [3, 1],
+  [4, 2],
+  [5, 3],
+].map(([rank = 0, hull = 0], index) => [rank, hull, PRINTS[index] ?? ''] as const);
 
 test('a fight against each hull through WebAssembly fights to the same fingerprint as the door natively', async () => {
   const rules = await openSquare();

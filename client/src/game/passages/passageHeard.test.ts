@@ -105,10 +105,11 @@ test('an ask of the passages is answered yes by its dive changed, whatever other
 });
 
 test('the passages’ refusals are heard as the rules number them, each said in words of its own', async () => {
-  const rules = await readFile(new URL('../../../../crates/gear/src/refusal.rs', import.meta.url), 'utf8');
-  const number = (name: string) => Number(new RegExp(`^\\s+${name} = (\\d+),`, 'm').exec(rules)?.[1]);
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs): the passages' first refusal and their last.
+  const written = await readFile(new URL('../../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  const [noDive = 0, foesNear = 0] = (JSON.parse(written) as { passageRefusals: number[] }).passageRefusals;
   // The room answers a refusal as its number plus one, 0 being yes.
-  const [first, last] = [number('NoDive') + 1, number('FoesNear') + 1];
+  const [first, last] = [noDive + 1, foesNear + 1];
   const asked = { answered: 4, dive: null };
   for (const answer of [first - 1, last + 1])
     assert.equal(answerHeard(asked, { answered: 5, answer, dive: null }, false), null, `${answer} is none of theirs`);

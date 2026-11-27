@@ -9,23 +9,17 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes once CI passes on its head**: #234 (the owner's answers to the Open Questions, recorded and
-  built: the sea, foes and fighting, the patrol zones' folk, the Drowned Vale, the lore, the page, and the repo's
-  rate limit, workflows and two new checks). A merge deploys the page, the site, the rooms and the bot, and releases
-  the desktop app.
-- **Merging on the owner's yes ("merge and deploy all") as CI passes**:
-  - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
-  - #245: new repo checks, each landing with what it refuses fixed (review 8).
-- **Other sessions' pull requests**: #249 (the welcome's steps done early count), #250 (the kit runs only in cloud
-  sessions) and #251 (drops larger, weapons and armour as pickups).
-- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`).
-- **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
-  longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
-- **Merge order**: #245 moves the sea clash pin #235 moved: it takes main's line in `content/fingerprints.txt`
-  before it merges. #244 shares lines with #242, merged, in `install-all.sh`, `check_tools.py`, CLAUDE.md and the
-  Toolkit: it takes main's before it merges.
-- **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
+- #234: The owner's answers to the Open Questions, recorded and built
+- #255: Faster checks: sampled passage sweeps on pull requests, the whole nightly, lighter test builds
+- #254: Sea polish: the aim swings between sides, lamps hold still, ships ride high waves, the map travels to every place
+- #253: Record No Shores (Mobile): rebuilt in Rust, beside the browser game
+- #251: Drops are larger and brighter, and weapons and armour lie on the ground as real pickups
+- #250: The kit runs only in cloud sessions
+- #249: The welcome's gifts and lessons: steps done early count, and lesson steps stop sending notices
+- #224: The walk's left arm hangs at the side, the healing drink has its own move and a red swirl, and the Thunderlock's hold is drawn
+- #159: The rooms' worker tests wait for what they check, not for the clock
+- #114: The gear message carries the pledge once
+- #93: The toolkit's first review: workers start on a free disk and a tested claude-mem; pictures never share a port or a dev server
 
 ## Built
 
@@ -141,6 +135,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The owner's 120-character line check** for the bible and code comments, with every longer line rewrapped
+  (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
 - **After #234** ([[The Open Questions' Answers as Claude Builds Them]]): a friendly ship in a fight still flies
   Overlook's blue; travelling aboard another's ship has no getting off at will, no fight of the captain's shown, the
   helm's controls still offered, no going ashore together, and no way back for one keeping no ship let off far from

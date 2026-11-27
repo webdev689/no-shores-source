@@ -83,10 +83,6 @@ pub fn sea_points() -> Vec<f64> {
         .collect()
 }
 
-/// The deep sea's height under the weather at `sea_points` at a moment of 2026 (watersRules.test.ts asks the built
-/// module for the same).
-pub const WORLD_SEA_HASH: &str = "aa8b7cd0624a292d";
-
 #[test]
 fn the_sea_by_weather_is_calm_in_a_roadstead_and_holds_to_its_fingerprint() {
     use crate::sea_door::{sea_hash, shelter_bytes, swell_json};
@@ -102,5 +98,7 @@ fn the_sea_by_weather_is_calm_in_a_roadstead_and_holds_to_its_fingerprint() {
     assert_eq!(grid.len(), 4 * 4 * 4);
     assert!(shelter_bytes(x, y, 0.5, 4, 4, time).is_empty() && shelter_bytes(x, y, 9.0, 65, 1, time).is_empty());
     let bytes: Vec<u8> = sea_points().iter().flat_map(|number| number.to_le_bytes()).collect();
-    assert_eq!(format!("{:016x}", sea_hash(&bytes, time)), WORLD_SEA_HASH);
+    // The deep sea's height under the weather at `sea_points` at a moment of 2026 (watersRules.test.ts asks the
+    // built module for the same).
+    assert_eq!(format!("{:016x}", sea_hash(&bytes, time)), crate::door_tests::pinned("sea.world"));
 }

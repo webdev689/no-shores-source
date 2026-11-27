@@ -24,6 +24,8 @@ import type { Helm } from '../client/src/rules/landRules.ts';
 import { type Controls, floatsOf, floatsOfControls, startMovementRules } from '../client/src/rules/movementRules.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 import { PROTOCOL } from '../generated/messages/ts/version.ts';
+import { pinned } from './pinnedForTests.ts';
+import { intentOf } from './intentForTests.ts';
 
 const built = (name: string) =>
   readFile(new URL(`../target/wasm32-unknown-unknown/release/${name}.wasm`, import.meta.url)).catch(() => {
@@ -31,7 +33,7 @@ const built = (name: string) =>
   });
 const compiled = new WebAssembly.Module(await built('room_wasm'));
 /** Forward at a walk, looking north, no fight's buttons. */
-const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
+const walk = intentOf({ forward: 1 });
 const walking = { anim: 'walk', frame: 2, facing: 0 };
 /** An input as a browser writes it, holding nothing and seeing the start of the room. */
 const asking = (sequence: number, intent: Float64Array, look: Look, dress?: string, respawn = false) =>
@@ -374,8 +376,8 @@ test('the sea travels a ship a browser asks to take anywhere at sea, within its 
 const CLASH_START_S = 1_790_153_100;
 
 test('a sea where a Tithe ship attacks a friendly ship and a player joins them snapshots to the crate’s fingerprint', () => {
-  // crates/room-wasm/src/door_tests.rs runs the same sea natively and holds the same value (SEA_CLASH_HASH): Overlook's
-  // and Sunspire's islands with the lane between them (`TRAFFIC_SEA`).
+  // crates/room-wasm/src/door_tests.rs runs the same sea natively to the same value (`sea.clash` in
+  // content/fingerprints.txt): Overlook's and Sunspire's islands with the lane between them (`TRAFFIC_SEA`).
   const room = startRoomDoor(compiled);
   const square = (west: number) => [
     [west, 100_000],
@@ -415,7 +417,7 @@ test('a sea where a Tithe ship attacks a friendly ship and a player joins them s
     friendly ||= others.some((other) => other.faction === 0);
   }
   assert.ok(friendly, 'the player fights beside the friendly ship');
-  assert.equal(hash.toString(16).padStart(16, '0'), '37b8fca918a836c5');
+  assert.equal(hash.toString(16).padStart(16, '0'), pinned('sea.clash'));
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {

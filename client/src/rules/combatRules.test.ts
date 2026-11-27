@@ -5,9 +5,10 @@ import { checkSizes, PAGE_SIZES, roomWasmAt, startCombatRules } from './combatRu
 import { DRINKS_AT, FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS, fighterView } from './fighters.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import { BODY_FLOATS } from './movementRules.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 /** The combat crate's agreement test holds the same fingerprint, course and script (crates/combat/tests/agree.rs). */
-const FIGHT_HASH = 'ea928425bcd3ab23';
+const FIGHT_HASH = pinned('combat.fight');
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(

@@ -1,16 +1,20 @@
 //! The structure checks. Each is a pure function over the repository's files, tested on made-up input beside it.
 
 mod assets;
+mod client_tests;
 mod comments;
 mod crates;
 mod dialogue;
 mod html;
 mod layers;
 mod layout;
+mod pins;
 mod plain_text;
+mod python;
+mod schema;
 mod script_comments;
 mod size;
-mod vault;
+pub mod vault;
 mod versions;
 
 use crate::files::Repo;
@@ -94,6 +98,21 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     let (content, skipped) = repo.sources(plain_text::is_read);
     problems.extend(unreadable(&skipped));
     problems.extend(plain_text::check(&content));
+    problems.extend(client_tests::check(&code));
+    problems.extend(pins::check(&code));
+    let (schemas, skipped) = repo.sources(|path| path.ends_with(".fbs"));
+    problems.extend(unreadable(&skipped));
+    // A clone without main, or a schema main lacks, has nothing to hold a table to. A shallow clone (CI's) has no merge
+    // base, and checks the merge of its branch into main against main's tip.
+    let main = repo.merge_base(schema::MAIN).unwrap_or_else(|| schema::MAIN.to_owned());
+    for (path, now) in &schemas {
+        if let Some(main) = repo.at(&main, path) {
+            problems.extend(schema::check(path, now, &main));
+        }
+    }
+    let (tools, skipped) = repo.sources(python::is_tool);
+    problems.extend(unreadable(&skipped));
+    problems.extend(python::check(&tools));
     problems
 }
 

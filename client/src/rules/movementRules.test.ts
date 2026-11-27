@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { type Block, type Body, type Controls, type Mode, floatsOf, startMovementRules } from './movementRules.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/movement_wasm.wasm', import.meta.url);
 
@@ -13,7 +14,7 @@ async function movement() {
 }
 
 /** The movement crate's agreement test holds the same fingerprint, course and script (crates/movement/tests/agree.rs). */
-const RUN_HASH = 'f3c408c9a9782f6f';
+const RUN_HASH = pinned('movement.run');
 
 /** A ledge to catch and climb, a low thin wall to vault, a tower to climb, and a step. */
 const COURSE: readonly Block[] = [

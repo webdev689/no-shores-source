@@ -1,0 +1,23 @@
+# Each fingerprint the Rust tests and the TypeScript tests both hold, pinned once: a name, a space, then its value
+# (several values, space-separated, for a run of them). Rust reads it with its test's `pinned`, the page's and the
+# server's tests with server/pinnedForTests.ts. A value moves only once switching the change off restores the old one.
+land.square_ground 2723ccc818961ecb
+land.square_sample 1316e7b1b67f5f55
+land.square_sea b6ceaaa9dd1a37f4
+land.sail_square abf7572961569df1
+land.shore_voyage dbcd586188982208
+fight.legs e454e050d99fa04e 4e45e8c4510d7789 5e4368a929d3e57e 966aa293a1b8b24f e252828049982355 57367ddfff1fc024 4d74479c465fc08e 3674caafaa897bf9 896c9ea4b9acae3c
+fight.hulls 896c9ea4b9acae3c 8228aad2d3c4ddea f56ba4f8a141b009 239869e9d951c4cf
+sea.clash 37b8fca918a836c5
+sea.world aa8b7cd0624a292d
+isle.ground_41_desert 5372bca559dd7c59
+isle.plans baa11ec6b5b25530
+dungeon.agreed 28aeb7f85045e220
+sky.weather 9ad102e7d7c276ec
+node.run b39c55dc0f1f3fe8
+movement.run f3c408c9a9782f6f
+combat.fight ea928425bcd3ab23
+climb.run ec2c4d58
+garrison.run 45da60fd
+garrison.patrol_site 40e5f5ec
+garrison.pair caf1e6c1
