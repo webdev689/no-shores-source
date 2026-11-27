@@ -117,7 +117,9 @@ function explored(map: DungeonMap, from: number): [number, number, number][] {
   const words = map.dungeon?.words ?? new Uint32Array();
   return [...words.keys()].flatMap((index) => {
     const [storey, column] = [Math.floor(index / 6), index % 6];
-    return (words[index] ?? 0) & 1 && storey >= from ? [[(column + 0.5) * 3.2, 1.6, storey * -8] as [number, number, number]] : [];
+    return (words[index] ?? 0) & 1 && storey >= from
+      ? [[(column + 0.5) * 3.2, 1.6, storey * -8] as [number, number, number]]
+      : [];
   });
 }
 

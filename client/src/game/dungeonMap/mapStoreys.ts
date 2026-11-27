@@ -73,11 +73,7 @@ export function floorAt(
  *  flight's) in the cell under the feet, the highest under them by less than half a storey, so a flight's upper half
  *  is the storey over's and its lower half the one under's, and a jump under open air stays on the floor it left.
  *  Over no such floor, the highest storey under the feet by that much; else the lowest. */
-export function storeyOfFeet(
-  layout: DungeonLayout,
-  storeys: Storeys,
-  feet: readonly [number, number, number],
-): number {
+export function storeyOfFeet(layout: DungeonLayout, storeys: Storeys, feet: readonly [number, number, number]): number {
   const [column, row] = [Math.floor(feet[0] / layout.cell), Math.floor(feet[1] / layout.cell)];
   let [onFloor, byHeight] = [-1, storeys.count - 1];
   for (let storey = storeys.count - 1; storey >= 0; storey--) {

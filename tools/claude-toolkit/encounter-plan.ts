@@ -9,7 +9,7 @@
 //
 //     node tools/claude-toolkit/encounter-plan.ts <room-qa.wasm> <elite place> <out dir> <plan.json> [port]
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { askLayout, floorOf, ROCK, STAIR, storeyUnder, VOID } from '../../client/src/game/dungeonLayout.ts';
+import { askLayout, floorOf, ROCK, STAIR, storeyAt, storeyUnder, VOID } from '../../client/src/game/dungeonLayout.ts';
 
 const [wasm, place, out, planPath, port = '5173'] = process.argv.slice(2);
 if (!wasm || !place || !out || !planPath) throw new Error('name the room-qa.wasm, the Elite Dungeon, a folder, a plan');
@@ -162,8 +162,8 @@ for (const todo = [layout.wayIn.cell]; todo.length > 0; ) {
     todo.push(next);
   }
 }
-/** The solids standing on a storey. */
-const boxesOn = (storey: number) => layout.boxes.filter((box) => storeyUnder(layout, box[4] + 0.01) === storey);
+/** The solids of a storey: each by the floor nearest its bottom, so a piece sunk under its floor stays its own. */
+const boxesOn = (storey: number) => layout.boxes.filter((box) => storeyAt(layout, box[4]) === storey);
 /** A room's doorway cell it is entered by (nearest the way in on the walk), and the open cell outside it that the
  *  company comes from. */
 function entry(room: number): { door: Point; outside: Point } {

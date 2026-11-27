@@ -19,7 +19,8 @@ test('a dungeon keeps its view and what it revealed, and gives them back', () =>
 
 test('only the last dungeons are kept, the one written last the newest', () => {
   const storage = memory();
-  for (let each = 0; each <= KEPT_MOST; each++) writeKept(`dungeon ${each}`, { view: null, cells: [each], print: 'p' }, storage);
+  for (let each = 0; each <= KEPT_MOST; each++)
+    writeKept(`dungeon ${each}`, { view: null, cells: [each], print: 'p' }, storage);
   assert.equal(readKept('dungeon 0', 'p', storage), null);
   writeKept('dungeon 1', { view: null, cells: [9], print: 'p' }, storage);
   writeKept('another', { view: null, cells: [], print: 'p' }, storage);
