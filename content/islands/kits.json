@@ -1833,6 +1833,21 @@
     "temperate.tree.dead"
    ]
   },
+  "temperate-coast": {
+   "kit": "temperate",
+   "relief": 1.0,
+   "cliffs": 0.35,
+   "trees": 0.0028,
+   "shrubs": 0.006,
+   "boulders": 0.0006,
+   "tree": [
+    "temperate.tree.a",
+    "temperate.tree.a",
+    "temperate.tree.b",
+    "temperate.tree.c",
+    "temperate.tree.dead"
+   ]
+  },
   "desert": {
    "kit": "arid",
    "relief": 0.85,

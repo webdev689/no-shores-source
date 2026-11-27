@@ -46,7 +46,7 @@ const regions: MapRegion[] = regionsOf(
   ],
 );
 const [shore, reach] = regions;
-const judged = { waters, judge: () => 0 };
+const judged = { waters, judge: () => ({ continent: 0, holder: 'home' as const }) };
 
 test("each point of an island's land lies in the region whose centre is nearest, the sea and other islands in none", () => {
   assert.equal(regionAt(waters, regions, 'continent-1', [140, 50]), shore);

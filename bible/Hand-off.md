@@ -9,10 +9,11 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
+- **Merging on the owner's yes once CI passes on its head**: #221 (hostile ships and islands on the sea map, travel
+  anywhere at sea as a fade, home waters sheltered, unnamed islands' seas locked; `main` with #216, #227 and #231
+  taken in). A merge deploys the page, the site, the rooms and the bot, and releases the desktop app.
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
-- **Other sessions' work under way**: #221 (hostile ships and islands on the sea map, travel anywhere at sea; it
-  shares the sea's files with #216, merged, so it takes `main` in again).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -105,6 +106,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
+  deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
 - **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
