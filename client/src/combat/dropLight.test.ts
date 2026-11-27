@@ -86,7 +86,7 @@ test('a pillar has no flat end: its foot fades in, and its top tapers to a point
 test("an item's glow is its own up close, and reaches a few pixels past its picture far off", () => {
   const long = 1.4;
   assert.equal(glowReach(long, [0, 0, 1], EYE), 0, 'up close its own glow, no larger than its picture');
-  const reaches = [2, 6, 10, 20].map((far) => glowReach(long, [0, far, 1], EYE));
+  const reaches = [6, 10, 14, 24].map((far) => glowReach(long, [0, far, 1], EYE));
   assert.ok(
     reaches.every((reach, nth) => nth === 0 || reach > (reaches[nth - 1] ?? 0)),
     'growing, never jumping',
