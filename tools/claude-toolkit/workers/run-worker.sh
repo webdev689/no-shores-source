@@ -46,6 +46,8 @@ pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped w
 if [ "$MODE" != "--resume" ]; then git rev-parse HEAD > "$OUT/$NAME.base"
 elif [ ! -s "$OUT/$NAME.base" ]; then { git merge-base HEAD origin/main || git rev-parse HEAD; } > "$OUT/$NAME.base" 2>/dev/null; fi
 WORKER_BASE=$(cat "$OUT/$NAME.base"); export WORKER_BASE
+# Two checkouts sharing one build folder overwrite each other's binaries mid-run; cargo xtask check refuses one outside.
+unset CARGO_TARGET_DIR CARGO_BUILD_TARGET_DIR
 # A worktree holds only what git tracks. Link the main checkout's packages, and build here what the client's tests read
 # and git ignores (the generated messages, the WebAssembly, and the fixtures Rust tests write: the protocol's messages,
 # the schedule, the arts' first levels and the native elite layouts), so the worker's tests run as the main checkout's
@@ -56,7 +58,7 @@ MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 stamp="$(git rev-parse --abbrev-ref HEAD) $(git rev-parse HEAD)"
 if [ -f package.json ] && [ "$(cat target/.worker-built 2>/dev/null)" != "$stamp" ]; then
   ( flock 9
-    { npm run -s schema && npm run -s wasm && cargo test -q -p protocol && cargo test -q -p room written_for &&
+    { npm run -s fixtures && cargo test -q -p room written_for &&
       cargo test -q -p room-wasm every_elite_dungeon_answers; } >> "$OUT/$NAME.log" 2>&1 && echo "$stamp" > target/.worker-built
   ) 9> "$OUT/.setup.lock" ||
     echo "run-worker.sh: the worktree's generated messages, WebAssembly or test fixtures did not build; see $OUT/$NAME.log" >&2
