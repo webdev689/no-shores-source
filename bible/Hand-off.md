@@ -144,6 +144,25 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The Saltgrass fold-in** (branch `ccr-0567dd6d-1v0ppa-saltgrass`, no pull request yet;
+  [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]], [[The Saltgrass Fold-In as Claude Builds It]]).
+  Done and tested offline: the Vale and the Moors cut, the Downs' six new places, the houses' twelve tasks, the Breach,
+  the events' one clock, the gear, world, layout, bake and passage crates, the room crate's unit tests but two, and
+  `npm test` but the node window's fingerprint (it follows `crates/room/tests/agree_node.rs`) and the five ship-mesh
+  fetches this sandbox cannot reach. Left:
+  - The Saltbreaker Hulks: no way is laid to their middle, though its ground is reached from the landing by the way
+    finder's own rules (`areas::reached_from`) and the great hull on the middle is not the cause; the middle lies
+    outside the section, so `respawns_tests` fails there and the Lamplighters' Reeve would stand where no one walks.
+  - The Old Stones' west rod is off its ground at 5, 10 and 12 m (the other three stand at 12 m).
+  - `crates/room/tests/*.rs` and the room-wasm tests not yet run on the cut (their zone lists, the Vale's modules
+    walked, `agree_node`'s fingerprint, `dungeon_door.rs`'s fixture shared with `dungeonRules.test.ts`); the picture
+    plans (`seaShots.ts`, `playlistShots.ts`, `characterShots.ts`, `journalShots.ts`, `guildShots.ts`) still name the
+    Vale; `tools/modules/breach_gate.py` and `catalogue.py` say the gate is the Vale's, left so the modules workflow
+    does not publish again.
+  - Then the owner's asks: the Downs' design pass and patrol zone design pass, its enemy placements, the held map's
+    polish and legend, and the three landing zones with their map and fast travel.
+  - With three dungeons the island's dungeon of the day draws the same one on runs of days, as on every island.
+
 - **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
   browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
   2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
