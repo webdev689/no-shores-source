@@ -333,11 +333,20 @@ test("a ruin is overtaken: great formations drawn far, the buildings' crystal in
   };
   assert.equal(crystalCorners(port, everything(port)).length, 0, 'a port city is untouched');
   assert.equal(formations(port).length + port.lamps.length, 0);
-  // Nothing the page lays stands in the plaza's window (the made plan's plaza, 110 m round).
+  // Nothing the page lays stands over the plaza (the made plan's), nor any of the works' crystal in its window, 110 m
+  // round; the buildings in that window are overtaken as any other.
   const [west, north, east, south] = madePlan().social.bounds.map((bound, k) => bound - madePlan().centre[k % 2]);
-  const outside = ([x, y]: readonly number[]) => x < west - 110 || x > east + 110 || y < north - 110 || y > south + 110;
-  for (const corner of crystalCorners(ruin, everything(ruin))) assert.ok(outside(corner), `${corner} in the window`);
-  for (const each of formations(ruin)) assert.ok(outside(each.at), `${each.at} in the window`);
+  const within =
+    (margin: number) =>
+    ([x, y]: readonly number[]) =>
+      x > west - margin && x < east + margin && y > north - margin && y < south + margin;
+  for (const corner of crystalCorners(ruin, everything(ruin)))
+    assert.ok(!within(110)(corner), `${corner} in the window`);
+  for (const each of formations(ruin)) assert.ok(!within(0)(each.at), `${each.at} over the plaza`);
+  assert.ok(
+    formations(ruin).some((each) => within(110)(each.at)),
+    'a building round the plaza is overtaken',
+  );
   // With its plaza far off, every building of the made city is overtaken as its seed says; a shard of the crate's
   // crust on its rubble is small, drawn near.
   const plan = madePlan();

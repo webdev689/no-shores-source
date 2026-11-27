@@ -35,7 +35,7 @@ export type Placed = {
 /** Every building's masses (for the middle distance) and hull (for far off), grouped by chunk: all the masses in
  *  chunk order, then all the hulls. In a ruin each building is broken (`ruins.ts`): a fallen one leaves a heap
  *  among the solids instead, a broken one's masses and hull end at its break, roofless; and the Lattice's crystal
- *  grows through each (`overtaken.ts`), none in the plaza's window, each great formation lighting a lamp. */
+ *  grows through each (`overtaken.ts`), none over the plaza, each great formation lighting a lamp. */
 export function* buildingMassesOf(
   plan: CityPlan,
   pieces: readonly Placed[],
@@ -76,7 +76,7 @@ export function* buildingMassesOf(
   const heaps: Solid[] = [];
   const crystal: { cell: number; place: CrystalPlace }[] = [];
   const overtake = (grown: readonly CrystalPlace[], cell: number) => {
-    for (const place of grown) if (clearOfPlaza(place, plan)) crystal.push({ cell, place });
+    for (const place of grown) if (clearOfPlaza(place, plan, 0)) crystal.push({ cell, place });
   };
   // How near the city's heart a place stands: 1 at its middle, 0 at the grid's edge.
   const reachM = (sideOf(plan) * CELL_M) / 2;
