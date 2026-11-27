@@ -21,6 +21,9 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   - #243: the game's test hooks and the picture tools work everywhere or say why not (review 10).
   - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
   - #245: new repo checks, each landing with what it refuses fixed (review 8).
+- **Merging on the owner's yes ("Merge and deploy") once CI passes on its head**: #248 (the page's lying-still intent
+  has the 18 numbers the rules read, every intent it predicts by built by `intentOf`; players saw no difference, as
+  the rules' buffer read the missing drink as none).
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
 - **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
@@ -144,6 +147,9 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
+  and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
+  the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
 - **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
   browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
   2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
