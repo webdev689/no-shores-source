@@ -15,7 +15,7 @@ fn the_test_character_is_level_30_in_hard_breach_armour_with_the_most_attack_in_
         assert!(item.fully_upgraded(), "{slot:?} every node bought");
     }
     for slot in [Slot::Melee, Slot::Ranged] {
-        assert_eq!(character.attack(slot), Some(300), "{slot:?} at the most Attack");
+        assert_eq!(character.attack(slot), Some(315), "{slot:?} at the most Attack, a Forged weapon's");
         assert!(character.worn(slot).and_then(|item| item.element).is_some(), "{slot:?} Forged");
         assert!(!character.traits(slot).is_empty(), "{slot:?} with its perks");
     }

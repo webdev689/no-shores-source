@@ -488,7 +488,7 @@ The owner's decision is [[Developers Launch Activities From a Test Room, in Max 
   accounts do not answer for with 1013, to join again. A developer's second socket sends their first away.
 - **The test character**: everyone who joins a test room plays `Character::max_test`, made as they join and kept
   nowhere: level 30 by XP for 20 and Prestige 120 from the four Hard Breach armour pieces with every node bought, a
-  Forged weapon at 300 Attack in Melee and Ranged with its perks, every Art mastered, ammunition full, the prologue
+  Forged weapon at 315 Attack in Melee and Ranged with its perks, every Art mastered, ammunition full, the prologue
   played and the Breach won at Normal, the first ship given. Their plate carries their username.
 - **What differs, in test rooms alone** (`room::test_room`): a tester's blow on a foe weighs ten times
   (`TEST_HARM`); their health never falls below 1, so they never fall, and a fall into the dark lets them stand again
