@@ -150,6 +150,8 @@ export interface RoomDoor {
    *  at sea every ship near them and only what is theirs of the sea's own part; in a fleet every ship, its balls and
    *  what happened. */
   snapshotFor(player: number): Uint8Array;
+  /** The room's word on how many messages it has taken from a player's socket, to send them alone. */
+  taken(messages: number): Uint8Array;
   /** Lays out a course's stall, where a social space's asks are answered, and its resource nodes; false with no
    *  course open. */
   furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
@@ -326,6 +328,7 @@ interface RoomExports {
   room_tick(): void;
   room_snapshot_prepare(): void;
   room_snapshot_for(player: number): bigint;
+  room_taken(messages: number): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
   room_judged_moved(player: number): number;
@@ -500,6 +503,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     snapshotPrepare: () => exports.room_snapshot_prepare(),
     snapshotFor: (player) => take(exports.room_snapshot_for(player)),
+    taken: (messages) => take(exports.room_taken(messages >>> 0)),
     furnish: (stall, nodes) => {
       const numbers = [
         stall?.x ?? Number.NaN,

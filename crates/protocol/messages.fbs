@@ -702,11 +702,18 @@ table PassageSeen {
   holding_share: double;
 }
 
+// How many messages the room has taken from the socket it is sent on, told every 30th: the page holds what it sends
+// once too many it sent are not yet taken, as an upload held up builds no backlog past the room's budget.
+table Taken {
+  messages: uint;
+}
+
 // What a room sends: exactly one of these is present.
 table FromRoom {
   joined: Joined;
   snapshot: Snapshot;
   gear: Gear;
+  taken: Taken;
 }
 
 root_type FromRoom;

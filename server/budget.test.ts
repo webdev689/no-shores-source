@@ -7,8 +7,7 @@ import {
   UNSIGNED_FROM_ONE,
   admitsFrom,
   counted,
-  takenOf,
-  toldTaken,
+  tellsTaken,
 } from './budget.ts';
 import { UNHEARD_MOST } from '../client/src/network/roomConnection.ts';
 
@@ -55,15 +54,12 @@ test("one address holds a room's sockets unsigned only up to its share, and sign
   assert.ok(admitsFrom(held, '203.0.113.9'), 'a signed socket holds no unsigned place');
 });
 
-test('a room tells a page how many of its messages it has taken, every so many, in words the page reads back', () => {
+test('a room tells a page how many of its messages it has taken every so many, counted over the seconds', () => {
   let count: Count | undefined;
-  const told: string[] = [];
+  const told: number[] = [];
   for (let message = 0; message < 2 * TOLD_EVERY + 1; message++) {
     count = counted(count, 10_000 + message * 16).count;
-    const word = toldTaken(count);
-    if (word !== null) told.push(word);
+    if (tellsTaken(count)) told.push(count.taken);
   }
-  assert.equal(told.length, 2, 'once each TOLD_EVERY, counted over the seconds');
-  assert.deepEqual(told.map(takenOf), [TOLD_EVERY, 2 * TOLD_EVERY]);
-  assert.equal(takenOf('0123456789abcdef'), null, "a session's token is no such word");
+  assert.deepEqual(told, [TOLD_EVERY, 2 * TOLD_EVERY]);
 });

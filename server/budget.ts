@@ -22,15 +22,8 @@ export function counted(count: Count | undefined, now: number): { readonly count
  *  held up while the room's snapshots still come in holds what it sends by it (`roomConnection.ts`, `quiet`). */
 export const TOLD_EVERY = 30;
 
-/** What a room tells a page after a message counted as `count`: how many it has taken, every TOLD_EVERY; else none. */
-export const toldTaken = (count: Count): string | null =>
-  count.taken % TOLD_EVERY === 0 ? `taken ${count.taken}` : null;
-
-/** How many messages a room's word says it has taken; null for any other. */
-export function takenOf(word: string): number | null {
-  const taken = /^taken (\d{1,15})$/.exec(word)?.[1];
-  return taken === undefined ? null : Number(taken);
-}
+/** Whether a room tells a page how many it has taken after a message counted as `count`: every TOLD_EVERY. */
+export const tellsTaken = (count: Count): boolean => count.taken % TOLD_EVERY === 0;
 
 /** The most sockets one address may hold in a room before they sign in, each let go of a few seconds on
  *  (`TOKEN_WAIT_MS`): enough for a household's tabs, too few for one address to fill a room's places. */

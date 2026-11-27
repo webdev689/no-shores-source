@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { type TestContext, test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
-import { FromRoom, Joined, Plate, Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
+import { FromRoom, Joined, Plate, Snapshot, Taken } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
-import { TOLD_EVERY, toldTaken } from '../../../server/budget.ts';
+import { TOLD_EVERY } from '../../../server/budget.ts';
 import {
   ELSEWHERE,
   HELD_MS,
@@ -67,10 +67,14 @@ class FakeSocket extends EventTarget {
     this.dispatchEvent(new MessageEvent('message', { data: fromRoom(message) }));
   }
 
-  /** The room tells how many of the page's messages it has taken, as `toldTaken` words it. */
-  tells(taken: number): void {
-    const data = toldTaken({ second: 0, messages: 0, taken });
-    this.dispatchEvent(new MessageEvent('message', { data }));
+  /** The room tells how many of the page's messages it has taken. */
+  tells(messages: number): void {
+    const builder = new flatbuffers.Builder(16);
+    const taken = Taken.createTaken(builder, messages);
+    FromRoom.startFromRoom(builder);
+    FromRoom.addTaken(builder, taken);
+    builder.finish(FromRoom.endFromRoom(builder));
+    this.dispatchEvent(new MessageEvent('message', { data: builder.asUint8Array().slice().buffer }));
   }
 
   closed(code: number, reason = ''): void {
@@ -153,14 +157,11 @@ test('an upload held up while the room still speaks goes quiet once the room has
       socket?.says({ tick: BigInt(sent) });
     }
   };
-  sending(2 * UNHEARD_MOST);
-  assert.equal(connection.quiet, false, 'a room that never tells what it took is judged by its silence alone');
-  socket?.tells(2 * UNHEARD_MOST);
   sending(UNHEARD_MOST + TOLD_EVERY - 1);
-  assert.equal(connection.quiet, false, 'one short of the most untaken, past those it has yet to tell');
+  assert.equal(connection.quiet, false, 'one short of the most not yet taken, though the room speaks');
   sending(1);
-  assert.equal(connection.quiet, true, 'though the room speaks, it has not taken what was sent');
-  socket?.tells(3 * UNHEARD_MOST + TOLD_EVERY);
+  assert.equal(connection.quiet, true, 'the upload is held up');
+  socket?.tells(UNHEARD_MOST + TOLD_EVERY);
   assert.equal(connection.quiet, false, 'the upload caught up');
 });
 
