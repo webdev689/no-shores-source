@@ -114,7 +114,7 @@ test("an item's glow leads the eye to it far off, and is no larger than its pict
   assert.ok(far.glow > far.picture + 0.1, `far off: glow ${far.glow} m past its picture ${far.picture} m`);
 });
 
-test('an item keeps its own proportions as it lies and at every turn of its hover, its business end right', () => {
+test('an item keeps its own proportions as it lies and at every turn of its hover, never mirrored', () => {
   // A weapon's large picture is long and low, as a gun, a sword, a bow or a staff is drawn level.
   for (const [width, height] of [
     [106, 55],
