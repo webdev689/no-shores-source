@@ -24,8 +24,9 @@ uncommitted changes: `passed: checked <commit>, nothing uncommitted`, or `FAILED
 
 Most of a part's time before its tests is the game's own crates compiling: CI keeps the dependencies built, per part,
 with the Rust parts sharing theirs, and a fresh checkout rebuilds every crate of the workspace. Debug and test builds
-keep line tables only, not full debug info, which halves a clean build and leaves the tests as fast; a backtrace still
-names its files and lines. Linking is a small share of the time, and Rust's own default linker is kept
+keep line tables only, not full debug info, which makes a clean build nearly twice as fast and leaves the tests as
+fast; a backtrace still names its files and lines. Builds on x86_64 Linux link with LLD, the faster linker Rust uses
+there by default; linking is a small share of the time
 ([[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]). A session runs the
 repo checks and the tests of what it changed, and leaves the whole check to CI ([[Toolkit]]).
 

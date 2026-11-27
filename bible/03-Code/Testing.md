@@ -50,7 +50,7 @@ request's head, in three parts at once; before a push, the tests of what changed
 
 ## Measuring
 
-- A test bounded by wall-clock time measures the machine too. Run `cargo xtask check` on an idle machine, with no
+- A test bounded by wall-clock time measures the machine too. Run the tests on an idle machine, with no
   picture driver, profiler or bake beside it, and rerun a timing failure idle before reading it as a regression.
 - To compare an older commit's speed with the current one, build it in a worktree, into that worktree's own
   `target/`. Never point two checkouts at one `CARGO_TARGET_DIR`: each overwrites the other's binaries, and
