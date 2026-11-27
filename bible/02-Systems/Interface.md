@@ -1385,8 +1385,8 @@ anchor); a patrol zone's dungeons (its door), its resources (a rock veined with 
 its Elite and Abyss seas (dim while shut) and today's modifier; an Elite Dungeon's blocks (courses of stone), seals (a
 wax seal), company (two of it), pay (the cache's chest), its week, the Elite's or the Abyss's, and its modifiers; the
 Playlist's today, its week's two and its rewards; a mission's and a world boss's foes and named places (a pin); the
-Outposts tile's sites (a stake flying a grey pennant over a roped plot) and how many hold the player's guild's outposts
-(a palisade, dim at none); a padlock on a place that is shut. Nine fit a tile at its narrowest;
+Outposts tile's sites (a stake flying a grey pennant over a roped plot, one a site) and how many hold the player's
+guild's outposts (a palisade each, one dim at none); a padlock on a place that is shut. Nine fit a tile at its narrowest;
 more wrap onto a second row. Its label reads all of it out: its name, its line, every glyph's meaning and its
 details. The tile the keys or the pad have focused is lit, else the one under the pointer, else the first place's: a
 brass edge two pixels wide, raised 2 px, its chevron bright. Over the tiles the interface takes the keys and the pad:
@@ -1398,7 +1398,7 @@ only at the node chosen. A desolate city's social space is listed nowhere.
 The Outposts tile's sites stand in the tiles' place as the Playlist's screen opens from its tile (`outpostsNode` in
 `islandPanel.ts`): a panel 104 px down, dark and nearly opaque, its region's name in brass, its levels and kind with
 "Choose a slot to land at", and a card for each site in a row that wraps, each 260 px wide: its name in brass, a small
-chart of the region (the whole island's coast, every site of the region a dot, its own brass in a ring, one
+chart of the region (the coast round its sites, four times as wide as they lie apart, every site a dot, its own brass in a ring, one
 holding the player's guild's outpost green), and a palisade with "Your guild's outpost" or a stake with "No outpost of
 your guild's" (the guild read as the map's marks read it, [[Guilds]]); a shut one says why. The card the keys or the
 pad have focused is lit, else the one under the pointer, else the first open one, a brass edge raised 2 px. A click on

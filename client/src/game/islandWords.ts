@@ -58,10 +58,9 @@ export interface OutpostSlot {
   readonly shut: string | null;
 }
 
-/** The region's Outposts tile: its slots, and the points its chart is framed on (its places and its centre). */
+/** The region's Outposts tile, and its slots. */
 export interface OutpostsEntry extends IslandEntry {
   readonly slots: readonly OutpostSlot[];
-  readonly area: readonly Point2[];
 }
 
 /** Each kind of tile in a word or two, said after its levels ("Lv 1–5 · Patrol zone"). */
@@ -355,6 +354,7 @@ function outpostsEntry(
     ['Slots', `${slots.length}`],
     ["Your guild's", held ? `${held}` : 'none'],
   ];
+  const [stake, palisade] = detailGlyphs(rows, held ? [] : ["Your guild's"]) as [IslandGlyph, IslandGlyph];
   const id = `outposts-${(region?.name ?? landmass.id).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   // A shut tile only where every slot is shut, saying the first's reason.
   const shut = slots.every((slot) => slot.shut !== null) ? (slots[0]?.shut ?? null) : null;
@@ -362,10 +362,11 @@ function outpostsEntry(
     ...base({ ...first, id, name: `Outposts of ${named}` }, 'Outposts', facts, shut),
     kind: 'outposts',
     rows,
-    glyphs: detailGlyphs(rows, held ? [] : ["Your guild's"]),
+    // A stake for each slot and a palisade for each of the guild's outposts, so the tile shows its counts; one dim
+    // palisade at none.
+    glyphs: [...slots.map(() => stake), ...Array<IslandGlyph>(Math.max(1, held)).fill(palisade)],
     act: { words: 'Choose a slot', does: 'outposts' },
     slots,
-    area: [...(region ? [region.centre] : []), ...here.map((node) => node.centre)],
   };
 }
 

@@ -696,3 +696,16 @@ test('with one slot in the region, its panel shows that one', () => {
   screen.act(null);
   assert.deepEqual(done, ['land tern-strand']);
 });
+
+test('the Outposts tile counts in glyphs: a stake a slot, a palisade for each of the guild’s outposts', () => {
+  const regions = REGIONED.regions.map((region, place) =>
+    place === 0 ? { ...region, nodes: [...region.nodes, 'gull-cove', 'salt-hythe'] } : region,
+  );
+  const island = { ...REGIONED, nodes: [...NODES, ...SLOTS.slice(1)], regions };
+  const icons = (ours: string[]) =>
+    entriesOf(islandPanelOf(island, true, { ...FACTS, ours }, [100, -700]))
+      .find((entry) => entry.kind === 'outposts')
+      ?.glyphs.map((glyph) => `${glyph.icon}${glyph.dim ? ' dim' : ''}`);
+  assert.deepEqual(icons(['gull-cove', 'tern-strand']), ['slots', 'slots', 'slots', 'outpost', 'outpost']);
+  assert.deepEqual(icons([]), ['slots', 'slots', 'slots', 'outpost dim']);
+});

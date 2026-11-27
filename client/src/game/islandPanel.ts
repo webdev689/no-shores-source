@@ -325,7 +325,7 @@ const CARD_GROUND = 'rgba(22,28,40,0.92)';
 /** The chart's sea and land, the coast's ink, and the slots' marks. */
 const CHART = { sea: '#0c1724', land: '#2a3527', coast: '#8a6a3a', slot: '#7d8794', lit: BRASS, ours: '#9fd08a' };
 
-/** Draws a small chart of the region on a card: the whole island's coast, every slot of the region a dot,
+/** Draws a small chart of the region on a card: the coast round its slots, every slot of the region a dot,
  *  the card's own brass in a ring, and one holding the player's guild's outpost green. */
 function drawSlotChart(
   outline: readonly Point2[],
@@ -333,16 +333,14 @@ function drawSlotChart(
   lit: OutpostSlot,
 ): (context: OffscreenCanvasRenderingContext2D, width: number, height: number) => void {
   return (context, width, height) => {
-    // The whole island framed, its coast saying where the region's slots lie on it; with no coast, the region's
-    // places, never closer than 1.5 km across, so a lone slot sits in its ground.
-    const points = outline.length > 2 ? outline : [...entry.area, ...entry.slots.map((slot) => slot.at)];
-    const [xs, ys] = [points.map((point) => point[0]), points.map((point) => point[1])];
-    const middle = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2] as const;
-    const span = Math.max(
-      1500,
-      (Math.max(...xs) - Math.min(...xs)) * 1.1,
-      ((Math.max(...ys) - Math.min(...ys)) * 1.1 * width) / height,
-    );
+    // Framed on the region's slots with a wide margin, so they stand apart on their stretch of coast (an island is
+    // hundreds of kilometres across, its slots a few apart); never closer than 20 km across, so a lone slot sits in
+    // its coast.
+    const extent = (values: readonly number[]) => Math.max(...values) - Math.min(...values);
+    const middleOf = (values: readonly number[]) => (Math.max(...values) + Math.min(...values)) / 2;
+    const [xs, ys] = [entry.slots.map((slot) => slot.at[0]), entry.slots.map((slot) => slot.at[1])];
+    const middle = [middleOf(xs), middleOf(ys)] as const;
+    const span = Math.max(20_000, extent(xs) * 4, (extent(ys) * 4 * width) / height);
     const scale = width / span;
     const at = ([x, y]: Point2): [number, number] => [
       width / 2 + (x - middle[0]) * scale,
