@@ -678,6 +678,7 @@ test('over the slots Enter lands at the lit one, the keys and the pad walk them,
   assert.deepEqual(done.slice(2), ['land tern-strand'], 'the first open one while none is lit');
   screen.act('outposts-the-beacon-shore');
   assert.equal(screen.back(), true, 'Escape closes the slots');
+  assert.equal(chosen(), 'outposts-the-beacon-shore', 'its tile lit again for Enter');
   step(root, [], 1);
   assert.ok(ui.boxOf('island-panel'), 'the tiles again');
   assert.equal(screen.back(), false, 'and then is the sea’s');

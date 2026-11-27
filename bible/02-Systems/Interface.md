@@ -1395,7 +1395,7 @@ only at the node chosen. A desolate city's social space is listed nowhere.
 The Outposts tile's sites stand in the tiles' place as the Playlist's screen opens from its tile (`outpostsNode` in
 `islandPanel.ts`): a panel 104 px down, dark and nearly opaque, its region's name in brass, its levels and kind with
 "Choose a slot to land at", and a card for each site in a row that wraps, each 260 px wide: its name in brass, a small
-chart of the region (the island's coast framed on the region's places, every site a dot, its own brass in a ring, one
+chart of the region (the whole island's coast, every site of the region a dot, its own brass in a ring, one
 holding the player's guild's outpost green), and a palisade with "Your guild's outpost" or a stake with "No outpost of
 your guild's" (the guild read as the map's marks read it, [[Guilds]]); a shut one says why. The card the keys or the
 pad have focused is lit, else the one under the pointer, else the first open one, a brass edge raised 2 px. A click on

@@ -325,7 +325,7 @@ const CARD_GROUND = 'rgba(22,28,40,0.92)';
 /** The chart's sea and land, the coast's ink, and the slots' marks. */
 const CHART = { sea: '#0c1724', land: '#2a3527', coast: '#8a6a3a', slot: '#7d8794', lit: BRASS, ours: '#9fd08a' };
 
-/** Draws a small chart of the region on a card: the island's coast framed on the region's places, every slot a dot,
+/** Draws a small chart of the region on a card: the whole island's coast, every slot of the region a dot,
  *  the card's own brass in a ring, and one holding the player's guild's outpost green. */
 function drawSlotChart(
   outline: readonly Point2[],
@@ -333,12 +333,17 @@ function drawSlotChart(
   lit: OutpostSlot,
 ): (context: OffscreenCanvasRenderingContext2D, width: number, height: number) => void {
   return (context, width, height) => {
-    const points = [...entry.area, ...entry.slots.map((slot) => slot.at)];
+    // The whole island framed, its coast saying where the region's slots lie on it; with no coast, the region's
+    // places, never closer than 1.5 km across, so a lone slot sits in its ground.
+    const points = outline.length > 2 ? outline : [...entry.area, ...entry.slots.map((slot) => slot.at)];
     const [xs, ys] = [points.map((point) => point[0]), points.map((point) => point[1])];
     const middle = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2] as const;
-    // Framed on the region with a margin round it, never closer than 1.5 km across, so a lone slot sits in its coast.
-    const span = Math.max(1500, (Math.max(...xs) - Math.min(...xs)) * 1.4, (Math.max(...ys) - Math.min(...ys)) * 1.4);
-    const scale = Math.min(width, height) / span;
+    const span = Math.max(
+      1500,
+      (Math.max(...xs) - Math.min(...xs)) * 1.1,
+      ((Math.max(...ys) - Math.min(...ys)) * 1.1 * width) / height,
+    );
+    const scale = width / span;
     const at = ([x, y]: Point2): [number, number] => [
       width / 2 + (x - middle[0]) * scale,
       height / 2 + (y - middle[1]) * scale,
@@ -511,6 +516,11 @@ export function islandScreen(game: IslandGame): {
           OutpostsEntry | undefined);
   // The flow lands only at the node chosen, so a landing chooses its node first.
   const landAt = (id: string) => ((picking = null), game.choose(id), game.does.land(id));
+  // Closing the slots lights their tile again, so Enter on the tiles never holds a slot's id no tile has.
+  const close = () => {
+    if (picking !== null) game.choose(picking);
+    picking = null;
+  };
   const land = (slot: OutpostSlot) => void (slot.shut === null && landAt(slot.id));
   const act = (entry: IslandEntry) => {
     if (entry.shut !== null) return;
@@ -530,7 +540,6 @@ export function islandScreen(game: IslandGame): {
       const chart = { id: landmass.id, outline: landmass.outline, harbour, ship: sea.position };
       const picked = pickedOf(panel);
       if (picked) {
-        const close = () => void (picking = null);
         return outpostsNode(ui, picked, game.chosen(), chart, { choose: game.choose, land, close });
       }
       return islandPanelNode(ui, panel, game.chosen(), chart, {
@@ -553,7 +562,7 @@ export function islandScreen(game: IslandGame): {
     // Escape and the pad's B close the slots first, back to the tiles.
     back: () => {
       const open = pickedOf(panelNow()) !== undefined;
-      picking = null;
+      close();
       return open;
     },
   };
