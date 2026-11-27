@@ -51,6 +51,7 @@ export class DungeonDrawers {
   private readonly canvas: HTMLCanvasElement | null;
   private readonly biomeOf: (continent: string) => string | null;
   private shownEntrances: readonly Entrance[] | null = null;
+  private shownLooks = 0;
   /** The city's assets, whose props' table a dungeon waits for so no solid prop goes undrawn. */
   private readonly assets: Promise<CityAssets | null>;
   /** The forged props' table, once read. */
@@ -86,10 +87,13 @@ export class DungeonDrawers {
    *  them anew; null anywhere else or before the props' table has come. */
   entrancesOf(foot: Foot): Drawer | null {
     if ((foot.node.kind !== 'patrol' && foot.node.kind !== 'dungeon') || !this.props) return null;
-    const now = foot.held.entrances.entrances;
-    if (now !== this.shownEntrances) {
-      this.shownEntrances = now;
-      this.entranceView.set(now, this.props, this.climateOf(foot.node));
+    const { entrances } = foot.held;
+    // Laid again as the entrances change, or as more of their dungeons' looks are known for their facades.
+    if (entrances.entrances !== this.shownEntrances || entrances.looked !== this.shownLooks) {
+      this.shownEntrances = entrances.entrances;
+      this.shownLooks = entrances.looked;
+      const lookOf = (number: number) => entrances.lookOf(number);
+      this.entranceView.set(entrances.entrances, this.props, this.climateOf(foot.node), lookOf);
     }
     return this.entranceView;
   }

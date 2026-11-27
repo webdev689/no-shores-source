@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import type { DungeonLayout } from './dungeonLayout.ts';
+import { askDungeon, type DungeonLayout } from './dungeonLayout.ts';
 import type { PropTable } from '../models/tables.ts';
 import { EVENT } from '../combat/cues.ts';
 import type { FightEvent, Reviving } from '../network/messages.ts';
@@ -92,6 +92,9 @@ test("a patrol's dungeons are named as their entrances are heard, not as a door 
   entrances.heard([100, 100, 0, 0, 0, 400, 100, 0, 0, 2]);
   assert.equal(entrances.nameOf(empty, patrol, 0), 'Coldmouth Cloisters', 'named as heard');
   assert.equal(entrances.nameOf(empty, patrol, 1), 'Gloamford Bastion');
+  const laid = askDungeon(roomModule, patrol.id, patrol.name, 1);
+  assert.deepEqual(entrances.lookOf(1), { style: laid.style, pictures: laid.pictures }, 'its facade’s look with it');
+  assert.equal(entrances.looked, 2);
   assert.throws(() => new Entrances().nameOf(empty, patrol, 0), 'none is named before it is heard');
 });
 
