@@ -238,7 +238,7 @@ test('a Charged foe crackles, throwing sparks while the fight runs; its arcs are
   assert.ok(sparks.flying.length > 0);
 });
 
-test('a Hasted player leaves no streaks as they run: their figure is lit instead, and known as Hasted', () => {
+test('a Hasted player leaves no trail as they run, and is known as Hasted, so their figure is lit', () => {
   const hasted = { ...NONE, haste: 300 };
   const looks = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
   // Running a metre each twentieth of a second.

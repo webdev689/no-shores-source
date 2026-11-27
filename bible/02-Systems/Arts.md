@@ -297,8 +297,8 @@ The numbers are an Art's at level 5.
   with eight forks of lightning; one spent at its time pops.
 - **Quicken.** A jagged ring of lightning on the ground at the caster's feet, swelling in three steps from 0.8 m to
   2 m over its half second, three bolts climbing the caster's front from the ground to the chest for eight frames,
-  and a burst of sparks. A Hasted player leaves three
-  streaks behind them as they move, each 0.3 s long and three of a figure's pixels across at its newest.
+  and a burst of sparks. A Hasted player leaves no trail; their figure is lit round its edge while the Haste lasts
+  ("Statuses", below; [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]).
 - **Arc Lash.** Five bolts reaching out over 0.1 s and thinning in three steps: one to the chest of each foe in its
   cone and reach, nearest first, the rest fanned through it. A flash at the caster's hand; as they reach, an impact
   star on each foe struck and sparks at each end; a zigzag scorch in the element's dark under each bolt, breaking up
@@ -347,6 +347,8 @@ The numbers are an Art's at level 5.
   of its inside in dusk and a band of shimmer crossing it every 0.8 s; it shows no weapon outline, throws no shadow
   and has no contact shade. Charged strikes three jagged Volt arcs inside the figure, never past its edge, 12 times a
   second, edges it on alternate strikes and shakes it a pixel either way, and a foe throws 24 Volt sparks a second.
+  Hasted lights the figure's edge in Volt, its light on the outline and its blue a pixel in, held still: no flicker,
+  so it asks nothing of reduced motion. A figure both Charged and Hasted shows each.
 - **The birds** are drawn by the [[Sprite Forge]] in Blender (`artbirds.py`), each beat as light alone, which the
   page turns into its element's four steps, so a bird shows in whatever element its caster's Art is. Each is drawn in
   the forge's five views and turned to the eye as a figure is (eight directions, three of them mirrored), Dawnflare's

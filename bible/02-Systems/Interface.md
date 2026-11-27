@@ -612,7 +612,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   did besides (Staggered) rides on its number as a small word, and the player's blow on a foe winding up that does
   not break it says "Holds". Stepping onto an Ammo box the room leaves lying, the ammunition full, says "Ammo full" on
   the player in plain grey, once each time ([[Gear]], "Ammo full"). A drink's heal says what it gave back ("+40") on
-  the player in green, and in plain grey on another player.
+  the player in green, and in plain grey on another player. What befalls a fighter in a fight the player is not in
+  (another player's blow, heal or parry, a companion's) is said only where a foe's plate would show: its fighter's
+  head within 60 m across the ground and not hidden by the place's blocks or its land
+  ([[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]).
 - **Reduced motion.** With it asked for, no piece falls, no word pops or rises (each stands and blinks out), no edge
   blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
