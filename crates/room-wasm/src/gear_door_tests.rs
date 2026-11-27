@@ -67,13 +67,12 @@ fn what_is_no_character_or_no_shared_part_is_refused() {
 }
 
 #[test]
-fn at_sea_the_room_a_kept_character_came_from_puts_its_ship_off_that_nodes_region() {
-    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
-    assert!(crate::open_sea(layout.as_bytes(), 7));
+fn at_sea_the_patrol_zone_a_kept_character_came_from_puts_its_ship_off_that_zones_region() {
+    assert!(crate::open_sea(include_bytes!("../../../content/world/layout.json"), 7));
     let player = room_join();
     let mut body = gear::Character::starting();
     assert!(body.give_first_ship(), "a ship the sea lets in");
-    body.ship_at = Some([2_809_000, 1_200_000]);
+    body.ship_at = Some([2_805_282, 1_196_621]);
     let given = json!({ "body": body.to_json(), "vault": null, "from": "node-gullwing-vale" });
     assert!(restore_joined(player, given.to_string().as_bytes()));
     let at = crate::with_open(|opened| {

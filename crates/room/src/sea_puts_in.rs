@@ -29,9 +29,9 @@ impl Sea {
 
     /// Where a ship not yet at sea puts in: where the sea last had its owner's ship; else, asked by a port city within
     /// reach of its roadstead, at that roadstead itself, never the page's own point; in a sea with no port cities,
-    /// where the page asks. Asked within reach of a region's anchorage, at that anchorage, unless the ship was left
-    /// off that region: the page leaving a zone finds the ship off the zone's side of the island. None where it may
-    /// not put to sea.
+    /// where the page asks. A ship last had off one region of an island, asked within reach of another region's
+    /// anchorage there, puts in at that anchorage: the page leaving a patrol zone finds the ship off the zone's side of
+    /// the island. None where it may not put to sea.
     pub(super) fn puts_in(&self, player: PlayerId, asked: Point) -> Option<Point> {
         let left = self.harbour.accounts.get(&player).and_then(|owner| self.harbour.left.get(owner));
         let left = left.and_then(|&[x, y, ..]| self.open_at([x, y]));
@@ -39,12 +39,7 @@ impl Sea {
         let near = |at: [f64; 2]| libm::hypot(at[0] - x, at[1] - y) <= crate::harbour::REPAIR_REACH_M;
         let open = |at: [f64; 2]| near(at) && self.open_at(at).is_some();
         let region = world::regions::all().iter().find(|region| open(region.anchorage));
-        // A ship left off another region of the same island lies off the one asked; one left off another island stays
-        // left, as an anchorage is no way round sailing there.
-        let moved = |region: &&world::regions::Region| {
-            let off = left.and_then(world::regions::off);
-            off.is_none_or(|off| off.island == region.island && off.name != region.name)
-        };
+        let moved = |region: &&world::regions::Region| left.is_some_and(|at| self.off_another_region(region, at));
         let anchorage = region.filter(moved).map(|region| region.anchorage);
         let [x, y] = match (anchorage, left) {
             (Some(at), _) | (None, Some(at)) => at,

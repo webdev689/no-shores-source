@@ -714,11 +714,13 @@ the ship (its settled word on the ship lying within 2 m of where the page has it
 taken) and the player has the helm with nothing else holding them, a ship lying within 30 m of its berth sails out at
 ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen pulling away,
 and is the player's to sail from there. A course the player sets first, or the room placing the ship away from its
-berth, leaves it as it is; either way it is docked no more. Back at sea from a node of a region the ship does not lie
-off (the region whose centre is nearest the ship; [[World Map]], "Regions"), walked to through the crossing gates or
-landed on, the ship lies at that region's anchorage, 3 km off its coast, facing as it did, and the view stands over it
-there (`regionLeft.ts`); the room places it there too ([[Server]], "The sea"), and the player sails from there, in
-reach to land on that region again. From a node of the region it lies off, it lies where it was left.
+berth, leaves it as it is; either way it is docked no more. Back at sea from a patrol zone's own land (at any tier;
+never its dungeon, a run, a Breach's gate copy, an Elite Dungeon or a run started at sea), walked to through the
+crossing gates or landed on, with the ship off another region of the zone's island (the region of that island whose
+centre is nearest the ship; [[World Map]], "Regions"), the ship lies at the zone's region's anchorage, 3 km off its
+coast, facing as it did, and the view stands over it there (`regionLeft.ts`); the room places it there too
+([[Server]], "The sea"), and the player sails from there, in reach to land on that zone again. From a zone of the
+region it lies off, from anywhere else, or with the ship off another island, it lies where it was left.
 
 Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
 framed on the nodes of its side, the city's social space among them when docking. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",

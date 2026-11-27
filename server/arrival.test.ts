@@ -19,6 +19,7 @@ import {
 import { Keeper, type KeptRoom } from './keeping.ts';
 import layout from '../content/world/layout.json' with { type: 'json' };
 import regions from '../content/world/regions.json' with { type: 'json' };
+import saltmere from '../content/world/land/continent-1.json' with { type: 'json' };
 
 /** An island 100 km square, its coast at x and y from 1,000 km to 1,100 km. */
 const COAST: [number, number][] = [
@@ -360,18 +361,22 @@ test('a player crossing from a patrol zone joins the next at the gate toward the
   assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale--dungeon-0', 'gullwing-vale'), false);
 });
 
-test("a ship at a region's anchorage lands its player on every node of that region again", () => {
-  // Leaving a zone puts the ship at its region's anchorage (the sea room's `came_from`): from there the zone is in reach.
-  // Saltmere's alone, as every other island's sea is locked and lands no one from the sea.
-  for (const { island, regions: own } of regions.filter((each) => each.island === 'continent-1'))
-    for (const { name, anchorage, nodes } of own)
-      for (const node of nodes) {
-        const index = [{ id: node, kind: 'patrol', continent: island }];
-        const there = reachOf(index, layout.continents, node);
-        assert.equal(
-          arrives(`node-${node}`, 'sea', [anchorage[0] ?? 0, anchorage[1] ?? 0], there),
-          true,
-          `${name}: ${node}`,
-        );
-      }
+test('from the anchorage leaving a Saltmere patrol zone puts the ship at, that zone is landed on again', () => {
+  // The sea room puts the ship at the zone's region's anchorage (`came_from`); the room judges a landing by the whole
+  // island's coast, so this proves the anchorage lies in landfall reach of it. Saltmere's zones alone: every other
+  // island's sea is locked and lands no one from the sea.
+  const zones = saltmere.nodes.filter((node) => node.kind === 'patrol');
+  assert.deepEqual(
+    zones.map((zone) => zone.id),
+    ['saltgrass-downs', 'gullwing-vale', 'driftwood-moors'],
+  );
+  const own = regions.find((each) => each.island === 'continent-1')?.regions ?? [];
+  for (const { id, kind } of zones) {
+    const region = own.find((each) => each.nodes.includes(id));
+    assert.ok(region, id);
+    const lying: [number, number] = [region.anchorage[0] ?? 0, region.anchorage[1] ?? 0];
+    const there = reachOf([{ id, kind, continent: 'continent-1' }], layout.continents, id);
+    assert.ok(there && toCoast(lying, there.coast) <= LANDFALL_M, `${id}: within ${LANDFALL_M} m of the coast`);
+    assert.equal(arrives(`node-${id}`, 'sea', lying, there), true, id);
+  }
 });
