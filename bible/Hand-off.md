@@ -11,9 +11,9 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
-- **To come**: the owner's 120-character line check for the bible and code comments, with every longer line
-  rewrapped (observation #53), now that the observations review's pull requests (#239, #240, #242 to #245) have
-  merged; the review's record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
+- **For the owner's yes**: #257 (lines in the bible and code comments held to 120 characters, every longer one
+  rewrapped, the observations review's last item; the review's record is in `toolkit-data`'s
+  `reviews/2026-11-27/REVIEW.md`).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the
   toolkit's first review) and #114 (the gear message carries the pledge once).
 
