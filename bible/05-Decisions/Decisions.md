@@ -410,6 +410,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]
 - [[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]
 - [[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]
+- [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
 
 ## Claude's calls
 
