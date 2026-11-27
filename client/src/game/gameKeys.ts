@@ -3,7 +3,7 @@
 // acts only where its control does (`binds.ts`), so a key bound at the helm and on foot alike does each in its place.
 // The story hears its keys itself.
 import { type BindId, CONTROLS, type Context } from '../player/binds.ts';
-import { type Action, BINDS, type Input, type InputFrame, keyNameOf, sideButtonOf } from '../player/input.ts';
+import { type Action, BINDS, type Input, type InputFrame, keyNameOf } from '../player/input.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
 import type { Flow, Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
@@ -90,13 +90,13 @@ export function listenForControls(game: Controlled): void {
     const retry = game.retry();
     // No key breaks a travel's fade: the player has the ship again once it has arrived.
     if (sea?.travelling) return;
-    // The legend's key is the map's wherever it is up, at the helm too, where the map takes every key.
+    // The legend's key is the map's wherever it is up, at the helm too, where the map takes every key; Set sail first.
     const mapKey = escape
       ? 'escape'
-      : pressed('legend')
-        ? 'legend'
-        : acts('confirm')
-          ? 'enter'
+      : acts('confirm')
+        ? 'enter'
+        : pressed('legend')
+          ? 'legend'
           : acts('landMap')
             ? 'n'
             : '';
@@ -149,17 +149,6 @@ export function listenForControls(game: Controlled): void {
     const welcome = playing.after.holding;
     if (welcome && BINDS.now.jump.keys.includes(key)) return void playing.after.press();
     act((id) => !welcome && BINDS.now[id].keys.includes(key), key === 'escape');
-  });
-  // A side button bound to one of these controls presses it as its key would, but under a window, whose it is; the
-  // Character's or the Inventory's opens or shuts it, over the menu too, as their keys do.
-  addEventListener('mousedown', (event) => {
-    const button = sideButtonOf(event);
-    if (!button || ui.typing || hud.controls.open) return;
-    const menu = (['character', 'inventory'] as const).find((id) => BINDS.now[id].keys.includes(button));
-    if (menu) return void openGearWindow({ view: menu, toggle: true });
-    if (playing.flow.mode === 'story' || playing.after.holding) return;
-    if (gearScreenOpen() || socialUp() || chatOpen()) return;
-    act((id) => BINDS.now[id].keys.includes(button), false);
   });
   // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are. B is Escape at
   // the helm's map, at a landing, at a landing's confirmation and while a piece of decoration is placed; in the story,

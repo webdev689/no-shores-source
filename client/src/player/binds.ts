@@ -232,19 +232,26 @@ export function overridesOf(binds: Binds): Overrides {
   return changed;
 }
 
-/** The binds `overrides` make of the defaults. A kept bind that clashes with another where the two act alike, as one
- *  kept while the defaults were otherwise may, goes back to its default, until none clashes. */
+/** The binds `overrides` make of the defaults, until none clashes where two act alike: a default on a key the player
+ *  kept for another control, as a default moved since may be, gives that key up, so what the player bound stays theirs;
+ *  two kept binds that clash both go back to their defaults. */
 export function withOverrides(overrides: Overrides): Binds {
   const kept: Partial<Record<BindId, Partial<Bound>>> = { ...overrides };
   const bindsOf = () => Object.fromEntries(BIND_IDS.map((id) => [id, { ...DEFAULTS[id], ...kept[id] }])) as Binds;
   let binds = bindsOf();
   for (let clash = clashOf(binds); clash; clash = clashOf(binds)) {
-    const { device } = clash;
-    const dropped = [clash.one, clash.other].filter((id) => kept[id]?.[device] !== undefined);
+    const { device, one, other } = clash;
+    const keptBy = [one, other].filter((id) => kept[id]?.[device] !== undefined);
     // The defaults never clash; were they to, nothing kept is to blame.
-    if (dropped.length === 0) break;
-    for (const id of dropped)
-      kept[id] = Object.fromEntries(Object.entries(kept[id] ?? {}).filter(([part]) => part !== device));
+    if (keptBy.length === 0) break;
+    const [player] = keptBy;
+    if (keptBy.length === 1 && player) {
+      const holder = player === one ? other : one;
+      const given = binds[holder][device].filter((name) => !binds[player][device].includes(name));
+      kept[holder] = { ...kept[holder], [device]: given };
+    } else
+      for (const id of keptBy)
+        kept[id] = Object.fromEntries(Object.entries(kept[id] ?? {}).filter(([part]) => part !== device));
     binds = bindsOf();
   }
   return binds;

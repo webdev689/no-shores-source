@@ -236,29 +236,24 @@ test('the pad fights with the pointer free once the menu is shut; the keys and m
   }
 });
 
-test('a side button is heard with the pointer free, as a key is; the others only with it locked', () => {
+test('a side button comes to the game as a key of its name, heard with the pointer free but not while typing', () => {
+  // The page sends it as a key of its name ('Mouse3', `sideKey`), at the window, after the button itself.
   const page = globalThis as unknown as Record<string, unknown>;
-  const [heard, onCanvas] = [new Map<string, (event: unknown) => void>(), new Map<string, (event: unknown) => void>()];
+  const heard = new Map<string, (event: unknown) => void>();
   Object.assign(page, {
     addEventListener: (kind: string, run: (event: unknown) => void) => heard.set(kind, run),
     document: { pointerLockElement: null },
   });
-  const canvas = {
-    addEventListener: (kind: string, run: (event: unknown) => void) => onCanvas.set(kind, run),
-  } as unknown as HTMLCanvasElement;
-  const input = new Input(canvas);
-  let kept = 0;
-  const mouse = (kind: string, button: number) =>
-    (kind === 'mousedown' ? onCanvas : heard).get(kind)?.({ button, preventDefault: () => (kept += 1) });
-  BINDS.set({ ...BINDS.now, leave: { keys: ['mouse3'], pad: [] } });
-  mouse('mousedown', 0);
-  mouse('mousedown', 3);
-  const frame = input.frame();
-  assert.deepEqual([frame.pressed('guard'), frame.held('leave')], [false, true]);
-  // Its own work, the page back, is kept from it.
-  mouse('mouseup', 3);
-  assert.equal(kept, 2);
-  assert.equal(input.frame().held('leave'), false);
+  let typing = false;
+  const input = new Input({ addEventListener: () => undefined } as unknown as HTMLCanvasElement, () => typing);
+  const key = (kind: string) => heard.get(kind)?.({ key: 'Mouse3', code: '', preventDefault: () => undefined });
+  BINDS.set({ ...DEFAULTS, leave: { keys: ['mouse3'], pad: [] } });
+  key('keydown');
+  assert.equal(input.frame().held('leave'), true, 'the leave held on the back button, the pointer free');
+  key('keyup');
+  typing = true;
+  key('keydown');
+  assert.equal(input.frame().held('leave'), false, 'not while words are typed');
   BINDS.set(DEFAULTS);
   delete page['addEventListener'];
   delete page['document'];

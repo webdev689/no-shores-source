@@ -289,11 +289,12 @@ test('a side button binds any control, the sheet itself among them, and opens it
   sheet.rebinding.mouse(3);
   assert.deepEqual(BINDS.now.use.keys, ['mouse3']);
   BINDS.set(DEFAULTS);
-  const { sheet: shut, press } = listening();
+  // The page sends a side button as a key of its name too (`sideKey`), which the sheet hears as its key.
+  const { sheet: shut, key } = listening();
   BINDS.set({ ...DEFAULTS, controls: { keys: ['mouse4'], pad: [] } });
-  press(4);
+  key('Mouse4');
   assert.ok(shut.open);
-  press(4);
+  key('Mouse4');
   assert.ok(!shut.open);
   BINDS.set(DEFAULTS);
 });

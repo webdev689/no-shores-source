@@ -116,7 +116,9 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   13 ms at 1920 x 1080, measured natively), and its picture's repaint and upload (4 to 18 MB) are unmeasured; lighting
   the water under the pointer takes some 14 ms each time it crosses into another (`litCells`); the sea map's own
   marks (islands, hostile ships) say nothing under the pointer, the landings' tiles alone do; the Legend has no pad
-  button until one is bound.
+  button until one is bound. Its audit's leftovers: the sea's summed tables (`CellSums`) take some 2.6 MB each, the
+  land and each continent asked, kept for the page's life; Firefox's keeping of a side button from going back is
+  unchecked.
 
 - **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
   deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.

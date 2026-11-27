@@ -1,12 +1,12 @@
 // The sheet of every control, which K (or the pad's View) opens and closes: a window of the Enhanced Plus kit over
 // everything the game draws but the screen's keyboard, its controls in their groups (`controls.ts`), each row a few
-// words on what it does and beside them its keys and the pad's buttons, drawn as the key strip draws them. Each key or button chosen
-// (a click, Enter or the pad's A) waits for its new one (`rebinding.ts`); Reset to defaults binds them all as they
-// came. While it is open the game hears no key, its scrim takes the pointer, and the keys and the pad move among its
-// keys, a screen reader hearing each as it takes focus. Settings' Controls tab lays the same list (`bindingColumns`).
+// words on what it does and beside them its keys and the pad's buttons, drawn as the key strip draws them. Each key
+// or button chosen (a click, Enter or the pad's A) waits for its new one (`rebinding.ts`); Reset to defaults binds
+// them all as they came. While it is open the game hears no key, its scrim takes the pointer, and the keys and the
+// pad move among its keys, a screen reader hearing each as it takes focus. Settings' Controls lays the same list.
 import { edged } from '../combat/barDraw.ts';
 import type { Device, Slot } from '../player/binds.ts';
-import { BINDS, keyNameOf, sideButtonOf } from '../player/input.ts';
+import { BINDS, keyNameOf } from '../player/input.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -161,17 +161,9 @@ export class ControlsSheet {
     addEventListener(
       'mousedown',
       (event) => {
-        if (this.rebinding.slot) {
-          event.stopImmediatePropagation();
-          this.rebinding.mouse(event.button);
-          return;
-        }
-        // A side button bound to the sheet opens and closes it as its key does.
-        const button = sideButtonOf(event);
-        if (!button || !BINDS.now.controls.keys.includes(button) || this.ui?.typing || !(this.shown || may())) return;
+        if (!this.rebinding.slot) return;
         event.stopImmediatePropagation();
-        this.toggle();
-        if (this.shown) document.exitPointerLock();
+        this.rebinding.mouse(event.button);
       },
       { capture: true },
     );

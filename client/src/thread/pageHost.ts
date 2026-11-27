@@ -13,6 +13,7 @@ import {
   MEDIA,
   type PadRead,
   QA_HOOKS,
+  sideKey,
   type Start,
   type ToGame,
   type ToPage,
@@ -184,6 +185,8 @@ export class PageHost {
     );
     const where = event.target === this.canvas ? 'canvas' : event.target === window ? 'window' : 'page';
     this.post({ kind: 'event', on: where, type: event.type, fields, pointer: this.events.pointer });
+    const asKey = event instanceof MouseEvent ? sideKey(event.type, event.button, this.events.pointer) : null;
+    if (asKey) this.post(asKey);
   }
 
   private asked(message: ToPage): void {

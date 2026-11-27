@@ -73,9 +73,9 @@ const ISLANDS: Readonly<Record<string, readonly string[]>> = { cove: ['cove'], i
 
 /** The words for each leg. */
 export const LEGS = {
-  /** Named by the leave's key as bound now, or the pad's button. */
+  /** Named by the leave's key as bound now, or the pad's button, in words: the note is drawn as words, not keycaps. */
   get ship(): string {
-    return `Hold ${askedKey('leave', true)} to return to your ship`;
+    return `Hold ${askedKey('leave').replace(/ hold$/, '')} to return to your ship`;
   },
   sail: (name: string) => `Sail to ${name}`,
   gate: (name: string) => `Through the gate to ${name}`,

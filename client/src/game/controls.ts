@@ -29,6 +29,7 @@ const NAMES: Readonly<Record<string, string>> = {
   control: 'Ctrl',
   alt: 'Alt',
   enter: 'Enter',
+  tab: 'Tab',
   backspace: 'Backspace',
   capslock: 'Caps Lock',
   arrowleft: 'Left arrow',

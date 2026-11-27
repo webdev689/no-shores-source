@@ -754,9 +754,11 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   or with another within 0.12 s for the two together. Escape cancels, as does six seconds with nothing pressed. The
   left, middle and right buttons bind only a control that hears them: the menus, the sheet, Use, Respawn, the map, its
   legend and the helm's controls act on a key going down or at the helm, where the pointer is free, so for them the
-  footer says it "takes keys only". The two side buttons bind any control: one bound to a control that hears only
-  keys presses it as its key would, with the pointer free or held, and a side button never takes the page back or
-  forward. A button past the fifth is no key, and the slot waits on. Tab binds as any key does. Every other control acting with the key in the same place
+  footer says it "takes keys only". The two side buttons bind any control: the page sends each, after the button
+  itself, as a key of its name (`sideKey`), so it acts as its control's key would, with the pointer free or held, and
+  every window that keeps the keys from the game (the menu, the sheet, the chat's typing, the cards) keeps it too; a
+  side button never takes the page back or forward. A button past the fifth is no key, and the slot waits on. Tab
+  binds as any key does, named "Tab"; bound to a window's own key, it shuts that window rather than walking its focus. Every other control acting with the key in the same place
   (on foot, dead, in a window, at the helm or in a sea fight; `binds.ts`) gives it up, taking the slot's old key
   where that clashes with nothing it acts with there, and the footer says "Swapped with" them; where one would be
   left with nothing, the binding is refused and the footer says that control "needs it". No two controls that act

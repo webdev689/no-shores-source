@@ -100,7 +100,7 @@ export function setWorldVolume(volume: number): void {
 /** Where the world's sounds play: this engine's context, through the world's volume; null before the first press or
  *  key wakes it, or with the world silenced. */
 export function worldOutput(): { readonly audio: AudioContext; readonly out: AudioNode } | null {
-  if (!context || !world || worldVolume() === 0) return null;
+  if (!context || !world || worldVolume() === 0 || masterVolume() === 0) return null;
   if (context.state === 'suspended') void context.resume();
   return { audio: context, out: world };
 }
@@ -131,7 +131,7 @@ export function setAmbienceVolume(volume: number): void {
 
 /** A bus of this engine's, through its volume; null before the first press or key wakes it, or with it silenced. */
 function bus(node: GainNode | null, volume: number): { readonly audio: AudioContext; readonly out: AudioNode } | null {
-  if (!context || !node || volume === 0) return null;
+  if (!context || !node || volume === 0 || masterVolume() === 0) return null;
   if (context.state === 'suspended') void context.resume();
   return { audio: context, out: node };
 }
@@ -192,7 +192,7 @@ function wake(): void {
 
 /** The synthesiser, if it is awake and may sound now. */
 function live(): { readonly audio: AudioContext; readonly out: GainNode; readonly when: number } | null {
-  if (!context || !master || interfaceVolume() === 0) return null;
+  if (!context || !master || interfaceVolume() === 0 || masterVolume() === 0) return null;
   if (context.state === 'suspended') void context.resume();
   return { audio: context, out: master, when: context.currentTime + 0.005 };
 }

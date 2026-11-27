@@ -44,7 +44,8 @@ Asked which to build, the owner chose from Claude's options:
 | Call | Chosen | Why |
 |---|---|---|
 | The legend's key | A control of its own, Legend, on L, heard while any map is up (at the helm too, where the map takes every key), no pad button until one is bound; the strip names it; hidden, it stays hidden in this browser | A key to hide it, bound as every control is; L is free on foot, and the map up takes the helm's L |
-| The side buttons | The back and forward buttons bind any control, heard with the pointer free too, and never take the page back or forward; the left, middle and right stay with the controls that hear them | They press nothing of the interface, so no click is taken from a window |
+| The side buttons | The back and forward buttons bind any control, coming to the game as keys of their names, heard with the pointer free and kept from it wherever a window keeps the keys, and never take the page back or forward; the left, middle and right stay with the controls that hear them | They press nothing of the interface, so no click is taken from a window |
+| Binds kept on the keys that moved | A default now on a key the player kept for another control gives it up (the Legend, the map or the leave may be left without a key until bound), where before the player's bind went back to its own | A player's own bind is never lost to a new default |
 | Tab | Bound, it acts before it walks a window's focus | The player bound it to act |
 | The interface size | Auto (the screen's own, as before), 1x, 2x, 3x and 4x, each offered where it leaves at least 960 by 540 of the interface's pixels; at 1920 by 1080 that is 1x and 2x | The interface is drawn so every pixel is whole: a size between would draw its pixel letters unevenly |
 | The master volume | First of the volumes, whole at first, over the other four | It sits above them as one control |

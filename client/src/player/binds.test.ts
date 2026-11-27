@@ -231,7 +231,7 @@ test('the two side buttons bind to any control, as a player asked: the map, the 
   assert.deepEqual(readOverrides({ leave: { keys: ['mouse3'] } }), { leave: { keys: ['mouse3'] } });
 });
 
-test('binds kept by another build keep what still reads; a kept key a default now holds leaves no clash', () => {
+test("binds kept by another build keep what still reads; a kept key a default now holds stays the player's", () => {
   assert.deepEqual(
     readOverrides({
       fly: { keys: ['w'] },
@@ -242,14 +242,25 @@ test('binds kept by another build keep what still reads; a kept key a default no
     { jump: { keys: ['c'] } },
   );
   // Kept from a build where Jump was on X and Dodge on E, with Details on X now and Use on E: Jump and Details never
-  // act alike, so both stand; Dodge goes back to its own, as Use holds E.
+  // act alike, so both stand; Use, on its default, gives E up to the Dodge the player put there.
   const kept = withOverrides({ jump: { keys: ['x'] }, dodge: { keys: ['e'] } });
   assert.deepEqual(clashesIn(kept), []);
-  assert.deepEqual(
-    [kept.jump.keys, kept.details.keys, kept.dodge.keys, kept.use.keys],
-    [['x'], ['x'], ['v', 'mouse4'], ['e']],
-  );
-  assert.deepEqual(withOverrides({ crouch: { keys: [' '] } }).crouch.keys, ['c'], "Space is Jump's, on its default");
+  assert.deepEqual([kept.jump.keys, kept.details.keys, kept.dodge.keys, kept.use.keys], [['x'], ['x'], ['e'], []]);
+  assert.deepEqual(withOverrides({ crouch: { keys: [' '] } }).jump.keys, [], 'Jump gives Space up to the crouch');
+  // Two kept binds that clash both go back to their own.
+  const both = withOverrides({ jump: { keys: ['q'] }, crouch: { keys: ['q'] } });
+  assert.deepEqual([both.jump.keys, both.crouch.keys], [[' '], ['c']]);
+});
+
+test("a player's kept key that a new default now holds stays theirs: the default gives it up, as the audit asked", () => {
+  // Bound to L before the Legend came: Use keeps L, and the Legend is left without a key until bound.
+  const kept = withOverrides({ use: { keys: ['l'] } });
+  assert.deepEqual([kept.use.keys, kept.legend.keys], [['l'], []]);
+  assert.deepEqual(clashesIn(kept), []);
+  // Jump swapped onto M while the leave held it: M is the map's now, and Jump keeps it.
+  const swapped = withOverrides({ jump: { keys: ['m'] }, leave: { keys: [' '] } });
+  assert.deepEqual([swapped.jump.keys, swapped.leave.keys, swapped.landMap.keys], [['m'], [' '], []]);
+  assert.deepEqual(clashesIn(swapped), []);
 });
 
 test('a bind kept under the menu that M opened is read as the leave held, so a key swapped with it stays swapped', () => {

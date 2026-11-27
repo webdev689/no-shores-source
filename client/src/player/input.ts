@@ -1,13 +1,4 @@
-import {
-  BIND_IDS,
-  type BindId,
-  type Binds,
-  CONTROLS,
-  type Context,
-  DEFAULTS,
-  type Device,
-  isSideButton,
-} from './binds.ts';
+import { BIND_IDS, type BindId, type Binds, CONTROLS, type Context, DEFAULTS, type Device } from './binds.ts';
 import { NO_PAD, PadReader, type PadFrame, type PadState, type Waits, padInputs, padOf } from './pad.ts';
 
 /** A control the player binds (`binds.ts`). */
@@ -51,13 +42,6 @@ export class LiveBinds {
 
 /** The binds of the page: one game, one player. */
 export const BINDS = new LiveBinds();
-
-/** The side button `event` pressed, by its name as bound (`mouse3`, `mouse4`), or null for another button: a control
- *  that acts as its key goes down hears it as that key, with the pointer free or held. */
-export function sideButtonOf(event: Pick<MouseEvent, 'button'>): string | null {
-  const name = `mouse${event.button}`;
-  return isSideButton(name) ? name : null;
-}
 
 /** Whether the player's hands fight this frame: with the pointer locked, or with the pad last used and nothing paused,
  *  since a pad button cannot lock the pointer again; a click on a free pointer only locks it. */
@@ -149,21 +133,20 @@ export class Input {
       wentDown.clear();
     });
     canvas.addEventListener('contextmenu', (event) => event.preventDefault());
-    // A side button presses nothing of the interface, so it is heard with the pointer free too (a control that hears
-    // only keys and acts as one goes down hears it as its key: `sideButtonOf`).
+    // A side button also comes as a key of its name (`sideKey`), heard with the pointer free and kept from the game
+    // wherever a window keeps the keys.
     canvas.addEventListener('mousedown', (event) => {
-      const name = `mouse${event.button}`;
-      if (!this.locked && !isSideButton(name)) return;
+      if (!this.locked) return;
       event.preventDefault();
-      press(name);
+      press(`mouse${event.button}`);
     });
     // A side button's own work (back, forward) is done on its release and its click, so those are kept too.
     addEventListener('mouseup', (event) => {
-      if (this.locked || isSideButton(`mouse${event.button}`)) event.preventDefault();
+      if (this.locked) event.preventDefault();
       release(`mouse${event.button}`);
     });
     addEventListener('auxclick', (event) => {
-      if (this.locked || isSideButton(`mouse${event.button}`)) event.preventDefault();
+      if (this.locked) event.preventDefault();
     });
     addEventListener('mousemove', (event) => {
       if (!this.locked) return;
