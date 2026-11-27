@@ -442,6 +442,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Passages as Claude Builds Them]]
 - [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]
 - [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
+- [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
 
 ## Replaced
 
