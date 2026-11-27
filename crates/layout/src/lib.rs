@@ -194,6 +194,8 @@ pub fn plan(
         let rim =
             if area.kind == AreaKind::Plot { areas::PLOT_CORNER_M + 1.0 } else { clearing::rim_of(&seating, area.at) };
         clearing::end_at_rim(&mut paths, area.at, rim);
+        let round = if area.kind == AreaKind::Plot { Vec::new() } else { clearing::round_rim(&paths, area.at, rim) };
+        paths.extend(round);
     }
     clearing::round_rooms(&mut paths, &seating);
     clearing::keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));

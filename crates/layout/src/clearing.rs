@@ -2,8 +2,12 @@
 //! bends round a room's corner, and what a way runs over is left out.
 
 use crate::field::{CELL_M, distance};
-use crate::paths::Path;
+use crate::paths::{Path, Tier};
 use crate::seat::Seating;
+use std::f64::consts::TAU;
+
+/// How far apart the points of a footpath round a piece lie, metres.
+const ROUND_STEP_M: f64 = 6.0;
 
 /// How far from a point the pieces standing over it reach: a set piece at an area's middle, its tower or its hull.
 pub(crate) fn rim_of(seating: &Seating, at: [f64; 2]) -> f64 {
@@ -56,6 +60,40 @@ pub(crate) fn end_at_rim(paths: &mut [Path], at: [f64; 2], rim: f64) {
             }
         }
     }
+}
+
+/// The footpaths round what stands at a place's middle that join the ways stopped at its rim (`end_at_rim`): from each
+/// way's end round to the next by bearing, the widest gap between them left open, so the ways meet as a body walks
+/// round the piece, never through it.
+pub(crate) fn round_rim(paths: &[Path], at: [f64; 2], rim: f64) -> Vec<Path> {
+    let reach = rim + Tier::Track.width() / 2.0 + 1.2 + CELL_M;
+    let mut ends: Vec<[f64; 2]> = paths
+        .iter()
+        .flat_map(|path| path.points.first().into_iter().chain(path.points.last()))
+        .copied()
+        .filter(|&end| distance(end, at) > rim && distance(end, at) <= reach)
+        .collect();
+    let bearing = |point: [f64; 2]| libm::atan2(point[1] - at[1], point[0] - at[0]);
+    ends.sort_by(|one, two| bearing(*one).total_cmp(&bearing(*two)));
+    ends.dedup_by(|one, two| distance(*one, *two) < 1.0);
+    if rim <= 0.0 || ends.len() < 2 {
+        return Vec::new();
+    }
+    let gap = |nth: usize| (bearing(ends[(nth + 1) % ends.len()]) - bearing(ends[nth])).rem_euclid(TAU);
+    let widest = (0..ends.len()).max_by(|&one, &two| gap(one).total_cmp(&gap(two))).unwrap_or(0);
+    let out = ends.iter().map(|&end| distance(end, at)).fold(0.0, f64::max);
+    let joining = (0..ends.len()).filter(|&nth| nth != widest).map(|nth| {
+        let (from, to) = (ends[nth], ends[(nth + 1) % ends.len()]);
+        let turn = gap(nth);
+        let steps = ((turn * out / ROUND_STEP_M).ceil() as usize).max(1);
+        let round = (1..steps).map(|step| {
+            let angle = bearing(from) + turn * step as f64 / steps as f64;
+            [at[0] + libm::cos(angle) * out, at[1] + libm::sin(angle) * out]
+        });
+        let points = std::iter::once(from).chain(round).chain(std::iter::once(to)).collect();
+        Path { tier: Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() }
+    });
+    joining.collect()
 }
 
 /// Bends each way round the buildings walked into where it would graze one, as it may near its end's yard: where a
@@ -152,3 +190,37 @@ pub(crate) fn keep_off_paths(seating: &mut Seating, paths: &[Path], height: &dyn
 
 /// The widest a set piece's solid may be and still be cleared out of a way, metres: a post, a lantern, a stone.
 const SMALL_SOLID_M: f64 = 2.5;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn way(points: Vec<[f64; 2]>) -> Path {
+        Path { tier: Tier::Track, points, crossings: Vec::new(), heights: Vec::new() }
+    }
+
+    #[test]
+    fn the_ways_stopped_at_a_pieces_rim_are_joined_round_it_and_never_through_it() {
+        // Three ways come to a tower at the middle from the east, the north and the west, each stopped at its rim.
+        let mut ways = vec![
+            way(vec![[100.0, 0.0], [50.0, 0.0], [0.0, 0.0]]),
+            way(vec![[0.0, -100.0], [0.0, -50.0], [0.0, 0.0]]),
+            way(vec![[-100.0, 0.0], [-50.0, 0.0], [0.0, 0.0]]),
+        ];
+        end_at_rim(&mut ways, [0.0, 0.0], 8.0);
+        let round = round_rim(&ways, [0.0, 0.0], 8.0);
+        assert_eq!(round.len(), 2, "three ends joined by two, the widest gap (the south) left open");
+        for path in &round {
+            assert!(
+                path.points.iter().all(|&point| distance(point, [0.0, 0.0]) > 8.0),
+                "round the rim, not through it"
+            );
+            let ends = [path.points[0], path.points[path.points.len() - 1]];
+            for end in ends {
+                assert!(ways.iter().any(|way| way.points.last() == Some(&end)), "each joins a way's end: {end:?}");
+            }
+            assert!(path.points.iter().all(|point| point[1] <= 1e-9), "by the north, the way round the closed side");
+        }
+        assert!(round_rim(&ways[..1], [0.0, 0.0], 8.0).is_empty(), "one way alone has nothing to join");
+    }
+}

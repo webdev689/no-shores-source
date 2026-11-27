@@ -635,13 +635,13 @@
               "kind": "race",
               "node": "saltgrass-downs",
               "checkpoints": [
-                "Saltgrass",
-                "Chalkpit Ruin",
+                "The Old Beacon",
+                "Tithe Camp",
                 "The Old Stones"
               ],
               "seconds": 270,
               "late": "stormSlow",
-              "text": "Run the Downs road from Saltgrass"
+              "text": "Run the Downs road from the Old Beacon"
             },
             {
               "kind": "kill",
@@ -691,22 +691,22 @@
                 {
                   "name": "The north rod",
                   "bearing": 0,
-                  "at": 12
+                  "at": 16
                 },
                 {
                   "name": "The east rod",
                   "bearing": 90,
-                  "at": 12
+                  "at": 16
                 },
                 {
                   "name": "The south rod",
                   "bearing": 180,
-                  "at": 12
+                  "at": 16
                 },
                 {
                   "name": "The west rod",
                   "bearing": 270,
-                  "at": 5
+                  "at": 16
                 }
               ],
               "order": [
@@ -1659,9 +1659,9 @@
             {
               "kind": "reach",
               "node": "saltgrass-downs",
-              "place": "Moorhold",
+              "place": "The Barrow Field",
               "scene": "veilOrchard",
-              "text": "Moorhold, on the way"
+              "text": "The Barrow Field, on the way"
             }
           ],
           "reward": {

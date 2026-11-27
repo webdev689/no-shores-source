@@ -121,7 +121,7 @@
       { "who": "stormcaller", "say": "The rest rode up the Downs road with Pell. Run under my storm." }
     ],
     "stormSlow": [
-      { "who": "stormcaller", "say": "It's blown out. Back to Saltgrass, and I'll call you another." }
+      { "who": "stormcaller", "say": "It's blown out. Back to the Old Beacon, and I'll call you another." }
     ],
     "stormPell": [
       { "who": "pell", "say": "I lit Grey Point for them. They said it would pay my family's tenth." },
@@ -298,7 +298,7 @@
       { "who": "wren", "say": "On your horse. We ride hard, or we don't ride." }
     ],
     "veilOrchard": [
-      { "who": "wren", "say": "The Tithe are back in Moorhold. Head down, and carry something." }
+      { "who": "wren", "say": "Collectors walk these barrows. Head down, and carry something." }
     ],
     "veilHalf": [
       { "who": "wren", "say": "His ledger says half your debt's already paid. By someone in Overlook." },

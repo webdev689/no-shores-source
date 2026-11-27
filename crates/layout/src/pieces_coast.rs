@@ -156,11 +156,12 @@ pub fn lighthouse(kit: &mut Kit, area: &Area) {
 }
 
 /// A graveyard of ships: great hulls and smaller ones driven up and left at every angle, half sunk in the ground,
-/// their masts snapped and their timbers, crates and rigging strewn between them, a fire where scavengers camp.
+/// their masts snapped and their timbers, crates and rigging strewn between them, a fire where scavengers camp. Its
+/// middle, where its way ends, is open ground, and the greatest hull lies behind it from the way in.
 pub fn hulks(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     let middle = area.at;
     let hulls: [(u32, f64, f64); 5] = [
-        (model::GREAT_SHIP, 0.0, 0.0),
+        (model::GREAT_SHIP, 50.0, 2.8),
         (model::SHIP, 38.0, 1.1),
         (model::SHIP, 42.0, 3.4),
         (model::GREAT_SHIP, 55.0, 4.9),
