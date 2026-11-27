@@ -59,7 +59,8 @@ test("the dread never stands in a body's way: on the floor under a step, on a wa
       const local = plane.layout;
       for (const part of model.parts) {
         assert.ok(
-          [COLOUR.blood, COLOUR.bone, COLOUR.shroud, COLOUR.eyes].includes(part.archive) || part.archive >= 0,
+          new Set<number>([COLOUR.blood, COLOUR.bone, COLOUR.shroud, COLOUR.eyes]).has(part.archive) ||
+            part.archive >= 0,
           'blood, bone, shrouds, eyes and iron',
         );
         for (let index = part.start; index < part.start + part.count; index++) {
