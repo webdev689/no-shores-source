@@ -9,7 +9,9 @@ request's head; before a push, the tests of what changed and `cargo xtask repo` 
 `tools/flora`'s, `tools/islands`', `tools/dungeon`'s, `tools/modules`', `tools/freesound`'s and the Lattice's
 (`tools/test_forge_lattice.py`, whose `MergeFoe` cases CI runs too). `tools/item-pictures/test_pixels.py`
 ([[Item Pictures]]) and `tools/freesound/test_root.py` run in no workflow. The build tools' own tests beside them
-(`tools/*.test.mjs`) run with the TypeScript tests.
+(`tools/*.test.mjs`) run with the TypeScript tests. `client/src/ships/shipTags.test.ts` reads the published ship
+meshes, fetched from R2 once into the machine's temporary folder (`overlook-ships`); CI keeps that folder between runs
+(`actions/cache`, keyed by `content/ships/ships.json`, which names each mesh by its content).
 
 ## Where tests live
 
