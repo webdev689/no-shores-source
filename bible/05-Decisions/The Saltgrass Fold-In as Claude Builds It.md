@@ -45,5 +45,5 @@ Drowned Vale's book below the gate, keep the Vale and the Moors as land far off 
 | The passages' places | The five that came into the Downs are no longer names a passage zone takes; the Vale's and the Moors' other names stay | A zone under the Grey Reach named for Grey Point Light would point at a place that stands on the Downs |
 | The public events | One zone's clock: an event every 15 minutes, the Fissure and the raid in turn | The clock as it was for each zone, with no other zone beside it |
 | The dungeon of the day | One of the Downs' three dungeons | The island's one patrol zone |
-| The hulks' greatest hull | 50 m off the middle, behind it from the way in | A way ends at a place's middle; a hull standing on it left the Saltbreaker Hulks with no way at all |
+| The hulks' middle | Its salvage heaped there with the scavengers' fire, the hulls 44 to 64 m out round it, each mast askew by its hull | A way ends at a place's middle; the great hull standing on it, its neighbours' bounds overlapping it, left the Saltbreaker Hulks with no way at all |
 | The gate's model | Kept as built, its mill stones and mooring stones as they were | The Sunken Gate is a door into the Vale as it was, so the Vale's stone suits it |

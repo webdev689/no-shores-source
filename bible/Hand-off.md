@@ -191,7 +191,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
 - **After #216** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]] and the
-  four decisions before it): the three landing zones of Saltmere's patrol zones, the zone's map and their fast travel,
+  four decisions before it): the Saltgrass Downs' three landing zones, the zone's map and their fast travel,
   not built; ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore
   does not sail out from the berth; parked ships kept in the sea rooms' memory alone, so a deploy loses them; a ship
   ashore vanishes up to 15 s after it sails; the island's Elite Dungeon scene and the website's gate alike but not

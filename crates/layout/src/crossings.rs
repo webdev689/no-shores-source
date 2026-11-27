@@ -2,6 +2,7 @@
 //! ([[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]): passages across the island,
 //! each on the zone's landing toward the zone it leads to, added once the zone is planned, so its places, ways and
 //! runs stand as they would alone. Its map joins each to the landing by a way, and its sites mark each as a gate.
+//! While each island holds one patrol zone, none stands.
 
 use crate::Link;
 use crate::areas::Area;
@@ -73,7 +74,7 @@ mod tests {
             crosses: false,
         };
         let mill = Link { id: "mill".into(), towards: [0.0, 500.0], patrol: false };
-        // Saltmere's two other zones as the Downs sees them, 48 degrees apart.
+        // Two other zones of its island as a zone would see them, 48 degrees apart.
         let vale = Link { id: "vale".into(), towards: [-475_000.0, 608_000.0], patrol: true };
         let moors = Link { id: "moors".into(), towards: [-461_000.0, 37_000.0], patrol: true };
         let (mut areas, mut basins) = (vec![landing], vec![Basin { floors: Vec::new(), terraces: Vec::new() }]);

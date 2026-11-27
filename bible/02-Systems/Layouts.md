@@ -90,7 +90,8 @@ from the sea, fresh water and the claim's edge), then:
    the regions into the briefs (`Briefs::regions`), and the settle's `links_of` reads them there.
    An outpost site's landing comes first
    the same way, then its plot near it. An instance's way in comes first,
-   at its edge toward its patrol area, and each later area lies further on, so the way through runs one way.
+   at its edge toward its patrol area, or on its seaward side where its region holds none, as it is landed at from the
+   sea; and each later area lies further on, so the way through runs one way.
 2. **The blocks.** A hamlet stands a tavern, houses, a shop and a temple; a farm, a ruin, a keep, a graveyard, a
    coven, a shrine and a cave's mouth stand one block of their kind. A hamlet's blocks stand apart across lanes and
    greens, out of line, each at the quarter turn the land holds best. Each building is seated on its own footprint,
@@ -129,10 +130,13 @@ from the sea, fresh water and the claim's edge), then:
    (`pieces_land.rs` `deck_over`). A way too steep for its tier is laid as a footpath, then stepped; an area no way
    reached is
    joined to the nearest that is. A way that ends at an area's middle stops short of what stands there (a gate's
-   arch, a tower, a hull, the wilds' standing stone), so the piece stays; where two or more ways stop at that rim, a
-   footpath runs round it from each way's end to the next by bearing, the widest gap between them left open, so the
-   ways meet as a body walks round the piece (`clearing::round_rim`; not round a plot). A graveyard of ships keeps its
-   middle open, its greatest hull 50 m off it behind the way in. Bridges carry paths over rivers: a timber deck 0.5 m
+   arch, a tower, a hull, the wilds' standing stone), so the piece stays; in a patrol area, where two or more ways
+   stop at that rim, a footpath runs round it from each way's end to the next by bearing, the widest gap between them
+   left open, so the ways meet as a body walks round the piece (`clearing::round_rim`; not round a plot). Each is laid
+   as close round as it keeps on dry walkable land a way's half-width and a metre off every building, every prop over
+   6 m square and every solid over 2.5 m, up to 12 m further out, or not at all; nothing is dressed along it. A
+   graveyard of ships heaps its salvage and its scavengers' fire at its middle, its hulls 44 to 64 m out round it,
+   each snapped mast askew by its hull. Bridges carry paths over rivers: a timber deck 0.5 m
    thick, so a body walks on it, 0.3 m over the land at its higher end, 3 m past each bank and on out along a lower
    bank until its two ends' land stands within 0.15 m, so a body steps onto it at either end; rails 0.8 m past the
    walked width; deck and rails laid in lengths short enough that each one's box keeps close to it on a slant, so no
