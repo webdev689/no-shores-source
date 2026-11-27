@@ -1,8 +1,9 @@
-//! What a worn piece may show others, as the room's word: the armour sets and the weapon and shield layers the page
-//! could draw it in. A look is its content's (`content/gear/looks.json`, by the item's `Source`), the one written on a
-//! named piece, or its faction's; where the forge does not draw it for the body (`content/gear/drawn.json`), the
-//! page's fallback, the nearest of its own content's and then the nearest by worth, which the room lets stand. The page
-//! chooses one of these by the piece's level, name and number (`gearLooks.ts`, `gear.ts`); the room keeps any of them.
+//! What a worn piece may show others, as the room's word: the armour sets, the garments and the weapon and shield
+//! layers the page could draw it in. A look is its content's (`content/gear/looks.json`, by the item's `Source`), the
+//! one written on a named piece, or its faction's; where the forge does not draw it for the body
+//! (`content/gear/drawn.json`), the page's fallback, the nearest of its own content's and then the nearest by worth,
+//! which the room lets stand. A piece's clothes are its rarity's garments in the same file. The page chooses one of
+//! these by the piece's level, name and number (`gearLooks.ts`, `gear.ts`); the room keeps any of them.
 
 use crate::catalogue::{NamedDef, catalogue};
 use crate::character::Character;
@@ -22,9 +23,25 @@ struct ContentLooks {
     metals: Vec<String>,
 }
 
+/// The garments a torso or legs piece is drawn in as clothes, by rarity (Normal, then Magic), each a list of choices;
+/// and plain clothes' own, each with its dye.
+#[derive(Deserialize)]
+struct Clothes {
+    torso: Vec<Vec<Vec<String>>>,
+    legs: Vec<Vec<Vec<String>>>,
+    plain: PlainClothes,
+}
+
+#[derive(Deserialize)]
+struct PlainClothes {
+    torso: Vec<(String, String)>,
+    legs: Vec<(String, String)>,
+}
+
 #[derive(Deserialize)]
 struct LooksFile {
     sources: Vec<ContentLooks>,
+    clothes: Clothes,
 }
 
 /// What the forge draws for one body: each armour piece's sets, and the layers each hand may hold, in the page's order.
@@ -58,12 +75,16 @@ const WORTH: [&str; 10] =
 /// Where a world Rare piece starts on the world's sets: past its Magic leather and the thieves'.
 const WORLD_RARE_FROM: usize = 2;
 
-fn content(source: Source) -> &'static ContentLooks {
+fn looks() -> &'static LooksFile {
     static READ: OnceLock<LooksFile> = OnceLock::new();
-    let looks = READ.get_or_init(|| {
+    READ.get_or_init(|| {
         serde_json::from_str(include_str!("../../../content/gear/looks.json"))
             .expect("content/gear/looks.json reads: its test says so")
-    });
+    })
+}
+
+fn content(source: Source) -> &'static ContentLooks {
+    let looks = looks();
     looks.sources.get(source as usize).unwrap_or(&looks.sources[0])
 }
 
@@ -87,23 +108,25 @@ fn pieces(slot: Slot) -> &'static [&'static str] {
     }
 }
 
-/// What a character's worn gear may show others on `body`: each armour piece with a set it may be drawn in, and each
-/// weapon or shield layer its hands may hold.
+/// What a character's worn gear may show others on `body`: each armour piece with a set it may be drawn in, each
+/// weapon or shield layer its hands may hold, and each garment its clothes may be drawn in.
 #[derive(Debug)]
 pub struct Shown {
     pub armour: Vec<(&'static str, &'static str)>,
     pub held: Vec<String>,
+    pub garments: Vec<&'static str>,
 }
 
 /// What `character` may show others on `body` (`Shown`).
 #[must_use]
 pub fn shown(character: &Character, body: &str) -> Shown {
     let body = drawn(body);
-    let mut shown = Shown { armour: Vec::new(), held: Vec::new() };
+    let mut shown = Shown { armour: Vec::new(), held: Vec::new(), garments: Vec::new() };
     for (slot, item) in character.all_worn() {
         for set in armour_sets(item, slot, body) {
             shown.armour.extend(pieces(slot).iter().map(|piece| (*piece, set)));
         }
+        shown.garments.extend(garments(item, slot));
         if let Some(body) = body {
             shown.held.extend(held_layers(item, body));
         }
@@ -181,6 +204,32 @@ fn armour_sets(item: &Item, slot: Slot, body: Option<&'static Drawn>) -> Vec<&'s
         sets.extend(fallen.into_iter().find(|set| is_drawn(set)));
     }
     sets
+}
+
+/// The garments a piece worn in `slot` may be drawn in, as the page dresses it (`gearLooks.ts` `gearOutfit`): plain
+/// clothes their own; a Normal torso or legs piece, but the prologue's steel, any of its rarity's clothes, and a Magic
+/// one any of its own (the page picks one of each list by the piece's number, a Magic one only where its look roll
+/// makes it clothes); a cloak the casual one, or the formal one from Rare or as its faction's cape.
+fn garments(item: &Item, slot: Slot) -> Vec<&'static str> {
+    let clothes = &looks().clothes;
+    let (plain, rolled) = match slot {
+        Slot::Torso => (&clothes.plain.torso, &clothes.torso),
+        Slot::Legs => (&clothes.plain.legs, &clothes.legs),
+        Slot::Cloak => {
+            let cape = factions().factions.iter().any(|faction| Some(&faction.cape) == item.named.as_ref());
+            return vec![if item.rarity >= Rarity::Rare || cape { "formal_cloak" } else { "casual_cloak" }];
+        }
+        _ => return Vec::new(),
+    };
+    if item.plain {
+        return plain.iter().map(|(garment, _)| garment.as_str()).collect();
+    }
+    let rung = match item.rarity {
+        Rarity::Normal if !item.story => 0,
+        Rarity::Magic => 1,
+        _ => return Vec::new(),
+    };
+    rolled.get(rung).into_iter().flatten().flatten().map(String::as_str).collect()
 }
 
 /// What a hand holds of a weapon kind: its weapon's word, and in the left hand its pair, its shield, or nothing.

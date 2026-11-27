@@ -113,3 +113,35 @@ fn a_gun_a_normal_blade_and_a_normal_shield_keep_only_their_own_rungs() {
     }
     assert_eq!(relayed(&json!({ "left": "shield_kite_plain" }), &shielded)["left"], json!("shield_kite_plain"));
 }
+
+#[test]
+fn a_dress_keeps_only_the_garments_the_clothes_worn_could_be_drawn_in() {
+    let garments = |outfit: Value, character: &Character| relayed(&outfit, character)["garments"].clone();
+    let sent =
+        json!({ "garments": ["shirt_long_deep", "vest", "breeches", "sandals", "evening_gown", "formal_cloak"] });
+    // A Normal torso piece is one of the Normal shirts; a vest is a Magic piece's, and a gown no piece's.
+    let normal = wearing(&[(Kind::Torso, Rarity::Normal, Source::World, None)]);
+    assert_eq!(garments(sent.clone(), &normal), json!(["shirt_long_deep"]));
+    let magic = wearing(&[
+        (Kind::Torso, Rarity::Magic, Source::World, None),
+        (Kind::Legs, Rarity::Normal, Source::World, None),
+    ]);
+    assert_eq!(garments(sent.clone(), &magic), json!(["vest", "breeches", "sandals"]));
+    // A Rare piece is armour, never clothes; nothing worn shows none.
+    let rare = wearing(&[(Kind::Torso, Rarity::Rare, Source::World, None)]);
+    assert_eq!(garments(sent.clone(), &rare), json!([]));
+    assert_eq!(garments(sent.clone(), &wearing(&[])), json!([]));
+    // A cloak is the casual one, the formal one from Rare or as a faction's cape.
+    let casual = wearing(&[(Kind::Cloak, Rarity::Magic, Source::World, None)]);
+    assert_eq!(garments(json!({ "garments": ["casual_cloak", "formal_cloak"] }), &casual), json!(["casual_cloak"]));
+    let cape = wearing(&[(Kind::Cloak, Rarity::Normal, Source::World, Some("veiled_cape"))]);
+    assert_eq!(garments(json!({ "garments": ["casual_cloak", "formal_cloak"] }), &cape), json!(["formal_cloak"]));
+    // Plain clothes are the shore's shirt, breeches and boots.
+    let mut plain = Character::starting();
+    plain.items.clear();
+    for (id, kind) in [(1, Kind::Torso), (2, Kind::Legs)] {
+        plain.items.insert(id, (crate::story::plain_item(id, kind), At::Worn(kind.slot())));
+    }
+    let shore = json!({ "garments": ["shirt_long_v", "breeches", "boots", "shoes"] });
+    assert_eq!(garments(shore, &plain), json!(["shirt_long_v", "breeches", "boots"]));
+}

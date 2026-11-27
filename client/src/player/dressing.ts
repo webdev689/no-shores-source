@@ -1,3 +1,4 @@
+import looks from '../../../content/gear/looks.json' with { type: 'json' };
 import { CLOTHING_DYES, type DyeTable, type Rgb, metalOfLayer } from '../forge/dyes.ts';
 import { type CosmeticKind, bardingLayer, cosmeticOf, cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 import { type Figure, type ForgeBody, type ForgeLooks, HORSE_LAYER, type IndexLook } from '../forge/looks.ts';
@@ -136,15 +137,12 @@ export function lookOutfit(look: IndexLook, keep: Outfit): Outfit {
   return { ...keep, armour, garments, dyes, right: look.weapon, left: null, drawn: !!look.weapon };
 }
 
+/** Each garment with its dye, as `content/gear/looks.json` lists them. */
+const pairs = (worn: readonly (readonly string[])[]) => worn.map(([garment = '', dye = '']) => [garment, dye] as const);
 /** Plain clothes, each garment with its dye, by the piece they are worn as: a shirt for the torso, breeches and boots
- *  for the legs. The shore dresses the player in them, and the prologue's end gives them as plain pieces. */
-export const PLAIN_CLOTHES = {
-  torso: [['shirt_long_v', 'White']],
-  legs: [
-    ['breeches', 'DarkBrown'],
-    ['boots', 'DarkBrown'],
-  ],
-} as const satisfies Readonly<Record<string, readonly (readonly [string, string])[]>>;
+ *  for the legs, as the room keeps them. The shore dresses the player in them, and the prologue's end gives them as
+ *  plain pieces. */
+export const PLAIN_CLOTHES = { torso: pairs(looks.clothes.plain.torso), legs: pairs(looks.clothes.plain.legs) };
 const PLAIN_WORN = [...PLAIN_CLOTHES.torso, ...PLAIN_CLOTHES.legs];
 
 /** A plain figure: the plain shirt, breeches and boots, an iron sword worn at the hip, of a race and skin tone. */

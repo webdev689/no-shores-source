@@ -7,6 +7,7 @@
 
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import items from '../../../content/gear/items.json' with { type: 'json' };
+import looks from '../../../content/gear/looks.json' with { type: 'json' };
 import { wornCosmetic } from '../forge/cosmetics.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
@@ -43,25 +44,11 @@ const PIECES: Readonly<Record<number, readonly ArmourPiece[]>> = {
   [ARMS]: ['gauntlets'],
   [LEGS]: ['greaves', 'boots'],
 };
-/** Each slot's clothes, by rarity: the garments worn, each a choice among those the forge draws for the body. */
+/** Each slot's clothes, by rarity: the garments worn, each a choice among those the forge draws for the body
+ *  (`content/gear/looks.json`, which the room keeps them by). */
 const CLOTHES: Readonly<Record<number, readonly (readonly (readonly string[])[])[]>> = {
-  [TORSO]: [
-    [['shirt_long_v', 'shirt_long_round', 'shirt_long_deep', 'peasant_blouse', 'shirt_short_round']],
-    [
-      ['shirt_long_round', 'shirt_long_v', 'peasant_blouse'],
-      ['short_tunic', 'formal_tunic', 'vest'],
-    ],
-  ],
-  [LEGS]: [
-    [
-      ['breeches', 'casual_pants', 'long_skirt', 'tights'],
-      ['shoes', 'sandals'],
-    ],
-    [
-      ['breeches', 'casual_pants', 'tights'],
-      ['tall_boots', 'shoes'],
-    ],
-  ],
+  [TORSO]: looks.clothes.torso,
+  [LEGS]: looks.clothes.legs,
 };
 /** The dyes a rarity's clothes and cloak take, one by each item's name. */
 const DYES: Readonly<Record<number, readonly string[]>> = {
