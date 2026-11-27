@@ -66,7 +66,7 @@ From [[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forge
 | A checkpoint | The run's stages (the Descent's top, each encounter's start, the Broken Stair's), kept with the hidden chests its attempt earned | Each encounter's start was a stage already |
 | The reset | In the Playlist, by the company's leader or a player alone, pressed twice; the next Launch is a new run from the Waking | Destiny lets the fireteam leader's checkpoint stand |
 | How long it is kept | A day after the checkpoint last moved; a shut run two days | Storage stays bounded |
-| A Forged weapon's climb | 263 to 315 Attack, a level's more at each end than Normal's | As Hard's armour reaches the level past Normal's |
+| A Forged weapon's climb | 263 to 315 Attack, a level's more at each end than Normal's; its reach may stand that level past the foe's, so it strikes a level harder than a Normal one even on Hard's level 30 foes | As Hard's armour reaches the level past Normal's; asked whether it should out-hit a Normal one there: "Yes, make it count" |
 
 ## The page
 

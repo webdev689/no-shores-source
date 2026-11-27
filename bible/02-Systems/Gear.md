@@ -165,12 +165,13 @@ number is one of [[Gear as Claude Shapes It]].
 - **Attack and Defense.** A Legendary weapon's Attack climbs from 248 to 300 over its upgrades, an Atheric's from
   260, and a Breach's won at Hard (Forged) from 263 to 315, a level's Attack further, as Hard's armour reaches the
   level past Normal's ([[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]).
-  A weapon's blow is times 1.07 for each of the foe's levels up to its Attack ÷ 15, and
-  falls to 0.67, 0.56, 0.47 and none as the player is one to four levels below the foe. A foe's health is its kind's
-  times 1.07 for each of its levels, so a matched player fells it in the blows combat is tuned for. A foe's blow is
-  times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each level the player is
-  below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full set's, torso 0.3375,
-  arms 0.2625, legs 0.2375.
+  A weapon's blow is times 1.07 for each of the foe's levels up to its Attack ÷ 15, a Forged one's for a level past
+  the foe's too, so its 15 more counts even where the foe's level stops a Normal one's, as on Hard's level 30 foes in
+  Hard's armour, and falls to 0.67, 0.56, 0.47 and none as the player is one to four levels below the foe. A foe's
+  health is its kind's times 1.07 for each of its levels, so a matched player fells it in the blows combat is tuned
+  for. A foe's blow is times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each
+  level the player is below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full
+  set's, torso 0.3375, arms 0.2625, legs 0.2375.
 - **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]], [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], [[Kills Drop Four Times as Often, and a Miniboss Half the Time]]). A kill may leave a Vestige for each player who
   struck the foe, seen by them alone: by the foe's rank (Minor 8 in 100, Major 16, Elite 40, Miniboss 50, a Boss always;
   `vestige::chance`), raised by the voyage's tier, a chance past one leaving one sure and another by what is over; its
