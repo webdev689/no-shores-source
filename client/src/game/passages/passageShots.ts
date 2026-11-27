@@ -3,16 +3,22 @@
 // modules and plants lit by the sky of the hollow's own climate, under ground the dungeon's scene lit by its torches
 // and the pieces' lights), its pieces over it; the way between zones as its camera frames the island, its dots over a
 // plain ground; the map; and the passages' panels. The game never imports it.
+import { isleTiles } from '../isleTiles.ts';
 import { REVERSED_DEPTH } from '../../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../../gpu.ts';
 import { ISLE_MANIFEST } from '../../islands/isleManifest.ts';
-import type { IsleShown } from '../../islands/islePlan.ts';
+import { gridOf, type IsleShown, readIslePlan } from '../../islands/islePlan.ts';
+import { groundHeight } from '../../islands/isleGround.ts';
+import { islePlanner } from '../../network/islePlans.ts';
 import { GROWTH_ROLES, IslesView } from '../../islands/isleView.ts';
 import { cityClimate } from '../../city/plan.ts';
 import { ShadowMap } from '../../shadow.ts';
 import { startSkyLaw } from '../../sky/skyLaw.ts';
 import { SkyDriver } from '../../sky/skyDriver.ts';
 import { skyUniformFor } from '../../sky/skyUniform.ts';
+import { CITY_LAMPS, lampsRound } from '../../sky/lamps.ts';
+import { Flames } from '../../cinema/flames.ts';
+import { DepthCopy } from '../depthCopy.ts';
 import { DAY_S } from '../../sky/worldClock.ts';
 import { type PassagePiece, type PassagePlan, type PassageZone, startPassageDoor } from '../../rules/passageRules.ts';
 import type { Node } from '../../ui/node.ts';
@@ -141,18 +147,79 @@ export async function zoneShot(asked: ZoneAsked): Promise<string> {
       { drawInto: (pass, fromEye, eyed, time) => dungeon.drawInto(pass, fromEye, eyed.eye, time) },
       { drawInto: (pass, fromEye, eyed) => pieces.drawInto(pass, fromEye, eyed) },
     ];
-    for (let frame = 0; frame < 3; frame++) {
-      // Under ground the sky only says so, with no dark to fade into, as the game's dungeon frame has it.
-      scene.draw(shot, view, 0, drawers, { look: { ...runSky(0), darkM: 0 }, lamps: [] });
-      await device.queue.onSubmittedWorkDone();
-      // Room for the dungeon's pictures to be painted before the next frame.
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      for (let frame = 0; frame < 3; frame++) {
+        // Under ground the sky only says so, with no dark to fade into, as the game's dungeon frame has it.
+        scene.draw(shot, view, 0, drawers, { look: { ...runSky(0), darkM: 0 }, lamps: [] });
+        await device.queue.onSubmittedWorkDone();
+        // Room for the dungeon's pictures to be painted before the next frame.
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    } finally {
+      // Let go before its device is, so no flames of a destroyed device stay shown (`DUNGEON_FLAMES`).
+      dungeon.clear();
     }
   }
   const picture = await readBack(device, target);
   // A device let go, so the software GPU keeps room for the next picture's.
   device.destroy();
   return picture;
+}
+
+/** What an island's picture asks: its climate, the first seed tried (the first from it whose island holds `near`),
+ *  the module it frames (the first placement whose name begins `near`), the eye `back` m short of it and `up` m over
+ *  the ground there, and the world's `hour`. */
+export interface IsleAsked {
+  readonly climate: string;
+  readonly near: string;
+  readonly seed?: number;
+  readonly back?: number;
+  readonly up?: number;
+  readonly hour?: number;
+  readonly view?: { readonly width: number; readonly height: number };
+}
+
+/** An island drawn as the game draws one, built by the room module as the page builds it, framed on a module of it
+ *  (a camp's fire, a mine's adit) from in front of its face, as a PNG's data URL. */
+export async function isleShot(asked: IsleAsked): Promise<string> {
+  const view = asked.view ?? { width: 1280, height: 720 };
+  const planner = islePlanner(await WebAssembly.compileStreaming(fetch('/room.wasm')));
+  for (let seed = asked.seed ?? 1; seed < (asked.seed ?? 1) + 200; seed++) {
+    const built = planner(String(seed), asked.climate, [0, 0]);
+    const plan = built && readIslePlan(built.json);
+    const placed = plan?.placements.find((one) => MODULE_NAMES[one[0]]?.startsWith(asked.near));
+    if (!built || !plan || !placed) continue;
+    const shown: IsleShown = { id: seed, at: [0, 0], climate: asked.climate, plan, heights: built.heights };
+    const floor = (x: number, y: number) => groundHeight(gridOf(built.heights), x, y);
+    // In front of its face (its own -y, as a door's), looking back at it.
+    const [x, y, back, up] = [placed[1], placed[2], asked.back ?? 6, asked.up ?? 2];
+    const [eyeX, eyeY] = [x + Math.sin(placed[4]) * back, y - Math.cos(placed[4]) * back];
+    const eye: [number, number, number] = [eyeX, eyeY, (floor(eyeX, eyeY) ?? placed[3]) + up];
+    const shot: Shot = {
+      eye,
+      yaw: Math.atan2(x - eyeX, -(y - eyeY)),
+      pitch: Math.atan2(eye[2] - placed[3] - 0.5, back),
+      fov: 1.1,
+      near: 0.1,
+      far: 2_000,
+    };
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) throw new Error('no GPU adapter');
+    const device = await adapter.requestDevice();
+    const format: GPUTextureFormat = 'rgba8unorm';
+    const target = device.createTexture({
+      size: [view.width, view.height],
+      format,
+      usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.copySource,
+    });
+    const gpu = { device, format, context: { getCurrentTexture: () => target } } as unknown as Gpu;
+    const pieces = new PieceView(gpu);
+    await hollowFrames(gpu, shown, shot, { at: [0, 0], hour: asked.hour ?? 11 }, () => pieces);
+    const picture = await readBack(device, target);
+    device.destroy();
+    return picture;
+  }
+  throw new Error(`no island of ${asked.climate} holds ${asked.near}`);
 }
 
 /** What a zone's picture asks: the week, and the zone by its `number`, else the first laid of its `ground` (a form
@@ -170,27 +237,30 @@ export interface ZoneAsked {
   readonly eye?: { readonly back: number; readonly up: number; readonly pitch: number };
   readonly above?: boolean;
   readonly aim?: { readonly kind: PassagePiece['kind']; readonly distance: number; readonly up: number };
-  /** Above ground, the game's own camera behind a body standing at the arrival, or beside the placement nearest it
-   *  whose module begins `near` (a strand's wreck), facing it. */
-  readonly own?: { readonly near?: string };
+  /** The game's own camera behind a body standing at the arrival (under ground, where no `eye` is asked, always), or
+   *  above ground `back` metres (3 unless said) short of the placement nearest it whose module begins `near` (a
+   *  strand's wreck), facing it. */
+  readonly own?: { readonly near?: string; readonly back?: number };
   readonly hour?: number;
 }
 
-/** The game's own third-person camera (`cameraOrbit`, as the foot's view stands at its start) behind a body in an
- *  open zone at the arrival, or 3 m short of the placement nearest it whose module begins `near`, facing it: its boom
- *  kept off the hollow's ground and its dressing's and pieces' blocks as the foot's is. */
-function ownEye(plan: PassagePlan, floor: (x: number, y: number) => number | null, near?: string): Shot {
-  if (plan.ground.kind !== 'open') throw new Error('the own camera is pictured above ground');
+/** The game's own third-person camera (`cameraOrbit`, as the foot's view stands at its start) behind a body at the
+ *  arrival, or above ground `back` m short of the placement nearest it whose module begins `near`, facing it: its boom
+ *  kept off the hollow's ground and its dressing's and the pieces' blocks (under ground, the way in's leaf) as the
+ *  foot's is. */
+function ownEye(plan: PassagePlan, floor: (x: number, y: number) => number | null, near?: string, back = 3): Shot {
+  const ground = plan.ground.kind === 'open' ? plan.ground : null;
+  if (near && !ground) throw new Error('a placement is pictured above ground');
   let [[x, y], yaw] = [plan.sites.arrive, plan.sites.facing];
-  const placed = near ? plan.ground.placements.filter((one) => MODULE_NAMES[one[0]]?.startsWith(near)) : [];
+  const placed = near ? (ground?.placements ?? []).filter((one) => MODULE_NAMES[one[0]]?.startsWith(near)) : [];
   const nearest = placed.sort((one, two) => Math.hypot(one[1] - x, one[2] - y) - Math.hypot(two[1] - x, two[2] - y))[0];
   if (near && !nearest) throw new Error(`zone ${plan.zone.number} holds no ${near}`);
   if (nearest) {
     const away = Math.hypot(x - nearest[1], y - nearest[2]) || 1;
-    [x, y] = [nearest[1] + ((x - nearest[1]) / away) * 3, nearest[2] + ((y - nearest[2]) / away) * 3];
+    [x, y] = [nearest[1] + ((x - nearest[1]) / away) * back, nearest[2] + ((y - nearest[2]) / away) * back];
     yaw = Math.atan2(nearest[1] - x, -(nearest[2] - y));
   }
-  const blocks = [...plan.ground.blocks, ...plan.solids].map(([minX, minY, maxX, maxY, top]) => ({
+  const blocks = [...(ground?.blocks ?? []), ...plan.solids].map(([minX, minY, maxX, maxY, top]) => ({
     ...{ minX, minY, maxX, maxY, top },
     bottom: -1_000,
   }));
@@ -216,17 +286,21 @@ const START_PITCH = 0.1;
 
 /** The eye a zone's picture is drawn from, as `asked` stands it. */
 function zoneEye(plan: PassagePlan, floor: (x: number, y: number) => number | null, asked: ZoneAsked): Shot {
-  if (asked.own) return ownEye(plan, floor, asked.own.near);
+  if (asked.own) return ownEye(plan, floor, asked.own.near, asked.own.back);
   const lens = { fov: 1.1, near: 0.1, far: 2_000 };
   const piece = asked.aim && plan.pieces.find((each) => each.kind === asked.aim?.kind);
   if (asked.aim && !piece) throw new Error(`zone ${plan.zone.number} has no ${asked.aim.kind}`);
   if (piece && asked.aim) {
-    // In front of the piece, along its facing, looking back at it.
-    const [east, south] = [Math.sin(piece.facing), -Math.cos(piece.facing)];
+    // In front of the piece looking back at it: a lamp from the arrival's side, as a body comes to it between two of
+    // its stones; any other along its facing.
+    const [arriveX, arriveY] = plan.sites.arrive;
+    const toArrival = Math.atan2(arriveX - piece.at[0], -(arriveY - piece.at[1]));
+    const facing = piece.kind === 'lamp' ? toArrival : piece.facing;
+    const [east, south] = [Math.sin(facing), -Math.cos(facing)];
     const [x, y] = [piece.at[0] + east * asked.aim.distance, piece.at[1] + south * asked.aim.distance];
     const eye: [number, number, number] = [x, y, (floor(x, y) ?? piece.at[2]) + asked.aim.up];
     const pitch = Math.atan2(eye[2] - piece.at[2] - 1.2, asked.aim.distance);
-    return { eye, yaw: piece.facing + Math.PI, pitch, ...lens };
+    return { eye, yaw: facing + Math.PI, pitch, ...lens };
   }
   const yaw = plan.sites.facing;
   if (asked.above) {
@@ -235,6 +309,8 @@ function zoneEye(plan: PassagePlan, floor: (x: number, y: number) => number | nu
     const [x, y] = [-Math.sin(yaw) * back, Math.cos(yaw) * back];
     return { eye: [x, y, (floor(0, 0) ?? 0) + reach * 1.3], yaw, pitch: 0.95, ...lens };
   }
+  // Under ground the arrival stands by the way in's wall: the game's own camera, kept off its leaf, stands there.
+  if (!asked.eye && plan.ground.kind !== 'open') return ownEye(plan, floor);
   const { back, up, pitch } = asked.eye ?? { back: 2, up: 1.8, pitch: 0.05 };
   const [x, y] = plan.sites.arrive;
   const [east, south] = [Math.sin(yaw), -Math.cos(yaw)];
@@ -242,8 +318,8 @@ function zoneEye(plan: PassagePlan, floor: (x: number, y: number) => number | nu
 }
 
 /** A hollow drawn as the game draws one: the islands' ground and modules and the land's own plants, lit and shadowed
- *  by the sky of its own climate over where it lies in the world (`at`) at the world's `hour`, under no sea; `pieces`
- *  answers what draws over it each frame. */
+ *  by the sky of its own climate over where it lies in the world (`at`) at the world's `hour`, under no sea, its
+ *  embers' fires burning over it and their lamps lit (`CITY_LAMPS`); `pieces` answers what draws over it each frame. */
 async function hollowFrames(
   gpu: Gpu,
   shown: IsleShown,
@@ -257,7 +333,7 @@ async function hollowFrames(
     .then(startSkyLaw);
   const sky = new SkyDriver(law, skyUniformFor(device), { seconds: () => (hour / 24) * DAY_S });
   await law;
-  const isles = new IslesView(gpu, ISLE_MANIFEST, null, undefined, GROWTH_ROLES);
+  const isles = new IslesView(gpu, ISLE_MANIFEST, null, undefined, GROWTH_ROLES, isleTiles(gpu));
   const nature = new IslesNature(gpu);
   isles.show([shown]);
   nature.show([shown]);
@@ -270,14 +346,26 @@ async function hollowFrames(
   const depth = device.createTexture({
     size: [width, height],
     format: REVERSED_DEPTH.format,
-    usage,
+    usage: usage | TEXTURE_USAGE.textureBinding,
     sampleCount: SAMPLES,
   });
+  // The embers' fires, over the picture where the scene's depth lets them show, as the game's scene draws them.
+  const [flames, copy] = [new Flames(gpu), new DepthCopy(gpu)];
+  for (const fire of CITY_LAMPS.fires) flames.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts);
+  const flat = device.createTexture({
+    size: [width, height],
+    format: 'r32float',
+    usage: usage | TEXTURE_USAGE.textureBinding,
+  });
   const ground = isles.groundAt(shot.eye[0], shot.eye[1]) ?? 0;
+  let daylight = 1;
   for (let frame = 0; frame < 6; frame++) {
     // A matrix of each frame's own, as the game's: the plants keep their tiles once a frame, known by it.
     const fromEye = fromEyeMatrix(shot, width / height);
-    const { look } = sky.frame([shot.eye[0] + at[0], shot.eye[1] + at[1], shot.eye[2]], shown.climate, [], ground);
+    const seconds = 1 + frame * 0.1;
+    const lamps = lampsRound(shot.eye, [...CITY_LAMPS.current, ...flames.lamps], null, daylight, seconds);
+    const { look } = sky.frame([shot.eye[0] + at[0], shot.eye[1] + at[1], shot.eye[2]], shown.climate, lamps, ground);
+    daylight = look.daylight;
     isles.show([shown]);
     const encoder = device.createCommandEncoder();
     shadow.update(shot.eye, shot.yaw, Math.max(1, shot.eye[2] - ground), look.key);
@@ -302,15 +390,22 @@ async function hollowFrames(
         depthStoreOp: 'store',
       },
     });
-    isles.drawInto(pass, fromEye, shot, 0, shadow);
+    isles.drawInto(pass, fromEye, shot, seconds, shadow);
     nature.drawInto(pass, fromEye, shot, 0, shadow);
     pieces(isles).drawInto(pass, fromEye, shot);
+    flames.drawInto(pass, fromEye, shot, seconds);
     pass.end();
+    copy.encode(encoder, depth, flat);
+    flames.overWater(encoder, gpu.context.getCurrentTexture().createView(), fromEye, flat);
     device.queue.submit([encoder.finish()]);
     await device.queue.onSubmittedWorkDone();
     // Room for the kits' packs and the plants' forms to come before the next frame.
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
+  // Its lamps and fires let go, so the next picture of the page lights only its own.
+  isles.destroy();
+  flames.destroy();
+  flat.destroy();
 }
 
 /** The passages' door this module opened, for the interface's pictures, which build without waiting; and the moment

@@ -82,7 +82,7 @@ code:
   - client/src/network/seaHarbour.ts#harbourOf
   - crates/naval/src/fight.rs#ambush
   - client/src/game/prologue/fightAtSea.ts#StoryFight
-  - client/src/ships/fightLamps.ts#fightLamps
+  - client/src/ships/fightLamps.ts#FightLamps
 ---
 # Naval Combat
 
@@ -502,14 +502,17 @@ shreds and planks are solid and lit. The puffs are drawn after the water, far to
 where the scene stands nearer (`puffView.ts`), at most 2,048 a frame, the nearest kept, and fading softly to nothing
 over the last 2.5 to 0.3 m to the eye (`nearFade.ts`), as the fires' smoke does; their floats are written each frame
 into arrays the view keeps (`PuffScratch`), so laying them makes nothing new. Each glow gives its stepped halo through
-the light layer, as the land's bright things do. A gun's flash, a burning ship and a magazine's blast light the ships
-and the water round them as lamps of the sky's ([[Sky]], "The nearest sixteen"; `fightLamps.ts`,
-[[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]): a flash 26 m, its reach
-shrinking to nothing over 0.12 s; a burning ship 16 m at its deck, flickering between 0.7 and all of it, three ships
-at most; a blast 52 m for 0.6 s; DFO's lights on the hulls. They are lit by day too, at a quarter of their light, and
-wholly at night. Among the sixteen they and the ships' lanterns and the city's lamps take their places by nearness to
-the eye, counting their reach, so a broadside beside the eye outshines the lanterns farther off. They follow the fight
-a frame behind, which no eye can tell. At most 900 puffs
+the light layer, as the land's bright things do. DFO's lights round a flash (26 m for 0.12 s), a magazine's blast
+(52 m for 0.6 s) and a burning ship (16 m, three at most, flickering from 0.6 of its full to its full with the
+lamps' `flicker`, seeded by its ship) are the effects' `light` marks, cast as the sky's lamps for as long as each
+lasts, steady as lamps, their marks' brightness moving them (`FightLamps`, taken up with the ships' lanterns a frame
+later, and by the story's fight on its own; [[Sky]], "Lamps at sea";
+[[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]): they light the hulls,
+the sea round them and the people on deck, lit as the daylight fades as every lamp is, and are never drawn as puffs,
+whose halo of their whole reach would band the sky and sea
+([[Every Light Is Redesigned and Animated, and Each Casts Light]]). Among the sixteen they, the ships' lanterns and
+the city's lamps take their places by nearness to the eye, counting their reach, so a broadside beside the eye
+outshines the lanterns farther off. At most 900 puffs
 live at once; past that, spray, foam and glints go first, then splinters, shreds and embers, then flashes and planks,
 and smoke last.
 The view's own numbers stand in where no event says more: a ship's canvas's share left holes its sails, a ship `struck`

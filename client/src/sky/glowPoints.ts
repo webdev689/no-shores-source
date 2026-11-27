@@ -4,6 +4,7 @@
 // of its light on the sea under it, as lights on water read at night. Hidden where the scene's depth stands nearer.
 // Anything with a list of points may draw them: their places, colours, sizes and seeds are the caller's.
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
+import { LIGHT_MOTION_WGSL } from './flicker.ts';
 
 type Rgb = readonly [number, number, number];
 
@@ -90,6 +91,7 @@ struct Out {
   @location(2) @interpolate(flat) seed: vec2f,
 };
 
+${LIGHT_MOTION_WGSL}
 const CORNERS = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0), vec2f(-1.0, -1.0), vec2f(1.0, 1.0), vec2f(-1.0, 1.0));
 
 fn pulled(offset: vec3f) -> vec3f {
@@ -136,7 +138,8 @@ fn pulled(offset: vec3f) -> vec3f {
 @fragment fn glow_fragment(in: Out) -> @location(0) vec4f {
   if (in.position.z < textureLoad(depths, vec2i(in.position.xy), 0).r) { discard; }
   let time = view.eye.w;
-  let flicker = 0.92 + 0.08 * sin(time * 7.3 + in.seed.x * 12.9) * sin(time * 3.1 + in.seed.x * 5.3);
+  // Each an enclosed light (a lantern, a lamp's glass), flickering as every lantern does, by its own seed.
+  let flicker = light_flicker(in.seed.x, time, 0.35);
   if (in.seed.y > 0.5) {
     // the column: brightest under its light, broken into ripples drifting down it
     let down = in.uv.y * -0.5 + 0.5;

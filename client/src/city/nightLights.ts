@@ -3,6 +3,7 @@
 // the paving and the walls round them, written once into a light map of the city when it is built and read by its
 // shaders at night, so thousands of lamps cost no loop a pixel and none of the sky's sixteen lamps.
 import type { GlowPoint } from '../sky/glowPoints.ts';
+import { seedAt } from '../sky/lamps.ts';
 import type { MeshData } from './mesh.ts';
 import type { CityLight, Solid } from './plan.ts';
 import { solidModel } from './solidModel.ts';
@@ -24,14 +25,15 @@ const SEA_M = 0;
 
 /** The glowing point of each light, at its flame; a lantern's and the mouth's over the water with their column on it. */
 export function glowsOf(lights: readonly CityLight[]): GlowPoint[] {
-  return lights.map((light, index) => {
+  return lights.map((light) => {
     const look = LIGHT_LOOKS[light.kind];
     const flame = light.at[2] + look.flameM;
     return {
       at: [light.at[0], light.at[1], flame],
       colour: look.colour,
       sizeM: look.sizeM,
-      seed: (index * 0.618) % 1,
+      // Seeded by where it stands, as every lantern on land is (`seedAt`).
+      seed: seedAt([light.at[0], light.at[1], flame]),
       ...(light.kind === 'lamp' ? {} : { overWaterM: flame - SEA_M }),
     };
   });

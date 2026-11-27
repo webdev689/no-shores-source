@@ -1,29 +1,44 @@
-// A sea fight's light on what stands round it, as lamps of the sky's (DFO's point lights on the hulls): each gun's
-// flash, each burning ship and a magazine's blast, from the effects' `light` marks, the nearest of them and of the
-// lanterns and the city's lamps lit (`lampsRound`).
+// A sea fight's lights as the sky's lamps: each muzzle's flash, each burning ship's fire and each magazine's blast
+// (the effects' `light` marks) lights the hulls, the sea and the people round it for as long as it lasts, as the
+// land's lamps do. Each is steady as a lamp: its mark's brightness already moves (a flash fading, a fire flickering).
 import type { LampPlace } from '../sky/lamps.ts';
 import type { Mark } from './effects.ts';
 
-/** The share of its light a fight's flash keeps by day: it shows faintly on a hull in the sun, fully at night. */
-export const FIGHT_DAY_SHARE = 0.25;
+/** Where a fight is drawn from: its window's corner, world metres. */
+export interface FightWindow {
+  readonly leftM: number;
+  readonly topM: number;
+}
 
-/** The `light` marks among `marks` (window metres, heights before `shown`) as lamps in world metres: the window put
- *  back (`view`), each reaching as far as its mark has left of its reach (a flash's shrinking, a fire's flicker). */
-export function fightLamps(
-  marks: readonly Mark[],
-  view: { readonly leftM: number; readonly topM: number },
-  shown: number,
-): LampPlace[] {
-  const lamps: LampPlace[] = [];
-  for (const mark of marks)
-    if (mark.blend === 'light')
-      lamps.push({
-        at: [mark.x + view.leftM, mark.y + view.topM, mark.z * shown],
-        reachM: mark.radius * (mark.alpha ?? 1),
-        light: mark.colour,
-        seed: 0,
-        day: FIGHT_DAY_SHARE,
-        steady: true,
-      });
-  return lamps;
+interface Kept {
+  at: [number, number, number];
+  reachM: number;
+  light: [number, number, number];
+  readonly seed: 0;
+  readonly motion: 'steady';
+}
+
+/** A fight's lamps, kept from frame to frame: the same places while their number holds, moved and dimmed in place,
+ *  so the land's lamps are told of a new list only when a light comes or goes. */
+export class FightLamps {
+  private readonly kept: Kept[] = [];
+  private list: Kept[] = [];
+
+  /** The lamps of the `light` marks among `marks` (window metres, heights as drawn), in world metres. */
+  lampsOf(marks: readonly Mark[], window: FightWindow): readonly LampPlace[] {
+    let count = 0;
+    for (const mark of marks) {
+      if (mark.blend !== 'light') continue;
+      const lamp = (this.kept[count] ??= { at: [0, 0, 0], reachM: 0, light: [0, 0, 0], seed: 0, motion: 'steady' });
+      count += 1;
+      lamp.at[0] = mark.x + window.leftM;
+      lamp.at[1] = mark.y + window.topM;
+      lamp.at[2] = mark.z;
+      lamp.reachM = mark.radius;
+      const alpha = mark.alpha ?? 1;
+      for (let part = 0; part < 3; part++) lamp.light[part] = (mark.colour[part] ?? 0) * alpha;
+    }
+    if (count !== this.list.length) this.list = this.kept.slice(0, count);
+    return this.list;
+  }
 }

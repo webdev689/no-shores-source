@@ -95,10 +95,10 @@ where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, w
 Every hull carries lanterns where DFO hung them ([[Ships' Lanterns Come Over From DFO]]): two on poles at its quarters'
 rails, one at its taffrail, and one on an arm beside its cabin's door. Each is placed by the hull's own parts, measured
 from its published mesh (`HULL_LANTERNS`): the Schooner, the Brig and the Frigate carry the taffrail lantern
-`ship_details.py` makes, which the game only sleeves in glass; the game draws the rest with the hull, each a six-sided
-glass between an iron foot and a peaked cap (`lanternMesh.ts`). The Sloop has no companionway of its own in its mesh, so
-it carries three: its taffrail's on a pole and its quarters'. The glass is pale horn by day and burns at night while its
-ship shows her lanterns ([[Sailing]], "Lanterns at night").
+`ship_details.py` makes ("Its lanterns" below); the game draws the rest with the hull, each a six-sided glass between
+an iron foot and a peaked cap (`lanternMesh.ts`). The Sloop has no companionway of its own in its mesh, so it carries
+three: its taffrail's on a pole and its quarters'. Every one burns and lights as the taffrail's does, with her ship's
+flicker, and none on a ship running dark, whose glass is pale horn ([[Sailing]], "Lanterns at night").
 
 ## Stern windows
 
@@ -106,8 +106,9 @@ The Schooner, the Brig and the Frigate each carry four windows round their stern
 its stern wall; the Sloop's model has none, its transom one plain face
 ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]). Each pane is built in
 the part `glass`, which `paint_ship.py` keeps, and `export_ship.py` writes it as iron with its vertices' second part
-byte 2 (`GLASS_SHELL`), every other byte as before. The game draws it as it draws a lantern's glass: pale horn by day,
-and burning while its ship shows her lanterns ([[Sailing]], "Lanterns at night"). The `ships` workflow tests the
+byte 2 (`GLASS_SHELL`), every other byte as before. The game draws it as it draws a lantern's glass, burning evenly
+while its ship's lanterns burn and flickering with them, and pale horn on a ship running dark ([[Sailing]], "Lanterns
+at night"). The `ships` workflow tests the
 export's bytes (`tools/ships/test_export.py`) before it builds.
 
 ## What the code needs

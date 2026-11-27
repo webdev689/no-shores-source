@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { GLASS_SHELL, lanternMesh } from './lanternMesh.ts';
 import { HULL_LANTERNS } from './lanterns.ts';
-import { VERTEX_BYTES } from './shipMesh.ts';
+import { shipLanterns, VERTEX_BYTES } from './shipMesh.ts';
 
 function vertices(mesh: ReturnType<typeof lanternMesh>) {
   const view = new DataView(mesh.vertices);
@@ -36,16 +36,12 @@ test('a lantern of ours is glass round its middle under an iron cap, over an iro
   }
 });
 
-test('a lantern the mesh carries is only sleeved in glass', () => {
-  const all = vertices(lanternMesh([{ at: [0, 0, 4], hung: 'built' }]));
-  assert.ok(all.length > 0 && all.every((vertex) => vertex.shell === GLASS_SHELL));
-});
-
-test('every hull carries lanterns at its stern and its quarters', () => {
-  for (const [hull, lanterns] of Object.entries(HULL_LANTERNS)) {
+test("every hull carries lanterns at its stern and its quarters, one at its taffrail: its mesh's or ours", () => {
+  for (const [hull, hung] of Object.entries(HULL_LANTERNS)) {
+    const lanterns = [...shipLanterns(hull).map((middle) => ({ at: middle })), ...hung];
     assert.ok(lanterns.length >= 3, hull);
     const sterns = lanterns.filter((lantern) => lantern.at[1] === 0);
-    assert.equal(sterns.length, 1, `${hull}'s taffrail`);
+    assert.equal(sterns.length, 1, `${hull}'s taffrail, never two lanterns in one place`);
     assert.ok(lanterns.some((lantern) => lantern.at[1] > 1) && lanterns.some((lantern) => lantern.at[1] < -1));
   }
 });

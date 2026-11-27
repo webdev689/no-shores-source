@@ -1,7 +1,6 @@
 // The lanterns a hull carries, as vertices laid out as its mesh's are, drawn with it: each a six-sided glass between
-// an iron foot and a peaked iron cap, on a pole from the rail or an arm out from a wall. A lantern the mesh already
-// carries (`ship_details.py`'s at the taffrail) is only sleeved in glass. The glass is tagged GLASS_SHELL in its
-// vertices' shell byte, which the ship shader draws as glass that burns as its ship's lanterns are lit.
+// an iron foot and a peaked iron cap, on a pole from the rail or an arm out from a wall. The glass is tagged
+// GLASS_SHELL in its vertices' shell byte, which the ship shader draws as glass that burns with its ship's lanterns.
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import type { Lantern } from './lanterns.ts';
 import { VERTEX_BYTES } from './shipMesh.ts';
@@ -12,12 +11,11 @@ type Point = readonly [number, number, number];
  *  (tools/ships/export_ship.py GLASS_SHELL): past the shell's 1 and the rest's 0. */
 export const GLASS_SHELL = 2;
 /** A lantern of ours: its glass's radius and half height; its foot's and cap's radius, the cap's height; a pole's
- *  radius; the sleeve's radius and half height round a mesh's own lantern's glass (iron of 0.17 m across 0.4 m). */
+ *  radius. */
 const GLASS = { radiusM: 0.15, halfM: 0.17 } as const;
 const FOOT = { radiusM: 0.17, heightM: 0.05 } as const;
 const CAP = { radiusM: 0.18, heightM: 0.14 } as const;
 const POLE_M = 0.04;
-const SLEEVE = { radiusM: 0.2, halfM: 0.2 } as const;
 /** An arm's half thickness and how far over the cap it runs. */
 const ARM_M = 0.025;
 const ARM_OVER_M = 0.12;
@@ -102,10 +100,6 @@ export function lanternMesh(lanterns: readonly Lantern[]): LanternMesh {
   const faces = new Faces();
   for (const { at, hung } of lanterns) {
     const [x, y, z] = at;
-    if (hung === 'built') {
-      faces.upright(x, y, [z - SLEEVE.halfM, z + SLEEVE.halfM], [SLEEVE.radiusM, SLEEVE.radiusM], iron, GLASS_SHELL);
-      continue;
-    }
     const [low, high] = [z - GLASS.halfM, z + GLASS.halfM];
     faces.upright(x, y, [low, high], [GLASS.radiusM, GLASS.radiusM], iron, GLASS_SHELL);
     faces.upright(x, y, [low - FOOT.heightM, low], [FOOT.radiusM, FOOT.radiusM], iron);

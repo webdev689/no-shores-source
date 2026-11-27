@@ -1,24 +1,24 @@
-// Ships' lanterns at night, as DFO hung them: on poles at her quarters' rails, at her taffrail and by her cabin's door.
-// Each hull's are placed by its own parts, measured from its published mesh (its frame: x to its bow, y to starboard, z
-// up from its waterline). A ship shows them from the lamps' hour unless she runs dark: the Grey Tithe's always, a
-// friendly ship running from an attack. Near the eye a lantern's glass burns and its light is a lamp among the sky's
-// sixteen, lighting her deck and the water round her; past DFO's reach its light is off. Far off, up to four of a lit
-// ship's lanterns are warm points over the water, sized and faded as DFO drew them.
+// Ships' lanterns, as DFO hung them: on poles at her quarters' rails, at her taffrail and by her cabin's door. The
+// taffrail's is her mesh's own where it carries one (its place in her manifest, `shipLanterns`); the rest are ours,
+// placed by each hull's parts, measured from its published mesh (its frame: x to its bow, y to starboard, z up from
+// its waterline). Every one burns and lights as a ship's lantern does (`shipModels.ts`) unless she runs dark: the Grey
+// Tithe's always, a friendly ship running from an attack. Far off at night, up to four of a lit ship's lanterns are
+// warm points over the water, sized and faded as DFO drew them (`shipLights.ts`).
 import type { ShipLook } from './dress.ts';
 import type { HullName } from './hulls.ts';
 
 type Point = readonly [number, number, number];
 
-/** A lantern: its glass's middle in its ship's frame; what it hangs by (a pole standing from its height `pole`, an arm out from
- *  a wall at its `arm` along the ship, or nothing of ours: the mesh's own lantern, whose glass is only sleeved). */
+/** A lantern of ours: its glass's middle in its ship's frame; what it hangs by (a pole standing from its height `pole`,
+ *  or an arm out from a wall at its `arm` along the ship). */
 export interface Lantern {
   readonly at: Point;
-  readonly hung: { readonly pole: number } | { readonly arm: number } | 'built';
+  readonly hung: { readonly pole: number } | { readonly arm: number };
 }
 
-/** Where each hull's lanterns hang. The Schooner, the Brig and the Frigate carry a lantern at the taffrail in their
- *  mesh (`ship_details.py`), and have a companionway whose door a lantern hangs beside; the Sloop carries neither, so
- *  its taffrail lantern stands on a pole of ours. Each hull's quarters carry two on poles at the rail. */
+/** Where each hull's lanterns of ours hang. The Schooner, the Brig and the Frigate carry their taffrail's lantern in
+ *  their mesh (`ship_details.py`), and have a companionway whose door a lantern hangs beside; the Sloop carries
+ *  neither, so its taffrail lantern stands on a pole of ours. Each hull's quarters carry two on poles at the rail. */
 export const HULL_LANTERNS: Readonly<Record<HullName, readonly Lantern[]>> = {
   sloop: [
     { at: [-9.35, 0, 3.85], hung: { pole: 2.7 } },
@@ -26,29 +26,21 @@ export const HULL_LANTERNS: Readonly<Record<HullName, readonly Lantern[]>> = {
     { at: [-5.75, 2.85, 3.85], hung: { pole: 2.7 } },
   ],
   schooner: [
-    { at: [-11.2, 0, 4.463], hung: 'built' },
     { at: [-9.65, -2.445, 4.94], hung: { pole: 3.79 } },
     { at: [-9.65, 2.445, 4.94], hung: { pole: 3.79 } },
     { at: [-4.55, 0.62, 2.95], hung: { arm: -4.82 } },
   ],
   brig: [
-    { at: [-13.965, 0, 4.916], hung: 'built' },
     { at: [-12.42, -3.005, 5.4], hung: { pole: 4.25 } },
     { at: [-12.42, 3.005, 5.4], hung: { pole: 4.25 } },
     { at: [-6.515, 0.62, 3.285], hung: { arm: -6.785 } },
   ],
   frigate: [
-    { at: [-17.6, 0, 5.47], hung: 'built' },
     { at: [-16.05, -3.305, 5.97], hung: { pole: 4.82 } },
     { at: [-16.05, 3.305, 5.97], hung: { pole: 4.82 } },
     { at: [-7.35, 0.62, 3.674], hung: { arm: -7.62 } },
   ],
 };
-
-/** A near lantern's light, DFO's: its colour and reach (metres). Its light is off past `LANTERN_OFF_M` from the eye
- *  along the water. */
-export const LANTERN_LIGHT = { light: [1, 147 / 255, 41 / 255] as const, reachM: 20 };
-export const LANTERN_OFF_M = 51.5;
 
 /** A far ship's lanterns: drawn from LAMP_NEAR_M, whole LAMP_FADE_M past it; never under LAMP_MIN_M across, and
  *  LAMP_ANGLE of the eye's view (radians) at any range; at most LAMP_MOST of a ship's. */

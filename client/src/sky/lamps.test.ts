@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CityLamps, carriedLight, flicker, type LampPlace, lampsLit, lampsRound } from './lamps.ts';
+import {
+  CityLamps,
+  carriedLight,
+  type FirePlace,
+  flicker,
+  type LampPlace,
+  lampsLit,
+  lampsRound,
+  lanternLamp,
+  relightFires,
+  seedAt,
+} from './lamps.ts';
 import { AFTERNOON, LAMPS_MOST, PUDDLE_WRAP_M, skyNumbers, WRAP_M } from './skyUniform.ts';
+import { breath, lightMotion, motionCode } from './flicker.ts';
 
 const place = (x: number, seed = 0): LampPlace => ({ at: [x, 0, 2], reachM: 10, light: [1, 0.6, 0.3], seed });
 
@@ -20,10 +32,10 @@ test('a torch or a lantern in the left hand carries a light; anything else none'
   assert.equal(carriedLight(null), null);
 });
 
-test('a flame flickers gently: never above full, never below 84%', () => {
+test('a flame flickers gently: never above full, never below 80%', () => {
   for (let seconds = 0; seconds < 20; seconds += 0.013) {
     const shown = flicker(3, seconds);
-    assert.ok(shown <= 1 && shown >= 0.84, `${shown} at ${seconds}`);
+    assert.ok(shown <= 1 && shown >= 0.8, `${shown} at ${seconds}`);
   }
   assert.notEqual(flicker(1, 2), flicker(2, 2));
 });
@@ -85,7 +97,8 @@ test('of a city full of lamps, the nearest lit are those a full sort finds, in i
     lamps.map((lamp) => lamp.light[0]),
     ranked.slice(0, LAMPS_MOST).map(({ one, away }) => {
       const cut = ranked[LAMPS_MOST]?.away ?? Infinity;
-      return one.light[0] * flicker(one.seed, 0) * Math.min(1, (cut - away) / 10);
+      const motion = lightMotion(Math.fround(motionCode('fire', one.seed)), 0);
+      return one.light[0] * motion * Math.min(1, (cut - away) / 10);
     }),
   );
 });
@@ -158,17 +171,72 @@ test('a lamp too faint to show takes no place among the lit: a bright one furthe
   assert.deepEqual(lamps[0]?.fromEye, [30, 0, 2]);
 });
 
-test("a lamp that shows by day (a gun's flash) keeps its day share of its light at noon and all of it at night", () => {
-  const flash: LampPlace = { ...place(5), day: 0.25 };
-  const [noon] = lampsRound([0, 0, 0], [place(4), flash], null, 1, 0);
-  const [night] = lampsRound([0, 0, 0], [flash], null, 0, 0);
-  assert.equal(lampsRound([0, 0, 0], [place(4)], null, 1, 0).length, 0, 'a lantern stays out by day');
-  assert.ok(noon && night, 'the flash lights by day and by night');
-  assert.ok(Math.abs(noon.light[0] / night.light[0] - 0.25) < 1e-9, 'a quarter of its light by day');
+test("a view's fires are kept with its lamps, and a change to any view's fires is told", () => {
+  const lamps = new CityLamps();
+  const [city, isles] = [{}, {}];
+  const fire = (x: number) => ({ at: [x, 0, 0] as const, sizeM: 1, seed: x, casts: true });
+  lamps.set(city, [place(1)], [fire(1), fire(2)]);
+  const first = lamps.firesChanged;
+  lamps.set(isles, [], [fire(3)]);
+  assert.deepEqual(
+    lamps.fires.map((each) => each.at[0]),
+    [1, 2, 3],
+  );
+  assert.ok(lamps.firesChanged > first);
+  const second = lamps.firesChanged;
+  lamps.set(city, [place(2)]);
+  assert.deepEqual(
+    lamps.fires.map((each) => each.at[0]),
+    [3],
+    "the city's fires out with its last set",
+  );
+  assert.ok(lamps.firesChanged > second);
+  const third = lamps.firesChanged;
+  lamps.set(city, [place(4)]);
+  assert.equal(lamps.firesChanged, third, 'lamps alone changed: the fires burn on');
+  lamps.set(isles, [place(5)], [fire(3)]);
+  assert.equal(lamps.firesChanged, third, 'a view built again with the same fires changes none');
 });
 
-test("a steady lamp (a gun's flash, keeping its own fade) takes no flame's flicker", () => {
-  const steady: LampPlace = { ...place(5), steady: true };
-  const shown = [0.1, 0.37, 1.9].map((seconds) => lampsRound([0, 0, 0], [steady], null, 0, seconds)[0]?.light[0]);
-  assert.deepEqual(shown, [1, 1, 1]);
+test('fires lit again light only the new and put out only the gone', () => {
+  const [lit, out]: [number[], number[]] = [[], []];
+  let next = 0;
+  const flames = { light: () => (lit.push(++next), next), out: (id: number) => out.push(id) };
+  const fire = (x: number): FirePlace => ({ at: [x, 0, 0], sizeM: 1, seed: x, casts: true });
+  const first = relightFires(flames, new Map(), [fire(1), fire(2), fire(2)]);
+  assert.deepEqual([lit, out], [[1, 2, 3], []]);
+  const second = relightFires(flames, first, [fire(2), fire(3)]);
+  assert.deepEqual(
+    [lit, out.sort()],
+    [
+      [1, 2, 3, 4],
+      [1, 2],
+    ],
+    'one of the twins kept, the other and the first out',
+  );
+  assert.deepEqual([...second.values()].flat().sort(), [3, 4]);
+});
+
+test('a steady lamp moves not at all and moves no glow', () => {
+  assert.equal(motionCode('steady', 7), 0);
+  assert.equal(lightMotion(0, 3.3), 1);
+  const [lit] = lampsRound([0, 0, 0], [{ ...place(1, 5), motion: 'steady' }], null, 0, 3.3);
+  assert.deepEqual([lit?.light[0], lit?.motion], [1, 0]);
+});
+
+test("a lamp carries its motion to the uniform, a stone's breathing; one carried carries none", () => {
+  const stone: LampPlace = { ...place(1, 5), motion: 'stone' };
+  const [carried, lit] = lampsRound([0, 0, 0], [stone], { light: 'torch', feet: [0, 0, 0] }, 0, 3.3);
+  assert.equal(carried?.motion, undefined);
+  assert.equal(Math.floor(lit?.motion ?? 0), 3);
+  assert.ok(Math.abs((lit?.light[0] ?? 0) - breath(5, 3.3, 0.75)) < 1e-5);
+  const numbers = skyNumbers(AFTERNOON, [carried!, lit!]);
+  const firstLamp = 16 * 4;
+  assert.equal(numbers[firstLamp + 7], 0);
+  assert.equal(numbers[firstLamp + 15], lit?.motion);
+});
+
+test('a lantern is an enclosed light: its lamp alone, seeded by where it stands, flickering as a lantern', () => {
+  const lamp = lanternLamp([4, 6, 2], 0.4);
+  assert.deepEqual([lamp.at, lamp.seed, lamp.motion], [[4, 6, 2], seedAt([4, 6, 2]), 'lantern']);
 });

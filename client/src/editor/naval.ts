@@ -4,7 +4,6 @@ import type { LandView } from '../rules/landRules.ts';
 import { type AimDrawn, type AimView, aimViewOf } from '../ships/aimView.ts';
 import type { Mark, Splash } from '../ships/effects.ts';
 import { fightDisplay } from '../ships/fightDisplay.ts';
-import { fightLamps } from '../ships/fightLamps.ts';
 import { type Cue, type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import type { MarkView } from '../ships/markView.ts';
 import { factionSide } from '../ships/dress.ts';
@@ -15,7 +14,6 @@ import { barOver, type ShipBar } from '../ships/shipBars.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import type { ShipCamera } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
-import { FIGHT_LAMPS } from '../sky/lamps.ts';
 import type { Afloat } from './afloat.ts';
 import { lookBearing } from './aim.ts';
 import { AimCamera, type AimShip, type Laid } from './aimCamera.ts';
@@ -340,8 +338,6 @@ export class Naval {
     }
     // The balls first: past the most marks a frame draws, the effects' last puffs wait.
     const floated = this.feel.marks(now, scale, sea.water ?? null, camera.eye);
-    // Its flashes' and fires' light, for the sky's lamps the next frame takes.
-    FIGHT_LAMPS.current = fightLamps(floated, view, shown);
     marks.push(...floated.map((mark) => ({ ...mark, z: mark.z * shown })));
     this.marks.drawInto(pass, marks, camera, sea.shadow);
   }

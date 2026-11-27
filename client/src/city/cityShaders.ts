@@ -1,6 +1,7 @@
 // The city's WGSL: the forged models instanced in the near cells and the solids, the masses and hulls stood up from
 // one shape each, and the ground plates dressed in their tiles. All share one view, one cell table and one array of
 // pictures, are lit as the land is, and dither between tiers by the same thresholds the CPU's tiers test.
+import { LIGHT_MOTION_WGSL } from '../sky/flicker.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { CRYSTAL_WGSL } from './crystal.ts';
@@ -183,19 +184,28 @@ ${CLOTH_CASES}
 
 // The land's light, and the light the ground throws back onto a wall, so a wall in shade still reads. The sun reaches
 // a point at 'from_eye' as the shadow map says, through the clouds' shadows; the lamps light it at night, and the
-// weather wets it. A glowing solid is a flame: brighter when the night round it is dark. The Lattice's crystal is
-// drawn by its own light (crystal.ts).
+// weather wets it. A glowing solid is a flame: brighter when the night round it is dark, moving with its own light.
+// The Lattice's crystal is drawn by its own light (crystal.ts), breathing.
 ${CRYSTAL_WGSL}
+${LIGHT_MOTION_WGSL}
 
 // How far alight the crystal's core is: a module's, or a ruin's formation's (set by the surface drawing it).
 var<private> crystal_glow: f32 = CITY_CRYSTAL_GLOW;
 
+// How a glow at 'from_eye' moves: with its own lamp where one is lit near it (a lantern's glass with its light, a
+// brazier's coals with its fire, a crown with its light), a 'stone' (crystal) only with a stone's; else by where it
+// stands, all of one 3 m cell together.
+fn glow_motion(from_eye: vec3f, stone: bool) -> f32 {
+  let place = floor((from_eye + view.eye.xyz) / 3.0);
+  let own = select(1.0, 3.0, stone) + min(light_phase(place.x * 13.0 + place.y * 7.0 + place.z), 0.999);
+  let near = sky_lamp_motion(from_eye);
+  let keeps = near > 0.0 && (floor(near) == 3.0) == stone;
+  return light_motion(select(own, near, keeps), view.eye.w);
+}
+
 fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   if layer == GLOW {
-    // Each flame flickers on its own, a few times a second, by where it burns: all of one fire together.
-    let place = floor((from_eye + view.eye.xyz) / 3.0);
-    let flicker = 0.86 + 0.16 * sky_noise(vec2f(view.eye.w * 7.0, place.x * 13.0 + place.y * 7.0 + place.z));
-    return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * flicker;
+    return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * glow_motion(from_eye, false);
   }
   let facing = normalize(normal);
   // A clear noon's ambient was AMBIENT, more on a wall by the bounce, the sun lighting the rest.
@@ -207,7 +217,7 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
     sun *= sunlit(from_eye, facing);
   }
   if layer == CRYSTAL {
-    return crystal_colour(facing, from_eye, crystal_glow, sun);
+    return crystal_colour(facing, from_eye, crystal_glow * glow_motion(from_eye, true), sun);
   }
   // Fresh snow lies on the flat stone as on the ground round it, the city standing on the eye's own ground. Flat stone
   // (the plaza, a flat roof) holds puddles where no snow lies; walls and sloping roofs are only darkened and sheened.

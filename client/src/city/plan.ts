@@ -1,7 +1,6 @@
 // A city's plan as the city crate serialises it, a port city's or a ruin's, and the climate its pictures are drawn
 // in. The land worker hands the plan over as JSON; this layer only reads it.
 import type { RockShape } from '../rules/rockMesh.ts';
-import { FIRELIGHT, type LampPlace } from '../sky/lamps.ts';
 import type { Climate, Season } from '../textures/picture.ts';
 import type { Grain } from './walkGrain.ts';
 
@@ -192,22 +191,4 @@ export function cellCorner(plan: CityPlan, cell: { column: number; row: number }
 export function solidReach(solid: Solid): number {
   const swing = Math.max(Math.abs(Math.sin(solid.lean)), Math.abs(Math.sin(solid.roll)));
   return Math.hypot(solid.size[0], solid.size[1]) / 2 + solid.size[2] * swing;
-}
-
-/** Every glowing solid of a city (its Beacon, its stations' and courtyards' lanterns) as a place that gives light, from
- *  the middle of the solid: a lantern's light reaches some ten metres, a great fire's more, up to sixty. */
-export function glowLamps(plan: CityPlan): LampPlace[] {
-  const solids = [...plan.landmark, ...plan.works, ...plan.social.solids];
-  return solids
-    .filter((solid) => solid.material === 'glow')
-    .map((solid, index) => {
-      const largest = Math.max(...solid.size);
-      const strength = Math.min(1.3, 1 + largest / 40);
-      return {
-        at: [solid.at[0], solid.at[1], solid.at[2] + solid.size[2] / 2],
-        reachM: Math.min(60, 9 + 2 * largest),
-        light: [FIRELIGHT[0] * strength, FIRELIGHT[1] * strength, FIRELIGHT[2] * strength],
-        seed: index * 0.618,
-      };
-    });
 }

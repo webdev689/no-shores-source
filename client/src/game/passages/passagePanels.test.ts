@@ -28,12 +28,12 @@ const choice: MouthsChoice = {
   ),
   modifiers: [],
   routes: [
-    { route: 'public', words: 'The public passage' },
-    { route: 'alone', words: 'Your own route, alone' },
+    { route: 'public', words: 'Public' },
+    { route: 'alone', words: 'Alone' },
   ],
   starts: [
     { lamp: null, words: 'Go in' },
-    { lamp: 2, words: 'Begin at the second lamp' },
+    { lamp: 2, words: 'Lamp 2 · Foes 7-10' },
   ],
 };
 
@@ -65,9 +65,8 @@ function card() {
 test('the mouths’ card shows the zone beyond, the routes and where to begin', () => {
   const { built } = card();
   const words = said(built());
-  for (const line of ['THE CHALK ADIT', 'A chalk cut', 'The public passage', 'Your own route, alone', 'Go in'])
+  for (const line of ['THE CHALK ADIT', 'A chalk cut', 'Public', 'Alone', 'Go in', 'Lamp 2 · Foes 7-10'])
     assert.ok(words.includes(line), line);
-  assert.ok(words.includes('Begin at the second lamp'));
 });
 
 test('a route chosen is the one a start goes by; the pad’s B closes it', () => {
@@ -92,7 +91,9 @@ test('a route chosen is the one a start goes by; the pad’s B closes it', () =>
 
 test('the sign, the haul and the lamp’s prompt each say their view model’s words', () => {
   const view = { width: 1280, height: 720 };
-  assert.ok(said(signNode(choice.beyond, view)).includes('A chalk cut'));
+  const sign = said(signNode(choice.beyond, view));
+  for (const line of ['A chalk cut', 'Reliquary', 'Depth 1', 'Bring down its guard to open it'])
+    assert.ok(sign.includes(line), line);
   assert.equal(haulNode(haulView({ items: [], vestiges: 0, materials: [], lantern: false }), view), null);
   const haul = haulNode(haulView({ items: [], vestiges: 1, materials: [], lantern: false }), view);
   assert.ok(said(haul).includes('A Vestige'));
