@@ -9,15 +9,19 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **Merging on the owner's yes once CI passes on its head**: #249 ("Use your gifts" counts a step done before it, so
-  none is asked again; a lesson's steps tick in the tracker alone, with no notice at the foot; tested offline, the
-  notices not yet seen in a running game). A merge deploys the page, the site, the rooms and the bot.
-- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`).
-- **To come**: the owner's 120-character line check for the bible and code comments, with every
-  longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
-- **For the owner's yes once CI passes**: #264 (the hand-off says the repository is public under webdev689).
-- **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
+- #159 The rooms' worker tests wait for what they check, not for the clock
+- #234 The owner's answers to the Open Questions, recorded and built
+- #250 The kit runs only in cloud sessions
+- #251 Drops are larger and brighter, and weapons and armour lie on the ground as real pickups
+- #253 Record No Shores (Mobile): rebuilt in Rust, beside the browser game
+- #254 Sea polish: the aim swings between sides, lamps hold still, ships ride high waves, the map travels to every place
+- #256 Weapon glow fixes, a great-room Holdfast with lighter waves, and pathing round rocks
+- #257 Lines in the bible and code comments held to 120 characters, every longer one rewrapped (review 8)
+- #258 Armour, cloaks and clothes get large icons in the gear screens, as the weapons do
+- #259 The wreck exports again, its stern windows glowing as a lit ship's
+- #263 Stop a player snapping back on foot after a stall, a load or slow frames
+- #264 The hand-off says the repository is public under webdev689, and what the owner sets for it
+- Drafts: #93 The toolkit's first review; #114 The gear message carries the pledge once
 
 ## Built
 
