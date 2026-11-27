@@ -24,4 +24,4 @@ a GitHub render, the owner answered:
   (`tools/forge_figures_local.py` for figures, [[Sprite Forge]]).
 - A session asks the owner before it starts a render on GitHub's runners by hand or by a request file.
 
-Links: [[Sprite Forge]], [[Toolkit]].
+Links: [[Sprite Forge]], [[Toolkit]], [[Heavy Forge Renders May Run on the Public Forge Mirror]].

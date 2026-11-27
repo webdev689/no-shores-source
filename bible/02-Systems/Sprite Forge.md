@@ -175,7 +175,10 @@ layer not drawn again keeps the cell its strip was drawn in. It publishes only o
 ends with the manifest. `tools/forge_figures_local.py --run <id>` does the same on one machine of the owner's,
 costing no Actions minutes, as a heavy render does ([[Heavy Renders Run on the Owner's PC, Not on Actions]]): it
 takes the jobs a run finished from its artifacts (`gh`), draws the rest side by side, and publishes them with the
-first person's flask.
+first person's flask. A heavy redraw may instead run on the runners of the public mirror `Lattymoy/no-shores-forge`,
+which cost no Actions minutes, when the owner says so; its strips are laid into the studio on the owner's PC, the
+publish staged there (`R2_STAGE=<folder> python3 -I tools/forge_publish.py add`) and the stage uploaded by a workflow
+here that holds the token ([[Heavy Forge Renders May Run on the Public Forge Mirror]]).
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes
 `tools/lattice/render-request.txt`, whose first line names the foes, or by hand on `main`. Its actions are pinned by
