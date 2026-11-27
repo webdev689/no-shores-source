@@ -7,7 +7,7 @@ import { nodeReach, nodeText } from './nodeFiles.ts';
 import { Ashore, placeOf } from './ashore.ts';
 import { addressKey } from './address.ts';
 import { Breach, breachAsked, breachRoom, restoring, toldBreach } from './breach.ts';
-import { type Count, admitsFrom, counted, tellsTaken } from './budget.ts';
+import { type Count, MESSAGE_MOST, admitsFrom, counted, tellsTaken } from './budget.ts';
 import { delveAsk } from './delveHost.ts';
 import { entranceOf, roomName, sessionHash } from './joinRequest.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
@@ -65,9 +65,6 @@ const ELSEWHERE = 4001;
 const SHUT = 4003;
 /** The close code for a player a run cannot keep for now, the accounts not answering: the page joins again. */
 const AGAIN = 1013;
-
-/** The most bytes one input may be: an input with the largest dress fits well inside it. */
-const MESSAGE_MOST = 8192;
 
 /**
  * One room on Cloudflare: a Durable Object for each room's name (`roomNames.ts`), keeping the room in WebAssembly:
@@ -439,6 +436,8 @@ export class RoomHost extends DurableObject<Env> {
           // At sea a ship played unkept is its session's, so a rejoin brings it back where the sea last had it.
           const owner = !kept && seaRoom(this.name) !== null ? `unkept:${await sessionHash(message)}` : null;
           if (here() && owner !== null) this.guarded(() => this.room.own(player, owner), undefined);
+          // A passenger played unkept has no company here, so is sent away as one whose has no such ship.
+          if (here() && owner !== null) void this.aboard?.owned(player, owner);
           if (here()) this.guarded(() => this.room.noneKept(player), undefined);
           // Logging back in, the kept character stands where it left this social space, by the room's own word on it.
           if (here() && kept && held.relog) this.guarded(() => this.room.standWhereLeft(player), false);

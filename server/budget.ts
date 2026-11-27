@@ -3,6 +3,9 @@
  *  must take before its next tick, so every other player's snapshots would wait behind it. */
 export const MESSAGES_A_SECOND = 240;
 
+/** The most bytes one input may be: an input with the largest dress fits well inside it. */
+export const MESSAGE_MOST = 8192;
+
 /** A socket's messages in the second it last sent in, and all it has sent. */
 export interface Count {
   readonly second: number;
