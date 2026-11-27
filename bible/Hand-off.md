@@ -104,6 +104,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   Developer role appears once the layout is built again.
 - **Branches**: delete `ccr-9e470c58-pm6nyz` (#211, merged) and `ccr-c7c30290-wwnvc5` (#221, merged); a session
   cannot.
+- **The repository is public, under webdev689**: `main` has no protection. In Settings: a ruleset on `main` (a pull
+  request and the `check` status, no force-push or deletion); secret scanning with push protection, private
+  vulnerability reporting and Dependabot alerts; Actions asking approval for outside contributors, with a read-only
+  default token; interaction limits to collaborators. A pattern scan of every branch's history found no key (tested
+  offline, not exhaustive).
+- **The Pages address moved** to `webdev689.github.io/no-shores-source/`: `lattymoy.github.io` is still named by the
+  accounts' `PAGES` (`server/accounts/wrangler.jsonc`), `site.yml`'s `PAGE_ORIGIN`, tests and notes, so a sign-in
+  from the Pages copy is unchecked. Changing them changes a deploy: the owner's word first.
 - **Security and deploys found by the tooling audit** (each needs the owner's named approval, as a rule on keys,
   security or deploys does): any branch's push runs the asset workflows (`modules.yml`, flora, ships, wreck, freesound,
   dungeon-modules, island-modules; lattice on every branch but main) with `CLOUDFLARE_TOKEN`, which writes the bucket
