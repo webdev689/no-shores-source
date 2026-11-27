@@ -358,3 +358,23 @@ fn a_bold_ship_by_the_edge_of_home_waters_meets_no_player_inside_them() {
     hostiles.chase(5, Some(1));
     assert!(hostiles.tick(1.0, &[inside], &home).is_empty(), "nor one it chases");
 }
+
+#[test]
+fn by_night_a_ship_comes_for_a_player_only_within_650_m_and_by_day_within_its_sight() {
+    let midnight = sky::clock::EPOCH_UNIX_MS / 1000.0;
+    let noon = midnight + sky::clock::DAY_S / 2.0;
+    // A player inside home waters is never met, so the ship's choice alone shows.
+    let quarry = |east: f64, clock_s: f64| {
+        let mut hostiles = Hostiles {
+            sailing: vec![standing(1, [0.0, 0.0], 0.0, true)],
+            clock_s: Some(clock_s),
+            ..Hostiles::default()
+        };
+        let player = Voyager { home: true, ..voyager(5, [east, 0.0], 0, false) };
+        hostiles.tick(1.0, &[player], &HOSTILE_WATER);
+        hostiles.sailing[0].quarry
+    };
+    assert_eq!((quarry(649.0, midnight), quarry(651.0, midnight)), (Some(5), None), "her lanterns: 650 m");
+    assert_eq!(quarry(4_000.0, noon), Some(5), "by day its whole sight");
+    assert_eq!(quarry(SIGHT_LEAST_M + 1.0, noon), None, "and no farther");
+}

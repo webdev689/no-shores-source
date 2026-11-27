@@ -8,11 +8,12 @@ use crate::friendlies::{Friendlies, Friendly, friendly_commission};
 use crate::hostiles::{Hostile, Hostiles};
 use crate::sea::Coast;
 use crate::sea_weather::CoastWaters;
+use crate::sighting::daylight_at;
 use combat::sight::apart;
 use land::sea::Swell;
 use naval::captain::{ENGAGE_RANGE, Mode};
 use naval::fight::{CAPTAIN, Fight, Vessel};
-use naval::night::runs_dark;
+use naval::night::{night_sight, runs_dark};
 use naval::ranks::PLAYERS;
 use naval::shots::ShipId;
 use sailing::ship::{SAILS_SET, Ship};
@@ -51,8 +52,7 @@ pub(crate) fn sailed_off(fight: &Fight, (id, friend): (ShipId, Friendly)) -> Opt
 /// (`naval::night`).
 pub(crate) fn light_fight(fight: &mut Fight, unix_s: f64) {
     if let Some(vessel) = fight.ships.values().next() {
-        let world_s = sky::clock::world_seconds(unix_s * 1000.0);
-        fight.daylight = sky::heavens::heavens_at(vessel.ship.y, world_s).daylight();
+        fight.daylight = daylight_at(vessel.ship.y, unix_s);
     }
 }
 
@@ -171,11 +171,14 @@ pub(crate) fn step_clashes(
     clashes.retain(|clash| !clash.settled());
 }
 
-/// The clash a player at `at` comes within sight of, the first of any, taken from the sea for their fight.
+/// The clash a player at `at` comes within sight of, the first of any, taken from the sea for their fight: a ship of it
+/// is sighted from `ENGAGE_RANGE` by day, and by night as far as her lanterns show her (`naval::night`).
 pub fn sighted(clashes: &mut Vec<Clash>, at: [f64; 2]) -> Option<Clash> {
-    let within = |[x, y]: [f64; 2]| apart(at, [x, y]) <= ENGAGE_RANGE;
     let index = clashes.iter().position(|clash| {
-        clash.ships().any(|ship| within([ship.x, ship.y])) || clash.friendlies().any(|ship| within([ship.x, ship.y]))
+        let within =
+            |[x, y]: [f64; 2], dark: bool| apart(at, [x, y]) <= night_sight(ENGAGE_RANGE, clash.fight.daylight, !dark);
+        clash.ships().any(|ship| within([ship.x, ship.y], runs_dark(ship.commission.faction, false)))
+            || clash.friendlies().any(|ship| within([ship.x, ship.y], ship.dark))
     })?;
     Some(clashes.remove(index))
 }

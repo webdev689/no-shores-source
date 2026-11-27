@@ -323,6 +323,11 @@ is when the daylight is 0.375 or less, as the lamps are half up through the dusk
   (`SkyLaw.nightSight`): by night the compass marks a ship, the sea marks a hostile ship and the voyage names one, a
   chase picks one, and the held map marks another player's ship, only within that sight of the player's ship; by day
   each as far as ever.
+- **The sea's.** It holds as a ship is sighted at sea
+  ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]): a player joins a
+  clash of a Tithe ship and a merchant from 750 m by day, and by night within 220 m of the Tithe ship and 650 m of the
+  merchant, 220 m once she runs dark (`clash::sighted`); and a hostile ship at sea comes for a player, whose ship always
+  shows her lanterns, only within 650 m by night (`come_for`), each read under the daylight where it lies.
 
 ## How a fight ends
 
@@ -646,7 +651,8 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   sail out), it takes the open heading nearest its last, a twenty-fourth of a turn at a time
   either way, so it follows the coast round; with none open it goes about. Its temper is its
   seed's: an Elite and a Miniboss are always bold, any other one in four.
-- **Coming for the player.** A bold ship that has sighted a player who is not fighting comes for them (`come_for`):
+- **Coming for the player.** A bold ship that has sighted a player who is not fighting (by night only within 650 m,
+  "Night sight") comes for them (`come_for`):
   it steers to intercept, heading to where their ship will be when it can reach it at its way on that player's
   clock (lead pursuit; straight at them where it cannot reach them, as when they sail away faster), turning at most
   at a Sloop's helm rate, 10 degrees a second of its clock. It keeps after the one it came for while they stay in
@@ -685,8 +691,9 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   parted meet again only once they have been 750 m apart. None meets a friendly ship lying in Overlook's home waters,
   which hold no hostile ship. A fight with no ship a player keeps at sea leaves the sea, as a ship does. Two Tithe
   ships never meet.
-- **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight, or of a fight with players in
-  it, joins it: their ship heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
+- **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight
+  (by night as far as her lanterns show her, "Night sight"), or of a fight with players in it, joins it: their ship
+  heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
   its captains choose whom to fight by their own law, the one each fights reckoned nearer ("How a fight ends"). It is
   won once every Tithe ship is beaten: each pays as a Tithe ship beaten, nothing is paid or lost for the friendly ship
   (`SeaFight::friends`), and one sunk lays nothing that floats. Afloat as the fight ends, it sails on for its port.
@@ -845,8 +852,8 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 - A captain's odds and the hulls' hull points (`captain::odds::hit_share_at`) count its gunners' scatter and window,
   not what they misjudge each volley, so a captain reckons itself a better shot than it is when it chooses to fight
   or run, and each hull's hull points are scaled to an exact gunner's fire.
-- By night a player joins a clash of a Tithe ship and a merchant from 750 m as by day, and a hostile ship at sea still
-  comes for a player it sights by day's reckoning: night sight is the captains' in a fight and the player's marks.
+- By night a bold hostile ship still meets a player within 750 m, and a player still joins a fight with players in it
+  from 750 m, as by day: night sight holds for a hostile ship choosing whom to come for, not for its meeting them.
 - Every Tithe captain sails their rank's hull, a friendly ship the traffic's; there is no iron ram bow (the Tithe Ram)
   and no Fluyt yet, and no other classes.
 - A player's view of a fight shows its captains; the other players' Sloops in it are drawn from the sea's ships, where

@@ -301,7 +301,8 @@ the ports, the Sloops moored at Overlook's pier, the players' ships and hostile 
 - **Far.** Past 45 m a lit ship shows up to four of her lanterns (her first, her last and spread between) as warm points
   over the water, fading in over 45 m, half a metre across or 0.004 of their distance, whichever is more, so a ship
   reads across the sea at night as her lanterns (`GlowPoints`).
-- **Seen by them.** By night a lit ship is spotted to 650 m and a dark one only to 220 m ([[Naval Combat]], "Night
+- **Seen by them.** By night a lit ship is spotted to 650 m and a dark one only to 220 m: by the captains in a fight,
+  the player's marks, a player joining a clash, and a hostile ship choosing whom to come for ([[Naval Combat]], "Night
   sight").
 
 ## Its deck

@@ -612,6 +612,8 @@ const SET_AT_SEA: u32 = 900;
 /// heading `heading`, sighted from as far as a voyage at that pace sights it.
 fn come_for_on(course: &[[f64; 2]], at: [f64; 2], heading: f64, bold: bool) -> (Sea, PlayerId) {
     let mut sea = sea();
+    // At noon, so the ship sights him as far as by day.
+    sea.set_world_start(sky::clock::EPOCH_UNIX_MS / 1000.0 + sky::clock::DAY_S / 2.0);
     let player = sea.join();
     sea.course(player, course, 60).unwrap();
     let sight = crate::sighting::sight_for(60.0, 1.0);
@@ -646,6 +648,23 @@ fn a_bold_ship_sighted_within_its_meeting_cone_meets_a_voyage_that_holds_its_cou
     });
     assert!(met.is_some_and(|ticks| ticks < 60 * 60), "it met him within a minute: {met:?}");
     assert!(least <= 5, "the hold eased him only as it came near along his way: x{least}");
+}
+
+#[test]
+fn by_night_a_bold_ship_at_sea_does_not_come_for_a_voyage_beyond_its_lanterns() {
+    let off = 6.0_f64.to_radians();
+    let out = 0.95 * crate::sighting::sight_for(60.0, 1.0);
+    let at = [50_000.0 + libm::sin(off) * out, 400_000.0 - libm::cos(off) * out];
+    let quarry = |unix_s: Option<f64>| {
+        let (mut sea, _) = come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], at, PI * 1.5, true);
+        if let Some(unix_s) = unix_s {
+            sea.set_world_start(unix_s);
+        }
+        sea.tick();
+        sea.hostiles.sailing.iter().find(|hostile| hostile.id == SET_AT_SEA).and_then(|hostile| hostile.quarry)
+    };
+    assert!(quarry(None).is_some(), "by day it comes for him");
+    assert!(quarry(Some(sky::clock::EPOCH_UNIX_MS / 1000.0)).is_none(), "at midnight he lies past 650 m");
 }
 
 #[test]
