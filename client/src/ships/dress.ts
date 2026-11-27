@@ -64,6 +64,8 @@ export interface ShipLook {
   readonly side: ShipSide;
   readonly shade?: number;
   readonly painted?: Painted;
+  /** Whether she runs dark, her lanterns out: a friendly ship running from an attack. */
+  readonly dark?: boolean;
 }
 
 export const PLAYER_LOOK: ShipLook = { side: 'player' };

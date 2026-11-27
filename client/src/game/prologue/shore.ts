@@ -156,7 +156,7 @@ export class Shore implements Beat {
 
   private talk(): void {
     this.phase = 'talking';
-    this.story.stage.play('shore', true, { stranger: 'stranger' }).then(() => {
+    this.story.stage.play('shore', false, { stranger: 'stranger' }).then(() => {
       // A shore hushed and left while she spoke asks nothing of a player no longer there.
       if (this.phase !== 'talking') return;
       this.phase = 'asking';
@@ -213,7 +213,7 @@ export class Shore implements Beat {
       this.rose = Math.min(1, this.rose + tick.seconds / RISE_S);
       if (this.rose >= 1) {
         this.phase = 'leaning';
-        stage.play('standing', true, { stranger: 'stranger' }).then(() => (this.phase = 'walking'), this.fail);
+        stage.play('standing', false, { stranger: 'stranger' }).then(() => (this.phase = 'walking'), this.fail);
       }
     }
     if (this.phase === 'walking') {

@@ -111,6 +111,7 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
       row('Details', 'details'),
       row('Compare', 'compare'),
       row('Chat', 'chat'),
+      row('Continue dialogue', 'continue'),
       fixed('Tab', 'Next', padName('D-pad')),
       fixed('Left arrow / Right arrow', 'Tabs', `${padName('LB')} / ${padName('RB')}`),
       fixed('Esc', 'Back; free the mouse', padName('B')),

@@ -288,6 +288,7 @@ export function crystalLamps(great: readonly Solid[], most: number): LampPlace[]
         reachM: Math.min(30, 6 + solid.size[2]),
         light: CRYSTAL_LAMP,
         seed: index * 0.618 + solid.at[0] * 0.001,
+        motion: 'stone',
       };
     });
 }
@@ -301,6 +302,7 @@ export function greatLamp(place: CrystalPlace, index: number): LampPlace {
     reachM: Math.min(30, 6 + height),
     light: CRYSTAL_LAMP,
     seed: index * 0.618,
+    motion: 'stone',
   };
 }
 

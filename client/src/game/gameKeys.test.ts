@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Controlled, contextOf, interfaceKeys, listenForControls, withoutTaken } from './gameKeys.ts';
+import {
+  type Controlled,
+  clickedOnLine,
+  contextOf,
+  interfaceKeys,
+  listenForControls,
+  withoutTaken,
+} from './gameKeys.ts';
+import { DialogueBox } from '../speech/dialogue.ts';
+import { Stack } from '../ui/stack.ts';
 import { OPEN_AT, setGearScreenOpen } from './gearScreen.ts';
 import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import { PLACING_STRIP, placingNow, startPlacing } from './guild/decorPlacing.ts';
@@ -272,6 +281,22 @@ test('Escape or B while a piece of decoration is placed lets it go first and ope
     ['[', ']'],
     'the turn as its two keys',
   );
+});
+
+test("a free pointer's click on a waiting line moves it on and does nothing else; a locked one's is the frame's", async () => {
+  assert.equal(clickedOnLine(false), false, "no line: the click is the game's");
+  const box = new DialogueBox(new Stack(), () => null);
+  const cast = {
+    speakers: { mate: { name: 'First Mate', voice: 'mate', colour: null } },
+    voices: { mate: { pitchHz: 120, spreadHz: 10, muffleHz: 1400, volume: 0.3, syllableS: 0.1 } },
+  };
+  const said = box.play([{ who: 'mate', say: 'Up.' }], cast, { auto: false });
+  assert.equal(clickedOnLine(true), false, 'locked, the frame hears the button');
+  assert.equal(clickedOnLine(false), true, 'typed whole');
+  assert.equal(clickedOnLine(false), true, 'moved on: the last line said');
+  await said;
+  assert.equal(clickedOnLine(false), false);
+  box.remove();
 });
 
 test('at sea a landing’s confirmation takes Enter as yes and Escape as no; V switches the view; over an island Enter lands', () => {

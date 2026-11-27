@@ -16,25 +16,80 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  # On a push to main, whether its merge is code its pull request's check already passed: main before the merge is in
+  # the pull request's head, so the merge is that head's code, which the check passed merged with an older main that
+  # held nothing it lacks. Then main deploys without checking it again; on any doubt, or an error here, it is checked.
+  earlier:
     runs-on: ubuntu-latest
-    # The check runs about 45 minutes on a hosted runner, and grows with the tests; at 45 a merge's pass was cancelled
-    # and nothing deployed. The limit stays well above the run, to stop only a hung one.
-    timeout-minutes: 75
+    permissions:
+      contents: read
+      checks: read
+      actions: read
+    outputs:
+      passed: ${{ steps.find.outputs.passed }}
+    steps:
+      - name: Find whether the pull request's check passed this code
+        id: find
+        if: github.event_name == 'push'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          api() { gh api "repos/$GITHUB_REPOSITORY/$1" --jq "$2"; }
+          read -r main head more <<< "$(api "commits/$GITHUB_SHA" '.parents | map(.sha) | join(" ")')"
+          passed=no
+          if [ -n "${head:-}" ] && [ -z "${more:-}" ] && [ "$(api "compare/$main...$head" .behind_by)" = 0 ]; then
+            for run in $(api "commits/$head/check-runs?check_name=check" \
+              '.check_runs[] | select(.conclusion == "success") | .details_url | capture("/runs/(?<id>[0-9]+)/").id'); do
+              if [ "$(api "actions/runs/$run" '.path + " " + .event')" = ".github/workflows/ci.yml pull_request" ]; then
+                passed=yes
+              fi
+            done
+          fi
+          echo "the merge of $head into $main: passed $passed"
+          echo "passed=$passed" >> "$GITHUB_OUTPUT"
+
+  # The check in its three parts, side by side, each on a runner of its own (`cargo xtask check <part>`), the Rust
+  # tests shared over two: every part runs to its end, so one run shows each part's failures.
+  part:
+    needs: earlier
+    if: ${{ !cancelled() && needs.earlier.outputs.passed != 'yes' }}
+    name: check (${{ matrix.part }})
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [rest, rust 1/2, rust 2/2, page]
+    runs-on: ubuntu-latest
+    # The longest part runs about 20 minutes on a hosted runner; the limit stops only a hung one.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install the pinned toolchain
         run: rustup toolchain install
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: ${{ startsWith(matrix.part, 'rust') && 'rust' || matrix.part }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
       - name: Install the TypeScript tools
         run: npm ci
+      # cargo-nextest, which runs every crate's tests at once, as its release built it, checked against its hash.
+      - name: Install cargo-nextest
+        if: startsWith(matrix.part, 'rust')
+        run: |
+          set -euo pipefail
+          release="cargo-nextest-0.9.152"
+          curl -sSfLo "$RUNNER_TEMP/nextest.tar.gz" \
+            "https://github.com/nextest-rs/nextest/releases/download/$release/$release-x86_64-unknown-linux-gnu.tar.gz"
+          echo "d039b43c3e0958441b6ad0a39c8884d018b3d2e8fb9928f209074b1100b5e17a  $RUNNER_TEMP/nextest.tar.gz" | sha256sum -c --quiet -
+          tar -xzf "$RUNNER_TEMP/nextest.tar.gz" -C "$HOME/.cargo/bin"
       # The island packs the committed manifest names, for the test that reads every kit's: each is checked against
       # the hash its key is named by.
       - name: Fetch the island packs
+        if: matrix.part == 'page'
         run: |
           set -euo pipefail
           packs="$RUNNER_TEMP/island-modules"
@@ -48,16 +103,34 @@ jobs:
       # `shipTags.test.ts` fetches the ship meshes it reads from R2 once into the runner's temporary folder, each named
       # by its content: they are kept between runs while the ships' manifest, which names them, stays as it is.
       - name: Keep the ship meshes between runs
+        if: matrix.part == 'page'
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: /tmp/overlook-ships
           key: ship-meshes-${{ hashFiles('content/ships/ships.json') }}
-      - name: cargo xtask check
-        run: cargo xtask check
+      - name: cargo xtask check ${{ matrix.part }}
+        run: cargo xtask check ${{ matrix.part }}
       # How the Lattice's renders lay into the forge's tables, on the runner's own Python: the wave's frame-cutting
       # test needs Pillow, so it runs in the Lattice workflow, which installs it.
       - name: Check the forge publisher lays the Lattice in
+        if: matrix.part == 'rest'
         run: python3 -I tools/test_forge_lattice.py MergeFoe
+
+  # The one check a merge waits on and the deploys follow: every part passed, or main's merge is code its pull request's
+  # check passed.
+  check:
+    needs: [earlier, part]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every part passed, or the pull request's check did
+        env:
+          EARLIER: ${{ needs.earlier.outputs.passed }}
+          PARTS: ${{ needs.part.result }}
+        run: |
+          echo "passed on the pull request: ${EARLIER:-no}; the parts here: $PARTS"
+          [ "$EARLIER" = yes ] || [ "$PARTS" = success ]
 
   # Publishes to GitHub Pages from main, once this same commit has passed the check and the rooms have deployed or
   # had nothing to, so no page is published on a protocol no room speaks. A called workflow's jobs get at most what

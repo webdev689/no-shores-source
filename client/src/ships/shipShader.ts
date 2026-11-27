@@ -9,6 +9,7 @@ import { SHIP_PARTS, SHIP_PICTURE_TEXELS, shipPictures } from '../textures/shipP
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { flagPictures } from './flagPictures.ts';
+import { GLASS_SHELL } from './lanternMesh.ts';
 import { VERTEX_BYTES } from './shipMesh.ts';
 
 /** Its faces seen from outside reach the screen counter-clockwise, as the land's and the water's do: the export keeps
@@ -21,13 +22,22 @@ const TEXELS_PER_METRE = 40;
 export const MOST_YARDS = 12;
 /** The most masts a hull steps, the Frigate's three with room to spare. */
 export const MOST_MASTS = 4;
-/** A ship's uniforms: its place, look and paint (60 floats), then each yard's pivot and turn, then each mast's fall. */
-export const PLACE_FLOATS = 60 + MOST_YARDS * 4 + MOST_MASTS * 8;
-/** Where in its uniforms each yard's pivot and turn start, and each mast's fall (`mastFalls`). */
+/** The most lanterns a hull carries, its stern's with room to spare. */
+export const MOST_LANTERNS = 2;
+/** A ship's uniforms: its place, look and paint (60 floats), then each yard's pivot and turn, each mast's fall, and
+ *  each lantern's middle. */
+export const PLACE_FLOATS = 60 + MOST_YARDS * 4 + MOST_MASTS * 8 + MOST_LANTERNS * 4;
+/** Where in its uniforms each yard's pivot and turn start, each mast's fall (`mastFalls`) and each lantern. */
 export const YARD_FLOATS_AT = 60;
 export const MAST_FLOATS_AT = 60 + MOST_YARDS * 4;
+export const LANTERN_FLOATS_AT = MAST_FLOATS_AT + MOST_MASTS * 8;
+/** A lantern's glass round its middle, metres: how far out from its middle and how far above and below it. Its frame's
+ *  posts stand just outside it, its cap and base just above and below. */
+export const GLASS_M = { radius: 0.172, half: 0.19 } as const;
 
-const [HULL_PART, SAIL_PART] = [SHIP_PARTS.indexOf('hull'), SHIP_PARTS.indexOf('sail')];
+const [HULL_PART, SAIL_PART, IRON_PART] = ['hull', 'sail', 'iron'].map((part) =>
+  SHIP_PARTS.indexOf(part as (typeof SHIP_PARTS)[number]),
+);
 
 /** What both its shaders share: its uniforms and pictures, and where each vertex of it is drawn; its parts' pictures'
  *  mean lightness is set when the pipeline is made, as a side's paint keeps a picture's grain about its colour. */
@@ -38,6 +48,10 @@ override HULL_LIGHT: f32 = 1.0;
 override SAIL_LIGHT: f32 = 1.0;
 const HULL_PART = ${HULL_PART}u;
 const SAIL_PART = ${SAIL_PART}u;
+const IRON_PART = ${IRON_PART}u;
+const MOST_LANTERNS = ${MOST_LANTERNS}u;
+const GLASS_RADIUS = ${GLASS_M.radius};
+const GLASS_HALF = ${GLASS_M.half};
 const LIGHTNESS = vec3f(0.299, 0.587, 0.114);
 // Its UVs are metres; a picture repeats every SHIP_PICTURE_TEXELS / TEXELS_PER_METRE of them, standing upright.
 const PICTURE_PER_M = vec2f(${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS}, -${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS});
@@ -47,7 +61,8 @@ struct Place {
   turn: mat4x4f,
   // Its middle from the eye, metres as drawn.
   offset: vec4f,
-  // How light it is drawn: 1 as modelled, less for a darker ship.
+  // How light it is drawn: 1 as modelled, less for a darker ship; then how bright its lanterns' glass glows now (its
+  // flicker).
   shade: vec4f,
   // Its side's paint for its hull, its stripe and its canvas, each its colour and 1 where it is laid, 0 where not.
   hull: vec4f,
@@ -62,6 +77,8 @@ struct Place {
   // Each mast's fall, two a mast: its foot's height, the cosine and sine of its turn over its side, and 1 while it
   // shows; then how far astern it has drifted and how far it has sunk.
   masts: array<vec4f, ${MOST_MASTS * 2}>,
+  // Each lantern's middle in its frame, and 1 where it has the lantern, 0 where not.
+  lanterns: array<vec4f, ${MOST_LANTERNS}>,
 };
 
 @group(0) @binding(0) var<uniform> place: Place;
@@ -78,6 +95,8 @@ struct Drawn {
   // How high on the ship it is, and how far along it, in its own frame.
   @location(4) model: vec2f,
   @location(5) from_eye: vec3f,
+  // Where it is in its own frame, as modelled.
+  @location(6) at: vec3f,
 };
 
 /** A vector of its frame turned by a yard's brace about a vertical axis. */
@@ -122,6 +141,9 @@ export const SHIP_DRAW_SHADER = /* wgsl */ `
 ${PLACE_SHADER}
 ${SHADOW_WGSL}
 const BOUNCE = 0.15;
+// A pane of glass (shell byte GLASS_SHELL: a stern window's, a hung lantern's), pale horn while its ship's lanterns
+// are out.
+const GLASS = vec3f(0.78, 0.7, 0.52);
 
 @vertex
 fn vertex_main(
@@ -139,7 +161,28 @@ fn vertex_main(
   drawn.part = part.x;
   drawn.shell = f32(part.y);
   drawn.model = position.xz;
+  drawn.at = position;
   return drawn;
+}
+
+// The light within burning through glass, 'share' of its brightest: amber, flickering with its ship's lanterns.
+fn glass_fire(share: f32) -> vec3f {
+  return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * place.shade.y * share;
+}
+
+// A lantern's glass, lit from inside, at 'at' in its frame: an enclosed light, it shows no flame, only an amber glow
+// flickering with its light, brightest at its middle. Alpha 0 off every lantern's glass. It burns by day as by night,
+// brighter against the dark, as the city's lanterns do.
+fn lantern_glass(at: vec3f) -> vec4f {
+  for (var index = 0u; index < MOST_LANTERNS; index++) {
+    let lantern = place.lanterns[index];
+    let off = at - lantern.xyz;
+    if (lantern.w < 0.5 || length(off.xy) > GLASS_RADIUS || abs(off.z) > GLASS_HALF) {
+      continue;
+    }
+    return vec4f(glass_fire(0.35 + 0.3 * (1.0 - length(off.xy) / GLASS_RADIUS)), 1.0);
+  }
+  return vec4f(0.0);
 }
 
 @fragment
@@ -148,6 +191,10 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   let normal = normalize(select(-drawn.normal, drawn.normal, facing));
   var colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
   let grain = dot(colour, LIGHTNESS);
+  let glass = drawn.shell > ${GLASS_SHELL - 0.5};
+  if (glass) {
+    colour = GLASS;
+  }
   // A side paints the outside of its shell; its deck's fittings and the insides of its bulwarks keep their timber.
   if (drawn.part == HULL_PART && drawn.shell > 0.5) {
     let line = place.band.x + place.band.y * drawn.model.x;
@@ -171,6 +218,16 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
     sun *= sunlit(drawn.from_eye, normal);
   }
   let light = ambient + sky_direct(normal, sun) + sky_lamps(drawn.from_eye, normal);
+  // A pane burns as its ship's lanterns' glass does, evenly, its glow at the middle of theirs.
+  if (glass && place.shade.y > 0.0) {
+    return vec4f(glass_fire(0.5), 1.0);
+  }
+  if (drawn.part == IRON_PART) {
+    let lantern = lantern_glass(drawn.at);
+    if (lantern.a > 0.0) {
+      return vec4f(lantern.rgb, 1.0);
+    }
+  }
   return vec4f(colour * place.shade.x * light, 1.0);
 }
 `;

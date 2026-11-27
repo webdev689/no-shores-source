@@ -122,7 +122,8 @@ struct Chase {
 }
 
 /// A ship a captain may fight as the captain sees it, a player's or another faction's: its number, its hull, where it
-/// is and how it lies, its hurts and its power.
+/// is and how it lies, its hurts and its power, and how far its lookout sees it (`ENGAGE_RANGE` by day; by night as
+/// her lanterns show her, `night::night_sight`).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sighting {
     pub id: ShipId,
@@ -131,6 +132,7 @@ pub struct Sighting {
     pub level: f64,
     pub hull_share: f64,
     pub power: Power,
+    pub seen_to: f64,
 }
 
 /// The captain's own ship as it works it, in the wind.
@@ -382,7 +384,7 @@ impl Captain {
     }
 
     /// Its enemy among the ships it sees, and how far off: the nearest it would fight and does not spare, within
-    /// its sight (farther for the one it fights), the one it fights reckoned nearer.
+    /// its lookout's sight of it (farther for the one it fights), the one it fights reckoned nearer.
     fn choose<'seen>(&self, vessel: &Own, sightings: &'seen [Sighting]) -> Option<(&'seen Sighting, f64)> {
         let me = [vessel.ship.x, vessel.ship.y];
         let mut chosen: Option<(&Sighting, f64)> = None;
@@ -390,7 +392,7 @@ impl Captain {
         for sighting in sightings {
             let apart = distance(me, [sighting.ship.x, sighting.ship.y]);
             let held = self.target == Some(sighting.id) && self.mode == Mode::Engage;
-            let sight = ENGAGE_RANGE * if held { DISENGAGE } else { 1.0 };
+            let sight = sighting.seen_to * if held { DISENGAGE } else { 1.0 };
             let hostile = self.provoked_by(sighting.id) || self.takes_prize(vessel, sighting);
             if apart < sight && hostile && !self.spares(sighting.id) {
                 let rank = if held { apart * HELD_NEARER } else { apart };

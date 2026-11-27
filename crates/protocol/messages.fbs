@@ -322,13 +322,15 @@ table Ship {
 }
 
 // A friendly ship of the traffic the room has taken off its route: its traffic id, where it is, its heading in radians
-// clockwise from north, and its hull (as Hostile numbers it).
+// clockwise from north, its hull (as Hostile numbers it), and whether she runs dark, her lanterns out, running from
+// the Tithe ship that attacked her.
 table Friendly {
   traffic: ulong;
   x: double;
   y: double;
   heading: double;
   hull: ubyte;
+  dark: bool;
 }
 
 // A ship on the sea's chart (Snapshot.charted): its player's number, where it lies, and its captain's name, which the

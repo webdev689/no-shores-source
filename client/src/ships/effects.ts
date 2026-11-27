@@ -7,7 +7,7 @@
 // size about the point it came from, so a fight seen from the raised view, where ships are drawn larger, draws them as
 // large about it. Past the budget, what a fight's picture misses least goes first.
 import type { MarkShape } from './markView.ts';
-import { along, BLEND_OF, EVICT_RANK, fadeOf, type PuffKind } from './puffLaw.ts';
+import { along, BLEND_OF, EVICT_RANK, fadeOf, type PuffKind, turnOf } from './puffLaw.ts';
 
 type Point = readonly [number, number, number];
 type Colour = readonly [number, number, number];
@@ -460,7 +460,7 @@ export class Effects {
         velocity: [this.spread(0.3), this.spread(0.3), 1.6 + this.draw()],
         drag: 0.5,
         colour: FLAME,
-        size: [1.2 + this.draw() * 0.6, 0.4],
+        size: [2 + this.draw() * 0.8, 0.6],
         life: 0.5 + this.draw() * 0.3,
       }));
       // DFO's embers, fourteen a second at a fire, and its gouts of smoke, five.
@@ -588,7 +588,7 @@ export class Effects {
           z: Math.max(puff.floor, puff.anchor[2] + (puff.from[2] + up) * scale),
           radius: (width / 2) * (blend ? 1 : fade) * scale,
           colour: puff.colour,
-          ...(blend ? { blend, alpha: puff.alpha * fade } : {}),
+          ...(blend ? { blend, alpha: puff.alpha * fade, yaw: turnOf(puff.anchor, puff.from) + share * 0.5 } : {}),
           ...(puff.flat ? { flat: true, ...(blend ? {} : { shape: 'chest' as const, yaw: puff.born * 7 }) } : {}),
         };
       });

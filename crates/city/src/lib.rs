@@ -15,6 +15,7 @@ pub mod hug;
 pub mod landmarks;
 pub mod landmarks_inland;
 pub mod life;
+pub mod lights;
 pub mod mail;
 pub mod modules;
 pub mod overtaken;
@@ -98,6 +99,9 @@ pub struct Plan {
     pub ruined: bool,
     /// The wrecks settled in a ruin's harbour; none in a port city's.
     pub wrecks: Vec<ruins::Wreck>,
+    /// The lights Overlook's city burns at night (`lights`); none in any other city's, nor in a ruin's.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub lights: Vec<lights::Light>,
 }
 
 /// Plans a city on the land as the generator and the hand edits left it, before any city's pads. Fails for a motif the
@@ -253,6 +257,19 @@ pub fn plan_as(city: &City, ground: &Ground, blocks: &Blocks, ruined: bool) -> R
     } else {
         (city.name.clone(), built.solids, Vec::new())
     };
+    let lights = if lights::lit(&city.id, ruined) {
+        lights::lights(&lights::Lit {
+            grid: &grid,
+            cells: &cells,
+            pads: &pads,
+            solids: landmark_solids.iter().chain(&works).chain(&social.solids).collect(),
+            keep_off: &[social.bounds, base],
+            footprint: &footprint,
+            harbour,
+        })
+    } else {
+        Vec::new()
+    };
     Ok(Plan {
         id: city.id.clone(),
         name,
@@ -270,6 +287,7 @@ pub fn plan_as(city: &City, ground: &Ground, blocks: &Blocks, ruined: bool) -> R
         pads,
         ruined,
         wrecks,
+        lights,
     })
 }
 

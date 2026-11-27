@@ -102,7 +102,9 @@ export class Calm implements Beat {
     brig.way = 0;
     const said = (line: Line) => this.said(line);
     const failed = (error: unknown) => (this.failure = { error });
-    this.cues = new Cues([[TALK_S, () => void stage.play('calm', true, {}, said).then(() => this.lastLine(), failed)]]);
+    this.cues = new Cues([
+      [TALK_S, () => void stage.play('calm', false, {}, said).then(() => this.lastLine(), failed)],
+    ]);
   }
 
   /** The lookout's line turns the camera out to the wrecks he speaks of, and the line after it brings it back. */

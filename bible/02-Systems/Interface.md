@@ -384,7 +384,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   in the interface; a captain's fight shows the game's own readout over the view.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG, hearing a shot's events on its second frame, once the first has laid what they press; a frame is
-  1/60 s, and the page asks for reduced motion unless the shots ask for `"motion": true`. `ui/gallery.ts`
+  1/60 s, and the page asks for reduced motion unless the shots ask for `"motion": true`. It serves on port 5173
+  where free, the next port otherwise, and fetches R2's packs for the page as from 5173 (through `HTTPS_PROXY` where
+  set), so a second checkout's pictures still draw the real pieces. `ui/gallery.ts`
   holds what a screen is mostly built of: a window under a header panel, presses at rest, primary, warn and disabled,
   words in a span's colour wrapping across a break, at two sizes, with a halo and with a hard shadow, a chip, a field
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
@@ -675,7 +677,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **In a passage zone** ([[Passages]], "Played"): the zone's deal stands in the task tracker, a public event's steps
   before it; an onward mouth's sign stands high in the view on coming near it; the haul is framed on the right while
   anything is carried; and the leave held adds "What you carry is lost" under its place. At a run's sealed door the
-  mouths' card is drawn as an entrance's card is.
+  mouths' card is drawn as an entrance's card is. Each says only what a choice or an act needs, in short words
+  ([[The Passages' New Interface Says Less and Reads Better]]).
 - **A sea fight's task**: the fight's task in the tracker says to defeat their crews, counts the ships fighting the
   player still afloat and their men, and says they need not be sunk, as the rules strike a ship whose men are gone
   or whose hull is beaten low. The ship's own state is the fight's readout ([[The Sea's Screens Wear Enhanced Plus]]). At sea DFO's messages are the
@@ -740,7 +743,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   shows, except over the menu's gear screen, and its key, Escape, the pad's B or its Close press shuts it. It is a
   window of the kit over a dimmed view, over every layer the game draws but the screen's keyboard: ALL CONTROLS on its
   header band, then its groups, Move, Fight, Arts, Camera, Menus, Sea and Sea fight (`CONTROL_GROUPS`), each its name
-  in faint capitals over a rule and its rows under it: the keys, then the pad's buttons, drawn as the strip draws them,
+  in faint capitals over a rule and its rows under it (Menus holds Continue dialogue, the press that moves a line of
+  the dialogue box on; [[Speech]], "Moving on"): the keys, then the pad's buttons, drawn as the strip draws them,
   beside a few words on what the row does; a footer band holds a line of a few words and Reset to defaults. Every key
   and button shown is as bound now, so the sheet always says what the game hears; the side the player used last stands
   bright and the other faint, and the words are that side's ("Swing; fire" on the pad). The groups stand in as many
@@ -761,7 +765,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   mouse button binds only a control that hears one: the menus, the sheet, Use, Respawn and the helm's controls act on
   a key going down or at the helm, where the pointer is free, so for them the footer says it "takes keys only"; a
   button past the fifth is no key, and the slot waits on. Every other control acting with the key in the same place
-  (on foot, dead, in a window, at the helm or in a sea fight; `binds.ts`) gives it up, taking the slot's old key
+  (on foot, dead, in a window, at the helm, in a sea fight, or while a line of the dialogue box waits; `binds.ts`)
+  gives it up, taking the slot's old key
   where that clashes with nothing it acts with there, and the footer says "Swapped with" them; where one would be
   left with nothing, the binding is refused and the footer says that control "needs it". No two controls that act
   in one place ever share a key. Reset to defaults binds every control as it came. A mouse's gesture (the click to
@@ -1052,7 +1057,7 @@ never while a press is held. Each press is an ask the room answers.
     taken and turned in at the board alone. The column stands at the right wherever it fits beside the quests, as wide
     as its head; on a phone (under 600 px) it stands under them. Under the board's, each Atheric bounty held or
     finished is a card of its own, as Destiny 1's exotic bounties stood apart: Lanternfall's name in the Atheric
-    colour, the cold lantern and its words, and its steps, each done with a tick, the one under way with its gauge and
+    colour and its steps, each done with a tick, the one under way with its gauge and
     count, those to come dimmed ([[Passages]], "The Journal and the board").
   - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
     Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
@@ -1159,9 +1164,11 @@ never while a press is held. Each press is an ask the room answers.
     [[Ambience]] ("Ambience"), each kept in this browser; under Credits, "Sound credits" and its View press, which
     shows the recorded sounds' credits in the volumes' place: each one's name, author, licence and source, and what was
     changed, with ‹ Audio, or Escape, back.
-  - **Controls**: every control as the sheet of every control lists it, each key and button bound anew there the same
-    way ("Binding a control"), and Reset to defaults; its line says what a waiting key wants or what the last binding
-    came to.
+  - **Controls**: under Dialogue, how a line of the dialogue box moves on ("Dialogue": Click to continue, the first
+    and the default, or Auto, kept in this browser; [[Speech]], [[Dialogue Waits for a Click by Default, With Auto as a Setting]]), a line under it
+    saying that Auto moves each line on by itself and that lines said in a fight always do; then every control as the
+    sheet of every control lists it, each key and button bound anew there the same way ("Binding a control"), and
+    Reset to defaults; its line says what a waiting key wants or what the last binding came to.
   - **Account** ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a username and
     password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held. Under it,
     the players blocked, each with a press to unblock them, and the muted.

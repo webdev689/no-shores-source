@@ -269,8 +269,10 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   the nearest face that leaves it in no solid, red, warm or the glass's coloured light. Underground (a sky with a
   `darkM`) a prop's lamps fall off more steeply than the land's (the fourth power), a face under a lamp turns to it
   as to a point 1.5 m over it, so the floor round a crystal's foot is lit, not grazed, and a face turned away from a
-  lamp takes none of it; on the land, props are lit by the lamps as the land is. A fire (glow) and stained glass are
-  their own light, the glass leaded panes laid across the face it looks out of; still water's face ripples slowly and
+  lamp takes none of it; on the land, props are lit by the lamps as the land is. Any other module's flames (an
+  outpost's fire pit's and braziers') light round them, each a fire's lamp reaching 9 m at its glow
+  ([[Lights as Claude Builds Them]]), and a crystal's lamps breathe. A fire (glow) moves with its own lamp and a
+  crystal's core breathes with its ([[Sky]], "Lamps"); a fire and stained glass are their own light, the glass leaded panes laid across the face it looks out of; still water's face ripples slowly and
   glints with the key light and the lamps; a prop marked dark (`dark`, its doorway's opening) is drawn as that
   opening, filled flat and dark, each of its vertices snapped to the opening's corner on its side. Under a sky
   that sets how far off all is dark (`darkM`, a Breach's run's 120 m), every prop fades into the fog's colour from a

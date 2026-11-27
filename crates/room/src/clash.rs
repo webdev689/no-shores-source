@@ -8,10 +8,13 @@ use crate::friendlies::{Friendlies, Friendly, friendly_commission};
 use crate::hostiles::{Hostile, Hostiles};
 use crate::sea::Coast;
 use crate::sea_weather::CoastWaters;
+use crate::sighting::daylight_at;
 use combat::sight::apart;
 use land::sea::Swell;
 use naval::captain::{ENGAGE_RANGE, Mode};
 use naval::fight::{CAPTAIN, Fight, Vessel};
+use naval::night::{night_sight, runs_dark};
+use naval::ranks::PLAYERS;
 use naval::shots::ShipId;
 use sailing::ship::{SAILS_SET, Ship};
 
@@ -42,6 +45,15 @@ fn sailing<T: Copy>(fight: &Fight, (id, at_sea): &(ShipId, T), stays: impl Fn(&V
 pub(crate) fn sailed_off(fight: &Fight, (id, friend): (ShipId, Friendly)) -> Option<Friendly> {
     let ship = fight.vessel(id).filter(|vessel| afloat(vessel) && !vessel.in_fight())?.ship;
     Some(Friendly { x: ship.x, y: ship.y, heading: ship.heading, ..friend })
+}
+
+/// Tells a fight the daylight over it at `unix_s` (seconds since the Unix epoch, as a room's world start counts),
+/// read where its first ship lies: by night its captains' lookouts see a ship only as far as her lanterns show her
+/// (`naval::night`).
+pub(crate) fn light_fight(fight: &mut Fight, unix_s: f64) {
+    if let Some(vessel) = fight.ships.values().next() {
+        fight.daylight = daylight_at(vessel.ship.y, unix_s);
+    }
 }
 
 /// Whether a ship is still afloat: neither going down nor sunk, whether or not it struck or runs.
@@ -90,10 +102,15 @@ impl Clash {
         fought.map(|(ship, hostile)| Hostile { x: ship.x, y: ship.y, heading: ship.heading, ..hostile })
     }
 
-    /// Each of its friendly ships still in the fight as a ship at sea, where the fight has it.
+    /// Each of its friendly ships still in the fight as a ship at sea, where the fight has it, dark while it runs.
     pub fn friendlies(&self) -> impl Iterator<Item = Friendly> + '_ {
-        let fought = self.friends.iter().filter_map(|crew| sailing(&self.fight, crew, Vessel::in_fight));
-        fought.map(|(ship, friend)| Friendly { x: ship.x, y: ship.y, heading: ship.heading, ..friend })
+        self.friends.iter().filter_map(|(id, friend)| {
+            let vessel = self.fight.vessel(*id).filter(|vessel| vessel.in_fight())?;
+            let runs = vessel.command().is_some_and(|command| command.mind.mode == Mode::Flee);
+            let dark = runs_dark(PLAYERS, runs);
+            let ship = vessel.ship;
+            Some(Friendly { x: ship.x, y: ship.y, heading: ship.heading, dark, ..*friend })
+        })
     }
 
     /// Whether it is over: none of its captains fights on.
@@ -154,11 +171,14 @@ pub(crate) fn step_clashes(
     clashes.retain(|clash| !clash.settled());
 }
 
-/// The clash a player at `at` comes within sight of, the first of any, taken from the sea for their fight.
+/// The clash a player at `at` comes within sight of, the first of any, taken from the sea for their fight: a ship of it
+/// is sighted from `ENGAGE_RANGE` by day, and by night as far as her lanterns show her (`naval::night`).
 pub fn sighted(clashes: &mut Vec<Clash>, at: [f64; 2]) -> Option<Clash> {
-    let within = |[x, y]: [f64; 2]| apart(at, [x, y]) <= ENGAGE_RANGE;
     let index = clashes.iter().position(|clash| {
-        clash.ships().any(|ship| within([ship.x, ship.y])) || clash.friendlies().any(|ship| within([ship.x, ship.y]))
+        let within =
+            |[x, y]: [f64; 2], dark: bool| apart(at, [x, y]) <= night_sight(ENGAGE_RANGE, clash.fight.daylight, !dark);
+        clash.ships().any(|ship| within([ship.x, ship.y], runs_dark(ship.commission.faction, false)))
+            || clash.friendlies().any(|ship| within([ship.x, ship.y], ship.dark))
     })?;
     Some(clashes.remove(index))
 }

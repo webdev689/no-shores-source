@@ -39,7 +39,15 @@ impl Deck {
 
 fn player_at(x: f64, y: f64) -> Sighting {
     let ship = Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    Sighting { id: 0, hull: HullKind::Sloop, ship, level: 0.0, hull_share: 1.0, power: Power::player(&LARGE_BOAT, 1.0) }
+    Sighting {
+        id: 0,
+        hull: HullKind::Sloop,
+        ship,
+        level: 0.0,
+        hull_share: 1.0,
+        power: Power::player(&LARGE_BOAT, 1.0),
+        seen_to: ENGAGE_RANGE,
+    }
 }
 
 /// The captain's helm against one player's ship, the only hull about it.

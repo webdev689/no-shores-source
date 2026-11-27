@@ -4,6 +4,7 @@
 import { edged } from '../combat/barDraw.ts';
 import { iconNode, isMouse } from './keyIcons.ts';
 import { padIconNode } from './padIcons.ts';
+import { boundCap } from './controls.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Drawing, Node, Text } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
@@ -81,6 +82,13 @@ export function keycap(key: string, size = 1): Node {
     children: [icon ?? { text: { words: key, size, colour: '#efe8d6', wrap: false } }],
   };
 }
+
+/** The cap of the key or button that moves a line of the dialogue box on, as the player last played: the prompt to
+ *  continue's (`dialogue.ts`). */
+export const continueCap = (): Node | null => {
+  const cap = boundCap('continue');
+  return cap === '' ? null : keycap(cap);
+};
 
 /** A key that is no word as it stands on a bar's keycap, each texel `texel` pixels: the mouse with its button lit in
  *  brass, an arrow, or the pad's button (`pad:` before its name), as the key strip draws them; null for a key the cap

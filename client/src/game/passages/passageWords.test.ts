@@ -48,11 +48,11 @@ test('the mouths’ choice offers the public passage and one route of one’s ow
   assert.ok(alone);
   assert.deepEqual(
     alone.routes.map((route) => route.words),
-    ['The public passage', 'Your own route, alone'],
+    ['Public', 'Alone'],
   );
   assert.deepEqual(
     alone.starts.map((start) => start.words),
-    ['Go in', 'Begin at the second lamp'],
+    ['Go in', 'Lamp 2'],
   );
   assert.equal(alone.beyond.name, 'A chalk cut');
   assert.equal(alone.modifiers[0]?.name, 'Trickle');
@@ -92,33 +92,27 @@ test('an onward mouth’s sign says a Gauntlet’s far mouth is its goal, and wh
 
 test('an onward mouth’s sign names the zone beyond, its deal, depth and currents, and why it is shut', () => {
   const shut = onwardSign(zone(3, { depth: 8 }), false);
-  assert.deepEqual(
-    [shut.name, shut.depth, shut.deal],
-    ['A chalk cut', '8 zones deep', 'A Kindle: three dead lamps wait to be lit.'],
-  );
+  assert.deepEqual([shut.name, shut.depth, shut.deal], ['A chalk cut', 'Depth 8', 'Light 3 dead lamps']);
   assert.equal(shut.kind, 'Kindle', 'a mission by its kind’s name');
   assert.equal(shut.currents[0]?.name, 'Gloom');
   assert.ok(shut.shut);
   assert.equal(onwardSign(zone(3), true).shut, null);
   const cold = onwardSign(zone(4, { deal: 'lamp', lamp: 3 }), true);
-  assert.equal(cold.deal, 'The third lamp, cold, its guard standing.', 'a lamp not lit burns for no one');
-  assert.equal(
-    onwardSign(zone(4, { deal: 'lamp', lamp: 3 }), true, 1, [3]).deal,
-    'The third lamp, lit by you this week.',
-  );
+  assert.deepEqual([cold.kind, cold.deal], ['Lamp 3', 'Bring down its guard, then light it'], 'cold for all');
+  assert.equal(onwardSign(zone(4, { deal: 'lamp', lamp: 3 }), true, 1, [3]).deal, 'Lit by you this week');
   assert.match(onwardSign(zone(5, { deal: 'gauntlet' }), true).deal, /90 s/, 'the Gauntlet says its time');
-  assert.equal(onwardSign(zone(5, { deal: 'vault' }), true).deal, 'A vault, its keeper deep inside.');
+  assert.equal(onwardSign(zone(5, { deal: 'vault' }), true).deal, 'Bring down the vault’s keeper');
 });
 
 test('a sign says its zone’s foes’ levels, too strong for the player three or more levels over them', () => {
   const deep = zone(6, { depth: 15, levels: [15, 18] });
-  assert.deepEqual([onwardSign(deep, true, 16).foes, onwardSign(deep, true, 16).hard], ['Foes 15 to 18', false]);
+  assert.deepEqual([onwardSign(deep, true, 16).foes, onwardSign(deep, true, 16).hard], ['Foes 15-18', false]);
   assert.equal(onwardSign(deep, true, 15).hard, true, 'three levels under its strongest');
   assert.equal(onwardSign(deep, true, 12).hard, true, 'a level 12 player cannot harm a level 18 foe');
   assert.equal(onwardSign(zone(7), true, 1).foes, null, 'none where the web does not say');
 });
 
-test('the card names the zone a begin at a lamp lands in, the lamp’s zone at the mouth’s place, and its foes', () => {
+test('a begin at a lamp says the foes of the lamp’s zone it lands in, the one at the mouth’s place', () => {
   const lanes: PassageWeb = {
     ...web,
     mouths: [...web.mouths, { run: 'The Beacon Stair', zone: 0 }],
@@ -129,19 +123,19 @@ test('the card names the zone a begin at a lamp lands in, the lamp’s zone at t
     ],
   };
   const start = mouthsChoice(lanes, 'The Chalk Adit', false, [1], 8)?.starts[1];
-  assert.deepEqual(start?.zone, { words: 'The first lamp: A near barrow · Foes 9 to 12', hard: true });
+  assert.equal(start?.words, 'Lamp 1 · Foes 9-12');
   const second = mouthsChoice(lanes, 'The Beacon Stair', false, [1], 8)?.starts[1];
-  assert.deepEqual(second?.zone, { words: 'The first lamp: A far barrow', hard: false }, 'the second mouth’s');
+  assert.equal(second?.words, 'Lamp 1', 'the second mouth’s, whose zone says no levels');
 });
 
 test('the lamp is held to light; lit, it offers Home or going on', () => {
   assert.equal(lampPrompt(false, false).deed, 'Light the lamp');
   assert.match(lampPrompt(false, true).under ?? '', /guard/);
   assert.equal(lampPrompt(true, false).deed, 'Home');
-  assert.match(lampPrompt(true, false).under ?? '', /ways on are open/);
+  assert.equal(lampPrompt(true, false).under, 'Or go on');
   assert.equal(lampPrompt(true, false, false, false).under, null, 'the deepest lamp has no ways on to offer');
   const cold = lampPrompt(false, false, true);
-  assert.deepEqual([cold.deed, cold.under], ['Kindle the lamp', 'Gone cold for you: the Tithe come while you hold']);
+  assert.deepEqual([cold.deed, cold.under], ['Kindle the lamp', 'The Tithe come while you hold']);
   assert.match(lampPrompt(false, true, true).under ?? '', /guard/, 'its guard first, cold or not');
 });
 
@@ -180,7 +174,7 @@ test('the deal’s tracker says what is to do and how far it is', () => {
   const hold = dealTracker(zone(0, { deal: 'hold' }), word({ seconds: 42 }), NOW);
   assert.equal(hold.steps[0]?.clock, 42);
   const done = dealTracker(zone(0, onward), word({ done: true, count: 3 }, { openMouths: [0] }), NOW);
-  assert.equal(done.steps.at(-1)?.text, 'Go on through an open mouth');
+  assert.equal(done.steps.at(-1)?.text, 'Go on through a mouth');
   const late = dealTracker(zone(0, { deal: 'gauntlet' }), word({ seconds: 0, late: true }), NOW);
   assert.match(late.steps[0]?.text ?? '', /cache is lost/);
 });
@@ -188,24 +182,24 @@ test('the deal’s tracker says what is to do and how far it is', () => {
 test('the tracker keys each step to the room’s word: a round done before one came, or begun again after', () => {
   const skirmish = zone(0, { deal: 'skirmish', ...onward });
   const came = dealTracker(skirmish, word({ done: true, again: 37 }), NOW);
-  assert.deepEqual(came.steps, [{ text: 'Done before you came: it begins again', clock: 37 }], 'no way on yet');
+  assert.deepEqual(came.steps, [{ text: 'Done before you came: begins again', clock: 37 }], 'no way on yet');
   const again = dealTracker(skirmish, word({ done: false }, { openMouths: [0] }), NOW);
   assert.deepEqual(
     again.steps.map((step) => [step.text, step.done]),
     [
       ['Bring down the garrison', true],
-      ['Go on through an open mouth', undefined],
+      ['Go on through a mouth', undefined],
     ],
     'begun again, the player’s mouths stand open: their work is done',
   );
 });
 
 test('the tracker says the depth and the next lamp, the lamp to light, and no way on at the deepest', () => {
-  assert.equal(depthWords(7), 'Depth 7, the second lamp in 3');
-  assert.equal(depthWords(10), 'Depth 10, the third lamp in 5');
-  assert.equal(depthWords(20), 'Depth 20, the deepest');
+  assert.equal(depthWords(7), 'Depth 7 · lamp 2 in 3');
+  assert.equal(depthWords(10), 'Depth 10 · lamp 3 in 5');
+  assert.equal(depthWords(20), 'Depth 20 · the deepest');
   const kindle = dealTracker(zone(0, { depth: 7 }), word({}), NOW);
-  assert.deepEqual([kindle.name, kindle.task], ['Depth 7, the second lamp in 3', 'Kindle']);
+  assert.deepEqual([kindle.name, kindle.task], ['Depth 7 · lamp 2 in 3', 'Kindle']);
   const deepest = zone(0, { depth: 20, deal: 'lamp', lamp: 4 });
   const unlit = dealTracker(deepest, word({ done: true }, { openMouths: [], lampLit: false }), NOW);
   assert.ok(!unlit.steps.some((step) => /Go on/.test(step.text)), 'no way on from the deepest');
@@ -223,7 +217,7 @@ test('the tracker says the depth and the next lamp, the lamp to light, and no wa
     [
       ['Bring down the lamp’s guard', true],
       ['Light the lamp', true],
-      ['Home from the lamp', undefined],
+      ['Home at the lamp', undefined],
     ],
     'the deepest has no mouth, yet its work is done for the player',
   );
@@ -258,6 +252,6 @@ test('a vein counts its six nodes once its guard is down; a reliquary asks only 
 test('in the last ten minutes before Tuesday 09:00 UTC the tracker warns that the web will shift', () => {
   const turn = weekStart(2_901);
   const near = dealTracker(zone(0), word({}), turn - 300_000);
-  assert.deepEqual(near.steps.at(-1), { text: 'The web shifts: its ways lead elsewhere', clock: 300 });
+  assert.deepEqual(near.steps.at(-1), { text: 'The web shifts', clock: 300 });
   assert.ok(!dealTracker(zone(0), word({}), turn - 900_000).steps.some((step) => /shifts/.test(step.text)));
 });

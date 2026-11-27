@@ -132,7 +132,9 @@ the scene's pass with depth, and never smaller than a speck however far off.
 
 ### Fire
 
-`Flames.light` lights a fire from half a metre to four metres tall and gives its id; `clear` puts every fire out. Given `along`,
+`Flames.light` lights a fire from a candle's few centimetres to four metres tall and gives its id; `clear` puts every
+fire out. It is the game's one fire: the prologue's, the game's scene's (`GameScene.fires`, [[Sky]]) and every flame
+under ground ([[Dungeons]], "Its flames"; [[Lights as Claude Builds Them]]). Given `along`,
 the run in metres of an edge burning from its base (a rail, a fallen spar, a sail's foot), the fire burns all along that
 edge, its flames, smoke and embers spread over its length; without it a fire is round.
 
@@ -141,7 +143,9 @@ and the figures' 62, and coloured from a stepped palette: deep red at the rim, r
 Nothing in it is a smooth gradient; smoke's cover comes in three steps. Only as the eye comes to a puff of smoke does
 it fade softly to nothing, over the last 2.5 to 0.3 m to its near side (`nearFade.ts`), so a camera in or against a
 column never sees it as a flat sheet over the whole view. Its flicker is held in frames, ten a second as a
-sprite's are, and each fire turns its frames at a moment of its own, so a deck of fires never flickers in step.
+sprite's are, and each fire turns its frames at a moment of its own, so a deck of fires never flickers in step: the
+game's one flicker ([[Sky]], "Lights at night"), seeded by the fire's seed. Its core tongue stands as tall as that
+flicker and its glow burns as strong, so a fire and the light it casts as a lamp move together.
 
 Each frame of a fire comes from its seed and the clock. Its tongues of flame wander in height within a band, sway and
 lean a little downwind; their edges lick and they tear near the tip, and each throws wisps from its tip that rise,
@@ -151,8 +155,17 @@ a sliver. Seen end on it is drawn at its nearer end, so a fire sunk into a deck 
 in a column of puffs that rise, widen, thin and lean with `Flames.wind`; while low over the flames a puff is lit orange
 from below, and it darkens from grey to black as it climbs. Embers are sparks one or two texels square, two dozen to a
 small fire and more to a larger one, that swirl up in the heat, drift with the wind and burn out from a pale heart to
-red. A fire's parts are worked out on the CPU once a frame of its flicker and kept; forty fires, a quarter of them along
-edges, cost about 0.8 ms a frame on the test machine, and no frame draws more than 16,384 parts.
+red. A fire under half a metre tall (a torch's, a candle's) takes fewer of each part, by its height, at least one of
+each, and its embers climb slower by the same share, so they rise no further for its size than a half-metre
+fire's. A fire's parts are worked out on the CPU once a frame of its flicker and kept; forty fires, a quarter of them
+along edges, cost about 0.8 ms a frame on the test machine, and no frame draws more than 16,384 parts. Past where its
+tongues read from the eye, 120 times its height and never nearer than 12 m (`farFire`), a fire is its glow alone,
+worked out with no part; past 600 times its height, where its glow is under some two pixels, it is not drawn at all,
+the glowing thing it burns in left to show it (`GLOW_READS_M`). `Flames.out` puts one fire out, and a fire lit without
+casting is left out of `Flames.lamps`, its place lighting a lamp of its own.
+
+`Flames.lamps` gives each fire's light as a lamp of the night's ([[Sky]]); whatever stands nearer than a flame hides
+it.
 
 Smoke and flame are laid over the picture after the water, tested against the scene's depth, so the water never covers a
 fire burning above it. Each fire also throws its light round it, laid under its flames at the picture's own size: the

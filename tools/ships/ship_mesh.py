@@ -1,4 +1,5 @@
-"""Mesh making for the ship builder: the five painted parts, and objects made from lists of points and faces.
+"""Mesh making for the ship builder: the five painted parts and a window's glass, and objects made from lists of
+points and faces.
 
 Every face names its part directly, so tools/ships/paint_ship.py keeps it where it was put rather than sorting it by
 the way it faces.
@@ -7,14 +8,15 @@ import math
 
 import bpy  # noqa: I001 - Blender's own modules load once bpy has
 
-PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
+# The five parts the game paints, then a window's glass, which the export marks (tools/ships/export_ship.py GLASS).
+PARTS = ('hull', 'deck', 'spar', 'sail', 'iron', 'glass')
 # A prism is built in lengths no longer than this, as the Sloop's spars are: tools/ships/deck.py takes each solid face
 # by its whole extent, so one long face sloping down would wall off every cell beneath it.
 SEGMENT_M = 0.6
 
 
 def part_materials():
-    """The five part materials, made once a file."""
+    """The part materials, made once a file."""
     return [bpy.data.materials.get(name) or bpy.data.materials.new(name) for name in PARTS]
 
 
@@ -124,7 +126,7 @@ class Piece:
         self.face(tuple(indices) if leans else tuple(reversed(indices)), part)
 
     def build(self, name, collection):
-        """The object these make, its material slots the five parts, linked into `collection`."""
+        """The object these make, its material slots the parts, linked into `collection`."""
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(self.points, [], self.faces)
         for material in part_materials():

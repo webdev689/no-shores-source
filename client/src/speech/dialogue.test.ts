@@ -3,9 +3,10 @@ import { test } from 'node:test';
 import cast from '../../../content/story/cast.json' with { type: 'json' };
 import { TONES } from '../plus/tones.ts';
 import { Stack } from '../ui/stack.ts';
-import { fakeInterface, laidOf, nodesOf, wordsOf } from '../ui/uiForTests.ts';
+import { byId, fakeInterface, laidOf, nodesOf, wordsOf } from '../ui/uiForTests.ts';
+import type { Node } from '../ui/node.ts';
 import { castOf } from './cast.ts';
-import { DialogueBox, dialogueNode, speaking, typedSpans } from './dialogue.ts';
+import { DialogueBox, continueDialogue, dialogueNode, dialogueWaits, speaking, typedSpans } from './dialogue.ts';
 
 const read = castOf(cast);
 const named = Object.entries(read.speakers).find(([, speaker]) => speaker.name !== '');
@@ -108,4 +109,81 @@ test("each speaker's name is shown in their own colour, turn by turn, and a name
   box.remove();
   const plain = nodesOf(dialogueNode('Kael', typedSpans('Up.', ''), 1280));
   assert.equal(plain.find((each) => each.text?.words === 'Kael')?.text?.colour, TONES.brassHi);
+});
+
+/** A cap for the prompt, as the game's own keycap stands in for it. */
+const CAP = { id: 'cap', text: { words: 'Space' } };
+const prompted = (node: Parameters<typeof nodesOf>[0]) => nodesOf(node).some((each) => each.text?.words === 'Continue');
+
+test('a typed line that waits shows the prompt to continue with its key, not while it types, and a press moves it on', async () => {
+  const box = new DialogueBox(
+    new Stack(),
+    () => null,
+    () => CAP,
+  );
+  const { ui } = fakeInterface(1280, 720);
+  const [who] = named ?? [''];
+  const said = box.play(
+    [
+      { who, say: 'Hold fast.' },
+      { who, say: 'Now pull.' },
+    ],
+    read,
+    { auto: false },
+  );
+  assert.equal(dialogueWaits(), true, "the press is the line's while it types");
+  assert.equal(prompted(box.node(ui)), false, 'no prompt while it types');
+  continueDialogue();
+  assert.equal(prompted(box.node(ui)), true, 'a press types it whole, and it waits');
+  assert.ok(byId(box.node(ui), 'cap'), "the key's cap beside the word");
+  for (let step = 0; step < 100; step++) box.frame(0.1);
+  assert.ok(wordsOf(laidOf(box.node(ui) as Node)).includes('Hold fast.'), 'it waits however long it stands');
+  continueDialogue();
+  assert.ok(
+    wordsOf(laidOf(box.node(ui) as Node)).some((words) => words.includes('Now')),
+    'the next line begins',
+  );
+  assert.equal(prompted(box.node(ui)), false);
+  continueDialogue();
+  continueDialogue();
+  assert.equal(dialogueWaits(), false, 'said, the press is free again');
+  await said;
+  box.remove();
+});
+
+test('a line that moves on by itself shows no prompt and takes no press', () => {
+  const box = new DialogueBox(
+    new Stack(),
+    () => null,
+    () => CAP,
+  );
+  const { ui } = fakeInterface(1280, 720);
+  void box.play([{ who: named?.[0] ?? '', say: 'Brace!' }], read, { auto: true });
+  box.frame(0.5);
+  assert.equal(dialogueWaits(), false);
+  assert.equal(prompted(box.node(ui)), false);
+  box.remove();
+});
+
+test('a voice from nowhere waits too, its prompt under its words and as faint as they are', () => {
+  const box = new DialogueBox(
+    new Stack(),
+    () => null,
+    () => CAP,
+  );
+  const { ui } = fakeInterface(1280, 720);
+  void box.play([{ who: nameless?.[0] ?? '', say: 'Wake.' }], read, { auto: false });
+  box.frame(5);
+  assert.equal(dialogueWaits(), true);
+  const laid = laidOf(box.node(ui) as Node);
+  const words = laid.find((each) => each.node.text?.words === 'Continue');
+  const line = laid.find((each) => wordsOf([each]).includes('Wake.'));
+  assert.ok(words && line);
+  assert.ok(words.box.y > line.box.y, 'under its words');
+  assert.ok(
+    nodesOf(box.node(ui)).some((each) => each.opacity === 0.7 && prompted(each)),
+    'faint',
+  );
+  box.remove();
+  assert.equal(dialogueWaits(), false, 'a box taken away holds no press');
 });

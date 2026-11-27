@@ -100,7 +100,7 @@ export class Ram implements Beat {
         0,
         heard(() => {
           dialogue.skip();
-          void stage.play('ram');
+          void stage.play('ram', true);
         }),
       ],
       ...FLASHES_S.map((when): [number, () => void] => [when, heard(() => this.strikeBehindHer(when))]),

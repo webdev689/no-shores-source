@@ -193,7 +193,7 @@ then 2.4 m over their feet, as far off as puts their crowns 14% and their feet 3
 figures whole above the dialogue box (whose top is 43% down at 960x540), through the player's own lens. The view comes
 to the pair in 2.4 s, eased out of rest and into it; with no pair to see it stays the player's, her words said all the
 same. From her first word to her farewell the view is hers and, as in the
-story's cutscenes, Space (or the pad's jump or confirm) moves her words on a line and Escape and the pad's Start and
+story's cutscenes, Continue moves her words on a line ([[Speech]], "Moving on") and Escape and the pad's Start and
 View open Settings, the character page or the sheet, her words and their time holding still under them; no other game
 key acts (no move or look, no use, map, chat, respawn or leave). While she speaks every figure is drawn for the welcome's own eye (the one last shown), not the player's camera, so each is turned and stands as that eye sees it; no townsman is drawn within 4 m of that eye (one walking past the camera would fill the view), the player and she always are. While she speaks a soft warm lamp hangs 2.6 m over the middle of the pair, a lantern of the town's at seven tenths of its light, reaching 8 m: lit as the city's lamps are, only as the daylight fades, so the two of them are seen at any hour, and put out once the welcome ends. As her first line begins the player is turned to face her, as she faces them. As she walks off the player is turned toward a point 3 m along her way into the town and the
 view eases back over their shoulder, so she is seen going; the keys are theirs once it has. It is a cutscene: the HUD's

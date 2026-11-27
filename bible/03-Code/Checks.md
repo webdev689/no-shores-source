@@ -10,9 +10,12 @@ code:
 # Checks
 
 `cargo xtask check` is the one command that says a change is done. CI runs it on every pull request and every push to
-`main`, and on `main` publishes the client to GitHub Pages and the site once it passes and the rooms have deployed or
-had nothing to deploy, and deploys the Discord bot. It stops at the first failing step, in the order a failure is
-cheapest to read:
+`main`, in three parts at once on runners of their own (`cargo xtask check rest`, `rust` and `page`): the rest
+(steps 1 to 5, 7 and 8), the Rust tests, shared over two runners with nextest (`rust 1/2` and `rust 2/2`), and the
+page's tests with the WebAssembly and the files the Rust tests write for them. A push to `main` whose merge is code its pull request's check passed is not checked again ([[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]). On
+`main` CI publishes the client to GitHub Pages and the site once the check passes and the rooms have deployed or had
+nothing to deploy, and deploys the Discord bot. Each part, like the whole check, stops at its first failing step, in
+the order a failure is cheapest to read:
 
 1. **messages**: the Rust and the TypeScript for every network message, made from the schema with `flatc`
    (`npm run schema`), into `generated/`. Its first run on a machine installs the pinned `flatc`.
@@ -26,8 +29,12 @@ cheapest to read:
    constant `createShaderModule({ code: … })` names, wherever its key stands, exported where it is made: a string, or
    a record of strings picked by a key; a call naming anything else, or no `code:` this can read, fails
    (`tools/shaderCalls.mjs`). `cargo xtask shaders` runs this step alone.
-6. **tests**: `cargo test`, then the world rules, the land, movement and the rooms built as WebAssembly
-   (`npm run wasm`), then `node --test`, whose bridge tests load them, and the build tools' own (`tools/*.test.mjs`).
+6. **tests**: the Rust tests, with cargo-nextest, which runs every crate's at once, where it is installed (CI installs
+   its pinned release) and with `cargo test` elsewhere; the workspace has no doctests, which nextest would not run. Then
+   the Rust tests that write the files the page's tests read (the messages', the schedule's, the arts' first levels and
+   the Elite Dungeons' answers, into `target/`), so the page's part has them without the rest; the world rules, the
+   land, movement and the rooms built as WebAssembly (`npm run wasm`); then `node --test`, whose bridge tests load
+   them, and the build tools' own (`tools/*.test.mjs`).
 7. **build**: the client, with Vite; the site (`npm run site:build`); then the bake cuts every node's window of the
    land (`npm run bake`), and the rooms' and the accounts' Cloudflare Workers are bundled with them as a deploy would,
    without deploying.
