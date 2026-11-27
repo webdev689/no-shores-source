@@ -74,6 +74,29 @@ fn every_node_is_listed_once_on_its_own_island_in_the_region_nearest_it() {
     assert_eq!(found, listed.len(), "every listed id names a node of its island's land file");
 }
 
+#[test]
+fn every_region_holds_three_outpost_slots_each_named_once_in_the_world() {
+    let mut names: BTreeMap<String, String> = BTreeMap::new();
+    for island in read("content/world/regions.json").as_array().expect("a list of islands") {
+        let id = island["island"].as_str().expect("an island id");
+        let land = read(&format!("content/world/land/{id}.json"));
+        let nodes = land["nodes"].as_array().expect("the land file's nodes");
+        for node in nodes {
+            let name = node["name"].as_str().expect("a node's name").to_owned();
+            let again = names.insert(name.clone(), node["id"].as_str().expect("a node id").to_owned());
+            assert!(again.is_none(), "{name} names two nodes");
+        }
+        for region in island["regions"].as_array().expect("its regions") {
+            let slots = region["nodes"]
+                .as_array()
+                .expect("its nodes")
+                .iter()
+                .filter(|listed| nodes.iter().any(|node| node["id"] == **listed && node["kind"] == "outpost"));
+            assert_eq!(slots.count(), 3, "{id} {}", region["name"]);
+        }
+    }
+}
+
 /// The rule: from a region's centre, walk out in whole kilometres on each bearing 5 degrees apart (from east,
 /// turning south) to the first point off its island's outline; the anchorage is 3 km past that point, on the bearing
 /// where it comes soonest (the first such bearing on a tie).
