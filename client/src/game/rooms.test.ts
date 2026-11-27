@@ -9,6 +9,7 @@ import {
   dungeonRoom,
   nodeOfRoom,
   nodeRoom,
+  roomAsked,
   roomSeas,
   roomsFrom,
   runInstance,
@@ -19,8 +20,17 @@ import {
 } from './rooms.ts';
 
 const KEY = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
-test('without ?room= the game plays offline', () => {
+test('the page plays on the deployed rooms and accounts unless its address names others, or plays alone', () => {
+  assert.equal(roomAsked(''), 'live');
+  assert.equal(roomAsked('?at=overlook-social'), 'live');
+  assert.equal(roomAsked('?room=ws://127.0.0.1:8787'), 'ws://127.0.0.1:8787');
+  assert.equal(accountsFrom(roomAsked(''), null), LIVE_ACCOUNTS);
+  // `?offline` plays alone, with no accounts, as a page without `?room=` once did.
+  assert.equal(roomAsked('?offline'), null);
+  assert.equal(roomAsked('?at=overlook-social&spawn=&offline'), null);
+  assert.equal(roomAsked('?room=live&offline'), null, 'playing alone wins');
   assert.equal(roomsFrom(null), null);
+  assert.equal(accountsFrom(null, null), null);
 });
 
 test('a whole address names the server, with or without a room after it', () => {
