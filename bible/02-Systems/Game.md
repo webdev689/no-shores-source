@@ -729,14 +729,15 @@ framed on the places of the region it lies off, the one whose centre is nearest 
 nodes of its side), the city's social space among them when docking, so each region has its own view ([[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
 `islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid with space between them. First the
 island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner (only where the region holds
-the port); then every patrol zone, Elite Dungeon, mission, world boss and outpost of that region, with any place no
-region lists; gone ashore, the places alone. A click on a
+the port); then every patrol zone, Elite Dungeon, mission and world boss of that region, with any place no
+region lists, and one Outposts tile for the region's outpost sites; gone ashore, the places alone. A click on a
 tile does what it does: a place lands there (the player stands at its first spawn, facing inland from the ship, or at a
 social space out from its landmark over the city, as on arriving), choosing its node first; an Elite Dungeon opens its
-card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist. Tab, the arrows
+card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist; the Outposts tile opens the region's sites, choosing one landing there.
+Tab, the arrows
 and the pad's cross walk the tiles, and Enter or the pad's A presses the one they reach; else Enter does what the lit
 tile does (the one under the pointer, else the first place's). Escape, the pad's B, or Back to the sea, flies back
-down.
+down; over the Outposts tile's sites, they close them first, back to the tiles.
 
 A sea island's landing docks in sight at once, from wherever the ship lies: it sails for the island's offing, out on
 the bearing it is landed on, planned on water as any route and bent round every island in sight, then in to its

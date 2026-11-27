@@ -121,6 +121,7 @@ test('while the stranger speaks her welcome Escape opens Settings; no other game
     change: (asked: unknown) => changes.push(asked),
     openMap: () => changes.push('map'),
     respawn: () => changes.push('respawn'),
+    islandBack: () => false,
   } as unknown as Controlled);
   window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as CustomEvent).detail));
   const key = (name: string, code: string) => window.dispatchEvent(new FakeEvent('keydown', { key: name, code }));
@@ -152,6 +153,7 @@ test('Escape opens Settings with nothing else over the game, and steps back from
   const { window } = fakeWindow();
   const [changes, opened]: [unknown[], unknown[]] = [[], []];
   let backed = 0;
+  let slotsOpen = false;
   const playing = {
     flow: { mode: 'foot' } as object,
     sea: { ...afloat(), view: { backToSea: () => void (backed += 1) } },
@@ -170,6 +172,7 @@ test('Escape opens Settings with nothing else over the game, and steps back from
     retry: () => null,
     landings: { asking: null },
     change: (asked: unknown) => changes.push(asked),
+    islandBack: () => (slotsOpen ? !(slotsOpen = false) : false),
   } as unknown as Controlled);
   window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as CustomEvent).detail));
   const escape = () => window.dispatchEvent(new FakeEvent('keydown', { key: 'Escape', code: 'Escape' }));
@@ -180,6 +183,9 @@ test('Escape opens Settings with nothing else over the game, and steps back from
   assert.equal(opened.length, 1, 'the held map takes it first');
   playing.mapUp = false;
   playing.flow = { mode: 'landing', chosen: null };
+  slotsOpen = true;
+  escape();
+  assert.deepEqual([backed, changes], [0, []], 'an Outposts tile’s slots close first, back to the tiles');
   escape();
   assert.deepEqual([opened.length, backed, changes], [1, 1, [{ kind: 'back' }]], 'back to the sea from a landing');
   playing.flow = { mode: 'sea' };
@@ -217,6 +223,7 @@ test('Enter over the island’s tiles does the lit tile’s press, never behind 
     landings: { asking: null },
     change: () => undefined,
     landAt: (id: string | null) => void landed.push(id),
+    islandBack: () => false,
   } as unknown as Controlled);
   const enter = () => window.dispatchEvent(new FakeEvent('keydown', { key: 'Enter', code: 'Enter' }));
   setGearScreenOpen(true);
@@ -293,6 +300,7 @@ test('at sea a landing’s confirmation takes Enter as yes and Escape as no; V s
     landings,
     change: () => undefined,
     landAt: (id: string | null) => done.push(`land ${id}`),
+    islandBack: () => false,
   } as unknown as Controlled);
   const key = (name: string) => window.dispatchEvent(new FakeEvent('keydown', { key: name }));
   landings.asking = {};
@@ -390,6 +398,7 @@ test('over the island’s tiles the game’s Enter and A yield to a tile the key
     landings: { asking: null },
     change: () => undefined,
     landAt: (id: string | null) => void landed.push(id),
+    islandBack: () => false,
   } as unknown as Controlled);
   window.dispatchEvent(new FakeEvent('keydown', { key: 'Enter', code: 'Enter' }));
   pads[0]?.(new Set(['confirm']), new Set(['A']));
