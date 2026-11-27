@@ -11,8 +11,11 @@ code:
 
 `cargo xtask check` is the one command that says a change is done. CI runs it on every pull request and every push to
 `main`, in three parts at once on runners of their own (`cargo xtask check rest`, `rust` and `page`): the rest
-(steps 1 to 5, 7 and 8), the Rust tests, shared over two runners with nextest (`rust 1/2` and `rust 2/2`), and the
-page's tests with the WebAssembly and the files the Rust tests write for them. A push to `main` whose merge is code its pull request's check passed is not checked again ([[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]); a newer
+(steps 1 to 5, 7 and 8), the Rust tests, and the page's tests with the WebAssembly and the files the Rust tests write
+for them. The Rust tests are compiled once, into a nextest archive (`rust archive <file>`), and two runners each run
+half of it in a checkout of the same commit (`rust 1/2 <archive>` and `rust 2/2 <archive>`), so the workspace's tests
+are built on one runner, not two ([[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]);
+`cargo xtask check rust`, and `rust 1/2` without an archive, build them where they run. A push to `main` whose merge is code its pull request's check passed is not checked again ([[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]); a newer
 merge's check cancels an older run's parts on `main`, and that run deploys nothing
 ([[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]). On
 `main` CI publishes the client to GitHub Pages and the site once the check passes and the rooms have deployed or had
@@ -39,7 +42,8 @@ uncommitted changes: `passed: checked <commit>, nothing uncommitted`, or `FAILED
 6. **tests**: the Rust tests, with cargo-nextest, which runs every crate's at once, where it is installed (CI installs
    its pinned release) and with `cargo test` elsewhere; the workspace has no doctests, which nextest would not run. Then
    the Rust tests that write the files the page's tests read (the messages', the schedule's, the arts' first levels and
-   the Elite Dungeons' answers, into `target/`), so the page's part has them without the rest; the world rules, the
+   the Elite Dungeons' answers, into `target/`), so the page's part has them without the rest: their three crates' tests
+   built in one `cargo test --no-run`, side by side, then each crate's run with its own filter; the world rules, the
    land, movement and the rooms built as WebAssembly (`npm run wasm`); then `node --test`, whose bridge tests load
    them, and the build tools' own (`tools/*.test.mjs`).
 7. **build**: the client, with Vite; the site (`npm run site:build`); then the bake cuts every node's window of the
