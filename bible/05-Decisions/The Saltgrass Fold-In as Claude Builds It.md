@@ -26,13 +26,13 @@ owner may change any of it.
 |---|---|
 | Find Pell's trail | Grey Point Light |
 | Run down the Tithe at their camp (`run-down-tithe-camp`) | Tithe Camp |
-| Catch the tally riders (`race-downs-road`) | A race from Shingle Landing by Saltgrass to the Old Stones in 270 s, the riders at the Old Stones |
-| Ground the stolen storm | The rods round the Old Stones |
+| Catch the tally riders (`race-downs-road`) | A race from the Old Beacon by Tithe Camp to the Old Stones in 270 s (some 1.1 km over the ground), the riders at the Old Stones |
+| Ground the stolen storm | The rods round the Old Stones, staked 16 m out round the foot of its dais, where the ground is walked on every side |
 | Carry the light to Saltgrass (`carry-light-saltgrass`), Hold Saltgrass (`hold-saltgrass`) | The hamlet Saltgrass |
 | Find the lens's buyer | The Saltbreaker Hulks |
 | Set Grey Point true | Grey Point Light |
 | Follow the reckoner, Empty Moorhold, Open the reckoner's chest | Moorhold |
-| Meet Wren and follow her | From Shingle Landing past Ewe Fold into Hollow Coven |
+| Meet Wren and follow her | From Shingle Landing past the Barrow Field into Hollow Coven: her way runs by the barrows |
 
 A renamed task keeps its old id in `was`, so every player's place on their road is kept. The lines and the lore that
 named the Vale's or the Moors' places are reworded for the Downs; the chapters of those places' own history, and the
@@ -45,4 +45,5 @@ Drowned Vale's book below the gate, keep the Vale and the Moors as land far off 
 | The passages' places | The five that came into the Downs are no longer names a passage zone takes; the Vale's and the Moors' other names stay | A zone under the Grey Reach named for Grey Point Light would point at a place that stands on the Downs |
 | The public events | One zone's clock: an event every 15 minutes, the Fissure and the raid in turn | The clock as it was for each zone, with no other zone beside it |
 | The dungeon of the day | One of the Downs' three dungeons | The island's one patrol zone |
+| The hulks' greatest hull | 50 m off the middle, behind it from the way in | A way ends at a place's middle; a hull standing on it left the Saltbreaker Hulks with no way at all |
 | The gate's model | Kept as built, its mill stones and mooring stones as they were | The Sunken Gate is a door into the Vale as it was, so the Vale's stone suits it |

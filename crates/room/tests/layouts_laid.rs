@@ -6,6 +6,7 @@
 use city::solids::{Material, Shape};
 use land::ground::Ground;
 use land::sculpts::Sculpts;
+use land::sites::NodeKind;
 use layout::Layout;
 use layout::brief::AreaKind;
 use layout::field::distance;
@@ -523,20 +524,10 @@ fn no_box_of_a_laid_prop_or_solid_stands_further_off_its_parts_or_its_own_box_th
 }
 
 #[test]
-fn each_of_saltmeres_patrol_zones_crosses_to_the_other_two_at_a_gate_and_the_downs_runs_hold_the_passages_mouths() {
-    let zones = ["saltgrass-downs", "driftwood-moors", "gullwing-vale"];
-    for zone in zones {
-        let layout = laid().layouts.iter().find(|layout| layout.id == zone).expect("a laid patrol zone");
-        let crossings = bake::crossings_of(layout);
-        let mut names: Vec<&str> = crossings.iter().map(|place| place.name.as_str()).collect();
-        names.sort_unstable();
-        let mut others: Vec<&str> = zones.iter().copied().filter(|other| *other != zone).collect();
-        others.sort_unstable();
-        assert_eq!(names, others, "{zone} crosses to the other two");
-        for place in &crossings {
-            let gate = layout.areas.iter().find(|area| area.at == place.at).expect("a crossing is an area");
-            assert!(gate.kind == AreaKind::Gate && gate.crosses, "{zone}'s crossing to {} is a gate", place.name);
-        }
+fn every_patrol_zone_alone_on_its_island_crosses_to_none_and_the_downs_runs_hold_the_passages_mouths() {
+    for layout in laid().layouts.iter().filter(|layout| layout.kind == NodeKind::Patrol) {
+        assert!(bake::crossings_of(layout).is_empty(), "{} has no other patrol zone to cross to", layout.id);
+        assert!(!layout.areas.iter().any(|area| area.crosses), "{}: no crossing gate stands", layout.id);
     }
     let downs = laid().layouts.iter().find(|layout| layout.id == "saltgrass-downs").expect("the Downs");
     let doors = bake::doors_of(downs);

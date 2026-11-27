@@ -31,8 +31,6 @@ pub const STORE_CLEAR: f64 = 1.5;
 pub const STORE_OFF_WAYS: f64 = 2.0;
 /// How far out from the plaza a hamlet's raiders come in, and how far its banners stand, either side of the way in.
 pub const APPROACH_M: f64 = 36.0;
-/// How many 15 degree turns either side of the line to the nearest camp a raid's way in is looked for along.
-const WAY_IN_TURNS: u8 = 6;
 pub const BANNERS_M: f64 = 28.0;
 pub const BANNERS_APART: f64 = 6.0;
 /// How far from the fissure its crystal growth rises: the nearest of these that is clear.
@@ -44,6 +42,8 @@ const GROWTH_M: [f64; 3] = [17.0, 14.0, 20.0];
 const FISSURE_M: [f64; 3] = [12.0, 9.0, 15.0];
 pub const FISSURE_HALF: [f64; 2] = [7.7, 4.9];
 pub const FISSURE_CLEAR: f64 = 1.0;
+/// How many 15 degree turns either side of the line to the nearest camp a raid's way in is looked for along.
+const WAY_IN_TURNS: u8 = 6;
 
 /// What a box covers, west, north, east and south.
 type Print = [f64; 4];
@@ -128,10 +128,12 @@ fn clear_along(
 /// wall. None is clear: the line asked.
 fn way_in(field: &Field, around: (&[Print], &[Path]), from: [f64; 2], toward: [f64; 2]) -> [f64; 2] {
     let turned = |degrees: f64| {
-        let (sin, cos) = (libm::sin(degrees.to_radians()), libm::cos(degrees.to_radians()));
-        [toward[0] * cos - toward[1] * sin, toward[0] * sin + toward[1] * cos]
+        let (sine, cosine) = (libm::sin(degrees.to_radians()), libm::cos(degrees.to_radians()));
+        [toward[0] * cosine - toward[1] * sine, toward[0] * sine + toward[1] * cosine]
     };
-    let bearings = (0..=WAY_IN_TURNS).flat_map(|turn| [f64::from(turn) * 15.0, -f64::from(turn) * 15.0]).map(turned);
+    let bearings = std::iter::once(0.0)
+        .chain((1..=WAY_IN_TURNS).flat_map(|turn| [f64::from(turn) * 15.0, -f64::from(turn) * 15.0]))
+        .map(turned);
     bearings
         .into_iter()
         .find(|&bearing| clear_along(field, around, from, bearing, APPROACH_M).is_some())

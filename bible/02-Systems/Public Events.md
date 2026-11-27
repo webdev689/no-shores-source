@@ -45,7 +45,9 @@ seconds, and the next is shown from then.
 **The grounds.** The layout marks them with its other sites ([[Layouts]]), in the Saltgrass Downs alone: three stores in
 the first hamlet with room for them (Saltgrass), on clear ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of
 every building, set piece and prop and 2 m off every way; the point its raiders come in from, 36 m out toward the zone's
-nearest camp (Tithe Camp; in a zone with none, from the shore); their two banners, 28 m out, 6 m either side; and in
+nearest camp (Tithe Camp; in a zone with none, from the shore), or where a house or a way stands across every point
+of that line, on the nearest bearing either side of it, 15 degrees apart and six turns at most, that has a clear one
+(`grounds::way_in`); its banners stand either side of that bearing; their two banners, 28 m out, 6 m either side; and in
 its first wilds (the High Downs) where its fissure opens, 12 m (or 9, or 15) from its middle beside the obelisk its battlefield stands there, on ground
 15.4 m east and west and 9.8 m north and south (the fissure's own mesh, square to the grid, its long side east and west)
 clear of the obelisk, the ruins and everything standing, and the spot its crystal growth rises, 14 to 20 m from the

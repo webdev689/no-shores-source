@@ -102,7 +102,7 @@
       { "who": "stormcaller", "say": "And Grey Point Light is burning with lightning. Only a caller can do that." }
     ],
     "stormQuicken": [
-      { "who": "stormcaller", "say": "Pell's tracks run with Tithe boots, toward their camp. You'll need quicker feet." },
+      { "who": "stormcaller", "say": "Pell's tracks run with Tithe boots, back to their camp. You'll need quicker feet." },
       { "who": "stormcaller", "say": "Let the storm into your legs. We call it Quicken." }
     ],
     "stormLedger": [
@@ -193,7 +193,7 @@
       { "who": "maren", "say": "Now hang a sun where you stand. All beneath it heal. That's the Sunwell." }
     ],
     "lampMend": [
-      { "who": "maren", "say": "The Tithe beat Saltgrass's people for seeing wreckers paid. They'll be back." },
+      { "who": "maren", "say": "The Tithe beat folk in Saltgrass for seeing wreckers paid. They'll be back." },
       { "who": "maren", "say": "The light will close your own wounds now. We call that Mend." }
     ],
     "lampLost": [
@@ -224,7 +224,7 @@
       { "who": "maren", "say": "Not that one. Red, then white, then green, then gold." }
     ],
     "lampLit": [
-      { "who": "maren", "say": "Grey Point burns true. Its gold has found a door where none should be." }
+      { "who": "maren", "say": "Grey Point burns true. Its gold has found a door far to the west." }
     ],
     "lampTomb": [
       { "who": "maren", "say": "The Reeve answered to someone in the Pearl Tomb. Our lens is there." }
@@ -298,14 +298,14 @@
       { "who": "wren", "say": "On your horse. We ride hard, or we don't ride." }
     ],
     "veilOrchard": [
-      { "who": "wren", "say": "Collectors walk these barrows. Head down, and carry something." }
+      { "who": "wren", "say": "Collectors walk these barrows. Head down, like you came to mourn." }
     ],
     "veilHalf": [
       { "who": "wren", "say": "His ledger says half your debt's already paid. By someone in Overlook." },
       { "who": "veiled", "say": "Interesting. Vanish now, and follow the book. Like this." }
     ],
     "veilMarks": [
-      { "who": "wren", "say": "The ledger puts his chest back at Moorhold. It opens to four marks." },
+      { "who": "wren", "say": "The ledger says his chest is hidden in Moorhold. It opens to four marks." },
       { "who": "wren", "say": "Touch them as he counts: tithe, debt, interest, then fee." }
     ],
     "veilWrong": [

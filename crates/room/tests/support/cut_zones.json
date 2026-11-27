@@ -1,0 +1,330 @@
+{
+ "about": "Saltmere's two patrol zones cut from the island (the Gullwing Vale and the Driftwood Moors): their nodes and briefs as they stood, laid back into continent 1 by the tests alone, for what only they hold (a river, knolls and tors, a keep's citadel by a river, a coven's cavern, and runs of a rampart, a gorge and an undercroft). The game never reads this file.",
+ "nodes": [
+  {
+   "id": "gullwing-vale",
+   "kind": "patrol",
+   "name": "The Gullwing Vale",
+   "ring": [
+    [
+     2332568,
+     1815323
+    ],
+    [
+     2332476,
+     1815561
+    ],
+    [
+     2332380,
+     1815786
+    ],
+    [
+     2332216,
+     1815975
+    ],
+    [
+     2331979,
+     1816052
+    ],
+    [
+     2331742,
+     1816098
+    ],
+    [
+     2331485,
+     1816114
+    ],
+    [
+     2331247,
+     1816004
+    ],
+    [
+     2331090,
+     1815796
+    ],
+    [
+     2331020,
+     1815557
+    ],
+    [
+     2331001,
+     1815323
+    ],
+    [
+     2331016,
+     1815087
+    ],
+    [
+     2331123,
+     1814873
+    ],
+    [
+     2331286,
+     1814694
+    ],
+    [
+     2331492,
+     1814554
+    ],
+    [
+     2331742,
+     1814509
+    ],
+    [
+     2331997,
+     1814537
+    ],
+    [
+     2332244,
+     1814632
+    ],
+    [
+     2332438,
+     1814817
+    ],
+    [
+     2332557,
+     1815058
+    ]
+   ],
+   "spawns": [
+    [
+     2331540,
+     1815713
+    ],
+    [
+     2331390,
+     1815587
+    ],
+    [
+     2331310,
+     1815407
+    ]
+   ]
+  },
+  {
+   "id": "driftwood-moors",
+   "kind": "patrol",
+   "name": "The Driftwood Moors",
+   "ring": [
+    [
+     2346326,
+     1244596
+    ],
+    [
+     2346304,
+     1244849
+    ],
+    [
+     2346151,
+     1245050
+    ],
+    [
+     2345960,
+     1245194
+    ],
+    [
+     2345752,
+     1245291
+    ],
+    [
+     2345526,
+     1245358
+    ],
+    [
+     2345285,
+     1245339
+    ],
+    [
+     2345075,
+     1245217
+    ],
+    [
+     2344924,
+     1245034
+    ],
+    [
+     2344853,
+     1244815
+    ],
+    [
+     2344820,
+     1244596
+    ],
+    [
+     2344819,
+     1244366
+    ],
+    [
+     2344929,
+     1244162
+    ],
+    [
+     2345101,
+     1244011
+    ],
+    [
+     2345285,
+     1243854
+    ],
+    [
+     2345526,
+     1243752
+    ],
+    [
+     2345785,
+     1243800
+    ],
+    [
+     2346011,
+     1243929
+    ],
+    [
+     2346181,
+     1244120
+    ],
+    [
+     2346261,
+     1244357
+    ]
+   ],
+   "spawns": [
+    [
+     2345892,
+     1244351
+    ],
+    [
+     2345962,
+     1244535
+    ],
+    [
+     2345945,
+     1244730
+    ]
+   ]
+  }
+ ],
+ "briefs": {
+  "gullwing-vale": {
+   "theme": "A river vale of water meadows and mills under a guarded keep, its old stones older than anyone remembers.",
+   "rock": "knoll",
+   "river": true,
+   "heights": true,
+   "areas": [
+    {
+     "kind": "landing",
+     "name": "Vale Mouth"
+    },
+    {
+     "kind": "hamlet",
+     "name": "Gullwing",
+     "blocks": 2
+    },
+    {
+     "kind": "mill",
+     "name": "Weir Mill"
+    },
+    {
+     "kind": "keep",
+     "name": "Valeguard"
+    },
+    {
+     "kind": "farm",
+     "name": "Orchard Farm"
+    },
+    {
+     "kind": "shrine",
+     "name": "The Old Stones"
+    },
+    {
+     "kind": "wilds",
+     "name": "The Water Meadows",
+     "level": 0
+    },
+    {
+     "kind": "coven",
+     "name": "Hollow Coven"
+    },
+    {
+     "kind": "breach",
+     "name": "The Sunken Gate",
+     "level": 20
+    }
+   ],
+   "runs": [
+    {
+     "name": "Valeguard Walls",
+     "kind": "rampart",
+     "place": "rock"
+    },
+    {
+     "name": "The Weir Gorge",
+     "kind": "gorge",
+     "place": "beyond"
+    },
+    {
+     "name": "The Hollow Undercroft",
+     "kind": "undercroft",
+     "place": "rock"
+    }
+   ]
+  },
+  "driftwood-moors": {
+   "theme": "Gorse moor above a wreck-strewn strand, a lighthouse on the point and the drowned buried where the sea gave them back.",
+   "rock": "tor",
+   "heights": true,
+   "areas": [
+    {
+     "kind": "landing",
+     "name": "Driftwood Strand"
+    },
+    {
+     "kind": "hulks",
+     "name": "The Saltbreaker Hulks"
+    },
+    {
+     "kind": "hamlet",
+     "name": "Moorend",
+     "blocks": 1
+    },
+    {
+     "kind": "lighthouse",
+     "name": "Grey Point Light"
+    },
+    {
+     "kind": "ruin",
+     "name": "Moorhold"
+    },
+    {
+     "kind": "graveyard",
+     "name": "Drowned Men's Graves"
+    },
+    {
+     "kind": "wilds",
+     "name": "The Gorse Moor"
+    },
+    {
+     "kind": "camp",
+     "name": "Tithe Camp"
+    }
+   ],
+   "runs": [
+    {
+     "name": "Moorhold",
+     "kind": "keep",
+     "place": "rock"
+    },
+    {
+     "name": "Wreckers' Cut",
+     "kind": "gorge",
+     "place": "beyond"
+    },
+    {
+     "name": "The Gorse Ledge",
+     "kind": "ledge",
+     "place": "rock"
+    }
+   ]
+  }
+ }
+}

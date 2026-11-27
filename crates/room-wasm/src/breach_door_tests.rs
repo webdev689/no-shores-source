@@ -16,7 +16,7 @@ fn gated_patrol() -> Value {
         json!({ "width": 4, "height": 4, "left_m": -2000.0, "top_m": -2000.0, "cell_m": 1000.0,
             "first_column": 0, "first_row": 0, "data": vec![value; 16] })
     };
-    json!({ "id": "gullwing-vale", "kind": "patrol", "name": "Gullwing Vale", "continent": "continent-1",
+    json!({ "id": "saltgrass-downs", "kind": "patrol", "name": "Saltgrass Downs", "continent": "continent-1",
         "ring": [[-150.0, -150.0], [150.0, -150.0], [150.0, 150.0], [-150.0, 150.0]], "spawns": [[0.0, 90.0]],
         "bounds": [-250.0, -250.0, 250.0, 250.0],
         "ground": { "land": grid(10.0), "lake_level": vec![0.0; 16], "rivers": [], "roads": [], "towns": [],
@@ -27,7 +27,7 @@ fn gated_patrol() -> Value {
 #[test]
 fn a_run_opens_from_its_ask_at_either_tier_and_sends_each_player_its_breach() {
     for tier in [0, 1] {
-        assert!(open_breach(&ask("gullwing-vale", tier)));
+        assert!(open_breach(&ask("saltgrass-downs", tier)));
         let player = room_join();
         assert_ne!(player, 0);
         room_tick();
@@ -40,8 +40,8 @@ fn a_run_opens_from_its_ask_at_either_tier_and_sends_each_player_its_breach() {
         let progress: Value = serde_json::from_str(&progress_json()).expect("JSON");
         assert_eq!(progress, json!({ "tier": tier, "encounter": 1 }));
     }
-    assert!(!open_breach(&ask("saltgrass-downs", 0)), "no Breach's gate there");
-    assert!(!open_breach(&ask("gullwing-vale", 2)), "no third tier");
+    assert!(!open_breach(&ask("highwater-fells", 0)), "no Breach's gate there");
+    assert!(!open_breach(&ask("saltgrass-downs", 2)), "no third tier");
     assert!(!open_breach(b"not an ask"));
 }
 

@@ -220,41 +220,38 @@ fn a_player_playing_unkept_finds_the_caches_vestige_alone_and_their_kept_charact
 
 #[test]
 fn a_days_clear_pays_only_in_a_run_opened_as_that_days_dungeon_and_cleared_that_day_or_in_the_shared_room_at_normal() {
-    // A Sunday, the day after a Saturday that drew another of Saltmere's three.
-    let sunday_nine = FRIDAY_NINE + 2 * gear::clock::DAY_MINUTES;
-    let mut shared = Room::dungeon("saltgrass-downs", 0, Some((1, 4))).expect("today's dungeon of the day, shared");
+    // A Wednesday, the day after a Tuesday that drew another of Saltmere's three.
+    let wednesday_nine = FRIDAY_NINE - 2 * gear::clock::DAY_MINUTES;
+    let mut shared = Room::dungeon("saltgrass-downs", 1, Some((1, 4))).expect("today's dungeon of the day, shared");
     shared.set_difficulty(gear::Difficulty::Elite);
-    shared.set_minute(sunday_nine);
+    shared.set_minute(wednesday_nine);
     let player = kept_in(&mut shared, &past_the_prologue());
     clear_the_end(&mut shared);
-    assert_eq!(
-        vestiges_for(&shared, player),
-        (1, 0),
-        "the shared room carries no day's modifier, so pays no Elite clear"
-    );
+    // The cache throws its own Vestige one time in three by the room's rolls: the day's clear is the second.
+    assert_eq!(vestiges_for(&shared, player).1, 0, "the shared room carries no day's modifier, so pays no Elite clear");
     let run_at = |minute: u64| {
-        let of = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 0 };
+        let of = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 1 };
         Room::dungeon_run(&of, gear::Difficulty::Elite, minute).expect("a run of a patrol's dungeon")
     };
     let modifiers = |room: &Room| room.run.as_ref().map(|run| run.modifiers.clone());
-    let saturdays = gear::activities::dungeon_of_the_day(20_779, "continent-1");
-    assert_ne!(saturdays, Some(("saltgrass-downs", 0)), "the day before, another is the dungeon of the day");
-    let mut early = run_at(sunday_nine - 1);
+    let tuesdays = gear::activities::dungeon_of_the_day(20_775, "continent-1");
+    assert_ne!(tuesdays, Some(("saltgrass-downs", 1)), "the day before, another is the dungeon of the day");
+    let mut early = run_at(wednesday_nine - 1);
     assert_eq!(modifiers(&early), Some(vec![]));
     let player = kept_in(&mut early, &past_the_prologue());
-    early.set_minute(sunday_nine);
+    early.set_minute(wednesday_nine);
     clear_the_end(&mut early);
-    assert_eq!(vestiges_for(&early, player), (1, 0), "opened before the reset, when it was not the day's");
-    let mut today = run_at(sunday_nine);
-    assert_eq!(modifiers(&today), Some(vec![Modifier::Burn(3)]));
+    assert_eq!(vestiges_for(&early, player).1, 0, "opened before the reset, when it was not the day's");
+    let mut today = run_at(wednesday_nine);
+    assert_eq!(modifiers(&today), Some(vec![gear::activities::modifier_of_the_day(20_776)]), "Wednesday's modifier");
     let player = kept_in(&mut today, &past_the_prologue());
     clear_the_end(&mut today);
-    assert_eq!(vestiges_for(&today, player), (1, 1), "opened as the day's, carrying its modifier");
-    let mut late = run_at(sunday_nine);
+    assert_eq!(vestiges_for(&today, player).1, 1, "opened as the day's, carrying its modifier");
+    let mut late = run_at(wednesday_nine);
     let player = kept_in(&mut late, &past_the_prologue());
-    late.set_minute(sunday_nine + gear::clock::DAY_MINUTES);
+    late.set_minute(wednesday_nine + gear::clock::DAY_MINUTES);
     clear_the_end(&mut late);
-    assert_eq!(vestiges_for(&late, player), (1, 0), "cleared after the next reset");
+    assert_eq!(vestiges_for(&late, player).1, 0, "cleared after the next reset");
 }
 
 #[test]

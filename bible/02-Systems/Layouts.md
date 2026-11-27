@@ -75,7 +75,10 @@ from the sea, fresh water and the claim's edge), then:
 
 1. **The areas.** Each kind scores the land by what it wants: flat ground for a hamlet, a summit for a tower, the shore
    for a dock, a river bank for a mill, a slope for a quarry. Areas keep at least 50 m of open ground between their
-   reaches and spread over the claim, so something stands every couple of hundred metres. A patrol area's landing
+   reaches and spread over the claim, so something stands every couple of hundred metres. Each but a landing, a gate,
+   an entrance, a dock, a wreck and a causeway stands only on land a way is laid to from the first area, by the way
+   finder's own ground (dry land or a river, no steeper than a stepped way, clear of the claim's edge): where none
+   is, it stands where it scores best (`areas::reached_from`). A patrol area's landing
    comes first on its seaward side, then a gate at its edge toward each instance it leads to (the mission, dungeon
    and boss nodes of its own region, `content/world/regions.json`, nearer it than any other patrol area of that
    region), then the brief's areas. Once the zone is planned, a crossing gate toward each other patrol area of its
@@ -126,7 +129,10 @@ from the sea, fresh water and the claim's edge), then:
    (`pieces_land.rs` `deck_over`). A way too steep for its tier is laid as a footpath, then stepped; an area no way
    reached is
    joined to the nearest that is. A way that ends at an area's middle stops short of what stands there (a gate's
-   arch, a tower, a hull, the wilds' standing stone), so the piece stays. Bridges carry paths over rivers: a timber deck 0.5 m
+   arch, a tower, a hull, the wilds' standing stone), so the piece stays; where two or more ways stop at that rim, a
+   footpath runs round it from each way's end to the next by bearing, the widest gap between them left open, so the
+   ways meet as a body walks round the piece (`clearing::round_rim`; not round a plot). A graveyard of ships keeps its
+   middle open, its greatest hull 50 m off it behind the way in. Bridges carry paths over rivers: a timber deck 0.5 m
    thick, so a body walks on it, 0.3 m over the land at its higher end, 3 m past each bank and on out along a lower
    bank until its two ends' land stands within 0.15 m, so a body steps onto it at either end; rails 0.8 m past the
    walked width; deck and rails laid in lengths short enough that each one's box keeps close to it on a slant, so no
