@@ -1,5 +1,5 @@
 ---
-id: 328
+id: 344
 title: "Since #237, a merge to main skips every deploy: rooms and desktop lack !cancelled(), so the skipped check parts skip them"
 status: open
 type: internal

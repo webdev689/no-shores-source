@@ -1,5 +1,5 @@
 ---
-id: 327
+id: 343
 title: "QA scripts keyed to internals go stale on a merge; the hub's city no longer draws in the QA page; weather cannot be pinned; npx vite preview leaves its child"
 status: open
 type: internal
