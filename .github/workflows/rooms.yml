@@ -79,8 +79,8 @@ jobs:
           CODE: >-
             server/accounts server/address.ts server/arrival.ts server/keeping.ts server/outpostHost.ts
             server/roomDoor.ts server/roomNames.ts client/src/game/guild client/src/player/binds.ts
-            content/gear/factions.json content/guilds content/modules/modules.json package.json package-lock.json
-            .github/workflows/rooms.yml .github/deploy-ready.sh
+            content/gear/factions.json content/guilds content/modules/modules.json content/world/islands.json
+            package.json package-lock.json .github/workflows/rooms.yml .github/deploy-ready.sh
         run: bash .github/deploy-ready.sh accounts "the accounts"
 
   # One deploy at a time; a newer merge's deploy replaces one waiting. The database's id never enters the repository:

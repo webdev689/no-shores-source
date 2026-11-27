@@ -21,7 +21,7 @@ const ROADSTEAD: [f64; 2] = [50_000.0, 50_000.0];
 fn sea() -> Sea {
     let text = r#"{ "continents": [{ "id": "continent-4", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
-    sea.harbour.harbours = Harbours { ports: vec![("overlook".into(), ROADSTEAD)], ways: None };
+    sea.harbour.harbours = Harbours { ports: vec![("overlook".into(), ROADSTEAD)], ways: None, locked: Vec::new() };
     sea.keep_characters();
     sea
 }

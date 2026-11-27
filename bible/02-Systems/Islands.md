@@ -68,12 +68,18 @@ arctangents. Its frame is its own: metres from its middle, x east, y south.
 
 The sea room holds its islands (`sea_islands.rs`):
 
-- **Rolled** every ten seconds round each ship at sea that has fewer than two islands within 8 km, three times in ten:
-  3 to 7 km from it, in hostile water (never in home waters), 3 km clear of every coast and every other island, 1.2 km
-  clear of every ship, hostile ship and parked ship, and clear of every ship's course by its reach and 300 m. At most 96 stand.
-  An island in a climate the contract does not dress is not rolled.
+- **Rolled** every ten seconds round each ship at sea that has fewer than three islands within 8 km, 0.45 of the
+  time: 3 to 7 km from it, in hostile water (never in home waters, within 10 km of Overlook's coast, nor reaching into
+  them, its anchorage included; the Lantern Sea past them is hostile), 3 km clear of every coast and every other
+  island, 1.2 km clear of every ship, hostile ship and parked ship, and clear of every ship's course and every leg the
+  friendly traffic sails (its lanes, and its ways from berth to berth) by its reach and 300 m
+  ([[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]). At most 144 stand
+  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). An
+  island in a climate the contract does not dress is not rolled; the Lantern Sea's temperate coast is dressed as
+  woodland's.
 - **Seen and found.** Each player is told of the islands within 20 km of their ship and of those they have found;
-  a ship within 2 km of one finds it. The [[Held Map]] marks the found ones while they stand.
+  a ship within 2 km of one finds it. The [[Held Map]] marks the found ones while they stand, and with the sea's
+  chart every one standing in the water the ship lies in.
 - **Held and faded.** A ship within 8 km holds an island; so does its room while players stand ashore, telling the
   sea every 15 seconds. One held by nothing for ten minutes fades, and is forgotten by those who found it.
 - **Land.** A standing island's coast, 34 m out past it (its shallows' 14 m and 20 m more), is land to the player told
@@ -130,8 +136,9 @@ The sea room holds its islands (`sea_islands.rs`):
 - The sea snapshot carries the islands the player is told of; the page builds each once through the room module, one
   at a time in a worker of its own (`islePlanWorker.ts`), so a build never holds up a frame (`isles.ts`, by its
   number and seed, let go of once the room tells of it no more), and every
-  voyage's legs are bent round each island in sight, since the route planner's grid is far coarser than an island
-  (`isleLaw.ts`, `detour`); a leg for a point within an island's keeping (its anchorage) comes in along the line out
+  voyage's legs are bent round each island in sight, and each the sea's chart marks in the ship's water that the room
+  has not told of (as far as an island not built reaches), since the route planner's grid is far coarser than an
+  island and a travel's last leg is refused across any island standing (`isleLaw.ts`, `keptClear`, `detour`); a leg for a point within an island's keeping (its anchorage) comes in along the line out
   from its middle through that point. An island come into sight bends the voyage still ahead round it.
 - A click on an island, or on the water within 400 m of its reach, asks to go ashore on it ("Go ashore on the cove?"),
   and so does L within 700 m past its coast ([[Game]], "Landings"); yes docks in sight, the view switched to the

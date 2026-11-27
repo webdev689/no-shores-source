@@ -19,12 +19,12 @@ pub const SIGHT_M: f64 = 20_000.0;
 pub const FIND_M: f64 = 2_000.0;
 /// How near a ship holds an island, and how many it wants within that before more are rolled round it.
 pub const NEAR_M: f64 = 8_000.0;
-const WANTED_NEAR: usize = 2;
+const WANTED_NEAR: usize = 3;
 /// How often the sea rolls for islands round each ship, ticks, and the chance a roll that wants one makes one.
 const ROLL_EVERY_TICKS: u64 = 600;
-const ROLL_CHANCE: f64 = 0.3;
+const ROLL_CHANCE: f64 = 0.45;
 /// How far from the ship an island is rolled, metres, and how clear it stands of coasts, of other islands, and of
-/// ships and their courses.
+/// ships, and of their courses and the friendly ships' lanes past its reach.
 const ROLL_FROM_M: f64 = 3_000.0;
 const ROLL_TO_M: f64 = 7_000.0;
 const CLEAR_OF_COAST_M: f64 = 3_000.0;
@@ -37,7 +37,7 @@ pub const FADE_TICKS: u64 = 10 * 60 * 60;
 /// of them every 15 seconds.
 pub const ASHORE_TICKS: u64 = 2 * 60 * 60;
 /// The most islands the sea holds at once.
-const MOST: usize = 96;
+const MOST: usize = 144;
 /// How far past its shallows' ring a ship keeps off an island's coast, metres.
 const KEEP_OFF_M: f64 = 20.0;
 /// How near its anchorage a ship at rest lies to land its account on an island: the page anchors within 30 m, and
@@ -250,7 +250,8 @@ impl Islands {
     }
 
     /// An island rolled round a ship at `at`, in the first of eight places drawn that is hostile open sea, clear of the
-    /// coasts, the islands, every ship, hostile and parked ship (`others`), and every course.
+    /// coasts, the islands, every ship, hostile and parked ship (`others`), every course and every leg the friendly
+    /// ships sail.
     fn roll(
         &mut self,
         at: [f64; 2],
@@ -267,6 +268,7 @@ impl Islands {
             let Some(point) = super::whole(&place) else { continue };
             let reach = isle::reach_of(seed);
             let open = water.holder != Holder::Home
+                && clear_of_home(charted, place, reach)
                 && !super::on_land(coasts, point)
                 && charted.clearance(place) >= CLEAR_OF_COAST_M
                 && self.standing.iter().all(|island| apart(island.at, place) >= CLEAR_OF_ISLANDS_M)
@@ -279,13 +281,25 @@ impl Islands {
                         .chain(course)
                         .zip(course)
                         .all(|(&from, &to)| off_leg(place, from, to) >= reach + CLEAR_OF_COURSES_M)
-                });
+                })
+                && charted.sailed.iter().all(|&[from, to]| off_leg(place, from, to) >= reach + CLEAR_OF_COURSES_M);
             if open && let Some(island) = self.island(seed, place, (water.continent, water.holder, levels)) {
                 return Some(island);
             }
         }
         None
     }
+}
+
+/// Whether an island at `place` whose coast reaches `reach` from its middle stands wholly out of home waters, its
+/// anchorage too: judged at eight points round it, far enough out that a straight edge of home waters crossing it
+/// meets one.
+fn clear_of_home(charted: &Charted, place: [f64; 2], reach: f64) -> bool {
+    let off = (reach + isle::sites::ANCHORAGE_OFF_M) / libm::cos(core::f64::consts::PI / 8.0);
+    (0..8).all(|step| {
+        let bearing = f64::from(step) * core::f64::consts::FRAC_PI_4;
+        !charted.home([place[0] + libm::sin(bearing) * off, place[1] - libm::cos(bearing) * off])
+    })
 }
 
 impl Sea {

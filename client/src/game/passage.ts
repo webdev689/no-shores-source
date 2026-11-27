@@ -1,9 +1,10 @@
 // The player's ship's passage at sea: where it lies and heads, the voyage it sails (one planned round the land to a
 // point, or the helm's straight on along its heading), the pace it was set at, and each course sent to the sea room,
 // which sails it by its own law while the page draws it toward where the room has it.
-import { WORLD_FRAME } from '../overworld/worldFrame.ts';
+import { CHART_CELL_M, WORLD_FRAME } from '../overworld/worldFrame.ts';
 import type { Point2 } from '../overworld/ground.ts';
-import { maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
+import type { SeaLock } from './pageWaters.ts';
+import { lockedOut, maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
 import { CLICK_PACE, type Pace, SHIP_SPEED, secondsLeft, shipAt, type Voyage, voyageOf } from '../overworld/voyage.ts';
 import type { Lies } from '../ships/swellPose.ts';
 import { distanceText } from '../plus/compass.ts';
@@ -32,6 +33,10 @@ const REFUSED: Record<RouteRefusal, string> = {
   inland: 'That lies too far inland to sail to.',
   'no way': 'No water leads there.',
 };
+/** Why a voyage into a locked sea, an unnamed island's, is not planned. */
+const LOCKED = 'That sea is locked.';
+/** How far off a locked sea a route keeps, metres: a cell of the grid it is judged on, past its edge's error. */
+const LOCK_MARGIN_M = CHART_CELL_M;
 
 /** How far the room's word may lie off its course straight on before it is laid where the room has it and the course set
  *  again from there, metres. */
@@ -76,6 +81,11 @@ export class Passage {
   private said = '';
   /** The sea room it sails in, once joined. */
   room: SeaRoom | null = null;
+
+  /** The locked seas, which no voyage is planned into or across (`pageWaters.ts`); none before the waters open. */
+  locked: SeaLock = { at: () => false, cell: () => false };
+  /** Each mask with the locked seas made land, by the mask and the lock it was made for. */
+  private lockedMasks = new WeakMap<SeaMask, { readonly lock: SeaLock; readonly mask: SeaMask }>();
 
   /** The sea's islands in sight, which every voyage is bent round: the route's grid is far coarser than an island. */
   keepClear: () => readonly KeptClear[] = () => [];
@@ -171,6 +181,7 @@ export class Passage {
   planTo(
     point: Point2,
   ): { readonly ok: true; readonly points: Point2[] } | { readonly ok: false; readonly why: string } {
+    if (this.locked.at(point)) return { ok: false, why: LOCKED };
     const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
     if (!route.ok) return { ok: false, why: REFUSED[route.reason] };
     return { ok: true, points: detour(route.points, this.keepClear()) };
@@ -179,9 +190,9 @@ export class Passage {
   /** Plans a voyage from the ship to a point and sets sail at `pace`, a click's unless said; a voyage that cannot be
    *  planned says why. */
   sailTo(point: Point2, pace: Pace = CLICK_PACE): void {
-    const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
-    if (!route.ok) {
-      this.said = REFUSED[route.reason];
+    const route = this.locked.at(point) ? null : planSeaRoute(this.maskFor(this.position, point), this.position, point);
+    if (!route?.ok) {
+      this.said = route ? REFUSED[route.reason] : LOCKED;
       return;
     }
     this.said = '';
@@ -195,6 +206,10 @@ export class Passage {
    *  the mask holding land, goes on to the point itself. Lying on that way in already, it sails straight on in from
    *  where it lies. Whether it set sail; if not, it says why. */
   sailVia(point: Point2, after: readonly Point2[]): boolean {
+    if (this.locked.at(point)) {
+      this.said = LOCKED;
+      return false;
+    }
     const ahead = aheadOnWayIn(this.position, [point, ...after]);
     const route = ahead ? null : planSeaRoute(this.maskFor(this.position, point), this.position, point);
     if (route && !route.ok) {
@@ -207,7 +222,7 @@ export class Passage {
     return true;
   }
 
-  /** Asks the room to travel the voyage still ahead: to take the ship to the other waters it ends in (`SeaTravel`).
+  /** Asks the room to travel the voyage still ahead: to take the ship most of the way to where it ends (`SeaTravel`).
    *  Answers the course sent, none with no voyage. */
   travel(): Point2[] {
     const ahead = this.voyage ? courseAhead(this.voyage, this.travelled) : [];
@@ -374,8 +389,18 @@ export class Passage {
     this.said = words;
   }
 
-  /** A voyage within the open landmass's window is planned on its fine mask; any other over the whole frame's. */
+  /** A voyage within the open landmass's window is planned on its fine mask; any other over the whole frame's; the
+   *  locked seas made land in either. */
   private maskFor(from: Point2, to: Point2): SeaMask {
+    const mask = this.landOrFrame(from, to);
+    const made = this.lockedMasks.get(mask);
+    if (made?.lock === this.locked) return made.mask;
+    const out = lockedOut(mask, this.locked.cell, LOCK_MARGIN_M);
+    this.lockedMasks.set(mask, { lock: this.locked, mask: out });
+    return out;
+  }
+
+  private landOrFrame(from: Point2, to: Point2): SeaMask {
     const mask = this.landmassMask();
     const inside = ([x, y]: Point2) =>
       x >= mask.leftM &&

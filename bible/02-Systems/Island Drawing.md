@@ -63,7 +63,7 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
   Islands mode still draws them as modules.
 - **The World Editor's Islands mode** builds one island at a time through `room.wasm`'s door and draws it with the
   sea round it ([[World Editor]]).
-- **The held map** marks found islands: `HeldMap.setIsles(marks)`, a cove a small ring and an isle a ring with a
+- **The held map** marks found islands, and every island standing in the ship's water: `HeldMap.setIsles(marks)`, a cove a small ring and an isle a ring with a
   tower, in the lighter ink under the words ([[Held Map]]).
 
 ## Cost

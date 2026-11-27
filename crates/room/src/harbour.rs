@@ -54,6 +54,8 @@ impl Repair {
 pub struct Harbours {
     pub ports: Vec<(String, [f64; 2])>,
     pub ways: Option<SeaWays>,
+    /// Whether each port lies in a locked sea, by its number: no ship washes up, puts in or is repaired there.
+    pub locked: Vec<bool>,
 }
 
 impl Harbours {
@@ -67,25 +69,33 @@ impl Harbours {
         let (kept, roadsteads) = Traffic::roadsteads(layout, &waters, ports);
         let roadstead = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
         let ports = kept.iter().zip(&roadsteads).map(|(port, at)| (port.id.clone(), roadstead(at)));
-        Harbours { ports: ports.collect(), ways: Some(SeaWays::new(layout, &waters, &roadsteads)) }
+        Harbours { ports: ports.collect(), ways: Some(SeaWays::new(layout, &waters, &roadsteads)), locked: Vec::new() }
     }
 
-    /// The port nearest `at` by the sea's way there (round land, as the traffic's routes are planned), by its number
-    /// among them; in a straight line where no port's way reaches, or with no ways planned.
+    /// Whether the port numbered `port` lies in an open sea.
+    fn open(&self, port: usize) -> bool {
+        !self.locked.get(port).copied().unwrap_or(false)
+    }
+
+    /// The open port nearest `at` by the sea's way there (round land, as the traffic's routes are planned), by its
+    /// number among them; in a straight line where no port's way reaches, the nearest by way is locked, or with no
+    /// ways planned.
     #[must_use]
     pub fn nearest(&self, at: [f64; 2]) -> Option<usize> {
         let point = world::geometry::Point::new(at[0].round() as i64, at[1].round() as i64);
-        if let Some(port) = self.ways.as_ref().and_then(|ways| ways.nearest(point)) {
+        if let Some(port) = self.ways.as_ref().and_then(|ways| ways.nearest(point)).filter(|&port| self.open(port)) {
             return Some(port);
         }
         let straight = |port: &(String, [f64; 2])| libm::hypot(port.1[0] - at[0], port.1[1] - at[1]);
-        (0..self.ports.len()).min_by(|one, other| straight(&self.ports[*one]).total_cmp(&straight(&self.ports[*other])))
+        let open = (0..self.ports.len()).filter(|&port| self.open(port));
+        open.min_by(|one, other| straight(&self.ports[*one]).total_cmp(&straight(&self.ports[*other])))
     }
 
-    /// Whether `at` lies within `REPAIR_REACH_M` of a port's roadstead.
+    /// Whether `at` lies within `REPAIR_REACH_M` of an open port's roadstead.
     #[must_use]
     pub fn in_reach(&self, at: [f64; 2]) -> bool {
-        self.ports.iter().any(|(_, port)| libm::hypot(port[0] - at[0], port[1] - at[1]) <= REPAIR_REACH_M)
+        let near = |(_, port): &(String, [f64; 2])| libm::hypot(port[0] - at[0], port[1] - at[1]) <= REPAIR_REACH_M;
+        self.ports.iter().enumerate().any(|(number, port)| self.open(number) && near(port))
     }
 
     /// Whether a ship not yet at sea may put to sea at `at`: within reach of a port city's roadstead, where the page

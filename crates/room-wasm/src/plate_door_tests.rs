@@ -1,5 +1,5 @@
 use super::{name, tag};
-use crate::{TAKEN, gear_door, input, open_sea, room_join, room_tick, snapshot_door};
+use crate::{Opened, TAKEN, gear_door, input, open_sea, room_join, room_tick, snapshot_door, with_open};
 use protocol::wire::overlook::wire as messages;
 use room::PlayerId;
 
@@ -134,4 +134,86 @@ fn every_ship_in_the_sea_rides_on_its_chart_once_a_second_however_far_off() {
 fn the_seas_chart_goes_once_a_second_of_ticks() {
     let ticks = u32::try_from(snapshot_door::CHART_EVERY_TICKS).unwrap();
     assert!((f64::from(ticks) * movement::TICK_SECONDS - 1.0).abs() < 1e-12);
+}
+
+/// The marks in the prepared snapshot `player` is sent for the held map: where each lies and what it is.
+fn marks_at_sea(player: PlayerId) -> Vec<([f64; 2], u8)> {
+    let bytes = snapshot_door::snapshot_for(player);
+    let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+    let read = |mark: messages::ChartMark<'_>| ([mark.x(), mark.y()], mark.kind());
+    snapshot.chart_marks().map_or(Vec::new(), |marks| marks.iter().map(read).collect())
+}
+
+/// The hostile ships among `marks`: where each lies.
+fn hostile_marks(marks: &[([f64; 2], u8)]) -> Vec<[f64; 2]> {
+    marks.iter().filter(|(_, kind)| *kind == 0).map(|(at, _)| *at).collect()
+}
+
+fn apart([x, y]: [f64; 2], [other_x, other_y]: [f64; 2]) -> f64 {
+    let (east, south) = (x - other_x, y - other_y);
+    (east * east + south * south).sqrt()
+}
+
+#[test]
+fn with_the_chart_each_player_is_sent_the_islands_and_hostile_ships_in_their_own_water_alone() {
+    // Two squares 400 km apart: the sea west of the line halfway between them is the fourth island's water, east of
+    // it the fifth's; both hostile, so islands are rolled round each ship.
+    let layout = r#"{ "continents": [
+        { "id": "continent-4", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
+        { "id": "continent-5", "climate": "desert", "outline": [[600000, 100000], [700000, 100000], [700000, 200000], [600000, 200000]] }
+    ], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+    let (west, far_west, east) = (room_join(), room_join(), room_join());
+    let far_west_at = [250_000.0, 300_000.0];
+    for (player, at) in [(west, [250_000.0, 150_000.0]), (far_west, far_west_at), (east, [550_000.0, 150_000.0])] {
+        assert_eq!(input(player, &protocol::course_bytes(&[at], 10)), TAKEN);
+    }
+    let island = |marks: &[([f64; 2], u8)]| marks.iter().any(|(_, kind)| (1..=3).contains(kind));
+    let mut seen = [Vec::new(), Vec::new(), Vec::new()];
+    for _ in 0..10 * 60 * 60 {
+        room_tick();
+        snapshot_door::prepare();
+        seen = [marks_at_sea(west), marks_at_sea(far_west), marks_at_sea(east)];
+        if seen.iter().all(|marks| island(marks)) {
+            break;
+        }
+    }
+    assert!(seen.iter().all(|marks| island(marks)), "an island round each ship within ten minutes: {seen:?}");
+    assert_eq!(seen[0], seen[1], "one water, the same marks");
+    assert!(seen[0].iter().all(|([x, _], _)| *x < 400_000.0), "the west's own: {:?}", seen[0]);
+    assert!(seen[2].iter().all(|([x, _], _)| *x > 400_000.0), "the east's own: {:?}", seen[2]);
+    let out_of_sight = seen[1].iter().filter(|(_, kind)| *kind != 0);
+    let out_of_sight = out_of_sight.filter(|(at, _)| apart(*at, far_west_at) > room::sea::islands::SIGHT_M);
+    assert!(out_of_sight.count() > 0, "the islands round the other ship of their water, out of their sight");
+    room_tick();
+    snapshot_door::prepare();
+    assert_eq!((chart_at_sea(west).len(), marks_at_sea(west).len()), (0, 0), "marks ride with the chart alone");
+    // A captain in a fight with the west's ship, and one sailing in the east: each marked in its own water alone.
+    let minor = naval::ranks::Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Minor };
+    let (fought, sailing) = ([250_000.0, 150_600.0], [550_000.0, 155_400.0]);
+    with_open(|opened| {
+        let Opened::Sea(sea) = opened else { panic!("not the sea") };
+        sea.put_to_sea(room::hostiles::Hostile::standing(901, 7, minor, fought, 0.0, true));
+        sea.put_to_sea(room::hostiles::Hostile::standing(902, 7, minor, sailing, 0.0, false));
+    });
+    let mut charted = false;
+    for _ in 0..snapshot_door::CHART_EVERY_TICKS {
+        room_tick();
+        snapshot_door::prepare();
+        charted = !chart_at_sea(west).is_empty();
+        if charted {
+            break;
+        }
+    }
+    assert!(charted, "a chart within a second");
+    let fights = with_open(|opened| match opened {
+        Opened::Sea(sea) => sea.fight_mut(west).is_some(),
+        _ => false,
+    });
+    assert_eq!(fights, Some(true), "the west's ship fights the captain");
+    let [one, two, three] = [west, far_west, east].map(|player| hostile_marks(&marks_at_sea(player)));
+    assert!(one.iter().any(|at| apart(*at, fought) < 2_000.0), "the captain in the fight: {one:?}");
+    assert_eq!(one, two, "the same to every ship in its water");
+    assert!(three.iter().any(|at| apart(*at, sailing) < 2_000.0), "the east's captain: {three:?}");
+    assert!(one.iter().all(|[x, _]| *x < 400_000.0) && three.iter().all(|[x, _]| *x > 400_000.0), "each its own");
 }
