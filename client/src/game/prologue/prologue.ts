@@ -6,6 +6,7 @@ import type { InputFrame } from '../../player/input.ts';
 import { type Shot, withQaEye } from '../camera.ts';
 import { boundWord } from '../controls.ts';
 import type { GearHere } from '../gearScreen.ts';
+import { dialogueWaits } from '../../speech/dialogue.ts';
 import { hushed } from './music.ts';
 import { asWreck, Battle, type Wreck } from './battle.ts';
 import { type Beat, type BeatName, BEATS, keepProloguePlayed, prologuePlayed, SCENE } from './beat.ts';
@@ -231,8 +232,10 @@ export class Prologue {
     return this.beat.key?.(key, down) ?? false;
   }
 
-  /** A tap or click: the title's beginning, or the stranger's hand taken on the shore. */
+  /** A tap or click: the title's beginning, or the stranger's hand taken on the shore; none while a line of the
+   *  dialogue box waits, whose press it is. */
   press(): void {
+    if (dialogueWaits()) return;
     if (this.beat instanceof Intro || this.beat instanceof Shore) this.beat.press();
   }
 

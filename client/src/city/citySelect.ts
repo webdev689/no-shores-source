@@ -49,7 +49,7 @@ export class CitySelector {
   /** What a frame drawn through `fromEye` from `eye` (measured from the city's middle) draws and casts, the casts
    *  only with a shadow map `casting`. Answers lists the selector keeps until its next frame. */
   select(
-    data: Omit<CityData, 'solids'>,
+    data: Omit<CityData, 'solids' | 'night'>,
     fromEye: Float32Array,
     eye: readonly number[],
     casting: ShadowMap | null,

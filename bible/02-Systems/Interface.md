@@ -9,6 +9,7 @@ code:
   - client/src/game/seaScreen.ts#seaLayer
   - client/src/game/seaLandings.ts#landingAskNode
   - client/src/game/islandPanel.ts#islandPanelNode
+  - client/src/game/islandPanel.ts#outpostsNode
   - client/src/game/playlistParts.ts#crestOf
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
@@ -372,6 +373,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   page's pointer and keys.
 - **The held map's** names, the ship's arrow and the card to set sail are a layer over the parchment the GPU draws,
   rising and falling with it; the card's presses take the pointer, so a click on them never picks a place.
+- **The dungeon's map** ([[Dungeon Map]]): its words (the dungeon's name, the storey looked at, the chests counted) and
+  its marks are nodes over the paper the GPU inks, laid where the map's view puts them, each letting the pointer
+  through to the map's own drag and wheel; while it is up they and the controls' sheet are all the display shows.
 - **The Test Ground's panels** are drawn too: the page is one canvas, its two panels laid either side of the view as
   its grid laid them, each a scrolled column of the Test Ground's own dark surfaces, flat presses and dim hints, with
   the shared toggle, slider and choice (`panels`, `Panel`, `GearPanel`). The view between them is drawn into a
@@ -737,7 +741,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   shows, except over the menu's gear screen, and its key, Escape, the pad's B or its Close press shuts it. It is a
   window of the kit over a dimmed view, over every layer the game draws but the screen's keyboard: ALL CONTROLS on its
   header band, then its groups, Move, Fight, Arts, Camera, Menus, Sea and Sea fight (`CONTROL_GROUPS`), each its name
-  in faint capitals over a rule and its rows under it: the keys, then the pad's buttons, drawn as the strip draws them,
+  in faint capitals over a rule and its rows under it (Menus holds Continue dialogue, the press that moves a line of
+  the dialogue box on; [[Speech]], "Moving on"): the keys, then the pad's buttons, drawn as the strip draws them,
   beside a few words on what the row does; a footer band holds a line of a few words and Reset to defaults. Every key
   and button shown is as bound now, so the sheet always says what the game hears; the side the player used last stands
   bright and the other faint, and the words are that side's ("Swing; fire" on the pad). The groups stand in as many
@@ -758,7 +763,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   mouse button binds only a control that hears one: the menus, the sheet, Use, Respawn and the helm's controls act on
   a key going down or at the helm, where the pointer is free, so for them the footer says it "takes keys only"; a
   button past the fifth is no key, and the slot waits on. Every other control acting with the key in the same place
-  (on foot, dead, in a window, at the helm or in a sea fight; `binds.ts`) gives it up, taking the slot's old key
+  (on foot, dead, in a window, at the helm, in a sea fight, or while a line of the dialogue box waits; `binds.ts`)
+  gives it up, taking the slot's old key
   where that clashes with nothing it acts with there, and the footer says "Swapped with" them; where one would be
   left with nothing, the binding is refused and the footer says that control "needs it". No two controls that act
   in one place ever share a key. Reset to defaults binds every control as it came. A mouse's gesture (the click to
@@ -1000,8 +1006,8 @@ never while a press is held. Each press is an ask the room answers.
   used is spent, not gained. Letters newly in the mail show as one row, "Sent to the mail" and how many, under the
   Postmaster's mark; a letter taken is not a gain, though what it held is. A Normal piece a kill, a chest or a clear
   gives in a Vestige's place shows as its item's row, as any item new to them does
-  ([[Gear]], "Commons drop as themselves"). A chest opened in a patrol or a dungeon shows as "Chest", and a container
-  searched as "Searched the" and its kind, under its mark and with no count, over the Aurem and the resource it gave
+  ([[Gear]], "Commons drop as themselves"). A chest opened in a patrol or a dungeon shows as "Chest", a dungeon's
+  vault's as "Vault chest", and a container searched as "Searched the" and its kind, under its mark and with no count, over the Aurem and the resource it gave
   (`gainsOf`; [[Chests and Searchable Containers as Claude Builds Them]]): told once the room names it as the last
   find it paid the player for (the gear's `opened`), so a chest that moved on is no gain.
   Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
@@ -1150,9 +1156,11 @@ never while a press is held. Each press is an ask the room answers.
     [[Ambience]] ("Ambience"), each kept in this browser; under Credits, "Sound credits" and its View press, which
     shows the recorded sounds' credits in the volumes' place: each one's name, author, licence and source, and what was
     changed, with ‹ Audio, or Escape, back.
-  - **Controls**: every control as the sheet of every control lists it, each key and button bound anew there the same
-    way ("Binding a control"), and Reset to defaults; its line says what a waiting key wants or what the last binding
-    came to.
+  - **Controls**: under Dialogue, how a line of the dialogue box moves on ("Dialogue": Click to continue, the first
+    and the default, or Auto, kept in this browser; [[Speech]], [[Dialogue Waits for a Click by Default, With Auto as a Setting]]), a line under it
+    saying that Auto moves each line on by itself and that lines said in a fight always do; then every control as the
+    sheet of every control lists it, each key and button bound anew there the same way ("Binding a control"), and
+    Reset to defaults; its line says what a waiting key wants or what the last binding came to.
   - **Account** ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a username and
     password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held. Under it,
     the players blocked, each with a press to unblock them, and the muted.
@@ -1182,7 +1190,7 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
   no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
 - **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
-  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
+  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea; a dungeon has none) or on the ground. A jump as a body
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
 - **Foes' voices** ([[The Grey Tithe and the Lattice Each Have Their Own Voice]]). A foe of the Grey Tithe or the
   Lattice, by its faction, is heard in its faction's voice as it spots the player (the shared `foe.alert` until its
@@ -1334,7 +1342,10 @@ primary, with Enter's key) on its footer; Cancel names the pad's B while the pad
 
 Over an island docked at or gone ashore on, no node is marked on the map; the island's tiles hold them
 (`islandPanel.ts`, `islandWords.ts`, `islandArt.ts`, `islandScenes.ts`;
-[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]). They
+[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]],
+[[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). On an island cut into regions ([[World Map]], "Regions") they are the places of
+the region the ship lies off, the one whose centre is nearest it: those its nodes list, and any place no region lists;
+the port and the Playlist only where that region holds the living port. They
 are rectangles of one size in a grid with 16 px between them, across the view under the place's name (104 px down, 24
 in from each side), centred: each 280 to 340 px wide (narrower only on a view too narrow for one of 280), as many a row
 as fit up to five, as tall as three rows fit (176 to 220 px), their sides in 4-pixel steps so each is even and a
@@ -1344,12 +1355,13 @@ Playlist's card does (`scrolledNode`), with no fade over the island at their foo
 
 Each is a pixel scene painted as the website's pictures are (`client/src/art/`, [[Website]]), on a sheet half the
 tile's size, each texel two pixels across, dithered in one of the sheet's lights and seeded by its place, so no two
-are alike, drawn a little transparent (74%) so the island shows through; its foot darkens, dithered, where its words
+are alike, drawn 90% opaque so the island shows through a little; its foot darkens, dithered, where its words
 stand:
 
 - **The island's own**: the island charted on the night sea, its land rising inland in bands with contours, its rock
   at the coast and shoals dithered round it, the harbour's lantern and the ship; its name in brass at the larger size,
-  where the ship lies ("Docked at Overlook"), and Back (Esc, or the pad's B while the pad is in use).
+  where the ship lies, naming its region ("Docked at Overlook, on the Beacon Shore", "Ashore on the Weirlands"), and
+  Back (Esc, or the pad's B while the pad is in use).
 - **The port**, docked at a living port: Overlook by night, its town stepping up the rock to its beacon, the quay's
   lanterns streaking the water, a ship at anchor, the moon. A click lands in its plaza.
 - **The Playlist**, docked at a living port: a crystal night thick with stars and a pale nebula, its four crests
@@ -1366,17 +1378,22 @@ stand:
   or a windmill with its sails broken, in mist, at first light or at a fiery dusk; a lantern on a post. A click lands
   there.
 - **The world boss**: a horned shadow rising from an ember sea, its edges facing the fire lit, its eyes and its maw
-  burning, tentacles breaking the water and a ship burning beside it. **The outpost**: its palisade and watchtower on a
-  strand at dawn, a ship off it.
+  burning, tentacles breaking the water and a ship burning beside it.
+- **The Outposts tile**, one in a region's view for all the region's outpost sites, named for its region ("Outposts of
+  the Beacon Shore"), its levels the island's: an outpost's palisade and watchtower on a strand at dawn, a ship off
+  it. A click opens its sites (below).
 
-A tile's words are its name in brass at the larger size and its levels in short ("Lv 1–5"); every other detail is a
+A tile's words are its name in brass at the larger size and under it its levels in short and its kind ("Lv 1–5 ·
+Patrol zone"; the island's own "Island", then Port, Playlist, Patrol zone, Elite Dungeon, Mission, World boss and
+Outposts), the kind left out where the name says it already, as the Playlist's does; every other detail is a
 glyph at its head, each saying its words in the tile's label, in the Journal's icons (`journalIcons.ts`) and the
 tiles' own in their style (`islandIconMaps.ts`): the port's counters (a stall under its awning) and its moorings (an
 anchor); a patrol zone's dungeons (its door), its resources (a rock veined with ore), its foes (two blades crossed),
 its Elite and Abyss seas (dim while shut) and today's modifier; an Elite Dungeon's blocks (courses of stone), seals (a
 wax seal), company (two of it), pay (the cache's chest), its week, the Elite's or the Abyss's, and its modifiers; the
-Playlist's today, its week's two and its rewards; a mission's, a world boss's and an outpost's foes and named places (a
-pin), an outpost's what it is for (a palisade); a padlock on a place that is shut. Nine fit a tile at its narrowest;
+Playlist's today, its week's two and its rewards; a mission's and a world boss's foes and named places (a pin); the
+Outposts tile's sites (a stake flying a grey pennant over a roped plot, one a site) and how many hold the player's
+guild's outposts (a palisade each, one dim at none); a padlock on a place that is shut. Nine fit a tile at its narrowest;
 more wrap onto a second row. Its label reads all of it out: its name, its line, every glyph's meaning and its
 details. The tile the keys or the pad have focused is lit, else the one under the pointer, else the first place's: a
 brass edge two pixels wide, raised 2 px, its chevron bright. Over the tiles the interface takes the keys and the pad:
@@ -1384,6 +1401,16 @@ Tab, the arrows and the pad's cross walk them, and Enter or A presses the one fo
 yielding to it; with none focused, Enter does what the lit tile does. A tile still rising takes no click. A shut
 tile's name is dim and a click on it does nothing. A landing chooses its node before it lands, as the flow lands
 only at the node chosen. A desolate city's social space is listed nowhere.
+
+The Outposts tile's sites stand in the tiles' place as the Playlist's screen opens from its tile (`outpostsNode` in
+`islandPanel.ts`): a panel 104 px down, dark and nearly opaque, its region's name in brass, its levels and kind with
+"Choose a slot to land at", and a card for each site in a row that wraps, each 260 px wide: its name in brass, a small
+chart of the region (the coast round its sites, four times as wide as they lie apart, every site a dot, its own brass in a ring, one
+holding the player's guild's outpost green), and a palisade with "Your guild's outpost" or a stake with "No outpost of
+your guild's" (the guild read as the map's marks read it, [[Guilds]]); a shut one says why. The card the keys or the
+pad have focused is lit, else the one under the pointer, else the first open one, a brass edge raised 2 px. A click on
+a card, or Enter or A, lands at its site as a place's tile does; the arrows, Tab and the pad's cross walk the cards,
+the keys and the pad held to the panel while it stands. Back, Escape or the pad's B close it, back to the tiles.
 
 ## The character screen
 

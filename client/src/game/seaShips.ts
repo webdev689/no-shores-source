@@ -112,7 +112,7 @@ function round(
       who: `friendly-${friend.traffic}`,
       lies: { ...friend, underWay: true },
       hull: shown(friend.hull),
-      look: { side: 'friendly' as ShipSide },
+      look: { side: 'friendly' as ShipSide, dark: friend.dark ?? false },
       crew: plainCrew(`friendly-${friend.traffic}`),
     })),
   ];

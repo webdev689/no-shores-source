@@ -1,6 +1,6 @@
 import { FIELD_OF_VIEW, type Orbit } from '../editor/orbit.ts';
 import type { Block } from '../rules/movementRules.ts';
-import { BOOM, boomEased, boomReach } from './boom.ts';
+import { BOOM, boomEased, boomReach, roofShare } from './boom.ts';
 
 /** First or third person, how far behind the head the camera is meant to sit, and how far it sits now as it eases;
  *  and how far out its boom stands as it eases clear of what is in the way (`boom.ts`), unset or infinite where
@@ -153,7 +153,7 @@ export function boomFollowed(
   blocks: readonly Block[],
   aim: number,
   place: AimPlace,
-  groundAt: ((x: number, y: number) => number | null) | null,
+  groundAt: ((x: number, y: number, z?: number) => number | null) | null,
   seconds: number,
 ): ViewMode {
   const end = boomEnd(head, yaw, pitch, view, aim, place);
@@ -175,8 +175,8 @@ export function cameraOrbit(
   blocks: readonly Block[],
   aim = 0,
   place: AimPlace = AIM,
-  groundAt: ((x: number, y: number) => number | null) | null = null,
-  roof: ((x: number, y: number) => number | null) | null = null,
+  groundAt: ((x: number, y: number, z?: number) => number | null) | null = null,
+  roof: ((x: number, y: number, z?: number) => number | null) | null = null,
 ): Orbit {
   const forward = forwardOf(yaw, pitch);
   const end = boomEnd(head, yaw, pitch, view, aim, place);
@@ -191,11 +191,9 @@ export function cameraOrbit(
     const share = length > 1e-6 ? Math.min(1, Math.max(0, shown) / length) : 0;
     const along = (part: number) =>
       [0, 1, 2].map((axis) => head[axis] + (end[axis] - head[axis]) * part) as unknown as Point;
-    const reach = along(share);
-    // Under a ceiling by the clearance too, along the same line, so the player stays in the middle of the view.
-    const ceiling = Math.min(roof?.(head[0], head[1]) ?? Infinity, roof?.(reach[0], reach[1]) ?? Infinity);
-    const [over, rise] = [ceiling - BOOM.clearance, end[2] - head[2]];
-    eye = reach[2] > over && rise > 0 ? along(Math.max(0, (over - head[2]) / rise)) : reach;
+    // Under the ceiling over each point of the line by the clearance too, so the player stays in the middle of the
+    // view, and a flight's sloped ceiling keeps the eye as far out as it fits.
+    eye = along(roof ? share * roofShare(head, along(share), roof, BOOM.clearance) : share);
   }
   const zoom = aimZoom(view.shown, aim, place) * widened(view.shown);
   return {

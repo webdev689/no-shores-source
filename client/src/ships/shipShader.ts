@@ -9,6 +9,7 @@ import { SHIP_PARTS, SHIP_PICTURE_TEXELS, shipPictures } from '../textures/shipP
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { flagPictures } from './flagPictures.ts';
+import { GLASS_SHELL } from './lanternMesh.ts';
 import { VERTEX_BYTES } from './shipMesh.ts';
 
 /** Its faces seen from outside reach the screen counter-clockwise, as the land's and the water's do: the export keeps
@@ -140,6 +141,9 @@ export const SHIP_DRAW_SHADER = /* wgsl */ `
 ${PLACE_SHADER}
 ${SHADOW_WGSL}
 const BOUNCE = 0.15;
+// A pane of glass (shell byte GLASS_SHELL: a stern window's, a hung lantern's), pale horn while its ship's lanterns
+// are out.
+const GLASS = vec3f(0.78, 0.7, 0.52);
 
 @vertex
 fn vertex_main(
@@ -161,6 +165,11 @@ fn vertex_main(
   return drawn;
 }
 
+// The light within burning through glass, 'share' of its brightest: amber, flickering with its ship's lanterns.
+fn glass_fire(share: f32) -> vec3f {
+  return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * place.shade.y * share;
+}
+
 // A lantern's glass, lit from inside, at 'at' in its frame: an enclosed light, it shows no flame, only an amber glow
 // flickering with its light, brightest at its middle. Alpha 0 off every lantern's glass. It burns by day as by night,
 // brighter against the dark, as the city's lanterns do.
@@ -171,9 +180,7 @@ fn lantern_glass(at: vec3f) -> vec4f {
     if (lantern.w < 0.5 || length(off.xy) > GLASS_RADIUS || abs(off.z) > GLASS_HALF) {
       continue;
     }
-    let fire = mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w);
-    let glow = fire * place.shade.y * (0.35 + 0.3 * (1.0 - length(off.xy) / GLASS_RADIUS));
-    return vec4f(glow, 1.0);
+    return vec4f(glass_fire(0.35 + 0.3 * (1.0 - length(off.xy) / GLASS_RADIUS)), 1.0);
   }
   return vec4f(0.0);
 }
@@ -184,6 +191,10 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   let normal = normalize(select(-drawn.normal, drawn.normal, facing));
   var colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
   let grain = dot(colour, LIGHTNESS);
+  let glass = drawn.shell > ${GLASS_SHELL - 0.5};
+  if (glass) {
+    colour = GLASS;
+  }
   // A side paints the outside of its shell; its deck's fittings and the insides of its bulwarks keep their timber.
   if (drawn.part == HULL_PART && drawn.shell > 0.5) {
     let line = place.band.x + place.band.y * drawn.model.x;
@@ -207,10 +218,14 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
     sun *= sunlit(drawn.from_eye, normal);
   }
   let light = ambient + sky_direct(normal, sun) + sky_lamps(drawn.from_eye, normal);
+  // A pane burns as its ship's lanterns' glass does, evenly, its glow at the middle of theirs.
+  if (glass && place.shade.y > 0.0) {
+    return vec4f(glass_fire(0.5), 1.0);
+  }
   if (drawn.part == IRON_PART) {
-    let glass = lantern_glass(drawn.at);
-    if (glass.a > 0.0) {
-      return vec4f(glass.rgb, 1.0);
+    let lantern = lantern_glass(drawn.at);
+    if (lantern.a > 0.0) {
+      return vec4f(lantern.rgb, 1.0);
     }
   }
   return vec4f(colour * place.shade.x * light, 1.0);

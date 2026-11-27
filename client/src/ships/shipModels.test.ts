@@ -11,6 +11,7 @@ const viewOf = (slots: number[]) =>
   ({
     drawInto: (...args: unknown[]) => slots.push(args[3] as number),
     lanterns: [],
+    lamps: [],
     boundsAt: (place: ShipPlace, eye: readonly number[]) => [
       place.x - (eye[0] ?? 0),
       place.y - (eye[1] ?? 0),
@@ -85,7 +86,7 @@ test("the ships of one hull take that model's slots in turn", async () => {
   const [sloop, brig] = [[] as number[], [] as number[]];
   const models = new ShipModels(async (hull) => viewOf(hull === 2 ? brig : sloop));
   await Promise.all([models.load(0), models.load(2)]);
-  const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'tithe' as const } });
+  const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'friendly' as const } });
   models.draw({} as GPURenderPassEncoder, [ship(2), ship(0), ship(2), ship(2), ship(0)], CAMERA);
   assert.deepEqual(
     [brig, sloop],
@@ -139,10 +140,15 @@ test('a lantern burns where its ship carries it: turned with its heading and hee
 test("each ship's lanterns light the sky's lamps, in view or not, with the fight's lights, told only when they change", async () => {
   // A device that answers every call with itself, enough for the halos' puffs to be laid.
   const device: unknown = new Proxy(() => device, { get: () => device, apply: () => device });
-  const lit = { ...viewOf([]), lanterns: [[-10, 0, 4]], gpu: { device, format: 'bgra8unorm' } } as unknown as ShipView;
+  const lit = {
+    ...viewOf([]),
+    lanterns: [[-10, 0, 4]],
+    lamps: [[-10, 0, 4]],
+    gpu: { device, format: 'bgra8unorm' },
+  } as unknown as ShipView;
   const models = new ShipModels(async () => lit);
   await models.load(0);
-  const ship = (y: number) => ({ hull: 0, place: { ...PLACE, y }, rig: null, look: { side: 'tithe' as const } });
+  const ship = (y: number) => ({ hull: 0, place: { ...PLACE, y }, rig: null, look: { side: 'friendly' as const } });
   models.draw({} as GPURenderPassEncoder, [ship(-50), ship(50)], CAMERA, undefined, 3);
   const flash = { at: [1, 2, 3] as const, reachM: 26, light: [1, 1, 1] as const, seed: 9 };
   models.shine([flash]);
@@ -171,10 +177,15 @@ test("each ship's lanterns light the sky's lamps, in view or not, with the fight
 
 test("a ship's lantern flickers as a lantern, by a seed of its own ship: no two ships, of one hull or two, in step", async () => {
   const device: unknown = new Proxy(() => device, { get: () => device, apply: () => device });
-  const lit = { ...viewOf([]), lanterns: [[-10, 0, 4]], gpu: { device, format: 'bgra8unorm' } } as unknown as ShipView;
+  const lit = {
+    ...viewOf([]),
+    lanterns: [[-10, 0, 4]],
+    lamps: [[-10, 0, 4]],
+    gpu: { device, format: 'bgra8unorm' },
+  } as unknown as ShipView;
   const models = new ShipModels(async () => lit);
   await Promise.all([models.load(0), models.load(1)]);
-  const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'tithe' as const } });
+  const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'friendly' as const } });
   models.draw({} as GPURenderPassEncoder, [ship(0), ship(0), ship(1)], CAMERA, undefined, 3);
   models.shine();
   const lanterns = CITY_LAMPS.current.filter((lamp) => lamp.reachM === 13);
@@ -187,6 +198,31 @@ test("a ship's lantern flickers as a lantern, by a seed of its own ship: no two 
     [shipSeed(0, 0), shipSeed(0, 1), shipSeed(1, 0)],
   );
   assert.equal(new Set(lanterns.map((lamp) => lamp.seed)).size, 3);
+  models.draw({} as GPURenderPassEncoder, [], CAMERA, undefined, 3);
+  models.shine();
+});
+
+test("the Grey Tithe's ships and a ship running dark light no lamp and burn no glass, a lit one beside them does", async () => {
+  const device: unknown = new Proxy(() => device, { get: () => device, apply: () => device });
+  const burning: unknown[] = [];
+  const lit = {
+    ...viewOf([]),
+    drawInto: (...args: unknown[]) => burning.push(args[7]),
+    lanterns: [[-10, 0, 4]],
+    lamps: [
+      [-10, 0, 4],
+      [-8, 2, 4],
+    ],
+    gpu: { device, format: 'bgra8unorm' },
+  } as unknown as ShipView;
+  const models = new ShipModels(async () => lit);
+  await models.load(0);
+  const ship = (look: { side: 'friendly' | 'tithe'; dark?: boolean }) => ({ hull: 0, place: PLACE, rig: null, look });
+  const ships = [ship({ side: 'tithe' }), ship({ side: 'friendly', dark: true }), ship({ side: 'friendly' })];
+  models.draw({} as GPURenderPassEncoder, ships, CAMERA, undefined, 3);
+  models.shine();
+  assert.equal(CITY_LAMPS.current.filter((lamp) => lamp.reachM === 13).length, 2, "only the lit ship's two lanterns");
+  assert.deepEqual(burning, [null, null, 3], 'the dark ships draw their glass unlit');
   models.draw({} as GPURenderPassEncoder, [], CAMERA, undefined, 3);
   models.shine();
 });

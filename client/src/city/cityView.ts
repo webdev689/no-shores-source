@@ -2,7 +2,11 @@
 // their hulls far off, dithered into each other; its landmark, works and plaza always, and in a ruin the Lattice's
 // great spires, its small crystal only near; its ground plates at every distance. A Drawer the game's scene draws
 // into its own pass.
-import { CITY_LAMPS } from '../sky/lamps.ts';
+import { CITY_LAMPS, lampsLit } from '../sky/lamps.ts';
+import { GlowPoints } from '../sky/glowPoints.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
+import { hourOf } from '../sky/worldClock.ts';
+import { POOL_TEXEL_M } from './nightLights.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, ShadowMap } from '../shadow.ts';
@@ -19,10 +23,13 @@ import {
 import { chunkDraws, crustMoved, type InstancedDraw, withinMiddle, WreckCrust } from './crystalInstances.ts';
 import {
   CITY_BUFFER_USAGE,
+  CITY_VIEW_BYTES,
   type CityPipelines,
   cityPipelines,
+  darkPoolMap,
   MODEL_INSTANCE_BYTES,
   originInstance,
+  poolBindings,
 } from './cityGpu.ts';
 import { CityPainter, type PaintProgress, painting } from './painter.ts';
 import type { ModelEntry } from './cityModels.ts';
@@ -59,7 +66,7 @@ type Instances = {
 export type CityFrame = { triangles: number; draws: number; nearCells: number; buildMs: number };
 
 const TIER_WHOLE = 1;
-const VIEW_BYTES = 96;
+const VIEW_BYTES = CITY_VIEW_BYTES;
 /** How long a frame may spend building a city while an older one stands drawn, milliseconds: the old is drawn until
  *  the new is whole, so no one waits on it. Overlook's takes about a second of steps, so about 500 frames. */
 export const CITY_SLICE_MS = 2;
@@ -71,8 +78,10 @@ export const CITY_FIRST_SLICE_MS = 24;
 type Owned = { destroy(): void };
 
 type Drawn = {
-  /** The city's drawing less its solids, which are let go once on the GPU. */
-  readonly data: Omit<CityData, 'solids'>;
+  /** The city's drawing less its solids and its lights at night, which are let go once on the GPU. */
+  readonly data: Omit<CityData, 'solids' | 'night'>;
+  /** Where its light map lies (west, north from the city's middle, metres east and south), or null for a city not lit. */
+  readonly pools: readonly [number, number, number, number] | null;
   readonly painter: CityPainter;
   readonly group: GPUBindGroup;
   readonly owned: Owned[];
@@ -90,6 +99,8 @@ type Drawn = {
   readonly crystal: GPUBuffer;
   /** Its wrecks' crusts by instance, written again whenever the size the wrecks are drawn at changes. */
   readonly wreckCrust: { readonly buffer: GPUBuffer; readonly crust: WreckCrust } | null;
+  /** A lit city's lights' glowing points, drawn over the water at night; null for a city not lit. */
+  readonly glows: GlowPoints | null;
 };
 
 /** A city being built a few steps a frame: its steps, what of the GPU's they have made so far, its plan, the time
@@ -118,6 +129,8 @@ export class CityView implements CityDrawer {
   private readonly solidRunList: Range[] = [];
   private onPainted: () => void = () => {};
 
+  /** The eye the last frame was seen from, world metres, for the glows drawn over the water after it. */
+  private lastEye: readonly [number, number, number] = [0, 0, 0];
   /** Lists a pass's crystal draws are laid into, kept from pass to pass. */
   private readonly draws: InstancedDraw[] = [];
   private readonly middleChunks: Chunk[] = [];
@@ -225,7 +238,7 @@ export class CityView implements CityDrawer {
   /** The city's drawing put on the GPU once its build's steps are done, a step a large buffer; whatever is made goes
    *  into `owned`, to be let go if the build is. */
   private *drawnSteps(building: Generator<void, CityData>, owned: Owned[]): Generator<void, Drawn> {
-    const { solids, ...data } = yield* building;
+    const { solids, night, ...data } = yield* building;
     const { device } = this.gpu;
     const buffer = (contents: ArrayBufferView | ArrayBuffer, usage: number, least = 16): GPUBuffer => {
       const bytes =
@@ -256,6 +269,24 @@ export class CityView implements CityDrawer {
     const painter = new CityPainter(this.gpu, data.book, () => this.onPainted());
     owned.push(painter);
     yield;
+    const { pools } = night;
+    const poolMap = pools
+      ? device.createTexture({
+          size: [pools.width, pools.height],
+          format: 'r8unorm',
+          usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
+        })
+      : darkPoolMap(device);
+    owned.push(poolMap);
+    if (pools) {
+      device.queue.writeTexture({ texture: poolMap }, pools.texels, { bytesPerRow: pools.width }, [
+        pools.width,
+        pools.height,
+      ]);
+      yield;
+    }
+    const glows = night.glows.length ? new GlowPoints(this.gpu, night.glows, data.origin) : null;
+    if (glows) owned.push(glows);
     const view = buffer(new ArrayBuffer(VIEW_BYTES), CITY_BUFFER_USAGE.uniform);
     const cellTable = buffer(data.cells, CITY_BUFFER_USAGE.storage);
     const layerSizes = buffer(sizes, CITY_BUFFER_USAGE.storage);
@@ -277,6 +308,7 @@ export class CityView implements CityDrawer {
           }),
         },
         { binding: 5, resource: tiles.createView() },
+        ...poolBindings(device, poolMap),
       ],
     });
     const modelVertices = buffer(data.models.vertices, CITY_BUFFER_USAGE.vertex);
@@ -291,6 +323,7 @@ export class CityView implements CityDrawer {
     yield;
     return {
       data,
+      pools: pools && [pools.west, pools.north, pools.width * POOL_TEXEL_M, pools.height * POOL_TEXEL_M],
       painter,
       group,
       owned,
@@ -314,6 +347,7 @@ export class CityView implements CityDrawer {
             return { buffer: buffer(crust.bytes, CITY_BUFFER_USAGE.vertex), crust };
           })()
         : null,
+      glows,
     };
   }
 
@@ -378,6 +412,10 @@ export class CityView implements CityDrawer {
     uniforms.set(data.grid, 20);
     uniforms[22] = data.plates.width;
     uniforms[23] = data.ruined ? 1 : 0;
+    uniforms[24] = hourOf(SKY_NOW.current.worldS);
+    uniforms[25] = drawn.pools ? 1 : 0;
+    if (drawn.pools) uniforms.set(drawn.pools, 28);
+    this.lastEye = shot.eye;
     this.gpu.device.queue.writeBuffer(drawn.view, 0, uniforms);
     this.seen = this.selector.select(data, fromEye, eye, shadow?.active ? shadow : null);
     return this.seen;
@@ -469,6 +507,21 @@ export class CityView implements CityDrawer {
         frame.triangles += run.count * 14;
       }
     Object.assign(this.frame, frame);
+  }
+
+  /** A lit city's glowing lights over the finished picture, after the water, as lit as the lamps are now. */
+  overWater(encoder: GPUCommandEncoder, target: GPUTextureView, fromEye: Float32Array, depth: GPUTexture): void {
+    const glows = this.drawn?.glows;
+    if (!glows) return;
+    glows.draw(
+      encoder,
+      target,
+      depth,
+      fromEye,
+      this.lastEye,
+      lampsLit(SKY_NOW.current.look.daylight),
+      this.uniforms[19] ?? 0,
+    );
   }
 
   /** The near cells' models, an instanced draw a model, their instances kept a selection at a time and written

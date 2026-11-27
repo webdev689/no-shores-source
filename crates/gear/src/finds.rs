@@ -1,43 +1,58 @@
 //! What a chest found in a patrol or a dungeon holds, and what searching a container turns up, after Destiny 1's loot
 //! chests, which held Glimmer, a planetary material and now and then an engram: Aurem, which grows with the level as a
-//! kill's worth does; the island's resource; and a chance of a Vestige. A chest holds more than a search finds. Both
-//! are raised by a harder voyage as a kill is, and neither pays XP.
+//! kill's worth does; the island's resource; and a chance of a Vestige. A chest holds more than a search finds, a
+//! dungeon's more than a patrol's, and a dungeon's vault's the most. All are raised by a harder voyage as a kill is,
+//! and none pays XP.
 
 use crate::character::{Character, Stuff, Vestige};
 use crate::dice::{Dice, Purpose};
 use crate::source::Source;
 use crate::world::Difficulty;
 
-/// What is opened: a chest standing in a patrol or a dungeon, or a container searched.
+/// What is opened: a chest standing in a patrol, a dungeon's chest or its vault's, or a container searched.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Find {
     Chest,
+    DungeonChest,
+    VaultChest,
     Search,
 }
 
 /// What a find holds: its Aurem at level 5, the island's resource (from the first count to the second, each as
-/// likely) one time in `resource_chance`, and its chance of a Vestige, coloured as a drop of foes of `rank` is.
+/// likely) one time in `resource_chance`, and its chances of a Vestige and of an item as itself, coloured as a drop of
+/// foes of `rank` is.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Holds {
     pub aurem: u32,
     pub resource: [u16; 2],
     pub resource_chance: f64,
     pub vestige: f64,
+    pub item: f64,
     pub rank: u8,
 }
 
-/// A chest: about four Major kills' Aurem, a node's worth of the resource give or take one, and a Vestige one time in
-/// four, coloured as a Major's (a Major's own is 4 in 100).
-pub const CHEST: Holds = Holds { aurem: 30, resource: [2, 4], resource_chance: 1.0, vestige: 0.25, rank: 2 };
+/// A patrol's chest: about four Major kills' Aurem, a node's worth of the resource give or take one, and a Vestige one
+/// time in four, coloured as a Major's (a Major's own is 16 in 100).
+pub const CHEST: Holds = Holds { aurem: 30, resource: [2, 4], resource_chance: 1.0, vestige: 0.25, item: 0.0, rank: 2 };
+/// A dungeon's chest: twice a patrol's Aurem, a resource more, and a Vestige as often as an Elite's kill leaves one, in
+/// an Elite's colours, so a chest found in a dungeon is never worth less than a kill met there.
+pub const DUNGEON_CHEST: Holds =
+    Holds { aurem: 60, resource: [3, 5], resource_chance: 1.0, vestige: 0.40, item: 0.0, rank: 3 };
+/// A dungeon's vault's chest: the best a dungeon holds off its way, a sure Vestige in a Miniboss's colours and an item
+/// one time in four, still under a Boss's drop (a sure Vestige and a sure item in a Boss's colours).
+pub const VAULT_CHEST: Holds =
+    Holds { aurem: 150, resource: [4, 6], resource_chance: 1.0, vestige: 1.0, item: 0.25, rank: 4 };
 /// A container searched: a Major kill's Aurem, one of the resource one time in two, and a Vestige one time in twenty,
 /// coloured as a Minor's.
-pub const SEARCH: Holds = Holds { aurem: 8, resource: [1, 1], resource_chance: 0.5, vestige: 0.05, rank: 1 };
+pub const SEARCH: Holds = Holds { aurem: 8, resource: [1, 1], resource_chance: 0.5, vestige: 0.05, item: 0.0, rank: 1 };
 
 impl Find {
     #[must_use]
     pub fn holds(self) -> Holds {
         match self {
             Find::Chest => CHEST,
+            Find::DungeonChest => DUNGEON_CHEST,
+            Find::VaultChest => VAULT_CHEST,
             Find::Search => SEARCH,
         }
     }
@@ -74,7 +89,8 @@ impl Character {
             Some(resource) => self.materials.add(Stuff::Resource(resource), count),
             None => 0,
         };
-        let vestiges = self.loot((holds.vestige * difficulty.reward(), 0.0), holds.rank, level, source, dice);
+        let chances = (holds.vestige * difficulty.reward(), holds.item * difficulty.reward());
+        let vestiges = self.loot(chances, holds.rank, level, source, dice);
         Found { aurem, resource, vestiges }
     }
 }

@@ -18,7 +18,8 @@ use world::layout::Continent;
 mod sites;
 use sites::breach_of;
 pub use sites::{
-    OutpostGround, Place, RUN_REACH_M, chests_of, crossings_of, doors_of, foes_of, holders_of, outpost_of, places_of,
+    OutpostGround, Place, RUN_REACH_M, chests_of, crossings_of, doors_of, foes_of, holders_of, on_plot, outpost_of,
+    places_of, plot_off,
 };
 
 /// How far past a section's ring its window reaches, metres: beyond the 60 m where a body dies, so no living body

@@ -79,8 +79,9 @@ jobs:
           CODE: >-
             server/accounts server/address.ts server/arrival.ts server/keeping.ts server/outpostHost.ts
             server/roomDoor.ts server/roomNames.ts client/src/game/guild client/src/player/binds.ts
-            content/gear/factions.json content/guilds content/modules/modules.json content/world/islands.json
-            package.json package-lock.json .github/workflows/rooms.yml .github/deploy-ready.sh
+            client/src/overworld/regions.ts content/gear/factions.json content/guilds content/modules/modules.json
+            content/world/islands.json content/world/regions.json package.json package-lock.json
+            .github/workflows/rooms.yml .github/deploy-ready.sh
         run: bash .github/deploy-ready.sh accounts "the accounts"
 
   # One deploy at a time; a newer merge's deploy replaces one waiting. The database's id never enters the repository:
@@ -129,7 +130,7 @@ jobs:
       - name: Deploy the accounts
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
-        run: npx wrangler deploy --config "$CONFIG"
+        run: npx wrangler deploy --config "$CONFIG" --var "ACCOUNTS_COMMIT:$GITHUB_SHA"
       # Each key goes in from a pipe, never a command line or a file, and only when the repository has it.
       - name: Hand over the Discord app's keys
         env:
@@ -145,14 +146,16 @@ jobs:
               echo "::warning::the repository has no $name secret: Discord sign-in is off unless an earlier deploy gave the Worker one"
             fi
           done
-      - name: Check the accounts answer
+      # The deploy stamped this commit on the Worker, so a health answer naming it is the new code live.
+      - name: Check the accounts answer from this commit
         run: |
           set -euo pipefail
           for attempt in 1 2 3 4 5 6; do
-            if curl -fsS --max-time 15 https://overlook-accounts.mackcothran.workers.dev/v1/health; then exit 0; fi
+            if curl -fsS --max-time 15 https://overlook-accounts.mackcothran.workers.dev/v1/health |
+              jq -e --arg commit "$GITHUB_SHA" '.commit == $commit'; then exit 0; fi
             sleep 10
           done
-          echo "::error::the accounts did not answer /v1/health"
+          echo "::error::the accounts did not answer /v1/health from $GITHUB_SHA"
           exit 1
 
   # The rooms deploy after the accounts, whose Worker their service binding names; a failed accounts deploy leaves

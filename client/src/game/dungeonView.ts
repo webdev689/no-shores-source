@@ -18,10 +18,12 @@ import { propPlans } from './dungeonCells.ts';
 import { CLUSTER_COUNT, LightClusters, MOST_LISTED } from './dungeonClusters.ts';
 import { type Cache, chestMesh, chestsMesh, foundChest } from './dungeonChest.ts';
 import type { ChestDrawn } from './finds.ts';
-import { type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
+import { type DungeonLayout, SIDE_STEPS, STOREY_M, storeysOf, storeyUnder, type StyleKey } from './dungeonLayout.ts';
+import { reachOf, seenFrom, type Spaces, spaceAt, spacesOf } from './dungeonSpaces.ts';
 import { dressingOf } from './dungeonDressing.ts';
 import { burningOf, cellWords, LIGHT_KINDS, type Light, lightAt, MOODS, NearestLights } from './dungeonLight.ts';
 import { dungeonMesh } from './dungeonMesh.ts';
+import type { StoreyPlane } from './dungeonStoreyPlanes.ts';
 import { drownedNow, layEncounters, waterMesh } from './encounterMesh.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { ModulePack } from './dungeonModules.ts';
@@ -60,6 +62,8 @@ type Drawn = {
   pieceLights: readonly Light[];
   /** Picks the lights each frame is lit by. */
   picker: NearestLights;
+  /** What joins its storeys, for the spaces each light and surface lies in (`dungeonSpaces.ts`). */
+  readonly spaces: Spaces;
   readonly book: SmallBook;
   readonly wood: readonly [number, number];
   readonly painter: CityPainter;
@@ -93,6 +97,7 @@ export class DungeonView {
   /** What a frame writes, kept from frame to frame: the view's parts before its grid, the lights, the clusters. */
   private readonly frame = new Float32Array(VIEW_FLOATS.grid);
   private readonly burningFloats = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
+  private readonly burningBits = new Uint32Array(this.burningFloats.buffer);
   private readonly clusters = new LightClusters(MOST_LIGHTS);
   /** The flames its lights burn from, drawn as fires over the finished picture: one of the scene's drawers. */
   readonly flames: Flames;
@@ -168,18 +173,21 @@ export class DungeonView {
     const [timberArchive, timberRecord] = MATERIALS[climate.climate].timber;
     const wood = [timberArchive, timberRecord] as const;
     const forged = layout.props.map(([id]) => propModel(props, id));
-    const dressing = dressingOf(layout, packs, climate.climate, propPlans(layout, forged));
+    // Each storey is furnished from its own floor, with its own props, fixtures and seals.
+    const forgedOn = (plane: StoreyPlane) => plane.props.map((index) => forged[index] ?? null);
+    const dressing = dressingOf(layout, packs, climate.climate, (plane) => propPlans(plane.layout, forgedOn(plane)));
     const model = dungeonMesh(
       layout,
       door,
-      (mesh) => {
-        layout.props.forEach(([, x, y, z, yaw], index) => {
-          const prop = forged[index];
+      (mesh, plane) => {
+        const models = forgedOn(plane);
+        plane.layout.props.forEach(([, x, y, z, yaw], index) => {
+          const prop = models[index];
           if (prop) layModel(mesh, prop, [x, y, z], yaw);
         });
-        for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture, bedOf(layout, fixture));
-        dressing.lay(mesh);
-        layEncounters(mesh, layout);
+        for (const fixture of plane.layout.fixtures) fixtureMesh(mesh, fixture, bedOf(plane.layout, fixture));
+        dressing.lay(mesh, plane);
+        layEncounters(mesh, plane.layout);
       },
       dressing,
     );
@@ -207,7 +215,7 @@ export class DungeonView {
     });
     // The grid and the looks' moods hold for the dungeon; a frame writes the view's parts before them.
     const fixed = new Float32Array(VIEW_FLOATS.all - VIEW_FLOATS.grid);
-    fixed.set([layout.cell, layout.columns, layout.rows, 0]);
+    fixed.set([layout.cell, layout.columns, layout.rows, layout.storeyM ?? STOREY_M]);
     layout.looks
       .slice(0, MOST_LOOKS)
       .forEach((look, index) => fixed.set([...MOODS[look.style], 0], VIEW_FLOATS.moods - VIEW_FLOATS.grid + index * 4));
@@ -233,10 +241,13 @@ export class DungeonView {
     const burning = burningOf(layout);
     const [east, south] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
     const { x, y, height } = layout.portal;
+    const spaces = spacesOf(layout);
+    const portalAt = [x - east * PORTAL_OUT_M, y - south * PORTAL_OUT_M, (layout.portal.z ?? 0) + height / 2] as const;
     const portalLight: Light = {
-      at: [x - east * PORTAL_OUT_M, y - south * PORTAL_OUT_M, height / 2],
+      at: portalAt,
       number: burning.length,
       burning: LIGHT_KINDS.portal,
+      ...(storeysOf(layout) > 1 ? { space: reachOf(layout, spaces, portalAt, LIGHT_KINDS.portal.reach) } : {}),
     };
     const floor = this.buffersOf(model, book);
     this.lightFlames(burning);
@@ -247,6 +258,7 @@ export class DungeonView {
       portalLight,
       pieceLights: [],
       picker: new NearestLights(burning, portalLight),
+      spaces,
       book,
       wood,
       painter,
@@ -304,7 +316,7 @@ export class DungeonView {
     const drawn = this.drawn;
     if (!drawn) return;
     const shown = chests.map(foundChest);
-    const key = shown.map((chest) => `${chest.x},${chest.y},${(chest.lid ?? 0).toFixed(2)}`).join(';');
+    const key = shown.map((chest) => `${chest.x},${chest.y},${(chest.lid ?? 0).toFixed(2)},${chest.vault}`).join(';');
     if (key === drawn.findsShown) return;
     drawn.findsShown = key;
     for (const buffer of [drawn.finds?.vertices, drawn.finds?.indices]) buffer?.destroy();
@@ -333,8 +345,10 @@ export class DungeonView {
     const { layout } = drawn;
     const [column, row] = [Math.floor(point[0] / layout.cell), Math.floor(point[1] / layout.cell)];
     const inside = column >= 0 && row >= 0 && column < layout.columns && row < layout.rows;
-    const look = layout.looks[Math.max(0, inside ? (layout.cellLooks[row * layout.columns + column] ?? 0) : 0)];
-    return lightAt(drawn.nearest ?? this.lights(drawn), point, time, MOODS[look?.style ?? layout.style]);
+    const cell = (storeyUnder(layout, point[2]) * layout.rows + row) * layout.columns + column;
+    const look = layout.looks[Math.max(0, inside ? (layout.cellLooks[cell] ?? 0) : 0)];
+    const space = spaceAt(layout, drawn.spaces, point);
+    return lightAt(drawn.nearest ?? this.lights(drawn), point, time, MOODS[look?.style ?? layout.style], space);
   }
 
   /** The torches, the fixtures, the pieces' lights and the carried one, and the portal while it stands open, which is
@@ -342,6 +356,11 @@ export class DungeonView {
   private lights(drawn: Drawn): readonly Light[] {
     const burning = [...drawn.burning, ...drawn.pieceLights, ...(drawn.carried ? [drawn.carried] : [])];
     return drawn.shown?.open ? [...burning, drawn.portalLight] : burning;
+  }
+
+  /** The dungeon's mesh as drawn now, which its map inks from the same buffers; null with no dungeon set. */
+  get mesh(): Buffers | null {
+    return this.drawn?.floor ?? null;
   }
 
   /** Draws the dungeon from an eye at `eye` (the dungeon's metres), lit by the torches nearest it: its depth first,
@@ -356,12 +375,12 @@ export class DungeonView {
     if (!drawn) return;
     if (painting(drawn.painter)) standIn('dungeon pictures');
     const { device } = this.gpu;
-    const { frame, burningFloats, clusters } = this;
+    const { frame, burningFloats, burningBits, clusters } = this;
     const open = drawn.shown?.open === true;
-    const nearest = drawn.picker.nearest(eye, open, MOST_LIGHTS);
+    const nearest = drawn.picker.nearest(eye, open, MOST_LIGHTS, seenFrom(drawn.layout, drawn.spaces, eye));
     drawn.nearest = nearest;
     for (let index = 0; index < nearest.length; index++)
-      lightFloats(nearest[index], burningFloats, index * LIGHT_FLOATS);
+      lightFloats(nearest[index], burningFloats, index * LIGHT_FLOATS, burningBits);
     device.queue.writeBuffer(drawn.lights, 0, burningFloats);
     const listed = clusters.build(nearest, fromEye, eye);
     if (listed) device.queue.writeBuffer(drawn.clusters, 0, clusters.words, 0, CLUSTER_COUNT + clusters.listed);

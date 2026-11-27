@@ -27,6 +27,10 @@ import { meshSolid } from './solidMesh.ts';
 import { finished } from './steps.ts';
 import { type Reach, reachesWhole, reachFrom } from './tiers.ts';
 import { cutAtWindows } from './windowCuts.ts';
+import type { GlowPoint } from '../sky/glowPoints.ts';
+import { glowsOf, LIGHT_KINDS, type PoolMap, poolMapSteps, postMeshes } from './nightLights.ts';
+import { streetLampSteps } from './streetLamps.ts';
+import { DISTRICTS } from './windowLights.ts';
 import { grainsOf } from './walkGrain.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
@@ -84,7 +88,8 @@ export type CityData = {
   readonly grid: readonly [number, number];
   readonly side: number;
   readonly book: PictureBook;
-  /** Each cell's middle from the city's origin and its level, four floats a cell. */
+  /** Each cell's middle from the city's origin, its level, and 1 more than its district's number (`DISTRICTS`, 0 for
+   *  none), four floats a cell. */
   readonly cells: Float32Array;
   readonly models: ModelBuffers;
   readonly near: ReadonlyMap<number, readonly NearInstance[]>;
@@ -105,6 +110,9 @@ export type CityData = {
   readonly firstFormation: number;
   /** A ruin's wrecks, each with its crust, placed from its middle at its true size. */
   readonly wrecks: readonly { readonly wreck: Wreck; readonly crust: readonly CrystalPlace[] }[];
+  /** A lit city's lights at night: their glowing points, and the light map of their pools on the ground (null for a
+   *  city the plan does not light). */
+  readonly night: { readonly glows: readonly GlowPoint[]; readonly pools: PoolMap | null };
 };
 
 /** Works out a city's drawing from its plan, climate, blocks and the forged tables, in one go. */
@@ -135,7 +143,8 @@ export function* cityBuildSteps(
   const cells = new Float32Array(side * side * 4);
   for (const [index, cell] of levelled) {
     const [west, north] = cellCorner(plan, cell);
-    cells.set([west + CELL_M / 2 - origin[0], north + CELL_M / 2 - origin[1], cell.level, 1], index * 4);
+    const district = DISTRICTS.indexOf(cell.district as (typeof DISTRICTS)[number]) + 1;
+    cells.set([west + CELL_M / 2 - origin[0], north + CELL_M / 2 - origin[1], cell.level, 1 + district], index * 4);
   }
 
   const placedPieces: Placed[] = [];
@@ -226,6 +235,7 @@ export function* cityBuildSteps(
   );
 
   const chunkCount = chunkSide * chunkSide;
+  const formations = plan.ruined ? formationMeshes(book.materials.crystal) : [];
   yield;
   const { masses, massRanges, hullRanges, tops, heaps, crystal } = yield* buildingMassesOf(
     plan,
@@ -258,6 +268,40 @@ export function* cityBuildSteps(
     const list = near.get(cell) ?? [];
     const stands = [place.at[0] - origin[0], place.at[1] - origin[1], place.at[2], place.yaw] as const;
     list.push({ model: models.length + place.formation, at: stands, cut: 0, scale: place.scale });
+    near.set(cell, list);
+  }
+  // A lit city's lights: the plan's, and its blocks' streets' lamps. Each post stands by instance in the levelled cell
+  // under it, or the nearest within three cells (the quay's and the piers' stand on the shore and over the sea).
+  const piecesByCell = new Map<number, { id: number; at: [number, number]; yaw: number }[]>();
+  for (const piece of placedPieces) {
+    const list = piecesByCell.get(piece.cell) ?? [];
+    list.push({ id: piece.row[0] ?? 0, at: [piece.at[0] + origin[0], piece.at[1] + origin[1]], yaw: piece.at[3] });
+    piecesByCell.set(piece.cell, list);
+  }
+  const lights = [
+    ...(plan.lights ?? []),
+    ...(yield* streetLampSteps(
+      plan,
+      blocks,
+      tables,
+      (cell) => piecesByCell.get(cellIndex(side, cell.column, cell.row)) ?? [],
+    )),
+  ];
+  yield;
+  for (const light of lights) {
+    const cell = levelledNear(levelled, side, [
+      Math.floor((light.at[0] - plan.grid.west) / CELL_M),
+      Math.floor((light.at[1] - plan.grid.north) / CELL_M),
+    ]);
+    if (cell === null) continue;
+    const list = near.get(cell) ?? [];
+    const stands = [light.at[0] - origin[0], light.at[1] - origin[1], light.at[2], 0] as const;
+    list.push({
+      model: models.length + formations.length + LIGHT_KINDS.indexOf(light.kind),
+      at: stands,
+      cut: 0,
+      scale: 1,
+    });
     near.set(cell, list);
   }
   for (const list of near.values()) list.sort((a, b) => a.model - b.model);
@@ -376,11 +420,18 @@ export function* cityBuildSteps(
     yield;
   }
 
-  const formations = plan.ruined ? formationMeshes(book.materials.crystal) : [];
+  const posts = postMeshes(book.materials.iron, book.materials.glow);
   yield;
-  const modelData = yield* modelBufferSteps(models, book.layerOf, formations);
+  // a building's windows are lit or dark a piece at a time; a prop's cut-out texels are no window
+  const modelData = yield* modelBufferSteps(
+    models,
+    book.layerOf,
+    [...formations, ...posts],
+    (model) => !(keys[model] ?? 'prop:').startsWith('prop:'),
+  );
   const plates = yield* groundPlateSteps(plan, blocks, book.ground, book.materials.paving);
   const cleared = yield* clearedGroundSteps(plan);
+  const pools = yield* poolMapSteps(lights, origin);
   const crystalDrawn = crystalInstances(great, middle, origin, FORMATIONS.length, chunkCount);
   yield;
   return {
@@ -407,7 +458,26 @@ export function* cityBuildSteps(
     crystal: crystalDrawn,
     firstFormation: models.length,
     wrecks: (plan.ruined ? (plan.wrecks ?? []) : []).map((wreck) => ({ wreck, crust: wreckCrust(wreck) })),
+    night: { glows: glowsOf(lights), pools },
   };
+}
+
+/** The levelled cell at `cell` (column, row), or the nearest within three cells of it, nearer rings first and each
+ *  ring row by row; null with none. */
+export function levelledNear(
+  levelled: ReadonlyMap<number, unknown>,
+  side: number,
+  cell: readonly [number, number],
+): number | null {
+  for (let ring = 0; ring <= 3; ring++)
+    for (let row = cell[1] - ring; row <= cell[1] + ring; row++)
+      for (let column = cell[0] - ring; column <= cell[0] + ring; column++) {
+        if (Math.max(Math.abs(column - cell[0]), Math.abs(row - cell[1])) !== ring) continue;
+        if (column < 0 || row < 0 || column >= side || row >= side) continue;
+        const index = cellIndex(side, column, row);
+        if (levelled.has(index)) return index;
+      }
+  return null;
 }
 
 /** The ranges of the crystal's small detail to draw: those of the chunks within the whole tier's reach of the eye

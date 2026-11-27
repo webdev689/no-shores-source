@@ -18,7 +18,12 @@ export function recorded(
 ): { story: Story; calls: string[] } {
   const calls: string[] = [];
   // The storm's lightning is still unless a test says otherwise.
-  const answered: Readonly<Record<string, unknown>> = { 'lightning.step': { flash: 0, bolt: null }, ...answers };
+  const answered: Readonly<Record<string, unknown>> = {
+    'lightning.step': { flash: 0, bolt: null },
+    // A scene is said at once, so a beat that waits for its scene goes on.
+    'stage.play': Promise.resolve(),
+    ...answers,
+  };
   const part = (path: string): unknown =>
     path in values
       ? values[path]

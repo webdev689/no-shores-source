@@ -10,7 +10,7 @@ use crate::PlayerId;
 use crate::battle::Fights;
 pub use crate::battle::{QUIET, SeaFight};
 use crate::chart::{Charted, SeaChart};
-use crate::clash::{Clash, ship_at, step_clashes};
+use crate::clash::{Clash, light_fight, ship_at, step_clashes};
 pub(crate) use crate::coast::{Coast, leg_meets_land, on_land};
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::friendlies::{Friendlies, Friendly};
@@ -407,6 +407,11 @@ impl Sea {
         self.fights.fit(&self.harbour.characters);
         let chart = &self.chart;
         self.fights.break_off_home(|at| chart.home(at));
+        let world_s = self.weather.world_start_s + time;
+        let fights = self.fights.list.iter_mut().map(|fought| &mut fought.fight);
+        for fight in fights.chain(self.clashes.iter_mut().map(|clash| &mut clash.fight)) {
+            light_fight(fight, world_s);
+        }
         let (outcomes, sank) = self.fights.step(&self.coasts, time);
         self.friendlies.back_from_clash(&[], std::mem::take(&mut self.fights.freed));
         self.after_fights(outcomes, &sank);
@@ -433,14 +438,17 @@ impl Sea {
             .collect();
         let islands: Vec<&Coast> = self.islands.coasts().collect();
         let chart = SeaChart { coasts: &self.coasts, charted: &self.chart, islands: &islands };
+        self.hostiles.clock_s = Some(world_s);
         let mut met = self.hostiles.tick(TICK_SECONDS, &ships, &chart);
         ports::wary_meet(&mut self.hostiles, &self.berths, &ships, &mut met);
-        let world_s = self.weather.world_start_s + time;
         self.friendlies.sail(TICK_SECONDS, &players, (self.chart.traffic.as_ref(), &chart), world_s);
         let traffic = (self.chart.traffic.as_ref(), &chart);
         for (tithe, friend) in self.friendlies.meet(&mut self.hostiles, traffic, world_s) {
             let weather = self.weather.at([tithe.x, tithe.y], time);
-            self.clashes.push(Clash::begin((tithe, friend), weather, &self.coasts, time));
+            let mut clash = Clash::begin((tithe, friend), weather, &self.coasts, time);
+            // Lit now, as a player may come in sight of it this tick.
+            light_fight(&mut clash.fight, world_s);
+            self.clashes.push(clash);
         }
         let mut heave = |player| heave_to((&mut self.berths, &mut self.aboard, &mut self.harbour), player);
         let at_sea = (&mut self.clashes, &mut self.hostiles);

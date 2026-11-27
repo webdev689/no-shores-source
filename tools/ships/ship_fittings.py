@@ -158,7 +158,7 @@ def fife_rail(piece, hull, x):
 
 
 def stern_windows(piece, hull):
-    """Windows round her stern, each square to her side where it stands: a frame, a dark pane and a mullion."""
+    """Windows round her stern, each square to her side where it stands: a frame, a pane of glass and a mullion."""
     middle = hull.deck(hull.aft + 1) - 0.72
     for x, side in hull.numbers['stern_windows']:
         (_, py, _), _ = hull.surface(x, middle)
@@ -169,7 +169,7 @@ def stern_windows(piece, hull):
         panel(piece, centre, (across, out), (0.62, 0.78, 0.07), 'spar')
         pane = [tuple(centre[axis] + out[axis] * 0.075 + across[axis] * da + (0, 0, dz)[axis] for axis in range(3))
                 for da, dz in ((-0.24, -0.3), (0.24, -0.3), (0.24, 0.3), (-0.24, 0.3))]
-        piece.quad(pane, 'iron', out)
+        piece.quad(pane, 'glass', out)
         panel(piece, tuple(centre[axis] + out[axis] * 0.08 for axis in range(3)), (across, out), (0.05, 0.6, 0.03),
               'spar')
 

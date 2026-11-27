@@ -1,5 +1,6 @@
 // What the helm's and the map's controls do, from the HUD's presses and the keys: the map raised at the helm or over
 // the land, Manage, the helm left and taken again, the voyage stopped or resumed, and a mark chosen at sea.
+import { DUNGEON_MAP } from './dungeonMap/dungeonMap.ts';
 import type { Playing } from './gameFrame.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { landSheetOf } from './landMap.ts';
@@ -26,8 +27,11 @@ export function helmControls(playing: Playing, input: { lock(): void }, game: He
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
       const passage = game.passageMap();
-      if (!passage && foot.mapless) return;
-      playing.helmMap.openLand(passage ?? landSheetOf(foot.node, playing.landmass, groundAt));
+      // In a dungeon the same key opens its own map; in a passage zone, under ground or not, the web's.
+      if (!passage && foot.dungeon) DUNGEON_MAP.toggle();
+      else if (passage || !foot.mapless)
+        playing.helmMap.openLand(passage ?? landSheetOf(foot.node, playing.landmass, groundAt));
+      else return;
       document.exitPointerLock();
     }
   };

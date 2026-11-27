@@ -52,18 +52,44 @@ export function blockReach(from: Point, to: Point, blocks: readonly Block[], cle
 export function groundReach(
   from: Point,
   to: Point,
-  groundAt: (x: number, y: number) => number | null,
+  groundAt: (x: number, y: number, z?: number) => number | null,
   clearance: number,
 ): number {
   const length = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
   const steps = Math.ceil(length / BOOM.groundStep);
   for (let step = 1; step <= steps; step++) {
     const share = Math.min(1, step / steps);
-    const ground = groundAt(from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share);
-    if (ground !== null && from[2] + (to[2] - from[2]) * share < ground + clearance)
-      return ((step - 1) / steps) * length;
+    const [x, y, z] = AXES.map((axis) => from[axis] + (to[axis] - from[axis]) * share) as [number, number, number];
+    const ground = groundAt(x, y, z);
+    if (ground !== null && z < ground + clearance) return ((step - 1) / steps) * length;
   }
   return length;
+}
+
+/** How far along the line from `from` to `to` (a share, 0 to 1) it stays `clearance` under the ceiling `roof` gives
+ *  over each point, felt every `BOOM.groundStep` at the point's own height; where it is not, the crossing between the
+ *  last point felt clear and the first that is not, so a flat ceiling or a flight's sloped one stops it where met. */
+export function roofShare(
+  from: Point,
+  to: Point,
+  roof: (x: number, y: number, z?: number) => number | null,
+  clearance: number,
+): number {
+  const steps = Math.max(1, Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]) / BOOM.groundStep));
+  // How far over the ceiling less the clearance the line stands at a share of it; never over where there is none.
+  const over = (share: number) => {
+    const [x, y, z] = AXES.map((axis) => from[axis] + (to[axis] - from[axis]) * share) as [number, number, number];
+    const ceiling = roof(x, y, z);
+    return ceiling === null ? Number.NEGATIVE_INFINITY : z - (ceiling - clearance);
+  };
+  let [last, before] = [0, over(0)];
+  for (let step = 1; step <= steps; step++) {
+    const [share, now] = [step / steps, over(step / steps)];
+    if (now > 0)
+      return before > 0 || !Number.isFinite(before) ? last : last + ((share - last) * -before) / (now - before);
+    [last, before] = [share, now];
+  }
+  return 1;
 }
 
 /** How far out the boom from `head` to `want` stands clear of the blocks and the ground by `clearance`, metres. */
@@ -71,7 +97,7 @@ export function boomReach(
   head: Point,
   want: Point,
   blocks: readonly Block[],
-  groundAt: ((x: number, y: number) => number | null) | null,
+  groundAt: ((x: number, y: number, z?: number) => number | null) | null,
   clearance: number,
 ): number {
   const byBlocks = blockReach(head, want, blocks, clearance);
