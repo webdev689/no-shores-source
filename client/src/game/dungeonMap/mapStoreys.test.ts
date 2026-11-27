@@ -56,13 +56,13 @@ test('a flight is walked as its ramp, from the upper floor down to the lower', (
 
 test('the storey a body stands on is the highest floor under its feet by less than half a storey', () => {
   const storeys = readStoreys(STOREYED);
-  const at = (column: number, z: number) => storeyOfFeet(STOREYED, storeys, [(column + 0.5) * 3.2, 1.6, z]);
-  assert.equal(at(0, 0), 0);
-  assert.equal(at(0, -0.4), 0);
-  assert.equal(at(2, -3), 0, "on the flight's upper half, still the storey over");
-  assert.equal(at(3, -5), 1);
-  assert.equal(at(5, -8), 1);
-  assert.equal(at(5, -30), 1);
+  const storeyAt = (column: number, z: number) => storeyOfFeet(STOREYED, storeys, [(column + 0.5) * 3.2, 1.6, z]);
+  assert.equal(storeyAt(0, 0), 0);
+  assert.equal(storeyAt(0, -0.4), 0);
+  assert.equal(storeyAt(2, -3), 0, "on the flight's upper half, still the storey over");
+  assert.equal(storeyAt(3, -5), 1);
+  assert.equal(storeyAt(5, -8), 1);
+  assert.equal(storeyAt(5, -30), 1);
 });
 
 test('feet high in the air under open air are on the storey whose floor is under them, not the one over', () => {
