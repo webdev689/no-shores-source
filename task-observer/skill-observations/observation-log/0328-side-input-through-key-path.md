@@ -1,5 +1,5 @@
 ---
-id: 327
+id: 328
 title: "Input meant to act as a key was given its own mousedown listeners, which every window that swallows keys missed; the read-only audit caught it"
 status: open
 type: internal
