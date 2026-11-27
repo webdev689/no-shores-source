@@ -15,7 +15,6 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - #253: Record No Shores (Mobile): rebuilt in Rust, beside the browser game
 - #251: Drops are larger and brighter, and weapons and armour lie on the ground as real pickups
 - #250: The kit runs only in cloud sessions
-- #249: The welcome's gifts and lessons: steps done early count, and lesson steps stop sending notices
 - #224: The walk's left arm hangs at the side, the healing drink has its own move and a red swirl, and the Thunderlock's hold is drawn
 - #159: The rooms' worker tests wait for what they check, not for the clock
 - #114: The gear message carries the pledge once
