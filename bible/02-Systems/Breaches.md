@@ -38,20 +38,22 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 
 ## How it works
 
-- **Two tiers.** `gear::breach::Tier`: Normal stands its foes at 26 and opens at level 25; Hard at 30, opening at 29
-  and only once Normal is won (`Shut::BreachHard`). The fallen are revived as anywhere ([[Revives]]); the Breach adds
-  its own rules on top (`breach/fallen.rs`). At Normal the fallen in a running encounter stand again of themselves,
-  unasked, after 10 s at its stage, unless revived sooner; at Hard they never stand again of themselves, and each
-  revive spends one of the attempt's 5 revives, none left meaning none (`breach_lets_revive`). Outside a running
-  encounter the fallen stand again after 6 s at either tier (`stands_after`); a fall into the dark is not revived (one who leaves so comes back so), and
-  waits as long. Every stand at the stage reached is a respawn there, the stage the Breach's checkpoint, told
-  `Checkpoint` as it moves on. At the Waking the same holds for the company holding the gate in its hollow, standing
-  again at the gate's arrival, its fallen revived only by its own company. At Hard every blow on a player
-  in the run, or of the company in its Waking, weighs 1.25 times. The whole company unwritten (`unwrite_all`) loses the attempt 3 s on, whoever stands again meanwhile
-  (`Breach::lost`); and every living player down 3 s at once wipes the
-  attempt: its foes go, the company stands whole at its stage, its revives are whole again, and it begins again as
-  they walk in. A player who leaves and comes back keeps what the Breach laid on them: down if they left down (a fall
-  too), their mark and its time, and a shore they were taken to (`breach/rejoin.rs`).
+- **Two tiers.** `gear::breach::Tier`: Normal stands its foes at 26 and opens at level 25; Hard at 30, opening at 29 and
+  only once Normal is won (`Shut::BreachHard`). Its foes, the Waking's too, carry shields as any foe may, one in five,
+  but never a Boss, a Miniboss, a bell or a Watcher ([[Gear]], "Elements and shields"). The fallen are revived as
+  anywhere ([[Revives]]); the Breach adds its own rules on top (`breach/fallen.rs`). At Normal the fallen in a running
+  encounter stand again of themselves, unasked, after 10 s at its stage, unless revived sooner; at Hard they never stand
+  again of themselves, and each revive spends one of the attempt's 5 revives, none left meaning none
+  (`breach_lets_revive`). Outside a running encounter the fallen stand again after 6 s at either tier (`stands_after`);
+  a fall into the dark is not revived (one who leaves so comes back so), and waits as long. Every stand at the stage
+  reached is a respawn there, the stage the Breach's checkpoint, told `Checkpoint` as it moves on. At the Waking the
+  same holds for the company holding the gate in its hollow, standing again at the gate's arrival, its fallen revived
+  only by its own company. At Hard every blow on a player in the run, or of the company in its Waking, weighs 1.25
+  times. The whole company unwritten (`unwrite_all`) loses the attempt 3 s on, whoever stands again meanwhile
+  (`Breach::lost`); and every living player down 3 s at once wipes the attempt: its foes go, the company stands whole at
+  its stage, its revives are whole again, and it begins again as they walk in. A player who leaves and comes back keeps
+  what the Breach laid on them: down if they left down (a fall too), their mark and its time, and a shore they were
+  taken to (`breach/rejoin.rs`).
 - **Its great foes** are matched to everyone who has played in the run, living, fallen or away (`Breach::company`), and
   matched again as more come in, keeping their share of health (each player past the first adds 0.45
   of its health; a Keeper is matched to half the company), then stand at their own times: the Scrivener six, the
@@ -86,8 +88,9 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 - **The Lodestone.** The Breach's relic, taken from its plinth within 2.5 m and set down again. Its bearer fights bare
   handed: their swing is its Strike (three times a blow); Guard raises Hold True (4 m round the bearer, 6 s at most,
   10 s to rest), which cleanses the Rewritten and halves a foe's blow there; the Art key Grounds it once charged
-  (20 s): within 8 m it breaks a ward. Left lying 6 s (Hard 4) it unwrites the company. Hold True rests from whenever it ends, a set-down or a pass
-  too; the stone is set down only standing; fallen into the dark with its bearer, it goes home to its plinth.
+  (20 s): within 8 m it breaks a ward and strips the foes there of their shields, which do not grow back. Left lying
+  6 s (Hard 4) it unwrites the company. Hold True rests from whenever it ends, a set-down or a pass too; the stone is
+  set down only standing; fallen into the dark with its bearer, it goes home to its plinth.
 - **Rewritten.** A mark the encounters lay on players; when its time comes the Rewritten are unwritten (killed)
   unless cleansed first.
 

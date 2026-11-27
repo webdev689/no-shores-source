@@ -570,3 +570,23 @@ fn in_a_test_room_one_player_on_one_mooring_fills_the_spire_and_wakes_the_gate_a
     room.tick();
     assert!(room.breach_opened("run-a"), "woken, the gate opens to the tester");
 }
+
+#[test]
+fn the_wakings_foes_stand_shielded_as_any_foe_may() {
+    let (mut room, players) = gate_room(8);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    let mut shields = Vec::new();
+    for _ in 0..10 {
+        room.breach_gate.as_mut().expect("gate").next_wave = room.clock + 1;
+        room.tick();
+        for id in room.breach_gate.as_ref().expect("gate").foes.clone() {
+            shields.extend(room.foes.get(&id).map(|found| found.shield.is_some()));
+            room.gone(id);
+        }
+    }
+    assert!(shields.len() >= 40 && shields.contains(&true), "some of {} shielded", shields.len());
+}

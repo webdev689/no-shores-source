@@ -494,6 +494,7 @@ impl Room {
         self.step_arts();
         self.judge_waiting();
         self.heal_linked();
+        self.regrow_shields();
         self.tell_brains();
         self.fall_with_callers();
         self.raise_the_dead();
