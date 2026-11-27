@@ -20,7 +20,7 @@ From [[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostil
 | Which house a friendly ship sails for | One of the three by its traffic id (`1 + id % 3`), the same on every page | Fixed for a ship's life, and ships leaving a port take turns |
 | A house's colours | Its flag, as a player's ship flies it; the hull and canvas stay the friendly side's | Colours are a flag |
 | How a Sloop escapes a Boss | A captain gives up a chase after 150 s in which it fired no volley and, out of its fighting range, closed no tenth of the gap; a blow from a ship it spared ends the spare. The Boss's way stays 1.3 times a Sloop's | Slowed to a Sloop's way, a Boss lost most fights to a Sloop standing off; the chase rule leaves the stand-up fight as it was |
-| The seas at Normal | Every sailing goes to the one sea; the voyage card's Elite and Abyss set the tier of the places landed at | "The seas only": the patrol zones keep their tiers |
+| The seas at Normal | Every sailing goes to the one sea; the voyage card's Elite and Abyss set the tier of the places landed at, a sea island and its dungeon among them, which ask the one sea of the island | "The seas only": the patrol zones keep their tiers |
 | Docked at a port | The ship kept within 5 km of a living port city's centre, for the week's run alone, a company member's join into it too | A port's pier and roadstead lie inside it |
 | Who may be boarded | Any member of the player's company whose ship is at sea, named by username | The smallest way aboard |
 | A passenger | Sees their captain's view, takes no helm, their own ship left where it lay; let off as the captain leaves the sea | The captain sails |
