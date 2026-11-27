@@ -198,6 +198,9 @@ fn on_wall<B: Near + ?Sized>(
     let Some(ahead) = wall_ahead(blocks, body, body.facing) else {
         return Body { mode: Mode::Air, moving: false, ..*body };
     };
+    // A lip is hung as it was caught, off square or not; along it and over it the body goes square to its face, so it
+    // keeps to the lip as it shimmies and lands on the top as from a square hold.
+    let square = square_into(&ahead.block, body);
     let ahead = wall_top(blocks, body, body.facing, ahead);
     let lip_above = ahead.block.top - body.z;
     let climbing = body.mode == Mode::Climb;
@@ -207,11 +210,11 @@ fn on_wall<B: Near + ?Sized>(
     }
     if controls.forward > 0.0
         && lip_above <= TUNING.hang + 0.01
-        && let Some(over) = go_over(body, &ahead, body.facing, false, blocks, terrain)
+        && let Some(over) = go_over(body, &ahead, square, false, blocks, terrain)
     {
         return over;
     }
-    let (along_x, along_y) = (libm::cos(body.facing), libm::sin(body.facing));
+    let (along_x, along_y) = (libm::cos(square), libm::sin(square));
     let pace = if climbing { TUNING.climb } else { TUNING.shimmy };
     let along = controls.sideways * pace * seconds;
     let moved = Body { x: body.x + along_x * along, y: body.y + along_y * along, ..*body };
