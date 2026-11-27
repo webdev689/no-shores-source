@@ -71,34 +71,38 @@ test('a node is landed at from the sea at its seas, its ship lying off the node�
 });
 
 test('a gate takes a player into a node from a node whose gate leads there, at the same seas', () => {
-  const gated = reach(['gullwing-vale']);
-  assert.equal(arrives('node-tidewall', 'node-gullwing-vale', null, gated), true);
-  assert.equal(arrives('node-tidewall--elite', 'node-gullwing-vale--elite', null, gated), true);
-  assert.equal(arrives('node-tidewall--elite', 'node-gullwing-vale', null, gated), false, 'at another tier');
-  assert.equal(arrives('node-tidewall', 'node-driftwood-moors', null, gated), false, 'no gate leads from there');
-  assert.equal(arrives('node-tidewall', 'node-gullwing-vale--dungeon-0', null, gated), false, 'not from its dungeon');
+  const gated = reach(['saltgrass-downs']);
+  assert.equal(arrives('node-burned-mill', 'node-saltgrass-downs', null, gated), true);
+  assert.equal(arrives('node-burned-mill--elite', 'node-saltgrass-downs--elite', null, gated), true);
+  assert.equal(arrives('node-burned-mill--elite', 'node-saltgrass-downs', null, gated), false, 'at another tier');
+  assert.equal(arrives('node-burned-mill', 'node-tidewall', null, gated), false, 'no gate leads from there');
+  assert.equal(
+    arrives('node-burned-mill', 'node-saltgrass-downs--dungeon-0', null, gated),
+    false,
+    'not from its dungeon',
+  );
 });
 
 test('a dungeon or a run is entered from its node’s room, and left back into it at its seas', () => {
-  assert.equal(arrives('node-gullwing-vale--dungeon-1', 'node-gullwing-vale', null, null), true);
-  assert.equal(arrives('node-gullwing-vale--dungeon-1', 'node-gullwing-vale--elite', null, null), false);
-  assert.equal(arrives('node-gullwing-vale--dungeon-1', 'node-gullwing-vale--dungeon-2', null, null), false);
-  assert.equal(arrives('node-gullwing-vale--dungeon-1', 'node-tidewall', null, null), false);
-  assert.equal(arrives('node-gullwing-vale--dungeon-1', 'sea', OFF_COAST, reach()), false);
-  const run = 'node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6';
-  assert.equal(arrives(run, 'node-gullwing-vale--elite', null, null), true);
-  assert.equal(arrives(run, 'node-gullwing-vale', null, null), false);
+  assert.equal(arrives('node-saltgrass-downs--dungeon-1', 'node-saltgrass-downs', null, null), true);
+  assert.equal(arrives('node-saltgrass-downs--dungeon-1', 'node-saltgrass-downs--elite', null, null), false);
+  assert.equal(arrives('node-saltgrass-downs--dungeon-1', 'node-saltgrass-downs--dungeon-2', null, null), false);
+  assert.equal(arrives('node-saltgrass-downs--dungeon-1', 'node-tidewall', null, null), false);
+  assert.equal(arrives('node-saltgrass-downs--dungeon-1', 'sea', OFF_COAST, reach()), false);
+  const run = 'node-saltgrass-downs--elite--dungeon-1--run-k3j4h5g6';
+  assert.equal(arrives(run, 'node-saltgrass-downs--elite', null, null), true);
+  assert.equal(arrives(run, 'node-saltgrass-downs', null, null), false);
   // An Elite Dungeon's run, at Normal or the week's at its own tier, from its node at any seas: its tier is its own.
   assert.equal(arrives('node-krakens-grotto--run-k3j4h5g6', 'node-krakens-grotto--abyss', null, null), true);
   assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-krakens-grotto--abyss', null, null), true);
   assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-krakens-grotto', null, null), true);
-  assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-gullwing-vale', null, null), false);
+  assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-saltgrass-downs', null, null), false);
   // Out again, at the seas the dungeon was gone into at.
-  assert.equal(arrives('node-gullwing-vale', 'node-gullwing-vale--dungeon-1', null, reach()), true);
-  assert.equal(arrives('node-gullwing-vale--elite', run, null, reach()), true);
-  assert.equal(arrives('node-gullwing-vale', run, null, reach()), false);
+  assert.equal(arrives('node-saltgrass-downs', 'node-saltgrass-downs--dungeon-1', null, reach()), true);
+  assert.equal(arrives('node-saltgrass-downs--elite', run, null, reach()), true);
+  assert.equal(arrives('node-saltgrass-downs', run, null, reach()), false);
   assert.equal(arrives('node-krakens-grotto', 'node-krakens-grotto--run-k3j4h5g6', null, reach()), true);
-  assert.equal(arrives('node-tidewall', 'node-gullwing-vale--dungeon-1', null, reach(['gullwing-vale'])), false);
+  assert.equal(arrives('node-burned-mill', 'node-saltgrass-downs--dungeon-1', null, reach(['saltgrass-downs'])), false);
 });
 
 test('a playlist’s run is launched from the sea, from beside any port, and left back to it', () => {
@@ -124,7 +128,7 @@ test('a playlist’s run is launched from the sea, from beside any port, and lef
     false,
     'not an Elite Dungeon at Normal',
   );
-  assert.equal(arrives('node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6', 'sea', null, null), false);
+  assert.equal(arrives('node-saltgrass-downs--elite--dungeon-1--run-k3j4h5g6', 'sea', null, null), false);
 });
 
 test('an Elite Dungeon’s run at Normal started at sea is entered from the sea off its island alone, and left back to it', () => {
@@ -143,30 +147,30 @@ test('an Elite Dungeon’s run at Normal started at sea is entered from the sea 
 });
 
 test('a player stands out of an entrance only as they come out of its dungeon or its run', () => {
-  const patrol = 'node-gullwing-vale--elite';
-  assert.equal(cameOutOf(patrol, 'node-gullwing-vale--elite--dungeon-2--run-k3j4h5g6', 2), true);
-  assert.equal(cameOutOf(patrol, 'node-gullwing-vale--elite--dungeon-2--run-k3j4h5g6', 1), false, 'another door');
-  assert.equal(cameOutOf(patrol, 'node-gullwing-vale--abyss--dungeon-2--run-k3j4h5g6', 2), false, 'another tier');
-  assert.equal(cameOutOf('node-gullwing-vale', 'node-gullwing-vale--dungeon-0', 0), true);
-  assert.equal(cameOutOf('node-gullwing-vale', 'node-gullwing-vale', 0), false, 'a rejoin is an ordinary join');
-  assert.equal(cameOutOf('node-gullwing-vale', 'sea', 0), false);
-  assert.equal(cameOutOf('node-gullwing-vale', null, 0), false, 'a player not kept');
+  const patrol = 'node-saltgrass-downs--elite';
+  assert.equal(cameOutOf(patrol, 'node-saltgrass-downs--elite--dungeon-2--run-k3j4h5g6', 2), true);
+  assert.equal(cameOutOf(patrol, 'node-saltgrass-downs--elite--dungeon-2--run-k3j4h5g6', 1), false, 'another door');
+  assert.equal(cameOutOf(patrol, 'node-saltgrass-downs--abyss--dungeon-2--run-k3j4h5g6', 2), false, 'another tier');
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-saltgrass-downs--dungeon-0', 0), true);
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-saltgrass-downs', 0), false, 'a rejoin is an ordinary join');
+  assert.equal(cameOutOf('node-saltgrass-downs', 'sea', 0), false);
+  assert.equal(cameOutOf('node-saltgrass-downs', null, 0), false, 'a player not kept');
   assert.equal(cameOutOf('node-krakens-grotto', 'node-krakens-grotto--run-k3j4h5g6', 0), true, 'its one entrance');
-  assert.equal(cameOutOf('node-gullwing-vale--dungeon-0', 'node-gullwing-vale', 0), false, 'no door inside');
+  assert.equal(cameOutOf('node-saltgrass-downs--dungeon-0', 'node-saltgrass-downs', 0), false, 'no door inside');
 });
 
 test('a node’s reach reads from the bake’s index, and a ship’s place from the kept character', () => {
   const index = [
-    { id: 'gullwing-vale', kind: 'patrol', continent: 'continent-1', gates: ['tidewall', 'pearl-tomb'] },
-    { id: 'tidewall', kind: 'mission', continent: 'continent-1', gates: ['gullwing-vale'] },
+    { id: 'saltgrass-downs', kind: 'patrol', continent: 'continent-1', gates: ['burned-mill', 'broken-causeway'] },
+    { id: 'burned-mill', kind: 'mission', continent: 'continent-1', gates: ['saltgrass-downs'] },
     { id: 'overlook-social', kind: 'social', continent: 'continent-1' },
   ];
   const continents = [{ id: 'continent-1', outline: COAST }];
-  assert.deepEqual(reachOf(index, continents, 'tidewall'), {
+  assert.deepEqual(reachOf(index, continents, 'burned-mill'), {
     social: false,
     continent: 'continent-1',
     coast: COAST,
-    gatedFrom: ['gullwing-vale'],
+    gatedFrom: ['saltgrass-downs'],
     locked: false,
   });
   const sunspire = reachOf(
@@ -325,51 +329,34 @@ test('a guild dungeon’s run is entered from its guild’s outpost alone, and l
   assert.equal(cameOutOf(plot, plot, 0), false, 'the outpost itself is no run');
 });
 
-test("each of Saltmere's patrol zones is walked into from both others through their gates, at the same seas", () => {
-  const index = [
-    { id: 'saltgrass-downs', kind: 'patrol', continent: 'continent-1', gates: ['gullwing-vale', 'driftwood-moors'] },
-    { id: 'gullwing-vale', kind: 'patrol', continent: 'continent-1', gates: ['saltgrass-downs', 'driftwood-moors'] },
-    { id: 'driftwood-moors', kind: 'patrol', continent: 'continent-1', gates: ['saltgrass-downs', 'gullwing-vale'] },
-  ];
-  const continents = [{ id: 'continent-1', outline: COAST }];
-  const vale = reachOf(index, continents, 'gullwing-vale');
-  assert.deepEqual(vale?.gatedFrom, ['saltgrass-downs', 'driftwood-moors']);
-  assert.equal(arrives('node-gullwing-vale', 'node-saltgrass-downs', null, vale), true);
-  assert.equal(arrives('node-gullwing-vale--elite', 'node-driftwood-moors--elite', null, vale), true);
-  assert.equal(arrives('node-gullwing-vale--elite', 'node-saltgrass-downs', null, vale), false, 'at another tier');
-});
-
 test('a player crossing from a patrol zone joins the next at the gate toward the one left, once it keeps them so', () => {
-  const text = JSON.stringify({
-    id: 'saltgrass-downs',
-    crossings: [{ name: 'gullwing-vale', at: [40, -20], radius: 18 }],
-  });
+  // Two patrol zones of one island, the glade and the grove, as the bake writes a crossing between them.
+  const text = JSON.stringify({ id: 'glade', crossings: [{ name: 'grove', at: [40, -20], radius: 18 }] });
   const crossings = crossingsOf(text);
-  assert.deepEqual(crossings, [{ name: 'gullwing-vale', at: [40, -20] }]);
+  assert.deepEqual(crossings, [{ name: 'grove', at: [40, -20] }]);
   assert.deepEqual(crossingsOf('{"id":"tidewall"}'), [], 'a file with none');
   assert.deepEqual(crossingsOf('not JSON'), []);
-  const asked = (query: string) =>
-    crossingAsked(new Request(`https://rooms/room/node-saltgrass-downs${query}`), crossings);
-  assert.deepEqual(asked('?from=gullwing-vale'), { name: 'gullwing-vale', at: [40, -20] });
+  const asked = (query: string) => crossingAsked(new Request(`https://rooms/room/node-glade${query}`), crossings);
+  assert.deepEqual(asked('?from=grove'), { name: 'grove', at: [40, -20] });
   assert.equal(asked('?from=tidewall'), null, 'no gate leads there');
   assert.equal(asked(''), null);
   // Kept as come from that node at the same seas, the player stays at its gate; else the landing stands them.
-  assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale', 'gullwing-vale'), true);
-  assert.equal(cameOutOf('node-saltgrass-downs--elite', 'node-gullwing-vale--elite', 'gullwing-vale'), true);
-  assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale--elite', 'gullwing-vale'), false, 'other seas');
-  assert.equal(cameOutOf('node-saltgrass-downs', 'sea', 'gullwing-vale'), false, 'landed from the sea');
-  assert.equal(cameOutOf('node-saltgrass-downs', 'node-tidewall', 'gullwing-vale'), false, 'from elsewhere');
-  assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale--dungeon-0', 'gullwing-vale'), false);
+  assert.equal(cameOutOf('node-glade', 'node-grove', 'grove'), true);
+  assert.equal(cameOutOf('node-glade--elite', 'node-grove--elite', 'grove'), true);
+  assert.equal(cameOutOf('node-glade', 'node-grove--elite', 'grove'), false, 'other seas');
+  assert.equal(cameOutOf('node-glade', 'sea', 'grove'), false, 'landed from the sea');
+  assert.equal(cameOutOf('node-glade', 'node-tidewall', 'grove'), false, 'from elsewhere');
+  assert.equal(cameOutOf('node-glade', 'node-grove--dungeon-0', 'grove'), false);
 });
 
-test('from the anchorage leaving a Saltmere patrol zone puts the ship at, that zone is landed on again', () => {
+test('from the anchorage leaving Saltmere’s one patrol zone puts the ship at, that zone is landed on again', () => {
   // The sea room puts the ship at the zone's region's anchorage (`came_from`): it lies off that region, and in landfall
-  // reach of the island's coast. Saltmere's zones alone: every other island's sea is locked and lands no one from the
+  // reach of the island's coast. Saltmere's zone alone: every other island's sea is locked and lands no one from the
   // sea.
   const zones = saltmere.nodes.filter((node) => node.kind === 'patrol');
   assert.deepEqual(
     zones.map((zone) => zone.id),
-    ['saltgrass-downs', 'gullwing-vale', 'driftwood-moors'],
+    ['saltgrass-downs'],
   );
   const own = regions.find((each) => each.island === 'continent-1')?.regions ?? [];
   for (const { id, kind } of zones) {
@@ -390,14 +377,14 @@ test("from the sea a node a region lists is landed on only with the ship off tha
   const [weirlands, beacon] = [anchorage('The Weirlands'), anchorage('The Beacon Shore')];
   const reachOfNode = (id: string, kind: string) =>
     reachOf([{ id, kind, continent: 'continent-1' }, ...gates], layout.continents, id);
-  const gates = [{ id: 'saltgrass-downs', kind: 'patrol', continent: 'continent-1', gates: ['gullwing-vale'] }];
-  const vale = reachOfNode('gullwing-vale', 'patrol');
-  assert.ok(vale && toCoast(beacon, vale.coast) <= LANDFALL_M, 'off the Beacon Shore, in reach of the island');
-  assert.equal(arrives('node-gullwing-vale', 'sea', weirlands, vale), true, 'off the Weirlands');
-  assert.equal(arrives('node-gullwing-vale', 'sea', beacon, vale), false, 'off the Beacon Shore');
-  assert.equal(arrives('node-gullwing-vale--elite', 'sea--elite', beacon, vale), false, 'at any tier');
+  const gates = [{ id: 'saltgrass-downs', kind: 'patrol', continent: 'continent-1', gates: ['burned-mill'] }];
+  const mill = reachOfNode('burned-mill', 'mission');
+  assert.ok(mill && toCoast(weirlands, mill.coast) <= LANDFALL_M, 'off the Weirlands, in reach of the island');
+  assert.equal(arrives('node-burned-mill', 'sea', beacon, mill), true, 'off the Beacon Shore');
+  assert.equal(arrives('node-burned-mill', 'sea', weirlands, mill), false, 'off the Weirlands');
+  assert.equal(arrives('node-burned-mill--elite', 'sea--elite', weirlands, mill), false, 'at any tier');
   assert.equal(
-    arrives('node-gullwing-vale', 'node-saltgrass-downs', beacon, vale),
+    arrives('node-burned-mill', 'node-saltgrass-downs', weirlands, mill),
     true,
     'through a gate, from anywhere',
   );

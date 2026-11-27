@@ -26,11 +26,11 @@ const DRAWN = {
   weekElite: { place: 'cinder-deep', modifiers: [], level: 30, opens: 24 },
   weekAbyss: { place: 'silt-barrows', modifiers: [], level: 32, opens: 26 },
 } as unknown as Activities;
-const PLAN = { name: 'The Drowned Vale', zone: 'gullwing-vale' } as BreachPlan;
+const PLAN = { name: 'The Drowned Vale', zone: 'saltgrass-downs' } as BreachPlan;
 const names: Record<string, string> = {
   'cinder-deep': 'The Cinder Deep',
   'silt-barrows': 'The Silt Barrows',
-  'gullwing-vale': 'Gullwing Vale',
+  'saltgrass-downs': 'Saltgrass Downs',
 };
 
 test('the six entries in the Playlist order, named by the rules, each launching its own test room', () => {
@@ -70,14 +70,14 @@ test('the six entries in the Playlist order, named by the rules, each launching 
       [
         'breach-normal',
         'The Drowned Vale · Normal',
-        'From the gate in a copy of Gullwing Vale of its own',
-        'node-gullwing-vale--breach-normal--test-ab12cd34',
+        'From the gate in a copy of Saltgrass Downs of its own',
+        'node-saltgrass-downs--breach-normal--test-ab12cd34',
       ],
       [
         'breach-hard',
         'The Drowned Vale · Hard',
-        'From the gate in a copy of Gullwing Vale of its own',
-        'node-gullwing-vale--breach-hard--test-ab12cd34',
+        'From the gate in a copy of Saltgrass Downs of its own',
+        'node-saltgrass-downs--breach-hard--test-ab12cd34',
       ],
     ],
   );

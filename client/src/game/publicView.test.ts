@@ -263,7 +263,7 @@ test('beats kept while the tab was hidden: the last shows, their sounds and stin
 
 test('a slow page counts a chest on the wall’s time, not its capped frame clock; the next event shows no panel', () => {
   let wall = 0;
-  const view = new PublicView('gullwing-vale', undefined, null, () => wall);
+  const view = new PublicView('saltgrass-downs', undefined, null, () => wall);
   const waiting = { ...raid([]), kind: 0, phase: 0, radius: 0, nextTicks: 3600, nextGround: [40, 0, 0] as const };
   view.frame(waiting, [], [], bodies(), 0, [], () => 0);
   // Ten frames at 1 s each, the game's clock capped at 0.1 s a frame.
@@ -315,7 +315,7 @@ test('the heroic chance opens: an orange beat, its call in the banner, heard at 
 });
 
 test('the next event a minute off: counted to the second, a beat, and a beacon over its ground', () => {
-  const view = atPace('gullwing-vale');
+  const view = atPace('saltgrass-downs');
   const waiting = (nextTicks: number) => ({
     ...raid([]),
     kind: 0,
@@ -598,7 +598,12 @@ test("back from a hidden tab during a Breach's Waking, what changed meanwhile is
   const gateAt = [100, 200, 3] as const;
   const gate = { shape: 'module', module: moduleNumber('breach-gate'), group: 0, at: gateAt, turn: 0 };
   const layout = [{ solids: [gate], areas: [] }];
-  const zone = { id: 'gullwing-vale', kind: 'patrol', name: 'Gullwing Vale', continent: 'continent-1' } as NodeInfo;
+  const zone = {
+    id: 'saltgrass-downs',
+    kind: 'patrol',
+    name: 'The Saltgrass Downs',
+    continent: 'continent-1',
+  } as NodeInfo;
   const context_ = { land: { layoutsNamed: async () => JSON.stringify(layout) }, trips: {} };
   let wall = 0;
   const course = { boxes: [], courses: [], breach: { zone, run: null, context: context_, module, seal: () => null } };

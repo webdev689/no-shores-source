@@ -579,13 +579,13 @@ test('a run’s room opens from its ask with its revives, and what is on reads a
 });
 
 test('a patrol’s dungeon’s run opens only with its patrol’s file, and takes no player while the patrol is locked', () => {
-  const ask = JSON.stringify({ dungeon: { patrol: 'gullwing-vale', number: 0 }, tier: 1, minute: 29_919_420 });
+  const ask = JSON.stringify({ dungeon: { patrol: 'saltgrass-downs', number: 0 }, tier: 1, minute: 29_919_420 });
   const patrol = (locked: boolean) =>
-    JSON.stringify({ id: 'gullwing-vale', kind: 'patrol', name: 'Gullwing Vale', locked });
+    JSON.stringify({ id: 'saltgrass-downs', kind: 'patrol', name: 'The Saltgrass Downs', locked });
   const room = startRoomDoor(compiled);
   assert.equal(room.openRun(ask), false, 'without its patrol’s file');
   assert.equal(room.openRun(ask, patrol(true)), true);
-  assert.deepEqual([room.join(), room.refusal()], [0, 'Gullwing Vale is locked']);
+  assert.deepEqual([room.join(), room.refusal()], [0, 'The Saltgrass Downs is locked']);
   assert.equal(room.openRun(ask, patrol(false)), true);
   assert.notEqual(room.join(), 0);
 });

@@ -14,9 +14,9 @@ const plan = breachPlanOf(
   ),
 );
 
-test("the Drowned Vale's plan reads from the room module, its gate in Gullwing Vale, at Normal and Hard", () => {
+test("the Drowned Vale's plan reads from the room module, its gate in the Saltgrass Downs, at Normal and Hard", () => {
   assert.equal(plan.name, 'The Drowned Vale');
-  assert.equal(plan.zone, 'gullwing-vale');
+  assert.equal(plan.zone, 'saltgrass-downs');
   assert.deepEqual(
     plan.tiers.map((tier) => [tier.name, tier.level, tier.opens, tier.revives]),
     [

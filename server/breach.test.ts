@@ -20,7 +20,7 @@ import { Keeper } from './keeping.ts';
 import { roomOf } from './keepingForTests.ts';
 import type { RoomDoor } from './roomDoor.ts';
 
-const RUN = 'node-gullwing-vale--breach-hard--run-k3j4h5g6';
+const RUN = 'node-saltgrass-downs--breach-hard--run-k3j4h5g6';
 
 /** A host's words, written down: the room's own Breach calls, its zone's answers, and the accounts' launches. */
 function host(opened = false, launched = true) {
@@ -43,17 +43,17 @@ function host(opened = false, launched = true) {
 }
 
 test('a join into a patrol’s room comes for a Breach’s run of that zone alone', () => {
-  const ask = (query: string, zone = 'node-gullwing-vale') =>
+  const ask = (query: string, zone = 'node-saltgrass-downs') =>
     breachAsked(new Request(`https://r.test/room/x?${query}`), zone);
   assert.equal(ask(`breach=${RUN}`), RUN);
-  assert.equal(ask(`breach=${RUN}`, 'node-saltgrass-downs'), null, 'another zone’s');
+  assert.equal(ask(`breach=${RUN}`, 'node-highwater-fells'), null, 'another zone’s');
   assert.equal(ask('breach=node-krakens-grotto--run-k3j4h5g6'), null, 'no Breach’s run');
   assert.equal(ask(''), null);
 });
 
 test('in its zone a launched player is held in their run’s company once the accounts say so, and no one else', async () => {
   const { said, deps } = host();
-  const zone = new Breach('node-gullwing-vale', deps);
+  const zone = new Breach('node-saltgrass-downs', deps);
   zone.joined(4, RUN);
   zone.joined(5, null);
   assert.equal(await zone.launchedHere(4, 'ada'), true);
@@ -63,7 +63,7 @@ test('in its zone a launched player is held in their run’s company once the ac
   await new Promise((done) => setTimeout(done, 0));
   assert.deepEqual(said.company, [[4, JSON.stringify({ run: RUN, tier: 1 })]]);
   const { said: refused, deps: unlaunched } = host(false, false);
-  const other = new Breach('node-gullwing-vale', unlaunched);
+  const other = new Breach('node-saltgrass-downs', unlaunched);
   other.joined(6, RUN);
   other.owned(6, 'cal');
   await new Promise((done) => setTimeout(done, 0));
@@ -80,7 +80,7 @@ test('a run asks its zone whether its gate opened until it says so once, and tel
   const run = new Breach(RUN, deps);
   assert.equal(await run.gateOpen(), true);
   assert.equal(await run.gateOpen(), true);
-  assert.deepEqual(said.asked, [`node-gullwing-vale ${RUN}`], 'asked once');
+  assert.deepEqual(said.asked, [`node-saltgrass-downs ${RUN}`], 'asked once');
   const word = (name: string) => JSON.stringify({ run: RUN, tier: 1, name, encounter: 3 });
   run.tick(19_000);
   assert.deepEqual(said.inside, [], 'its gate open to one who was then refused: no one let in yet');
@@ -120,7 +120,7 @@ test('in its zone a launched player arrives from anywhere within the arrival win
   const [asked, waited]: [(number | undefined)[], number[]] = [[], []];
   let blips = 1;
   const { said, deps } = host();
-  const zone = new Breach('node-gullwing-vale', {
+  const zone = new Breach('node-saltgrass-downs', {
     ...deps,
     launched: (_account, _run, within) => {
       asked.push(within);
@@ -165,7 +165,7 @@ test('a Breach’s run lets its company in only once its gate opened, and its zo
   open = true;
   assert.equal(await run.signIn(2, ada, now, here), true, 'once the zone says it opened');
   sent.length = 0;
-  const zone = new Keeper(kept, room, 'node-gullwing-vale', lost)
+  const zone = new Keeper(kept, room, 'node-saltgrass-downs', lost)
     .judgingArrivals(() => false)
     .arrivingLaunched((player) => Promise.resolve(player === 7));
   assert.equal(await zone.signIn(8, ben, now, here), false);

@@ -127,9 +127,9 @@ test("a laid node's foes' sites are every one it lays, its territories, as the b
   ]);
 });
 
-test('a run whose name an area has already is left to the area, as the bake leaves it (Moorhold is both)', () => {
+test('a run whose name an area has already is left to the area, as the bake leaves it', () => {
   const moors: NodeLayout = {
-    ...square('driftwood-moors', 0, 0),
+    ...square('moors', 0, 0),
     areas: [{ kind: 'keep', name: 'Moorhold', at: [10, 10], radius: 40 }],
     runs: [
       { name: 'Moorhold', kind: 'keep', place: 'beyond', mouth: [60, 10], line: [], beats: [], door: [90, 10] },

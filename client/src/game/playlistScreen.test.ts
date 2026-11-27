@@ -20,7 +20,7 @@ const WITH_BREACH = {
       kind,
       name: 'The Drowned Vale',
       about: `${tier === 0 ? 'Normal' : 'Hard'} · Foes at level ${tier === 0 ? 26 : 30}`,
-      launch: { place: 'gullwing-vale', seas: 'breach' as const, playlist: null, finds: null, breach: tier },
+      launch: { place: 'saltgrass-downs', seas: 'breach' as const, playlist: null, finds: null, breach: tier },
     })),
   ],
 };

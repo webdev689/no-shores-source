@@ -47,7 +47,7 @@ test('where a player is reads as its place: a node by name and its difficulty, t
   const guild = 'node-tern-strand-outpost--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
   assert.equal(placeWords(`${guild}--run-k3j4h5g6`), 'Tern Strand Outpost · Guild dungeon', "a guild's room's run");
   assert.equal(placeWords(`${guild}--abyss--run-k3j4h5g6`), 'Tern Strand Outpost · Guild dungeon · Abyss');
-  assert.equal(placeWords('node-gullwing-vale--breach-hard--run-k3j4h5g6'), 'Gullwing Vale · Breach · Hard');
+  assert.equal(placeWords('node-saltgrass-downs--breach-hard--run-k3j4h5g6'), 'Saltgrass Downs · Breach · Hard');
   assert.equal(
     placeWords('node-saltworm-warrens--abyss--run-k3j4h5g6'),
     'Saltworm Warrens · Abyss Dungeon of the week',
