@@ -17,8 +17,8 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - **To come**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
-- **Waiting on a `wreck` run that publishes**: #259 (the wreck exports again, its stern windows glowing as a lit
-  ship's; its `content/prologue/wreck.json` is taken from that run, then the owner's yes).
+- **For the owner's yes once CI passes on its head**: #259 (the wreck exports again, its stern windows glowing as a
+  lit ship's; its level taken whole from the `wreck` run that published it).
 
 ## Built
 
