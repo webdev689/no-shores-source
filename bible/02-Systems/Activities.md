@@ -76,7 +76,9 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 - **Normal, Elite and Abyss** are the tiers in code, in the rooms' names (`--elite`, `--abyss`) and on every screen,
   the voyage's card included. The Roster says "Elite difficulty", so a voyage's tier is not read as a foe's rank.
 - **The seas chosen set the tier**, as the owner decided: a voyage set out at Abyss makes the patrols it reaches, and
-  the dungeons in them, Abyss. Each tier adds 0, 2 or 3 levels over the area's band, never past 32, and pays 1, 1.5
+  the dungeons in them, Abyss. The sea itself, its ships and its islands sail at Normal whatever tier is chosen, as the
+  seas have lost their Elite and Abyss tiers for now
+  ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]). Each tier adds 0, 2 or 3 levels over the area's band, never past 32, and pays 1, 1.5
   or 2 times (`gear::world::Difficulty`).
 - **The week's two dungeons have their own tier and level** (below), whatever the seas.
 
@@ -187,7 +189,9 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
   voyage's veil; out of it by its door, its portal or a wipe, the player is back on the sea where the ship lies,
   beside the port it was launched from, as a sea island's dungeon leaves back to the sea. The rooms take a player
   into a playlist's run, or the week's run the Playlist names `--sea`, from the sea alone, and out of it only back to
-  the sea ([[Server]], "Where a character comes from").
+  the sea ([[Server]], "Where a character comes from"). The week's run takes one only with their ship docked at a
+  port, whichever way they come, a companion's join too, and says "Dock at a port to enter the dungeon of the week."
+  to any other.
 - **What it pays.** Every clear pays its kills, its cache and a dungeon's clear, as any run. Beside them:
   - **Daily:** each playlist's first clear each day, a Boss Captain's kill at the run's level and tier (as the dungeon
     of the day pays) and a sure Vestige in a Boss's colours, a Normal one coming as its item
@@ -438,9 +442,8 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   "This place opens after the prologue.", "This dungeon opens at level 24." (or 28), "A Breach at Normal opens at
   level 25." (or Hard at 29), "A Breach at Hard opens once you have won it at Normal.", "Elite seas open at level 10."
   and "Abyss seas open at level 20.". The sea's room, a sea island's room and a sea island's dungeon are gated by
-  their seas alone: the sea's tier is its room's name's (`sea--elite`, `sea--abyss`), and an island's is its sea's
-  (`Sea::shut`, an island's room `Place::Node`), so the server keeps a character below the tier's level off those
-  seas, and the voyage's card never sets sail at a tier it shuts. The screens show what is
+  their seas alone (`Sea::shut`, an island's room `Place::Node`), the one sea at Normal, and the voyage's card never
+  sets out at a tier it shuts, whose places a node's room keeps below the tier's level off. The screens show what is
   shut and why: the Journal's timers, an entrance's card and the voyage's card. The page reads every gate's reason for a level
   from the rules (`room_gates`), so it never judges a gate itself.
 

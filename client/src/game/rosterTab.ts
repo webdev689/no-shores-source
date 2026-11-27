@@ -55,7 +55,8 @@ const isPanelPart = (id: string | null) => id !== null && /^roster-(action|field
 /** The page's services, given by the menu. */
 export interface RosterWith {
   readonly link: AccountLink;
-  readonly travel: (place: string) => string | null;
+  /** Goes to a company member where they play, by their place and name; why not, or null. */
+  readonly travel: (place: string, name?: string) => string | null;
   readonly now?: () => number;
   /** Whether the page is out of sight (its tab hidden), when the Roster is not asked again. */
   readonly hidden?: () => boolean;
@@ -157,7 +158,7 @@ export class RosterPage {
   private focusPanel = false;
   private ui: Interface | null = null;
   private readonly link: AccountLink;
-  private readonly travel: (place: string) => string | null;
+  private readonly travel: (place: string, name?: string) => string | null;
   private readonly now: () => number;
   private readonly hidden: () => boolean;
 
@@ -241,7 +242,7 @@ export class RosterPage {
     void this.link.roster().then((fresh) => {
       const known = typeof fresh === 'string' ? this.roster : fresh;
       const place = known?.company?.members.find((each) => each.name === person.name)?.place ?? person.place;
-      if (place && place !== known?.me?.place) this.say(this.travel(place) ?? '');
+      if (place && place !== known?.me?.place) this.say(this.travel(place, person.name) ?? '');
     });
   }
 

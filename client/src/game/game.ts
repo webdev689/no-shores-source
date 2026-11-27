@@ -1,9 +1,7 @@
 import type { Gpu } from '../gpu.ts';
-import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { MapWater } from '../heldmap/watersWash.ts';
 import { warmFlora } from '../nature/flora.ts';
 import type { Point2 } from '../overworld/ground.ts';
-import { PLANNED_PACE } from '../overworld/voyage.ts';
 import type { Placed } from '../player/figures.ts';
 import { Input, keyUpNameOf } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
@@ -55,7 +53,7 @@ import { inspectAgainst } from './social/social.ts';
 import { rejoinOnGuild } from './footPlace.ts';
 import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
-import { companyPlaces, seaRoomName } from './rooms.ts';
+import { companyPlaces } from './rooms.ts';
 import { companyJoin } from './companyJoin.ts';
 import { PassageGame } from './passages/passageGame.ts';
 import { piecesDrawer } from './passages/pieceView.ts';
@@ -149,7 +147,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     helmMap: new HelmMap({
       ...{ gpu, store, stack, outlines: continents.map((each) => each.outline) },
       sea: () => playing.sea,
-      sail: (to, seas, travel) => sailFor(to, seas, travel),
+      sail: (to, travel) => sailFor(to, travel),
       shut: () => screens.seasShut(),
       made: (map) => {
         if (opened) map.setWaters(opened);
@@ -242,6 +240,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     playing.foot?.leave();
     playing.foot = null;
     scene.sky.shelterUnder([]);
+    playing.sea?.leaveRoom(); // at sea already, as one boards a company member's ship
     if (!playing.sea) {
       // The ship first lies facing the city, so the view over it looks at the island.
       const { anchorage, heading } = start ?? firstAnchorage(playing.landmass);
@@ -268,22 +267,21 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     playing.sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
     void playing.helmMap.made;
-    await enterSea(playing.helmMap.difficulty ?? 'normal');
+    await enterSea();
     dungeons.forget(); // once aboard, as `goInto` once arrived: a failed return's way back finds the dungeon drawn
   };
 
-  /** The sea room a voyage at `seas` sails in, joined: online the server's at that difficulty; playing alone, the same
-   *  room in the rooms' worker. */
-  let seaSeas: Difficulty = 'normal';
-  let switching = Promise.resolve();
-  const enterSea = async (seas: Difficulty) => {
-    seaSeas = seas;
-    const [level, ports] = [(['normal', 'elite', 'abyss'] as const).indexOf(seas), portsOf(world.cities)];
+  /** The sea room every voyage sails in, joined: online the server's, at Normal whatever tier the voyage set out at
+   *  (the seas have no other for now), the tier setting only the places it lands at, and aboard the ship of the company
+   *  member named `aboard` where the player travels with them; playing alone, the same room in the rooms' worker. */
+  let aboard: string | null = null;
+  const enterSea = async () => {
+    const ports = portsOf(world.cities);
     await playing.sea?.enterRoom(
       rooms
         ? async (snapshot, gear) =>
             RoomConnection.open(
-              rooms(seaRoomName(seas)),
+              rooms('sea') + (aboard === null ? '' : `?aboard=${encodeURIComponent(aboard)}`),
               snapshot,
               (said) => {
                 gear(said);
@@ -292,7 +290,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
               await session(),
             )
         : async (snapshot, gear) =>
-            RoomThread.openSea(await roomModule, world.layoutText, snapshot, undefined, ports, level, gear),
+            RoomThread.openSea(await roomModule, world.layoutText, snapshot, undefined, ports, 0, gear),
     );
   };
 
@@ -301,7 +299,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     ashoreOn(
       footContext,
       held,
-      { word, continent: continents[held.seen.continent]?.id ?? '', seas: seaSeas },
+      { word, continent: continents[held.seen.continent]?.id ?? '', seas: 'normal' },
       trips.enterSeaDungeon,
     );
   const { travel, behindVeil, retry, tell, wayOut } = startTravel({
@@ -377,7 +375,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     !playing.sea?.busy &&
     !charting.busy;
 
-  /** Joins a company member where they play, on any landmass, at their seas; the ship stays (`companyJoin.ts`). */
+  /** Joins a company member where they play, on any landmass, at their seas, the ship staying; online, a member at
+   *  sea aboard their ship (`companyJoin.ts`). */
   const joinAt = companyJoin({
     ...{ landmass: () => playing.landmass, world, open: landOf, put: showLandmass, travel, intoDungeon: trips.join },
     now: () => {
@@ -389,6 +388,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       };
     },
     goFoot: (node, seas, guild) => goFoot(node, arrivalFacing(node, playing.landmass.plan, null), seas, guild),
+    board: rooms ? (name) => ((aboard = name), travel({ kind: 'aboard', name }, goSea)) : undefined,
   });
 
   /** The leave held through: back to the ship on the room's yes, or told why not; a yes that comes once the player is
@@ -422,7 +422,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
         playing.flow = { mode: 'sea' };
         hud.veil(null);
         tell(`You could not go ashore: ${error instanceof Error ? error.message : String(error)}.`);
-        if (rooms) await enterSea(seaSeas).catch(() => undefined); // the island's room may have taken the character
+        if (rooms) await enterSea().catch(() => undefined); // the island's room may have taken the character
         return;
       }
       leaveHere();
@@ -447,6 +447,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     const sea = playing.sea;
     landings.frame(playing.flow.mode === 'sea');
     if (!sea || playing.flow.mode !== 'sea') return;
+    if (sea.sighted?.letOff) return getOff('Your company member left the sea.');
     // An island new in sight bends the voyage ahead round it.
     if (isles.update(sea.sighted?.islands ?? [])) sea.bendRound();
     // Marked only while the map is up, the only time they are drawn.
@@ -470,21 +471,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (anchored) goIsle(anchored, ashoreWords(anchored));
   };
 
-  /** A destination set on the map: the ship sails for it or travels there, in its difficulty's sea room (mid-fight the
-   *  one it fights in), one switch at a time; a travel asks whichever room holds the ship as it fades. */
-  const sailFor = (sail: Point2, seas: Difficulty, travel: MapWater | null) => {
+  /** A destination set on the map: the ship sails for it or travels there, a travel asking the sea room as it fades. */
+  const sailFor = (sail: Point2, travel: MapWater | null) => {
     const sea = playing.sea;
     if (sea) sailOrTravel(sea, sail, travel, () => !charting.waiting(sea.position, playing.landmass.id));
-    if (!sea || sea.fight || seas === seaSeas) return;
-    seaSeas = seas;
-    switching = switching
-      .then(() => {
-        sea.leaveRoom();
-        return enterSea(seas);
-      })
-      .then(() => void (onTheSea(playing.flow) && (sea.travelling ?? sea.sailTo(sail, PLANNED_PACE))))
-      // A room that will not open leaves the ship sailing alone, and says so; ashore by then, nothing sails.
-      .catch(() => void (onTheSea(playing.flow) && sea.sailAlone(sail, PLANNED_PACE)));
   };
 
   const helm = { mark: (id: string) => landings.click({ kind: 'mark', id }), groundAt, passageMap: passages.map };
@@ -520,6 +510,14 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const gearHere = () =>
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
   const fed = () => sailed.heard(playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
+  /** Off a company member's ship, back where the player would be: aboard their own, or, keeping none, Overlook. */
+  const getOff = (why: string) => {
+    aboard = null;
+    if (sailed.shipless()) return shutOut(why);
+    tell(why);
+    playing.sea?.leaveRoom();
+    void enterSea();
+  };
   /** A gate shut sends the player back to their ship; one who keeps none yet, to Overlook, where the Harbourmaster is. */
   const shutOut = (why: string) => {
     const home = sailed.shipless() ? playing.landmass.nodes.find((node) => node.id === FIRST_NODE) : undefined;

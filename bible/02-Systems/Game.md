@@ -409,7 +409,10 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   company stays together at its seas: an Elite Dungeon's run at Normal, gone into from Elite seas, comes out at
   Normal, as a member who came in by the Roster does. "Go to them" for a
   member in a dungeon goes into the very room they are in, at their seas, the veil saying "Joining your company at"
-  its name.
+  its name. "Go to them" for a member at sea, online, boards their ship: the page joins the sea asking to travel
+  aboard it (`?aboard=<username>`), the veil saying "Boarding Ann's ship", and is sent the captain's ship as its own
+  ([[Shipyard]], "Limits"). Let off as the captain leaves the sea (`SeaRoom.letOff`), the page says "Your company
+  member left the sea." and goes back to the player's own ship, or, keeping none, to Overlook (`getOff`).
 - **A sea island's dungeon** is entered by E at its door on the island ([[Islands]], "The door") by its room's name
   (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`, with `--elite` or `--abyss` after it for
   its tier), shared at Normal and a run above it. It is laid by its seed and style and named "The <Style> of the
@@ -661,8 +664,8 @@ sails out from its berth ("Landings").
   left"), "The ship is whole", or where it is had ("Repair: free, lying at rest within 3 km of a port city", the rules' own
   reach from the waters' table; out of the sea, "Repairs are made at sea, by a port city"). The chase's meeting reach
   and the voyage's hold reach come from that table too (`SeaFacts`); it holds every ship's name as well, which the
-  page's own names (`shipBars.ts` `shipName`) are tested against. A voyage set at Elite or Abyss sails in that
-  difficulty's sea room (`sea--elite`, `sea--abyss`), the game leaving one for the other as the voyage sets out. The ship's
+  page's own names (`shipBars.ts` `shipName`) are tested against. A voyage set at Elite or Abyss sails the one sea,
+  `sea`, at Normal, as every voyage does for now; its tier sets the places it lands at. The ship's
   voyage sails at the way its kept canvas leaves it, as the room sails it (`seaLaw.ts` `followed`). Back at sea
   after a session, it lies where the room last kept it.
 - **Friendly ships** sail between the three port cities all the time ([[World Map]], "Traffic";

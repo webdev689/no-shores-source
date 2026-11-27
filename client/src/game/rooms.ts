@@ -75,11 +75,6 @@ export function nodeRoom(
   return seas === 'normal' ? `node-${node.id}` : `node-${node.id}--${seas}`;
 }
 
-/** The sea's room a voyage at `difficulty` sails in: `sea` at Normal, else `sea--elite` or `sea--abyss`. */
-export function seaRoomName(difficulty: Difficulty): string {
-  return difficulty === 'normal' ? 'sea' : `sea--${difficulty}`;
-}
-
 /** A patrol's dungeon's room's name before any run: `node-<id>--dungeon-<number>`, the one shared room at Normal, or
  *  `node-<id>--elite--dungeon-<number>`, whose runs (`runOf`) are its rooms at Elite and Abyss. */
 export function dungeonRoom(patrol: { readonly id: string }, difficulty: Difficulty, number: number): string {

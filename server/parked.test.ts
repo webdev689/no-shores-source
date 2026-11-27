@@ -35,8 +35,10 @@ const ANSWER =
 /** Ann as a room names her while her character sails the Sloop as built, as her ship lies parked. */
 const ANN = { account: 'ann', hull: 0, dress: [0, 10, 18, 30], name: [255, 255], emblem: 0, level: 1 };
 
-/** crates/room-wasm/src/parked_door_tests.rs pins the same word on Ann once she sails the Brig at level 9 (`REFIT`). */
-const REFIT = '{"account":"ann","hull":2,"dress":[0,10,18,30],"name":[255,255],"emblem":0,"level":9}';
+/** crates/room-wasm/src/parked_door_tests.rs pins the same word on Ann once she sails the Brig at level 9, before the
+ *  room is told her username or guild tag (`REFIT`). */
+const REFIT =
+  '{"account":"ann","hull":2,"dress":[0,10,18,30],"name":[255,255],"emblem":0,"level":9,"username":"","tag":""}';
 
 /** A sea island's word, as its sea gives it, for its room to open on. */
 const ISLAND = '{"seed":"41","climate":"desert","at":[700000,300000],"guards":0,"levels":null}';
@@ -115,4 +117,6 @@ test('an island’s room names its player to the seas as their character has the
   assert.ok(door.restoreCharacter(ann, JSON.stringify(refit)));
   assert.equal(door.named(ann), REFIT);
   assert.equal(door.named(guest), '', 'a player of no account is named by none');
+  assert.ok(door.name(ann, 'Ann') && door.tag(ann, 'SD'));
+  assert.equal(door.named(ann), REFIT.replace('"username":"","tag":""', '"username":"Ann","tag":"SD"'), 'as told now');
 });

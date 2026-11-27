@@ -198,6 +198,10 @@ export interface RoomDoor {
   name(player: number, name: string): boolean;
   /** Gives a player their guild's tag for their plate, or takes it with none (''); false on no land. */
   tag(player: number, tag: string): boolean;
+  /** At sea, a player just joined asks to travel aboard another's ship; then, their account known, boards the ship of
+   *  `{ captain, company }`, their captain's username and their company's accounts (`aboard.ts`). */
+  askAboard(player: number): boolean;
+  goAboard(player: number, word: string): boolean;
   /** Tells the room a player's guild as the accounts tell it (`guildWeeks.ts` `guildTold`), as text; '' for none. */
   guild(player: number, told: string): boolean;
   /** At sea, the name of the water a player's ship lies in; null off the sea or before it puts to sea. */
@@ -345,6 +349,8 @@ interface RoomExports {
   room_own(player: number, address: number, length: number): number;
   room_name(player: number, address: number, length: number): number;
   room_tag(player: number, address: number, length: number): number;
+  room_ask_aboard(player: number): number;
+  room_board(player: number, address: number, length: number): number;
   room_guild(player: number, address: number, length: number): number;
   room_water(player: number): bigint;
   room_hold(player: number, held: number): number;
@@ -542,6 +548,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     name: (player, name) => openWith((address, length) => exports.room_name(player, address, length), name),
     tag: (player, tag) => openWith((address, length) => exports.room_tag(player, address, length), tag),
+    askAboard: (player) => exports.room_ask_aboard(player) === 1,
+    goAboard: (player, word) => openWith((address, length) => exports.room_board(player, address, length), word),
     guild: (player, told) => openWith((address, length) => exports.room_guild(player, address, length), told),
     water: (player) => {
       const bytes = take(exports.room_water(player));

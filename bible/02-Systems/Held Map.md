@@ -192,7 +192,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or three
   levels higher, paying half again or twice the XP, Aurem and Vestiges. The difficulty picked is the voyage's only once
   the player sets sail with it; letting the destination go lets it go too. The node landed at is joined at the
-  voyage's difficulty ([[Server]], "The host"). Elite here is the voyage's tier, never a foe's rank; the Roster says
+  voyage's difficulty ([[Server]], "The host"); the sea itself sails at Normal whatever is picked. Elite here is the voyage's tier, never a foe's rank; the Roster says
   "Elite difficulty" where a player is, and reads a place kept under the tiers' old names (`--rough`, `--storm`) as
   Elite and Abyss. The presses stand after a "Seas" label. A difficulty the player's level shuts rests, titled with
   its gate's reason, and the first reason stands in a line under the row ("Elite seas open at level 10."), read from

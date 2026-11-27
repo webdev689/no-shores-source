@@ -66,7 +66,7 @@ function joining(failing: string | null = null) {
     works = [];
     for (const work of now) await work().catch((error: unknown) => said.push(`failed ${String(error)}`));
   };
-  return { join: companyJoin(game), said, run, landmass: () => landmass };
+  return { join: companyJoin(game), game, said, run, landmass: () => landmass };
 }
 
 test('a member on foot on this landmass is joined there, at their seas, nothing opened', async () => {
@@ -103,4 +103,19 @@ test('a join failing on another landmass puts back the one left; at sea or no la
   assert.equal(landmass().id, 'saltmere');
   assert.equal(join('sea'), 'They are at sea: meet them where they land.');
   assert.equal(join('sea-dungeon-cairnwatch-caverns-12'), 'They are across the sea.');
+});
+
+test('a member at sea is boarded by name where the game can board, and not before the player is free', () => {
+  const boarded: string[] = [];
+  const free = joining();
+  const join = companyJoin({ ...free.game, board: (name) => void boarded.push(name) });
+  assert.equal(join('sea', 'Ann'), null);
+  assert.deepEqual(boarded, ['Ann']);
+  const held = companyJoin({
+    ...free.game,
+    now: () => ({ free: false, fighting: false, fallen: false }),
+    board: () => {},
+  });
+  assert.match(held('sea', 'Ann') ?? '', /once nothing else is under way/);
+  assert.equal(free.join('sea', 'Ann'), 'They are at sea: meet them where they land.', 'offline, no board');
 });

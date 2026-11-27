@@ -281,7 +281,8 @@ side's colours, its pose, its heel and its footprint on the water taken from its
 - **Lying parked** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]). A
   ship whose player is ashore lies at rest where they left it, at the coast nearest it within 5 km: the sea room sends
   it to players within sight at sea, and the rooms on that island's own ground (a node's, or a sea island's) to the
-  players there, its own player among them ([[Server]], "Parked ships").
+  players there, its own player among them ([[Server]], "Parked ships"). It looks as its player's ship does now, and
+  its plate carries their level, username and guild tag as they are now, changed ashore or not.
 
 ## Its deck
 
@@ -348,8 +349,8 @@ and its line says why ("No travel while fighting.", "No travel off the helm.", "
 chase.", "The way there crosses land.", else "The sea would not take that course."). The
 room judges a player's travel against the waters and the islands at most once a course's wait (half a second); one asked
 sooner is answered too soon and asked again by the page, and a refused one keeps no course of theirs waiting. A course
-set at another tier on the map begins the travel at once and enters that tier's sea room as setting sail does, the
-travel asked of it by the fade; a tier the player's level shuts is never sailed for. The ship is drawn under way, sails
+set at another tier on the map travels in the one sea, at Normal, as any does; the tier sets only the places the voyage
+lands at, and a tier the player's level shuts is never set out at. The ship is drawn under way, sails
 set and wake behind, from the yes until it has arrived.
 
 ## Limits

@@ -270,9 +270,10 @@ on Cloudflare.
 
 ## The sea
 
-The room named `sea` holds every player's ship at Normal; `sea--elite` and `sea--abyss` are the same sea at a
-voyage's harder difficulty, each a room of its own whose ships come at the levels that difficulty raises them to
-(`room_difficulty` after `room_open_sea`). A player sets their ship's course: the world points it sails through
+The room named `sea` holds every player's ship, at Normal, whatever tier a voyage sets out at: the seas have no other
+tier for now ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]). No room opens as
+`sea--elite` or `sea--abyss` (`seaRoom`), so neither does an island or a dungeon of theirs; a sea room still takes a
+tier, its ships coming at the levels it raises them to (`room_difficulty` after `room_open_sea`). A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s,
 200 (2,400 m/s), at which a voyage planned on the held map sails, or 1, the world's own time, which the page sails it
 at while its view is close on it ([[Game]], "At sea").
@@ -401,27 +402,40 @@ will take it, by the room's own tick.
   coast nearest it of those within 5 km, a continent's or a standing sea island's, as a sea island may stand 3 km off
   a coast or another island. It is never one of the sea's ships: no hostile ship or fight heeds it, and a sea island
   is rolled 1.2 km clear of it. Every room on an island (a node's room, its dungeons' and runs', a passage zone's
-  under its island, a sea island's room and its dungeon's) names the players it holds to all three seas, as a player
-  may come ashore from any tier's (a social space or an outpost from any, an Elite Dungeon's run, a Breach's zone and
-  run and a passage zone from a node at any), as each account is known and every 15 seconds after (`ashoreWord`,
+  under its island, a sea island's room and its dungeon's) names the players it holds to every sea, the one at Normal
+  for now (`ashore.ts` `SEAS`), as each account is known and every 15 seconds after (`ashoreWord`,
   `room_sea_ashore`), with its island (its node's or a passage zone's continent, a sea island's number and seed, or
-  none for a run started at sea) and the host's time in seconds. Each player named carries their account and, as their
-  character has them now (`room_named`, `ShipLook::of`), the ship they sail as others see it and their level, which
-  their parked ship takes on: a ship bought, dressed or renamed ashore, or a level gained, shows on it. Every naming
+  none for a run started at sea) and the host's time in seconds. Each player named carries their account, as their
+  character has them now (`room_named`, `ShipLook::of`) the ship they sail as others see it and their level, and their
+  username and guild tag as the accounts told the room, which their parked ship takes on: a ship bought, dressed or
+  renamed ashore, a level gained, a username taken or a guild joined or left shows on it. A room not yet told a
+  username names none, and the parked plate keeps the name and tag it had. Every naming
   is timed by the host's time, which the sea keeps, carries on by its own ticks between words, holds at its most
   rather than overflowing, and never puts before the minute the host sets as it starts ticking, since a sea room stops
   ticking while nobody sails it. A named account's parked ship lying at that island (a run's wherever it lies) is seen
   for 45 seconds more; one no room has named for 45 seconds lies unseen, seen again once a room names it (its player
-  back on the island), and is let go after a day unnamed (`KEPT_S`) or as its player comes back to any sea: the sea
-  that learns their account tells the other two, by the same word naming no one (`afloat`), to let go of theirs. The
+  back on the island), and is let go after a day unnamed (`KEPT_S`) or as its player comes back to the sea; with
+  more than one sea, the sea that learns their account tells the others, by the same word naming no one (`afloat`),
+  to let go of theirs. The
   sea keeps 1,024 parked ships at most, letting go of the one parked longest ago first. It sends each ship seen to the
   players within 60 km of it, at rest, with its looks and its plate, under the number its player had as they left, and
   answers each naming with every ship seen at that island. A room whose page draws them (a node's own ground or a sea
   island's, not a dungeon, a run or a passage zone) sends those in its snapshots to every player, the ship's own too,
-  so a page reloaded ashore still draws its own (`room_parked`; every room numbers the Elite and Abyss seas' ships
-  2^30 and 2^31 past their own), and hands on a sea's last answer for 45 seconds at most once that sea stops
+  so a page reloaded ashore still draws its own (`room_parked`; with more than one sea, every room numbers the second
+  and third seas' ships 2^30 and 2^31 past their own), and hands on a sea's last answer for 45 seconds at most once that sea stops
   answering. Parked ships live only in the sea room's memory: they are lost as it restarts, on a deploy or once the
   host evicts it idle.
+- **Travelling aboard a company member's ship** (`room::sea::passengers`, `aboard.ts`). A join to the sea naming a
+  username (`?aboard=<username>`) asks the room, as the player joins and before their character comes, to let them
+  travel aboard that player's ship (`room_ask_aboard`): the sea's gate then takes them with no ship of their own
+  (`Sea::shut_to`), and their own, if they keep one, is not put to sea, staying where it was kept. Once the accounts
+  say whose character it is, the room asks them the player's company (`companions`) and boards them on the ship of the
+  player of that username whose account is of it, at sea here and aboard no one else's (`room_board`); with none, the
+  player is sent away saying "Their ship is not at sea.". Aboard, they set no course (refused as off the helm) and
+  take no helm. Each snapshot sends them what their captain is sent: the ships and hostile ships within their
+  captain's sight, the captain's ship under the passenger's own number with its looks, and no plate over it; their
+  own flotsam, word and gear stay theirs. A passenger gets off by leaving the sea, and is let off as their captain
+  leaves it, told so (`LET_OFF`, 25).
 
 ## A fleet
 
@@ -584,7 +598,7 @@ each room's name. The object keeps its room in WebAssembly: the room and protoco
 so every decision is Rust and the shell only carries bytes and time.
 
 - The name says which room it is, opened when the first player joins: `sea` is the sea, round the layout's
-  continents, and `sea--elite` or `sea--abyss` the sea at a harder difficulty (`seaRoom`); `node-<id>` is that
+  continents, the one sea, at Normal (`seaRoom`); `node-<id>` is that
   node's room, from its baked file, and `node-<id>--elite` or `--abyss` the same
   node at a voyage's harder difficulty, a room of its own; `node-<patrol>--dungeon-0`, `-1` or `-2` is one of a
   patrol's dungeons, one room shared at Normal, opened from the patrol's baked file; `fleet-<name>` a fleet's place
@@ -693,7 +707,7 @@ so every decision is Rust and the shell only carries bytes and time.
   it alone how it arrives (`arrival.ts`), never by the page, on a look before the claim, so a character turned away
   stays with the room that plays it. Overlook's social space, where every session begins and
   where a new character first stands, takes anyone. Any other node's room takes a character that rejoins it; that
-  lands from the sea at the room's seas (a social space's from any), the ship the sea kept in it (`ship_at`) lying
+  lands from the sea at whatever tier the room stands at, the sea sailing at Normal, the ship the sea kept in it (`ship_at`) lying
   within the landfall's 30 km of the node's island's coast, and 2 km more, since the ship heaves to a moment after
   the page offers it, but never on an island not yet named, whose sea is locked ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]); that comes through a gate from a node whose gate leads there, at the same seas (the bake's
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
@@ -702,7 +716,11 @@ so every decision is Rust and the shell only carries bytes and time.
   the week's or one at Normal) takes one from the sea alone, as the Playlist beside a port or the island's tile
   starts it (one at Normal only with the ship within 32 km of its island's coast, where its tile stands), and never
   leads out to its node or by its door,
-  so no run carries a player across the sea onto an island. A character that came by none of these ways may still join one of its company who plays
+  so no run carries a player across the sea onto an island. The week's run started at sea takes one only with their
+  kept ship docked at a port, lying within 5 km of a living port city's centre (`PORT_REACH_M`; its pier and its
+  roadstead, 3.7 km out, lie within it), whichever way they come, a companion's join too, and sends any other away
+  saying "Dock at a port to enter the dungeon of the week." (`DOCK_AT_PORT`); the port cities are the rules'
+  (`room_main_ports`). A character that came by none of these ways may still join one of its company who plays
   in the room, as the Roster's "Go to them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
   this place from where you were.", so the page takes the player back to their ship, saying so. A player unkept is
   not judged, as they keep nothing. The sea, its islands and their dungeons keep their own rules ("The sea").

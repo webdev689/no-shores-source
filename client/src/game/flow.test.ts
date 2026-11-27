@@ -136,6 +136,19 @@ test('a room whose gate shuts sends the player back to their ship, the veil sayi
     { mode: 'loading', words: `${why} Returning to Overlook`, then: { mode: 'foot', node: 'overlook-social' } },
     'one who keeps no ship yet goes back to Overlook, where the Harbourmaster has one',
   );
+  assert.deepEqual(
+    next({ mode: 'sea' }, { kind: 'shut', why: 'Left.', ashore }),
+    { mode: 'loading', words: 'Left. Returning to Overlook', then: { mode: 'foot', node: 'overlook-social' } },
+    'so too one let off a company member’s ship at sea',
+  );
+});
+
+test('a player boards a company member’s ship from on foot or at sea, the veil naming its captain', () => {
+  const boarding = { mode: 'loading', words: "Boarding Ann's ship", then: { mode: 'sea' } };
+  for (const flow of [{ mode: 'foot', node: 'tidewall' }, { mode: 'sea' }] as const)
+    assert.deepEqual(next(flow, { kind: 'aboard', name: 'Ann' }), boarding, flow.mode);
+  const landing = { mode: 'landing', chosen: null } as const;
+  assert.deepEqual(next(landing, { kind: 'aboard', name: 'Ann' }), landing, 'not while choosing a landing');
 });
 
 test('a sea island’s dungeon is entered from the sea and left back to it, the veil saying why', () => {

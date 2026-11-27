@@ -35,15 +35,19 @@ export interface JoinGame<Land extends { readonly id: string; readonly nodes: re
   readonly travel: (happening: Happening, work: () => Promise<void>) => void;
   readonly goFoot: (node: NodeInfo, seas: Difficulty, guild: string | null) => Promise<void>;
   readonly intoDungeon: (node: NodeInfo, place: string, opened: Opened) => void;
+  /** Boards the ship of the member named, at sea; none offline, where no member sails. */
+  readonly board?: (name: string) => void;
 }
 
-/** Goes to the company's member who plays in the room `place`; answers why not, or null once on the way. */
+/** Goes to the company's member who plays in the room `place` (at sea, aboard the ship of `name`); answers why not,
+ *  or null once on the way. */
 export function companyJoin<Land extends { readonly id: string; readonly nodes: readonly NodeInfo[] }>(
   game: JoinGame<Land>,
-): (place: string) => string | null {
-  return (place) => {
+): (place: string, name?: string) => string | null {
+  return (place, name) => {
     const yet = notYet(place, game.now());
     if (yet) return yet;
+    if (place === 'sea' && name !== undefined && game.board) return (game.board(name), null);
     const where = nodeOfRoom(place);
     // A run started at sea leads back out to the sea, so no landmass is opened for it.
     const atSea = startedAtSea(place);

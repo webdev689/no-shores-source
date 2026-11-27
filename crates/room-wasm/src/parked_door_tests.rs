@@ -3,7 +3,9 @@
 //! player too. server/parked.test.ts runs the same through the WebAssembly and pins the same answer.
 
 use super::{land_named, land_parked, sea_ashore};
-use crate::{TAKEN, gear_door, input, isle_door, open_sea, room_join, room_leave, room_tick, snapshot_door};
+use crate::{
+    TAKEN, gear_door, input, isle_door, open_sea, plate_door, room_join, room_leave, room_tick, snapshot_door,
+};
 use protocol::wire::overlook::wire as messages;
 use room::PlayerId;
 
@@ -154,9 +156,48 @@ fn a_ship_whose_player_sails_another_tiers_sea_is_let_go_here_as_that_sea_says()
     assert_eq!(ships_in(&snapshot_door::snapshot_for(near)).0, [(near, 0)]);
 }
 
-/// Ann as an island's room names her once her character sails the Brig at a higher level, pinned: the WebAssembly
-/// names her the same (server/parked.test.ts).
-pub const REFIT: &str = r#"{"account":"ann","hull":2,"dress":[0,10,18,30],"name":[255,255],"emblem":0,"level":9}"#;
+/// Ann as an island's room names her once her character sails the Brig at a higher level, before the accounts have
+/// told it her username or guild tag, pinned: the WebAssembly names her the same (server/parked.test.ts).
+pub const REFIT: &str =
+    r#"{"account":"ann","hull":2,"dress":[0,10,18,30],"name":[255,255],"emblem":0,"level":9,"username":"","tag":""}"#;
+
+/// Ann as a room names her once the accounts have told it her username, Ann, and her guild's tag, SD, pinned: the
+/// WebAssembly names her the same (server/parked.test.ts).
+pub const RENAMED: &str = r#"{"account":"ann","hull":0,"dress":[0,10,18,30],"name":[255,255],"emblem":0,"level":1,"username":"Ann","tag":"SD"}"#;
+
+/// The name and the tag on the plate over `player`'s ship in `near`'s snapshot.
+fn plate_in(near: PlayerId, player: PlayerId) -> Option<(String, String)> {
+    snapshot_door::prepare();
+    let snapshot = snapshot_door::snapshot_for(near);
+    let snapshot = messages::root_as_from_room(&snapshot).unwrap().snapshot().unwrap();
+    let plate = snapshot.plates()?.iter().find(|plate| plate.player() == player)?;
+    Some((plate.name().unwrap_or_default().to_owned(), plate.tag().unwrap_or_default().to_owned()))
+}
+
+#[test]
+fn a_parked_ships_plate_follows_its_players_username_and_guild_tag_once_a_room_has_them() {
+    let island = r#"{"seed":"41","climate":"desert","at":[700000,300000],"guards":0,"levels":null}"#;
+    assert!(isle_door::open_island(island.as_bytes()));
+    let ashore = room_join();
+    assert!(gear_door::own(ashore, b"ann"));
+    assert!(plate_door::name(ashore, b"Ann") && plate_door::tag(ashore, b"SD"));
+    assert_eq!(land_named(ashore), RENAMED, "as the accounts told the room");
+    let (ann, near) = ann_left();
+    assert_ne!(sea_ashore(&word(ANN, NOW)), "");
+    assert_eq!(plate_in(near, ann), Some((String::new(), String::new())), "parked as she sailed, unnamed");
+    assert_ne!(sea_ashore(&word(RENAMED, NOW)), "");
+    assert_eq!(plate_in(near, ann), Some(("Ann".to_owned(), "SD".to_owned())), "named and tagged as now");
+    let left_guild = RENAMED.replace(r#""tag":"SD""#, r#""tag":"""#);
+    assert_ne!(sea_ashore(&word(&left_guild, NOW)), "");
+    assert_eq!(plate_in(near, ann), Some(("Ann".to_owned(), String::new())), "her guild left, no tag");
+    let unlearnt = RENAMED.replace(r#""username":"Ann","tag":"SD""#, r#""username":"","tag":"""#);
+    assert_ne!(sea_ashore(&word(&unlearnt, NOW)), "");
+    assert_eq!(
+        plate_in(near, ann),
+        Some(("Ann".to_owned(), String::new())),
+        "a room yet to learn them changes neither"
+    );
+}
 
 #[test]
 fn a_parked_ships_looks_and_level_follow_its_players_character_as_a_room_names_them() {

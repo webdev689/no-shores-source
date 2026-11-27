@@ -27,6 +27,8 @@ export type Happening =
   | { readonly kind: 'land'; readonly node: string; readonly name: string }
   | { readonly kind: 'pass'; readonly node: string; readonly name: string; readonly into: boolean }
   | { readonly kind: 'join'; readonly node: string; readonly name: string }
+  /** Aboard a company member's ship at sea, named by its captain's username. */
+  | { readonly kind: 'aboard'; readonly name: string }
   | { readonly kind: 'enter'; readonly node: string; readonly name: string }
   | { readonly kind: 'leave'; readonly node: string; readonly name: string }
   | { readonly kind: 'surface'; readonly name: string; readonly fell: boolean }
@@ -91,6 +93,9 @@ export function next(flow: Flow, happening: Happening): Flow {
         words: `Joining your company at ${happening.name}`,
         then: { mode: 'foot', node: happening.node },
       };
+    case 'aboard':
+      if (flow.mode !== 'foot' && flow.mode !== 'sea') return flow;
+      return { mode: 'loading', words: `Boarding ${happening.name}'s ship`, then: { mode: 'sea' } };
     case 'enter':
     case 'leave': {
       // Into a dungeon, on foot, or at sea or over an island's side as the Playlist starts a run, or out of one to its
@@ -126,8 +131,10 @@ export function next(flow: Flow, happening: Happening): Flow {
     case 'shut': {
       // A room whose gate shuts to the player sends them back to their ship, or ashore where one waits for them, the
       // veil saying why.
-      if (flow.mode !== 'foot' && flow.mode !== 'loading' && flow.mode !== 'passing') return flow;
       const { why, ashore } = happening;
+      // At sea, one let off a company member's ship who keeps none of their own goes ashore so.
+      const atSea = flow.mode === 'sea' && ashore !== undefined;
+      if (flow.mode !== 'foot' && flow.mode !== 'loading' && flow.mode !== 'passing' && !atSea) return flow;
       if (ashore)
         return {
           mode: 'loading',

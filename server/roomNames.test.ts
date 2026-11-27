@@ -64,18 +64,13 @@ test('a node has one room at each difficulty, by one spelling each', () => {
   assert.equal(nodeRoom('tidewall--storm'), null);
 });
 
-test('the sea has one room at each difficulty: sea, sea--elite and sea--abyss', () => {
+test('the sea has one room, at Normal: no room opens at its other tiers, nor their islands', () => {
   assert.equal(seaRoom('sea'), 0);
-  assert.equal(seaRoom('sea--elite'), 1);
-  assert.equal(seaRoom('sea--abyss'), 2);
+  assert.equal(seaRoom(seaRoomName(0)), 0, 'its name reads back');
+  for (const name of ['sea--elite', 'sea--abyss', ...[1, 2].map(seaRoomName)]) assert.equal(seaRoom(name), null, name);
   assert.equal(seaRoom('sea--normal'), null, 'Normal is the plain name');
   assert.equal(seaRoom('sea--abyss--1'), null, 'no fresh copies');
   assert.equal(seaRoom('node-sea'), null);
-  assert.deepEqual(
-    [0, 1, 2].map((seas) => seaRoom(seaRoomName(seas))),
-    [0, 1, 2],
-    'each name reads back',
-  );
 });
 
 test("an island's room is named by its number and its whole seed, one spelling each", () => {

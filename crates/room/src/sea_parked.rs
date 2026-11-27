@@ -105,12 +105,17 @@ impl Sea {
         self.parked.by_account.remove(account);
     }
 
-    /// A parked ship as its player's character has it now, as a place's room names them: the ship it sails as others
-    /// see it (one bought, dressed or renamed ashore) and their level on its plate. Nothing for an account with no
-    /// ship parked.
-    pub fn refit(&mut self, account: &str, look: ShipLook, level: u8) {
+    /// A parked ship as its player has it now, as a place's room names them: the ship their character sails as others
+    /// see it (one bought, dressed or renamed ashore), and on its plate their level and their username and guild tag,
+    /// which a room yet to learn the username, naming none, leaves as they were. Nothing for an account with no ship
+    /// parked.
+    pub fn refit(&mut self, account: &str, look: ShipLook, level: u8, (username, tag): (&str, &str)) {
         if let Some(parked) = self.parked.by_account.get_mut(account) {
             (parked.look, parked.plate.level) = (look, level);
+            if !username.is_empty() {
+                username.clone_into(&mut parked.plate.name);
+                tag.clone_into(&mut parked.plate.tag);
+            }
         }
     }
 

@@ -1,8 +1,8 @@
 /**
  * Who stands ashore, told to the sea. Every room on an island (a node's room, its dungeons' and runs', a passage
- * zone's, a sea island's room and its dungeon's) names its players to all three seas, each with their ship and level
- * as their character has them now, as each one's account is known and every 15 seconds after, with the host's time,
- * as a sea room stops ticking while nobody sails it. The sea keeps each named player's parked ship seen while it lies
+ * zone's, a sea island's room and its dungeon's) names its players to every sea (`SEAS`), each with their ship, level,
+ * username and guild tag as they have them now, as each one's account is known and every 15 seconds after, with the
+ * host's time, as a sea room stops ticking while nobody sails it. The sea keeps each named player's parked ship seen while it lies
  * at that island (a run started at sea keeps it seen wherever it lies), holds a sea island named, and answers with
  * every ship parked there, which an island's own ground sends in its snapshots (crates/room/src/sea_parked.rs).
  */
@@ -28,10 +28,9 @@ export interface Place {
   readonly draws: boolean;
 }
 
-/** Every sea, by its tier: a player may come ashore anywhere from any of them (a social space's or an outpost's node
- *  from any tier, an Elite Dungeon's run, a Breach's zone and run and a passage zone from a node at any), so every
- *  room on land names its players to all three. */
-const SEAS = [0, 1, 2].map(seaRoomName);
+/** Every sea a player may come ashore from, and so every room on land names its players to: the one, at Normal, for
+ *  now (`seaRoom`), whatever tier a voyage sets out at. */
+const SEAS = [seaRoomName(0)];
 
 /** Where the room `name` stands ashore: at the sea island it is on or behind (`isle`), at its node's island (`reach`,
  *  null where unknown) or a passage zone's, or anywhere for a run started at sea; null for a room on no island. */
@@ -62,8 +61,8 @@ export class Ashore {
   private readonly named: (player: number) => string;
 
   /** `sea` reaches a sea's room by its name; `give` hands the room the ships parked at its island, as JSON; `named` is
-   *  the room's word on a player for the seas, their account and their ship and level as their character has them now
-   *  (`room_named`), empty for one it holds no account of. */
+   *  the room's word on a player for the seas, their account, their ship and level as their character has them now and
+   *  their username and guild tag as the accounts told it (`room_named`), empty for one it holds no account of. */
   constructor(
     sea: (name: string) => { ashoreWord(word: string): Promise<string> },
     give: (ships: string) => void,
@@ -78,7 +77,8 @@ export class Ashore {
   }
 
   /** A player's account, as the room learns it: ashore, the seas are told at once. At sea (`seas`, this sea's tier),
-   *  the other two are told to let go of the player's ship parked there, as they sail it here now. */
+   *  every other sea, none while there is one, is told to let go of the player's ship parked there, as they sail it
+   *  here now. */
   own(player: number, account: string, seas: number | null = null): void {
     if (seas !== null) {
       const word = JSON.stringify({ named: [], afloat: [account], seconds: Math.floor(Date.now() / 1000) });
