@@ -139,27 +139,35 @@ def palette(metal):
     return out
 
 
+_PALETTES = {}
+
+
+def build(kind, metal, name=None, chain=CHAIN):
+    """`metal`'s `kind` as one object in its own frame, its materials by role (each metal's made once, so a weapon
+    worn on the body (sheaths.py) is drawn in its held one's): [the object], named `name` (its layer's). A flail's
+    chain at `chain` (`make`)."""
+    import bpy
+    from body import rest_attr
+    if metal not in _PALETTES:
+        _PALETTES[metal] = palette(metal)
+    roles = _PALETTES[metal]
+    name = name or f'{kind}_{metal.lower()}'
+    v, t, m = make(kind, metal, chain)
+    used = sorted(set(m.tolist()))
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(v.tolist(), [], t.tolist())
+    for k in used:
+        me.materials.append(roles[ROLES[kind][k]])
+    me.polygons.foreach_set('material_index', [used.index(k) for k in m.tolist()])
+    me.update()
+    me.shade_smooth()
+    rest_attr(me)
+    ob = bpy.data.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(ob)
+    return [ob]
+
+
 def build_all():
     """Every metal's mace, flail and warhammer, each one object in its own frame, its materials by role: the layer's
     name to [object]."""
-    import bpy
-    from body import rest_attr
-    out = {}
-    for metal in METALS:
-        roles = palette(metal)
-        for kind in KINDS:
-            name = f'{kind}_{metal.lower()}'
-            v, t, m = make(kind, metal)
-            used = sorted(set(m.tolist()))
-            me = bpy.data.meshes.new(name)
-            me.from_pydata(v.tolist(), [], t.tolist())
-            for k in used:
-                me.materials.append(roles[ROLES[kind][k]])
-            me.polygons.foreach_set('material_index', [used.index(k) for k in m.tolist()])
-            me.update()
-            me.shade_smooth()
-            rest_attr(me)
-            ob = bpy.data.objects.new(name, me)
-            bpy.context.scene.collection.objects.link(ob)
-            out[name] = [ob]
-    return out
+    return {f'{kind}_{metal.lower()}': build(kind, metal) for metal in METALS for kind in KINDS}

@@ -11,6 +11,7 @@ A skirt hangs round the legs from a height on the body; a cloak hangs behind the
 from one side to the other. Each hangs down the world when the body stands and along the body when it lies. Each is one
 grid of rows and columns, two-faced: its cloth outside, its lining inside, its edges closed."""
 import math
+import os
 
 import numpy as np
 
@@ -428,6 +429,9 @@ class Skirt(Drape):
 PACE = {'walk': (0.24, True, 1.0), 'walk_staff': (0.24, True, 1.0), 'bow': (0.25, False, 0.0),
         'spell': (0.15, False, 0.0), 'horsewalk': (0.13, True, 1.2), 'horsegallop': (0.08, True, 3.0)}
 PACE_ELSE = (0.11, False, 0.0)
+# a cloak hung once on the body standing and worn on its bones after (rigcape.py), or with FORGE_RIG=0 hung and carried
+# as cloth at every key, as it was before
+RIG = os.environ.get('FORGE_RIG', '1') != '0'
 YOKE = 0.2   # how far down a cloak its yoke lies over the shoulders
 YOKE_SPAN = 1.1   # the yoke's foot, either way round from the back: on the shoulder blades, so it hangs between the arms
 MANTLE = 6   # the row of a cloak's yoke its hood's mantle is sewn to, most of the way down the shoulders
@@ -729,8 +733,11 @@ class Cloak(Drape):
 
     def snapshot(self, W, fighter):
         """What the cloak hangs on at one key: the surfaces under it (the body, what is worn under it, an armour's
-        plates, a full skirt it hangs clear of), its collar, and the way the body faces."""
+        plates, a full skirt it hangs clear of), its collar, and the way the body faces. Rigged (`RIG`), once its rig
+        is made, nothing is read off the skin: a key gives only the horse under it, astride."""
         import cloth
+        if RIG and getattr(self, 'rig', None) is not None:
+            return {'extra': self._ridden(W, fighter)}
         P, N, under = surfaces(fighter, self.over, self.rigid)
         if mounted(fighter):   # astride, it falls over the horse's back and rump
             hp, hn = horse_points()
@@ -742,14 +749,26 @@ class Cloak(Drape):
             P, N, under = np.concatenate([P, g]), np.concatenate([N, n]), np.concatenate([under, np.ones(len(g), bool)])
         F = Frame(W)
         neck = np.array(W['neck'])[:3, 3]
-        air, out = cloth.outside(P)
+        # the air kept out of the body: its spine's joints lie inside it whatever it does
+        air, out = cloth.outside(P, inside=[np.array(W[j])[:3, 3] for j in ('pelvis', 'spine', 'chest')])
         open_ = under & air
         N = np.where(((N * out).sum(axis=1) < -0.2)[:, None], -N, N)   # a triangle turned inside out by a bend
         ring = self._collar(W, P[open_], N[open_])
         shot = {'P': P, 'N': N, 'open': open_, 'pin': self._yoke(ring, P[open_], N[open_], W), 'F': F, 'neck': neck}
         if mounted(fighter):   # what its first guess lies over astride: the rider's trunk and legs, and the horse
             shot['under'], shot['beside'] = posed_points(fighter, self.over, self.rigid), horse_points()[0]
+        if RIG:
+            shot['extra'] = self._ridden(W, fighter)
+            if getattr(self, 'cut_from', None) is None:   # the body standing, which its rig is made on
+                self._cut_shot = shot
         return shot
+
+    def _ridden(self, W, fighter):
+        """Astride, the horse under it as a capsule round its barrel and rump (rigcape.py `horse`), else none."""
+        if not mounted(fighter):
+            return []
+        import rigcape
+        return [rigcape.horse(horse_points()[0], np.array(W['pelvis'])[:3, 3])]
 
     def _axes(self, W):
         C = np.array(W['chest'])[:3, :3]
@@ -881,6 +900,22 @@ class Cloak(Drape):
         return G
 
     def carry(self, shots, anim, Ws):
+        """Carry it through `anim`'s keys (`shots`, one a key, `snapshot`, with each key's joints `Ws`), each key's
+        cloth kept for its frame. Rigged (`RIG`): hung as cloth once, on the body standing (`_hang`), its rig made
+        from that (rigcape.py), and swung on it through every move after; else hung as cloth at every key (`_hang`)."""
+        if not RIG:
+            return self._hang(shots, anim, Ws)
+        import rigcape
+        if getattr(self, 'rig', None) is None:
+            cut = getattr(self, '_cut_shot', None) or shots[0]
+            W0 = self.cut_from[1] if getattr(self, 'cut_from', None) is not None else Ws[0]
+            self._hang([cut], 'idle', [W0])
+            self.rig = rigcape.Rig(self.states[0], W0, cut['P'], self.yoke_rows)
+        extras = [s.get('extra', ()) for s in shots]
+        X = self.rig.swing(anim, Ws, PACE.get(anim, PACE_ELSE), extras)
+        self.states = [self.rig.grid(x, W, e) for x, W, e in zip(X, Ws, extras)]
+
+    def _hang(self, shots, anim, Ws):
         """Hang it on the first of `shots` (one a key, `snapshot`, with each key's joints `Ws`) and carry it through
         them as `anim` passes (PACE); each key's cloth is kept for its frame. Its yoke lies on the shoulders at each
         key; the cloth below it hangs and swings."""

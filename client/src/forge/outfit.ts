@@ -49,8 +49,9 @@ const CHEST =
 /** Pieces of armour that hold a drape out from the body. */
 const PLATING: readonly ArmourPiece[] = ['cuirass', 'greaves', 'boots'];
 
-/** Where a weapon is worn while it is not in the hand, and while it is (an empty scabbard, a quiver). A mace, a flail
- *  or a hammer has no place on the body. The left hand's blade sits at the right hip (`_l`). */
+/** Where a weapon is worn while it is not in the hand, and while it is (an empty scabbard, a quiver). A mace hangs at
+ *  the hip as a sword does, a warhammer or a flail on the back as the battle axe does; none leaves anything behind
+ *  while it is out. The left hand's blade or mace sits at the right hip (`_l`). */
 export function wornWeapon(weapon: string, out: boolean): string[] {
   const left = weapon.endsWith('_l') ? '_l' : '';
   const name = left ? weapon.slice(0, -2) : weapon;
@@ -63,6 +64,8 @@ export function wornWeapon(weapon: string, out: boolean): string[] {
   if (out) return [];
   if (kind === 'axe') return ['sheath_axe'];
   if (kind === 'staff' || kind === 'crossbow' || kind === 'thunderlock') return [`sheath_${name}`];
+  if (kind === 'mace') return [`sheath_${name}${left}`];
+  if (kind === 'flail' || kind === 'warhammer') return [`sheath_${name}`];
   return [];
 }
 

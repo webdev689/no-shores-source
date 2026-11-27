@@ -9,7 +9,7 @@ standing body's: on the move the legs walk, so the blow is struck from the strid
 
 Each moving animation is its action's name and `walk`: the blows (`over1hwalk`), the bow's shot (`bowshotwalk`, its
 legs the bow's own walk), the rifle's, the pistol's and the braced pistols' shots and the reloads (`gunshotwalk`),
-and the cast (`castwalk`)."""
+the cast (`castwalk`) and the healing drink (`quaffwalk`)."""
 from mathutils import Matrix, Quaternion, Vector
 
 import blows
@@ -17,15 +17,16 @@ import bowhold  # noqa: F401  the bow's walk, registered in poses
 import casting
 import gunplay
 import poses
+import quaff
 
 # each moving animation: the action it plays and the walk its legs take
 WALKS = {**{f'{b}walk': (b, 'walk') for b in blows.BLOWS},
-         'bowshotwalk': ('bow', 'bowwalk'), 'castwalk': ('cast', 'walk'),
+         'bowshotwalk': ('bow', 'bowwalk'), 'castwalk': ('cast', 'walk'), 'quaffwalk': ('quaff', 'walk'),
          'gunshotwalk': ('gunshot', 'gunwalk'), 'gunreloadwalk': ('gunreload', 'gunwalk'),
          'pistolshotwalk': ('pistolshot', 'pistolwalk'), 'pistolreloadwalk': ('pistolreload', 'pistolwalk'),
          'braceshotwalk': ('braceshot', 'bracewalk')}
 # the actions' frames, each moving animation as many as its action
-FRAMES_OF = {**blows.BLOWS, 'bow': 4, **casting.CAST, **gunplay.RIFLE, **gunplay.PISTOL, **gunplay.BRACE}
+FRAMES_OF = {**blows.BLOWS, 'bow': 4, **casting.CAST, **quaff.QUAFF, **gunplay.RIFLE, **gunplay.PISTOL, **gunplay.BRACE}
 MOVES = {name: FRAMES_OF[act] for name, (act, _) in WALKS.items()}
 STRIDE = 4   # a walk's frames: one stride over the action
 LEAN = 0.5   # the share of the action's lean the walking chest keeps
@@ -50,9 +51,12 @@ def _upright(act, walk):
 
 
 def _carried(T, key, v):
-    """What an action holds, moved with the chest by `T`: a matrix or a point whole, a spark's or a flash's place."""
+    """What an action holds, moved with the chest by `T`: a matrix or a point whole, a spark's or a flash's place, each
+    prop's matrix."""
     if isinstance(v, (Matrix, Vector)):
         return T @ v
+    if key == 'props':
+        return {name: T @ M for name, M in v.items()}
     if key in ('spark', 'flash'):
         M, what = v
         return T @ M, what

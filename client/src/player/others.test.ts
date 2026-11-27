@@ -127,6 +127,12 @@ test('another player drinking has their weapon put away at once, from the snapsh
   assert.equal(others.placed.get(7)?.dress.outfit.drawn, false);
   others.seen([seen(0)], 1, forge);
   assert.equal(others.placed.get(7)?.dress.outfit.drawn, true);
+  // Their page's quaff shows where this page's forge draws it; else they stand as their body does.
+  const quaffing = { ...seen(13), anim: 'quaff', frame: 2 };
+  others.seen([quaffing], 1, { draws: (body: string, anim: string) => !!body && anim === 'quaff' } as unknown as Cards);
+  assert.deepEqual([others.placed.get(7)?.anim, others.placed.get(7)?.frame], ['quaff', 2]);
+  others.seen([quaffing], 1, forge);
+  assert.deepEqual([others.placed.get(7)?.anim, others.placed.get(7)?.frame], ['idle', null]);
 });
 
 test('other players ride as they are drawn, each boosted as the room last stepped their body', () => {
