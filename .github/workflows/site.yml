@@ -4,7 +4,9 @@ name: site
 # the site's pages at the root and the game's client under /play/, and noshores-www, which sends www.noshores.online to
 # the bare domain. ci.yml calls it from main once the same commit has passed the check and the rooms have deployed or
 # had nothing to, as it publishes the page, so no game is served on a protocol no room speaks. It also runs by hand
-# from main, to try a deploy again, but only for a commit whose own CI check passed. The game's R2 bucket is first made to answer the domain wherever it answers the page.
+# from main, to try a deploy again, but only for a commit whose own CI run passed the check and then built the site,
+# which it does only once the rooms deployed that commit or had nothing to. The game's R2 bucket is first made to answer
+# the domain wherever it answers the page.
 # Until noshores.online is a zone of the Cloudflare account (its nameservers moved from Porkbun), nothing is served and
 # the run says so. The token then needs Zone: Read and Workers Routes: Edit on that zone, beside the account's Workers
 # R2 Storage: Edit it publishes with, which the bucket's rules need too.
@@ -81,15 +83,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
         # Asked apart from the comparison, so a failed ask fails the step rather than skipping the deploy unseen. By
-        # hand, only a commit whose CI check passed is served.
+        # hand, only a commit whose CI check passed is served, and only once its CI run built the site (`site / build`),
+        # which it does only when the rooms deployed that commit or had nothing to: so no page runs ahead of the rooms.
         run: |
           set -euo pipefail
           sha=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
           if [ "$BY_HAND" = "true" ]; then
-            passed=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?check_name=check" \
+            checks="repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs"
+            passed=$(gh api "$checks?check_name=check" \
               --jq 'any(.check_runs[]; .app.slug == "github-actions" and .conclusion == "success")')
             if [ "$passed" != true ]; then
               echo "::error::a run by hand serves only a commit that passed the CI check, and this one has not"
+              exit 1
+            fi
+            followed=$(gh api "$checks?check_name=site%20%2F%20build" \
+              --jq 'any(.check_runs[]; .app.slug == "github-actions" and .conclusion != "skipped")')
+            if [ "$followed" != true ]; then
+              echo "::error::this commit's CI run never built the site, as the rooms did not deploy it: run ci by hand"
               exit 1
             fi
           fi

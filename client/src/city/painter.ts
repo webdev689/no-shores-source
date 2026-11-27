@@ -1,6 +1,8 @@
 // The city's texture array on the GPU: every layer starts as its picture's guessed colour and is replaced as the
-// painting workers finish it, most-worn first. What was painted is kept for the next city that wears it.
+// painting workers finish it, most-worn first. What was painted is kept for the next city that wears it, within a
+// budget (`keptLayers.ts`).
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { keptLayers } from './keptLayers.ts';
 import { type LayerLevels, levelCount, plainLevels } from './layerImage.ts';
 import { LAYER_SIZE, type PictureBook } from './pictures.ts';
 import type { PaintJob, Painted } from './paintWorker.ts';
@@ -10,7 +12,7 @@ const MOST_WORKERS = 4;
 /** A picture whose worker fails this many times keeps its guessed colour. */
 const MOST_TRIES = 2;
 
-const kept = new Map<string, LayerLevels>();
+const kept = keptLayers();
 const keyOf = (picture: {
   archive: number;
   record: number;

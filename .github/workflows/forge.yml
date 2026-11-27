@@ -11,11 +11,11 @@ on:
   push:
     branches: [main]
     paths:
-      - tools/forge/tools/sprite-forge/artbirds.py
-      - tools/forge/tools/sprite-forge/weaponart.py
+      # The three tools and every module they import: the weapons' reach most of the forge's own (layers, the bodies,
+      # the metals, the first person's makes), so any of its modules may change what they draw.
+      - tools/forge/tools/sprite-forge/*.py
       # The material nodes are laid from the item forge's models, any of which may change them.
       - tools/forge/tools/sprite-forge/items/**
-      - tools/forge/tools/sprite-forge/itempics.py
       - tools/forge/tools/sprite-forge/specs/item-ramps.json
       - tools/forge/tools/sprite-forge/specs/pictures/nodes.json
       - tools/forge/tools/sprite-forge/artbirds-requirements.txt

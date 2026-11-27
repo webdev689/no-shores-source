@@ -20,13 +20,15 @@ import { USERNAME, refusalOf, skeleton } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
 /** What the API runs on: the database, the clock, the Discord app if its keys are set, the pages (by origin and
- *  path) a Discord sign-in may come back to, and the bot that says who is a developer (none: no one is). */
+ *  path) a Discord sign-in may come back to, the bot that says who is a developer (none: no one is), and
+ *  Cloudflare's limit on sign-ins (none: only the database's limits hold). */
 export interface Deps {
   readonly database: Db;
   readonly now: () => number;
   readonly discord: DiscordApp | null;
   readonly pages: readonly string[];
   readonly bot?: Developers | null;
+  readonly signIns?: { limit(options: { key: string }): Promise<{ success: boolean }> } | null;
 }
 
 const PASSWORD_LEAST = 8;
@@ -251,6 +253,10 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
       return json({ account: shown({ ...account, username: given.username }) });
     }
     case 'POST /v1/login': {
+      // Cloudflare's count is kept outside the Worker, so a flood is refused here before it writes a limit's row or
+      // derives a hash; the database's limits below still hold a name against many addresses.
+      if (deps.signIns && !(await deps.signIns.limit({ key: address })).success)
+        return refused(429, 'Too many sign-ins from here. Wait a minute.');
       if (!(await within(database, `login:${address}`, LIMITS.login, now)))
         return refused(429, 'Too many tries. Wait a few minutes.');
       const given = await nameAndPassword(request);

@@ -121,7 +121,9 @@ panel's sign-in live at one origin. A merge into `main` deploys it
 to, so no game is served on a protocol no room speaks. It deploys while that commit is still `main`'s head, or when its
 own run deployed the rooms: a merge landing between the two would otherwise leave the rooms on the new protocol and
 the page on the old, every join refused, until the newer merge's deploy. Run by hand from the Actions tab it deploys
-again, but only a commit whose own CI check passed. Before it deploys, every CORS rule of the game's R2 bucket
+again, but only a commit whose own CI check passed and whose CI run then built the site (`site / build`), which it
+does only once the rooms deployed that commit or had nothing to; for one whose rooms did not deploy, `ci.yml` run by
+hand deploys the rooms and then the site. Before it deploys, every CORS rule of the game's R2 bucket
 (`overlook-forge`) that lets the published page read it is widened to the domain's two origins, and the accounts send
 a Discord sign-in back to the game there. Each deploy also writes `play/patch-notes.json` from the merged pull
 requests' "Patch notes" sections, which the [[Desktop App]]'s launcher shows (`site/patchNotes.ts`). The game is still

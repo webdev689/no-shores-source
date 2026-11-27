@@ -23,6 +23,8 @@ interface Env {
   readonly DISCORD_CLIENT_SECRET?: string;
   /** The bot's Members (`bot/main.ts`), which says who is a developer; without it, no one is. */
   readonly BOT?: Developers;
+  /** Cloudflare's count of sign-ins by address (`wrangler.jsonc`'s `ratelimits`). */
+  readonly SIGN_INS?: RateLimit;
 }
 
 const wait = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
@@ -114,6 +116,7 @@ export default {
           }
         : null;
     const pages = env.PAGES.split(/\s+/).filter(Boolean);
-    return handle(request, { database: env.DB, now: Date.now, discord, pages, bot: env.BOT ?? null });
+    const signIns = env.SIGN_INS ?? null;
+    return handle(request, { database: env.DB, now: Date.now, discord, pages, bot: env.BOT ?? null, signIns });
   },
 } satisfies ExportedHandler<Env>;

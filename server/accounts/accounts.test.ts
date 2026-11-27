@@ -62,6 +62,36 @@ test('one address is slowed: new guests per hour, and guesses at one username', 
   assert.equal((await ask('POST', '/v1/login', { username: 'Mariner', password: 'long enough' })).status, 429);
 });
 
+test("sign-ins are slowed at Cloudflare by address first, before the database or a password's hash is reached", async () => {
+  const { deps, ask } = accounts();
+  const token = (await ask('POST', '/v1/guest')).body['token'] as string;
+  await ask('POST', '/v1/register', { username: 'Mariner', password: 'long enough' }, token);
+  // Cloudflare's binding, stubbed: two sign-ins a key, and the database's statements counted.
+  const counted = new Map<string, number>();
+  const signIns = {
+    limit: ({ key }: { key: string }) => {
+      counted.set(key, (counted.get(key) ?? 0) + 1);
+      return Promise.resolve({ success: (counted.get(key) ?? 0) <= 2 });
+    },
+  };
+  const { database } = deps;
+  let statements = 0;
+  const counting = { ...database, prepare: (sql: string) => ((statements += 1), database.prepare(sql)) };
+  Object.assign(deps, { signIns, database: counting });
+  const signIn = (address: string) =>
+    ask('POST', '/v1/login', { username: 'Mariner', password: 'long enough' }, undefined, {
+      'CF-Connecting-IP': address,
+    });
+  assert.equal((await signIn('2001:db8:4c:1::1')).status, 200);
+  assert.equal((await signIn('2001:db8:4c:1::2')).status, 200, 'the same /64');
+  const before = statements;
+  const slowed = await signIn('2001:db8:4c:1::3');
+  assert.deepEqual([slowed.status, slowed.body['error']], [429, 'Too many sign-ins from here. Wait a minute.']);
+  assert.equal(statements, before, 'refused before the database is asked');
+  assert.equal((await signIn('2001:db8:4c:2::1')).status, 200, 'another network');
+  assert.deepEqual([...counted.keys()], ['2001:db8:4c:1::/64', '2001:db8:4c:2::/64']);
+});
+
 test('the API answers any page, and nothing it does not know', async () => {
   const { ask } = accounts();
   const preflight = await ask('OPTIONS', '/v1/guest');

@@ -300,7 +300,9 @@ export type FromRoomMessage =
       readonly passage?: PassageSeenState | null;
     } & FleetPart &
       HarbourPart)
-  | ({ readonly kind: 'gear' } & GearState);
+  | ({ readonly kind: 'gear' } & GearState)
+  /** How many messages the room has taken from this socket, told every 30th (`roomConnection.ts`, `quiet`). */
+  | { readonly kind: 'taken'; readonly messages: number };
 
 /** A fallen player an ally is reviving: the fallen player's number, the ally's, and the share of the hold done. */
 export interface Reviving {
@@ -438,6 +440,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     }
     const gear = message.gear();
     if (gear) return { kind: 'gear', ...gearOf(gear) };
+    const taken = message.taken();
+    if (taken) return { kind: 'taken', messages: taken.messages() };
     const snapshot = message.snapshot();
     if (!snapshot) return null;
     // Everyone but the player a snapshot is for crosses packed, measured from the room's middle.

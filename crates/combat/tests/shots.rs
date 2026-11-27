@@ -422,3 +422,24 @@ fn a_foes_ball_strikes_two_thirds_of_its_gun_and_its_arrow_or_bolt_whole() {
         assert_eq!(by_foe(&shot).damage, shot.damage, "{ranged:?}");
     }
 }
+
+/// A ridge 4 m high from 0.5 m north of the start to 3 m north, with level ground on both sides.
+struct Ridge;
+
+impl movement::Terrain for Ridge {
+    fn height_at(&self, _x: f64, y: f64) -> f64 {
+        if (-3.0..0.5).contains(&y) { 4.0 } else { 0.0 }
+    }
+}
+
+#[test]
+fn a_shot_loosed_inside_a_cliff_stops_where_it_is_loosed() {
+    let arrow = loose(1, Ranged::Bow, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
+    let ball = by_foe(&loose(1, Ranged::Thunderlock, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0));
+    for shot in [arrow, ball] {
+        let Flight::Stopped { at, struck } = fly(&shot, &[], &Ridge, &[(2, [0.0, -5.0, 0.0])]) else {
+            panic!("{:?} flew on from inside the ridge", shot.ranged)
+        };
+        assert_eq!((at, struck), (shot.at, None), "{:?} stops where it was loosed", shot.ranged);
+    }
+}

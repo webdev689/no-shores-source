@@ -576,6 +576,7 @@ fn the_bytes_for_the_clients_test_are_written() {
     std::fs::create_dir_all(folder).unwrap();
     let (players, foes, shots, lines, plates, public) = (players(), foes(), shots(), lines(), plates(), public());
     std::fs::write(format!("{folder}/joined.bin"), welcome()).unwrap();
+    std::fs::write(format!("{folder}/taken.bin"), taken_bytes(4_294_967_290)).unwrap();
     let snapshot = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines, &plates), &public));
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
     let friend = room::friendlies::Friendly {

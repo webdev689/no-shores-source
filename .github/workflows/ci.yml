@@ -45,6 +45,13 @@ jobs:
             echo "$(basename "$key" .modules)  $packs/$kit.modules" | sha256sum -c --quiet -
           done
           echo "ISLAND_MODULES=$packs" >> "$GITHUB_ENV"
+      # `shipTags.test.ts` fetches the ship meshes it reads from R2 once into the runner's temporary folder, each named
+      # by its content: they are kept between runs while the ships' manifest, which names them, stays as it is.
+      - name: Keep the ship meshes between runs
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: /tmp/overlook-ships
+          key: ship-meshes-${{ hashFiles('content/ships/ships.json') }}
       - name: cargo xtask check
         run: cargo xtask check
       # How the Lattice's renders lay into the forge's tables, on the runner's own Python: the wave's frame-cutting

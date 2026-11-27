@@ -29,6 +29,10 @@
     { "tag": "finders", "new_sqlite_classes": ["CompanyFinder"] },
     { "tag": "chat", "new_sqlite_classes": ["ChatHall"] },
   ],
+  // Sign-ins counted by address before the database or a password's hash is reached (accounts.ts, "POST /v1/login"):
+  // ten a minute in each of Cloudflare's locations. Its namespace is a number of our own, unique in the Cloudflare
+  // account: nothing is made in the dashboard.
+  "ratelimits": [{ "name": "SIGN_INS", "namespace_id": "4401", "simple": { "limit": 10, "period": 60 } }],
   // The bot's Members (bot/main.ts), which says who is a developer, reached by RPC alone.
   "services": [{ "binding": "BOT", "service": "noshores-bot", "entrypoint": "Members" }],
   // The pages a Discord sign-in may come back to, by origin and path: the game at noshores.online and on GitHub Pages,

@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Count, MESSAGES_A_SECOND, UNSIGNED_FROM_ONE, admitsFrom, counted } from './budget.ts';
+import {
+  type Count,
+  MESSAGES_A_SECOND,
+  TOLD_EVERY,
+  UNSIGNED_FROM_ONE,
+  admitsFrom,
+  counted,
+  tellsTaken,
+} from './budget.ts';
 import { UNHEARD_MOST } from '../client/src/network/roomConnection.ts';
 
 /** Counts a socket's messages sent at `times` (milliseconds); answers whether each was within the budget. */
@@ -23,7 +31,9 @@ test('a browser sending an input a tick, with a stall caught up at once, stays w
 });
 
 test('a stall of any length lets through no more than the page sends a room it has not heard from, within budget', () => {
-  const held = Array.from({ length: UNHEARD_MOST }, () => 10_000);
+  // The page holds once the room has gone unheard UNHEARD_MOST messages, or has taken that many fewer than were sent
+  // as it last told, which it tells every TOLD_EVERY.
+  const held = Array.from({ length: UNHEARD_MOST + TOLD_EVERY }, () => 10_000);
   assert.ok(send([...held, ...ticks(120, 10_000)]).every(Boolean), 'all held back at once, then two seconds of ticks');
 });
 
@@ -42,4 +52,14 @@ test("one address holds a room's sockets unsigned only up to its share, and sign
   assert.ok(admitsFrom(held, '198.51.100.4'), 'another address');
   held[0] = { address: '203.0.113.9', signed: true };
   assert.ok(admitsFrom(held, '203.0.113.9'), 'a signed socket holds no unsigned place');
+});
+
+test('a room tells a page how many of its messages it has taken every so many, counted over the seconds', () => {
+  let count: Count | undefined;
+  const told: number[] = [];
+  for (let message = 0; message < 2 * TOLD_EVERY + 1; message++) {
+    count = counted(count, 10_000 + message * 16).count;
+    if (tellsTaken(count)) told.push(count.taken);
+  }
+  assert.deepEqual(told, [TOLD_EVERY, 2 * TOLD_EVERY]);
 });

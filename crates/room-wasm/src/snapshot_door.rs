@@ -357,6 +357,13 @@ fn friendlies_seen(own: Option<[f64; 2]>, all: &[room::friendlies::Friendly]) ->
     all.iter().filter(|friend| own.is_some_and(|at| friend.kept_by(at))).copied().collect()
 }
 
+/// The room's word on how many messages it has taken from a player's socket (`protocol::taken_bytes`), packed as
+/// `hand_over` packs: its host counts them, and tells the page every so many.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_taken(messages: u32) -> u64 {
+    crate::hand_over(protocol::taken_bytes(messages))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

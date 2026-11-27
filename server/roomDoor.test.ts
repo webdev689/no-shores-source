@@ -121,6 +121,10 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   );
 });
 
+test("a room's word on how many messages it took from a socket reads back in the browser", () => {
+  assert.deepEqual(readFromRoom(startRoomDoor(compiled).taken(90)), { kind: 'taken', messages: 90 });
+});
+
 test('the roster reads from the rules: every type it drives with its name, faction, ranks and hands', () => {
   const roster = JSON.parse(startRoomDoor(compiled).roster()) as {
     type: number;
