@@ -145,7 +145,7 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | From | Happening | To |
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
-| On foot | The leave held (M, or the pad's View held, 1.5 s; [[Interface]], "The leave held") | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and no yes while the room joins again or has not sent the gear (a room lost for good is played on alone, and the page goes); else the veil, "Returning to your ship", then at sea |
+| On foot | The leave held (N, or the pad's View held, 1.5 s; [[Interface]], "The leave held") | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and no yes while the room joins again or has not sent the gear (a room lost for good is played on alone, and the page goes); else the veil, "Returning to your ship", then at sea |
 | On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
 | At sea | A click on a port's icon or its island, or L off a coast, then the confirmation's yes, once the ship lies within reach | Over the island, its tiles up |
 | Over the island | A tile clicked, or Enter on the tile lit ([[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]) | The veil, "Landing at" the node, then on foot there; an Elite Dungeon's card; or the Playlist |
@@ -244,7 +244,10 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   0.3 m over the ground, with the Test Ground's 50-degree view. The player's own Anima pushes it in as it is
   released, with a frame of its element round the screen ([[Arts]]).
 - **The world goes on.** The body is stepped every frame, with the pointer locked or not; while a menu is open,
-  with nothing pressed. Click the view to look round with the mouse.
+  with nothing pressed. Click the view to look round with the mouse; the last window over the game shut where the
+  mouse looks round (on foot, walking a deck, a scene of the story that wants it) takes the mouse back at once, the
+  keys and mouse played last (`Input.onShut`). A browser may still refuse it where the player freed the mouse with
+  Escape first; the [[Desktop App]] takes it for the page.
 - **The room.** The node's room is the authority, always. Alone, the room crate runs in the game's worker, ticked by its clock,
   on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
 - **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
@@ -298,8 +301,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **Sounds.** The world sounds on foot ([[Interface]], "World sounds"): the fight's blows, shots, steps and spells,
   the drops landing and the player standing again, each where it happens, through the World volume once the first
   press or key has woken the interface's sound. A cue not yet picked is silent; nothing new plays while a menu is open.
-- **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
-  by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
+- **Foes to try.** Under `npm run dev` only, `?foes=` asks the room played alone for foes as the player lands: types
+  by their numbers, each with a rank after a colon (`?foes=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`, `life/`): its keepers stand behind their counters and at their stalls and
   work, and its townsfolk walk the plan's ways (the city crate's `life`) from post to post, looking out, browsing,
   drinking, talking or carrying, keeping to the right; each keeps a routine laid on the world clock from the plan and a
@@ -554,23 +557,12 @@ sails out from its berth ("Landings").
   - Shift gives no burst at sea: only a fight's helm has one ([[Naval Combat]], "How it works").
   - Straight on, the voyage's line says "Sailing straight on"; resumed, the ship sails on straight along its heading.
 - **The ship's console** (`shipConsole.ts`, `seaScreen.ts`; [[The Sea Is Navigated From the Helm With the Held Map]],
-  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]), a window of the [[Interface]] at the foot of the screen while the ship is the player's
-  to sail. Its head names the ship (its own name, else its class) beside its class, over the switch between the
-  Oversea and the Sealevel views (V). Under it: a compass, north up, its brass needle the ship's heading and a pale
-  arrow the way the wind blows, with the heading in degrees and the wind ("Wind 6 m/s from the ENE", or "Calm");
-  the voyage (under way, hove to or at anchor; its pace, and while eased "×1 (×200 set) · true speed while watched",
-  or held near a hostile ship the room's; its speed in m/s at it; where it is bound when it makes for a landing; a bar
-  of the way sailed; its line); and the ship
-  (hull, canvas and crew as bars of whole, and the water it is in). Its foot holds the view's own presses: in the
-  Oversea view Plan a voyage (Map, N), which takes the view down to the helm and raises the [[Held Map]], and Stop or
-  Resume voyage (Space); at sea level Sail on (W), Heave to (S), Manage (B) and Leave the helm (H)
-  ([[The Ship Is Managed and Walked From the Sea's Panel]]), whose keys act at sea level alone, as the console offers
-  them. Narrower than 840 pixels the ship stands under the
-  compass and the voyage, its bars side by side. It goes at the helm, aboard, in a fight and on a travel. A stopped voyage keeps its destination: resuming
-  plans the way there again from wherever the ship lies, after going ashore and coming back too. A destination
-  anywhere at sea, in the ship's own water or another, asks whether to travel there, and yes travels there as the
-  picture fades out and in: the flow stays at
-  sea throughout, its keys held until the ship has arrived ([[Sailing]], "Travel by the held map").
+  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]): a window at the foot of the
+  screen while the ship is the player's to sail, laid out as [[Interface]], "The ship's console", says. It goes at the
+  helm, aboard, in a fight and on a travel. A stopped voyage keeps its destination: resuming plans the way there again
+  from wherever the ship lies, after going ashore and coming back too. A destination anywhere at sea, in the ship's
+  own water or another, asks whether to travel there, and yes travels there as the picture fades out and in: the flow
+  stays at sea throughout, its keys held until the ship has arrived ([[Sailing]], "Travel by the held map").
 - **Manage** pans the view down over 1.4 s to the ship at its true size, from its starboard quarter 39 m off,
   looking 0.5 radians down at its middle; a drag turns the view round it, the wheel brings it from 18 m to 78 m. The player
   stands at its wheel, its stand-in hands go about its deck, and a panel of the [[Interface]] shows it: its hull
@@ -901,7 +893,10 @@ sun has turned a texel at the square's corner, 0.04 degrees; only the square's r
 moves with them. Its casters draw into a pass that draws nothing, which keeps their calls and signs them: every draw
 with what it reads, and what no draw shows, where a ship lies and how far an event's prop has risen. The map is drawn
 from those calls when the signature or the view changes, and at least once in 60 frames whatever holds still. A still
-city costs no far pass; a ship moving in the far square draws it every frame.
+city costs no far pass; a ship moving in the far square draws it every frame, and so does one whose canvas moves (it
+is being set or struck, trimmed or luffing), but not one whose rig has settled to a steady wind or lies furled: its
+rig counts a change only when what its canvas reads moves (`SailRig.changes`), and its harm only while something of it
+has fallen.
 
 **The figures' shadows.** A figure's card casts turned square to the sun about its feet, its clear texels cut away,
 the picture kept the way round the eye sees it; it is drawn into the near map only. The card the eye sees is lit

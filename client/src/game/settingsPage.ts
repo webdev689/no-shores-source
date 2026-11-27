@@ -21,15 +21,18 @@ import type { PlainContext } from './menuPage.ts';
 import { PRESS_PADDING, answerNode, headingNode, hintNode } from './menuPages.ts';
 import { REBINDING, type Rebinding } from './rebinding.ts';
 import { RESOLUTIONS, resolution, setResolution } from './renderScale.ts';
+import { interfaceSize, screenPixels, setInterfaceSize, sizesOffered } from '../ui/interfaceSize.ts';
 import { soundCredits } from '../soundSamples.ts';
 import { PACES, dialoguePace, setDialoguePace } from '../speech/pace.ts';
 import {
   ambienceVolume,
   interfaceVolume,
+  masterVolume,
   musicVolume,
   play,
   setAmbienceVolume,
   setInterfaceVolume,
+  setMasterVolume,
   setMusicVolume,
   setWorldVolume,
   worldVolume,
@@ -46,7 +49,20 @@ export type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
 
 /** The address's asks that take the page past the title as it loads: the place to arrive at and how, and where the
  *  story starts. */
-const PAST_THE_TITLE = ['at', 'spawn', 'view', 'arrival', 'prologue', 'run', 'wisp', 'bow', 'armed', 'lash'];
+const PAST_THE_TITLE = [
+  'at',
+  'spawn',
+  'foes',
+  'minute',
+  'view',
+  'arrival',
+  'prologue',
+  'run',
+  'wisp',
+  'bow',
+  'armed',
+  'lash',
+];
 /** How long the page waits for its window to close before it says the browser kept it open, milliseconds. */
 const CLOSE_WAIT_MS = 500;
 /** How wide a tab's parts stand at most in its panel, CSS pixels, and at the larger words; Controls takes the panel's
@@ -66,8 +82,9 @@ const PANEL_LEAST = 200;
 const LIST = 'settings-list';
 /** The page's drop-down lists, each shut as the page is shown again. */
 const RESOLUTION_LIST = 'resolution';
+const SIZE_LIST = 'interface-size';
 const DIALOGUE_LIST = 'dialogue-pace';
-const LISTS = [RESOLUTION_LIST, API_LIST, DIALOGUE_LIST];
+const LISTS = [RESOLUTION_LIST, SIZE_LIST, API_LIST, DIALOGUE_LIST];
 /** Switch character's held press. */
 export const SWITCH = 'settings-switch-character';
 /** The credits' press in Audio and their way back. */
@@ -328,27 +345,35 @@ function held(
   };
 }
 
-/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, kept in this browser; and in the
- *  desktop app, the app's own graphics and version. The launcher shows the same. */
+/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, and the interface's size, each kept
+ *  in this browser; and in the desktop app, the app's own graphics and version. The launcher shows the same. */
 export function graphicsNode(ui: Interface): Node {
   const { node, chosen } = choice(ui, RESOLUTION_LIST, resolution(), RESOLUTIONS);
   if (chosen !== resolution()) setResolution(chosen);
   const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
+  const screen = screenPixels();
+  const offered = sizesOffered(screen.width, screen.height);
+  const sized = choice(ui, SIZE_LIST, interfaceSize(), offered);
+  if (sized.chosen !== interfaceSize()) setInterfaceSize(sized.chosen);
+  const sizeSaid = offered.find((option) => option.value === sized.chosen)?.words ?? sized.chosen;
   return column([
     headingNode('Display'),
     { height: 4 },
     settingRow('Resolution', { ...node, label: `Resolution, ${said}` }),
     hintNode('Auto lowers the resolution while the game runs slow. The interface stays sharp.'),
+    settingRow('Interface size', { ...sized.node, label: `Interface size, ${sizeSaid}` }),
+    hintNode('Each step draws the interface larger by a whole pixel, so it stays sharp.'),
     ...desktopNodes(ui, settingRow),
   ]);
 }
 
-/** Audio: the volumes of the interface, the world, the music and the ambience, each kept in this browser, and the
- *  press to the sound credits. */
+/** Audio: the master volume over all, the volumes of the interface, the world, the music and the ambience, each kept
+ *  in this browser, and the press to the sound credits. */
 function audioNode(context: PlainContext, toCredits: () => void): Node {
   return column([
     headingNode('Volume'),
     { height: 4 },
+    volumeRow(context, 'Master', masterVolume, setMasterVolume),
     volumeRow(context, 'Interface sounds', interfaceVolume, setInterfaceVolume),
     volumeRow(context, 'World sounds', worldVolume, setWorldVolume),
     volumeRow(context, 'Music', musicVolume, setMusicVolume),

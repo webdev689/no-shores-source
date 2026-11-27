@@ -4,6 +4,9 @@ status: live
 code:
   - client/src/heldmap/heldMap.ts#HeldMap
   - client/src/heldmap/heldMapKept.ts#layoutKey
+  - client/src/heldmap/mapLayout.ts#shipRoomLost
+  - client/src/heldmap/seaLettering.ts#SeaLettering
+  - client/src/heldmap/routeTiles.ts#routeTiles
   - client/src/heldmap/heldMapAsk.ts#MapAsk
   - client/src/heldmap/heldMapAsk.ts#litCells
   - client/src/heldmap/heldMapAsk.ts#WaterJudge
@@ -42,7 +45,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
 ## How it works
 
-- **Opening.** At sea, Plan a voyage on the ship's console in the Oversea view, or N, takes the view down from the [[Overworld]]'s raised camera
+- **Opening.** At sea, Plan a voyage on the ship's console in the Oversea view, or M, takes the view down from the [[Overworld]]'s raised camera
   to the helm behind the Sloop's wheel on its quarterdeck in first person, over 1.1 s, the eye riding the swell with it.
   On the way down every ship shrinks from the Overworld's scale to its own, so at the wheel the Sloop is its true size
   ([[The Ship Is Managed and Walked From the Sea's Panel]]). There the
@@ -94,6 +97,10 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   ink (`paintLock`). A lock is never dropped for a name, and names keep clear of it. A locked sea is not sailed or
   travelled into: a course whose end lies in one is refused ("That sea is locked."), and the route planner keeps a
   4.8 km cell clear of every one (`SeaLock`, `lockedOut`; [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]).
+- **The legend** (the sea's key, the land's table) hides and shows again with its key (`legend`, L, heard while any
+  map is up, at the helm too, where the map takes every key; the strip says "L Legend"), as a player asked ([[M Is the Map, N the Leave, and the Players' First Asks Are Built]]).
+  Hidden, it is not painted, nothing keeps clear of it, and it stays hidden for the next map in this browser
+  (`MapLegend`).
 - **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the three
   holders' swatches (Home, Grey Tithe, The Lattice) and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
   its wash as the map shows it, over the map's parchment (`washedOver`), with the Tithe's and the Lattice's
@@ -124,10 +131,16 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
-  over the picture, a node of the game's interface. They are laid out again only when something the layout reads has changed
-  (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the waters set, the ship's point
-  and heading, the places and islands shown, the place chosen); a still frame lays out nothing (at 1920 × 1080,
-  0.02 ms against 8 ms). How it reads:
+  over the picture, a node of the game's interface. They are laid out again only when something the layout reads has
+  changed (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the waters set, the places
+  and islands shown, the place chosen, whether the legend shows), or when the ship's arrow, painted where it is each
+  frame, would cover a name or the key (`shipRoomLost`): so the names stand still while the ship sails on under them.
+  A still frame lays out nothing, and while only the arrow moves, only the pixels round where it was and is are
+  painted again and sent to the GPU (`SeaLettering`). A layout asks each water's name's spots whether they stand on
+  its own sea some 18,000 times, each four reads of a table summed once a grid (`CellSums`, `onOwnSea`), and the
+  key's places laid round reuse the first layout up to the first name the key would cover: measured natively on the
+  real world, a layout takes some 13 ms at 1920 × 1080 and 18 ms at 2560 × 1440; a drag or the wheel still lays out
+  each frame it moves the view. How it reads:
   - *Sizes.* In the game's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
     mark and line grows with the map on a larger screen (`letterScale`: the map's height over its height at
     1280 × 720, never below 1), so at 1920 × 1080 the words are 20 px and 23 px.
@@ -167,7 +180,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   (`paintCard`), over the point, or under it where over would leave the map, whole inside the map, and stood anew by the pointer once the map is panned, zoomed or raised
   again; with the pointer off the map, none is lit. Its land lit, no water is; off it, the water under the pointer is
   lit again. A click on a region's land (no place's mark within 16 px) chooses its anchorage, named for the region:
-  the way there is planned and inked as any course is, and sailed at the sea's own pace, the course judged by the
+  the way there is planned and inked as any course is, and sailed at ×200, as any course set on the held map, the course judged by the
   waters' rules as any other ([[Sailing]]). Another island's land lights nothing.
 - **Other waters** ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). At sea, the water under the
   pointer, when it is not the one the ship is in, is lit (the pad's cursor stands only in the interface's windows, so the pad lights none): its sea brightened a little with the
@@ -210,10 +223,10 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 The map on land speaks in icon glyphs, with little text, and a table on it says what each glyph is
 ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
-- **Raising.** On foot, N anywhere but in a dungeon (where it opens the [[Dungeon Map]]; a passage zone's under ground among the places it rises, the web its sheet: [[Passages]], "The passages' map"), under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
+- **Raising.** On foot, M anywhere but in a dungeon (where it opens the [[Dungeon Map]]; a passage zone's under ground among the places it rises, the web its sheet: [[Passages]], "The passages' map"), under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
   person too), and there the same painting rises in their gauntlets as it does at the helm. The pointer is let go to
   pan it. The world goes on: the player stands still and hears it, and a fall lowers the map. While it rises every key
-  waits; N or Escape turns back. Up, N or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
+  waits; M or Escape turns back. Up, M or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
   plates and compass, and a gate's offer, give way while it is up.
 - **The view** opens centred on the player, 400 m across (in a passage zone, the whole web), held to the land's sheet: its ring and 40 m past it. A drag
   pans and the wheel zooms, to 8 px a metre at most. A click does nothing: the map is only to look at.
@@ -267,7 +280,10 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
 - A route is planned on every continent's outline.
 - The coast field is a cell's middle every 4.8 km, interpolated: a headland narrower than a few kilometres is drawn
   softened.
-- The route is inked through at most 128 of its points.
+- A name the ship's arrow sailed onto and pushed off the map stays off after the ship sails on, until the map is
+  panned, zoomed or raised again.
+- The route is inked through at most 128 of its points. Each 32 px tile of the map is told which of the route's
+  legs pass near it (`routeTiles`), so a pixel measures itself against those alone.
 - On land, the map marks a keeper a quest step names, not the place of a quest's other goals.
 - A water's sea is judged a 4.8 km cell at a
   time, so its words may stand over an isle smaller than a cell.

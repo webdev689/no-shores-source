@@ -9,6 +9,7 @@ import {
   blowFrame,
   blowWay,
   type Doing,
+  drinkMoves,
   FULL_RUN,
   FULL_WALK,
   likelyMoves,
@@ -458,4 +459,30 @@ test("the moves a figure shows standing and moving are a few of its likely ones,
   );
   assert.ok(steady.length < likely.length / 2, 'and few: no blow, guard, roll or hurt');
   assert.equal(new Set(steady).size, steady.length);
+});
+
+test('a drink plays the quaff by its progress, on the move its walk where drawn whole; undrawn, the rest as before', () => {
+  const walking = (action: string) => onTheMove(action);
+  const drinking: Doing = { ...doing, drawn: false, fight: { kind: 'drink', progress: 0.6 } };
+  const moving = { ...drinking, moving: true, speed: FULL_WALK };
+  assert.deepEqual(shownMove(drinking, frames, everything, walking), { anim: 'quaff', frame: 2, frameSeconds: 0 });
+  assert.deepEqual(shownMove(moving, frames, everything, walking), { anim: 'quaffwalk', frame: 2, frameSeconds: 0 });
+  assert.equal(shownMove(moving, frames, everything, () => null).anim, 'quaff', 'not drawn whole walking');
+  const noQuaff = (anim: string) => !anim.startsWith('quaff');
+  const plain = { ...drinking, fight: null };
+  assert.deepEqual(shownMove(drinking, frames, noQuaff, walking), shownMove(plain, frames, noQuaff, walking));
+  assert.deepEqual(
+    shownMove(moving, frames, noQuaff, walking),
+    shownMove({ ...plain, moving: true, speed: FULL_WALK }, frames, noQuaff, walking),
+  );
+});
+
+test('the drink is composed ahead for empty hands only, where the forge draws it', () => {
+  const walking = (action: string) => onTheMove(action);
+  for (const moves of [drinkMoves(null, null, everything, walking), steadyMoves(null, null, everything, walking)])
+    assert.ok(moves.includes('quaff') && moves.includes('quaffwalk'));
+  assert.deepEqual(drinkMoves('sword_iron', null, everything, walking), [], 'a weapon drawn drinks not');
+  assert.ok(!likelyMoves(null, null, everything, null, walking).includes('quaff'), 'a foe never drinks');
+  const noQuaff = (anim: string) => !anim.startsWith('quaff');
+  assert.ok(!steadyMoves(null, null, noQuaff, walking).includes('quaff'));
 });

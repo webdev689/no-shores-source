@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# message-guard: git's commit-msg hook (git commit and git merge run it). install-all.sh copies it to the local clone's
+# .git/hooks/commit-msg; every worktree of that clone shares it. It refuses a message whose first line runs past 100
+# characters or holds a trailer (a body built with $(printf '\n') loses its newlines and joins the lines), and, in a
+# Claude cloud session, a message without its `Claude-Session:` trailer. Write a body with `git commit -F - <<'EOF'`.
+# NO_SESSION_TRAILER=1 is for the kit's own data commits (toolkit-data.sh), which no session writes.
+msg=$(git stripspace --strip-comments < "$1")
+first=$(printf '%s\n' "$msg" | head -n 1)
+bad=0
+if [ "${#first}" -gt 100 ]; then
+  echo "commit-msg: refusing: the first line has ${#first} characters (100 at most); write the body with git commit -F - <<'EOF'" >&2; bad=1
+fi
+if printf '%s' "$first" | grep -qiE 'co-authored-by: .*<|claude-session: *https?://'; then
+  echo "commit-msg: refusing: a trailer is on the first line; put a blank line before the trailers (git commit -F - <<'EOF')" >&2; bad=1
+fi
+if [ "${CLAUDECODE:-}" = 1 ] && [ -n "${CLAUDE_CODE_REMOTE_SESSION_ID:-}" ] && [ "${NO_SESSION_TRAILER:-}" != 1 ] &&
+   ! printf '%s\n' "$msg" | sed 1d | grep -q '^Claude-Session: '; then
+  echo "commit-msg: refusing: a Claude session's commit ends with its Claude-Session: trailer; for a merge, one step:" \
+       "git merge --no-ff -m '<message>' -m '<trailers>' <branch>, never an amend after it; a merge this stopped" \
+       "(git pull, --no-edit) is still open: finish it with git commit -F - <<'EOF' and the trailers" >&2; bad=1
+fi
+exit $bad

@@ -142,3 +142,6 @@ fn a_day_of_the_schedule_is_written_for_the_page_to_agree_with() {
     std::fs::create_dir_all(folder).expect("the folder");
     std::fs::write(format!("{folder}/schedule.json"), written.to_string()).expect("written");
 }
+
+#[path = "page_numbers_tests.rs"]
+mod page_numbers_tests;

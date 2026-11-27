@@ -52,6 +52,7 @@ import gunplay  # noqa: E402
 import guns3p  # noqa: E402
 import torch3p  # noqa: E402
 import casting  # noqa: E402
+import quaff  # noqa: E402
 import playing  # noqa: E402
 import riding  # noqa: E402
 import driving  # noqa: E402
@@ -68,6 +69,7 @@ from mathutils import Matrix, Vector  # noqa: E402
 import sheaths  # noqa: E402
 import onthemove  # noqa: E402
 import rendercache  # noqa: E402
+import rigcape  # noqa: E402
 import shape  # noqa: E402
 import stage  # noqa: E402
 
@@ -158,7 +160,7 @@ def class_records(archive):
 STAFF_ANIMS = {'walk_staff': 4, 'attack_staff': 6, 'hurt_staff': 1, 'idle_staff': 1, 'spell': 4}
 ANIMS = {'walk': 4, 'attack_axe': 6, 'attack_sword': 6, 'hurt': 1, 'idle': 1, 'bow': 4, **STAFF_ANIMS, **poses.OWN,
          **blows.BLOWS, **playing.PLAY, **onehand.ONEHAND, **riding.RIDE, **driving.DRIVE, **people.PEOPLE, **gunplay.GUNPLAY,
-         **agility.MOVES, **casting.CAST, **bowhold.ANIMS, **agility.ELSEWHERE, **onthemove.MOVES}
+         **agility.MOVES, **casting.CAST, **quaff.QUAFF, **bowhold.ANIMS, **agility.ELSEWHERE, **onthemove.MOVES}
 # the bow at rest in the left fist (poses.py `AT_REST`): each animation a carried weapon shows in, the right hand empty
 BOW_REST = {anim: ANIMS[base] for anim, base in poses.AT_REST.items()}
 ANIMS.update(BOW_REST)
@@ -266,6 +268,7 @@ def held_anims(weapon):
             and a not in driving.DRIVE   # and a driver's
             and a not in agility.BARE   # a climber's hands are on the wall
             and a not in casting.CAST   # a player casts with the weapon put away
+            and a not in quaff.QUAFF   # and drinks with it put away
             and a not in agility.ELSEWHERE   # drawn for outside the game, the hands empty
             and a not in onthemove.WALKS   # on the move as its action is (`weapon_anims`)
             and (a not in blows.BLOWS or a in blows.blows_of(weapon))]   # each its own holds' blows
@@ -969,11 +972,13 @@ def laid_tag(ly, anim):
 
 
 def drape_tags(ly):
-    """What a layer's drapes add to its keys: a cloak's cut on the body standing (`CUT`), and a drape hung over an
-    envelope named by its copy (drape.py `named`). Nothing for the rest, so their keys stand."""
+    """What a layer's drapes add to its keys: a cloak's cut on the body standing (`CUT`), and its rig's version
+    (rigcape.py) where it is rigged, else the air kept out of the body it hangs on (cloth.py `outside`), so a change to
+    either draws its strips again and no other's; and a drape hung over an envelope named by its copy (drape.py
+    `named`). Nothing for the rest, so their keys stand."""
     tags = []
     if any(isinstance(d, drape.Cloak) for d in ly.drapes or ()):   # a cloak alone: hair carries its own hang
-        tags.append(('cut', CUT))
+        tags += [('cut', CUT), ('rig', rigcape.VERSION) if drape.RIG else ('air', 'sealed')]
     if any('.' in n for d in ly.drapes or () for n in (getattr(d, 'over', None) or ())):
         tags.append(('over', 'named'))
     return tags
@@ -1624,11 +1629,10 @@ def fitted_mark(out, anim):
 def write_fitted(fitted, body):
     """Each layer drawn this run listed under the body it was drawn to fit, in `FITTED/<body>.json`: by animation, the
     body's mark and the layers drawn to fit it. A layer leaves the mark it was listed under before."""
-    import fcntl
     os.makedirs(FITTED, exist_ok=True)
     path = os.path.join(FITTED, f'{body}.json')
     with open(LOOKS + '.lock', 'w') as lock:   # the index's lock: a run on the other body writes its own list
-        fcntl.flock(lock, fcntl.LOCK_EX)
+        rendercache.exclusive(lock)
         now = json.load(open(path)) if os.path.exists(path) else {}
         for anim, (mark, names, _) in fitted.items():
             if mark is None:
@@ -1651,9 +1655,8 @@ def write_index(index, body, drew=None):
     (the other body's, or another shard's of this body) keeps its own. `drew`, the (layer, animation) strips this run
     drew: only those, and the animations' cells it set, are laid over the body's; with none, every strip the run lists.
     The body's class looks are made under the lock from the strips the index then lists; the order and dye with them."""
-    import fcntl
     with open(LOOKS + '.lock', 'w') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+        rendercache.exclusive(lock)
         now = json.load(open(LOOKS)) if os.path.exists(LOOKS) else {}
         mine = index['bodies'][body]
         if drew is None:   # a whole run: every strip it lists, laid over as a named run's are, so another's are kept

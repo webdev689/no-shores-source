@@ -7,9 +7,9 @@ node_modules
 dist/
 desktop/out/
 generated
-client/public/*.wasm
-# The island build's packs, copied in for pictures before they are published (the editor's ?islePacks=).
-client/public/isle-packs/
+# client/public holds only builds (the WebAssembly; the island build's packs, copied in for pictures before they are
+# published, the editor's ?islePacks=). Ignored as a path, not as a folder, so a worktree's link to it is ignored too.
+/client/public
 # The forge's renders, its tables and its packs: published to R2 by tools/forge_publish.py.
 tools/forge/public/
 tools/forge/src/systems/
@@ -17,6 +17,7 @@ tools/forge/packs/
 # A render's lock on its keys (rendercache.py), held only while it runs.
 tools/forge/tools/sprite-forge/keys/*.lock
 __pycache__/
+.pytest_cache/
 
 # The toolkit's working folders: the code map it generates and Serena's project data.
 graphify-out/
@@ -45,3 +46,4 @@ bible/.trash/
 
 # The design tool's own working folder (its live server and saved critiques), never the repo's.
 .impeccable/
+/figures-work/

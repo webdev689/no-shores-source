@@ -13,8 +13,9 @@ EVERY SESSION
 2. Work in the local clone <REPO_DIR> (Serena is pinned there). Run `graphify update .` there.
 3. Invoke the task-observer skill and run its session-start scan:
    `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh $SHARED_DIR/task-observer`.
-4. End of a session: `bash $KIT_DIR/claude-mem-save.sh`, then `headroom learn --project . --apply` (skip it and say
-   so if Gemini is unreachable), then update the hand-off doc <path>.
+4. End of a session: `bash $KIT_DIR/claude-mem-save.sh`, then `headroom learn --project .` (it only
+   suggests: keep a lesson only once checked against the rules; skip it and say so if Gemini is unreachable), then
+   update the hand-off doc <path>.
 - Call scripts as `bash x.sh` / `python3 x.py` (mounted folders can drop the execute bit).
 - After any change to the kit: `bash $KIT_DIR/check-tools.sh --worker` (expect 0 FAIL).
 

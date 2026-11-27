@@ -52,10 +52,11 @@ import { type Landmass, openLandmass } from './landmass.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import { helmControls } from './helmControls.ts';
 import { arrivalFacing, FIRST_NODE } from './nodes.ts';
-import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
+import { startGearWindow } from './gearWindow.ts';
+import { listenForLook } from './lookRound.ts';
 import { inspectAgainst } from './social/social.ts';
 import { rejoinOnGuild } from './footPlace.ts';
-import { clickedOnLine, listenForControls } from './gameKeys.ts';
+import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
 import { companyPlaces, nodeOfRoom, seaRoomName, startedAtSea } from './rooms.ts';
 import { notYet } from './companyJoin.ts';
@@ -124,7 +125,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     rooms,
     roomModule,
     groundAt: (x, y) => groundAt(x, y),
-    // Under `npm run dev` only, `?spawn=` asks a room playing alone for foes to fight.
+    // Under `npm run dev` only, `?foes=` asks a room playing alone for foes to fight.
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
     trips: onFoot,
@@ -357,7 +358,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     node: () => playing.foot?.node ?? null,
     arrive: goFoot,
     sea: () => travel({ kind: 'return-to-ship' }, goSea),
-    ...{ walker, dead, game: playing },
+    ...{ walker, dead, game: playing, sky: scene.sky },
   });
   const landAt = (id: string) => {
     const landing = playing.sea?.view.landingOf(id);
@@ -479,12 +480,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (sea) sailOrTravel(sea, sail, travel, () => !charting.waiting(sea.position, playing.landmass.id));
     if (!sea || sea.fight || seas === seaSeas) return;
     seaSeas = seas;
+    // A switch queued behind another runs only while this ship is still the one at sea (not after a Roster join).
+    const here = () => onTheSea(playing.flow) && playing.sea === sea;
     switching = switching
-      .then(() => {
-        sea.leaveRoom();
-        return enterSea(seas);
-      })
-      .then(() => void (onTheSea(playing.flow) && (sea.travelling ?? sea.sailTo(sail, PLANNED_PACE))))
+      .then(() => (here() ? (sea.leaveRoom(), enterSea(seas)) : undefined))
+      .then(() => void (here() && (sea.travelling ?? sea.sailTo(sail, PLANNED_PACE))))
       // A room that will not open leaves the ship sailing alone, and says so; ashore by then, nothing sails.
       .catch(() => void (onTheSea(playing.flow) && sea.sailAlone(sail, PLANNED_PACE)));
   };
@@ -556,16 +556,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     ...{ playing, input, ui, hud, story, retry, change, respawn, landings, stopOrResume, openMap },
     ...{ manage, leaveHelm, takeHelm, goThrough, landAt: island.act, islandBack: island.back },
   });
-  canvas.addEventListener('click', () => {
-    // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open
-    // the pointer stays free, though the click comes before the interface has heard where it is.
-    if (ui.takesPointer || gearScreenOpen() || clickedOnLine(input.locked)) return;
-    if (playing.flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
-    const { flow, foot, sea, helmMap } = playing;
-    const onFoot = flow.mode === 'foot' && !helmMap.looking && foot?.standing.kind !== 'dead';
-    const onDeck = flow.mode === 'sea' && (sea?.aboard.walking || sea?.boarding.onDeck);
-    if (!input.locked && (onFoot || onDeck)) input.lock();
-  });
+  listenForLook(canvas, input, ui, playing, story);
   seaPointer(canvas, input, {
     // On a struck ship's deck the pointer and the wheel are the fight's on foot.
     atSea: () => playing.flow.mode === 'sea' && !playing.sea?.boarding.onDeck,

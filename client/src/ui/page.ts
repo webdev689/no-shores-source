@@ -107,7 +107,16 @@ export const BROWSERS_SIGN_INS: SignIns = {
     const Made = (globalThis as { PasswordCredential?: PasswordMade }).PasswordCredential;
     const store = globalThis.navigator?.credentials;
     if (!Made || !store) return;
-    await store.store(new Made({ id, password })).catch(() => undefined);
+    // The browser refuses some sign-ins as it makes them (an empty id or password): those are not kept, as one the
+    // store turns down is not.
+    const made = (() => {
+      try {
+        return new Made({ id, password });
+      } catch {
+        return null;
+      }
+    })();
+    if (made) await store.store(made).catch(() => undefined);
   },
   async kept() {
     const store = globalThis.navigator?.credentials;

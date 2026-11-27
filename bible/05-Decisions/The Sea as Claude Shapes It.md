@@ -55,7 +55,8 @@ Its rank, by the lowest level of its water's band:
   Major, 1.1 for an Elite and 1.2 for a Miniboss.
 - **Sighted** half a minute of the two closing head-on, 432 m a step of the voyage's pace, never under 5 km. It is
   kept until 1.1 times that; no roll launches while three sail in sight.
-- **Where it comes.** A bold ship comes within the cone from which it meets a voyage that holds its course: 0.8 of
+- **Where it comes** (how far out replaced by
+  [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]). A bold ship comes within the cone from which it meets a voyage that holds its course: 0.8 of
   the arcsine of its way over the ship's. A wary one comes within 60 degrees of the course, and at x10 and under both
   do. A pirate takes the place nearest a coast; a Tithe ship the place nearest a lane, along it.
 - **The chase**: a click on its mark sails to meet it, and within 750 m the fight begins.

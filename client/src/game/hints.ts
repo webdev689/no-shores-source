@@ -36,7 +36,7 @@ const MAP: StripHint = ['landMap', 'Map'];
 
 /** The keys each moment shows, the strip's last entry with them. */
 export const HINTS = {
-  landMap: [['Drag', 'Pan'], ['Wheel', 'Zoom'], ['landMap / Esc', 'Close'], ALL_CONTROLS],
+  landMap: [['Drag', 'Pan'], ['Wheel', 'Zoom'], ['legend', 'Legend'], ['landMap / Esc', 'Close'], ALL_CONTROLS],
   dead: [['respawn', 'Respawn'], ALL_CONTROLS],
   oversea: [['Left button', 'Sail there'], ['map', 'Plan a voyage'], ['seaView', 'Sea level'], ALL_CONTROLS],
   sealevel: [
@@ -68,6 +68,7 @@ export const HINTS = {
     ['Wheel', 'Zoom'],
     ['Left button', 'Choose'],
     ['confirm', 'Set sail'],
+    ['legend', 'Legend'],
     ['Esc', 'Close'],
     ALL_CONTROLS,
   ],

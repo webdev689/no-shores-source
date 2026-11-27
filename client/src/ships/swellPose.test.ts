@@ -58,7 +58,7 @@ test('its wake stirs at its bow and both quarters, deeper the more way it makes'
 });
 
 test('a bigger hull answers the swell slower, as the rules have it', () => {
-  assert.equal(RIDE.lagSPerM, 0.02, 'crates/sailing/src/pose.rs LAG_S_PER_M');
+  assert.equal(RIDE.lagSPerM, 0.02, 'LAG_S_PER_M in crates/sailing/src/pose.rs');
   assert.ok(Math.abs(lagOf(38) / lagOf(18.7) - 38 / 18.7) < 1e-12);
   // A short, quick wave: the same middle, so only its inertia tells a long hull from a short one.
   const chop: Swell = { ...SWELL, waves: [{ ...SWELL.waves[0]!, number: (2 * Math.PI) / 400, frequency: 3 }] };

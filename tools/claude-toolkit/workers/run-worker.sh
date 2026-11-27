@@ -11,34 +11,64 @@
 # Late owner changes: append them to <worktree>/../reports/inbox-<name>.md; the worker re-reads it before each commit
 # and before its final report. Stop/--resume only for changes that invalidate work in progress.
 # Stop a worker: `bash stop-worker.sh <worktree>` (pid file); never pkill -f.
+# Refused (exit 3): a start past WORKERS_MAX live workers (the owner's 2) or with under 15 GB free on the disk.
 KIT_DIR=${KIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}; SHARED_DIR=${SHARED_DIR:-$HOME/toolkit-data}; export KIT_DIR SHARED_DIR
 set -u; WT=$(cd "$1" && pwd); BRIEF=$2; MODE=${3:-}; NAME=$(basename "$WT"); OUT=$(dirname "$WT")/reports; mkdir -p "$OUT"
 cd "$WT"
+# A refusal goes to the log too: a detached start discards stderr.
+refuse() { echo "run-worker.sh: $1" | tee -a "$OUT/$NAME.log" >&2; exit "$2"; }
 # Refuse a brief copied from brief-common-template.md whose <...> lines were never filled in (check-tools expects this).
 left=$(grep -oE '<(the hand-off doc|project rules:|the session.s attribution lines)[^>]*>' "$BRIEF" | head -3 | tr '\n' ' ')
-[ -z "$left" ] || { echo "run-worker.sh: brief $BRIEF still has: $left(fill in the template's <...> lines first)" >&2; exit 2; }
+[ -z "$left" ] || refuse "brief $BRIEF still has: $left(fill in the template's <...> lines first)" 2
 # Read once, here: a brief missing or empty when the worker starts would start it with no task.
-PROMPT=$(cat "$BRIEF" 2>/dev/null); [ -n "$PROMPT" ] || { echo "run-worker.sh: brief $BRIEF is missing or empty" >&2; exit 2; }
+PROMPT=$(cat "$BRIEF" 2>/dev/null); [ -n "$PROMPT" ] || refuse "brief $BRIEF is missing or empty" 2
+# Refuse a brief that runs vitest or one tsc config: `npm run -s types` checks every config and `node --test` runs the
+# client's tests. A line that forbids them ("never", "not", "no", "avoid", "instead", "refuse") passes.
+bad=$(grep -inE 'vitest|tsc -p [^ `<]' "$BRIEF" | grep -viE "never|not |n't|no |avoid|instead|refuse" | head -2 | tr '\n' ' ')
+[ -z "$bad" ] || refuse "brief $BRIEF names vitest or a single tsc -p: $bad(use npm run -s types, node --test)" 2
+# At most WORKERS_MAX workers at once (the owner's 2 on this 4-core machine), and none with under 15 GB free: more
+# swamped the CPU, and a full disk killed checks mid-run. The lock makes two starts at once count each other.
+exec 8> "$OUT/.start.lock"; flock 8
+live=0; for f in "$OUT"/*.pid; do
+  [ "$f" != "$OUT/$NAME.pid" ] && [ -s "$f" ] && kill -0 "$(cat "$f")" 2>/dev/null && live=$((live + 1))
+done
+[ "$live" -lt "${WORKERS_MAX:-2}" ] || refuse "$live workers already running (the cap is ${WORKERS_MAX:-2}); start this one when one ends" 3
+free=$(df -Pk "$WT" | awk 'NR == 2 {print $4}')
+[ "$free" -ge $((15 * 1024 * 1024)) ] || refuse "$((free / 1048576)) GB free, under 15 GB; clear merged worktrees' target/ (clear-target.sh)" 3
+echo $$ > "$OUT/$NAME.pid"; trap 'rm -f "$OUT/$NAME.pid"' EXIT; exec 8>&-
 INBOX="$OUT/inbox-$NAME.md"
 # A fresh run starts an empty inbox: one left by an earlier worker of this name is kept aside, not handed on.
 [ "$MODE" != "--resume" ] && [ -f "$INBOX" ] && mv "$INBOX" "$OUT/inbox-$NAME.$(date +%Y%m%d%H%M%S).md"
 [ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
-echo $$ > "$OUT/$NAME.pid"; trap 'rm -f "$OUT/$NAME.pid"' EXIT
 pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped worker can leave a stale lock
-# A worktree holds only what git tracks. Link the main checkout's packages, and build here, once, what the client's
-# tests read and git ignores (the generated messages, the WebAssembly, and the message fixtures the protocol's Rust tests
-# write), so the worker's tests run as the main checkout's do, on its own Rust.
+# The fork commit, from the first run: the reviewer diffs $WORKER_BASE...HEAD, only the worker's own commits. A resume
+# with none recorded (a worker started before this) takes its merge-base with main.
+if [ "$MODE" != "--resume" ]; then git rev-parse HEAD > "$OUT/$NAME.base"
+elif [ ! -s "$OUT/$NAME.base" ]; then { git merge-base HEAD origin/main || git rev-parse HEAD; } > "$OUT/$NAME.base" 2>/dev/null; fi
+WORKER_BASE=$(cat "$OUT/$NAME.base"); export WORKER_BASE
+# Two checkouts sharing one build folder overwrite each other's binaries mid-run; cargo xtask check refuses one outside.
+unset CARGO_TARGET_DIR CARGO_BUILD_TARGET_DIR
+# A worktree holds only what git tracks. Link the main checkout's packages, and build here what the client's tests read
+# and git ignores (the generated messages, the WebAssembly, and the fixtures Rust tests write: the protocol's messages,
+# the schedule, the arts' first levels and the native elite layouts), so the worker's tests run as the main checkout's
+# do, on its own Rust. Built again when the branch or head moved since the last build; one worktree builds at a time,
+# so parallel starts queue instead of racing for the CPU.
 MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 [ -e node_modules ] || [ ! -d "$MAIN/node_modules" ] || ln -s "$MAIN/node_modules" node_modules
-if [ -f package.json ] && { [ ! -d generated ] || ! ls client/public/*.wasm >/dev/null 2>&1 || [ ! -d target/protocol ]; }; then
-  { npm run -s schema && npm run -s wasm && cargo test -q -p protocol; } >> "$OUT/$NAME.log" 2>&1 ||
-    echo "run-worker.sh: the worktree's generated messages, WebAssembly or message fixtures did not build; see $OUT/$NAME.log" >&2
+stamp="$(git rev-parse --abbrev-ref HEAD) $(git rev-parse HEAD)"
+if [ -f package.json ] && [ "$(cat target/.worker-built 2>/dev/null)" != "$stamp" ]; then
+  ( flock 9
+    { npm run -s fixtures && cargo test -q -p room written_for &&
+      cargo test -q -p room-wasm every_elite_dungeon_answers; } >> "$OUT/$NAME.log" 2>&1 && echo "$stamp" > target/.worker-built
+  ) 9> "$OUT/.setup.lock" ||
+    echo "run-worker.sh: the worktree's generated messages, WebAssembly or test fixtures did not build; see $OUT/$NAME.log" >&2
 fi
 [ -f .serena/project.yml ] || yes n | serena project create --name "$NAME" $(bash "$KIT_DIR/serena-languages.sh" "$WT") "$WT" >/dev/null 2>&1   # "n": extra-server prompts abort without a terminal
 G=$(git rev-parse --git-common-dir); grep -qx '.serena/' "$G/info/exclude" 2>/dev/null || echo '.serena/' >> "$G/info/exclude"
 MEM=$(ls -d /root/.claude/plugins/cache/thedotmack/claude-mem/*/ 2>/dev/null | sort -V | tail -1)
+# headroom_compress needs its proxy. setsid: the proxy is shared, so it outlives this worker's session.
 curl -s --noproxy '*' --max-time 2 http://127.0.0.1:8787/health >/dev/null || \
-  (HEADROOM_BEACON=off nohup headroom proxy --host 127.0.0.1 --port 8787 --no-subscription-tracking >/tmp/headroom-proxy.log 2>&1 &)   # headroom_compress needs it
+  (HEADROOM_BEACON=off setsid nohup headroom proxy --host 127.0.0.1 --port 8787 --no-subscription-tracking >/tmp/headroom-proxy.log 2>&1 &)
 CFG="$OUT/mcp-$NAME.json"
 # Serena's first start in a fresh container can pass Claude's 30 s MCP connect limit (CONNECT_TIMEOUT), and the
 # worker then runs without it. Warm it with one handshake (retried once) and give MCP servers 2 minutes to connect.
@@ -97,5 +127,18 @@ if [ ! -f "$REPORT" ] || [ "$(stat -c %Y "$REPORT")" -lt "$(git log -1 --format=
   echo "WORKER $NAME REPORT STALE: resumed once to finish and write it" >> "$OUT/$NAME.log"
   work "Your run ended with your report ($REPORT) older than your last commit. Re-read your inbox, finish what your brief and inbox still ask (a review you started included), run the brief's checks, commit, write this round's report and give the final reply the brief asks for." -c
 fi
+# Audit the run as it ends; a final reply without its INBOX or OBSERVATIONS line is resumed once to add them.
+aud=$(python3 "$KIT_DIR/workers/audit.py" "$WT" 2>&1); printf '%s\n' "$aud" >> "$OUT/$NAME.log"
+if grep -qE 'OBSERVATIONS: line|INBOX NOT ACKED' <<< "$aud"; then
+  echo "WORKER $NAME REPLY LINES MISSING: resumed once" >> "$OUT/$NAME.log"
+  work "Your final reply lacks its INBOX or OBSERVATIONS line (audit: $(grep -E 'OBSERVATIONS: line|INBOX NOT ACKED' <<< "$aud" | tr '\n' ' ')). Re-read your inbox and give the final reply again, ending with the INBOX and OBSERVATIONS lines the brief asks for." -c
+fi
+# Stop what the worker left running (a preview server, a watcher): each process whose folder is in its worktree, but
+# this script and its callers. The Bash tool gives each command a session of its own, so the session can't find them.
+keep=" "; p=$$; while [ "${p:-0}" -gt 1 ]; do keep="$keep$p "; p=$(ps -o ppid= -p "$p" | tr -d ' '); done
+for d in /proc/[0-9]*; do
+  case "$keep" in *" ${d#/proc/} "*) continue ;; esac
+  case "$(readlink "$d/cwd" 2>/dev/null)" in "$WT" | "$WT"/*) kill "${d#/proc/}" 2>/dev/null ;; esac
+done
 # The last line, after every resume: what wait-worker.sh waits on.
 echo "WORKER $NAME DONE" >> "$OUT/$NAME.log"

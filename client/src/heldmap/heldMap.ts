@@ -18,6 +18,7 @@ import {
   routeOf,
   seasChoices,
   SHEET,
+  shipOnSheet,
   stageOf,
   toInk,
   toWorld,
@@ -26,7 +27,8 @@ import {
   wheelFactor,
   zoomAt,
 } from './heldMapLaw.ts';
-import { askLines, MapAsk, paintHover, paintTravelAsk, type HoverSaid, type WaterJudge } from './heldMapAsk.ts';
+import { askLines, MapAsk, type HoverSaid, type WaterJudge } from './heldMapAsk.ts';
+import { type Painted, SeaLettering } from './seaLettering.ts';
 import { heldCardNode } from './heldMapCard.ts';
 import { Kept, layoutKey } from './heldMapKept.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
@@ -35,10 +37,11 @@ import { LandLettering } from './landLetters.ts';
 import type { LandSheet } from './landSheet.ts';
 import type { Course, HeldMapScene, IsleMark, MapPlace } from './heldMapScene.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
-import { insideCells, MapRegions, paintCard } from './mapRegions.ts';
+import { insideCells, MapRegions } from './mapRegions.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
-import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
-import { dotInks, fontOf, HOSTILE_HALF, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
+import { handsCover, layOut, type Lettering, letterScale, shipRoomLost } from './mapLayout.ts';
+import { dotInks, fontOf, HOSTILE_HALF, isleInks } from './mapLetters.ts';
+import { MapLegend } from './mapLegend.ts';
 import { type MapWater, type MapWaters, shutCells } from './watersWash.ts';
 import type { MapRegion } from '../overworld/regions.ts';
 import { motionReduced } from '../plus/kit.ts';
@@ -89,17 +92,22 @@ export class HeldMap {
   private readonly painter: OffscreenCanvasRenderingContext2D;
   private readonly field: CoastField;
   private key: KeyPlace | null = null;
+  /** Whether the map's legend shows, its table on land and its key at sea. */
+  readonly legend = new MapLegend();
   /** The land's sheet, painted onto a picture of its own and copied onto the parchment's with what moves on it. */
   private readonly landLettering = new LandLettering(new OffscreenCanvas(1, 1));
+  /** The sea's, painted onto the parchment's picture whole, or round the ship's arrow alone as it sails. */
+  private readonly seaLettering = new SeaLettering();
   /** The words' widths and the key's size as last measured, and the face's loading they were measured in. */
   private readonly widths = new Map<string, number>();
   private keySize: { width: number; height: number } | null = null;
   private measuredFonts = '';
-  private letteredShape = '';
   /** The last layout, and what it read: laid out again only when that has changed. */
   private readonly laidOut = new Kept<Lettering>();
-  /** Counts the times the waters were set, which the layout reads but no key can cheaply hold. */
+  /** Counts the times the waters were set, which the layout reads but no key can cheaply hold; and the times the
+   *  ship's arrow ran out of room in the layout, which is laid out again round it then. */
   private chartings = 0;
+  private shipRoomings = 0;
   private phase: Phase = { kind: 'closed' };
   private mapView: View = { left: 0, top: 0, scale: 1 };
   private ink: Rect = { x: 0, y: 0, width: 1, height: 1 };
@@ -387,18 +395,18 @@ export class HeldMap {
       [this.measuredFonts, this.keySize] = [fonts, null];
       this.widths.clear();
     }
-    const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
+    const reads = `${layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null)}|${this.legend.shown}`;
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const size = { width, height, inkAt, dpr };
     const said = (waters && this.portUnder()) ?? this.regions.said() ?? hovered?.said ?? null;
-    const letteringChanged = this.letter(reads, scene, stage.sprite, size, said);
+    const letteringPainted = this.letter(reads, scene, stage.sprite, size, said);
     const land = this.land !== null;
     const ink = scaled(stage.ink, drop);
     return {
       pulses: { coins: this.litCoins(scene, ink, dpr), seconds: this.clock, held: motionReduced() },
       parchment: picture,
       lettering: this.lettering,
-      letteringChanged,
+      letteringPainted,
       screen: { width: viewport.width * dpr, height: viewport.height * dpr },
       sprite: scaled(stage.sprite, drop),
       ink,
@@ -440,37 +448,39 @@ export class HeldMap {
     sprite: Rect,
     size: { width: number; height: number; inkAt: { x: number; y: number }; dpr: number },
     said: HoverSaid | null,
-  ): boolean {
-    const { width, height, inkAt, dpr } = size;
+  ): Painted {
+    const { inkAt, dpr } = size;
     const land = this.land;
     if (land) {
       // The sea's lettering is painted afresh once the land's has been.
-      this.letteredShape = '';
+      this.seaLettering.forget();
       const player = {
         at: [scene.ship[0] - land.origin[0], scene.ship[1] - land.origin[1]] as const,
         heading: scene.heading,
       };
       const [scale, covers, moving] = [letterScale(this.ink), handsCover(sprite, this.ink), scene.moving];
       const painting = { sheet: land, view: this.mapView, ink: this.ink, scale, covers, table: null, player, moving };
-      return this.landLettering.paint(this.painter, this.lettering, { inkAt, dpr, reads }, painting);
+      const sheet = { ...painting, legend: this.legend.shown };
+      return this.landLettering.paint(this.painter, this.lettering, { inkAt, dpr, reads }, sheet) ? 'all' : null;
     }
-    const lettering = this.laidOut.made(reads, () => this.layout(scene, sprite));
-    const isles = this.isleInks(lettering.scale);
+    // The layout stands while the ship's arrow, where it is now, keeps clear of every name and the key.
+    const ship = shipOnSheet(this.mapView, this.ink, scene.ship, scene.heading);
+    const laidFor = () => `${reads} ${this.shipRoomings}`;
+    let laid = this.laidOut.made(laidFor(), () => this.layout(scene, sprite, ship));
+    if (shipRoomLost(laid, ship)) {
+      this.shipRoomings++;
+      laid = this.laidOut.made(laidFor(), () => this.layout(scene, sprite, ship));
+    }
+    const lettering = { ...laid, ship };
     const inkOf = (x: number, y: number) => toInk(this.mapView, x, y);
+    const isles = isleInks(this.isles, inkOf, this.ink, lettering.scale);
     const others = dotInks(scene.moving?.others ?? [], inkOf, this.ink);
     const hostiles = dotInks(scene.moving?.hostiles ?? [], inkOf, this.ink, HOSTILE_HALF * lettering.scale);
     const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey(), this.noKey());
-    const sea = [this.measuredFonts, lettering, isles, others, hostiles, said, asked];
-    const shape = JSON.stringify([width, height, inkAt, dpr, sea]);
-    if (shape === this.letteredShape) return false;
-    this.letteredShape = shape;
-    this.landLettering.forget();
-    paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles, others, hostiles);
-    // While the prompt asks, it says what the pointer's words would.
-    if (said?.card && !asked) paintCard(this.painter, said, [said.x, said.y], this.ink, lettering.scale);
-    else if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
-    if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);
-    return true;
+    const painting = { lettering, isles, others, hostiles, said, asked, fonts: this.measuredFonts, ink: this.ink };
+    const painted = this.seaLettering.paint(this.painter, this.lettering, inkAt, dpr, painting);
+    if (painted) this.landLettering.forget();
+    return painted;
   }
 
   /** Draws what `frame` worked out over the finished picture. */
@@ -508,7 +518,11 @@ export class HeldMap {
   /** What is lettered on the map this frame (`layOut`): each place on it and each water named, the ship's
    *  arrow and the key, all clear of the gauntlets on the painting at `sprite`; and the card over the parchment,
    *  `drop` pixels down its lowering. */
-  private layout(scene: HeldMapScene, sprite: Rect): Lettering {
+  private layout(
+    scene: HeldMapScene,
+    sprite: Rect,
+    ship: { readonly x: number; readonly y: number; readonly heading: number } | null,
+  ): Lettering {
     const onSheet = (x: number, y: number) => x >= 0 && y >= 0 && x <= this.ink.width && y <= this.ink.height;
     this.placed = [];
     const places = [];
@@ -522,7 +536,6 @@ export class HeldMap {
     }
     const inked = (x: number, y: number) => toInk(this.mapView, x, y);
     const waters = this.waters?.letters(this.ink, inked, (x, y) => toWorld(this.mapView, x, y)) ?? [];
-    const [shipX, shipY] = toInk(this.mapView, scene.ship[0], scene.ship[1]);
     const lettering = layOut({
       ink: { width: this.ink.width, height: this.ink.height },
       scale: letterScale(this.ink),
@@ -531,12 +544,12 @@ export class HeldMap {
       waters,
       islands: this.regions.islandLetters(this.waters?.waters ?? null, inked, onSheet),
       locks: waters.flatMap((water) => (this.regions.names[water.id] || !water.point ? [] : [water.point])),
-      ship: onSheet(shipX, shipY) ? { x: shipX, y: shipY, heading: scene.heading } : null,
+      ship,
       widthOf: (text, kind) => this.widthOf(text, kind),
       land: (box) => landUnder(this.field, scene.knownIslands, this.mapView, box),
       sea: (box, continent) =>
         this.waters ? onOwnSea(this.waters.waters, this.field, this.mapView, box, continent) : 2,
-      key: this.waters ? (this.keySize ??= keySize(this.painter)) : null,
+      key: this.waters && this.legend.shown ? (this.keySize ??= keySize(this.painter)) : null,
       current: this.key,
     });
     this.key = lettering.key;
@@ -546,18 +559,6 @@ export class HeldMap {
       return letter ? { ...each, x: letter.x, y: letter.y } : each;
     });
     return lettering;
-  }
-
-  /** The found islands' marks on the sheet now, ink pixels, whole marks only. */
-  private isleInks(scale: number): IsleInk[] {
-    const inks: IsleInk[] = [];
-    const half = ISLE_HALF * scale;
-    for (const mark of this.isles) {
-      const [x, y] = toInk(this.mapView, mark.at[0], mark.at[1]);
-      if (x < half || y < half || x > this.ink.width - half || y > this.ink.height - half) continue;
-      inks.push({ x: Math.round(x * 4) / 4, y: Math.round(y * 4) / 4, isle: mark.isle });
-    }
-    return inks;
   }
 
   /** A word's width in its kind's face, units, measured once a word and kind. */

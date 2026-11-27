@@ -7,6 +7,7 @@ import { FromRoom } from '../generated/messages/ts/overlook/wire.ts';
 import { inputBytes, readFromRoom } from '../client/src/network/messages.ts';
 import { SnapshotKeeper } from '../client/src/network/snapshots.ts';
 import { startRoomDoor } from './roomDoor.ts';
+import { intentOf } from './intentForTests.ts';
 
 const compiled = new WebAssembly.Module(
   await readFile(new URL('../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)).catch(() => {
@@ -75,7 +76,7 @@ test('a passage zone’s room fights its deal done to the same fingerprint throu
       nearest !== null && apart(own, nearest) <= REACH_M && Math.abs((nearest[2] ?? 0) - (own[2] ?? 0)) <= REACH_M;
     const swing = near && tick % SWING_EVERY === 0 ? 1 : 0;
     const forward = nearest && !near ? 1 : 0;
-    const intent = new Float64Array([forward, 0, yaw, 1, 0, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
+    const intent = intentOf({ forward, yaw, run: true }, swing);
     const look = { anim: '', frame: 0, facing: 0 };
     const input = inputBytes(tick, { intent, look, arms: SWORD, seen: BigInt(tick - 1), respawn: true });
     assert.equal(room.input(player, input), 'taken');

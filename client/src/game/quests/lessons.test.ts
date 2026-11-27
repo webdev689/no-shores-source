@@ -5,8 +5,7 @@ import { DEFAULTS, rebind } from '../../player/binds.ts';
 import type { StationInfo } from '../nodes.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { QUESTS } from './questBook.ts';
-import { type Kept, lessonsBetween } from './questNews.ts';
-import { doneAnywhere, lessonKeys, lessonNotice } from './lessons.ts';
+import { doneAnywhere, lessonKeys } from './lessons.ts';
 import { LEGS, type Standing, guideOf } from './waypoint.ts';
 
 const OPENING = QUESTS.findIndex((quest) => quest.id === 'house');
@@ -16,25 +15,6 @@ const goalsOf = (id: string) => QUESTS[OPENING]?.tasks[taskAt(id)]?.goals ?? [];
 /** The room's word on a character at the opening's task `id`, its goals' counts `counts`. */
 function onTask(id: string, counts: readonly number[] = []): QuestState {
   return { quest: OPENING + 1, task: taskAt(id), counts, done: [], choices: [], at: null };
-}
-
-/** What the page keeps of that word. */
-function kept(id: string, counts: readonly number[] = []): Kept {
-  const empty: readonly number[] = [];
-  return {
-    quest: OPENING + 1,
-    task: taskAt(id),
-    counts,
-    fails: empty,
-    figures: empty,
-    done: empty,
-    pledge: 0,
-    aurem: 0,
-    earned: empty,
-    choices: empty,
-    offered: 0,
-    houseGifts: 0,
-  };
 }
 
 test('the opening rides after the round and sails after the Harbourmaster, each lesson a step an act', () => {
@@ -64,29 +44,12 @@ test('each step names its keys as bound now, on the keys or on the pad', () => {
   assert.ok(steer && trim && map && fire);
   assert.deepEqual(lessonKeys(steer, 'keys', DEFAULTS), ['A', 'D']);
   // No pace dial: sailing on sets a click's ×60 and a voyage planned on the map ×200, so those are the trim's keys.
-  assert.deepEqual(lessonKeys(trim, 'keys', DEFAULTS), ['W', 'N']);
-  assert.deepEqual(lessonKeys(map, 'keys', DEFAULTS), ['N']);
+  assert.deepEqual(lessonKeys(trim, 'keys', DEFAULTS), ['W', 'M']);
+  assert.deepEqual(lessonKeys(map, 'keys', DEFAULTS), ['M'], 'the map on M, as the owner chose');
   assert.ok(lessonKeys(fire, 'pad', DEFAULTS).length > 0, 'the pad fires on its own trigger');
   const talk = goalsOf('your-ship')[0];
   assert.ok(talk);
   assert.deepEqual(lessonKeys(talk, 'keys', DEFAULTS), [], 'no other goal names keys');
-});
-
-test('each step the room ticks is announced once, through the quest’s news', () => {
-  const words = (before: Kept, after: Kept) =>
-    lessonsBetween(before, after).map((notice) => `${notice.title}: ${notice.line}`);
-  assert.deepEqual(words(kept('ride-the-bay'), kept('ride-the-bay', [1, 0, 1])), [
-    'Riding: Get up on your horse',
-    'Riding: Gallop',
-  ]);
-  assert.deepEqual(words(kept('ride-the-bay', [1]), kept('ride-the-bay', [1])), [], 'nothing new');
-  // The last step met ends the task: the steps left are announced with it.
-  assert.deepEqual(words(kept('learn-the-helm', [1, 1, 1, 1, 1]), kept('bring-it-home')), [
-    'Sailing: Put a ball in the hulk',
-  ]);
-  const fire = goalsOf('learn-the-helm')[5];
-  assert.ok(fire);
-  assert.deepEqual(lessonNotice(fire), { title: 'Sailing', line: 'Put a ball in the hulk' });
 });
 
 const OVERLOOK: NodeInfo = {
@@ -151,10 +114,4 @@ test('after Put them on, Use your gifts asks each gift used, at its counter or b
   const square: NodeInfo = { ...OVERLOOK, stations };
   const guide = guideOf(onTask('use-your-gifts'), { ...ashore, node: square }, { nodes: [square], layouts: [] });
   assert.deepEqual(guide.at, [1100, 1], 'the Mage first');
-  assert.deepEqual(
-    lessonsBetween(kept('use-your-gifts'), kept('use-your-gifts', [0, 0, 1, 0])).map(
-      (notice) => `${notice.title}: ${notice.line}`,
-    ),
-    ['Your gifts: Wear a dye'],
-  );
 });

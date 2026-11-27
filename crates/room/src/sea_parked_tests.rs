@@ -150,7 +150,11 @@ fn a_sea_islands_room_holds_it_and_is_answered_with_the_ships_lying_off_it() {
     let player = sea.join();
     assert!(sea.own(player, "ann"));
     sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
-    ticks(&mut sea, 60 * 60 * 3);
+    // Every ship the sea's rolls send let go at once, so none takes the player on while an island rolls.
+    for _ in 0..60 * 60 * 3 {
+        sea.hostiles.sailing.clear();
+        sea.tick();
+    }
     let ship = sea.berths[&player].sailing.as_ref().expect("at sea").ship;
     let at = crate::sea::whole(&[ship.x, ship.y]).unwrap();
     let island = (sea.islands().standing()).min_by(|one, other| one.coast.off(at).total_cmp(&other.coast.off(at)));

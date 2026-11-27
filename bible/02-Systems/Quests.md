@@ -28,7 +28,6 @@ code:
   - crates/room/src/sea_lessons.rs#moor_hulk
   - crates/room/src/sea_lessons.rs#charted
   - client/src/game/quests/lessons.ts#lessonKeys
-  - client/src/game/quests/questNews.ts#lessonsBetween
   - crates/gear/src/quest_defs.rs#speaker_place
   - crates/room/src/steps.rs#Step
   - crates/room/src/steps.rs#way_between
@@ -177,11 +176,12 @@ never on the page's word, met in any order:
 | Wear a dye | `dye` | Any dye worn (a cosmetic of the dye kind) | Anywhere; the tracker names the Character key (I) |
 | Take your letter from the mail | `letter` | Any letter taken, one or all | The Postmaster's counter (`mail`) |
 
-A `use` goal names the counter its act is done at, and a dye none; the file is refused otherwise. Done before the task
-begins, a step counts only once it is done again, but a Vestige opened while none is held, sealed, carried or vaulted,
-and a letter taken while the mail is empty, are met as the task begins and after every ask (`tell_held`), so a save
-that used them before (or one kept before the gifts, with nothing to open or take) is never stuck. The page announces
-each step as the room ticks it, under its keeper's mark ("Your gifts", "Wear a dye"), as the lessons' are. The task
+A `use` goal names the counter its act is done at, and a dye none; the file is refused otherwise. A step done before
+the task begins is met as it begins and after every successful ask (`tell_held`): the Mage's Vestige (Magic, for the
+head) no longer held sealed, carried or vaulted; the Postmaster's letter (its Magic Vestige for the legs) no longer in
+the mail; a cloak held out of the vault, carried or worn; a dye worn other than the one every player starts in. A step
+undone since (the cloak put back, the starting dye worn again) is asked again; a save kept before the gifts, with
+nothing to open or take, is never stuck. Each step ticks in the tracker alone, as the lessons' do. The task
 pays no clear: it is done at the keepers'. A save on the round or on **Put them on** walks on into it; one on the houses
 or later is not sent back.
 
@@ -191,8 +191,8 @@ Riding and sailing are taught as the wreck teaches ([[Prologue]], "The teaching"
 [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]): each step
 a goal the rooms tick from what the body, the horse or the ship did, so any input serves; a step done early stays
 done; the tracker names each step's keys as bound now on the keys or the pad played last (`lessonKeys`), the defaults
-on the keys below; and the page announces each step as the room ticks it, a notice at the foot under the Tack's or the
-Harbourmaster's mark, through the quest's news (`lessonsBetween`: "Riding", "Gallop"; "Sailing", "Steer").
+on the keys below; and each step ticks in the tracker alone, with no notice at the foot, as the steps come seconds
+apart ([[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]); the task's "Step done" is announced.
 
 - **Ride the Bay**, wherever the room lets a rider ride, the last step at Overlook's counters: Get up on your horse (`,`), Ride at
   a walk (W), Gallop (Shift), Spur it on (Space: a rider's jump is the boost), Get down (`,`), and Ride to the
@@ -200,8 +200,9 @@ Harbourmaster's mark, through the quest's news (`lessonsBetween`: "Riding", "Gal
   (`Room::keep_lessons`), measuring their stretches at a walk and at a gallop from the body's own pace, and forgets
   them once it asks none. The compass and the screen's mark point at the Harbourmaster's counter; the other steps
   read "Anywhere".
-- **Learn the helm**, at sea: Go aboard your Sloop (M held, its step reading "Hold M to return to your ship" ashore),
-  Set sail (W), Steer (A, D), Trim your sails (`[`, `]`, the pace dial), Open the held map (N), and Put a ball in the
+- **Learn the helm**, at sea: Go aboard your Sloop (N held, its step reading "Hold N to return to your ship" ashore,
+  named by the leave's key as bound), Set sail (W), Steer (A, D), Trim your sails (W sails on at ×60, M plans a voyage
+  at ×200), Open the held map (M), and Put a ball in the
   hulk (the right button laid and let go, the pad's RT). The sea watches each captain on it each tick
   (`Sea::keep_lessons`), keeping their heading and pace as last seen and how far they have turned under way. The page
   asks the sea (ask 4) each time the held map is raised at the helm (`Sea::charted`); the sea takes it only for a
@@ -269,8 +270,8 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
   saying only what is earned, so the road's news never takes the loan for Tenets earned. The tracker shows the foes left of all of them beside
   the goal ("17/29", as a puzzle's points lit of all), and the wait after a fall as a defence's; a notice under the
   Art's emblem says "Storm unbounded", "Every ability ready" (the worn Art's name) as it begins, and "Storm bound
-  again", "Its abilities cost as before" as it ends. The ability bar shows every ability ready and none locked, each glowing in the Art's colour under an infinity
-  mark while the horde runs (`hordeRunning`; [[Arts]], "The ability bar"), all from the room's word.
+  again", "Its abilities cost as before" as it ends. The ability bar shows the Art unbounded while the horde runs
+  ([[Arts]], "The ability bar"), all from the room's word.
 
 ## Offered by a keeper
 
@@ -365,16 +366,16 @@ acquired are kept by quest id (`acquired`). Claude's calls:
     its types in sight, or the nearest materials to gather;
   - in a patrol whose gate leads to the goal's zone (a dungeon's, a boss's), at that gate, its step saying "Through the
     gate to" the zone; in an instance reached through a gate, back through it the same way;
-  - on any other land, at the landing of the zone it is landed at, across the water, its step saying "Hold M to return
+  - on any other land, at the landing of the zone it is landed at, across the water, its step saying "Hold N to return
     to your ship"; at sea, at that landing, its step saying "Sail to" the zone;
   - a goal with no zone of its own at the nearest place to do it: a talk, a pledge or a buy at the nearest social space
     with its keeper, gathering at the nearest patrol with materials; one done at sea (a ship of its side beaten, an
     isle or a cove landed on, wrecks searched, an isle's leader) at the nearest in sight at sea, its step saying "None
-    in sight: sail the open sea" while none is, and "Hold M to return to your ship" from land;
+    in sight: sail the open sea" while none is, and "Hold N to return to your ship" from land;
   - a goal done anywhere (an Art's spell cast, a piece worn, a riding act but riding up to a counter, and at sea a
     sailing act but the gunnery) at nothing, its step saying "Anywhere"; the stranger, heard anywhere in a social
     space, "Anywhere here" there; riding up to a counter at the counter, as a talk; the gunnery at sea at the sea's
-    mark, and from land "Hold M to return to your ship", as every sailing act;
+    mark, and from land "Hold N to return to your ship", as every sailing act;
   - inside a dungeon, only what stands in it (a foe of the goal's types, the room's mark); on a sea's island, its
     wrecks not yet searched and, if it is of the goal's kind, its leader, any other goal back to the ship.
 

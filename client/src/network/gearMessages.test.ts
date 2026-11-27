@@ -15,6 +15,7 @@ import { earnedOf } from './artMessages.ts';
 import { ASKS, DROPPED, gearOf } from './gearMessages.ts';
 import { FIGURE_STATES } from './questMessages.ts';
 import { inputBytes, readFromRoom } from './messages.ts';
+import { INTENT_FLOATS } from '../rules/fighters.ts';
 
 const written = async (name: string) =>
   new Uint8Array(
@@ -22,6 +23,12 @@ const written = async (name: string) =>
       throw new Error(`${name} is not written: run \`cargo test -p protocol\``);
     }),
   );
+
+/** Each ask's number by its name in the protocol (asks_written_tests.rs writes them). */
+const askNumber = async () => {
+  const asks = JSON.parse(new TextDecoder().decode(await written('asks.json'))) as Record<string, number>;
+  return (name: string) => asks[name];
+};
 
 test('a players own gear the server wrote reads back whole, every column spelled out', async () => {
   // gear_wire_tests.rs writes it: level 20 by XP, Harbourwarden worn, Goldgrass Seed gathered at the stall's node, an
@@ -176,7 +183,7 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
 test('an ask crosses into an input with every field it names', () => {
   const ask = { kind: ASKS.buy, item: 7, column: 6, node: 1 } as const;
   const bytes = inputBytes(3, {
-    intent: new Float64Array(18),
+    intent: new Float64Array(INTENT_FLOATS),
     look: { anim: 'idle', frame: 0, facing: 0 },
     arms: 0,
     seen: 0n,
@@ -191,7 +198,7 @@ test('an ask crosses into an input with every field it names', () => {
   const named = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(
       inputBytes(4, {
-        intent: new Float64Array(18),
+        intent: new Float64Array(INTENT_FLOATS),
         look: { anim: 'idle', frame: 0, facing: 0 },
         arms: 0,
         seen: 0n,
@@ -203,7 +210,7 @@ test('an ask crosses into an input with every field it names', () => {
   const none = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(
       inputBytes(5, {
-        intent: new Float64Array(18),
+        intent: new Float64Array(INTENT_FLOATS),
         look: { anim: 'idle', frame: 0, facing: 0 },
         arms: 0,
         seen: 0n,
@@ -305,9 +312,7 @@ test("the ship's part of the gear message reads back: its power, materials, hand
 });
 
 test("the ship's, crew's, story's and bounties' asks carry the numbers the protocol reads them by", async () => {
-  const read = (file: string) => readFile(new URL(`../../../crates/protocol/src/${file}`, import.meta.url), 'utf8');
-  const wire = (await read('gear_wire.rs')) + (await read('lore_wire.rs')) + (await read('finds_wire.rs'));
-  const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
+  const number = await askNumber();
   assert.deepEqual(
     [
       ASKS.infuse,
@@ -435,13 +440,12 @@ test("a varied step reads back: its clock, each goal's failures, a puzzle's poin
 });
 
 test("the roads' asks carry the numbers the protocol reads them by, with the keeper and the fragment they name", async () => {
-  const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
-  const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
+  const number = await askNumber();
   assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment], [number('SPEAK'), number('CHOOSE_FRAGMENT')]);
   assert.equal(ASKS.acquire, number('ACQUIRE'));
   assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment, ASKS.usePoint], [64, 65, 66]);
   const bytes = inputBytes(6, {
-    intent: new Float64Array(18),
+    intent: new Float64Array(INTENT_FLOATS),
     look: { anim: 'idle', frame: 0, facing: 0 },
     arms: 0,
     seen: 0n,

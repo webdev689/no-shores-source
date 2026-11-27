@@ -92,8 +92,21 @@ test('weapons put away are worn on the body; drawn, they are in hand last, over 
     'shield_kite_iron',
   ]);
   assert.deepEqual(wornWeapon('bow_long_iron', false), ['sheath_bow_long_iron', 'quiver']);
-  assert.deepEqual(wornWeapon('mace_iron', false), []);
   assert.deepEqual(wornWeapon('dagger_iron_l', true), ['scabbard_dagger_iron_l']);
+});
+
+test('a mace is worn at the hip, a pair at both; a warhammer or a flail on the back; out, none leaves anything', () => {
+  assert.deepEqual(wornWeapon('mace_iron', false), ['sheath_mace_iron']);
+  assert.deepEqual(wornWeapon('mace_daedric_l', false), ['sheath_mace_daedric_l']);
+  assert.deepEqual(wornWeapon('warhammer_steel', false), ['sheath_warhammer_steel']);
+  assert.deepEqual(wornWeapon('flail_ebony', false), ['sheath_flail_ebony']);
+  for (const held of ['mace_iron', 'mace_iron_l', 'warhammer_steel', 'flail_ebony']) {
+    assert.deepEqual(wornWeapon(held, true), [], held);
+  }
+  // a pair of maces put away: one at each hip, where the forge draws them
+  const pair = { ...bare, right: 'mace_iron', left: 'mace_iron_l' };
+  const worn = { ...drawn, sheath_mace_iron: ['idle'], sheath_mace_iron_l: ['idle'] };
+  assert.deepEqual(outfitLayers(pair, worn).gear, ['sheath_mace_iron', 'sheath_mace_iron_l']);
 });
 
 test('in a move the forge does not draw a held weapon or shield in, it is worn for that move', () => {

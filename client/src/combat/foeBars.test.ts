@@ -349,12 +349,9 @@ test("a public event's climax, the Warden or Marrow, takes the boss bar, with no
   const miniboss = thule(7, 1, { rank: 4, name: 'Grimwald the Stout' });
   assert.equal(bossInFight([warden, miniboss], player)?.id, 6);
   assert.equal(bossBarOf(warden).phase, '');
-  for (const [file, constant] of [
-    ['fissure.rs', 'WARDEN_NAME'],
-    ['raid.rs', 'MARROW_NAME'],
-  ] as const) {
-    const rules = readFileSync(new URL(`../../../crates/room/src/public/${file}`, import.meta.url), 'utf8');
-    const name = new RegExp(`${constant}: &str = "([^"]+)"`).exec(rules)?.[1];
-    assert.ok(name && PUBLIC_CLIMAX.has(name), `${constant} is a climax`);
-  }
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs): the Warden's and Marrow's names.
+  const written = readFileSync(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  const { climaxes } = JSON.parse(written) as { climaxes: string[] };
+  assert.equal(climaxes.length, 2);
+  for (const name of climaxes) assert.ok(PUBLIC_CLIMAX.has(name), `${name} is a climax`);
 });

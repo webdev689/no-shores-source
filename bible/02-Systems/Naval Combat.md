@@ -63,6 +63,7 @@ code:
   - crates/naval/src/ranks.rs#Commission
   - crates/room/src/sighting.rs#rank_for
   - crates/room/src/sighting.rs#sight_for
+  - crates/room/src/sighting.rs#come_out_for
   - crates/room/src/chart.rs#Charted
   - crates/room/src/clash.rs#Clash
   - crates/naval/src/fight.rs#among
@@ -653,16 +654,19 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100 and 86.4 km at ×200, so one
   met head-on stays in sight half a minute and more. Each keeps the largest sight it has been given, from the pace of
   the player nearest it, and goes once no player past home waters is within 1.1 times it.
-- **Where.** Between 0.9 and 1 of its sight out from the player, within 60 degrees of their heading while under way and
-  anywhere at rest; a bold ship, under way above ×10, within its meeting cone off their course shrunk to 0.8 of it
-  (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
+- **Where.** Between 0.9 and 1 of `max(1 000 m, 30 s × (12 + 2.4) m/s × pace)` out from the player (`come_out_for`):
+  1 km at the helm and at rest, 2.2 km at ×5 and its sight from ×12 on
+  ([[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]); within 60 degrees of their heading while under
+  way and anywhere at rest; a bold ship, under way above ×10, within its meeting cone off their course shrunk to 0.8 of
+  it (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
   ten tries that fit, it takes the one nearest a friendly lane (a leg of a route between the port cities,
   `world::traffic`) within 50 km, heading along it the way nearer its slant toward the player; with no lane that near,
-  the one nearest a coast, heading across the player's waters on a slant. A hostile ship sails at the Sloop's 2.4 m/s times its rank's way (Minor 0.9, Major 1, Elite 1.1,
-  Miniboss 1.2). Blocked by land or the edge of home waters, which no hostile ship enters (one a clash left inside them takes
-  only steps away from their coast, so it sails out), it takes the open heading nearest its last, a twenty-fourth of a turn at a time
-  either way, so it follows the coast round; with none open it goes about. Its temper is its
-  seed's: an Elite and a Miniboss are always bold, any other one in four.
+  the one nearest a coast, heading across the player's waters on a slant. A hostile ship sails at the Sloop's 2.4 m/s
+  times its rank's way (Minor 0.9, Major 1, Elite 1.1, Miniboss 1.2). Blocked by land or the edge of home waters, which
+  no hostile ship enters (one a clash left inside them takes only steps away from their coast, so it sails out), it
+  takes the open heading nearest its last, a twenty-fourth of a turn at a time either way, so it follows the coast
+  round; with none open it goes about. Its temper is its seed's: an Elite and a Miniboss are always bold, any other one
+  in four.
 - **Home waters end a fight.** Every captain afloat and unstruck in a fight whose players all lie inside home waters
   breaks off and leaves it, as one out of reach does ([[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]).
 - **Coming for the player.** A bold ship that has sighted a player who is not fighting (by night only within 650 m,
@@ -714,7 +718,8 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   (`SeaFight::friends`), and one sunk lays nothing that floats. Afloat as the fight ends, it sails on for its port.
 - **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets
   them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's ship hove to
-  (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships, so the Sloop's stem
+  (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships (a press, the fire,
+  a load, a climb or a burst, is kept until a step uses it, however many orders come in the tick), so the Sloop's stem
   may ram the captain's, on waters made from the coasts (open sea, the swell on it, dry land on them), until every
   captain has sunk or gone; its last view is shown once, in the next snapshot however many ticks the room caught up before it (`Fights::sent`),
   and the players sail on from where it left them, keeping their
