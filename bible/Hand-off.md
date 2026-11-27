@@ -10,12 +10,10 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 ## Open pull requests
 
 - #234: The owner's answers to the Open Questions, recorded and built
-- #255: Faster checks: sampled passage sweeps on pull requests, the whole nightly, lighter test builds
 - #254: Sea polish: the aim swings between sides, lamps hold still, ships ride high waves, the map travels to every place
 - #253: Record No Shores (Mobile): rebuilt in Rust, beside the browser game
 - #251: Drops are larger and brighter, and weapons and armour lie on the ground as real pickups
 - #250: The kit runs only in cloud sessions
-- #224: The walk's left arm hangs at the side, the healing drink has its own move and a red swirl, and the Thunderlock's hold is drawn
 - #159: The rooms' worker tests wait for what they check, not for the clock
 - #114: The gear message carries the pledge once
 - #93: The toolkit's first review: workers start on a free disk and a tested claude-mem; pictures never share a port or a dev server
