@@ -98,8 +98,8 @@ fn patrols() -> &'static [String] {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn the_gullwing_vale_lies_in_the_weirlands_and_overlooks_harbour_lies_off_the_beacon_shore() {
-        let weirlands = super::of_node("gullwing-vale").unwrap();
+    fn krakens_grotto_lies_in_the_weirlands_and_overlooks_harbour_lies_off_the_beacon_shore() {
+        let weirlands = super::of_node("krakens-grotto").unwrap();
         assert_eq!((weirlands.name.as_str(), weirlands.island.as_str()), ("The Weirlands", "continent-1"));
         let off = |island, at| super::off(island, at).map(|region| region.name.as_str());
         assert_eq!(off("continent-1", weirlands.anchorage), Some("The Weirlands"));
@@ -118,26 +118,26 @@ mod tests {
 
     #[test]
     fn every_islands_land_file_parses_and_lists_its_patrol_zones() {
-        assert_eq!(super::patrols().len(), 11, "Saltmere's three and one on each other island");
+        assert_eq!(super::patrols().len(), 9, "one on each island");
     }
 
     #[test]
     fn only_a_patrol_zones_own_room_at_any_tier_is_a_zone_left() {
         let left = |room| super::zone_left(room).map(|region| region.name.as_str());
-        for room in ["node-gullwing-vale", "node-gullwing-vale--elite", "node-gullwing-vale--abyss"] {
-            assert_eq!(left(room), Some("The Weirlands"), "{room}");
+        for room in ["node-saltgrass-downs", "node-saltgrass-downs--elite", "node-saltgrass-downs--abyss"] {
+            assert_eq!(left(room), Some("The Beacon Shore"), "{room}");
         }
         for room in [
             "node-krakens-grotto--sea--run-abcd1234",
             "node-krakens-grotto--elite--playlist-12--run-abcd1234",
             "node-krakens-grotto",
             "node-shrine-tides",
-            "node-gullwing-vale--dungeon-0",
-            "node-gullwing-vale--elite--dungeon-1--run-abcd1234",
-            "node-gullwing-vale--breach-normal--run-abcd1234",
-            "node-gullwing-vale--test-abcd1234",
-            "node-gullwing-vale--normal",
-            "gullwing-vale",
+            "node-saltgrass-downs--dungeon-0",
+            "node-saltgrass-downs--elite--dungeon-1--run-abcd1234",
+            "node-saltgrass-downs--breach-normal--run-abcd1234",
+            "node-saltgrass-downs--test-abcd1234",
+            "node-saltgrass-downs--normal",
+            "saltgrass-downs",
             "sea",
             "node-overlook-social",
         ] {

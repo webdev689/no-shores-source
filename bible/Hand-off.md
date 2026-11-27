@@ -132,6 +132,30 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The Saltgrass fold-in** (branch `ccr-0567dd6d-1v0ppa-saltgrass`, no pull request yet;
+  [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]], [[The Saltgrass Fold-In as Claude Builds It]]).
+  Built and tested offline, the Downs never seen in a running game: the Vale and the Moors cut, the Downs' six new
+  places, the houses' twelve tasks, the Breach, the events' one clock; the layout's fixes the grown Downs exposed (a
+  place stands only where a way reaches it, ways stopped at a piece join round it in a patrol area, the raiders' way
+  in turns off a house, a sea-landed instance's way in faces the sea, the hulks ring an open middle); the content
+  audit's lines. Left:
+  - Four layout defects the grown Downs expose, each failing its room integration test (tested offline): a great
+    work's wall strip 1.9 m over Hollow Coven's cavern hollow and ten merlons of the Tithe Barns' corner turret with
+    no turret under them (`held_planned`; the turret also fails `runs_planned`); the ways up to Moorhold ramped 0.23
+    to 0.46 in some 4 m, steeper than a track (`map_planned`, `no_way_of_saltmeres_is_carved_steeper_...`); three of
+    Saltgrass's buildings across a step of 1.0 to 1.2 m (`map_planned`, `no_hamlet_or_ruin_building_...`). The
+    ignored shot-list writer meets a great wall's buttress past the top of Hollow Coven's cliff stair. Each wants its
+    cause fixed in `crates/layout`, not the content changed.
+  - The owner's asks still to come: the Downs' design pass and patrol zone design pass, its enemy placements, the held
+    map's polish and legend, and the three landing zones with their map and fast travel.
+  - `tools/modules/breach_gate.py` and `catalogue.py` still say the gate is the Vale's: their next edit sets off the
+    modules workflow's bake, so it waits for a modules change.
+  - Gates still stand where no way may reach them (`areas::needs_a_way` leaves them out, as they sit at the claim's
+    edge); `reached_from` is filled again for each area placed, where once a node would do.
+  - Unchecked: whether a Sunday Elite clear of the Downs' first dungeon keeps the day's Vestige as its item (a test
+    saw none laid or kept there, its record marked; every other day's clear paid one).
+  - With three dungeons the island's dungeon of the day draws the same one on runs of days, as on every island; the
+    garrison pace figures in `gear::band` were measured on the three zones before the cut.
 - **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
   and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
   the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
@@ -163,7 +187,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
 - **After #216** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]] and the
-  four decisions before it): the three landing zones of Saltmere's patrol zones, the zone's map and their fast travel,
+  four decisions before it): the Saltgrass Downs' three landing zones, the zone's map and their fast travel,
   not built; ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore
   does not sail out from the berth; parked ships kept in the sea rooms' memory alone, so a deploy loses them; a ship
   ashore vanishes up to 15 s after it sails; the island's Elite Dungeon scene and the website's gate alike but not

@@ -284,8 +284,8 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   `node-<id>--sea` from the sea, `node-<id>--elite` for the week's from its door and `node-<id>--elite--sea` from the
   Playlist (each `--sea` base's run named `--sea`, gone into from the sea),
   `playlist-elite` and `playlist-abyss` for the playlists, one queue each for the whole game, whichever
-  port the Playlist was opened beside, and `node-gullwing-vale--breach-normal` and `--breach-hard` for the Drowned
-  Vale, the one zone a Breach's gate stands in (`BREACH_ZONES`). A socket's first message is its session's token; one that is no session, or that sends none within five
+  port the Playlist was opened beside, and `node-saltgrass-downs--breach-normal` and `--breach-hard` for the Drowned
+  Vale, the Saltgrass Downs being the one zone a Breach's gate stands in (`BREACH_ZONES`). A socket's first message is its session's token; one that is no session, or that sends none within five
   seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with 4003 and "Sign in to find a company.". At most 64
   sockets with a token wait in one (a search past them is answered 503; a Launch is taken past searches, as it is gone
   at the next look, but past 64 Launches with a token it is answered 503 too, `launchesFull`), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never shut out

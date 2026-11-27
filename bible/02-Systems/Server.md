@@ -482,14 +482,14 @@ the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the three fact
 it (none in any other node); and whether it is locked: each patrol area and mission the open list,
 `content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"), and each social space but
 Overlook's ([[Only Overlook's Social Space Opens for Now]]); and its gates: the nodes its layout's gates and way in
-lead to, each with a layout of its own, as the [[Game]]'s passages go (a patrol area's instances of its region and
-the other patrol areas of its island, [[World Map]], "Regions"); the host lets a player into a node from any node
-whose gates lead there (`server/arrival.ts`, `gatedFrom`), so one of Saltmere's zones is walked into from both
-others. The index lists each node's id, kind, name,
+lead to, each with a layout of its own, as the [[Game]]'s passages go (a patrol area's instances of its region,
+[[World Map]], "Regions"); the host lets a player into a node from any node whose gates lead there
+(`server/arrival.ts`, `gatedFrom`), so a patrol area is walked into from each instance whose way in leads to it.
+The index lists each node's id, kind, name,
 continent, rect and gates, which the host reads to judge arrivals. A locked node's room opens but takes no player, and so does
 each dungeon's room of a locked patrol, its runs among them, which open only with the patrol's file. The bake takes
 about 14 s for the nine continents' 92 nodes, a few at a time, and writes about 35 MB in all, a patrol area's file
-the largest at about 1.6 MB (the Gullwing Vale's, its boxes keeping to what is drawn, [[Layouts]], "Boxes"). `server`, `server:bundle` and
+the largest, its boxes keeping to what is drawn ([[Layouts]], "Boxes"); the Saltgrass Downs' size is unchecked. `server`, `server:bundle` and
 `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is called
 `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2--run-00000000`, of at
 most 64 characters.
@@ -640,7 +640,7 @@ so every decision is Rust and the shell only carries bytes and time.
   for `RUN_LINGER_MS`, a minute, through a dropped connection, and is then forgotten: the next to come opens a fresh
   run.
 - **Test rooms** (`testRoom`, [[Activities]], "Test runs"): a name as a run's with `--test-<instance>` for
-  `--run-<instance>`, or a Breach's gate's zone copy, `node-gullwing-vale--test-<instance>`. A test run opens from its
+  `--run-<instance>`, or a Breach's gate's zone copy, `node-saltgrass-downs--test-<instance>`. A test run opens from its
   real run's ask and the zone copy as its node does; the host then makes it a test room (`makeTest`) before anyone
   joins. Its sockets are a run's (`privateRun`; the zone copy holds a Breach's eight). Its keeper keeps nothing: the
   host's `TestRun` asks the accounts only `developer(token)` as each token comes, lets a developer play as their
@@ -657,7 +657,8 @@ so every decision is Rust and the shell only carries bytes and time.
   spawn (`outOfDoor`). Across a crossing gate from another patrol zone, `?from=<node id>` stands them at the room's
   gate toward that node, as its node file lists its crossings (`bake::crossings_of`), and they stay there only once
   the room keeps their character as come from that node's room at the same seas, else at the next spawn
-  (`outOfDoor`). In a social space's room, `?relog=1` asks, once the room keeps the character, to stand the
+  (`outOfDoor`); with one patrol zone on each island, no node file lists one ([[Layouts]], "Gates"). In a social
+  space's room, `?relog=1` asks, once the room keeps the character, to stand the
   player where that character left the space (`standWhereLeft`; [[Accounts]], "Where a player logs back in"). Each
   binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
@@ -948,7 +949,7 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   its room standing its fallen again unasked; the [[Game]] does both, and fights there. A server's node room takes no
   ask for a foe; only a room a page plays alone is told to (`take_foe_asks`).
 - A dungeon's room bakes its navmesh over the dungeon's whole rectangle: two to five blocks laid in a chain that never
-  crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 11 patrols lays all three
+  crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 9 patrols lays all three
   entrances; a dungeon's room opens for its number whether or not its patrol's land found room for its entrance. A
   patrol's room takes `?entrance=` only from a character that came out of that entrance's dungeon; a player who
   plays unkept stands there for up to five seconds, until the host stands them at a spawn. Movement has no ceilings;
@@ -965,8 +966,8 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
 - A node's room bakes its foes' navmesh over a 70 m square of its land and every box in it, its layout's and its
   city's where any reach in, never its whole section; a foe that chases a player off it walks straight. A node's room
   opens in 0.15 to 0.34 s of WebAssembly, garrison and beats and all, 0.17 s at the median over the 90 garrisoned
-  nodes (tested offline, on an idle machine); Saltmere's three zones, baking their public events' grounds too, in
-  0.71 to 1.0 s ([[Public Events]]). Their foes' sites, its territories and its runs' beats, stand nothing as a room
+  nodes (tested offline, on an idle machine); the Saltgrass Downs, baking its public events' grounds too, in
+  0.75 to 0.95 s (at commit 2f6ce090, [[Public Events]]). Their foes' sites, its territories and its runs' beats, stand nothing as a room
   opens; a site's group stands once a player first comes within 150 m of it and its
   navmesh is baked, a slice a tick over some 45 ticks, each 15 ms at most natively ([[Navmesh]], [[Enemies]],
   "Territories and runs").

@@ -90,10 +90,10 @@ fn a_run_carries_its_days_or_weeks_modifiers_and_at_abyss_its_revives() {
     };
     let patrol = |patrol: &str, number| RunOf::Patrol { patrol: patrol.into(), number };
     use gear::Difficulty::{Abyss, Elite, Normal};
-    assert_eq!(rules(patrol("gullwing-vale", 0), Elite), Some((vec![Modifier::Burn(3)], None)));
-    assert_eq!(rules(patrol("gullwing-vale", 0), Abyss), Some((vec![Modifier::Burn(3)], Some(5))));
-    assert_eq!(rules(patrol("gullwing-vale", 0), Normal), Some((vec![], None)));
-    assert_eq!(rules(patrol("gullwing-vale", 1), Abyss), Some((vec![], Some(5))), "not today's");
+    assert_eq!(rules(patrol("saltgrass-downs", 1), Elite), Some((vec![Modifier::Burn(3)], None)));
+    assert_eq!(rules(patrol("saltgrass-downs", 1), Abyss), Some((vec![Modifier::Burn(3)], Some(5))));
+    assert_eq!(rules(patrol("saltgrass-downs", 1), Normal), Some((vec![], None)));
+    assert_eq!(rules(patrol("saltgrass-downs", 0), Abyss), Some((vec![], Some(5))), "not today's");
     assert_eq!(
         rules(RunOf::Elite { place: "saltworm-warrens".into() }, Abyss),
         Some((vec![Modifier::Lightswitch, Modifier::Burn(2), Modifier::Juggler], Some(5)))
@@ -101,7 +101,7 @@ fn a_run_carries_its_days_or_weeks_modifiers_and_at_abyss_its_revives() {
     assert_eq!(rules(RunOf::Elite { place: "forsaken-cistern".into() }, Elite), Some((vec![Modifier::Brawler], None)));
     assert_eq!(rules(RunOf::Elite { place: "krakens-grotto".into() }, Normal), Some((vec![], None)));
     assert_eq!(rules(patrol("glade", 0), Normal), None, "no island's");
-    assert_eq!(rules(patrol("gullwing-vale", 3), Normal), None);
+    assert_eq!(rules(patrol("saltgrass-downs", 3), Normal), None);
     let sea =
         |style: &str, continent: &str| RunOf::Sea { seed: 4_242, style: style.into(), continent: continent.into() };
     assert_eq!(rules(sea("caverns", "continent-4"), Abyss), Some((vec![], Some(5))));
@@ -118,7 +118,7 @@ fn the_first_clear_of_a_tier_on_any_islands_dungeon_of_the_day_pays_once_and_a_c
         let of = RunOf::Patrol { patrol: patrol.into(), number };
         Room::dungeon_run(&of, tier, FRIDAY_NINE).expect(patrol)
     };
-    let mut first = run("gullwing-vale", 0, gear::Difficulty::Elite);
+    let mut first = run("saltgrass-downs", 1, gear::Difficulty::Elite);
     let player = kept_in(&mut first, &character);
     clear_the_end(&mut first);
     assert_eq!(vestiges_for(&first, player), (1, 1), "its cache's on the floor, the day's kept at once");
@@ -130,12 +130,12 @@ fn the_first_clear_of_a_tier_on_any_islands_dungeon_of_the_day_pays_once_and_a_c
     // The cache throws its own Vestige one time in three, by the room's rolls.
     let (thrown, kept_now) = vestiges_for(&other, again);
     assert!(thrown <= 1 && kept_now == 1, "Elite is taken today on every island: its cache alone");
-    let mut shared = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("the shared Normal room");
+    let mut shared = Room::dungeon("saltgrass-downs", 1, Some((1, 4))).expect("the shared Normal room");
     shared.set_minute(FRIDAY_NINE);
     let plain = kept_in(&mut shared, &kept);
     clear_the_end(&mut shared);
     assert_eq!(vestiges_for(&shared, plain), (1, 2), "Normal is its own tier");
-    let mut not_today = run("gullwing-vale", 1, gear::Difficulty::Normal);
+    let mut not_today = run("saltgrass-downs", 0, gear::Difficulty::Normal);
     let late = kept_in(&mut not_today, &shared.players[&plain].character.clone());
     clear_the_end(&mut not_today);
     let (thrown, kept_late) = vestiges_for(&not_today, late);
@@ -200,7 +200,7 @@ fn the_weeks_abyss_run_again_pays_four_fifths_of_a_kill_once_its_first_clear_is_
 #[test]
 fn a_player_playing_unkept_finds_the_caches_vestige_alone_and_their_kept_character_still_takes_the_days_clear() {
     let shared = || {
-        let mut room = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("today's dungeon of the day, shared");
+        let mut room = Room::dungeon("saltgrass-downs", 1, Some((1, 4))).expect("today's dungeon of the day, shared");
         room.set_minute(FRIDAY_NINE);
         room
     };
@@ -220,39 +220,38 @@ fn a_player_playing_unkept_finds_the_caches_vestige_alone_and_their_kept_charact
 
 #[test]
 fn a_days_clear_pays_only_in_a_run_opened_as_that_days_dungeon_and_cleared_that_day_or_in_the_shared_room_at_normal() {
-    let mut shared = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("today's dungeon of the day, shared");
+    // A Wednesday, the day after a Tuesday that drew another of Saltmere's three.
+    let wednesday_nine = FRIDAY_NINE - 2 * gear::clock::DAY_MINUTES;
+    let mut shared = Room::dungeon("saltgrass-downs", 1, Some((1, 4))).expect("today's dungeon of the day, shared");
     shared.set_difficulty(gear::Difficulty::Elite);
-    shared.set_minute(FRIDAY_NINE);
+    shared.set_minute(wednesday_nine);
     let player = kept_in(&mut shared, &past_the_prologue());
     clear_the_end(&mut shared);
-    assert_eq!(
-        vestiges_for(&shared, player),
-        (1, 0),
-        "the shared room carries no day's modifier, so pays no Elite clear"
-    );
+    // The cache throws its own Vestige one time in three by the room's rolls: the day's clear is the second.
+    assert_eq!(vestiges_for(&shared, player).1, 0, "the shared room carries no day's modifier, so pays no Elite clear");
     let run_at = |minute: u64| {
-        let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 0 };
+        let of = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 1 };
         Room::dungeon_run(&of, gear::Difficulty::Elite, minute).expect("a run of a patrol's dungeon")
     };
     let modifiers = |room: &Room| room.run.as_ref().map(|run| run.modifiers.clone());
-    let thursdays = gear::activities::dungeon_of_the_day(20_777, "continent-1");
-    assert_ne!(thursdays, Some(("gullwing-vale", 0)), "the day before, another is the dungeon of the day");
-    let mut early = run_at(FRIDAY_NINE - 1);
+    let tuesdays = gear::activities::dungeon_of_the_day(20_775, "continent-1");
+    assert_ne!(tuesdays, Some(("saltgrass-downs", 1)), "the day before, another is the dungeon of the day");
+    let mut early = run_at(wednesday_nine - 1);
     assert_eq!(modifiers(&early), Some(vec![]));
     let player = kept_in(&mut early, &past_the_prologue());
-    early.set_minute(FRIDAY_NINE);
+    early.set_minute(wednesday_nine);
     clear_the_end(&mut early);
-    assert_eq!(vestiges_for(&early, player), (1, 0), "opened before the reset, when it was not the day's");
-    let mut today = run_at(FRIDAY_NINE);
-    assert_eq!(modifiers(&today), Some(vec![Modifier::Burn(3)]));
+    assert_eq!(vestiges_for(&early, player).1, 0, "opened before the reset, when it was not the day's");
+    let mut today = run_at(wednesday_nine);
+    assert_eq!(modifiers(&today), Some(vec![gear::activities::modifier_of_the_day(20_776)]), "Wednesday's modifier");
     let player = kept_in(&mut today, &past_the_prologue());
     clear_the_end(&mut today);
-    assert_eq!(vestiges_for(&today, player), (1, 1), "opened as the day's, carrying its modifier");
-    let mut late = run_at(FRIDAY_NINE);
+    assert_eq!(vestiges_for(&today, player).1, 1, "opened as the day's, carrying its modifier");
+    let mut late = run_at(wednesday_nine);
     let player = kept_in(&mut late, &past_the_prologue());
-    late.set_minute(FRIDAY_NINE + gear::clock::DAY_MINUTES);
+    late.set_minute(wednesday_nine + gear::clock::DAY_MINUTES);
     clear_the_end(&mut late);
-    assert_eq!(vestiges_for(&late, player), (1, 0), "cleared after the next reset");
+    assert_eq!(vestiges_for(&late, player).1, 0, "cleared after the next reset");
 }
 
 #[test]
@@ -262,7 +261,7 @@ fn a_first_clears_vestige_with_the_carried_ten_and_the_vault_full_goes_to_the_ma
         character.keep_paid(gear::Vestige::new(0, gear::Rarity::Normal, gear::Slot::Legs, 1));
     }
     assert!(character.mail.is_empty(), "the ten and the vault filled first");
-    let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 0 };
+    let of = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 1 };
     let mut room = Room::dungeon_run(&of, gear::Difficulty::Elite, FRIDAY_NINE).expect("the day's dungeon");
     let player = kept_in(&mut room, &character);
     clear_the_end(&mut room);

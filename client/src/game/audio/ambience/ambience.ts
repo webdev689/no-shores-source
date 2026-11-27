@@ -1,5 +1,5 @@
 // The world's ambience: the sea's, the social space's, each island's by its climate, and a Breach's (its run's spaces
-// under the ground, and its gate's hollow over the vale's own near it), heard wherever the player is.
+// under the ground, and its gate's hollow over its zone's own near it), heard wherever the player is.
 // The game tells it each frame where the player stands and looks (`onFoot`, `atSea`) and steps it once (`frame`); it
 // plays the place's ambience through the Ambience volume, crossfading over a few seconds as the player moves on, and
 // lets every place fade to nothing while the game shows none, behind a loading veil. Its beds and calls are the owner's
@@ -37,7 +37,7 @@ const COAST_ON_FOOT: readonly [number, number] = [60, 500];
  *  page's frames stop). */
 const THUNDER_AHEAD_S = 0.25;
 const THUNDER_LATE_S = 1.5;
-/** A Breach's gate's hollow is heard over the vale's own within this far of the gate, metres: as near as its banner
+/** A Breach's gate's hollow is heard over its zone's own within this far of the gate, metres: as near as its banner
  *  stands first (breachView.ts GATE_NEAR_M). */
 const HOLLOW_HEARD_M = 60;
 /** Under the ground no hour is told: every rate there is the same at every hour, so the day's stands for them all. */
@@ -104,7 +104,7 @@ export class Ambience {
   private fought: FightHeard | null = null;
   /** The space of a Breach's run last heard, kept while the listener stands between spaces. */
   private space: string | null = null;
-  /** A Breach's gate's hollow sounding over the vale's own. */
+  /** A Breach's gate's hollow sounding over its zone's own. */
   private hollow: ScapePlayer | null = null;
 
   constructor(
@@ -126,7 +126,7 @@ export class Ambience {
 
   /** The player on foot in `node` of `land`, the camera at `ear`, a social space's people walking about. Underground,
    *  in a dungeon, none of the open air is heard: its place fades out as behind a veil; in a Breach's run, the space
-   *  under the listener is heard instead (BREACH_HEARD). By a Breach's gate its hollow is heard over the vale. */
+   *  under the listener is heard instead (BREACH_HEARD). By a Breach's gate its hollow is heard over its zone. */
   onFoot(node: NodeInfo, land: Landmass, ear: Ear, folk: Heard['folk'] = [], below = false): void {
     const breach = BREACH_HEARD.current;
     if (below) {
@@ -236,7 +236,7 @@ export class Ambience {
     this.players = this.players.filter((player) => !gone.includes(player));
   }
 
-  /** A Breach's gate's hollow, over the vale's own while the ear stands near the gate, fading as places do. */
+  /** A Breach's gate's hollow, over its zone's own while the ear stands near the gate, fading as places do. */
   private hollowFrame(heard: Heard | null, audio: BaseAudioContext, master: GainNode, seconds: number): void {
     const gate = heard?.gate;
     const near =

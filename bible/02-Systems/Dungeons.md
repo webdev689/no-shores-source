@@ -793,7 +793,7 @@ as standing none (`readDungeon`).
 - The clusters take the eye's matrix to be a centred perspective, as `fromEyeMatrix` makes it; a lens shifted off
   centre would leave their bounds short on one side.
 - A room can lay no props where nothing of its purpose fits: over 2,000 dungeons, 10 end rooms and 28 of 19,866 other
-  rooms lay none; over the 11 patrols' 33 dungeons, 2 end rooms and no other room.
+  rooms lay none; over the 9 patrols' 27 dungeons, 2 end rooms at most and no other room.
 - No fountain or cart is laid: each is wider than a cell.
 - A caverns wall set spans most of its wall and its whole height, so wherever one stands, at most every third cell
   along a cave room's straight walls, that wall is drawn as flat rock.

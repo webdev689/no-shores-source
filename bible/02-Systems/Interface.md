@@ -517,7 +517,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   foot with a gold diamond (the next one's between events), held at the nearer end while off the strip as a ship is,
   and the growth or the tithe-taker with an orange one, blinking, while the heroic window is open; a chest of the
   player's waiting there with a smaller gold one, and a store under attack with a red one, blinking faster. In the
-  Gullwing Vale it marks the Sunken Gate; in a Breach's run, the stage reached, the way on, the way out and the
+  Saltgrass Downs it marks the Sunken Gate; in a Breach's run, the stage reached, the way on, the way out and the
   Lodestone while it lies or stands on its plinth ([[Breaches]], "On the page"). The compass hides
   with the view while the held map is up at the helm.
 - **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
@@ -1485,8 +1485,8 @@ developer alone (`developer` in the four's answer), is a screen of its own in th
 the test character summarised in a well (Level 30, Prestige 120, Max gear, and "Test runs: ten times the harm, never
 falls, one counts as a company"), and six banners, each its name, its line and Launch: the Elite Playlist and the Abyss
 Playlist ("An Elite Dungeon drawn as it starts · Foes at level 32"), the Elite and the Abyss Dungeon of the week (its
-place and its foes' level), and the Breach at Normal and at Hard ("From the gate in a copy of Gullwing Vale of its
-own"), named from the rules (`testRuns.ts`, from `activities_json` and `room_breach`). Launch waits, saying "A test run
+place and its foes' level), and the Breach at Normal and at Hard ("From the gate in a copy of <zone> of its own",
+the Saltgrass Downs' name as the world gives it), named from the rules (`testRuns.ts`, from `activities_json` and `room_breach`). Launch waits, saying "A test run
 sets out from your character in play. Play it past the prologue first.", while the character in play is none or has
 not played the prologue, as arriving on foot would mark it past; a screen opened at the Test Room for an account no
 longer a developer's shows the characters. Launch keeps the test room in the tab and goes past the title with no

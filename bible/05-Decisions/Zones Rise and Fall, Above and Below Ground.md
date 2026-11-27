@@ -79,4 +79,6 @@ The owner's answers to the questions that followed:
 - **A hamlet's blocks step up on terraces** where the brief asks for heights: its blocks are laid with lanes wide enough
   for a ramp, and each block uphill stands on its own terrace with a ramp up from the plaza.
 
+Replaced in part by [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]: Saltmere's one zone is the Saltgrass Downs, and it is the one worked on.
+
 It builds on [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]. [[Handcrafted Playspaces Are Scripted in Blender]] builds on it.

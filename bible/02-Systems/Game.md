@@ -155,7 +155,7 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |
 | On foot in a patrol zone with passages | E at a run's sealed door, a route and a start chosen on the mouths' card, and the room's yes | Passing to the zone behind the mouth, or to the lamp begun at ([[Passages]], "Played") |
 | On foot in a passage zone | Through an open onward mouth | Passing: the way between zones in place of the veil ([[Passages]], "The way between zones"), then on foot at the next zone's way in |
-| On foot in a patrol zone | E in the basin of a gate toward another patrol zone, offered as "Go to" and its name | Passing: the way between zones, the dots running from one zone's place to the other's, then on foot at its gate toward the one left ([[Layouts]], "Gates") |
+| On foot in a patrol zone | E in the basin of a gate toward another patrol zone of its island (none stands while each island holds one), offered as "Go to" and its name | Passing: the way between zones, the dots running from one zone's place to the other's, then on foot at its gate toward the one left ([[Layouts]], "Gates") |
 | On foot at a lit lamp | Home | Passing, the way running back to the patrol zone, then on foot there |
 | Passing | The way played and the place come | On foot there |
 | Passing | The room's gate shuts to the character | The veil, the room's reason and "Returning to your ship", then at sea |
@@ -714,8 +714,8 @@ taken) and the player has the helm with nothing else holding them, a ship lying 
 ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen pulling away,
 and is the player's to sail from there. A course the player sets first, or the room placing the ship away from its
 berth, leaves it as it is; either way it is docked no more. Back at sea from a patrol zone's own land (at any tier;
-never its dungeon, a run, a Breach's gate copy, an Elite Dungeon or a run started at sea), walked to through the
-crossing gates or landed on, with the ship off another region of the zone's island (the region of that island whose
+never its dungeon, a run, a Breach's gate copy, an Elite Dungeon or a run started at sea), however it was come to,
+with the ship off another region of the zone's island (the region of that island whose
 centre is nearest the ship; [[World Map]], "Regions"), the ship lies at the zone's region's anchorage, 3 km off its
 coast, facing as it did, and the view stands over it there (`regionLeft.ts`); the room places it there too
 ([[Server]], "The sea"), and the player sails from there, in reach to land on that zone again. From a zone of the

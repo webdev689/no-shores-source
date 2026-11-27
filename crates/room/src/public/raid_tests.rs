@@ -169,7 +169,7 @@ fn a_wave_the_room_has_no_room_for_waits_and_one_killed_late_still_brings_the_th
     assert_eq!((running(&room).heroic, raid(&room).wave_foes.len()), (Heroic::Met, 7), "its heroic two came");
 }
 
-/// Saltmere's three zones' node files as the bake writes them, baked once for every test that opens them.
+/// The event zones' node files as the bake writes them, baked once for every test that opens them.
 fn saltmeres_nodes() -> &'static [bake::NodeFile] {
     static BAKED: std::sync::OnceLock<Vec<bake::NodeFile>> = std::sync::OnceLock::new();
     BAKED.get_or_init(|| {
@@ -187,7 +187,7 @@ fn saltmeres_nodes() -> &'static [bake::NodeFile] {
     })
 }
 
-/// Saltmere's three zones' rooms as their node files open them, each with both its grounds.
+/// The event zones' rooms as their node files open them, each with both its grounds.
 pub(super) fn saltmeres_rooms() -> Vec<(&'static str, Room, super::RaidGround, super::FissureGround)> {
     super::ZONES
         .into_iter()

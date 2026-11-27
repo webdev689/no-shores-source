@@ -1,6 +1,6 @@
 // A Breach's ambiences, kept apart from the world's (scapes.ts): one for each kind of space of its run, each with the
 // cave's air and the drone under it, its own bed over them, the voices of the rock and the water placed round the
-// listener, and its own room; and the gate's hollow in the vale, heard over its zone's own with the Spire's hum.
+// listener, and its own room; and the gate's hollow in its zone, heard over its zone's own with the Spire's hum.
 // Underground the sky's hours and weather never reach, so every rate is the same at every hour and nothing is driven
 // by wind, rain or sand. Data only; ambience.ts plays them as it plays the world's.
 
@@ -108,7 +108,7 @@ export const BREACH_SCAPES: Readonly<Record<BreachKey, Scape>> = {
   ),
 };
 
-/** The gate's hollow in the Gullwing Vale, heard over the zone's own near it: its bed standing at the gate, and the
+/** The gate's hollow in the Saltgrass Downs, heard over the zone's own near it: its bed standing at the gate, and the
  *  Spire's hum at the Spire rising with its fill while the listener's company holds the Waking. */
 export const GATE_SCAPE: Scape = {
   title: 'The Sunken Gate: its hollow',

@@ -15,7 +15,7 @@ const compiled = new WebAssembly.Module(
 );
 const MINUTE = 29_000_000;
 const PLAYLIST = 'node-coral-halls--abyss--playlist-32--test-k3j4h5g6';
-const BREACH = 'node-gullwing-vale--breach-hard--test-k3j4h5g6';
+const BREACH = 'node-saltgrass-downs--breach-hard--test-k3j4h5g6';
 
 /** A test room opened from its name as the host opens it, made a test room, with one player joined. */
 function testRoom(name: string): { room: RoomDoor; player: number } {
@@ -104,11 +104,11 @@ test('a Breach’s test run lets a developer in only once its zone copy’s gate
   await open.run.leave(player);
   const again = room.join();
   assert.equal(await open.run.signIn(again, 'd'.repeat(64), Date.now, here), true);
-  const zone = 'node-gullwing-vale--test-k3j4h5g6';
+  const zone = 'node-saltgrass-downs--test-k3j4h5g6';
   const join = (run: string) => new Request(`https://rooms/room/${zone}?breach=${run}`);
   assert.equal(breachAsked(join(BREACH), zone), BREACH, 'the zone copy takes a join for its own test run');
-  assert.equal(breachAsked(join('node-gullwing-vale--breach-hard--run-k3j4h5g6'), zone), null, 'and no real run');
-  assert.equal(breachAsked(join(BREACH), 'node-gullwing-vale'), null, 'nor the real zone a test run');
+  assert.equal(breachAsked(join('node-saltgrass-downs--breach-hard--run-k3j4h5g6'), zone), null, 'and no real run');
+  assert.equal(breachAsked(join(BREACH), 'node-saltgrass-downs'), null, 'nor the real zone a test run');
 });
 
 test('a test room sends away for now one the accounts do not answer for, and one whose token never came', async () => {

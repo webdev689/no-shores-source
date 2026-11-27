@@ -1,7 +1,12 @@
 //! Each layout's map as the bake plans continent 1: its first spaces are its areas and every way joins two of them,
 //! every space is reached from the first, each lookout stands on its massif's top at its climb's end, each beat follows
 //! the one before it, a mine's and an undercroft's beats are roofed while no area of Saltmere's is, and every way and
-//! climb of Saltmere's is walked without a step a body cannot take.
+//! climb of Saltmere's is walked without a step a body cannot take; with the zones cut from Saltmere laid back in
+//! (support/cut_zones.rs), the Gullwing Vale's undercroft, its ways over its river and near places opening into one
+//! floor too.
+
+#[path = "support/cut_zones.rs"]
+mod cut_zones;
 
 use land::ground::Ground;
 use layout::Layout;
@@ -10,26 +15,44 @@ use layout::spaces::{Joined, SpaceKind};
 use std::path::Path;
 use std::sync::OnceLock;
 
-const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
+const ZONES: [&str; 1] = ["saltgrass-downs"];
 
-/// Continent 1's layouts as the bake settles them, and its ground as they leave it.
+/// Continent 1's layouts as the bake settles them, the cut zones laid back in or not, and its ground as they leave it.
+fn settled(cut: bool) -> (Vec<Layout>, Ground) {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
+    let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
+    let continent = world.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
+    let mut text = read("content/world/land/continent-1.json");
+    let mut builders = bake::builders(&root).expect("the builders read");
+    if cut {
+        text = cut_zones::edits(&text);
+        cut_zones::briefs(&mut builders.briefs);
+    }
+    let edits = land::edits::parse(&text).expect("the edits parse");
+    let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
+    let mut landmass = land::landmass::generate(&continent, edits).expect("continent-1 generates");
+    city::settle(&mut landmass, &city).expect("its city settles");
+    let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
+    (layouts, landmass.surface)
+}
+
 fn laid_one() -> &'static (Vec<Layout>, Ground) {
     static LAID: OnceLock<(Vec<Layout>, Ground)> = OnceLock::new();
-    LAID.get_or_init(|| {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let read =
-            |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
-        let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
-        let continent =
-            world.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
-        let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("the edits parse");
-        let builders = bake::builders(&root).expect("the builders read");
-        let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
-        let mut landmass = land::landmass::generate(&continent, edits).expect("continent-1 generates");
-        city::settle(&mut landmass, &city).expect("its city settles");
-        let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
-        (layouts, landmass.surface)
-    })
+    LAID.get_or_init(|| settled(false))
+}
+
+/// Continent 1 with the cut zones laid back in.
+fn laid_cut() -> &'static (Vec<Layout>, Ground) {
+    static LAID: OnceLock<(Vec<Layout>, Ground)> = OnceLock::new();
+    LAID.get_or_init(|| settled(true))
+}
+
+/// The Downs as the game lays them, and the Gullwing Vale and the Driftwood Moors as they stood.
+fn downs_and_cut() -> [&'static Layout; 3] {
+    let downs = continent_one().iter().find(|laid| laid.id == "saltgrass-downs").expect("the Downs lay out");
+    let cut = |id: &str| laid_cut().0.iter().find(|laid| laid.id == id).expect("the cut zone lays out");
+    [downs, cut("gullwing-vale"), cut("driftwood-moors")]
 }
 
 fn continent_one() -> &'static [Layout] {
@@ -127,7 +150,7 @@ fn each_beat_follows_the_one_before_it() {
 fn a_mines_and_an_undercrofts_beats_are_roofed_and_no_area_of_saltmeres_is() {
     use layout::brief::RunKind;
     let mut roofed_runs = 0;
-    for laid in continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
+    for laid in downs_and_cut() {
         for space in &laid.map.spaces[..laid.areas.len()] {
             assert!(!space.roofed, "{}: {} lies open to the sky", laid.id, space.name);
         }
@@ -139,18 +162,17 @@ fn a_mines_and_an_undercrofts_beats_are_roofed_and_no_area_of_saltmeres_is() {
             }
         }
     }
-    assert!(roofed_runs >= 2, "Saltmere has a mine and an undercroft");
+    assert!(roofed_runs >= 2, "the Downs have a mine and the Vale an undercroft");
 }
 
 /// A body's step: the most the land may rise within half a metre along a way, metres.
 const STEP_M: f64 = 0.5;
 
-/// Each place along a zone's ways and climbs where the carved land rises more than a body's step within half a metre,
-/// but where a bridge carries the way.
-fn steps_on(zones: &[&str]) -> Vec<String> {
-    let ground = &laid_one().1;
+/// Each place along a zone's ways and climbs as laid where the carved land rises more than a body's step within half a
+/// metre, but where a bridge carries the way.
+fn steps_on((layouts, ground): &(Vec<Layout>, Ground), zones: &[&str]) -> Vec<String> {
     let mut steps_found = Vec::new();
-    for laid in continent_one().iter().filter(|laid| zones.contains(&laid.id.as_str())) {
+    for laid in layouts.iter().filter(|laid| zones.contains(&laid.id.as_str())) {
         // A river crossing's bridge carries the way over the water and its banks.
         let bridged = |at: [f64; 2]| {
             laid.paths
@@ -184,34 +206,35 @@ fn steps_on(zones: &[&str]) -> Vec<String> {
 
 #[test]
 fn every_way_and_climb_of_the_vales_is_walked_without_a_step() {
-    let steps = steps_on(&["gullwing-vale"]);
+    // Its ways cross its river.
+    let steps = steps_on(laid_cut(), &["gullwing-vale"]);
     assert!(steps.is_empty(), "{} steps: {steps:#?}", steps.len());
 }
 
 #[test]
 fn every_way_and_climb_of_saltmeres_is_walked_without_a_step() {
-    let steps = steps_on(&ZONES);
+    let steps = steps_on(laid_one(), &ZONES);
     assert!(steps.is_empty(), "{} steps: {steps:#?}", steps.len());
 }
 
 #[test]
-fn the_vales_places_stand_at_their_heights() {
-    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+fn the_downs_places_stand_at_their_heights() {
+    let laid = continent_one().iter().find(|laid| laid.id == "saltgrass-downs").expect("the Downs lay out");
     let level = |name: &str| {
         let number = laid.areas.iter().position(|area| area.name == name).expect("the area is laid out");
         laid.map.spaces[number].level
     };
     let (keep, shrine, hamlet, farm) =
-        (level("Valeguard"), level("The Old Stones"), level("Gullwing"), level("Orchard Farm"));
+        (level("Moorhold"), level("The Old Stones"), level("Saltgrass"), level("Ewe Fold"));
     assert!(keep > shrine && shrine > hamlet && hamlet > farm && farm > 0.1, "{keep} {shrine} {hamlet} {farm}");
-    for low in ["Weir Mill", "The Water Meadows", "Hollow Coven"] {
-        assert!(level(low) < 0.05, "{low} lies by the river: {}", level(low));
+    for low in ["The Barrow Field", "The Saltbreaker Hulks", "Hollow Coven"] {
+        assert!(level(low) < 0.05, "{low} lies at the land's own level: {}", level(low));
     }
     let mut heights: Vec<i64> =
         laid.map.spaces[..laid.areas.len()].iter().map(|space| (space.level * 10.0).round() as i64).collect();
     heights.sort_unstable();
     heights.dedup();
-    assert!(heights.len() >= 4, "the Vale's places stand at {heights:?} tenths of its massif");
+    assert!(heights.len() >= 4, "the Downs' places stand at {heights:?} tenths of its massif");
 }
 
 #[test]
@@ -294,9 +317,9 @@ fn every_place_of_saltmeres_stands_at_its_briefs_height() {
 }
 
 #[test]
-fn the_vales_coven_opens_into_a_roofed_cavern_by_a_tunnel() {
+fn the_downs_coven_opens_into_a_roofed_cavern_by_a_tunnel() {
     let (layouts, ground) = laid_one();
-    let laid = layouts.iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+    let laid = layouts.iter().find(|laid| laid.id == "saltgrass-downs").expect("the Downs lay out");
     let coven = laid.areas.iter().position(|area| area.name == "Hollow Coven").expect("the coven is laid out");
     let cavern =
         laid.map.spaces.iter().position(|space| space.kind == SpaceKind::Cavern).expect("the coven has a cavern");
@@ -372,12 +395,15 @@ fn gates_close(laid: &Layout) {
 }
 
 #[test]
-#[ignore = "writes target/shots/vale-fly.json"]
+#[ignore = "writes target/shots/downs-fly.json"]
 fn fly_list() {
-    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+    let laid = continent_one().iter().find(|laid| laid.id == "saltgrass-downs").expect("the Downs lay out");
     let named = |name: &str| laid.areas.iter().position(|area| area.name == name).expect("the area is laid out");
-    // A tour along the Vale's own ways: the landing, the meadows, the keep, the farm, the coven and into its cavern.
-    let stops = ["Vale Mouth", "The Water Meadows", "Valeguard", "Orchard Farm", "Hollow Coven"].map(named);
+    // A tour along the Downs' own ways: the landing, the hulks, the barrows, the keep, the farm, the coven and into
+    // its cavern.
+    let stops =
+        ["Shingle Landing", "The Saltbreaker Hulks", "The Barrow Field", "Moorhold", "Ewe Fold", "Hollow Coven"]
+            .map(named);
     let mut line: Vec<[f64; 2]> = Vec::new();
     for pair in stops.windows(2) {
         let way = laid.map.connections.iter().find(|joined| {
@@ -412,15 +438,15 @@ fn fly_list() {
         }
         walked += length;
     }
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/shots/vale-fly.json");
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/shots/downs-fly.json");
     std::fs::create_dir_all(path.parent().expect("a folder")).expect("the folder is made");
     std::fs::write(&path, serde_json::to_string(&views).expect("the views write")).expect("the list is written");
 }
 
 #[test]
-fn the_vales_hamlet_steps_up_its_hillside_block_by_block() {
-    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
-    let hamlet = laid.areas.iter().find(|area| area.name == "Gullwing").expect("the hamlet is laid out");
+fn the_downs_hamlet_steps_up_its_hillside_block_by_block() {
+    let laid = continent_one().iter().find(|laid| laid.id == "saltgrass-downs").expect("the Downs lay out");
+    let hamlet = laid.areas.iter().find(|area| area.name == "Saltgrass").expect("the hamlet is laid out");
     let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
     // How far the carving raises the land under each of its buildings.
     let raised: Vec<f64> = laid
@@ -478,9 +504,8 @@ fn no_hamlet_or_ruin_building_of_saltmeres_stands_across_a_step_or_a_slope() {
 
 #[test]
 fn saltmeres_near_places_open_into_one_floor() {
-    let opened: usize =
-        continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())).map(near_places_open).sum();
-    assert!(opened > 0, "Saltmere has places near enough to open into one floor");
+    let opened: usize = downs_and_cut().into_iter().map(near_places_open).sum();
+    assert!(opened > 0, "the zones have places near enough to open into one floor");
 }
 
 fn near_places_open(laid: &Layout) -> usize {

@@ -44,6 +44,9 @@ The owner's answers to the questions that followed:
   removed. A region need not hold a patrol zone: it holds its nodes.
 - **Claude names the regions.**
 
+Replaced in part by [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]: Saltmere keeps the Saltgrass Downs alone, its gates to the other zones gone; the
+regions stay.
+
 It replaces in part [[Each Island Keeps One Patrol Zone, the One by Its Port City]]: Saltmere keeps its three patrol
 zones, and the houses' tasks stay where they were written. Claude's calls on it are in
 [[Passages as Claude Builds Them]].

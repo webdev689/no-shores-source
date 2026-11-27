@@ -43,7 +43,7 @@ test('This Week says what is on, what each pays, and what this character has tak
     ],
   );
   assert.deepEqual(board.today.dungeons[0], {
-    name: 'gullwing-vale 0',
+    name: 'saltgrass-downs 1',
     about: 'Levels 1 to 4',
     state: null,
     shut: false,
@@ -131,9 +131,10 @@ test('an entrance’s card says its run’s tier, level, modifiers and pay, and 
     name: `the way into ${id}`,
   });
   const today = { ...record, elite: false, boon: false };
-  const vale = entranceAt('gullwing-vale', 'patrol', 'continent-1', 'elite');
-  assert.deepEqual(entranceCardOf(vale, drawn, gates, today), {
-    name: 'the way into gullwing-vale',
+  // On Friday at nine the Downs' second dungeon is Saltmere's of the day, at Burn.
+  const downs = entranceAt('saltgrass-downs', 'patrol', 'continent-1', 'elite', 1);
+  assert.deepEqual(entranceCardOf(downs, drawn, gates, today), {
+    name: 'the way into saltgrass-downs',
     tier: 'Elite seas · Levels 3 to 6',
     rules: [],
     modifiers: [burn],
@@ -142,11 +143,11 @@ test('an entrance’s card says its run’s tier, level, modifiers and pay, and 
     finds: null,
   });
   assert.equal(
-    entranceCardOf(vale, drawn, gates, { ...today, day: 20_777 }).pays,
+    entranceCardOf(downs, drawn, gates, { ...today, day: 20_777 }).pays,
     'Once a day at each tier, on any island: a Vestige and a richer cache.',
     'yesterday’s clear is not today’s',
   );
-  const halls = entranceCardOf(entranceAt('gullwing-vale', 'patrol', 'continent-1', 'abyss', 1), drawn, gates, today);
+  const halls = entranceCardOf(entranceAt('saltgrass-downs', 'patrol', 'continent-1', 'abyss'), drawn, gates, today);
   assert.deepEqual(
     [halls.tier, halls.rules, halls.modifiers, halls.pays],
     ['Abyss seas · Levels 4 to 7', [revives], [], 'It pays its kills and its cache.'],

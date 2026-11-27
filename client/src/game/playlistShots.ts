@@ -108,7 +108,7 @@ const BREACH_SCREEN: PlaylistScreenState = {
     ...SAMPLE_SCREEN.entries,
     ...breachEntries(
       {
-        ...{ id: 'drowned-vale', name: 'The Drowned Vale', zone: 'gullwing-vale', spaces: [], seals: [], slabs: [] },
+        ...{ id: 'drowned-vale', name: 'The Drowned Vale', zone: 'saltgrass-downs', spaces: [], seals: [], slabs: [] },
         ...{ slabCycle: 660, slabStands: 420, encounters: [], shores: {}, banner: '', dye: '', horse: '' },
         tiers: [
           { key: 'normal', name: 'Normal', level: 26, opens: 24, revives: null },
@@ -116,7 +116,7 @@ const BREACH_SCREEN: PlaylistScreenState = {
         ],
       },
       22,
-      () => 'Gullwing Vale',
+      () => 'Saltgrass Downs',
       WEEK,
     ),
   ],

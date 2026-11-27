@@ -87,9 +87,10 @@ fn off_way(path: &Path, at: [f64; 2], at_least: f64) -> bool {
 }
 
 /// Dresses every way of a layout, and rings each shrine with its stones, where no module (`moduled`) stands in its
-/// place.
-pub fn dress(kit: &mut Kit, areas: &[Area], paths: &[Path], moduled: &[bool]) {
-    for (number, path) in paths.iter().enumerate() {
+/// place. The ways after the first `dressed`, the footpaths round a piece (`clearing::round_rim`), are dressed with
+/// nothing, and kept clear like the rest.
+pub fn dress(kit: &mut Kit, areas: &[Area], (paths, dressed): (&[Path], usize), moduled: &[bool]) {
+    for (number, path) in paths.iter().enumerate().take(dressed) {
         let others: Vec<&Path> =
             paths.iter().enumerate().filter(|(other, _)| *other != number).map(|(_, other)| other).collect();
         along(kit, areas, path, &others);

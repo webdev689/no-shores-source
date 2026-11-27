@@ -107,7 +107,7 @@ const LIGHTSWITCH = modifier('lightswitch', 'Lightswitch', 'Foes’ melee deals 
 const JUGGLER = modifier('juggler', 'Juggler', 'No ammunition drops.');
 const BRAWLER = modifier('brawler', 'Brawler', 'Melee deals 50% more damage.');
 const ISLES: readonly [string, number, number][] = [
-  ['gullwing-vale 0', 1, 4],
+  ['saltgrass-downs 1', 1, 4],
   ['highwater-fells 0', 4, 7],
   ['elder-thicket 0', 7, 10],
   ['ochre-wastes 0', 10, 13],

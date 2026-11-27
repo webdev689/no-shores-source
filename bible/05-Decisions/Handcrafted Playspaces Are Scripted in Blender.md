@@ -31,4 +31,7 @@ The owner's answers to the questions that followed:
   in the Gullwing Vale.
 - **They come after the terraced land**, then the Vale is pictured, then the Saltgrass Downs and the Driftwood Moors.
 
+Replaced in part by [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]: the Gullwing Vale and the Driftwood Moors are removed, so the playspaces come in
+the Saltgrass Downs.
+
 It builds on [[Zones Rise and Fall, Above and Below Ground]].

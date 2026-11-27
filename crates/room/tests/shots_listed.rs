@@ -1,12 +1,13 @@
-//! The picture list of Saltmere's three zones, from the layouts as laid: `cargo test -p room --test shots_listed
-//! shot_list -- --ignored` writes target/shots/saltmere.json (or `$SHOT_LIST`) for the picture driver's views.
+//! The picture list of Saltmere's patrol zone, the Saltgrass Downs, from the layouts as laid: `cargo test -p room
+//! --test shots_listed shot_list -- --ignored` writes target/shots/saltmere.json (or `$SHOT_LIST`) for the picture
+//! driver's views.
 
 use city::solids::Shape as SolidShape;
 use layout::brief::Briefs;
 use layout::field::ring_holds;
 use std::path::Path;
 
-const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
+const ZONES: [&str; 1] = ["saltgrass-downs"];
 
 /// Continent 1's layouts as the bake settles them with these briefs, its nodes' claims and its ground as laid.
 fn continent_one(briefs: &Briefs) -> (Vec<layout::Layout>, Vec<Vec<[f64; 2]>>, land::ground::Ground) {
@@ -79,10 +80,11 @@ fn back_along(line: &[[f64; 2]], from: [f64; 2], distance: f64) -> [f64; 2] {
     line[0]
 }
 
-/// Writes the views of each Saltmere zone for the picture driver's `views` step, each standing in the open: every area
-/// from its first way in facing its middle, every run beat from its way in, and three high views looking down at the
-/// zone. It writes to `target/shots/saltmere.json`, or to `$SHOT_LIST`. Run it where the pictures are to be taken, so
-/// the views follow the runs as laid then: `cargo test -p room --test shots_listed shot_list -- --ignored`.
+/// Writes the views of each of Saltmere's patrol zones for the picture driver's `views` step, each standing in the
+/// open: every area from its first way in facing its middle, every run beat from its way in, and three high views
+/// looking down at the zone. It writes to `target/shots/saltmere.json`, or to `$SHOT_LIST`. Run it where the pictures
+/// are to be taken, so the views follow the runs as laid then: `cargo test -p room --test shots_listed shot_list --
+/// --ignored`.
 #[test]
 #[ignore = "writes target/shots/saltmere.json"]
 fn shot_list() {

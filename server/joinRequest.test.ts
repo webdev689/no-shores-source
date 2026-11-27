@@ -8,8 +8,8 @@ const asked = (path: string) => new Request(`https://rooms.example/${path}`);
 test('a join names its room by its one spelling, and only a room’s name', () => {
   assert.equal(roomName(asked('room/node-saltgrass-downs')), 'node-saltgrass-downs');
   assert.equal(
-    roomName(asked('room/node-gullwing-vale--breach-hard--run-k3j4h5g6')),
-    'node-gullwing-vale--breach-hard--run-k3j4h5g6',
+    roomName(asked('room/node-saltgrass-downs--breach-hard--run-k3j4h5g6')),
+    'node-saltgrass-downs--breach-hard--run-k3j4h5g6',
   );
   for (const path of ['room/', 'room/Node-X', 'room/a/b', 'rooms/node-x', `room/${'a'.repeat(65)}`])
     assert.equal(roomName(asked(path)), null, path);

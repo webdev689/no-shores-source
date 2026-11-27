@@ -9,9 +9,10 @@ import type { PlaceMark } from '../plus/compass.ts';
 import { TICKS_A_SECOND } from './hudLaw.ts';
 import { clockWords, type Quest, type Step } from './tasks.ts';
 
-/** The zones that hold public events, in their places on the clock, each running one every `PERIOD_MINUTES`, the
- *  zones `ZONE_APART_MINUTES` apart (crates/room/src/public/mod.rs ZONES and schedule). */
-const ZONES = ['saltgrass-downs', 'gullwing-vale', 'driftwood-moors'] as const;
+/** The zones that hold public events, in their places on the clock (the Saltgrass Downs alone), each running one every
+ *  `PERIOD_MINUTES`, the Fissure and the raid in turn, a zone added `ZONE_APART_MINUTES` after the one before it
+ *  (crates/room/src/public/mod.rs ZONES and schedule). */
+const ZONES = ['saltgrass-downs'] as const;
 const PERIOD_MINUTES = 15;
 const ZONE_APART_MINUTES = 5;
 /** How long an event runs and a chest lies, its ticks (crates/room/src/public/mod.rs COUNTDOWN_MINUTES,
@@ -27,8 +28,6 @@ const NAMES: Readonly<Record<number, string>> = {
 };
 const PLACES: Readonly<Record<string, readonly [string, string]>> = {
   'saltgrass-downs': ['The High Downs', 'Saltgrass'],
-  'gullwing-vale': ['The Water Meadows', 'Gullwing'],
-  'driftwood-moors': ['The Gorse Moor', 'Moorend'],
 };
 /** The heroic task while its window is open, and the bonus objective, by event. */
 const HEROIC_TASK: Readonly<Record<number, string>> = {

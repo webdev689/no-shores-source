@@ -415,6 +415,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]
 - [[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]
 - [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
+- [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
+- [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
+- [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]
 
 ## Claude's calls
 
@@ -463,8 +466,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]
 - [[Lights as Claude Builds Them]]
 - [[Island Textures as Claude Builds Them]]
-- [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
-- [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
+- [[The Saltgrass Fold-In as Claude Builds It]]
 
 ## Replaced
 

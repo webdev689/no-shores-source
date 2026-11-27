@@ -197,14 +197,12 @@ test('through a passage’s mouth, or by a lamp’s Home, the way between zones 
   assert.equal(onTheSea(passing), false);
 });
 
-test("across from one of Saltmere's patrol zones to another, the way between them passing as a passage's does", () => {
-  const crossing = next(
-    { mode: 'foot', node: 'saltgrass-downs' },
-    { kind: 'cross', node: 'gullwing-vale', name: 'The Gullwing Vale' },
-  );
-  assert.deepEqual(crossing, { mode: 'passing', then: { mode: 'foot', node: 'gullwing-vale' } });
-  assert.deepEqual(next(crossing, { kind: 'loaded' }), { mode: 'foot', node: 'gullwing-vale' });
-  assert.deepEqual(next({ mode: 'sea' }, { kind: 'cross', node: 'gullwing-vale', name: 'The Gullwing Vale' }), {
+test("across from one of an island's patrol zones to another, the way between them passing as a passage's does", () => {
+  // Two patrol zones of one island, the glade and the grove, as the bake writes a crossing between them.
+  const crossing = next({ mode: 'foot', node: 'glade' }, { kind: 'cross', node: 'grove', name: 'The Grove' });
+  assert.deepEqual(crossing, { mode: 'passing', then: { mode: 'foot', node: 'grove' } });
+  assert.deepEqual(next(crossing, { kind: 'loaded' }), { mode: 'foot', node: 'grove' });
+  assert.deepEqual(next({ mode: 'sea' }, { kind: 'cross', node: 'grove', name: 'The Grove' }), {
     mode: 'sea',
   });
 });

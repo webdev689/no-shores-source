@@ -145,16 +145,13 @@ test('a join asks its room to stand the player before an entrance, or where they
   assert.equal(joinAsk('relog'), '?relog=1');
   assert.equal(joinAsk({ number: 2, x: 0, y: 0, facing: 0 }), '?entrance=2');
   assert.equal(joinAsk(), '');
-  assert.equal(joinAsk(undefined, 'gullwing-vale'), '?from=gullwing-vale', 'across from a patrol zone, at its gate');
+  assert.equal(joinAsk(undefined, 'grove'), '?from=grove', 'across from a patrol zone, at its gate');
   // Through a crossing gate the node gone to says where it came from (`gates.ts`), and its room is asked so.
   const context = { rooms: (name: string) => `wss://rooms/room/${name}` } as unknown as FootContext;
-  const vale = { id: 'gullwing-vale', kind: 'patrol', across: 'saltgrass-downs' } as unknown as NodeInfo;
+  const grove = { id: 'grove', kind: 'patrol', across: 'glade' } as unknown as NodeInfo;
+  assert.equal(nodeAddress(context, grove, 'elite', undefined, null), 'wss://rooms/room/node-grove--elite?from=glade');
   assert.equal(
-    nodeAddress(context, vale, 'elite', undefined, null),
-    'wss://rooms/room/node-gullwing-vale--elite?from=saltgrass-downs',
-  );
-  assert.equal(
-    nodeAddress({ ...context, rooms: null } as unknown as FootContext, vale, 'normal', undefined, null),
+    nodeAddress({ ...context, rooms: null } as unknown as FootContext, grove, 'normal', undefined, null),
     null,
   );
 });

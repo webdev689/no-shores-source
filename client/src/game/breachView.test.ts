@@ -32,8 +32,13 @@ const module = new WebAssembly.Module(
   }),
 );
 const plan = breachPlanOf(module);
-const zone = { id: 'gullwing-vale', kind: 'patrol', name: 'Gullwing Vale', continent: 'continent-1' } as NodeInfo;
-const into = { run: 'node-gullwing-vale--breach-hard--run-k3j4h5g6', tier: 1, plan, zone };
+const zone = {
+  id: 'saltgrass-downs',
+  kind: 'patrol',
+  name: 'The Saltgrass Downs',
+  continent: 'continent-1',
+} as NodeInfo;
+const into = { run: 'node-saltgrass-downs--breach-hard--run-k3j4h5g6', tier: 1, plan, zone };
 const SEEN: BreachSeen = {
   ...{ gate: false, tier: 1, phases: [2, 1, 0, 0, 0, 0], reached: 1, seals: 0b1, revives: 5 },
   ...{ stone: STONE.plinth, bearer: 0, stoneAt: [0, -60, 50], charge: 1, held: 0, lyingTicks: 0 },

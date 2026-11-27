@@ -22,13 +22,13 @@ test('every room on land names its players to all three seas, at its island', ()
     island: { continent: 'continent-1' },
     draws: true,
   });
-  assert.deepEqual(placeOf('node-gullwing-vale--elite', reach(false), null), {
+  assert.deepEqual(placeOf('node-saltgrass-downs--elite', reach(false), null), {
     seas: SEAS,
     island: { continent: 'continent-1' },
     draws: true,
   });
   // An Elite Dungeon's run is entered from its node at any tier, so its players' ships may lie in any sea.
-  assert.deepEqual(placeOf('node-gullwing-vale--elite--dungeon-1--run-a1b2c3d4', reach(false), null)?.seas, SEAS);
+  assert.deepEqual(placeOf('node-saltgrass-downs--elite--dungeon-1--run-a1b2c3d4', reach(false), null)?.seas, SEAS);
   // A run started at sea is entered from any tier's sea, so its players' ships may lie in any of them.
   assert.deepEqual(placeOf('node-krakens-grotto--sea--run-k3j4h5g6', null, null), {
     seas: SEAS,
@@ -48,9 +48,9 @@ test('every room on land names its players to all three seas, at its island', ()
   });
   // Only an island's own ground draws the ships parked off it: a dungeon, a run or a passage zone names its players,
   // keeping their ships seen at sea, but is sent none.
-  assert.equal(placeOf('node-gullwing-vale--dungeon-1', reach(false), null)?.draws, false);
+  assert.equal(placeOf('node-saltgrass-downs--dungeon-1', reach(false), null)?.draws, false);
   assert.equal(placeOf('sea-dungeon-continent-1-crypt-0000002a', null, { id: 7, seed: '42' })?.draws, false);
-  assert.equal(placeOf('node-gullwing-vale', null, null), null, 'a node whose island is unknown');
+  assert.equal(placeOf('node-saltgrass-downs', null, null), null, 'a node whose island is unknown');
   assert.equal(placeOf('fleet-trial', null, null), null, 'a room on no island');
 });
 

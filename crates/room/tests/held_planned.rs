@@ -1,12 +1,12 @@
-//! Nothing in Saltmere's three zones hangs in the air: every solid is held by the carved ground, by what it rests on,
-//! by what it hangs from if it is small, or as a thin deck laid on from another that is held.
+//! Nothing in Saltmere's patrol zone, the Saltgrass Downs, hangs in the air: every solid is held by the carved ground,
+//! by what it rests on, by what it hangs from if it is small, or as a thin deck laid on from another that is held.
 
 use land::ground::Ground;
 use layout::Layout;
 use std::path::Path;
 use std::sync::OnceLock;
 
-const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
+const ZONES: [&str; 1] = ["saltgrass-downs"];
 
 /// Continent 1's layouts as the bake settles them, and its ground as they leave it.
 fn laid_one() -> &'static (Vec<Layout>, Ground) {

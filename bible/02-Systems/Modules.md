@@ -289,7 +289,7 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   it faces most, as natural
   rock is.
 
-The Gullwing Vale stands the Old Stones, the citadel at Valeguard, the chamber in the Hollow Coven's cavern and the
+The Saltgrass Downs stands the Old Stones, the citadel at Moorhold, the chamber in the Hollow Coven's cavern and the
 Sunken Gate, each
 walked by `crates/room/tests/modules_walked.rs`, a walk stopping where the body would climb: up the Old Stones'
 flights to the upper tier; up the citadel's ramp, through its gate and up to its ward and its wall-walk; from the

@@ -1,9 +1,14 @@
 //! Keeping a layout's ways and what stands clear of each other: a way stops at the set piece at an area's middle and
 //! bends round a room's corner, and what a way runs over is left out.
 
-use crate::field::{CELL_M, distance};
-use crate::paths::Path;
+use crate::field::{CELL_M, Field, Water, distance};
+use crate::paths::{KEEP_OFF_M, Path, Tier};
 use crate::seat::Seating;
+use std::f64::consts::TAU;
+
+/// How far apart the points of a footpath round a piece lie, and the furthest past its ways' ends it is laid, metres.
+const ROUND_STEP_M: f64 = 6.0;
+const ROUND_WIDEST_M: f64 = 12.0;
 
 /// How far from a point the pieces standing over it reach: a set piece at an area's middle, its tower or its hull.
 pub(crate) fn rim_of(seating: &Seating, at: [f64; 2]) -> f64 {
@@ -56,6 +61,100 @@ pub(crate) fn end_at_rim(paths: &mut [Path], at: [f64; 2], rim: f64) {
             }
         }
     }
+}
+
+/// The footpaths round what stands at a place's middle that join the ways stopped at its rim (`end_at_rim`): from each
+/// way's end round to the next by bearing, the widest gap between them left open, so the ways meet as a body walks
+/// round the piece. Each is laid as close round as it keeps on walkable land clear of everything standing, up to
+/// ROUND_WIDEST_M further out; one that never does is not laid.
+pub(crate) fn round_rim(paths: &[Path], at: [f64; 2], rim: f64, field: &Field, seating: &Seating) -> Vec<Path> {
+    let reach = rim + Tier::Track.width() / 2.0 + 1.2 + CELL_M;
+    let mut ends: Vec<[f64; 2]> = paths
+        .iter()
+        .flat_map(|path| path.points.first().into_iter().chain(path.points.last()))
+        .copied()
+        .filter(|&end| distance(end, at) > rim && distance(end, at) <= reach)
+        .collect();
+    let bearing = |point: [f64; 2]| libm::atan2(point[1] - at[1], point[0] - at[0]);
+    ends.sort_by(|one, two| bearing(*one).total_cmp(&bearing(*two)));
+    ends.dedup_by(|one, two| distance(*one, *two) < 1.0);
+    if rim <= 0.0 || ends.len() < 2 {
+        return Vec::new();
+    }
+    let gap = |nth: usize| (bearing(ends[(nth + 1) % ends.len()]) - bearing(ends[nth])).rem_euclid(TAU);
+    let widest = (0..ends.len()).max_by(|&one, &two| gap(one).total_cmp(&gap(two))).unwrap_or(0);
+    let nearest = ends.iter().map(|&end| distance(end, at)).fold(0.0, f64::max);
+    let standing = standing_prints(seating);
+    let clear = |point: [f64; 2]| open_ground(field, &standing, point, Tier::Footpath.width() / 2.0 + KEEP_OFF_M);
+    let round = |from: [f64; 2], to: [f64; 2], turn: f64, out: f64| -> Vec<[f64; 2]> {
+        let steps = ((turn * out / ROUND_STEP_M).ceil() as usize).max(1);
+        let arc = (0..=steps).map(|step| {
+            let angle = bearing(from) + turn * step as f64 / steps as f64;
+            [at[0] + libm::cos(angle) * out, at[1] + libm::sin(angle) * out]
+        });
+        std::iter::once(from).chain(arc).chain(std::iter::once(to)).collect()
+    };
+    // The arc and the far half of each step out to it from a way's end; the end itself is its way's.
+    let laid = |points: &[[f64; 2]]| {
+        let last = points.len() - 1;
+        let half = |one: [f64; 2], two: [f64; 2]| [(one[0] + two[0]) / 2.0, (one[1] + two[1]) / 2.0];
+        let steps_out = [half(points[0], points[1]), half(points[last], points[last - 1])];
+        steps_out.into_iter().all(clear)
+            && points[1..last].windows(2).all(|pair| {
+                let pieces = (distance(pair[0], pair[1]) / (ROUND_STEP_M / 2.0)).ceil().max(1.0) as usize;
+                (0..=pieces).all(|piece| {
+                    let share = piece as f64 / pieces as f64;
+                    clear([
+                        pair[0][0] + (pair[1][0] - pair[0][0]) * share,
+                        pair[0][1] + (pair[1][1] - pair[0][1]) * share,
+                    ])
+                })
+            })
+    };
+    let joining = (0..ends.len()).filter(|&nth| nth != widest).filter_map(|nth| {
+        let (from, to) = (ends[nth], ends[(nth + 1) % ends.len()]);
+        let outs = (0..=ROUND_WIDEST_M as usize / 2).map(|wider| nearest + 2.0 * wider as f64);
+        let points = outs.map(|out| round(from, to, gap(nth), out)).find(|points| laid(points))?;
+        Some(Path { tier: Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() })
+    });
+    joining.collect()
+}
+
+/// Lays the footpaths round each piece of `rims` (its middle and its rim) after the ways, and how many ways came first.
+pub(crate) fn join_round(paths: &mut Vec<Path>, rims: &[([f64; 2], f64)], field: &Field, seating: &Seating) -> usize {
+    let ways = paths.len();
+    let round: Vec<Path> = rims.iter().flat_map(|&(at, rim)| round_rim(paths, at, rim, field, seating)).collect();
+    paths.extend(round);
+    ways
+}
+
+/// The prints a way round a piece keeps off: every building, and every prop and solid too large for `keep_off_paths`
+/// to clear off a way (the middle's own piece among them); what is small is cleared from it as from any way.
+fn standing_prints(seating: &Seating) -> Vec<[f64; 4]> {
+    let area = |[west, north, east, south]: [f64; 4]| (east - west) * (south - north);
+    let large_props = seating.props.iter().map(|prop| prop.footprint).filter(|&print| area(print) > LARGE_PROP_M2);
+    let buildings = seating.buildings.iter().map(|building| building.footprint);
+    let solids = seating
+        .solids
+        .iter()
+        .map(|solid| solid.bounds())
+        .filter(|&[west, north, east, south, _, _]| (east - west).max(south - north) > SMALL_SOLID_M);
+    let solids = solids.map(|[west, north, east, south, _, _]| [west, north, east, south]);
+    buildings.chain(large_props).chain(solids).collect()
+}
+
+/// The ground a prop covers past which a way does not run through it, square metres (`blocked_by` in lib.rs).
+const LARGE_PROP_M2: f64 = 6.0;
+
+/// Whether a body may walk at `at`: dry land a way crosses (`paths::find`'s ground), `keep` metres off every print.
+fn open_ground(field: &Field, prints: &[[f64; 4]], at: [f64; 2], keep: f64) -> bool {
+    let Some((column, row)) = field.cell_of(at[0], at[1]) else { return false };
+    let cell = field.index(column, row);
+    let land = field.water[cell] == Water::Dry && field.slope[cell] <= 1.2 && field.walkable(cell);
+    let off = |&[west, north, east, south]: &[f64; 4]| {
+        at[0] < west - keep || at[0] > east + keep || at[1] < north - keep || at[1] > south + keep
+    };
+    land && prints.iter().all(off)
 }
 
 /// Bends each way round the buildings walked into where it would graze one, as it may near its end's yard: where a
@@ -152,3 +251,61 @@ pub(crate) fn keep_off_paths(seating: &mut Seating, paths: &[Path], height: &dyn
 
 /// The widest a set piece's solid may be and still be cleared out of a way, metres: a post, a lantern, a stone.
 const SMALL_SOLID_M: f64 = 2.5;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn way(points: Vec<[f64; 2]>) -> Path {
+        Path { tier: Tier::Track, points, crossings: Vec::new(), heights: Vec::new() }
+    }
+
+    #[test]
+    fn the_ways_stopped_at_a_pieces_rim_are_joined_round_it_and_never_through_it() {
+        // Three ways come to a tower at the middle from the east, the north and the west, each stopped at its rim.
+        let mut ways = vec![
+            way(vec![[100.0, 0.0], [50.0, 0.0], [0.0, 0.0]]),
+            way(vec![[0.0, -100.0], [0.0, -50.0], [0.0, 0.0]]),
+            way(vec![[-100.0, 0.0], [-50.0, 0.0], [0.0, 0.0]]),
+        ];
+        end_at_rim(&mut ways, [0.0, 0.0], 8.0);
+        let field = Field::level(-160.0, -160.0, 40, 40);
+        let round = round_rim(&ways, [0.0, 0.0], 8.0, &field, &Seating::default());
+        assert_eq!(round.len(), 2, "three ends joined by two, the widest gap (the south) left open");
+        for path in &round {
+            assert!(
+                path.points.iter().all(|&point| distance(point, [0.0, 0.0]) > 8.0),
+                "round the rim, not through it"
+            );
+            let ends = [path.points[0], path.points[path.points.len() - 1]];
+            for end in ends {
+                assert!(ways.iter().any(|way| way.points.last() == Some(&end)), "each joins a way's end: {end:?}");
+            }
+            assert!(path.points.iter().all(|point| point[1] <= 1e-9), "by the north, the way round the closed side");
+        }
+        assert!(
+            round_rim(&ways[..1], [0.0, 0.0], 8.0, &field, &Seating::default()).is_empty(),
+            "one alone joins nothing"
+        );
+        let hut = |footprint: [f64; 4]| crate::seat::Seated {
+            model: 0,
+            at: [0.0, 0.0, 0.0],
+            yaw: 0.0,
+            building: false,
+            footprint,
+            purpose: 0,
+            open: false,
+            grounded: false,
+        };
+        // A hut between the north and the east ways: the way round goes out past it.
+        let mut seating = Seating { props: vec![hut([6.0, -12.0, 10.0, -6.0])], ..Seating::default() };
+        let round = round_rim(&ways, [0.0, 0.0], 8.0, &field, &seating);
+        let past =
+            |path: &Path| path.points[1..path.points.len() - 1].iter().all(|&point| distance(point, [0.0; 2]) > 18.0);
+        assert_eq!(round.len(), 2, "both joins still laid: {round:?}");
+        assert!(round.iter().any(past), "the one by the hut runs out past it: {round:?}");
+        seating.props.push(hut([-30.0, -30.0, 30.0, -8.6]));
+        let round = round_rim(&ways, [0.0, 0.0], 8.0, &field, &seating);
+        assert!(round.iter().all(|path| path.points.iter().all(|point| point[1] > -8.0)), "none north: {round:?}");
+    }
+}

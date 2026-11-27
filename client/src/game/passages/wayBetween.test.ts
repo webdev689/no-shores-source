@@ -40,7 +40,8 @@ function game() {
 }
 
 const ui = { size: { width: 1280, height: 720, scale: 1 } } as unknown as Interface;
-const cross = { kind: 'cross', node: 'gullwing-vale', name: 'The Gullwing Vale' } as const;
+/** A crossing gate to the grove, another patrol zone of the island, as the bake writes one between two. */
+const cross = { kind: 'cross', node: 'grove', name: 'The Grove' } as const;
 const onward = { kind: 'onward', node: 'passage-continent-1-w1-z7' } as const;
 const settle = () => new Promise((resolve) => setTimeout(resolve));
 
@@ -62,7 +63,7 @@ test('a crossing gate plays the way between the two patrol zones, never the veil
   let joined = false;
   const work = () => ((joined = true), Promise.resolve());
   assert.equal(ways.cross(cross, [2_800_000, 1_290_000], [2_330_000, 1_900_000], work), true);
-  assert.deepEqual(held.flow, { mode: 'passing', then: { mode: 'foot', node: 'gullwing-vale' } });
+  assert.deepEqual(held.flow, { mode: 'passing', then: { mode: 'foot', node: 'grove' } });
   assert.equal(held.ready, false);
   const over = ways.passing(1, held.ready, false);
   assert.ok(over && over !== 'place' && over.eye[2] > 1_000, 'risen over the island');
@@ -72,7 +73,7 @@ test('a crossing gate plays the way between the two patrol zones, never the veil
   assert.notEqual(ways.passing(PLAYED_S, held.ready, true), null);
   held.own = { x: -50, y: 30, z: 2 };
   assert.equal(playOut(ways, held, 0.5, 20), null);
-  assert.deepEqual(held.flow, { mode: 'foot', node: 'gullwing-vale' });
+  assert.deepEqual(held.flow, { mode: 'foot', node: 'grove' });
   assert.equal(held.fellBack, null);
 });
 
@@ -130,7 +131,7 @@ test('once come down, a frame not drawn whole never stops the way, nor keeps the
   assert.equal(ways.passing(0.01, held.ready, true), 'place');
   // The ground round the walk is still built, a figure stands in: the place is no longer drawn whole.
   assert.equal(playOut(ways, held, 0.1, 60, false), null, 'played to its end in time');
-  assert.deepEqual(held.flow, { mode: 'foot', node: 'gullwing-vale' });
+  assert.deepEqual(held.flow, { mode: 'foot', node: 'grove' });
 });
 
 test('the way waits over the island until the place gone to is drawn whole, then comes down and walks in', async () => {
@@ -161,7 +162,7 @@ test('a place never drawn whole is waited on as the veil waits, then the way com
   held.own = { x: -50, y: 30, z: 2 };
   assert.ok(ways.passing(READY_WAIT_S - 1, held.ready, false) !== 'place');
   assert.equal(playOut(ways, held, 0.5, 40, false), null);
-  assert.deepEqual(held.flow, { mode: 'foot', node: 'gullwing-vale' });
+  assert.deepEqual(held.flow, { mode: 'foot', node: 'grove' });
 });
 
 test('a room that never stands the body is waited on as the veil waits, then the way comes down', async () => {
@@ -170,7 +171,7 @@ test('a room that never stands the body is waited on as the veil waits, then the
   ways.passing(0.01, held.ready, false);
   await settle();
   assert.equal(playOut(ways, held, 0.1, 400), null, 'on foot in the far zone');
-  assert.deepEqual(held.flow, { mode: 'foot', node: 'gullwing-vale' });
+  assert.deepEqual(held.flow, { mode: 'foot', node: 'grove' });
 });
 
 test('the way’s dots go with the way once the flow leaves it, however it ends', () => {

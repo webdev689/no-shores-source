@@ -189,12 +189,15 @@ pub fn plan(
     let (mut paths, joined) = paths::lay(&field, &areas, &hubs, &blocked, patrol, seed);
     // A way ending at an area's middle stops at what stands there: its set piece, tower or hull; or at a plot's rim,
     // past its square's corners.
+    let mut rims = Vec::new();
     for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
         // A plot's rim stays inside its platform's edge, so a way crossing that edge is ramped up to it.
         let rim =
             if area.kind == AreaKind::Plot { areas::PLOT_CORNER_M + 1.0 } else { clearing::rim_of(&seating, area.at) };
         clearing::end_at_rim(&mut paths, area.at, rim);
+        rims.extend((patrol && area.kind != AreaKind::Plot).then_some((area.at, rim)));
     }
+    let ways = clearing::join_round(&mut paths, &rims, &field, &seating);
     clearing::round_rooms(&mut paths, &seating);
     clearing::keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0xB41D, draws: 0, into: &mut seating };
@@ -207,7 +210,7 @@ pub fn plan(
             }
         }
     }
-    dressing::dress(&mut kit, &areas, &paths, &moduled);
+    dressing::dress(&mut kit, &areas, (&paths, ways), &moduled);
     let mut sites = sites::mark(&field, &areas, &paths, &seating, seed, resource);
     sites.extend(grounds::mark(&node.id, &field, &areas, &paths, &seating));
     grounds::mark_events(&node.id, &areas, &mut sites);
@@ -513,7 +516,9 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
         }
     } else {
         let entrance = brief.areas.iter().find(|area| area.kind == AreaKind::Entrance);
-        let towards = links.first().map_or_else(|| middle_of(node), |link| link.towards);
+        // One its region gives no patrol area is landed at from the sea, so its way in lies on its seaward side.
+        let seaward = [middle_of(node)[0] + field.seaward[0] * span, middle_of(node)[1] + field.seaward[1] * span];
+        let towards = links.first().map_or(seaward, |link| link.towards);
         let name = entrance.map_or("The Way In", |area| area.name.as_str());
         put(&mut areas, AreaKind::Entrance, name, 0, links.first().map(|link| link.id.clone()), &edge_pull(towards));
         let later: Vec<_> = brief.areas.iter().filter(|area| area.kind != AreaKind::Entrance).collect();
