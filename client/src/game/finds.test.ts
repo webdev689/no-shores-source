@@ -26,14 +26,15 @@ const WARDROBE = { number: 9, box: [0, 20, 1, 21] as const, foot: 0, top: 1.8, m
 const gear = state({ chests: [CHEST], searchables: [WARDROBE] });
 
 test("the page's reach and holds are the room's", async () => {
-  const read = (path: string) => readFile(new URL(`../../../${path}`, import.meta.url), 'utf8');
-  const holds = await read('crates/room/src/find_holds.rs');
-  const number = (name: string) => Number(new RegExp(`pub const ${name}: \\w+ = ([\\d.]+);`).exec(holds)?.[1]);
-  assert.equal(number('CHEST_REACH'), CHEST_REACH_M);
-  assert.equal(number('SEARCH_REACH'), SEARCH_REACH_M);
-  assert.equal(number('FIND_HEIGHT'), FIND_HEIGHT_M);
-  assert.equal(number('OPEN_TICKS') / 60, OPEN_S);
-  assert.equal(number('SEARCH_TICKS') / 60, SEARCH_S);
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs).
+  const written = await readFile(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  type Holds = 'chestReach' | 'searchReach' | 'findHeight' | 'openTicks' | 'searchTicks';
+  const room = JSON.parse(written) as Record<Holds, number>;
+  assert.equal(room.chestReach, CHEST_REACH_M);
+  assert.equal(room.searchReach, SEARCH_REACH_M);
+  assert.equal(room.findHeight, FIND_HEIGHT_M);
+  assert.equal(room.openTicks / 60, OPEN_S);
+  assert.equal(room.searchTicks / 60, SEARCH_S);
 });
 
 test('E held by a chest within reach opens it by its number, a second', () => {

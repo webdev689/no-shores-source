@@ -11,6 +11,10 @@ When the owner decides something, it gets a note in `05-Decisions`, made from th
 - **What it settles**: the plain consequences, and nothing the owner did not say.
 - **Links** to the rules and notes it affects, and a link to it from them.
 
+Before changing a number or a law, run `cargo xtask decisions`: it maps the files changed against `origin/main`
+through each note's `code:` to the decision notes that note links, and prints them. Read each in full and keep every
+relation it sets (a ratio, an order, a cap), not only the number it names.
+
 A decision that changes is not edited away: mark it replaced, link its successor, and record the new one. Only the
 owner makes decisions; Claude records them and never writes one the owner did not make. A draft the owner declined
 stays a draft until the owner's own yes to it: a later general grant of autonomy lets Claude build it, not mark it in

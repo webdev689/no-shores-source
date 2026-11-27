@@ -472,6 +472,9 @@ pub fn body_of(numbers: &[f64]) -> Option<Body> {
 #[path = "arrival_wire_tests.rs"]
 mod arrival_wire_tests;
 #[cfg(test)]
+#[path = "asks_written_tests.rs"]
+mod asks_written_tests;
+#[cfg(test)]
 #[path = "course_wire_tests.rs"]
 mod course_wire_tests;
 #[cfg(test)]
