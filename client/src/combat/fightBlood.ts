@@ -21,22 +21,25 @@ export const chestOf = (view: FighterView): Vector => [view.x, view.y, view.z + 
 const LAND_STEP = 0.05;
 const SLOPE_SPAN = 0.25;
 
-/** Where a ray first goes under the land `groundAt` gives (world metres), walked in short steps up to `reach`, with
- *  the land's normal there; null if it never does. */
-function landHit(groundAt: (x: number, y: number) => number, from: Vector, direction: Vector, reach: number) {
+/** The land's height at a place, felt from a height `z` there where the land has storeys (a dungeon's). */
+type LandAt = (x: number, y: number, z?: number) => number;
+
+/** Where a ray first goes under the land `groundAt` gives at the ray's height (world metres), walked in short steps up
+ *  to `reach`, with the land's normal there; null if it never does. */
+function landHit(groundAt: LandAt, from: Vector, direction: Vector, reach: number) {
   const point = (distance: number) => [0, 1, 2].map((axis) => (from[axis] ?? 0) + (direction[axis] ?? 0) * distance);
   const under = (distance: number) => {
     const [x = 0, y = 0, z = 0] = point(distance);
-    return z <= groundAt(x, y);
+    return z <= groundAt(x, y, z);
   };
   if (under(0)) return null;
   for (let walked = LAND_STEP; walked < reach + LAND_STEP; walked += LAND_STEP) {
     const distance = Math.min(walked, reach);
     if (!under(distance)) continue;
-    const [x = 0, y = 0] = point(distance);
+    const [x = 0, y = 0, z = 0] = point(distance);
     // The land's fall each way across twice the span, and twice the span upward: its normal, unscaled.
-    const east = groundAt(x - SLOPE_SPAN, y) - groundAt(x + SLOPE_SPAN, y);
-    const south = groundAt(x, y - SLOPE_SPAN) - groundAt(x, y + SLOPE_SPAN);
+    const east = groundAt(x - SLOPE_SPAN, y, z) - groundAt(x + SLOPE_SPAN, y, z);
+    const south = groundAt(x, y - SLOPE_SPAN, z) - groundAt(x, y + SLOPE_SPAN, z);
     const length = Math.hypot(east, south, 2 * SLOPE_SPAN);
     return { distance, normal: [east / length, south / length, (2 * SLOPE_SPAN) / length] as const };
   }
@@ -46,7 +49,7 @@ function landHit(groundAt: (x: number, y: number) => number, from: Vector, direc
 /** The ground and the course's blocks as boxes from their undersides to their tops: the nearest surface a ray meets
  *  entering it, with that face's normal. The ground is open ground at height zero, or the land `groundAt` gives. A ray
  *  starting inside a box does not meet it. */
-export function surfacesOf(blocks: readonly Block[], groundAt?: (x: number, y: number) => number): Surfaces {
+export function surfacesOf(blocks: readonly Block[], groundAt?: LandAt): Surfaces {
   return (from, direction, reach) => {
     let nearest: SurfaceHit | null = null;
     const keep = (distance: number, normal: Vector) => {

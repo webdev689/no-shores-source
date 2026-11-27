@@ -67,14 +67,21 @@ and their firing spots by it, and climb and drop where its links say.
    kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the water is
    no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are. An
    anchored bake keeps instead the part joined to the floor nearest a point it is given, the way in of a dungeon, whose
-   rock stands as walls 10 m tall ([[Movement]]'s grid of heights) with flat tops larger than its floor. A dungeon
-   bakes in cells of 0.4 m, an eighth of its own, so every wall of it lies on a cell's edge and the bake holds a third
-   of the columns 0.25 m would; its jambs, pillars and solids are the bake's colliders, and an Elite Dungeon's Ascents'
-   pads with them, so no foe paths onto a pad.
+   rock stands as walls 10 m tall with flat tops larger than its floor. A dungeon bakes in cells of 0.4 m, an eighth
+   of its own, so every wall of it lies on a cell's edge and the bake holds a third of the columns 0.25 m would. Its
+   terrain is each column's lowest floor, a flight's slope (0.625, under the 0.7 walked) where it is one; the rock
+   between a storey's ceiling and the floor over it stands as a block with a bottom, so the storey under is walked
+   beneath it; its jambs, pillars and solids, each on its own floor, are the bake's colliders, and an Elite
+   Dungeon's Ascents' pads and a gallery's balustrades with them, so no foe paths onto a pad or over a balustrade. A
+   path between storeys goes by a flight. A dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is
+   taken up to the higher cell beside alone, never down, so a storey's way over a room of the storey under it (whose
+   column's lowest floor is that room's) and the edge of a flight's landing stay floor where they meet the drop.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
-5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so
-   no poly is larger than 12 m², and merged, the longest shared edge first, into convex polys of up to six corners.
+5. **Polys.** Each outline, its holes bridged in, is cut into triangles (a diagonal that only touches a bridge's
+   corner where the bridge visits it again is no crossing, so every hole stays out of them), sliced on one lattice
+   across the room so no poly is larger than 12 m², and merged, the longest shared edge first, into convex polys of
+   up to six corners.
    Polys that share an edge are neighbours, across regions too.
 6. **Heights.** Each corner is set on the surface nearest its own level: a block's top, or the ground where no block
    stands on it, blended between cell centres.

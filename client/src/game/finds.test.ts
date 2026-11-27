@@ -6,6 +6,7 @@ import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import {
   CHEST_REACH_M,
   ChestsSeen,
+  chestsCounted,
   FIND_HEIGHT_M,
   FootFinds,
   OPEN_S,
@@ -19,7 +20,7 @@ import {
 } from './finds.ts';
 import { CHEST_PICTURE, SEARCH_PICTURE } from './overheadMarks.ts';
 
-const CHEST = { number: 7, at: [10, 0, 2] as const, facing: Math.PI / 2 };
+const CHEST = { number: 7, at: [10, 0, 2] as const, facing: Math.PI / 2, vault: false };
 /** A wardrobe (41003) a metre across, its foot on the ground. */
 const WARDROBE = { number: 9, box: [0, 20, 1, 21] as const, foot: 0, top: 1.8, model: 41003 };
 const gear = state({ chests: [CHEST], searchables: [WARDROBE] });
@@ -102,7 +103,7 @@ test('each container is named by its family, a container where the page knows no
 
 test('a chest the room paid the player for stays drawn open a while; one that moved on goes at once', () => {
   const seen = new ChestsSeen();
-  const other = { number: 8, at: [50, 0, 0] as const, facing: 0 };
+  const other = { number: 8, at: [50, 0, 0] as const, facing: 0, vault: false };
   const standing = state({ chests: [CHEST, other] });
   assert.deepEqual(
     seen.frame(standing, 0).drawn.map((each) => [each.number, each.opened]),
@@ -185,4 +186,10 @@ test('each chest standing for the player wears a chest over its lid, and each co
       'every cell coloured',
     );
   }
+});
+
+test("a dungeon's chests are counted as the player's opened of all it stands, and none elsewhere", () => {
+  assert.equal(chestsCounted(state({ chestsOpened: 2, chestsTotal: 5 })), 'Chests 2 of 5');
+  assert.equal(chestsCounted(state({ chestsOpened: 0, chestsTotal: 0 })), null, 'a patrol counts none');
+  assert.equal(chestsCounted(null), null);
 });

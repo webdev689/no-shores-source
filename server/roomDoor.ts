@@ -183,8 +183,9 @@ export interface RoomDoor {
    *  each as JSON; null as `character` is. */
   keptApart(player: number): { body: string; vault: string } | null;
   /** Gives a player their kept character with the account's vault and Aurem (null for none kept yet) joined into it;
-   *  false if either is not one, or as `restoreCharacter`. */
-  restoreJoined(player: number, body: string, vault: string | null): boolean;
+   *  false if either is not one, or as `restoreCharacter`. At sea the room it came from (`from`) puts the ship off
+   *  that node's region. */
+  restoreJoined(player: number, body: string, vault: string | null, from?: string | null): boolean;
   /** Why the open room's gate shuts to a player's kept character (JSON), or to a new one (null), in its words, with
    *  the story they already hold in the room carried forward, or at sea the sea's tier; empty when it may enter, in a
    *  fleet, or for no character. */
@@ -530,10 +531,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
         ? null
         : (JSON.parse(new TextDecoder().decode(bytes)) as { body: string; vault: string });
     },
-    restoreJoined: (player, body, vault) =>
+    restoreJoined: (player, body, vault, from = null) =>
       openWith(
         (address, length) => exports.room_restore_joined(player, address, length),
-        JSON.stringify({ body, vault }),
+        JSON.stringify({ body, vault, from }),
       ),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     name: (player, name) => openWith((address, length) => exports.room_name(player, address, length), name),

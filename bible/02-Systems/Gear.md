@@ -249,10 +249,13 @@ number is one of [[Gear as Claude Shapes It]].
   (`CLEAR_VESTIGE`). It pays once until a group stands again. A patrol never ends, so it pays none. A laid
   dungeon's room pays the same clear as its cache opens ([[Dungeons]], "The cache").
 - **A find** ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]], `gear::finds`): a chest
-  opened in a patrol or a dungeon pays 30 Aurem at level 5, grown with the level as a kill's worth is, 2 to 4 of the
-  island's resource and a Vestige one time in four, coloured as a Major's; a container searched 8 Aurem, one of the
-  resource one time in two and a Vestige one time in twenty, coloured as a Minor's. A harder voyage raises the Aurem
-  and the Vestige's chance by its reward, as a kill's. Neither pays XP. It is of the island's band's middle, raised by
+  opened in a patrol pays 30 Aurem at level 5, grown with the level as a kill's worth is, 2 to 4 of the island's
+  resource and a Vestige one time in four, coloured as a Major's (`CHEST`); a dungeon's chest 60 Aurem, 3 to 5 of the
+  resource and a Vestige 40 times in 100, coloured as an Elite's (`DUNGEON_CHEST`); a dungeon's vault's chest 150
+  Aurem, 4 to 6 of the resource, a sure Vestige coloured as a Miniboss's and an item as itself one time in four
+  (`VAULT_CHEST`), under a Boss's drop; a container searched 8 Aurem, one of the resource one time in two and a
+  Vestige one time in twenty, coloured as a Minor's. A harder voyage raises the Aurem and the chances of a Vestige and
+  an item by its reward, as a kill's. None pays XP or Essence. It is of the island's band's middle, raised by
   the room's seas, and a full stock takes none of the resource while the rest is paid
   ([[Chests and Searchable Containers as Claude Builds Them]]). A chest's Vestige is poured out of it ("Drops",
   below); a container's is thrown to the searcher's feet.

@@ -22,7 +22,15 @@ test("a dungeon set's pictures turn to the island's climate, each once, and a fl
 
 test("each colour the dungeon's shader draws takes a layer of its own, past the pictures a dungeon wears", () => {
   const book = smallBook({ climate: 'temperate', season: 'summer' }, [[123, 0, 'wall']]);
-  const drawn = [COLOUR.glow, COLOUR.wax, COLOUR.ember, COLOUR.lanternGlass, COLOUR.crystal, COLOUR.fungus];
+  const drawn = [
+    COLOUR.glow,
+    COLOUR.wax,
+    COLOUR.ember,
+    COLOUR.lanternGlass,
+    COLOUR.crystal,
+    COLOUR.fungus,
+    COLOUR.gold,
+  ];
   const layers = drawn.map((archive) => book.layerOf(archive, 0));
   assert.equal(new Set(layers).size, drawn.length);
   for (const layer of layers)

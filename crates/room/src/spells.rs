@@ -406,13 +406,16 @@ impl Room {
 
     /// Where Dusk Daggers whirl: where they were aimed, drawn in to their reach, on the ground there once drawn in;
     /// at the caster's feet with no aim.
-    fn daggers_at(&self, feet: [f64; 3], aim: Option<[f64; 3]>, reach: f64) -> [f64; 3] {
+    pub(crate) fn daggers_at(&self, feet: [f64; 3], aim: Option<[f64; 3]>, reach: f64) -> [f64; 3] {
         let Some(wanted) = aim else { return feet };
         let far = libm::hypot(wanted[0] - feet[0], wanted[1] - feet[1]);
         // Within reach the ring lies where it was aimed, but always on the ground: the page's height is not taken.
         let share = if far <= reach { 1.0 } else { reach / far };
         let [x, y] = [0, 1].map(|axis| feet[axis] + (wanted[axis] - feet[axis]) * share);
-        [x, y, standing_on(&self.floor, &self.blocks, x, y).z]
+        // Under the caster's own height, never another storey's ground; up a flight, none is under it: its slope.
+        let under = movement::blocks::ground_at(&self.blocks, &self.floor, x, y, feet[2]);
+        let up = under > feet[2] + movement::TUNING.step;
+        [x, y, if up { standing_on(&self.floor, &self.blocks, x, y).z } else { under }]
     }
 
     /// Vanish's roll: a dodge's hop `roll` metres the way the caster moves, back with no way, on the ground only;

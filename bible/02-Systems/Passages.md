@@ -124,11 +124,13 @@ passages' own pieces standing in it with their solids.
   shows through its arch. Its lamp stands in its greatest room but the
   way in's, three cells or more each way, on the quiet cell nearest the room's middle where its plinth and stones,
   facing the arrival, stand on its rooms' floor clear of every prop, fixture, landmark, pillar and doorway, else in the next room as great
-  and as tall. A zone is forged from the first of its seeds where its floor gives its deal every spot it wants; a
+  and as tall. A zone is forged one storey deep (`forge_storeys`) from the first of its seeds where its floor gives
+  its deal every spot it wants, every way on its mouth and its foes a post; a
   lamp's zone also where a room but the way in's is tall enough and the lamp stands clear, and a Hold's where its ring
   lies whole on the room floor at its spot (no rock or corridor cell, nor the dungeon's edge, within 6 m of its middle), the spot
   where the ring lies whole, else where most of it does. A band's post is the
-  middle of a room's cells that no prop, fixture or landmark fills, and the deal's spots are quiet cells that hold none.
+  middle of a room's cells that no prop, fixture or landmark fills, the way in's room's none but in a zone laid as one
+  great room, whose post is its clear floor farthest from the arrival; a room with no such floor stands no post; the deal's spots are quiet cells that hold none.
 - **Above ground**: a hollow 38, 55 or 75 m across, its floor's outline of its form (round, a winding ravine with
   rounded ends, terraced shelves, a squared court, a long strand, a grove) on a grid of heights 2 m apart, rolling a
   little and stepping down in shelves, each easing into the next over an 8 m bank; its walls rise 12 to 25 m within
@@ -150,7 +152,7 @@ passages' own pieces standing in it with their solids.
   meadow) half a metre inside it.
 - **Laid where a body walks** (`Walk`): a zone is laid until a body, kept 0.5 m off every wall and solid and walking
   no steeper than 0.7, walks from the arrival to within 2.5 m of every onward mouth, the lamp and every spot, and
-  within a blow (1.45 m) of every post and a Reckoning's collectors' spots: under ground from each next seed, above
+  within a blow (1.45 m) of every post and a Reckoning's collectors' spots: under ground (one storey, the only plane a walk maps) from each next seed, above
   ground dressed again, up to eight times, the laying that misses fewest kept. The page's door keeps the last zone it
   laid, so a zone's plan, its heights and its local room are laid once.
 - **The pieces**: the way in, the onward mouths, the lamp (a plinth 1.6 m square in a ring of five standing stones

@@ -175,6 +175,15 @@ test('a ball over the sea stops on its surface and splashes there, not on the gr
   assert.ok(lowest > -0.1, `nothing below the water's surface: ${lowest}`);
 });
 
+test("where there is no sea, an arrow shot down from a gallery flies on under 0 to the hall's floor", () => {
+  const tracers = new Tracers();
+  tracers.fired([{ ...arrow, velocity: [0, -20, -20] }], () => [0, 0, 1.5]);
+  tracers.update(1, [], [], () => -8, [], false);
+  const [struck] = tracers.struck;
+  assert.equal(struck?.surface, 'ground');
+  assert.ok(Math.abs((struck?.at[2] ?? 0) + 8) < 0.05, `on the floor: ${struck?.at}`);
+});
+
 test("another's ball draws its tracer from the snapshot that carried it; the player's own is left to their own shots", () => {
   const tracers = new Tracers();
   const theirs: FlyingShot = {
@@ -306,6 +315,19 @@ test("on rising land the player's arrow stops where it goes under the ground, no
   );
   const [, y = 0, z = 0] = tip;
   assert.ok(y < -6.5 && y > -7.6 && Math.abs(z - rising(0, y)) < 0.05, `stuck there: ${y}, ${z}`);
+});
+
+test("the player's arrow up a flight stops on its slope, the ground asked at the arrow's height", () => {
+  const tracers = new Tracers();
+  // A flight rising north from -8 at y 0, felt as a dungeon's is: only within a step over the height asked.
+  const flight = (x: number, y: number, z = -8) => {
+    const slope = -8 - y * 0.625;
+    return slope <= Math.max(z, -8) + 0.5 ? slope : null;
+  };
+  tracers.fired([{ ...arrow, at: [0, 0, -6.4], velocity: [0, -45, 0] }], () => [0, 0, -6.4]);
+  tracers.update(1, [], [], flight, [], false);
+  const [struck] = tracers.struck;
+  assert.ok(struck && Math.abs(struck.at[1] + 2.56) < 0.1, `on the slope: ${struck?.at}`);
 });
 
 test("the player's own trail takes its element, another's keeps its own", () => {

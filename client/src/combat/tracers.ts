@@ -4,7 +4,7 @@ import type { FlyingShot } from '../network/messages.ts';
 import { rayHit } from '../player/playerCamera.ts';
 import type { Fired } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
-import { bodyHit } from '../player/crosshair.ts';
+import { bodyHit, type GroundAt } from '../player/crosshair.ts';
 import { GunLooks } from './gunLooks.ts';
 import { markArrow } from './marks.ts';
 import { POWDER, STEEL, type Ramp, layPicture } from './markSprites.ts';
@@ -226,11 +226,13 @@ function jolted<Shown extends { readonly at: Point }>(points: readonly Shown[], 
   }));
 }
 
-/** How far along one tick's flight (`from` plus shares of `along`) an arrow goes under the ground `groundAt` gives (0
- *  where it gives none): 1 when it stays over it, or starts under it. */
-function underGround(from: Point, along: Point, groundAt: (x: number, y: number) => number | null): number {
-  const under = (share: number) =>
-    from[2] + along[2] * share <= (groundAt(from[0] + along[0] * share, from[1] + along[1] * share) ?? 0);
+/** How far along one tick's flight (`from` plus shares of `along`) an arrow goes under the ground `groundAt` gives,
+ *  asked at the arrow's height (0 where it gives none): 1 when it stays over it, or starts under it. */
+function underGround(from: Point, along: Point, groundAt: GroundAt): number {
+  const under = (share: number) => {
+    const z = from[2] + along[2] * share;
+    return z <= (groundAt(from[0] + along[0] * share, from[1] + along[1] * share, z) ?? 0);
+  };
   if (under(0) || !under(1)) return 1;
   let [over, below] = [0, 1];
   for (let halving = 0; halving < 16; halving++) {
@@ -242,13 +244,14 @@ function underGround(from: Point, along: Point, groundAt: (x: number, y: number)
 }
 
 /** How far along one tick's flight an arrow first meets something, and what: a block, the ground, the sea (over land
- *  below its level), or a body (its feet); 1 and nothing when it meets none. */
+ *  below its level, where the place has a sea), or a body (its feet); 1 and nothing when it meets none. */
 function firstMet(
   from: Point,
   along: Point,
   blocks: readonly Block[],
   bodies: readonly Point[],
-  groundAt?: (x: number, y: number) => number | null,
+  groundAt?: GroundAt,
+  sea = true,
 ): { share: number; met: { surface: Surface; feet?: Point } | null } {
   let share = rayHit(from, add(from, along), blocks);
   let met: { surface: Surface; feet?: Point } | null = share < 1 ? { surface: 'stone' } : null;
@@ -259,9 +262,9 @@ function firstMet(
       ? from[2] / (from[2] - to[2])
       : 1;
   if (ground < share) [share, met] = [ground, { surface: 'ground' }];
-  if (groundAt && from[2] > 0 && to[2] <= 0 && (groundAt(to[0], to[1]) ?? 0) < 0) {
-    const sea = from[2] / (from[2] - to[2]);
-    if (sea < share) [share, met] = [sea, { surface: 'water' }];
+  if (sea && groundAt && from[2] > 0 && to[2] <= 0 && (groundAt(to[0], to[1]) ?? 0) < 0) {
+    const surface = from[2] / (from[2] - to[2]);
+    if (surface < share) [share, met] = [surface, { surface: 'water' }];
   }
   for (const feet of bodies) {
     const hit = bodyHit(from, along, feet);
@@ -341,15 +344,16 @@ export class Tracers {
   }
 
   /** Runs every tracer on by `seconds`: the player's own arrows fly a tick at a time until a block, the ground
-   *  (`groundAt`'s, else level at 0), the sea or one of `targets` (feet; `bodies` unless given) stops them. What each
-   *  shot struck, among `bodies`, keeps its look; answers where one struck stone this time, and the way back it came,
-   *  for the sparks it throws there. */
+   *  (`groundAt`'s, else level at 0), the sea (where the place has one) or one of `targets` (feet; `bodies` unless
+   *  given) stops them. What each shot struck, among `bodies`, keeps its look; answers where one struck stone this
+   *  time, and the way back it came, for the sparks it throws there. */
   update(
     seconds: number,
     blocks: readonly Block[],
     bodies: readonly Point[],
-    groundAt?: (x: number, y: number) => number | null,
+    groundAt?: GroundAt,
     targets: readonly Point[] = bodies,
+    sea = true,
   ): Impact[] {
     const impacts: Impact[] = [];
     this.struck = [];
@@ -363,7 +367,7 @@ export class Tracers {
     };
     for (const line of this.lines) {
       // A ball over the sea stops on its surface, not on the ground under it.
-      line.to = overSea(line.from, line.to, groundAt);
+      line.to = overSea(line.from, line.to, groundAt, sea);
       const arrives = this.arrival(line);
       line.quiet += seconds;
       if (!line.stopped) {
@@ -371,7 +375,7 @@ export class Tracers {
         continue;
       }
       if (line.age < arrives && line.age + seconds >= arrives)
-        struck(line.to, minus(line.to, line.from), true, surfaceAt(line.to, blocks, bodies, groundAt));
+        struck(line.to, minus(line.to, line.from), true, surfaceAt(line.to, blocks, bodies, groundAt, sea));
       line.age += seconds;
     }
     this.lines = this.lines.filter((line) =>
@@ -386,7 +390,7 @@ export class Tracers {
         const step = Math.min(TICK, left);
         const velocity: Point = [flight.velocity[0], flight.velocity[1], flight.velocity[2] - FALL * step];
         const along: Point = [velocity[0] * step, velocity[1] * step, velocity[2] * step];
-        const { share, met } = firstMet(flight.at, along, blocks, targets, groundAt);
+        const { share, met } = firstMet(flight.at, along, blocks, targets, groundAt, sea);
         flight.at = add(flight.at, along, share);
         flight.velocity = velocity;
         flight.flown += step * share;

@@ -314,6 +314,45 @@ test('a new account’s character is the one the room holds, given back to the r
   assert.deepEqual(given, ['{"starting":true}'], 'no kept character yet: the room’s own, given back');
 });
 
+test('the room a character came from is given with it, so the sea can put the ship off the zone left', async () => {
+  const { clock, kept, token } = await world();
+  const zone = roomOf();
+  zone.held.set(1, '{"starting":true}');
+  const left = new Keeper(kept, zone, 'node-gullwing-vale', () => undefined);
+  assert.equal(
+    await left.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  zone.held.set(1, '{"xp":3}');
+  left.changed(1);
+  const leaving = left.leave(1);
+  zone.held.delete(1);
+  await leaving;
+
+  const sea = roomOf();
+  sea.held.set(2, '{"starting":true}');
+  const froms: (string | null | undefined)[] = [];
+  const restore = sea.restoreJoined;
+  sea.restoreJoined = (player, body, vault, from) => (froms.push(from), restore(player, body, vault, from));
+  const back = new Keeper(kept, sea, 'sea', () => undefined);
+  assert.equal(
+    await back.signIn(
+      2,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  assert.deepEqual(froms, ['node-gullwing-vale'], 'the zone it left');
+  assert.equal(back.cameFrom(2), 'node-gullwing-vale');
+});
+
 test("a leaver's chest is opened and what lies for them mailed before their last save reads it; the room lets them go last", () => {
   // The room's character for player 1: its XP, which opening the chest lying for them raises.
   let gained = 10;

@@ -1,12 +1,13 @@
 """The caverns' pieces: natural rock, crystal, fungus and still water, every one grown, dripped, broken or worn.
-Nothing is built by hands but the exit's timber lintel and the sconce's lashing.
+Nothing is built by hands but the exit's timber lintel, the sconce's lashing and the gallery's rope.
 
-door.a/.b are rock arches round a doorway's jambs (.b studded with crystals); the pillar is a stalagnate; the wall
-trio a flowstone curtain down a hewn room's wall; feature.a an outcrop with fungus, .b a seam with crystals;
-ceiling.a/.b/.c stalactite clusters, small to large; floor.a scree, .b a drip puddle. Landmarks: the Still Lake, the
-Crystal Heart and the Stone Teeth.
+door.a/.b are rock arches round a doorway's jambs (.b studded with crystals); the pillar is a stalagnate; the wall trio
+a flowstone curtain down a hewn room's wall; feature.a an outcrop with fungus, .b a seam with crystals; ceiling.a/.b/.c
+stalactite clusters, small to large; floor.a scree, .b a drip puddle; stair.head a rock arch over a flight's head and
+foot, stair.side a rock ledge down its walls, balustrade a gallery's rock lip with a rope slung along it. Landmarks: the
+Still Lake, the Crystal Heart and the Stone Teeth.
 """
-from styles.caverns import features, forms, growths, landmarks, openings
+from styles.caverns import features, forms, growths, landmarks, openings, stairs
 
 
 def kit_pieces(kit):
@@ -30,6 +31,9 @@ def kit_pieces(kit):
         'sconce': made('sconce', openings.sconce('caverns.sconce')),
         'portal': made('portal', openings.portal('caverns.portal')),
         'exit': made('exit', openings.exit_frame('caverns.exit')),
+        'stair.head': made('stair.head', stairs.stair_head()),
+        'stair.side': made('stair.side', stairs.stair_side()),
+        'balustrade': made('balustrade', stairs.balustrade()),
     }
     found['ceiling.b'] = made('ceiling.b', growths.cluster('caverns.ceiling.b', 0.5, 0.18, 1.1, 10, 3, stretch=2.4,
                                                            row=True))

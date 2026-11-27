@@ -60,3 +60,16 @@ test('the world clock takes a room’s word at once, then eases toward later wor
   clock.heard(121);
   assert.ok(clock.seconds() > 101.5 && clock.seconds() < 102.5, `${clock.seconds()}`);
 });
+
+test('by night the WebAssembly rules see a lit ship to 650 m and a dark one to 220 m, as the native (night_tests.rs)', async () => {
+  const law = await startSkyLaw(await readFile(MODULE));
+  for (const lit of [true, false]) assert.equal(law.nightSight(750, 1, lit), 750, 'by day, the whole range');
+  assert.equal(law.nightSight(750, 0, true), 650);
+  assert.equal(law.nightSight(750, 0, false), 220);
+  assert.equal(law.nightSight(400, 0, true), 400, 'never farther than by day');
+  assert.equal(law.nightSight(Infinity, 0, true), 650, 'a lookout who sees without end by day');
+  assert.equal(law.nightSight(Infinity, 1, true), Infinity);
+  // Night falls at the daylight 0.375, as the lamps are half up.
+  assert.equal(law.nightSight(750, 0.375, false), 220);
+  assert.equal(law.nightSight(750, 0.375 + 1e-9, false), 750);
+});

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { CHEST_OPEN_RAD } from '../models/chest.ts';
 import { cacheOf, chestMesh, chestsMesh, foundChest } from './dungeonChest.ts';
-import { IRON } from './dungeonMesh.ts';
+import { COLOUR, IRON } from './dungeonMesh.ts';
 
 test("the cache reads from a snapshot's five numbers, and an empty one is none", () => {
   assert.deepEqual(cacheOf([1, 2, 0, Math.PI, 1]), { x: 1, y: 2, z: 0, bearing: Math.PI, open: true });
@@ -61,4 +61,12 @@ test("a found chest's lid, thrown open, stays clear of the 0.3 m a wall's kit pi
     );
     assert.ok(Math.min(...northings) >= 0.3, `opened ${opened}: ${Math.min(...northings).toFixed(3)} m off the wall`);
   }
+});
+
+test("a vault's chest is the same chest in the same wood, its hinge and latch gold", () => {
+  const vault = foundChest({ at: [5, 5, 0], facing: 0, opened: null, vault: true });
+  assert.equal(vault.vault, true);
+  const pictures = new Set(chestMesh(vault, [364, 1]).parts.map((part) => `${part.archive}.${part.record}`));
+  assert.deepEqual([...pictures].sort(), [`${COLOUR.gold}.0`, '364.1'].sort());
+  assert.equal(foundChest({ at: [5, 5, 0], facing: 0, opened: null }).vault, false, 'a plain one stays iron');
 });

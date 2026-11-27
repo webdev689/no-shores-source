@@ -1,14 +1,15 @@
 //! Chests and containers to search, after Destiny 1's loot chests. In a patrol a few chests stand at once at places
 //! drawn among its layout's (`layout::chests`), each moving on to another after a while, the next a little after the
 //! last, and a share of its props that hold things is searchable, drawn again now and then. In every dungeon a chest
-//! stands in a room of each block, against a wall, and a share of its crates, shelves, wardrobes and tombs is
-//! searchable, all drawn again as its garrison stands again. Each player opens each chest and searches each container
-//! once (`find_holds.rs`). The draws are made on the room's loot seed at its first tick, once its host has reseeded it,
-//! so no player can foresee them.
+//! stands in a room of each block, against a wall, a vault's chest in each vault, and a share of its crates, shelves,
+//! wardrobes and tombs is searchable, all drawn again as its garrison stands again. Each player opens each chest and
+//! searches each container once (`find_holds.rs`). The draws are made on the room's loot seed at its first tick, once
+//! its host has reseeded it, so no player can foresee them.
 
 use crate::{PlayerId, Room};
 use dungeon::{CELL_M, Cell, Dungeon, SIDES};
 use gear::dice::{Dice, Purpose};
+use gear::finds::Find;
 use movement::Terrain;
 use std::collections::BTreeMap;
 
@@ -28,6 +29,11 @@ pub const SEARCHABLE_MOST: usize = 16;
 pub(crate) const OFF_WALL_M: f64 = 0.5;
 /// How far a second chest in a dungeon's room stands from every other, metres: two cells.
 const SECOND_APART_M: f64 = 2.0 * CELL_M;
+/// The dice lanes a dungeon's chest draws take, each its base plus the chest's (or vault's) count: a lane spans the
+/// most chests any dungeon stands, so no two draws roll alike.
+pub(crate) const VAULT_LANE: u32 = 90;
+pub(crate) const ROOM_LANE: u32 = 100;
+pub(crate) const PLACE_LANE: u32 = 200;
 pub const CHEST_HALF_DEEP_M: f64 = 0.25;
 pub const CHEST_HALF_WIDE_M: f64 = 0.45;
 /// The draws' own stream of the room's loot seed, apart from every roll of its players' loot.
@@ -38,12 +44,20 @@ pub type ChestPlace = [f64; 4];
 /// A prop that holds things: its box across (west, north, east, south), its foot and its top, metres, and its model.
 pub type Holder = [f64; 7];
 
-/// A chest standing: its place among the room's, its number, and the tick it moves on (never, in a dungeon).
+/// A chest standing: its place among the room's, its number, the tick it moves on (never, in a dungeon), and whether
+/// it is a vault's, the finer chest in gold, rather than a plain one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct Chest {
     pub place: usize,
     pub number: u32,
     pub until: u64,
+    pub vault: bool,
+}
+
+/// How many plain chests a dungeon stands: one for each storey of each block. Its vaults' chests stand besides
+/// (`Finds::vaults`).
+pub(crate) fn dungeon_chests(dungeon: &Dungeon) -> usize {
+    dungeon.block_storeys.iter().sum()
 }
 
 /// A room's chests and containers: where its chests may stand, each with its group (a dungeon's room, one apiece in a
@@ -54,8 +68,12 @@ pub(crate) struct Finds {
     pub groups: Vec<usize>,
     pub holders: Vec<Holder>,
     pub patrol: bool,
-    /// How many chests stand at once: a patrol's by its places, a dungeon's one for each block.
+    /// How many chests stand at once: a patrol's by its places, a dungeon's plain ones by `dungeon_chests`; and the
+    /// rooms a dungeon's vaults' chests stand in, one each.
     pub count: usize,
+    pub vaults: Vec<usize>,
+    /// The rooms a dungeon's plain chests stand in first: its dead ends that hold nothing else.
+    pub firsts: Vec<usize>,
     pub chests: Vec<Chest>,
     /// The containers searchable now, each by its place among the holders with its number; and until when (a
     /// patrol's).
@@ -82,8 +100,9 @@ impl Finds {
         Finds { groups: (0..places.len()).collect(), places, holders, patrol: true, count, ..Finds::default() }
     }
 
-    /// A dungeon's: a chest in a room of each block (as many as have room for one), against a wall of a room past the
-    /// way in's but the end, never in a room of `kept` (a seal's); and its props that hold things, but in those rooms.
+    /// A dungeon's: a chest for each storey of each block (as many as have room for one), against a wall of a room past
+    /// the way in's but the end, never in a room of `kept` (a seal's), its dead ends first; a vault's chest in each of
+    /// its vaults; and its props that hold things, but in those rooms.
     pub(crate) fn of_dungeon(dungeon: &Dungeon, ground: &crate::dungeon_ground::DungeonGround, kept: &[usize]) -> Self {
         let mut places = Vec::new();
         let mut groups = Vec::new();
@@ -100,22 +119,48 @@ impl Finds {
             }
         }
         // A seal's room's containers are none of them searchable either: its floor is the seal's.
-        let in_kept = |[x, y]: [f64; 2]| {
-            let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
-            dungeon.room_at(cell).is_some_and(|room| kept.contains(&room))
-        };
+        let in_kept = |at: [f64; 3]| dungeon.room_at(dungeon.cell_at(at)).is_some_and(|room| kept.contains(&room));
         let holders = dungeon
             .props
             .iter()
-            .filter(|prop| dungeon::models::holder(prop.model).is_some() && !in_kept([prop.at[0], prop.at[1]]))
+            .filter(|prop| dungeon::models::holder(prop.model).is_some() && !in_kept(prop.at))
             .filter_map(|prop| {
                 let model = f64::from(prop.model);
-                prop.solid.map(|[west, north, east, south, top]| [west, north, east, south, 0.0, top, model])
+                prop.solid.map(|[west, north, east, south, top]| {
+                    let bottom = dungeon::storey_floor(dungeon.storey_under(top));
+                    [west, north, east, south, bottom, top, model]
+                })
             })
-            .filter(|held| beside(held).iter().any(|&spot| ground.clear_between(spot, spot, movement::TUNING.radius)))
+            .filter(|held| {
+                let storey = dungeon.storey_under(held[5]);
+                beside(held).iter().any(|&spot| ground.clear_between(spot, spot, movement::TUNING.radius, storey))
+            })
             .collect();
-        let count = dungeon.squares.len().min(places.len());
-        Finds { places, groups, holders, patrol: false, count, ..Finds::default() }
+        let count = dungeon_chests(dungeon).min(places.len());
+        let firsts = dungeon.chest_rooms.iter().copied().filter(|room| groups.contains(room)).collect();
+        let mut finds = Finds { places, groups, holders, patrol: false, count, firsts, ..Finds::default() };
+        for &vault in dungeon.vaults.iter().filter(|vault| !kept.contains(vault)) {
+            finds.stand_vault(vault);
+        }
+        finds
+    }
+
+    /// Stands a vault's chest in a dungeon's room, against one of its walls, drawn with the rest; a room it has no
+    /// place against a wall in stands none.
+    pub(crate) fn stand_vault(&mut self, room: usize) {
+        if !self.vaults.contains(&room) && self.groups.contains(&room) {
+            self.vaults.push(room);
+        }
+    }
+
+    /// What opening a chest by its number pays: a patrol's chest, a dungeon's, or a dungeon's vault's.
+    pub(crate) fn chest_find(&self, number: u32) -> Find {
+        let vault = self.chests.iter().any(|chest| chest.number == number && chest.vault);
+        match (self.patrol, vault) {
+            (true, _) => Find::Chest,
+            (false, false) => Find::DungeonChest,
+            (false, true) => Find::VaultChest,
+        }
     }
 
     /// Whether a find stands now by its number, and what it is: a chest's place, or a container's holder.
@@ -173,14 +218,7 @@ fn against_walls(dungeon: &Dungeon, ground: &crate::dungeon_ground::DungeonGroun
     }
     let [middle_x, middle_y] = dungeon.centre(cell);
     let rock = |side| dungeon.beside(cell, side).is_none_or(|next| dungeon.cells[next] == Cell::Rock);
-    let torch_on = |side| {
-        dungeon.torches.iter().any(|torch| {
-            let [x, y, _] = torch.at;
-            torch.wall == side
-                && (x / CELL_M).floor() == (middle_x / CELL_M).floor()
-                && (y / CELL_M).floor() == (middle_y / CELL_M).floor()
-        })
-    };
+    let torch_on = |side| dungeon.torches.iter().any(|torch| torch.wall == side && dungeon.cell_at(torch.at) == cell);
     let out = CELL_M / 2.0 - OFF_WALL_M - CHEST_HALF_DEEP_M;
     SIDES
         .into_iter()
@@ -193,7 +231,8 @@ fn against_walls(dungeon: &Dungeon, ground: &crate::dungeon_ground::DungeonGroun
             let (from, to) =
                 ([x - toward_y * along, y + toward_x * along], [x + toward_y * along, y - toward_x * along]);
             let facing = combat::sight::bearing([0.0, 0.0], [-toward_x, -toward_y]);
-            ground.clear_between(from, to, CHEST_HALF_DEEP_M).then_some([x, y, dungeon::FLOOR_M, facing])
+            let storey = dungeon.storey_of(cell);
+            ground.clear_between(from, to, CHEST_HALF_DEEP_M, storey).then_some([x, y, dungeon.floor_of(cell), facing])
         })
         .collect()
 }
@@ -262,7 +301,7 @@ impl Room {
     }
 
     /// Draws every find anew: in a patrol each chest at a place of its own, staggered so one moves on every
-    /// CHEST_TURN_TICKS over their count; in a dungeon each chest in a room of its own; and the searchable containers.
+    /// CHEST_TURN_TICKS over their count; in a dungeon by `draw_dungeon_chests`; and the searchable containers.
     pub(crate) fn draw_finds(&mut self) {
         self.finds.drawn = true;
         self.finds.chests.clear();
@@ -273,42 +312,59 @@ impl Room {
                 let place = self.free_place(None);
                 if let Some(place) = place {
                     let number = self.take_number();
-                    self.finds.chests.push(Chest { place, number, until });
+                    self.finds.chests.push(Chest { place, number, until, vault: false });
                 }
             }
         } else {
-            let dice = self.finds_dice();
-            let mut rooms: Vec<usize> = Vec::new();
-            for &room in &self.finds.groups {
-                if !rooms.contains(&room) {
-                    rooms.push(room);
-                }
-            }
-            // A room each while rooms last; then a room holds a second, SECOND_APART_M from every other.
-            for nth in 0..count as u32 {
-                let place = if rooms.is_empty() {
-                    let taken: Vec<[f64; 4]> =
-                        self.finds.chests.iter().map(|chest| self.finds.places[chest.place]).collect();
-                    let apart = |at: &usize| {
-                        let [x, y, ..] = self.finds.places[*at];
-                        taken.iter().all(|other| libm::hypot(other[0] - x, other[1] - y) >= SECOND_APART_M)
-                    };
-                    let free: Vec<usize> = (0..self.finds.places.len()).filter(apart).collect();
-                    let Some(&place) = free.get(dice.pick(Purpose::Find, 20 + nth, free.len())) else { break };
-                    place
-                } else {
-                    let room = rooms.swap_remove(dice.pick(Purpose::Find, 10 + nth, rooms.len()));
-                    let places: Vec<usize> =
-                        (0..self.finds.places.len()).filter(|&at| self.finds.groups[at] == room).collect();
-                    places[dice.pick(Purpose::Find, 20 + nth, places.len())]
-                };
-                let number = self.take_number();
-                self.finds.chests.push(Chest { place, number, until: u64::MAX });
-            }
+            self.draw_dungeon_chests();
         }
         // Drawn afresh, every container is new to everyone, as its chests are.
         self.finds.searchable.clear();
         self.draw_searchable();
+    }
+
+    /// Draws a dungeon's chests: each vault's in its room, then each plain one in a room of its own but the vaults'
+    /// while rooms last, its dead ends first, then a second in a room, SECOND_APART_M from every other.
+    fn draw_dungeon_chests(&mut self) {
+        let dice = self.finds_dice();
+        let in_room = |finds: &Finds, room: usize| -> Vec<usize> {
+            (0..finds.places.len()).filter(|&at| finds.groups[at] == room).collect()
+        };
+        let vaults = self.finds.vaults.clone();
+        for (nth, &room) in (0_u32..).zip(&vaults) {
+            let places = in_room(&self.finds, room);
+            let Some(&place) = places.get(dice.pick(Purpose::Find, VAULT_LANE + nth, places.len())) else { continue };
+            let number = self.take_number();
+            self.finds.chests.push(Chest { place, number, until: u64::MAX, vault: true });
+        }
+        let mut rooms: Vec<usize> = Vec::new();
+        for &room in &self.finds.groups {
+            if !rooms.contains(&room) && !vaults.contains(&room) {
+                rooms.push(room);
+            }
+        }
+        for nth in 0..self.finds.count as u32 {
+            let place = if rooms.is_empty() {
+                let taken: Vec<[f64; 4]> =
+                    self.finds.chests.iter().map(|chest| self.finds.places[chest.place]).collect();
+                let apart = |at: &usize| {
+                    let [x, y, ..] = self.finds.places[*at];
+                    let far = taken.iter().all(|other| libm::hypot(other[0] - x, other[1] - y) >= SECOND_APART_M);
+                    far && !vaults.contains(&self.finds.groups[*at])
+                };
+                let free: Vec<usize> = (0..self.finds.places.len()).filter(apart).collect();
+                let Some(&place) = free.get(dice.pick(Purpose::Find, PLACE_LANE + nth, free.len())) else { break };
+                place
+            } else {
+                let first = self.finds.firsts.iter().find_map(|room| rooms.iter().position(|found| found == room));
+                let room =
+                    rooms.swap_remove(first.unwrap_or_else(|| dice.pick(Purpose::Find, ROOM_LANE + nth, rooms.len())));
+                let places = in_room(&self.finds, room);
+                places[dice.pick(Purpose::Find, PLACE_LANE + nth, places.len())]
+            };
+            let number = self.take_number();
+            self.finds.chests.push(Chest { place, number, until: u64::MAX, vault: false });
+        }
     }
 
     /// A place no chest stands at, but `leaving`, drawn; `leaving` itself where no other is free.
@@ -328,7 +384,7 @@ impl Room {
         let leaving = self.finds.chests[slot].place;
         let place = self.free_place(Some(leaving)).unwrap_or(leaving);
         let number = self.take_number();
-        self.finds.chests[slot] = Chest { place, number, until: self.clock + CHEST_TURN_TICKS };
+        self.finds.chests[slot] = Chest { place, number, until: self.clock + CHEST_TURN_TICKS, vault: false };
     }
 
     /// Draws which containers are searchable: one in its share of them, at least one where any stands, at most
@@ -368,6 +424,24 @@ impl Room {
         let opened = self.opened_by(player);
         let unopened = self.finds.chests.iter().filter(|chest| !opened.contains(&chest.number));
         unopened.filter_map(|chest| self.finds.places.get(chest.place).map(|&place| (chest.number, place))).collect()
+    }
+
+    /// Whether the chest of this number is a vault's, the finer chest in gold.
+    #[must_use]
+    pub fn vault_chest(&self, number: u32) -> bool {
+        self.finds.chest_find(number) == Find::VaultChest
+    }
+
+    /// A dungeon's chests a player has opened and how many it stands, vaults' among them; none of none in a patrol,
+    /// whose chests move on.
+    #[must_use]
+    pub fn chests_counted(&self, player: PlayerId) -> (usize, usize) {
+        if self.finds.patrol {
+            return (0, 0);
+        }
+        let opened = self.opened_by(player);
+        let open = self.finds.chests.iter().filter(|chest| opened.contains(&chest.number)).count();
+        (open, self.finds.chests.len())
     }
 
     /// The containers searchable that a player has not searched: each its number and its holder.

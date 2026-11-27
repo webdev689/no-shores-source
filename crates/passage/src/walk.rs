@@ -40,9 +40,10 @@ impl Walk {
     }
 
     /// Under ground: round the dungeon's rock, its own solids and `extra` (each min x, min y, max x, max y, top), on
-    /// its one floor.
+    /// its one floor. A dungeon of more storeys has no one plane to walk, so it is refused.
     #[must_use]
     pub fn under(dungeon: &Dungeon, extra: &[[f64; 5]]) -> Self {
+        assert_eq!(dungeon.storeys, 1, "a walk under ground maps one storey");
         let mut walk = Walk::over([0.0, 0.0], [dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M]);
         for (cell, kind) in dungeon.cells.iter().enumerate() {
             if *kind == Cell::Rock {
@@ -50,8 +51,9 @@ impl Walk {
                 walk.block([x, y, x + CELL_M, y + CELL_M]);
             }
         }
-        for solid in dungeon.boxes().iter().chain(extra) {
-            walk.block([solid[0], solid[1], solid[2], solid[3]]);
+        let boxes = dungeon.boxes().into_iter().map(|solid| [solid[0], solid[1], solid[2], solid[3]]);
+        for footprint in boxes.chain(extra.iter().map(|solid| [solid[0], solid[1], solid[2], solid[3]])) {
+            walk.block(footprint);
         }
         walk
     }

@@ -63,6 +63,8 @@ export interface SkyNow {
   /** The way the sails' wind blows at the eye, radians clockwise from north (as a swell's bearing runs): the wind the
    *  rules sail a ship in there. Null until the law has come. */
   readonly sails: number | null;
+  /** How far a lookout who sees `rangeM` by day sees a ship under this sky, `lit` or dark (`SkyLaw.nightSight`). */
+  readonly sight: (rangeM: number, lit: boolean) => number;
 }
 
 /** The page's one view of the sky. */
@@ -76,6 +78,7 @@ export const SKY_NOW: { current: SkyNow } = {
     strikes: [],
     sails: null,
     held: [1, 1, 1],
+    sight: (rangeM) => rangeM,
   },
 };
 
@@ -189,7 +192,8 @@ export class SkyDriver {
     this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)], this.shelterPlace(eye));
     const sails = windBearing(law.seaWind(eye[0], eye[1], worldS));
     const held = heldLight(look, lamps);
-    SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes, sails, held };
+    const sight = (rangeM: number, lit: boolean) => law.nightSight(rangeM, reading.daylight, lit);
+    SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes, sails, held, sight };
     return SKY_NOW.current;
   }
 
@@ -208,7 +212,8 @@ export class SkyDriver {
     const look = lookOf(reading, worldS, flashOfAll(strikes, worldS, eye));
     this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)], this.shelterPlace(eye));
     const sails = windBearing(told.weather.wind);
-    SKY_NOW.current = { reading, look, climate, eye, worldS, strikes, sails, held: heldLight(look, lamps) };
+    const sight = (rangeM: number, lit: boolean) => law.nightSight(rangeM, reading.daylight, lit);
+    SKY_NOW.current = { reading, look, climate, eye, worldS, strikes, sails, held: heldLight(look, lamps), sight };
     return SKY_NOW.current;
   }
 

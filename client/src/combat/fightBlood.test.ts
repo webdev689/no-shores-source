@@ -59,3 +59,14 @@ test("blood's ray keeps a block at the very edge of its reach, passes one it sta
   // Thrown straight down along the crate's own side, at its edge: it meets the crate's top there.
   assert.deepEqual(ray([2, 0, 2], [0, 0, -1], 3), { distance: 1, normal: [0, 0, 1] });
 });
+
+test('blood thrown up a flight meets its slope, the ground asked at the height the throw passes', () => {
+  // A flight rising north from -8 at y 0, 0.625 m a metre, felt as a dungeon's is: only within a step over the height
+  // asked, from feet at its foot.
+  const flight = (x: number, y: number, z = -8) => {
+    const slope = -8 - y * 0.625;
+    return slope <= Math.max(z, -8) + 0.5 ? slope : 0;
+  };
+  const hit = surfacesOf([], flight)([0, 0, -6.4], [0, -1, 0], 6);
+  assert.ok(hit && Math.abs(hit.distance - 2.56) < 0.06, `on the slope: ${hit?.distance}`);
+});

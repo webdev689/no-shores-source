@@ -38,7 +38,10 @@
     "floor.b",
     "sconce",
     "portal",
-    "exit"
+    "exit",
+    "stair.head",
+    "stair.side",
+    "balustrade"
   ],
   "styles": {
     "crypt": {
@@ -95,7 +98,8 @@
       "ceiling": "beams",
       "floor": "scree",
       "features": 2,
-      "leastCeiling": 3.2
+      "leastCeiling": 3.2,
+      "leaves": ["stair.head", "stair.side", "balustrade"]
     },
     "barrow": {
       "wallEvery": 2,
@@ -103,7 +107,8 @@
       "ceiling": "apex",
       "floor": "slabs",
       "features": 2,
-      "leastCeiling": 3.6
+      "leastCeiling": 3.6,
+      "leaves": ["stair.head", "stair.side", "balustrade"]
     }
   },
   "passage": {

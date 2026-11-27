@@ -25,6 +25,7 @@ import { HULL_NAMES, hullPaint } from '../../ships/hulls.ts';
 import { ShipView } from '../../ships/shipView.ts';
 import { castOf, scenesOf } from '../../speech/cast.ts';
 import { DialogueBox } from '../../speech/dialogue.ts';
+import { continueCap } from '../hudParts.ts';
 import { Overheads } from '../../speech/overheads.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
 import type { FigureView } from '../figureView.ts';
@@ -136,7 +137,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     // The screen takes the page's touches for the game until it is removed.
     const screen = new Screen(stack, game.canvas);
     took(() => screen.remove());
-    const dialogue = new DialogueBox(stack, worldOutput);
+    const dialogue = new DialogueBox(stack, worldOutput, continueCap);
     took(() => dialogue.remove());
     const overheads = new Overheads(stack, worldOutput);
     took(() => overheads.remove());

@@ -148,7 +148,16 @@ export type CityPlan = {
   readonly pieces?: readonly Piece[];
   /** Round ground kept clear of the wild: a camp's floor, a landing's shore, an arena. */
   readonly clearings?: readonly { readonly at: readonly [number, number]; readonly radius: number }[];
+  /** The lights the city burns at night (the city crate's `lights`): Overlook's alone, never a ruin's. */
+  readonly lights?: readonly CityLight[];
 };
+
+/** A light a city burns at night (the city crate's `lights::Light`): where its post stands on the ground (east,
+ *  south, up), and its kind: a street lamp, a lantern on the quay or a pier, or the harbour mouth's light. */
+export interface CityLight {
+  readonly at: readonly [number, number, number];
+  readonly kind: 'lamp' | 'lantern' | 'mouth';
+}
 
 /** The climate and season a city's pictures are drawn in. */
 export type CityClimate = { readonly climate: Climate; readonly season: Season };

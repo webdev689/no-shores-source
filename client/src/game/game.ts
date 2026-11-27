@@ -19,6 +19,7 @@ import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
 import { arriving, type Flow, type Happening, next, onTheSea } from './flow.ts';
 import { keepPlace, placeKept, placeNow, resume } from './relog.ts';
+import { lieOffRegionLeft, zoneLeft } from './regionLeft.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { enterBreachRun, enterDungeon } from './footEntries.ts';
 import type { TripGame } from './dungeonTrips.ts';
@@ -35,6 +36,7 @@ import { islesDrawing } from './islesDrawing.ts';
 import { SeaLandings } from './seaLandings.ts';
 import { seaLayer } from './seaScreen.ts';
 import { islandScreen } from './islandPanel.ts';
+import { guildLanded } from './guild/guildHeld.ts';
 import { ashoreOn, ashoreWords } from './isleVisit.ts';
 import { isleMarksOf } from './mapMarks.ts';
 import { FootView } from './footView.ts';
@@ -53,7 +55,7 @@ import { arrivalFacing, FIRST_NODE } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { inspectAgainst } from './social/social.ts';
 import { rejoinOnGuild } from './footPlace.ts';
-import { listenForControls } from './gameKeys.ts';
+import { clickedOnLine, listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
 import { companyPlaces, nodeOfRoom, seaRoomName, startedAtSea } from './rooms.ts';
 import { notYet } from './companyJoin.ts';
@@ -68,7 +70,7 @@ import { arrivalAt, type NodeInfo, portsOf } from './worldData.ts';
 import { startTravel } from './travel.ts';
 import { Drain } from './drain.ts';
 import { returnToShip } from './toShip.ts';
-import { speaking } from '../speech/dialogue.ts';
+import { dialogueWaits, speaking } from '../speech/dialogue.ts';
 import { obtainedLayer } from './obtained.ts';
 
 /**
@@ -84,7 +86,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const { hud, stack, ui, story, rooms, link, session, world, landTexts, start, shown, roomModule, land } = boot;
   const { scene, shipModels, figureView, forge, firstPerson, store, sloop, movement, drawersOn, terrainFor } = boot;
   const { builtHulls: hulls } = boot;
-  const dungeons = new DungeonDrawers(gpu, figureView, boot.cityAssets, boot.biomeOf);
+  const dungeons = new DungeonDrawers(gpu, figureView, boot.cityAssets, boot.biomeOf, canvas);
   const { continents } = world;
   const input = new Input(canvas, () => ui.typing);
   const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);
@@ -212,10 +214,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   );
 
   /** Leaves wherever the player was: death's grey and the story's last moment go with them. */
-  const leaveHere = () => {
-    drain.toward(false);
-    playing.after.leave();
-  };
+  const leaveHere = () => (drain.toward(false), playing.after.leave());
   /** Leaves wherever the player was for the place `entering` stands them in. */
   const goInto = async (entering: () => Promise<Foot>) => {
     leaveHere();
@@ -234,6 +233,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
 
   const goSea = async (start?: { readonly anchorage: Point2; readonly heading: number }) => {
     leaveHere();
+    const left = zoneLeft(playing.foot);
     playing.foot?.leave();
     playing.foot = null;
     scene.sky.shelterUnder([]);
@@ -260,6 +260,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       playing.sea.facts = facts;
       playing.seaWord = new SeaWord(ports, facts);
     }
+    lieOffRegionLeft(playing.sea, left);
     playing.sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
     void playing.helmMap.made;
@@ -533,6 +534,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const island = islandScreen({
     ...{ landmass: () => playing.landmass, sea: () => playing.sea, facts: screens.facts },
     named: (id) => world.nodes.find((node) => node.id === id)?.name ?? id,
+    ours: () => guildLanded()?.sites ?? [],
     chosen: () => (playing.flow.mode === 'landing' ? playing.flow.chosen : null),
     choose: (node) => change({ kind: 'choose', node }),
     back: () => (playing.sea?.view.backToSea(), change({ kind: 'back' })),
@@ -552,12 +554,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
     ...{ playing, input, ui, hud, story, retry, change, respawn, landings, stopOrResume, openMap },
-    ...{ manage, leaveHelm, takeHelm, goThrough, landAt: island.act },
+    ...{ manage, leaveHelm, takeHelm, goThrough, landAt: island.act, islandBack: island.back },
   });
   canvas.addEventListener('click', () => {
     // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open
     // the pointer stays free, though the click comes before the interface has heard where it is.
-    if (ui.takesPointer || gearScreenOpen()) return;
+    if (ui.takesPointer || gearScreenOpen() || clickedOnLine(input.locked)) return;
     if (playing.flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
     const { flow, foot, sea, helmMap } = playing;
     const onFoot = flow.mode === 'foot' && !helmMap.looking && foot?.standing.kind !== 'dead';
@@ -567,7 +569,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   seaPointer(canvas, input, {
     // On a struck ship's deck the pointer and the wheel are the fight's on foot.
     atSea: () => playing.flow.mode === 'sea' && !playing.sea?.boarding.onDeck,
-    overInterface: () => ui.takesPointer,
+    overInterface: () => ui.takesPointer || dialogueWaits(),
     sea: () => playing.sea,
     map: () => playing.helmMap.held,
     clicked: (pick) => landings.click(pick),
@@ -589,7 +591,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sailed.waterline },
       ...{ builtShip: sailed.build, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps, docked: () => landings.docked },
-      ...{ world, music, ambience, dungeons, passages, pieces },
+      ...{ world, music, ambience, dungeons, passages, pieces, shipLights: boot.shipLights },
       heed: (here) => heed(here, shutOut, playing.flow.mode === 'foot'),
     },
     playing,

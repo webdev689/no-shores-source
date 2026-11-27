@@ -14,8 +14,13 @@ code:
 (steps 1 to 5, 7 and 8), the Rust tests, shared over two runners with nextest (`rust 1/2` and `rust 2/2`), and the
 page's tests with the WebAssembly and the files the Rust tests write for them. A push to `main` whose merge is code its pull request's check passed is not checked again ([[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]). On
 `main` CI publishes the client to GitHub Pages and the site once the check passes and the rooms have deployed or had
-nothing to deploy, and deploys the Discord bot. Each part, like the whole check, stops at its first failing step, in
-the order a failure is cheapest to read:
+nothing to deploy, and deploys the Discord bot. The repo checks (8) run first, as they take a second, in the whole
+check and in `rest`. Then each part, like the whole check, stops at its first failing step, in the order a failure is
+cheapest to read; the Rust tests run to their end, so one run lists every failing test. The check runs in the
+checkout git names from where it starts, and refuses to run where `CARGO_TARGET_DIR` points outside that checkout or
+the binary was built from another one. Its last line gives the verdict, the commit and whether the tree held
+uncommitted changes: `passed: checked <commit>, nothing uncommitted`, or `FAILED (<steps>): checked <commit> ...`, with
+`; the tree changed during the check` when files changed while it ran.
 
 1. **messages**: the Rust and the TypeScript for every network message, made from the schema with `flatc`
    (`npm run schema`), into `generated/`. Its first run on a machine installs the pinned `flatc`.

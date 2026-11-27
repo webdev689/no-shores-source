@@ -57,3 +57,10 @@ test("a ball's hole and an arrow in the ground last 8 s, the 24 newest kept; a s
   marks.mesh(out, [0, 5, 2]);
   assert.equal(out.length, 0, 'its dust settled too');
 });
+
+test('where there is no sea (a dungeon), ground under 0 is ground, and a line goes on under 0 to it', () => {
+  const hall = () => -8;
+  assert.deepEqual(surfaceAt([0, 0, -8], [], [], hall, false), { surface: 'ground' });
+  assert.equal(surfaceAt([0, 0, 0], [], [], hall, false), null, 'no water at 0 over the hall');
+  assert.deepEqual(overSea([0, 0, 2], [0, -4, -8], hall, false), [0, -4, -8]);
+});
