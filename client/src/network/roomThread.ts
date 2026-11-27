@@ -169,6 +169,16 @@ export class RoomThread implements RoomLink {
     return RoomThread.open(module, { how: 'passage', ask }, snapshot, gear);
   }
 
+  /** A Breach's run from its ask, as `LocalRoom.openBreach`. */
+  static openBreach(
+    module: WebAssembly.Module,
+    ask: string,
+    snapshot: (snapshot: Snapshot) => void,
+    gear?: (gear: GearMessage) => void,
+  ): Promise<RoomThread> {
+    return RoomThread.open(module, { how: 'breach', ask }, snapshot, gear);
+  }
+
   /** The sea round a layout's continents, as `LocalRoom.openSea`, the player's gear going to `gear`. */
   static openSea(
     module: WebAssembly.Module,

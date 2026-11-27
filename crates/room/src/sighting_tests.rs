@@ -10,6 +10,14 @@ fn sight_is_half_a_minute_of_closing_head_on_and_never_under_five_kilometres() {
 }
 
 #[test]
+fn a_ship_comes_out_half_a_minute_of_closing_head_on_off_and_never_under_one_kilometre() {
+    assert_eq!(come_out_for(0.0, 1.0), COME_OUT_LEAST_M, "at rest counts as 1");
+    assert_eq!(come_out_for(2.0, 1.0), COME_OUT_LEAST_M);
+    assert!((come_out_for(5.0, 1.0) - 2_160.0).abs() < 1e-9, "nearer than its sight");
+    assert!((come_out_for(60.0, 1.0) - sight_for(60.0, 1.0)).abs() < 1e-9, "its sight at speed");
+}
+
+#[test]
 fn each_holder_sends_its_faction_and_home_waters_none() {
     assert_eq!(faction_of(Holder::Home), None);
     assert_eq!(faction_of(Holder::GreyTithe), Some(GREY_TITHE));
