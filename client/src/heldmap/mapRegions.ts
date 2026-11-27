@@ -175,7 +175,7 @@ export function middleOf(outline: readonly Point2[]): Point2 {
  *  its name stands (ink units). */
 export class MapRegions {
   all: readonly MapRegion[] = [];
-  /** The islands' names the owner has given, by their continent's id: an island with none has its sea locked. */
+  /** The islands' names, by their continent's id: an island with none has its sea locked. */
   names: Readonly<Record<string, string>> = {};
   lit: { readonly region: MapRegion; readonly x: number; readonly y: number } | null = null;
   /** The map's view and place the name was stood by. */

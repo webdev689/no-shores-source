@@ -1,4 +1,4 @@
-// The owner's eighth beat: in first person, flat on the deck, the eyes blinking, the view swimming, the ears ringing;
+// The story's eighth beat: in first person, flat on the deck, the eyes blinking, the view swimming, the ears ringing;
 // rising to the feet and looking round at two ships jammed into one and burning; then the camera eases out of the eyes
 // to over the player's shoulder, where their control begins, their sword and shield gone from them.
 import { Cues } from '../../cinema/cues.ts';

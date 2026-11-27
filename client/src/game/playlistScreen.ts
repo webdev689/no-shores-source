@@ -1,4 +1,4 @@
-// The Playlist screen its tile over a living port's island opens, after the owner's reference, Destiny's Vanguard screen:
+// The Playlist screen its tile over a living port's island opens, after Destiny's Vanguard screen:
 // its entries as crests on a dark chart (`playlistMap.ts`), the chosen one's card beside them or under them
 // (`playlistParts.ts`), and a footer bar with Find a Company or Stop finding (a Breach's Reset checkpoints), Launch
 // and Close.

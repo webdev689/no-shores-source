@@ -75,7 +75,7 @@ function meadowPipelines(gpu: Gpu): MeadowPipelines {
 }
 
 /**
- * The meadow round the eye: the owner's tufts, flowers and bushes over the grass, drawn with WebGPU into the land's
+ * The meadow round the eye: tufts, flowers and bushes over the grass, drawn with WebGPU into the land's
  * pass after the plants. Each frame: `update` with the camera and the ground the plants grow on, then `drawInto`.
  */
 export class MeadowView {
@@ -121,7 +121,7 @@ export class MeadowView {
         level.height,
       ]),
     );
-    // The owner's pixels, never blurred: each tuft reads one texel of one level.
+    // The sprites' pixels, never blurred: each tuft reads one texel of one level.
     const nearest = device.createSampler({ magFilter: 'nearest', minFilter: 'nearest', mipmapFilter: 'nearest' });
     this.bind = device.createBindGroup({
       layout: this.pipelines.layout,

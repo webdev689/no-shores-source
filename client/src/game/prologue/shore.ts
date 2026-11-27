@@ -1,4 +1,4 @@
-// The owner's thirteenth beat: the player wakes on Saltmere's shore in first person, gulls overhead, the sea at their
+// The story's thirteenth beat: the player wakes on Saltmere's shore in first person, gulls overhead, the sea at their
 // feet; a stranger comes down the beach, kneels beside them and speaks, and holds out her hand. The player takes it,
 // gets up, and the two walk up the shore toward Overlook, until the picture goes to black and the game takes them to
 // its social space.

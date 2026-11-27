@@ -3,7 +3,7 @@
 //! over the ground it brings them to, lets each down in turn, built from the feet up as a player arriving is, and
 //! flies on. The Lattice's come under its crystal: a crown of it forms in the air, each foe forms under it, and it
 //! breaks. A Boss's called foes arrive where they stand. A foe arriving neither thinks, steps nor hears, no foe sees
-//! it, and no blow, shot or cast touches it, until it has landed: the owner's "some enemies are already on the
+//! it, and no blow, shot or cast touches it, until it has landed: "some enemies are already on the
 //! ground, while others come in from a dropship or spawn effect".
 
 use crate::{Floor, Room};

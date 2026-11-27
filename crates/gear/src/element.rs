@@ -63,7 +63,7 @@ pub fn rolled(kind: Kind, rarity: Rarity, dice: &Dice) -> Option<Element> {
 }
 
 /// A Forged weapon's element (a Breach's weapon won at Hard): always one, chosen evenly as a rolled weapon's is; a
-/// Breach's weapon won at Normal carries none, as the owner decided.
+/// Breach's weapon won at Normal carries none.
 #[must_use]
 pub fn forged(kind: Kind, dice: &Dice) -> Option<Element> {
     if !kind.weapon() {

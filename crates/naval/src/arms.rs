@@ -76,7 +76,7 @@ impl Arms {
 /// The guns a side the Sloop carries: every hull's broadside weighs the Sloop's.
 pub const SLOOP_GUNS_A_SIDE: f64 = 3.0;
 
-/// The owner's Sloop, as `content/ships/ships.json` has it (a test holds each hull's arms to it).
+/// The Sloop, as `content/ships/ships.json` has it (a test holds each hull's arms to it).
 pub const SLOOP_ARMS: Arms = Arms {
     port: &[[4.7229, -3.2218, 2.3844], [1.5322, -3.2218, 2.3595], [-1.7742, -3.1824, 2.3565]],
     starboard: &[[4.7023, 3.3269, 2.3586], [1.4848, 3.3269, 2.3456], [-1.797, 3.3663, 2.3471]],

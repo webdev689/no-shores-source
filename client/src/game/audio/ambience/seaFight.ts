@@ -1,5 +1,5 @@
 // The sea fight's sounds, read from the fight's own events: a gun fired, a ball striking a ship, a ball falling in the
-// sea, and a ship breaking up as it goes down, each heard where it happens. Each is the owner's Freesound pick and
+// sea, and a ship breaking up as it goes down, each heard where it happens. Each is picked from Freesound and
 // plays through the sea's soundscape; until a pick has come, the fight is as silent as it always was.
 import type { FightEvent, FightView, Point } from '../../../rules/fightRules.ts';
 

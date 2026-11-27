@@ -1,9 +1,9 @@
 // Every word the website says, by its page and name (`world.title`); a page names them and the build fills them in.
-// The premise is the owner's, word for word, split into passages and never reworded. Every other line says only what
+// The premise is kept word for word, split into passages and never reworded. Every other line says only what
 // the game's decisions say or what the game has built, and tells a newcomer plainly what they will do. The lore is
 // shown, not explained.
 
-/** The owner's premise, passage by passage, as the owner wrote it. */
+/** The premise, passage by passage, as it was written. */
 const PREMISE = {
   'premise.opening': 'An age without history. A world without certainty.',
   'premise.expanse': 'Beyond the known waters lies The Pale Expanse, a vast ocean stretching between nine continents.',
@@ -134,7 +134,7 @@ const HOME = {
     'Talk with other captains, find a company for your next run and follow the game as it grows, on the No Shores Discord.',
 } as const;
 
-// The World: the owner's premise, told as it was written, under headings of its own places.
+// The World: the premise, told as it was written, under headings of its own places.
 const WORLD = {
   'world.title': 'The World',
   'world.description':

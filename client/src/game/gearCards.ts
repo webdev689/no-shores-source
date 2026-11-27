@@ -71,7 +71,7 @@ export interface Trait {
   /** What a perk that gives and takes gives, and costs, apart; empty for any other. */
   readonly gives?: string;
   readonly takes?: string;
-  /** Its short line, and its cost's, as a card shows it beside its glyph (the owner's "a small perk description"). */
+  /** Its short line, and its cost's, as a card shows it beside its glyph. */
   readonly short?: string;
   readonly shortTakes?: string;
   /** A word on where it stands: an Atheric's intrinsic always on, its own node not yet chosen. */
@@ -253,7 +253,7 @@ const cell = (key: string, glyph: Glyph, name: string, fields: Partial<Cell> = {
   ...fields,
 });
 
-/** The inventory: Aurem its one currency, at the owner's word; every other thing a stack, shown only while held. */
+/** The inventory: Aurem its one currency; every other thing a stack, shown only while held. */
 export function inventoryPageOf(state: GearState): InventoryPage {
   const currencies = [{ glyph: 'aurem' as const, name: 'Aurem', count: state.aurem }];
   const stocks = STOCK_GLYPHS.map((glyph, index) =>

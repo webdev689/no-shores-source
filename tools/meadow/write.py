@@ -1,6 +1,6 @@
-"""Writes the owner's five meadow sprites into the client as pixel pictures: `python3 -I tools/meadow/write.py <dir>`.
+"""Writes the five meadow sprites into the client as pixel pictures: `python3 -I tools/meadow/write.py <dir>`.
 
-The directory holds the owner's PNGs as DFO keeps them (`src/assets/grass/source/` in DFO Online): tuft-tall,
+The directory holds the PNGs as DFO keeps them (`src/assets/grass/source/` in DFO Online): tuft-tall,
 tuft-short, flowers and tuft-dry, 32 by 32, and bush, 64 by 64, each in colours of its own and every pixel drawn or
 not, none between. They stay out of git; what the game draws is this file's output,
 `client/src/nature/meadowArt.ts`, each sprite its rows top row first and its colours as each is first met, lettered
@@ -47,7 +47,7 @@ def main():
         sys.exit('usage: write.py <the directory of the owner\'s meadow PNGs>')
     folder = Path(sys.argv[1])
     lines = [
-        "// The owner's meadow sprites as pixel pictures, written by `tools/meadow/write.py` from the owner's PNGs: a tall",
+        '// The meadow sprites as pixel pictures, written by `tools/meadow/write.py` from their PNGs: a tall',
         '// tuft, the same tuft cut short, a tuft of flowers and a dry tuft, 32 by 32, and a bush, 64 by 64, in the',
         "// meadow's order. Write it again rather than editing it.",
         '',
@@ -63,7 +63,7 @@ def main():
         '  readonly picture: MeadowPicture;',
         '}',
         '',
-        "/** The owner's five, in the atlas's order. */",
+        "/** The five sprites, in the atlas's order. */",
         'export const MEADOW_SPRITES: readonly MeadowSprite[] = [',
     ]
     for name, file in SPRITES:

@@ -1,7 +1,7 @@
 //! The land for the browser. JavaScript writes a request into memory this module reserves and reads back a view of a
 //! landmass: a JSON header, then its ground, lake surfaces, distances from the coast and heights carried over the
 //! coast as little-endian 32-bit floats, one a cell. The land
-//! stays in the land crate; the open landmass stays here between calls, so the owner's strokes land on it live, with
+//! stays in the land crate; the open landmass stays here between calls, so the editor's strokes land on it live, with
 //! its city settled on it, and a ship sails over it (`sail`).
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 

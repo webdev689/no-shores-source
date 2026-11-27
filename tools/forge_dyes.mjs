@@ -1,4 +1,4 @@
-// Reads Daggerfall's palette once into the forge's dye table, as the owner chose Daggerfall's exact colours: the
+// Reads Daggerfall's palette once into the forge's dye table, Daggerfall's exact colours: the
 // 256 colours a frame is snapped to, and for each dye the 16 colours the forge's greys are laid on, darkest first.
 // Cloth takes a clothing dye's run of the palette; metal takes its metal's run. Daggerfall's files never enter git.
 //

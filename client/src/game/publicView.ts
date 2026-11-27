@@ -330,7 +330,7 @@ export class PublicView {
           .map((mark) => ({ at: mark.at, share: mark.health, struck: moments.struck.has(mark.id) }))
       : [];
     const waiting = chests.filter((chest) => chest.opened === null);
-    // The panel and the tracker's steps show only on the event's ground (the owner's call); the map marks it elsewhere.
+    // The panel and the tracker's steps show only on the event's ground; the map marks it elsewhere.
     const here = inEvent(event, bodies.feet);
     const shown: PublicShown | null = event && {
       banner: here ? this.bannerOf(event, chests.length > 0, bodies, moments) : null,

@@ -1,4 +1,4 @@
-"""The Lattice's armour, in Daedric's place: a suit of crystal plate after the owner's reference, built from the
+"""The Lattice's armour, in Daedric's place: a suit of crystal plate after a reference, built from the
 forge's own armour kit so it is shaded as its sets are, graded red, purple in its shadows, its edges lit purple,
 strapped with leather over a dark suit. A tall closed helm crested with blades, a dark V across its eyes; broad
 pauldrons flared and jagged; a keeled breastplate under a high collar; a studded belt, a long plate hung in front;

@@ -52,7 +52,7 @@ export interface Beat {
  *  the fade in. */
 export const SCENE = { outS: 2, blackS: 1, inS: 2.5 } as const;
 
-/** The story's beats in order, as the owner set them: each name is where a page under development may start
+/** The story's beats in order: each name is where a page under development may start
  *  (`?prologue=<name>`). */
 export const BEATS = [
   'intro',

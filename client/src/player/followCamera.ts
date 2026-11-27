@@ -1,4 +1,4 @@
-// Following the company while fallen, as the owner asked for the Breach: while the player lies down or waits to stand
+// Following the company while fallen: while the player lies down or waits to stand
 // again in a Breach's run, or at its gate while their company holds it, once their own fall has played, the camera
 // stands over a living member of their company (every other player in a run is one), in third person, turned as the
 // player turns it; Follow goes to the next. Standing again, it is the player's own.

@@ -1,4 +1,4 @@
-// The Playlist's map, after the owner's reference, Destiny's Vanguard screen: a dark chart under the entries, each a
+// The Playlist's map, after Destiny's Vanguard screen: a dark chart under the entries, each a
 // crest (`playlistCrest.ts`) standing where `SPOTS` puts it on a dial of its own, joined by faint lines, the week's
 // dungeons below their playlists and a Breach's Hard below its Normal between them.
 import type { PlaylistKind } from './playlistWords.ts';

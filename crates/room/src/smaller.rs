@@ -1,4 +1,4 @@
-//! The smaller groups a patrol stands beside its bands, after the owner's "enemies should come in varied groups in
+//! The smaller groups a patrol stands beside its bands, after "enemies should come in varied groups in
 //! patrol ... The largest groups being what we have now, and then smaller varied groups": a sentry, a scout, a
 //! Collector and his Runner, a shield and a bow, two bows on watch, and a Collector's round. A patrol's square stands
 //! two or three of them beside its bands. A site's group is a band: a smaller one up a run's ledge, facing away, is

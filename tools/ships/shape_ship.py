@@ -1,4 +1,4 @@
-"""Shapes the owner's Sloop: her size, and a gap and steps down from her quarterdeck.
+"""Shapes the Sloop: her size, and a gap and steps down from her quarterdeck.
 
     <python with bpy> tools/ships/shape_ship.py Sloop.blend Shaped.blend --scale <times>
 
@@ -13,10 +13,10 @@ import bpy  # noqa: I001 - Blender's own modules load once bpy has
 import bmesh
 from mathutils import Matrix, Vector
 
-# The scene's own record of how many times the owner's model she stands, and whether her quarterdeck is opened.
+# The scene's own record of how many times the original model she stands, and whether her quarterdeck is opened.
 SCALE_KEY = 'overlook_scale'
 STEPS_KEY = 'overlook_steps'
-# Her quarterdeck as the owner modelled it, in the model's frame (x her bow, y her port, z up) at its own size: the
+# Her quarterdeck as modelled, in the model's frame (x her bow, y her port, z up) at its own size: the
 # front of its planks, how far out its two front corners reach either side of her hatch, its planks' height and her
 # deck's, and the depth of the rail along its front.
 FRONT_X = -3.179
@@ -26,14 +26,14 @@ DECK_Z = 1.0
 RAIL_X = (-0.1033, 0.03)
 # The rail is cut from just over her planks to over its top.
 CUT_Z = (0.01, 0.41)
-# Steps down from her planks to her deck, each this deep, at the owner's size.
+# Steps down from her planks to her deck, each this deep, at the original model's size.
 STEPS = 4
 STEP_X = 0.0833
 NEAR = 1e-5
 
 
 def size(times):
-    """Brings the model to `times` the owner's model, about her origin, from the scale it is at."""
+    """Brings the model to `times` the original model, about her origin, from the scale it is at."""
     scene = bpy.context.scene
     grow = times / scene.get(SCALE_KEY, 1.0)
     if abs(grow - 1.0) > 1e-9:

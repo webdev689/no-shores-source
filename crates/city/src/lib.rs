@@ -100,7 +100,7 @@ pub struct Plan {
     pub wrecks: Vec<ruins::Wreck>,
 }
 
-/// Plans a city on the land as the generator and the owner left it, before any city's pads. Fails for a motif the
+/// Plans a city on the land as the generator and the hand edits left it, before any city's pads. Fails for a motif the
 /// planner does not know, or a site the sea surrounds.
 pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, String> {
     plan_as(city, ground, blocks, ruins::is_ruined(&city.id))

@@ -1,4 +1,4 @@
-"""The Bulwark's own moves for the Sprite Forge. After the owner's own in project-final: "irregular snap-then-plant
+"""The Bulwark's own moves for the Sprite Forge. After their design in project-final: "irregular snap-then-plant
 footfalls with uneven strides (some long, the odd stunted one), under a constant low tremor of the spine, occasional
 deep shudders, a slow unsettling sway/cock of the crystal head on its own, and a forward hunch"; the head "snaps to a
 new sway/cock/tilt and holds". Shielded, it walks and stands with its shield arm across its front and discharges from

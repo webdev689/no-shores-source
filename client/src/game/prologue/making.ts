@@ -1,4 +1,4 @@
-// The owner's third beat, at the Brig's helm in the storm: the player creates their account, then makes themselves
+// The story's third beat, at the Brig's helm in the storm: the player creates their account, then makes themselves
 // (body, race, skin, hair), watching their whole figure in armour with sword and shield change as they choose, turning
 // on the spot at a press. The storm goes on round them, set at the beat's start as the storm before
 // leaves it, so a page started here plays as the story does.

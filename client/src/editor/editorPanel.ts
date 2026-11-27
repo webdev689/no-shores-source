@@ -68,7 +68,7 @@ export interface PanelHandlers {
   clearReferences(): void;
   save(): void;
   download(): void;
-  /** A layout file's words, opened by the owner. */
+  /** A layout file's words, opened by hand. */
   open(text: string): void;
   goTo(x: number, y: number): void;
 }

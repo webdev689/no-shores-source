@@ -34,7 +34,7 @@ const SWING_BASE_FRAME = (3 * (115 - 50)) / 980;
 const SWING_FRAME_MIN = 0.09;
 const SWING_FRAME_MAX = 0.4;
 const TWO_HANDED = 1.06;
-/** At the owner's word every swing takes three quarters of the law's time, as the combat crate's `SWING_PACE`. */
+/** Every swing takes three quarters of the law's time, as the combat crate's `SWING_PACE`. */
 const SWING_PACE = 0.75;
 /** How quickly each kind comes round apart from its weight, a sword the measure. */
 const HANDLING: Readonly<Record<WeaponKind, number>> = {

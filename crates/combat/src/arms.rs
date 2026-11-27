@@ -83,7 +83,7 @@ pub const fn weapon(class: WeaponClass) -> Weapon {
 
 /// DFO's swing law at an average speed: one strike frame lasts 3 x (115 - 50) / 980 seconds, times the weapon's
 /// handling and a further 1.06 for a two-handed one, held between 0.09 and 0.4. A swing is five frames; its blow
-/// lands as the third begins. At the owner's word every swing then takes three quarters of that (`SWING_PACE`).
+/// lands as the third begins. Every swing then takes three quarters of that (`SWING_PACE`).
 const SWING_FRAME: f64 = 3.0 * (115.0 - 50.0) / 980.0;
 pub const SWING_PACE: f64 = 0.75;
 const STRIKE_FRAMES: f64 = 5.0;
@@ -147,7 +147,7 @@ impl Stroke {
 
 /// How a stroke changes its weapon's blow: reach added, the half-width of its arc in radians, and its damage, poise
 /// and guard shares. A thrust reaches furthest in a narrow arc; a chop breaks poise and guards; a sweep crosses the
-/// widest arc. A blow strikes every fighter of another side its reach and arc hold, at the owner's word.
+/// widest arc. A blow strikes every fighter of another side its reach and arc hold.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StrokeShape {
     pub reach: f64,

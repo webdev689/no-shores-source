@@ -97,7 +97,7 @@ export async function gunPicture(
   return { ...laid, at: [DESIGN_WIDTH - laid.width, DESIGN_HEIGHT - laid.height + sunk] };
 }
 
-/** A crossbow's strip: seven cells side by side, each the owner's frame at its top left with the stock carried on past
+/** A crossbow's strip: seven cells side by side, each the frame at its top left with the stock carried on past
  *  its right and bottom edges. */
 const CROSSBOW = { cells: 7, cellWidth: 282, cellHeight: 204, frameWidth: 218, frameHeight: 156 } as const;
 /** The metals a crossbow is made in, each its own model and colours; any other metal is drawn as steel. */

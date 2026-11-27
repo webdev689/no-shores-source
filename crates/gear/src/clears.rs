@@ -16,8 +16,8 @@ use crate::world::Difficulty;
 pub const BOON_SHARE: u32 = 4;
 /// A Boss's rank, whose kill the dungeon of the day pays as and whose colours its Vestige takes.
 const BOSS: u8 = 5;
-/// The Shapes the week's Abyss Dungeon pays its first clear: Shapes come from the week's Abyss content alone, as the
-/// owner chose; this many buy a Legendary of Shape's a week, an Atheric's armour in a week and a half and its weapon
+/// The Shapes the week's Abyss Dungeon pays its first clear: Shapes come from the week's Abyss content alone;
+/// this many buy a Legendary of Shape's a week, an Atheric's armour in a week and a half and its weapon
 /// in two and a half, about as Destiny 1's weekly Strange Coins bought Xûr's exotics.
 pub const ABYSS_SHAPES: u16 = 10;
 

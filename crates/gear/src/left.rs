@@ -1,4 +1,4 @@
-//! The body a player left a room with, kept with their character so a return finds it as it was, as the owner chose:
+//! The body a player left a room with, kept with their character so a return finds it as it was:
 //! leaving and coming back heals nothing.
 
 use serde::{Deserialize, Serialize};

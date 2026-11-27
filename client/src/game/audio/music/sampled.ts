@@ -1,4 +1,4 @@
-// The music's sampled voices: a track or a drum played on a recording the owner picked from Freesound (a `music.*`
+// The music's sampled voices: a track or a drum played on a recording picked from Freesound (a `music.*`
 // cue) instead of the FM bank. A pitched cue plays each note at playbackRate 2^((note - root)/12) from its pick's
 // measured root (the `root` publish.py copies onto its entry in content/audio/sounds.json, as root.py measured it); a
 // textural or percussive cue plays from the note its score calls its home. A note longer than the recording carries

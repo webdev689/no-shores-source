@@ -1,4 +1,4 @@
-// The owner's ninth and tenth beats, played: the player is taught on the wreck's quiet deck (tutorial.ts), the fight
+// The story's ninth and tenth beats, played: the player is taught on the wreck's quiet deck (tutorial.ts), the fight
 // frozen on a boarder's blows until they parry and dodge; the boarder's bow is taught, a wisp gives them the Storm
 // (wispScene.ts) and the next fight freezes to teach each of its abilities (stormTeaching.ts); then they fight through
 // the wreck's foes on foot, as on any node,

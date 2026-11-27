@@ -3,7 +3,7 @@
 //! in turn, each waiting until a living player stands in its space, running, then won, its seal on opening; the stages
 //! a fallen player stands again at; how the fallen stand at each tier (`fallen.rs`); the Lodestone and the marks it
 //! cleanses (`lodestone.rs`); each encounter's rules in a file of its own; and the checkpoint it keeps past its room's
-//! life (`kept.rs`). Its opening, the Waking, is fought in the patrol zone (`gate.rs`). The numbers are Claude's.
+//! life (`kept.rs`). Its opening, the Waking, is fought in the patrol zone (`gate.rs`).
 
 pub mod plan;
 

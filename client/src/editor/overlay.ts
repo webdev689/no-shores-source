@@ -3,7 +3,7 @@ import { distanceKm, type Reference } from './measure.ts';
 import type { Ink, ScreenPoint } from './strokes.ts';
 import type { Label } from './viewMarks.ts';
 
-/** A reference shape the owner has pinned at a world point. */
+/** A reference shape pinned at a world point. */
 export interface PinnedReference {
   readonly reference: Reference;
   readonly x: number;

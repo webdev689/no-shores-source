@@ -1,4 +1,4 @@
-// The chat as the owner's picture of Destiny's shows names: a dark band between two thin rules at the bottom left, each
+// The chat as Destiny's chat shows names: a dark band between two thin rules at the bottom left, each
 // line its speaker's name in brackets and their words. Shut, it shows the newest five lines, each fading after a
 // while; open (T), the newest that fit and a field to type in, its channel before it. Tab changes the channel, the up
 // and down arrows read back, Enter says the line, and Escape shuts it. Colours are DFO's: each channel's words its own,

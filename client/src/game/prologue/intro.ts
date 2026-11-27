@@ -1,4 +1,4 @@
-// The intro, the owner's first beat: the camera fades in high over the cloud at first light, goes down through the
+// The intro, the story's first beat: the camera fades in high over the cloud at first light, goes down through the
 // cloud to Saltmere, where gulls wheel over the harbour, and ends as the title rises and a prompt to begin breathes.
 // Holding Space goes straight to the title. Where the page has accounts, beginning opens the character screen over the
 // title's scene, and the intro ends once a character is chosen there.

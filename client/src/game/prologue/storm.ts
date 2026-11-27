@@ -1,4 +1,4 @@
-// The owner's second beat: from the title the camera pulls away over the sea into a stormfront (the light failing,
+// The story's second beat: from the title the camera pulls away over the sea into a stormfront (the light failing,
 // rain driving, thunder), a strike's flash covers the leap far out to sea, and the camera rushes low over the swell
 // until the Brig comes out of the rain, the captain's chart held over the view as it leaps; it rises along its side,
 // passes over its working crew from bow to stern, and comes to rest at its helm, where the player stands.

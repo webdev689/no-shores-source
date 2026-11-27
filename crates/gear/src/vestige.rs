@@ -34,7 +34,7 @@ const COLOURS: [[u32; 5]; 5] = [
     [517, 258, 129, 64, 32],
 ];
 /// What a Vestige of each colour opens to, in 100: its own colour most often, since its colour is what a player chases,
-/// and, as the owner chose, below it now and then and above it rarely.
+/// and below it now and then and above it rarely.
 pub(crate) const OPENS: [[u32; 5]; 5] =
     [[95, 5, 0, 0, 0], [20, 75, 5, 0, 0], [0, 20, 75, 5, 0], [0, 0, 20, 75, 5], [0, 0, 0, 20, 80]];
 

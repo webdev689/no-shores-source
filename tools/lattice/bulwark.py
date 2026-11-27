@@ -1,4 +1,4 @@
-"""The Bulwark, the Lattice's captain. After the owner's own in project-final: a hulking mass of flesh, bulked, heavy
+"""The Bulwark, the Lattice's captain. After its design in project-final: a hulking mass of flesh, bulked, heavy
 and hunched, at 1.2 times a man; its head replaced by a great bulging red crystal with a crown spike and a glowing
 core; big crystals at its knees and elbows and its limbs peppered, fewer and smaller than the Husk's, so it reads as
 flesh. Fused to its left forearm, a slab of mangled crystal for a shield, a glowing core at its middle, the shield
@@ -121,7 +121,7 @@ def club(crystal):
     return made
 
 
-# Its own flesh, after the owner's "flesh slabs and lumps (pecs, belly roll, deltoids, a neckless trapezius hump)":
+# Its own flesh, after "flesh slabs and lumps (pecs, belly roll, deltoids, a neckless trapezius hump)":
 # each the piece of skin it swells from, the joint carrying it, where (the vertex scoring highest) and its size.
 SLABS = [
     ('torso', 'chest', lambda p, n: p[:, 2] + 2 * p[:, 1] - 3 * np.abs(p[:, 0]), (0.2, 0.11, 0.11)),    # the hump

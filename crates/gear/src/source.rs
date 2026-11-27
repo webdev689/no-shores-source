@@ -1,5 +1,5 @@
 //! The content an item or a Vestige came from: the world, a faction, a dungeon, an Elite Dungeon, an Abyss Dungeon, a
-//! sea dungeon or a Breach. Each armour set and weapon metal belongs to one of them, as the owner chose, so a look
+//! sea dungeon or a Breach. Each armour set and weapon metal belongs to one of them, so a look
 //! seen on a player says where it was earned; the page reads which in `content/gear/looks.json`.
 
 use serde::{Deserialize, Serialize};

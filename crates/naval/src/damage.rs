@@ -83,7 +83,7 @@ pub(crate) fn men(count: f64, roll: f64, tough: f64) -> f64 {
 }
 
 /// How much harder every blow one ship strikes another lands than DFO's numbers, its balls and its ram alike: half
-/// again, at the owner's word.
+/// again.
 pub const FIGHT_HARM: f64 = 1.5;
 
 /// One ball's harm, as the gun is loaded (grape's reach already in its men), by zone; `roll` is the ball's own draw

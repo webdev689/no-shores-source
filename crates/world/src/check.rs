@@ -1,4 +1,4 @@
-//! The rules a layout keeps, from the owner's world map decision. A layout being drafted may hold fewer continents;
+//! The rules a layout keeps, from the world map decision. A layout being drafted may hold fewer continents;
 //! a finished one holds exactly nine.
 
 use crate::geometry::{Point, circle_clear_of_ring, circles_apart, doubled_area, ring_is_simple, rings_overlap};

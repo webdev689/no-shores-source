@@ -1,4 +1,4 @@
-// Every chest a public event or a patrol stands, as the props draw a module: the owner's chest (models/chest.ts) built
+// Every chest a public event or a patrol stands, as the props draw a module: the chest (models/chest.ts) built
 // in code rather than baked in Blender, a plain one and a heroic one, each its body and its lid. A lid is a module of
 // its own with the hinge's line at its origin, so the props swing it open about their own x; the body's `hinge` socket
 // says where that line lies on it. A plain chest is banded in iron with a gold latch, a heroic one larger and all its

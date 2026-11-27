@@ -21,7 +21,7 @@ interface Tones {
   readonly glow: Vector;
 }
 
-/** The owner's white, then each finer rarity's own colours (green, yellow, red and cyan blue), each with its glow. */
+/** White, then each finer rarity's own colours (green, yellow, red and cyan blue), each with its glow. */
 const GLOWS: readonly Vector[] = [
   [120, 240, 150],
   [250, 236, 120],

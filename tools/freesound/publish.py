@@ -1,4 +1,4 @@
-"""Puts the owner's picked Freesound sounds on R2 under the hash of their bytes and writes content/audio/sounds.json,
+"""Puts the picked Freesound sounds on R2 under the hash of their bytes and writes content/audio/sounds.json,
 each with its credit, from the freesound workflow's download: picks.json, read from each pick's page, and
 picks/<cue>.mp3, its preview. A pick not read whole stops the publish: no sound goes in without its credit.
 
@@ -34,7 +34,7 @@ VARIED = re.compile(r'ui\.(hover|press|back)|(step|swing|hit|amb)\..+')
 VARIES = 'Its pitch varies a little each time it plays.'
 # The music's instruments (client/src/game/audio/music/sampled.ts) play a pick at many pitches.
 PLAYED = 'Played at many pitches as an instrument in the game\'s music.'
-# The licences the owner allows, each at its own address with its version.
+# The licences allowed, each at its own address with its version.
 LICENCES = {
     'CC0': re.compile(r'https://creativecommons\.org/publicdomain/zero/\d\.\d/'),
     'CC-BY': re.compile(r'https://creativecommons\.org/licenses/by/\d\.\d/'),
@@ -191,7 +191,7 @@ def main():
             sound['credits'].append(credit)
         else:
             sounds[cue] = {'key': key, **credit, 'changes': changes_of(cue, entry), **root_of(cue, entry)}
-    # DFO's own sounds the owner picked are put in by own.py, not by a download: kept, unless the cue now has a pick.
+    # DFO's own picked sounds are put in by own.py, not by a download: kept, unless the cue now has a pick.
     own = {cue: sound for cue, sound in before.items() if 'freesound' not in sound and 'credits' not in sound}
     sounds.update({cue: sound for cue, sound in own.items() if cue not in sounds})
     manifest = {

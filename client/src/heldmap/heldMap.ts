@@ -1,5 +1,5 @@
 // The held map at the helm: the parchment raised in the player's gauntlets, the whole world on it, panned,
-// zoomed and clicked to choose where to sail; lowered with or without a destination. The forge's art is the owner's
+// zoomed and clicked to choose where to sail; lowered with or without a destination. The forge's art is the game's
 // own; its rules are DFO's held map's (heldMapLaw.ts).
 import type { Gpu } from '../gpu.ts';
 import { forgeName } from '../firstperson/fpFrames.ts';
