@@ -655,7 +655,11 @@ so every decision is Rust and the shell only carries bytes and time.
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread. A page sends a room at most two seconds of messages without hearing from it (`UNHEARD_MOST`, 120): past
   that the player stands and nothing is numbered until the room speaks, so a stalled network that resumes lets
-  through less than a second's budget.
+  through less than a second's budget. Every 30th message it takes, the room tells the page in a text message how many
+  it has taken from that socket (`taken <n>`, `toldTaken` in `budget.ts`), and the page holds just as long once 150
+  it sent (120, and the 30 the room has yet to tell) are not yet taken: so an upload held up while the room's
+  snapshots still come in builds no backlog past the budget either. A page that hears no such word holds by the
+  room's silence alone.
 - A kept player is named in the room by their account's username, which the claim answers (`Room::name_player`, or at
   sea `Sea::name_player`, through `room_name`), for their plate; a guest, or a player who plays unkept, has no name.
 - A browser's one text message is its session's token. In a node's room, a dungeon's, an island's and at sea the

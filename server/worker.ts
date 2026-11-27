@@ -7,7 +7,7 @@ import { type Listed, arrives, cameOutOf, crossingAsked, crossingsOf, reachOf, s
 import { Ashore, placeOf } from './ashore.ts';
 import { addressKey } from './address.ts';
 import { Breach, breachAsked, breachHeard, breachRoom, toldBreach } from './breach.ts';
-import { type Count, admitsFrom, counted } from './budget.ts';
+import { type Count, admitsFrom, counted, toldTaken } from './budget.ts';
 import { delveAsk } from './delveHost.ts';
 import { entranceOf, roomName, sessionHash } from './joinRequest.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
@@ -451,6 +451,8 @@ export class RoomHost extends DurableObject<Env> {
       this.guarded(() => this.room.noneKept(player), undefined);
     }
     if (!within) return this.dismiss(socket, 1008, 'too many messages');
+    const told = toldTaken(count);
+    if (told !== null) socket.send(told);
     // The token again, from a player who took a username since: they are named anew, once in a while at most.
     if (typeof message === 'string' && TOKEN.test(message) && held.signed) {
       if (Date.now() - (held.renamed ?? 0) < RENAMED_EVERY_MS) return;

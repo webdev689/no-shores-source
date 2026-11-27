@@ -5,6 +5,7 @@ import { ROOM_TICK_S, WORLD_CLOCK } from '../sky/worldClock.ts';
 import { LinkMeasure, type Measured } from './linkMeasure.ts';
 import { SnapshotKeeper } from './snapshots.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
+import { TOLD_EVERY, takenOf } from '../../../server/budget.ts';
 
 /** A room's snapshot, as a link hands it on. */
 export type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
@@ -142,6 +143,10 @@ export class RoomConnection implements RoomLink {
   private waiting: ReturnType<typeof setTimeout> | null = null;
   /** Messages sent since the room was last heard. */
   private unheard = 0;
+  /** Inputs sent on this socket, and how many messages the room last said it had taken (`toldTaken`): none from a room
+   *  that does not say. The session's token, sent once a join, goes uncounted: the page holds one message later. */
+  private sent = 0;
+  private taken: number | null = null;
   /** The last welcome, until a snapshot after it carries its dresses and plates on. */
   private welcomeUnheard: Welcome | null = null;
 
@@ -209,8 +214,10 @@ export class RoomConnection implements RoomLink {
 
   /** Once `socket` closes, unless the page closed it or the room sent the player away, tries again after a wait. */
   private watch(socket: WebSocket): void {
-    socket.addEventListener('message', () => {
-      if (socket === this.socket) this.unheard = 0;
+    socket.addEventListener('message', (event: MessageEvent<unknown>) => {
+      if (socket !== this.socket) return;
+      this.unheard = 0;
+      if (typeof event.data === 'string') this.taken = takenOf(event.data) ?? this.taken;
     });
     socket.addEventListener('close', (event) => {
       if (socket !== this.socket || this.closed) return;
@@ -230,7 +237,7 @@ export class RoomConnection implements RoomLink {
   private rejoin(): void {
     this.waiting = null;
     const socket = this.connect(this.url);
-    this.socket = socket;
+    [this.socket, this.sent, this.taken] = [socket, 0, null];
     const welcomed = (welcome: Welcome) => this.welcomed(socket, welcome);
     hear(socket, { welcomed, snapshot: this.snapshot, gear: (sent) => this.heard(sent), came: this.came });
     this.watch(socket);
@@ -271,12 +278,14 @@ export class RoomConnection implements RoomLink {
   send(bytes: Uint8Array<ArrayBuffer>): void {
     if (this.rejoining || this.socket.readyState !== WebSocket.OPEN) return;
     this.socket.send(bytes);
-    this.unheard += 1;
+    [this.unheard, this.sent] = [this.unheard + 1, this.sent + 1];
   }
 
-  /** Whether the room has gone unheard for `UNHEARD_MOST` messages: what the page sends next waits for its word. */
+  /** Whether the room has gone unheard for `UNHEARD_MOST` messages, or, though it speaks, has taken that many fewer
+   *  than were sent, past those it has yet to tell (an upload held up): what the page sends next waits for its word. */
   get quiet(): boolean {
-    return this.unheard >= UNHEARD_MOST;
+    const untaken = this.taken === null ? 0 : this.sent - this.taken;
+    return this.unheard >= UNHEARD_MOST || untaken >= UNHEARD_MOST + TOLD_EVERY;
   }
 
   /** The link's lag and loss as the page measures them. */

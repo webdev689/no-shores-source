@@ -3,6 +3,7 @@ import { type TestContext, test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { FromRoom, Joined, Plate, Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
+import { TOLD_EVERY, toldTaken } from '../../../server/budget.ts';
 import {
   ELSEWHERE,
   HELD_MS,
@@ -64,6 +65,12 @@ class FakeSocket extends EventTarget {
   says(message: Said): void {
     this.readyState = WebSocket.OPEN;
     this.dispatchEvent(new MessageEvent('message', { data: fromRoom(message) }));
+  }
+
+  /** The room tells how many of the page's messages it has taken, as `toldTaken` words it. */
+  tells(taken: number): void {
+    const data = toldTaken({ second: 0, messages: 0, taken });
+    this.dispatchEvent(new MessageEvent('message', { data }));
   }
 
   closed(code: number, reason = ''): void {
@@ -135,6 +142,26 @@ test('a room unheard for two seconds of inputs goes quiet until it speaks, so a 
   assert.equal(connection.quiet, true);
   sockets[0]?.says({ tick: 4n });
   assert.equal(connection.quiet, false, 'any word from the room lets the page send again');
+});
+
+test('an upload held up while the room still speaks goes quiet once the room has taken too few of what was sent', async () => {
+  const { connection, sockets } = await joined(3);
+  const socket = sockets[0];
+  const sending = (count: number) => {
+    for (let sent = 0; sent < count; sent++) {
+      connection.send(new Uint8Array([1]));
+      socket?.says({ tick: BigInt(sent) });
+    }
+  };
+  sending(2 * UNHEARD_MOST);
+  assert.equal(connection.quiet, false, 'a room that never tells what it took is judged by its silence alone');
+  socket?.tells(2 * UNHEARD_MOST);
+  sending(UNHEARD_MOST + TOLD_EVERY - 1);
+  assert.equal(connection.quiet, false, 'one short of the most untaken, past those it has yet to tell');
+  sending(1);
+  assert.equal(connection.quiet, true, 'though the room speaks, it has not taken what was sent');
+  socket?.tells(3 * UNHEARD_MOST + TOLD_EVERY);
+  assert.equal(connection.quiet, false, 'the upload caught up');
 });
 
 test('a rejoin starts the count of messages the room has not answered over once welcomed', async (context: TestContext) => {
