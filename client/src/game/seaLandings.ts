@@ -4,7 +4,8 @@
 // (a sea island's anchorage always): the ship sails in to its berth, seen from the Oversea view, and lands once it
 // lies there; else it makes for the landing and docks once it can. A fight or another course lets a landing made for
 // go, on the coast and on a sea island alike; the player leaving the sea lets its voyage go with it. Back at sea, a
-// ship docked sails out from its berth. And the confirmation's card, in the middle of the view.
+// ship docked sails out from its berth. A port's card offers its repair too, asked once the ship lies at rest by the
+// port's roadstead. And the confirmation's card, in the middle of the view.
 import type { Point2 } from '../overworld/ground.ts';
 import { coastPoint } from '../overworld/islandView.ts';
 import { nearestRegion, regionWords } from '../overworld/regions.ts';
@@ -27,11 +28,13 @@ import {
   LandingCourse,
   type LandingAim,
   landingOn,
+  RepairCourse,
 } from './landingAsk.ts';
 import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import type { Sea } from './sea.ts';
 import type { Landfall } from './seaLaw.ts';
+import type { PortRepairs, RepairOffer } from './seaWord.ts';
 
 /** How far past a sea island's coast a click on the water still means the island, metres. */
 const ISLE_CLICK_M = 400;
@@ -43,10 +46,12 @@ export interface Asking {
 }
 
 /** What the landings reach: the sea, the open landmass and the sea's islands; whether the player may be taken
- *  elsewhere now; and what lands on the open landmass, asked only while the player is free: the view flown up over
- *  the island the ship lies off, to choose where, answering whether it was. */
+ *  elsewhere now; what lands on the open landmass, asked only while the player is free: the view flown up over the
+ *  island the ship lies off, to choose where, answering whether it was; and the repair a port's card offers now, with
+ *  where it is had (none before the sea's rules are read). */
 export interface LandingsGame {
   readonly sea: () => Sea | null;
+  readonly repairs: () => PortRepairs | null;
   readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'outline' | 'heightAt' | 'regions'>;
   readonly isles: Isles;
   readonly free: () => boolean;
@@ -90,6 +95,12 @@ export function aimOf(landfall: Landfall, here: ClickContext, ship: Point2): Lan
   return here.regionOf(ship) ? landingOn(here, ship) : { kind: 'ashore', coast: here.coast, toward: ship };
 }
 
+/** The room's word on the ship for its repair: once it has taken the last course sent, or with no voyage, as it last
+ *  moved it (no course sent since joining leaves `settledShip` none). */
+function roomsShip(sea: Sea): { readonly x: number; readonly y: number; readonly pace: number } | null {
+  return sea.sighted?.settledShip ?? (sea.bound === null ? (sea.sighted?.ownShip ?? null) : null);
+}
+
 /** The sea's clicks and the landings they ask after, answered, made for and docked in sight: on the open landmass's
  *  coast, and on a sea island. */
 export class SeaLandings {
@@ -97,6 +108,7 @@ export class SeaLandings {
   asking: Asking | null = null;
   private readonly course = new LandingCourse();
   private readonly docking = new Docking();
+  private readonly mending = new RepairCourse();
   private readonly game: LandingsGame;
   /** Whether the player was at sea last frame, so coming back to it is seen. */
   private wasAtSea = false;
@@ -146,6 +158,32 @@ export class SeaLandings {
     this.course.begin(aim, to);
   }
 
+  /** A port's card answered Repair Ship: where the room has the ship lying at rest within reach of the port's
+   *  roadstead it asks the repair now, else sails for the roadstead and asks it once there. A repair that cannot be
+   *  had does nothing, the card standing to say why. */
+  repair(): void {
+    const [asked, sea, repairs] = [this.asking, this.game.sea(), this.game.repairs()];
+    if (asked?.aim.kind !== 'dock' || !sea || !repairs || repairs.offer.why) return;
+    const { harbour } = asked.aim;
+    const off = (point: Point2) => Math.hypot(point[0] - harbour[0], point[1] - harbour[1]);
+    const roadstead = repairs.roadsteads.reduce<Point2 | null>(
+      (near, each) => (near && off(near) <= off(each) ? near : each),
+      null,
+    );
+    if (!roadstead) return;
+    this.asking = null;
+    this.letGo();
+    this.mending.begin(roadstead);
+    if (this.mending.due(roomsShip(sea), sea.bound, repairs.reachM)) return sea.sighted?.ask('repair');
+    sea.sailTo(roadstead);
+    this.mending.begin(roadstead);
+  }
+
+  /** The repair a port's card offers now; none before the sea's rules are read. */
+  get repairOffer(): RepairOffer | null {
+    return this.game.repairs()?.offer ?? null;
+  }
+
   /** Docks in sight: the ship sails in to the landing's berth, among the ships the sea shows, from the Oversea view;
    *  with no way in, nothing is made for, the view stays as it was, and the voyage's line says why. */
   private dock(sea: Sea, aim: LandingAim): void {
@@ -159,10 +197,12 @@ export class SeaLandings {
     return this.course.making ?? this.docking.making;
   }
 
-  /** Lets any landing made for go: another course set, a fight, or the player washed up or gone from the sea. */
+  /** Lets any landing or repair made for go: another course set, a fight, or the player washed up or gone from the
+   *  sea. */
   letGo(): void {
     this.course.cancel();
     this.docking.cancel();
+    this.mending.cancel();
   }
 
   /** Where the ship lies docked, if it does, until it sails out again. */
@@ -201,6 +241,8 @@ export class SeaLandings {
     if (!sea || !atSea) return;
     if (back) this.docking.cameAboard();
     if (sea.fight) this.letGo();
+    const repairs = this.mending.waiting ? this.game.repairs() : null;
+    if (repairs && this.mending.due(roomsShip(sea), sea.bound, repairs.reachM)) sea.sighted?.ask('repair');
     if (sea.fight || sea.view.kind !== 'sail' || sea.busy) this.asking = null;
     if (sea.fight || !this.game.free()) return;
     this.docking.undock(sea);
@@ -214,18 +256,42 @@ export class SeaLandings {
   }
 }
 
+/** The repair a port's card offers, and what pressing it does. */
+export interface CardRepair {
+  readonly offer: RepairOffer;
+  readonly mend: () => void;
+}
+
 /** The confirmation a little above the middle of the view, clear of the ship's console under it: its question in brass,
- *  what yes does, and its two presses, yes with Enter and no with Escape. */
-export function landingAskNode(ui: Interface, asking: Asking, answer: (yes: boolean) => void): Node {
+ *  what yes does, and its presses. A port's offers Dock with Enter, Repair Ship (`repair`, its price named, or why it
+ *  cannot be had, shown but doing nothing) with the repair's key, and Leave with Escape; another landing's no with
+ *  Escape and yes with Enter. */
+export function landingAskNode(
+  ui: Interface,
+  asking: Asking,
+  answer: (yes: boolean) => void,
+  repair: CardRepair | null = null,
+): Node {
   const words = askWords(asking.aim, asking.near);
+  const port = asking.aim.kind === 'dock';
+  const yes = hudPress(ui, 'sea:ask-yes', withKey(words.yes, 'confirm'), () => answer(true), { role: 'primary' });
+  const leave = hudPress(ui, 'sea:ask-no', `${port ? 'Leave' : 'Cancel'}  ${noKey()}`, () => answer(false));
+  const mend =
+    repair &&
+    port &&
+    hudPress(ui, 'sea:ask-repair', withKey('Repair Ship', 'repair'), repair.mend, {
+      disabled: repair.offer.why !== null,
+    });
+  const mendLine =
+    repair && mend ? (repair.offer.why ?? `Repairing your ship here costs ${repair.offer.price} Aurem.`) : '';
   return {
     id: 'sea:ask',
     role: 'window',
     direction: 'column',
-    width: 420,
+    width: mend ? 500 : 420,
     padding: 2,
     solid: true,
-    label: `${words.title} ${words.line}`,
+    label: [words.title, words.line, mendLine].filter(Boolean).join(' '),
     float: { to: 'screen', at: [0.5, 0.42], anchor: [0.5, 0.5] },
     children: [
       {
@@ -234,17 +300,20 @@ export function landingAskNode(ui: Interface, asking: Asking, answer: (yes: bool
         ...header(),
         children: [said(words.title, { size: 2, colour: '#f3cf86' })],
       },
-      { width: 'grow', padding: [12, 18], children: [said(words.line, { colour: DIM })] },
+      {
+        width: 'grow',
+        direction: 'column',
+        gap: 6,
+        padding: [12, 18],
+        children: [said(words.line, { colour: DIM }), mendLine ? said(mendLine, { colour: DIM }) : null],
+      },
       {
         width: 'grow',
         gap: 10,
         alignX: 'end',
         padding: [10, 18, 12, 18],
         ...footer(),
-        children: [
-          hudPress(ui, 'sea:ask-no', `Cancel  ${noKey()}`, () => answer(false)),
-          hudPress(ui, 'sea:ask-yes', withKey(words.yes, 'confirm'), () => answer(true), { role: 'primary' }),
-        ],
+        children: port ? [yes, mend, leave] : [leave, yes],
       },
     ],
   };

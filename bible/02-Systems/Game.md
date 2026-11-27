@@ -69,6 +69,7 @@ code:
   - client/src/game/seaClose.ts#CloseZoom
   - client/src/game/landingAsk.ts#clickAtSea
   - client/src/game/seaLandings.ts#SeaLandings
+  - client/src/game/landingAsk.ts#RepairCourse
   - client/src/game/docking.ts#Docking
   - client/src/game/berths.ts#berthOf
   - client/src/game/moorings.ts#shipsLying
@@ -647,9 +648,10 @@ sails out from its berth ("Landings").
   port city is open the player walks into its social space behind the veil, in the same words ("You washed up at
   Sunspire; your ship lies at its roadstead."), standing there as on arriving (`flow.ts`, `wash-up`). Manage's panel
   shows the ship's hull, canvas and men (men only once its build has a crew) as the sea keeps them, its voyage's state under
-  "Now", and a Repair part: R asks for its repair, which the panel shows with its seconds left ("Repairing it: 13 s
-  left"), "The ship is whole", or where it is had ("Repair: free, lying at rest within 3 km of a port city", the rules' own
-  reach from the waters' table; out of the sea, "Repairs are made at sea, by a port city"). The chase's meeting reach
+  "Now", and a Repair part: R asks for its repair ([[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]]), the line naming its price and where it is had
+  ("Repair: 40 Aurem, lying at rest within 3 km of a port city", the rules' own reach and Aurem for each percent
+  missing from the waters' table), or why it cannot be ("The ship is whole.", "You hold 39 Aurem of the 40 it costs.";
+  out of the sea, "Repairs are made at sea, by a port city."). The chase's meeting reach
   and the voyage's hold reach come from that table too (`SeaFacts`); it holds every ship's name as well, which the
   page's own names (`shipBars.ts` `shipName`) are tested against. A voyage set at Elite or Abyss sails in that
   difficulty's sea room (`sea--elite`, `sea--abyss`), the game leaving one for the other as the voyage sets out. The ship's
@@ -686,6 +688,15 @@ to dock there; off another, to go ashore on it. The confirmation stands a little
 the console, its question in brass and what yes does under it; Enter, the pad's A or its press says yes, Escape, the
 pad's B or Cancel no, and a click elsewhere puts it by, as does a fight, the helm, going aboard, a travel or leaving the
 sea.
+
+A port's card offers three choices, in this order: Dock (Enter), Repair Ship (the repair's key, R) and Leave (Escape,
+in Cancel's place), and names the repair's price under what docking does ("Repairing your ship here costs 40 Aurem.",
+[[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]]). With the ship whole, or too little Aurem held, Repair Ship is shown but does nothing and the card says why,
+in Manage's words. Repair Ship asks the room for the repair at once where its word has the ship lying at rest within
+the repair's reach of the roadstead nearest that port's harbour (an open sea's, from the waters' table, `PageSeaFacts.roadsteads`);
+else the ship sails for that roadstead and the repair is asked once the room has it at rest within reach there (a
+voyage's end brings the ship to rest, `sea_way.rs`), taken once (`RepairCourse`). Another course given meanwhile, a
+fight or leaving the sea lets it go.
 
 Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,
 and on an island cut into regions off the region that holds the port, to dock there; anywhere else, to go ashore. Yes within reach docks in sight at once, or once nothing else holds the

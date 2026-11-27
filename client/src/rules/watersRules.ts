@@ -57,13 +57,14 @@ export interface WatersTable {
 }
 
 /** The sea's rules the page reads beside its waters: the reach a hostile ship meets a player within and the furthest
- *  one may hold a voyage, metres; the reach of a port city's repairs, metres; how far from its coast a home water stays
- *  home, metres (crates/world/src/waters.rs `HOME_REACH_M`); and each ship's name by its faction's number and then its
- *  hull's (crates/naval/src/ranks.rs `ship_name`). */
+ *  one may hold a voyage, metres; the reach of a port city's repairs, metres, and their Aurem for each percent a ship
+ *  is missing; how far from its coast a home water stays home, metres (crates/world/src/waters.rs `HOME_REACH_M`);
+ *  and each ship's name by its faction's number and then its hull's (crates/naval/src/ranks.rs `ship_name`). */
 export interface SeaFacts {
   readonly engageM: number;
   readonly holdReachM: number;
   readonly repairReachM: number;
+  readonly repairAuremPerPercent: number;
   readonly homeReachM: number;
   readonly travelShortM: number;
   readonly shipNames: readonly (readonly string[])[];
@@ -178,6 +179,7 @@ interface TableAnswer {
     engage_m: number;
     hold_reach_m: number;
     repair_reach_m: number;
+    repair_aurem_per_percent: number;
     home_reach_m: number;
     travel_short_m: number;
     ship_names: string[][];
@@ -251,6 +253,7 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
           engageM: answer.sea.engage_m,
           holdReachM: answer.sea.hold_reach_m,
           repairReachM: answer.sea.repair_reach_m,
+          repairAuremPerPercent: answer.sea.repair_aurem_per_percent,
           homeReachM: answer.sea.home_reach_m,
           travelShortM: answer.sea.travel_short_m,
           shipNames: answer.sea.ship_names,

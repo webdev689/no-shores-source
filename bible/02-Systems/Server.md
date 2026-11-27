@@ -339,7 +339,7 @@ will take it, by the room's own tick.
   sea holds and steps (`deck_fight.rs`, `sea_decks.rs`), whose boarders' land inputs the sea passes to it; a player
   whose ship sinks, or beaten aboard it, washes up at the nearest port city (`harbour.rs`, `sea_ports.rs`); each ship
   keeps its hurts, with the player's character, which the sea claims and saves as a node does ([[Accounts]]), and is
-  repaired by a port city. The sea keeps characters (`room_keep_characters`): a player's course asked before the
+  repaired by a port city at once, for the character's Aurem ([[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]]). The sea keeps characters (`room_keep_characters`): a player's course asked before the
   accounts answered for them waits, then sails from where the room last kept it once their character is given back
   (a fight met from the page's spot meanwhile is over for it), or as asked once the host says none is kept
   (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives it
@@ -352,11 +352,11 @@ will take it, by the room's own tick.
   character is the one the room holds, given back to it. The account the
   keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
   they join once more. Whatever
-  changes a character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up, the character
+  changes a character at sea (a piece gathered, a fight's hurts, a repair, washing up, the character
   given back) is sent to the player as their gear (`room_gear`, written as a land room writes it), at most every 12
   ticks, which flags it for its save 2 s on. No ship is left outside the world's frame: a fight's waters run past it,
   but where the fight has it, where it washes up and where its next course starts are held within it. A course's message asks for a repair (1), a boarding (2) or leaving its deck (3). The sea's
-  snapshot carries what floats for each player, each ship's kept hurts and its repair's seconds left, what each player
+  snapshot carries what floats for each player, each ship's kept hurts (`Kept`; its `repair_left` deprecated), what each player
   is told beside their fight's view (the naval crate's numbers, or the sea's own: washed up, what a piece held, who
   joined with its hull, moored; their codes one export on the page, `seaHarbour.ts` `TOLD`), whether each fighting
   player may board now (`may_board`) and whether their fight is the Harbourmaster's hulk's (`lesson`), and each deck boarded with its boarders and its room's own snapshot. The host takes the snapshot

@@ -1,5 +1,5 @@
 use super::*;
-use crate::harbour::{HELD, Harbours, REPAIR_MOST_S};
+use crate::harbour::{HELD, Harbours};
 use crate::hostiles::Hostile;
 use naval::damage::{Hurt, State};
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
@@ -125,7 +125,7 @@ fn a_player_whose_ship_goes_down_washes_up_at_the_nearest_port_city_their_hurts_
     assert_eq!(washed, Some(vec![WASHED_UP, washed.as_ref().unwrap()[1], 0.0, 1.0, 0.0]), "at the first port, sunk");
     let ship = sea.ships().find(|(each, _)| *each == player).unwrap().1;
     assert_eq!((ship.x, ship.y, ship.pace), (60_000.0, 50_000.0, 0), "moored at its roadstead");
-    assert_eq!(sea.kept(player), Some((SUNK_KEPT, 0.0)));
+    assert_eq!(sea.kept(player), Some(SUNK_KEPT));
     assert!(!sea.fights.fighting(player));
 }
 
@@ -138,7 +138,7 @@ fn a_ships_hurts_are_kept_after_a_fight_and_it_starts_the_next_with_them() {
     }
     ticks(&mut sea, 2);
     assert!(!sea.fights.fighting(player));
-    let (kept, _) = sea.kept(player).unwrap();
+    let kept = sea.kept(player).unwrap();
     assert!((kept[0] - 0.5).abs() < 1e-9, "{kept:?}");
     let bold = Hostile::standing(2, 9, Commission::default(), [50_000.0, 49_300.0], 0.0, true);
     sea.hostiles.sailing.push(bold);
@@ -155,37 +155,74 @@ fn a_ships_hurts_are_kept_in_the_players_character_across_sessions() {
     let mut character = sailor();
     character.ship = [5_000, 10_000, 2_500];
     assert!(sea.restore_character(player, &character.to_json()));
-    assert_eq!(sea.kept(player), Some(([0.5, 1.0, 0.25], 0.0)));
-    sea.stop_repair(player);
+    assert_eq!(sea.kept(player), Some([0.5, 1.0, 0.25]));
     let kept = gear::Character::from_json(&sea.kept_character(player).unwrap()).unwrap();
     assert_eq!(kept.ship, [5_000, 10_000, 2_500]);
 }
 
-#[test]
-fn by_a_port_at_rest_a_ship_is_repaired_free_over_a_second_a_hundredth_and_sailing_stops_it_where_it_stood() {
+/// A player lying at rest by the first port's roadstead, their character holding `aurem`, their ship with `kept`.
+fn by_the_port(aurem: u32, kept: [f64; 3]) -> (Sea, PlayerId) {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[60_000.0, 50_000.0]], 10).unwrap();
     sea.tick();
-    sea.berths.get_mut(&player).unwrap().kept = [0.6, 0.8, 1.0];
+    let mut character = sailor();
+    character.materials.aurem = aurem;
+    sea.harbour.characters.insert(player, character);
+    sea.berths.get_mut(&player).unwrap().kept = kept;
+    sea.harbour.changed.clear();
+    (sea, player)
+}
+
+#[test]
+fn by_a_port_at_rest_a_repair_makes_the_ship_whole_at_once_for_two_aurem_a_percent_and_saves_the_character() {
+    let (mut sea, player) = by_the_port(100, [0.6, 0.8, 1.0]);
     assert_eq!(sea.repair(player), Ok(()));
-    ticks(&mut sea, 20 * 60);
-    let (kept, left) = sea.kept(player).unwrap();
-    assert!((kept[0] - 0.8).abs() < 1e-6 && (left - 20.0).abs() < 1e-6, "{kept:?} {left}");
-    ticks(&mut sea, 20 * 60 + 1);
-    assert_eq!(sea.kept(player), Some(([1.0; 3], 0.0)));
+    assert_eq!(sea.kept(player), Some([1.0; 3]), "whole at once");
+    let character = &sea.harbour.characters[&player];
+    assert_eq!(character.materials.aurem, 20, "40% missing: 80 Aurem taken");
+    assert_eq!(character.ship, [gear::character::SHIP_WHOLE; 3]);
+    assert!(sea.harbour.changed.contains(&player), "the character is saved and sent");
     assert_eq!(sea.repair(player), Err(RepairRefused::Whole));
-    sea.berths.get_mut(&player).unwrap().kept = [0.0; 3];
-    sea.repair(player).unwrap();
-    ticks(&mut sea, 30 * 60);
+    assert_eq!(sea.harbour.characters[&player].materials.aurem, 20, "a refused repair takes nothing");
+}
+
+#[test]
+fn a_repair_is_refused_to_a_character_with_too_little_aurem_or_none_held_and_takes_nothing() {
+    let (mut sea, player) = by_the_port(79, [0.6, 0.8, 1.0]);
+    assert_eq!(sea.repair(player), Err(RepairRefused::TooLittleAurem), "80 asked of 79");
+    assert_eq!(sea.kept(player), Some([0.6, 0.8, 1.0]));
+    assert_eq!(sea.harbour.characters[&player].materials.aurem, 79);
+    assert!(!sea.harbour.changed.contains(&player));
+    sea.harbour.characters.remove(&player);
+    assert_eq!(sea.repair(player), Err(RepairRefused::TooLittleAurem), "no character held, no Aurem to pay");
+}
+
+#[test]
+fn a_repair_is_refused_out_of_reach_under_way_in_a_fight_not_at_sea_and_whole() {
+    let (mut sea, player) = by_the_port(1_000, [0.5; 3]);
+    ticks(&mut sea, 60);
     sea.course(player, &[[58_500.0, 50_000.0]], 10).unwrap();
-    let (kept, left) = sea.kept(player).unwrap();
-    assert!((kept[0] - 30.0 / REPAIR_MOST_S).abs() < 1e-6 && left == 0.0, "stopped where it stood: {kept:?}");
+    assert_eq!(sea.repair(player), Err(RepairRefused::NotThere), "under way");
     let far = sea.join();
     sea.course_anywhere(far, &[[50_000.0, 50_000.0]], 10).unwrap();
     sea.tick();
+    sea.harbour.characters.insert(far, sailor());
     sea.berths.get_mut(&far).unwrap().kept = [0.5; 3];
     assert_eq!(sea.repair(far), Err(RepairRefused::NotThere), "10 km from the nearest roadstead");
+    assert_eq!(sea.repair(9_999), Err(RepairRefused::NotAtSea), "no such player");
+    let ashore = sea.join();
+    assert_eq!(sea.repair(ashore), Err(RepairRefused::NotAtSea), "not yet put to sea");
+    let (mut fighting, player) = met(700.0, Rank::Major);
+    let mut character = sailor();
+    character.materials.aurem = 1_000;
+    fighting.harbour.characters.insert(player, character);
+    let ship = &mut fighting.berths.get_mut(&player).unwrap().sailing.as_mut().unwrap().ship;
+    (ship.x, ship.y, ship.pace) = (60_000.0, 50_000.0, 0);
+    assert!(fighting.fights.fighting(player));
+    assert_eq!(fighting.repair(player), Err(RepairRefused::NotThere), "in a fight");
+    let (mut whole, player) = by_the_port(1_000, [1.0; 3]);
+    assert_eq!(whole.repair(player), Err(RepairRefused::Whole));
 }
 
 #[test]
@@ -270,7 +307,7 @@ fn boarders_all_beaten_on_its_deck_wash_up_with_their_ships_hurts_and_it_is_scut
         Some(vec![0.0, 0.0, 0.0]),
         "beaten, not sunk"
     );
-    let (hurts, _) = sea.kept(player).unwrap();
+    let hurts = sea.kept(player).unwrap();
     assert!((hurts[0] - 0.5).abs() < 1e-9, "moored with its hurts: {hurts:?}");
 }
 
@@ -330,21 +367,4 @@ fn what_a_fight_owes_a_player_who_rejoined_goes_to_their_new_number_once() {
     let count = |player| sea.harbour.flotsam.pieces.iter().filter(|piece| piece.player == player).count();
     assert!(count(ben) > 0, "it sank and floats for ben");
     assert_eq!((count(ada), count(again)), (0, count(ben)), "nothing for the old number, once for the new");
-}
-
-#[test]
-fn a_repair_begun_unkept_stops_as_the_kept_character_comes_and_mends_nothing_of_theirs() {
-    let mut sea = sea();
-    let player = sea.join();
-    sea.course(player, &[[60_000.0, 50_000.0]], 10).unwrap();
-    sea.tick();
-    sea.berths.get_mut(&player).unwrap().kept = [0.5; 3];
-    assert_eq!(sea.repair(player), Ok(()), "by a port, played unkept");
-    let mut character = sailor();
-    character.ship = [1_000, 1_000, 1_000];
-    character.ship_at = Some([50_000, 50_000]);
-    assert!(sea.restore_character(player, &character.to_json()));
-    ticks(&mut sea, 100 * 60);
-    let (kept, left) = sea.kept(player).unwrap();
-    assert!((kept[0] - 0.1).abs() < 1e-6 && left == 0.0, "the kept ship, 10 km from a port, as it was: {kept:?}");
 }

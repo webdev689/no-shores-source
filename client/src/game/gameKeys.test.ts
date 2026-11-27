@@ -338,6 +338,40 @@ test('at sea a landing’s confirmation takes Enter as yes and Escape as no; V s
   assert.deepEqual(done, ['answer true', 'answer false', 'switch', 'land null']);
 });
 
+test('R is Repair Ship while a port’s card is up, never the helm’s repair; with another landing’s card it repairs as ever', () => {
+  const { window } = fakeWindow();
+  const done: string[] = [];
+  const sea = {
+    ...afloat(),
+    aboard: { active: true, walking: false },
+    sighted: { ask: (what: string) => done.push(`ask ${what}`) },
+  };
+  const playing = { flow: { mode: 'sea' }, sea, foot: null, helmMap: { key: () => false }, through: null, after: {} };
+  const landings = {
+    asking: { aim: { kind: 'dock' } } as object | null,
+    answer: (yes: boolean) => done.push(`answer ${yes}`),
+    repair: () => done.push('repair ship'),
+  };
+  listenForControls({
+    playing,
+    input: { onPad: () => undefined },
+    ui: { typing: false },
+    hud: {},
+    story: null,
+    retry: () => null,
+    landings,
+    change: () => undefined,
+  } as unknown as Controlled);
+  const key = (name: string, code: string) => window.dispatchEvent(new FakeEvent('keydown', { key: name, code }));
+  key('r', 'KeyR');
+  key('Enter', 'Enter');
+  landings.asking = { aim: { kind: 'dock' } };
+  key('Escape', 'Escape');
+  landings.asking = { aim: { kind: 'ashore' } };
+  key('r', 'KeyR');
+  assert.deepEqual(done, ['repair ship', 'answer true', 'answer false', 'ask repair']);
+});
+
 test('on the pad at sea A asks after the landing the sea offers, and answers yes; B answers no', () => {
   fakeWindow();
   const done: string[] = [];

@@ -403,10 +403,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   /** Moves the flow on for something that needs no veil. */
   const change = (happening: Happening) => void (playing.flow = next(playing.flow, happening));
 
-  /** The sea's clicks and the landings asked after: a landing on the open landmass flies the view up over the island
-   *  to choose where, only while the player is free (never while another landmass opens). */
+  /** The sea's clicks, the landings asked after (flown up over the island only while the player is free), repairs. */
   const landings = new SeaLandings({
     ...{ sea: () => playing.sea, landmass: () => playing.landmass, isles, free },
+    repairs: () => playing.seaWord?.repairs(playing.sea?.sighted ?? null, fed()?.gear?.aurem ?? 0) ?? null,
     land: () =>
       playing.flow.mode === 'sea' && free() && !!playing.sea?.goAshore() && (change({ kind: 'view-landings' }), true),
   });
@@ -504,7 +504,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   hud.onManage(manage);
   hud.onTakeHelm(takeHelm);
   const sailed = sailedShip(() => fed()?.gear, hulls);
-  const hurtsKept = () => playing.seaWord?.keptOf(playing.sea?.sighted ?? null) ?? null;
+  const hurtsKept = () => playing.seaWord?.keptOf(playing.sea?.sighted ?? null, fed()?.gear?.aurem ?? 0) ?? null;
   const shipNow = () => sailed.papers(playing.flow.mode === 'sea' ? playing.sea : null, hurtsKept());
   /** Going through the gate the player stands in to the node it leads to. */
   const goThrough = () => {

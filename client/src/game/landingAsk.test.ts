@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Point2 } from '../overworld/ground.ts';
-import { askWords, type ClickContext, clickAtSea, inReach, LandingCourse, type LandingAim } from './landingAsk.ts';
+import {
+  askWords,
+  type ClickContext,
+  clickAtSea,
+  inReach,
+  LandingCourse,
+  type LandingAim,
+  RepairCourse,
+} from './landingAsk.ts';
 
 const HARBOUR: Point2 = [1_000, -2_000];
 const PORTED: ClickContext = {
@@ -112,4 +120,22 @@ test('a landing made for lands once in reach, taken once; another course lets it
   course.begin(DOCK, HARBOUR);
   assert.equal(course.due(null, null), null);
   assert.equal(course.making, null, 'at anchor out of reach, let go');
+});
+
+test('a repair made for asks once the room has the ship at rest within reach of the roadstead, once; a new course or none lets it go', () => {
+  const ROADSTEAD: Point2 = [10_000, 0];
+  const course = new RepairCourse();
+  course.begin(ROADSTEAD);
+  assert.equal(course.due(null, ROADSTEAD, 3_000), false, 'no word from the room yet');
+  assert.equal(course.due({ x: 8_000, y: 0, pace: 4 }, null, 3_000), false, 'within reach, still under way');
+  assert.equal(course.due({ x: 0, y: 0, pace: 0 }, ROADSTEAD, 3_000), false, 'stopped short, still bound there');
+  assert.equal(course.waiting, true);
+  assert.equal(course.due({ x: 9_000, y: 0, pace: 0 }, null, 3_000), true, 'at rest within reach');
+  assert.equal(course.due({ x: 9_000, y: 0, pace: 0 }, null, 3_000), false, 'once');
+  course.begin(ROADSTEAD);
+  assert.equal(course.due({ x: 9_000, y: 0, pace: 4 }, [50, 50], 3_000), false);
+  assert.equal(course.waiting, false, 'bound elsewhere');
+  course.begin(ROADSTEAD);
+  assert.equal(course.due({ x: 0, y: 0, pace: 0 }, null, 3_000), false);
+  assert.equal(course.waiting, false, 'at rest out of reach with no voyage');
 });

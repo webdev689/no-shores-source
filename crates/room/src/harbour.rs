@@ -1,9 +1,8 @@
 //! What a fight leaves a player's ship, and the port cities that take it in. Its hull, canvas and men are kept with
 //! it (as shares of whole) until repaired, and it starts every fight with them. A player whose ship goes down, or
 //! who is beaten on a deck with no player left standing there, washes up at the nearest of the port cities: on foot by
-//! its harbour, their ship moored at its roadstead, a sunk one at `SUNK_KEPT`. Within `REPAIR_REACH_M` of a port's
-//! roadstead it may be repaired, free: made whole over a second for each hundredth missing (the most of hull, canvas
-//! and men), `REPAIR_MOST_S` at most, lying at rest; sailing or leaving stops it where it stood.
+//! its harbour, their ship moored at its roadstead, a sunk one at `SUNK_KEPT`. Lying at rest within `REPAIR_REACH_M` of
+//! a port's roadstead it may be repaired: made whole at once for `repair_price`'s Aurem.
 
 use crate::PlayerId;
 use std::collections::{BTreeMap, BTreeSet};
@@ -12,40 +11,19 @@ use world::traffic::{Port, SeaWays, Traffic};
 
 /// What a sunk ship comes back with: a tenth of its hull, a quarter of its canvas and half its men.
 pub const SUNK_KEPT: [f64; 3] = [0.10, 0.25, 0.5];
-/// How near a port's roadstead it is repaired, metres; and the longest a repair takes, seconds.
+/// How near a port's roadstead it is repaired, metres.
 pub const REPAIR_REACH_M: f64 = 3_000.0;
-pub const REPAIR_MOST_S: f64 = 100.0;
-/// A repair takes this many seconds for each hundredth it is missing.
-pub const REPAIR_S_PER_HUNDREDTH: f64 = 1.0;
+/// What a repair costs for each whole percent the ship is missing, Aurem.
+pub const REPAIR_AUREM_PER_PERCENT: u32 = 2;
 
-/// A repair under way: what it had when it began, and the seconds it has run.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Repair {
-    pub from: [f64; 3],
-    pub seconds: f64,
-}
-
-impl Repair {
-    /// How long making it whole from `from` takes, seconds.
-    #[must_use]
-    pub fn takes(from: [f64; 3]) -> f64 {
-        let missing = from.iter().map(|share| 1.0 - share.clamp(0.0, 1.0)).fold(0.0, f64::max);
-        (missing * 100.0 * REPAIR_S_PER_HUNDREDTH).min(REPAIR_MOST_S)
-    }
-
-    /// What it has now: each share risen evenly toward whole over the repair's time.
-    #[must_use]
-    pub fn now(&self) -> [f64; 3] {
-        let takes = Repair::takes(self.from);
-        let done = if takes > 0.0 { (self.seconds / takes).min(1.0) } else { 1.0 };
-        self.from.map(|share| share + (1.0 - share) * done)
-    }
-
-    /// The seconds left.
-    #[must_use]
-    pub fn left(&self) -> f64 {
-        (Repair::takes(self.from) - self.seconds).max(0.0)
-    }
+/// What making a ship whole from `kept` costs, Aurem: `REPAIR_AUREM_PER_PERCENT` for each percent missing of the most
+/// missing of hull, canvas and men, a part of a percent counted whole; nothing for a whole ship.
+#[must_use]
+pub fn repair_price(kept: [f64; 3]) -> u32 {
+    let missing = kept.iter().map(|share| 1.0 - share.clamp(0.0, 1.0)).fold(0.0, f64::max);
+    // A share read back from the character's ten-thousandths lands a hair past its percent, never a whole millionth.
+    let percent = (missing * 100.0 - 1e-6).ceil().max(0.0) as u32;
+    percent * REPAIR_AUREM_PER_PERCENT
 }
 
 /// The port cities ships wash up at and are repaired by: each one's id and its roadstead, and the sea's ways between
@@ -113,30 +91,6 @@ impl Harbours {
     }
 }
 
-/// Each player's repair under way, stepped a tick at a time.
-#[derive(Debug, Default)]
-pub struct Repairs {
-    pub under_way: BTreeMap<PlayerId, Repair>,
-}
-
-impl Repairs {
-    /// One tick of `seconds`: each repair runs on; one done is answered with what it has, and ends.
-    pub fn tick(&mut self, seconds: f64) -> Vec<(PlayerId, [f64; 3])> {
-        let mut done = Vec::new();
-        for (player, repair) in &mut self.under_way {
-            repair.seconds += seconds;
-            done.push((*player, repair.now()));
-        }
-        self.under_way.retain(|_, repair| repair.left() > 0.0);
-        done
-    }
-
-    /// A repair stops where it stood: what it has then, if one was under way.
-    pub fn stop(&mut self, player: PlayerId) -> Option<[f64; 3]> {
-        self.under_way.remove(&player).map(|repair| repair.now())
-    }
-}
-
 /// Why a repair was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RepairRefused {
@@ -146,17 +100,18 @@ pub enum RepairRefused {
     NotThere,
     /// It is whole.
     Whole,
+    /// The player's character holds less Aurem than the repair costs, or the sea holds no character for them.
+    TooLittleAurem,
 }
 
 /// A course held for the keeper's word: its points and its pace.
 pub type HeldCourse = (Vec<[f64; 2]>, u16);
 
-/// What the sea keeps after its fights: its port cities, each repair under way, what floats, each player's character
-/// once the accounts gave it, and what each player is told this tick (`naval::wire::told_numbers`'s numbers).
+/// What the sea keeps after its fights: its port cities, what floats, each player's character once the accounts gave
+/// it, and what each player is told this tick (`naval::wire::told_numbers`'s numbers).
 #[derive(Debug, Default)]
 pub struct Harbour {
     pub harbours: Harbours,
-    pub repairs: Repairs,
     pub flotsam: crate::flotsam::Flotsam,
     pub characters: BTreeMap<PlayerId, gear::Character>,
     /// Each kept player's guild, as the host told it (`guild_book.rs`).

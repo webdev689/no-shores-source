@@ -106,6 +106,7 @@ fn sea_facts() -> Value {
         "engage_m": naval::captain::ENGAGE_RANGE,
         "hold_reach_m": room::threat::hold_reach_m(),
         "repair_reach_m": room::harbour::REPAIR_REACH_M,
+        "repair_aurem_per_percent": room::harbour::REPAIR_AUREM_PER_PERCENT,
         "home_reach_m": world::waters::HOME_REACH_M,
         "travel_short_m": room::sea::travel::SHORT_OF_END_M,
         "ship_names": names,

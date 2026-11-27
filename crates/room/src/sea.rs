@@ -190,7 +190,6 @@ impl Sea {
     pub fn leave(&mut self, player: PlayerId) {
         self.park(player);
         self.remember_left(player);
-        self.stop_repair(player);
         self.leave_decks(player);
         self.harbour.forget(player);
         self.islands.forget(player);
@@ -276,7 +275,6 @@ impl Sea {
             let Some(sailing) = berth.sailing.as_mut() else { return Err(CourseRefused::BadCourse) };
             sailing.course.clear();
             (sailing.ship.pace, sailing.ship.rate) = (0, 0);
-            self.stop_repair(player);
             return Ok(());
         }
         if pace != WORLD_PACE && !PACES.contains(&pace) {
@@ -294,7 +292,6 @@ impl Sea {
         if self.crosses_land(player, &path) {
             return Err(CourseRefused::CrossesLand);
         }
-        self.stop_repair(player);
         let course: VecDeque<[f64; 2]> = whole_points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
         let heading = at_sea.map_or_else(|| self.put_in(player, start, whole_points[0]), |ship| ship.heading);
         let ship = Ship { x: start.x as f64, y: start.y as f64, heading, pace, rate: 0 };
@@ -526,10 +523,6 @@ fn heave_to(
     player: PlayerId,
 ) -> Option<(PlayerId, sailing::ship::Ship, [f64; 3], sailing::HullKind)> {
     let berth = berths.get_mut(&player)?;
-    // A repair stops as the ship heaves to for a fight, keeping what it mended: the fight starts from that.
-    if let Some(mended) = harbour.repairs.stop(player) {
-        ports::keep(berth, &mut harbour.characters, player, mended);
-    }
     let kept = berth.kept;
     let sailing = berth.sailing.as_mut()?;
     sailing.course.clear();

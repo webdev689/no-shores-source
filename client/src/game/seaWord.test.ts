@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { portCities } from './worldData.ts';
-import { SeaWord, linesOf, washedUpWords } from './seaWord.ts';
+import { SeaWord, linesOf, repairOffer, repairPrice, washedUpWords } from './seaWord.ts';
 
 const FACTS = {
   engageM: 750,
   holdReachM: 1_642.8,
   repairReachM: 3_000,
+  repairAuremPerPercent: 2,
+  roadsteads: [],
   homeReachM: 10_000,
   travelShortM: 400,
   shipNames: [],
@@ -49,13 +51,32 @@ test('a piece gathered that held anything is left to the feed, which tells it fr
     assert.deepEqual(linesOf([held], [], words), [], `${held.join(',')}`);
 });
 
-test('the ship’s repair reads its time left, whole, or how to have it, by the rules’ reach', () => {
+test('a repair costs the rules’ Aurem for each whole percent missing of the most missing, a part counted whole', () => {
+  assert.equal(repairPrice({ hull: 0.9, sail: 1, crew: 0.95 }, 2), 20);
+  assert.equal(repairPrice({ hull: 0.7, sail: 1, crew: 1 }, 2), 60, 'a share a hair off its percent is that percent');
+  assert.equal(repairPrice({ hull: 1, sail: 0.995, crew: 1 }, 2), 2, 'half a percent costs a whole one');
+  assert.equal(repairPrice({ hull: 1, sail: 1, crew: 1 }, 2), 0);
+  assert.deepEqual(repairOffer({ hull: 0.8, sail: 1, crew: 1 }, 100, 2), { price: 40, why: null });
+  assert.deepEqual(repairOffer({ hull: 1, sail: 1, crew: 1 }, 100, 2), { price: 0, why: 'The ship is whole.' });
+  assert.deepEqual(repairOffer({ hull: 0.8, sail: 1, crew: 1 }, 39, 2), {
+    price: 40,
+    why: 'You hold 39 Aurem of the 40 it costs.',
+  });
+  assert.deepEqual(repairOffer(null, 100, 2), { price: 0, why: 'Repairs are made at sea, by a port city.' });
+});
+
+test('Manage’s repair line names the price and where it is had, whole, too little Aurem, or out of the sea', () => {
   const word = new SeaWord([], FACTS);
-  assert.equal(word.repairWords({ whole: false, left: 12.2 }), 'Repairing it: 13 s left');
-  assert.equal(word.repairWords({ whole: true, left: 0 }), 'The ship is whole');
-  assert.equal(word.repairWords({ whole: false, left: 0 }), 'Repair: free, lying at rest within 3 km of a port city');
-  assert.equal(word.repairWords(null), 'Repairs are made at sea, by a port city');
-  assert.match(new SeaWord([], { ...FACTS, repairReachM: 1_500 }).repairWords({ whole: false, left: 0 }), /1\.5 km/);
+  assert.equal(
+    word.repairWords({ price: 40, why: null }),
+    'Repair: 40 Aurem, lying at rest within 3 km of a port city',
+  );
+  assert.equal(word.repairWords({ price: 0, why: 'The ship is whole.' }), 'The ship is whole.');
+  assert.equal(
+    word.repairWords({ price: 40, why: 'You hold 39 Aurem of the 40 it costs.' }),
+    'You hold 39 Aurem of the 40 it costs.',
+  );
+  assert.match(new SeaWord([], { ...FACTS, repairReachM: 1_500 }).repairWords({ price: 2, why: null }), /1\.5 km/);
 });
 
 test('washed up, the player walks into the social space of the port city they washed up at once its landmass is open', () => {

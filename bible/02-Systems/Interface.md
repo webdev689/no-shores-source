@@ -1336,7 +1336,10 @@ ship, whose three bars then stand side by side so the console stays low. Its nod
 A click that asks to land (a port's icon, its island, a coast with no port, a sea island's water; [[Game]], "Landings")
 stands a window 420 px across a little above the middle of the view, clear of the console under it (`landingAskNode`): its question in brass
 at the face's larger size ("Dock at Overlook?"), what yes does under it in dim ink, and Cancel (Esc) and its yes (a
-primary, with Enter's key) on its footer; Cancel names the pad's B while the pad is in use.
+primary, with Enter's key) on its footer; Cancel names the pad's B while the pad is in use. A port's card stands 500 px
+across ([[A Port Repairs a Ship for Aurem, at Once, Its Card Offering Dock, Repair Ship and Leave]]): under what docking does, the repair's price or why it cannot be had, in dim ink, and on
+its footer Dock (the primary, Enter), Repair Ship (with the repair's key; dimmed and doing nothing while it cannot be
+had) and Leave (Esc, the pad's B), in that order.
 
 ## The island's tiles
 

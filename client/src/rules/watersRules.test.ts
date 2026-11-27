@@ -88,8 +88,14 @@ test('the held map grid has its cells, and agrees with the water at each cell mi
 test('the table gives the sea’s facts as its rules have them: its reaches and every ship’s name', async () => {
   const { table } = await opened();
   assert.deepEqual(
-    [table.sea.engageM, table.sea.repairReachM, table.sea.homeReachM, table.sea.travelShortM],
-    [750, 3_000, 10_000, 400],
+    [
+      table.sea.engageM,
+      table.sea.repairReachM,
+      table.sea.repairAuremPerPercent,
+      table.sea.homeReachM,
+      table.sea.travelShortM,
+    ],
+    [750, 3_000, 2, 10_000, 400],
   );
   assert.ok(table.sea.holdReachM > table.sea.engageM, `the hold reaches past its sight: ${table.sea.holdReachM}`);
   assert.deepEqual(table.sea.shipNames[1], ['Tithe Sloop', 'Tithe Schooner', 'Tithe Brig', 'Tithe Frigate']);
