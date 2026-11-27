@@ -41,33 +41,39 @@ Only what the player has walked or seen is drawn, never the whole dungeon.
   tilts it 0.006. Keys ease it there at 10 a second, the short way round. P lays the flat plan, turned to the nearest
   whole turn, and P again goes back to the view before. A left drag pans, the wheel zooms about the pointer as the held
   map's wheel does, + and - zoom by 1.35, the arrows pan 60 px. It zooms between 1 and 14 paper pixels a metre.
-- **At rest.** Opened with no view kept, it fits what is explored in 0.92 of the paper, never under 4 px a metre, and
+- **At rest.** Opened with no view kept, it fits what is explored on the storey looked at and those under it (every
+  storey's with L) in 0.92 of the paper, never under 4 px a metre, and
   is centred on the player instead where the fit would leave them more than 0.42 of the paper from its middle.
 - **Storeys** (`mapStoreys.ts`). The map reads a layout's `storeys`, `floors`, `storeyM` and `stairs` where it has
   them, and a layout without them as one storey at 0 m with no flights. Cells are storey-major. A flight's cells are
   named by `stairs` on both its storeys; any cell code but a room's, a corridor's and rock is open air over the storey
-  under. A body is on the storey with the highest floor under its feet by less than half a storey, so a flight's
-  upper half is the storey over's. It opens cut over the player's storey. PgUp or ] steps the cut a storey up, PgDn or [ a storey down, the view
+  under. A body is on the storey with the highest floor under its feet by less than half a storey of those with a floor
+  (a room's, a corridor's or a flight's) in the cell it stands in, so a flight's upper half is the storey over's and a
+  jump high under open air stays on the floor it left; over no such floor, the highest by height alone. It opens cut over the player's storey. PgUp or ] steps the cut a storey up, PgDn or [ a storey down, the view
   keeping the new floor where the old one lay; Home goes back to the player's storey, centred on them. L shows every
   storey, each cut over its own floor, its flights never cut, and each storey but the one looked at inked at 0.3.
   The words over the paper say "Storey 2 of 3, you are on 1" where a dungeon has more than one.
 - **The reveal** (`mapReveal.ts`, DFO's own law over our 3.2 m cells). The feet are read five times a second, opened
   or not, onto a metre's grid, the walked trail; a step between two reads up to 3 m is walked through, a longer one is
   a carry. From each metre newly walked, 144 lines of sight run across the floor up to 20 m, a sample every 0.5 m,
-  each cast from the floor under the feet (a flight's where they stand on one) and stopped by rock, by a solid that stands over 1.2 m above the floor it was cast from, or by the floor rising more
+  each cast from the floor under the feet (a flight's where they stand on one) and stopped by rock, by a step across a
+  corner where either cell beside it is rock, by a solid that stands over 1.2 m above the floor it was cast from, or by the floor rising more
   than 1.2 m from one cell to the next. Sight goes down a flight onto the storey under (past the flight's middle) and
   across open air, never up a flight nor onto the storey over. A cell is drawn once walked or seen; a flight's cell on
   both its storeys.
 - **Kept** (`mapKept.ts`). Each dungeon's view and its revealed cells are kept in the browser's storage under
-  `noShores.dungeonMaps`, by the dungeon's ask (the same dungeon at any tier shares one), for the last 30 dungeons,
-  the oldest written going first, and the oldest let go while the storage is too full to take the newest: on shutting
-  the map, on leaving the dungeon, and within 3 s of new cells. The cells are kept as a bit each, so a great dungeon's
-  are a few thousand letters.
+  `noShores.dungeonMaps`, by the dungeon's ask (the same dungeon at any tier shares one), for the last 30 dungeons in
+  at most 150,000 letters, the oldest written going first, and the oldest let go while the storage is too full to take
+  the newest: on shutting the map, on leaving the dungeon, and within 3 s of new cells. The cells are kept as a bit
+  each, so a great dungeon's are a few thousand letters, with the layout's print (its columns, rows and storeys and a
+  sum of its cells): a map kept for another layout of the dungeon is dropped, and the map starts afresh.
 - **The ink** (`mapShaders.ts`, `mapInk.ts`). The map draws the dungeon's own mesh, the very buffers the dungeon's
   view holds (`DungeonView.mesh`), with two pipelines of its own on the game's device, into targets of its own, then
-  over the finished picture. The first pass draws each face whose normal looks toward the eye, so a room's near wall
-  is never drawn and the room lies open from any side; only where its cell (read a little into the room it faces) is
-  walked or seen, and only under the cut, 2.6 m over the floor looked at. A face keeps its full ink down to 2 m under
+  over the finished picture. Each cell's word (walked or seen, a flight's, a landmark's) goes to the device only when
+  the reveal has grown. The first pass draws each face whose normal looks toward the eye, so a room's near wall
+  is never drawn and the room lies open from any side; only where its cell (read a little into the room it faces, on
+  the storey its height lies in, or the storey over where a landmark's cell there lies up to 3 m over it, so a pit or a
+  shaft sunk under its floor is its own storey's) is walked or seen, and only under the cut, 2.6 m over the floor looked at. A face keeps its full ink down to 2 m under
   the cut and fades to 0.3 over the next 8 m. It writes a face's facing and shade into one target and its strength,
   its pencil and its depth into a second: floors (facing up more than cos 70) a graphite (74, 74, 80) wash with
   1 m flagstones in running bond (joints 0.24, doubled where a stone would be under 10 px), ceilings 0.18, walls
@@ -78,7 +84,8 @@ Only what the player has walked or seen is drawn, never the whole dungeon.
   max(1, round(min(2.5, 0.6 + 0.1 x scale))) px, all over parchment (238, 222, 190) with a faint grain.
 - **The marks** (`mapPaper.ts`), laid by the interface over the ink: the player's caret, red, turned with the map;
   the company's carets, blue, each named under the pointer; the way in's staff, pulsing, once seen; the return portal
-  once seen; each flight's steps, named "Stairs down to storey 2" or "Stairs up to storey 1" under the pointer. A mark
+  once seen; each flight's steps, on the storey looked at, near its head from over and near its foot from under,
+  named "Stairs down to storey 2" or "Stairs up to storey 1" under the pointer. A mark
   on another storey than the one looked at is drawn faint. Only the mark nearest the pointer, within 14 px, is named.
   The compass (radius 24 px, at the paper's upper right) is inked by the second pass, its ring squashed with the
   tilt, its needle from the middle to a dot at the north, an N past

@@ -9,7 +9,7 @@
 //
 //     node tools/claude-toolkit/encounter-plan.ts <room-qa.wasm> <elite place> <out dir> <plan.json> [port]
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { askLayout } from '../../client/src/game/dungeonLayout.ts';
+import { askLayout, floorOf, ROCK, STAIR, storeyUnder, VOID } from '../../client/src/game/dungeonLayout.ts';
 
 const [wasm, place, out, planPath, port = '5173'] = process.argv.slice(2);
 if (!wasm || !place || !out || !planPath) throw new Error('name the room-qa.wasm, the Elite Dungeon, a folder, a plan');
@@ -44,11 +44,13 @@ const bearing = ([fromX = 0, fromY = 0]: Point, [toX = 0, toY = 0]: Point) =>
 const middleOf = (points: readonly Point[]): Point => [
   points.reduce((sum, point) => sum + (point[0] ?? 0), 0) / points.length,
   points.reduce((sum, point) => sum + (point[1] ?? 0), 0) / points.length,
+  points[0]?.[2] ?? 0,
 ];
+/** `metres` from `from` toward `to` on the floor, at `from`'s height. */
 const toward = (from: Point, to: Point, metres: number): Point => {
   const [east, south] = [(to[0] ?? 0) - (from[0] ?? 0), (to[1] ?? 0) - (from[1] ?? 0)];
   const length = Math.hypot(east, south) || 1;
-  return [(from[0] ?? 0) + (east / length) * metres, (from[1] ?? 0) + (south / length) * metres];
+  return [(from[0] ?? 0) + (east / length) * metres, (from[1] ?? 0) + (south / length) * metres, from[2] ?? 0];
 };
 
 /** A QA hook called in every room module, then a moment for the rooms' worker to take it. */
@@ -60,16 +62,21 @@ const freeze = (held: boolean) => call('room_qa_freeze', held ? 1 : 0);
 const encounter = (what: number, first: number, second: number) => call('room_qa_encounter', what, first, second);
 // The room ticks as the page draws (a slow frame runs many ticks), so a pause is a frame as well as its time.
 const pause = (millis: number) => steps.push({ eval: `(async()=>{${sleep(millis)}})()` }, { frames: 1 });
-/** Stands the body at `point` (on a pad's top at `lift`), asked again every `every` ms until the page's own body
- *  stands there; the run fails if it never does. */
-const stand = ([east = 0, south = 0]: Point, lift?: number, every = 1000) =>
+/** The storey a point (x, y, z) stands on, and that storey's floor (m). */
+const storeyOfPoint = (point: Point) => storeyUnder(layout, (point[2] ?? 0) + 0.01);
+const floorUnder = (point: Point) => floorOf(layout, storeyOfPoint(point));
+/** Stands the body at `point`, lifted to `lift` (a pad's top, or else the floor of the point's storey), asked again
+ *  every `every` ms until the page's own body stands there; the run fails if it never does. */
+const stand = (point: Point, lift = floorUnder(point), every = 1000) => {
+  const [east = 0, south = 0] = point;
   steps.push({
     eval:
       `(async()=>{const qa=new BroadcastChannel('qa');let at=null;for(let tries=0;tries<${(60000 / every) | 0};tries+=1){` +
-      `qa.postMessage([${east},${south}${lift === undefined ? '' : `,${lift}`}]);${sleep(every)}at=self.__qaWhere();` +
+      `qa.postMessage([${east},${south},${lift}]);${sleep(every)}at=self.__qaWhere();` +
       `if(Math.hypot(at.x-${east},at.y-${south})<1)return at;}` +
       `throw new Error('never stood at ${east},${south}: '+JSON.stringify(at));})()`,
   });
+};
 let shot = 1;
 /** Turns the camera from where the body stands toward `facing` and pictures it. */
 const picture = (standing: Point, facing: Point, camera: string, name: string) => {
@@ -84,31 +91,79 @@ const picture = (standing: Point, facing: Point, camera: string, name: string) =
 
 const KINDS = ['', 'litany', 'weighing', 'ascent', 'holdfast'];
 const [LITANY, WEIGHING, ASCENT, HOLDFAST] = [1, 2, 3, 4];
+// Cells are storey-major: a storey's plane follows the one over it.
+const plane = layout.columns * layout.rows;
+/** A cell's middle, on its storey's floor. */
 const centre = (cell: number): Point => [
-  ((cell % layout.columns) + 0.5) * layout.cell,
-  (Math.floor(cell / layout.columns) + 0.5) * layout.cell,
+  (((cell % plane) % layout.columns) + 0.5) * layout.cell,
+  (Math.floor((cell % plane) / layout.columns) + 0.5) * layout.cell,
+  floorOf(layout, Math.floor(cell / plane)),
 ];
-const cellOf = ([x = 0, y = 0]: Point) => Math.floor(y / layout.cell) * layout.columns + Math.floor(x / layout.cell);
+const cellOf = (point: Point) =>
+  storeyOfPoint(point) * plane +
+  Math.floor((point[1] ?? 0) / layout.cell) * layout.columns +
+  Math.floor((point[0] ?? 0) / layout.cell);
+/** The cells beside `cell` on its storey, in the order east, south, west, north. */
+const besideOn = (cell: number) => {
+  const [storey, column, row] = [Math.floor(cell / plane), (cell % plane) % layout.columns, Math.floor((cell % plane) / layout.columns)];
+  return (
+    [
+      [1, 0],
+      [0, 1],
+      [-1, 0],
+      [0, -1],
+    ] as const
+  ).flatMap(([east, south]) => {
+    const [nextColumn, nextRow] = [column + east, row + south];
+    const inside = nextColumn >= 0 && nextRow >= 0 && nextColumn < layout.columns && nextRow < layout.rows;
+    return inside ? [storey * plane + nextRow * layout.columns + nextColumn] : [];
+  });
+};
+/** The flight a flight's cell is of, or undefined. */
+const flightOf = (cell: number) =>
+  (layout.stairs ?? []).find((stair) => {
+    const storey = Math.floor(cell / plane);
+    return (storey === stair.upper || storey === stair.upper + 1) && stair.cells.includes(cell % plane);
+  });
+/** The landing a flight's end cell steps onto: its head's on the upper storey, its foot's on the lower; else null. */
+const landingOf = (cell: number) => {
+  const [flight, storey] = [flightOf(cell), Math.floor(cell / plane)];
+  if (!flight) return null;
+  if (storey === flight.upper && cell % plane === flight.cells[0]) return storey * plane + flight.top;
+  if (storey === flight.upper + 1 && cell % plane === flight.cells.at(-1)) return storey * plane + flight.bottom;
+  return null;
+};
+/** The cells a walk steps to from a cell, as the rules walk it (crates/dungeon storeys.rs `walk_from`): open cells
+ *  beside it on its storey but open air, a flight's cells only to its own and its ends to their landings, and a
+ *  flight's cell to its twin on the other storey it joins. */
+const walkFrom = (cell: number) => {
+  const flight = (each: number) => (layout.cells[each] === STAIR ? flightOf(each) : undefined);
+  const steps = besideOn(cell).filter((next) => {
+    if (layout.cells[next] === ROCK || layout.cells[next] === VOID) return false;
+    const [from, to] = [flight(cell), flight(next)];
+    if (from && to) return from === to;
+    if (from) return landingOf(cell) === next;
+    if (to) return landingOf(next) === cell;
+    return true;
+  });
+  const twin = flight(cell);
+  if (!twin) return steps;
+  const other = Math.floor(cell / plane) === twin.upper ? twin.upper + 1 : twin.upper;
+  return [...steps, other * plane + (cell % plane)];
+};
 // Each cell's walk from the way in over the open cells, as the room's plan reads the doorway a room is entered by.
 const walks = layout.cells.map(() => Infinity);
 walks[layout.wayIn.cell] = 0;
 for (const todo = [layout.wayIn.cell]; todo.length > 0; ) {
   const cell = todo.shift() ?? 0;
-  const [column, row] = [cell % layout.columns, Math.floor(cell / layout.columns)];
-  for (const [east, south] of [
-    [1, 0],
-    [0, 1],
-    [-1, 0],
-    [0, -1],
-  ] as const) {
-    const [nextColumn, nextRow] = [column + east, row + south];
-    const next = nextRow * layout.columns + nextColumn;
-    if (nextColumn < 0 || nextRow < 0 || nextColumn >= layout.columns || nextRow >= layout.rows) continue;
-    if (layout.cells[next] === -2 || walks[next] !== Infinity) continue;
+  for (const next of walkFrom(cell)) {
+    if (walks[next] !== Infinity) continue;
     walks[next] = (walks[cell] ?? 0) + 1;
     todo.push(next);
   }
 }
+/** The solids standing on a storey. */
+const boxesOn = (storey: number) => layout.boxes.filter((box) => storeyUnder(layout, box[4] + 0.01) === storey);
 /** A room's doorway cell it is entered by (nearest the way in on the walk), and the open cell outside it that the
  *  company comes from. */
 function entry(room: number): { door: Point; outside: Point } {
@@ -120,20 +175,15 @@ function entry(room: number): { door: Point; outside: Point } {
     return mine < theirs || (mine === theirs && cell < best) ? cell : best;
   };
   const door = cells.reduce(first);
-  const [columns, column] = [layout.columns, door % layout.columns];
-  const around = [
-    column + 1 < columns ? door + 1 : -1,
-    column > 0 ? door - 1 : -1,
-    door + columns,
-    door - columns,
-  ].filter((cell) => layout.cells[cell] !== undefined && layout.cells[cell] !== room && layout.cells[cell] !== -2);
+  const around = besideOn(door).filter((cell) => ![room, ROCK, VOID, STAIR].includes(layout.cells[cell] ?? ROCK));
   const outside = around.reduce(first, door);
   return { door: centre(door), outside: centre(outside) };
 }
 /** The middle of the seal's room's cell, clear of every pad and solid by a metre, farthest from `from`. */
 function floorAcross(seal: Seal, from: Point): Point {
+  const storey = Math.floor(layout.cells.indexOf(seal.room) / plane);
   const clear = ([x = 0, y = 0]: Point) =>
-    [...seal.pads, ...layout.boxes].every(
+    [...seal.pads, ...boxesOn(storey)].every(
       ([minX, minY, maxX, maxY]) => x < minX - 1 || x > maxX + 1 || y < minY - 1 || y > maxY + 1,
     );
   const far = (point: Point) => Math.hypot((point[0] ?? 0) - (from[0] ?? 0), (point[1] ?? 0) - (from[1] ?? 0));
@@ -142,7 +192,8 @@ function floorAcross(seal: Seal, from: Point): Point {
 }
 
 /** How far `point` stands inside room `index`'s walls and clear of every solid, metres (less than 0 outside). */
-function openness(index: number, [x = 0, y = 0]: Point): number {
+function openness(index: number, point: Point): number {
+  const [x = 0, y = 0] = point;
   const room = layout.rooms[index];
   const walls = room
     ? Math.min(
@@ -152,7 +203,8 @@ function openness(index: number, [x = 0, y = 0]: Point): number {
         (room.y + room.depth) * layout.cell - y,
       )
     : 0;
-  const solids = layout.boxes.map(([minX, minY, maxX, maxY]) => Math.max(minX - x, x - maxX, minY - y, y - maxY));
+  const storey = storeyOfPoint(point);
+  const solids = boxesOn(storey).map(([minX, minY, maxX, maxY]) => Math.max(minX - x, x - maxX, minY - y, y - maxY));
   return Math.min(walls, ...solids);
 }
 
@@ -239,6 +291,7 @@ plan.seals.forEach((seal, index) => {
       const out = (metres: number): Point => [
         (first[0] ?? 0) + Math.sin(turn) * metres,
         (first[1] ?? 0) - Math.cos(turn) * metres,
+        first[2] ?? 0,
       ];
       return { ring: out(2.4), room: Math.min(roomy(out(2.4)), roomy(out(4.4)), roomy(out(6.4))) };
     });

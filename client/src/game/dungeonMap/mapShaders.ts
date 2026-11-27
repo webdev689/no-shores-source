@@ -23,10 +23,13 @@ struct Map {
 @group(0) @binding(0) var<uniform> map: Map;
 `;
 
-/** The first pass: faces into the shading targets. A cell's word: 1 walked or seen, 2 a flight's. */
+/** The first pass: faces into the shading targets. A cell's word: 1 walked or seen, 2 a flight's, 4 a landmark's. */
 export const MAP_FACES_SHADER = /* wgsl */ `
 ${UNIFORM}
 @group(0) @binding(1) var<storage, read> cells: array<u32>;
+
+// How far under its storey's floor a landmark's piece may sink (m): the deepest, the Lift Shaft, goes 2.7 m.
+const SUNK_M = 3.0;
 
 struct Laid {
   @builtin(position) position: vec4f,
@@ -76,11 +79,16 @@ fn joint(at: vec2f, side: f32, pixel: f32) -> f32 {
   let inside = laid.world + normal * 0.3;
   let count = map.paper.w;
   let storeyM = map.storey.y;
-  let storey = clamp(ceil((map.storey.w - inside.z - 0.05) / storeyM), 0.0, count - 1.0);
   let column = floor(inside.x / map.grid.x);
   let row = floor(inside.y / map.grid.x);
   if (column < 0.0 || row < 0.0 || column >= map.grid.y || row >= map.grid.z) { discard; }
-  let cell = cells[u32(storey * map.grid.y * map.grid.z + row * map.grid.y + column)];
+  let plane = map.grid.y * map.grid.z;
+  let place = row * map.grid.y + column;
+  // The storey by height; but a landmark's piece sunk under its storey's floor (a pit, a shaft) is that storey's.
+  var storey = clamp(ceil((map.storey.w - inside.z - 0.05) / storeyM), 0.0, count - 1.0);
+  if (storey > 0.0 && (cells[u32((storey - 1.0) * plane + place)] & 4u) != 0u &&
+      inside.z >= map.storey.w - (storey - 1.0) * storeyM - SUNK_M) { storey -= 1.0; }
+  let cell = cells[u32(storey * plane + place)];
   if ((cell & 1u) == 0u) { discard; }
   let flight = (cell & 2u) != 0u;
   let every = map.paper.z > 0.5;

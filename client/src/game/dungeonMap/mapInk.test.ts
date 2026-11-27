@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { INK, mapFloats, type MapFrame } from './mapInk.ts';
+import type { Gpu } from '../../gpu.ts';
+import { INK, MapInk, mapFloats, type MapFrame } from './mapInk.ts';
 import { MAP_FLOATS } from './mapShaders.ts';
 
 const frame = (yaw: number, pitch: number): MapFrame => ({
@@ -33,4 +34,25 @@ test('turned a quarter, the light still comes from the upper left of the paper',
   const [east, south] = floats.slice(24, 26);
   // Turned a quarter, east lies down the paper and south to its left: the upper left is west and south.
   assert.ok((east ?? 0) < 0 && (south ?? 0) > 0, `${east}, ${south}`);
+});
+
+test("the cells' words are written to the device once a version, and again once let go", () => {
+  const written: unknown[] = [];
+  const queue = { writeBuffer: (...wrote: unknown[]) => void written.push(wrote) };
+  // A device whose every call answers another such stand-in, but for its queue, which counts what is written.
+  const stand: object = new Proxy(function stub() {}, {
+    get: (_target, key) =>
+      key === 'queue' ? queue : key === 'then' ? undefined : key === Symbol.toPrimitive ? () => 0 : stand,
+    apply: () => stand,
+  });
+  const ink = new MapInk({ device: stand, format: 'bgra8unorm' } as unknown as Gpu);
+  const words = new Uint32Array([1, 0, 3]);
+  ink.setCells(words, 7);
+  ink.setCells(words, 7);
+  assert.equal(written.length, 1, 'the same version is held');
+  ink.setCells(words, 8);
+  assert.equal(written.length, 2);
+  ink.release();
+  ink.setCells(words, 8);
+  assert.equal(written.length, 3, 'let go, the cells are written again');
 });

@@ -69,11 +69,22 @@ export function floorAt(
   return top - drop * storeys.storeyM;
 }
 
-/** The storey a body with its feet at `z` stands on: the one with the highest floor under its feet by less than half
- *  a storey, so a flight's upper half is the storey over's and its lower half the one under's; else the lowest. */
-export function storeyOfHeight(storeys: Storeys, z: number): number {
-  let found = storeys.count - 1;
-  for (let storey = storeys.count - 1; storey >= 0; storey--)
-    if ((storeys.floors[storey] ?? 0) <= z + storeys.storeyM / 2) found = storey;
-  return found;
+/** The storey a body with its feet at `feet` stands on: of the storeys with a floor (a room's, a corridor's or a
+ *  flight's) in the cell under the feet, the highest under them by less than half a storey, so a flight's upper half
+ *  is the storey over's and its lower half the one under's, and a jump under open air stays on the floor it left.
+ *  Over no such floor, the highest storey under the feet by that much; else the lowest. */
+export function storeyOfFeet(
+  layout: DungeonLayout,
+  storeys: Storeys,
+  feet: readonly [number, number, number],
+): number {
+  const [column, row] = [Math.floor(feet[0] / layout.cell), Math.floor(feet[1] / layout.cell)];
+  let [onFloor, byHeight] = [-1, storeys.count - 1];
+  for (let storey = storeys.count - 1; storey >= 0; storey--) {
+    if ((storeys.floors[storey] ?? 0) > feet[2] + storeys.storeyM / 2) continue;
+    byHeight = storey;
+    const kind = kindAt(layout, storeys, storey, column, row);
+    if (kind === 'open' || kind === 'stair') onFloor = storey;
+  }
+  return onFloor >= 0 ? onFloor : byHeight;
 }

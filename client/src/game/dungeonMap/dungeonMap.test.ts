@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { DungeonLayout } from '../dungeonLayout.ts';
 import { DungeonMap } from './dungeonMap.ts';
-import { ORBIT } from './mapCamera.ts';
+import { ORBIT, restView, toPaper } from './mapCamera.ts';
 import { REVEAL } from './mapReveal.ts';
 import { STOREYED } from './mapStoreys.test.ts';
 
@@ -110,4 +110,76 @@ test('the ink is told each cell walked or seen and each flight cell', () => {
   assert.equal(words?.[0], 1, 'walked');
   assert.equal(words?.[2], 3, 'a flight cell seen');
   assert.equal(words?.[6], 0, 'rock');
+});
+
+/** The middle of each cell whose word says walked or seen, on its storey's floor, for storeys `from` down. */
+function explored(map: DungeonMap, from: number): [number, number, number][] {
+  const words = map.dungeon?.words ?? new Uint32Array();
+  return [...words.keys()].flatMap((index) => {
+    const [storey, column] = [Math.floor(index / 6), index % 6];
+    return (words[index] ?? 0) & 1 && storey >= from ? [[(column + 0.5) * 3.2, 1.6, storey * -8] as [number, number, number]] : [];
+  });
+}
+
+test('opened on a storey, the rest view fits only what is explored on it and under it', () => {
+  const map = walking();
+  const below = { ...you, feet: [17.6, 1.6, -8] as const };
+  map.tick(below, REVEAL.everyS);
+  map.toggle();
+  const shown = map.frame(0, paper, []);
+  assert.equal(shown?.storey, 1);
+  const orbit = { yaw: ORBIT.yawRest, pitch: ORBIT.pitchRest };
+  assert.deepEqual(shown?.view, restView(explored(map, 1), [17.6, 1.6, -8], paper, orbit));
+  assert.notDeepEqual(shown?.view, restView(explored(map, 0), [17.6, 1.6, -8], paper, orbit), 'not the storey over');
+});
+
+test("looked at from the storey under, a flight's mark stands on that storey's floor at its foot", () => {
+  const map = walking();
+  map.toggle();
+  map.key('pagedown', []);
+  const shown = map.frame(10, paper, []);
+  const stairs = shown?.marks.find((mark) => mark.kind === 'stairs');
+  assert.equal(stairs?.faint, false, 'on the storey looked at');
+  const [across, down] = toPaper(shown!.view, [(3 + 0.5) * 3.2, 1.6, -8]);
+  assert.ok(Math.abs((stairs?.x ?? 0) - (across + 400)) < 1e-6 && Math.abs((stairs?.y ?? 0) - (down + 300)) < 1e-6);
+});
+
+test("the ink's words are laid again only when the reveal changes, each laying a new version", () => {
+  const map = new DungeonMap();
+  map.enter('test dungeon', layout);
+  const first = map.dungeon?.version;
+  assert.equal(map.dungeon?.version, first, 'nothing new found');
+  map.tick(you, REVEAL.everyS);
+  assert.notEqual(map.dungeon?.version, first);
+});
+
+test("a landmark's cells are marked on its storey, so a piece sunk under the floor is inked as that storey's", () => {
+  const map = new DungeonMap();
+  // An Oubliette (one cell) in the room at column 0 of storey 0, its three solids standing on that floor.
+  const solid = [0, 0, 3.2, 3.2, 0, 1];
+  const marked = { ...layout, landmarks: [['cells.oubliette', 0, 0, 0]], boxes: [solid, solid, solid] };
+  map.enter('landmark dungeon', marked as unknown as DungeonLayout);
+  assert.equal((map.dungeon?.words[0] ?? 0) & 4, 4);
+  assert.equal((map.dungeon?.words[6] ?? 0) & 4, 0, 'not the storey under');
+});
+
+test('a map kept for an older layout of the same dungeon is dropped', () => {
+  const kept = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => kept.get(key) ?? null,
+    setItem: (key: string, value: string) => void kept.set(key, value),
+  };
+  Object.assign(globalThis, { localStorage: storage });
+  try {
+    const map = walking();
+    map.leave();
+    map.enter('test dungeon', { ...layout });
+    assert.equal(map.dungeon?.words[0], 1, 'the same layout keeps its reveal');
+    map.leave();
+    const changed = { ...layout, cells: [0, -3, -3, -3, -3, -4, -2, -3, -3, -3, -3, 0] } as unknown as DungeonLayout;
+    map.enter('test dungeon', changed);
+    assert.equal(map.dungeon?.words[0], 0, "another layout's reveal is not drawn");
+  } finally {
+    Reflect.deleteProperty(globalThis, 'localStorage');
+  }
 });

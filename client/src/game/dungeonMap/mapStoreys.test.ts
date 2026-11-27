@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { DungeonLayout } from '../dungeonLayout.ts';
-import { cellIndex, floorAt, kindAt, storeyOfHeight, readStoreys } from './mapStoreys.ts';
+import { cellIndex, floorAt, kindAt, readStoreys, storeyOfFeet } from './mapStoreys.ts';
 
-/** Today's one-storey layout: a room, a corridor and rock in a row. */
+/** A one-storey layout: a room, a corridor and rock in a row. */
 const flat = { cell: 3.2, columns: 3, rows: 1, cells: [0, -1, -2], ceilings: [4, 3.2, 0] } as unknown as DungeonLayout;
 
-/** A hand-made storeyed layout as the storey engine's keys will give it: two storeys of a 6 by 1 plane, a flight of
- *  four cells (columns 1 to 4) from storey 0's landing at column 0 down to storey 1's landing at column 5, and a void
- *  cell (an unknown code) on storey 0 over the room under it. */
+/** A hand-made storeyed layout in the wire's codes: two storeys of a 6 by 1 plane, a flight of four cells (-3,
+ *  columns 1 to 4) from storey 0's landing at column 0 down to storey 1's landing at column 5, and open air (-4) on
+ *  storey 0 over the room under it. */
 export const STOREYED = {
   cell: 3.2,
   columns: 6,
@@ -17,9 +17,10 @@ export const STOREYED = {
   storeyM: 8,
   floors: [0, -8],
   stairs: [{ upper: 0, cells: [1, 2, 3, 4], top: 0, bottom: 5 }],
-  cells: [0, -5, -5, -5, -5, -3, -2, -5, -5, -5, -5, 1],
+  cells: [0, -3, -3, -3, -3, -4, -2, -3, -3, -3, -3, 1],
   ceilings: [4, 3.2, 3.2, 3.2, 3.2, 0, 0, 3.2, 3.2, 3.2, 3.2, 4],
   boxes: [],
+  landmarks: [],
 } as unknown as DungeonLayout;
 
 test('a layout without storeys reads as one storey at 0 m with no stairs', () => {
@@ -55,10 +56,17 @@ test('a flight is walked as its ramp, from the upper floor down to the lower', (
 
 test('the storey a body stands on is the highest floor under its feet by less than half a storey', () => {
   const storeys = readStoreys(STOREYED);
-  assert.equal(storeyOfHeight(storeys, 0), 0);
-  assert.equal(storeyOfHeight(storeys, -0.4), 0);
-  assert.equal(storeyOfHeight(storeys, -3), 0, "on the flight's upper half, still the storey over");
-  assert.equal(storeyOfHeight(storeys, -5), 1);
-  assert.equal(storeyOfHeight(storeys, -8), 1);
-  assert.equal(storeyOfHeight(storeys, -30), 1);
+  const at = (column: number, z: number) => storeyOfFeet(STOREYED, storeys, [(column + 0.5) * 3.2, 1.6, z]);
+  assert.equal(at(0, 0), 0);
+  assert.equal(at(0, -0.4), 0);
+  assert.equal(at(2, -3), 0, "on the flight's upper half, still the storey over");
+  assert.equal(at(3, -5), 1);
+  assert.equal(at(5, -8), 1);
+  assert.equal(at(5, -30), 1);
+});
+
+test('feet high in the air under open air are on the storey whose floor is under them, not the one over', () => {
+  const storeys = readStoreys(STOREYED);
+  // A pad 3.5 m up under the gallery's open air and a jump of half a metre more.
+  assert.equal(storeyOfFeet(STOREYED, storeys, [17.6, 1.6, -8 + 4.006]), 1);
 });

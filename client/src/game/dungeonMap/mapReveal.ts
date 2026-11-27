@@ -4,7 +4,7 @@
 // the rise a body sees over, or by the floor rising more than that from one cell to the next. Sight goes down a flight
 // onto the storey under and across open air, never up a flight nor onto the storey over.
 import type { DungeonLayout } from '../dungeonLayout.ts';
-import { cellIndex, floorAt, kindAt, storeyOfHeight, type Storeys } from './mapStoreys.ts';
+import { cellIndex, floorAt, kindAt, storeyOfFeet, type Storeys } from './mapStoreys.ts';
 
 type Point = readonly [number, number, number];
 
@@ -77,7 +77,7 @@ export class Reveal {
     if (this.walked.has(key)) return false;
     this.walked.add(key);
     const size = this.cells.size;
-    const storey = storeyOfHeight(this.storeys, feet[2]);
+    const storey = storeyOfFeet(this.layout, this.storeys, feet);
     const [column, row] = [Math.floor(feet[0] / this.layout.cell), Math.floor(feet[1] / this.layout.cell)];
     if (kindAt(this.layout, this.storeys, storey, column, row) !== 'rock') this.see(storey, column, row);
     for (let ray = 0; ray < REVEAL.rays; ray++) this.cast(feet, storey, (ray / REVEAL.rays) * Math.PI * 2);
@@ -107,9 +107,15 @@ export class Reveal {
       const [column, row] = [Math.floor(x / layout.cell), Math.floor(y / layout.cell)];
       if (this.blocked(x, y, row * layout.columns + column, floor)) return;
       if (column === lastColumn && row === lastRow) continue;
+      // A step across a corner passes between the two cells beside it: rock in either stops the sight.
+      const corner =
+        column !== lastColumn &&
+        row !== lastRow &&
+        (kindAt(layout, storeys, storey, column, lastRow) === 'rock' ||
+          kindAt(layout, storeys, storey, lastColumn, row) === 'rock');
       [lastColumn, lastRow] = [column, row];
       const kind = kindAt(layout, storeys, storey, column, row);
-      if (kind === 'rock') return;
+      if (corner || kind === 'rock') return;
       const here = floorAt(layout, storeys, storey, column, row);
       if (here !== null && here > floor + REVEAL.rise) return;
       this.see(storey, column, row);

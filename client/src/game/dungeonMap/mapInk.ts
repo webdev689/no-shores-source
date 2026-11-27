@@ -82,6 +82,7 @@ export class MapInk {
   private readonly inkLayout: GPUBindGroupLayout;
   private readonly uniform: GPUBuffer;
   private cells: GPUBuffer | null = null;
+  private cellsVersion = -1;
   private targets: { facing: GPUTexture; kind: GPUTexture; depth: GPUTexture; ink: GPUBindGroup } | null = null;
   private facesGroup: GPUBindGroup | null = null;
 
@@ -138,8 +139,11 @@ export class MapInk {
     });
   }
 
-  /** Each cell's word for the dungeon drawn now (storey-major: 1 walked or seen, 2 a flight's). */
-  setCells(words: Uint32Array): void {
+  /** Each cell's word for the dungeon drawn now (storey-major: 1 walked or seen, 2 a flight's, 4 a landmark's), laid
+   *  at `version`: the same version already held is not written again. */
+  setCells(words: Uint32Array, version: number): void {
+    if (this.cells && version === this.cellsVersion) return;
+    this.cellsVersion = version;
     if (!this.cells || this.cells.size < Math.max(16, words.byteLength)) {
       this.cells?.destroy();
       this.cells = this.device.createBuffer({

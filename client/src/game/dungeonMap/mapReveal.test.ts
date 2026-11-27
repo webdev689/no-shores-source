@@ -94,3 +94,16 @@ test('sight crosses open air over the storey under, at the height it was cast fr
   assert.ok(reveal.cells.has(cellIndex(gallery, 0, 2, 0)), 'the open air');
   assert.ok(reveal.cells.has(cellIndex(gallery, 0, 3, 0)), 'the floor across it');
 });
+
+test('sight never slips between two rock cells that meet at a corner', () => {
+  // A corridor cell at (5, 5) and a room's at (6, 6), touching only at a corner between rock at (6, 5) and (5, 6).
+  const cells = Array<number>(64).fill(-2);
+  cells[5 * 8 + 5] = -1;
+  cells[6 * 8 + 6] = 0;
+  const corner = { cell: 3.2, columns: 8, rows: 8, cells, ceilings: Array<number>(64).fill(3.2), boxes: [] };
+  const layout = corner as unknown as DungeonLayout;
+  const reveal = new Reveal(layout, readStoreys(layout));
+  reveal.tick([5.5 * 3.2, 5.5 * 3.2, 0], REVEAL.everyS);
+  assert.ok(reveal.cells.has(5 * 8 + 5), 'the cell walked');
+  assert.ok(!reveal.cells.has(6 * 8 + 6), 'not the room past the corner');
+});
