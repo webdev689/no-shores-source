@@ -55,6 +55,12 @@ owner has said "later" or "not now", the owner's words follow the question.
 - **The sea fight** ([[Game]], "Limits"): the crew re-laid when a fight starts; the view outside the aim, which the
   owner says "could still use some tweaking along with better design", its specifics the owner's
   ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]).
+- **The sea map, travel and home waters**
+  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]):
+  - Lantern Sea islands carry continent-1's resource, brineglass, Saltmere's own.
+  - A click on an island the map marks but the room has not told of still asks to travel, and the room refuses it
+    ("The way there crosses land.").
+  - A gunnery lesson's hulk off Overlook is a captain in a player's fight, so every map in the Lantern Sea marks it.
 - **The first Breach's new mechanics**, proposed by the audits and not built: Keepers warded at Hard (so the crossing
   rule binds), Hard's seams in a drawn order, the Steward taking into both shores, the Spire keeping each third, a pad
   way to call the Steward's order without voice, a new danger sound; and sinking the Sunken Gate's area into the vale

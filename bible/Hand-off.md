@@ -9,10 +9,11 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
+- **Merging on the owner's yes once CI passes on its head**: #221 (hostile ships and islands on the sea map, travel
+  anywhere at sea as a fade, home waters sheltered, unnamed islands' seas locked; `main` with #216, #227 and #231
+  taken in). A merge deploys the page, the site, the rooms and the bot, and releases the desktop app.
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
-- **Other sessions' work under way**: #221 (hostile ships and islands on the sea map, travel anywhere at sea; it
-  shares the sea's files with #216, merged, so it takes `main` in again).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -111,11 +112,10 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   - At sea ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]): friendly ships
     for the three houses; the seas' Elite and Abyss tiers removed; travel aboard a company member's ship; a Sloop
     able to flee a Boss; travel keeping the hostile clock, and its three small faults; the week's run only from a
-    port docked at; a parked ship's plate following its player's username and guild tag. The locked seas are #221's.
+    port docked at; a parked ship's plate following its player's username and guild tag.
   - The lore and the factions
     ([[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]): the Axis
-    in the lore, the Pearl Tomb's brief to cliffs, Captain Tamsin Rook and The Quiet One (Ysolde) in the game, and a
-    line of its tale on each bounty's card.
+    in the lore, the Pearl Tomb's brief to cliffs, and a line of its tale on each bounty's card.
   - Foes ([[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]): Minibosses and Bosses drawn
     larger; the Court dark at Elite; places in a patrol zone holding only civilians and guards (which, Claude's
     call); the arrivals' sound sheet; shields that regrow, carried by dungeon and Breach foes too; other players'
@@ -134,6 +134,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   - The repo ([[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]): a
     sign-in rate limit at Cloudflare; the workflows' and that audit's seven points; the 158 comments; three new
     checks; the ship meshes cached in CI; the dungeon crate in the bake.
+- **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
+  deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
 - **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.

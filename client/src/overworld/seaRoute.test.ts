@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { HeightGrid, Point2 } from './ground.ts';
-import { maskFromGrid, maskFromOutlines, planSeaRoute, SEA_CELLS, type SeaMask, type SeaRoute } from './seaRoute.ts';
+import {
+  lockedOut,
+  maskFromGrid,
+  maskFromOutlines,
+  planSeaRoute,
+  SEA_CELLS,
+  type SeaMask,
+  type SeaRoute,
+} from './seaRoute.ts';
 
 /** A grid of one-kilometre cells drawn as rows of text: `#` land, `.` sea. */
 function grid(rows: readonly string[], leftM = 0, topM = 0): HeightGrid {
@@ -224,4 +232,18 @@ test('an outline edge that only clips a cell corner makes that cell land', () =>
   ];
   const corners = maskFromOutlines([diagonal], { leftM: 0, topM: 0, widthM: 4_000, heightM: 4_000 }, 1_000);
   assert.equal(corners.land[1 * 4 + 2], 1, 'the cell beside the corner the diagonal edge passes through');
+});
+
+test('a locked sea is kept out of as land, by a margin, so no route runs into it or along its edge', () => {
+  // Open water 10 cells wide; the sea east of 6 km locked.
+  const mask = maskOf(['..........', '..........', '..........']);
+  const locked = lockedOut(mask, (x) => x >= 6_000, 1_000);
+  assert.deepEqual(
+    Array.from({ length: 10 }, (unused, column) => locked.land[column]),
+    [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+    'its cells and those within a kilometre of them',
+  );
+  assert.equal(mask.land[9], 0, 'the mask itself left as it was');
+  const route = planSeaRoute(locked, cellMiddle(0, 1), cellMiddle(4, 1)) as Extract<SeaRoute, { ok: true }>;
+  assert.ok(route.ok && route.points.every(([x]) => x < 5_000), 'a route within the open sea keeps out');
 });

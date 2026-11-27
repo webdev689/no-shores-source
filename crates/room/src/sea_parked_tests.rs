@@ -151,8 +151,10 @@ fn a_sea_islands_room_holds_it_and_is_answered_with_the_ships_lying_off_it() {
     assert!(sea.own(player, "ann"));
     sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     ticks(&mut sea, 60 * 60 * 3);
-    let island = sea.islands().standing().next().expect("an island rolled near the ship");
-    let (id, seed) = (island.id, island.seed);
+    let ship = sea.berths[&player].sailing.as_ref().expect("at sea").ship;
+    let at = crate::sea::whole(&[ship.x, ship.y]).unwrap();
+    let island = (sea.islands().standing()).min_by(|one, other| one.coast.off(at).total_cmp(&other.coast.off(at)));
+    let (id, seed) = island.map(|island| (island.id, island.seed)).expect("an island rolled near the ship");
     sea.leave(player);
     let answer = sea.ashore(Ashore::Island { id, seed }, &["ann"]);
     assert_eq!(answer.iter().map(|(_, parked)| parked.number).collect::<Vec<_>>(), [player]);

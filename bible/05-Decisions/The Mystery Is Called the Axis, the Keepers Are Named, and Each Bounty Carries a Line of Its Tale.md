@@ -23,7 +23,10 @@ brothers Penhallow, the wreckers' wars) stand, the owner answered:
 > "Keep names; cliffs win"
 
 Asked to name the Stormcallers' and the Veiled's keepers in Overlook, the owner asked Claude to propose names, and
-chose "Captain Tamsin Rook" and "The Quiet One (Ysolde)".
+chose "Captain Tamsin Rook" and "The Quiet One (Ysolde)". Then, as the answers were to be built, the owner wrote:
+
+> "Let's tackle all of this, and ensure some of these haven't already been changed (Like faction members do get their
+> own names)"
 
 Asked whether a faction's high ranks give anything beyond packages, as Destiny 1's rank 25 opened a quest, the owner
 answered:
@@ -41,11 +44,12 @@ answered:
   sort of peaceful state, their consciousness intact: a benevolent force that does not understand how it is
   transforming the world and its people ([[Raum's Lore Is Adapted Into One Mystery]], [[Lore]]).
 - **Cliffs win**: the Pearl Tomb's brief changes its dunes to cliffs, and the books' names stand.
-- **The Stormcallers' keeper is Captain Tamsin Rook; the Veiled's goes by The Quiet One, named Ysolde**
-  ([[Factions and Vendors as Claude Shapes Them]]).
+- **The keepers keep the names they have**: Arlo Kestrel the Stormcallers', Sable the Veiled's
+  (`content/story/cast.json`, [[Factions]]). The question was out of date, and Captain Tamsin Rook and The Quiet One
+  are not used.
 - **A faction's high ranks give packages only** ([[Factions]]).
 - **Each bounty's card carries one line of its tale** under its task ([[The Bounty Board as Claude Shapes It]]).
 
 Still open: how long the Axis stays unseen, and what calls in the deep ([[Open Questions]]).
 
-Not built yet: the Axis in the lore, the brief's cliffs, the keepers' names in the game, and the bounties' lines.
+Not built yet: the Axis in the lore, the brief's cliffs, and the bounties' lines.

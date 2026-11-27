@@ -69,7 +69,7 @@ notes, linked from [[Decisions]]; those left for later stay in [[Open Questions]
 | A lamp lit always keeping the haul ([[Passages as Claude Builds Them]]) | "Keep as built" |
 | The Lattice in the passages | "Tithe only" |
 | A Vein's nodes back in 9 minutes | "Keep 9 min" |
-| The held map at sea's calls ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]) | "Enforce the lock", and the lock "Already fixed": the rest stand |
+| The held map at sea's calls ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]) | "Enforce the lock", and the lock "Already fixed" ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]): the rest stand |
 | A docking within reach with no way in to its berth ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]) | "Already fixed along with the lock"; told the docking was unchanged: "Keep as built" |
 
 The open question on crew as companions was already settled: the owner approved DFO's naval `crewCompanions`

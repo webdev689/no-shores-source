@@ -92,8 +92,8 @@ fn a_travel_waits_the_players_next_roll_its_first_wait_and_never_brings_it_soone
     assert!(before < FIRST_ROLL_S, "the roll's wait ran down: {before}");
     sea.travel(player, &[[550_000.0, 150_000.0]], 10).unwrap();
     assert_eq!(sea.hostiles.wait_of(player), Some(FIRST_ROLL_S), "a wait run down waits its first again");
-    // Once the roll has come, the next waits a minute or more, and a travel's wait brings it no sooner (the roll's ship
-    // may chase the player, which refuses a travel, so the wait the travel sets is asked of the hostiles alone).
+    // Once the roll has come, the next waits half a minute or more, and a travel's wait brings it no sooner (the roll's
+    // ship may chase the player, which refuses a travel, so the wait the travel sets is asked of the hostiles alone).
     for _ in 0..120 {
         if sea.hostiles.wait_of(player).unwrap() > FIRST_ROLL_S {
             break;
@@ -107,12 +107,13 @@ fn a_travel_waits_the_players_next_roll_its_first_wait_and_never_brings_it_soone
 }
 
 #[test]
-fn a_travel_within_the_ships_own_water_is_refused() {
+fn a_travel_within_the_ships_own_water_is_taken() {
     let mut sea = sea();
     let player = at_sea(&mut sea);
-    assert_eq!(sea.travel(player, &[[260_000.0, 150_000.0]], 10), Err(TravelRefused::OwnWater));
-    assert_eq!(told(&sea, player), Some(TravelRefused::OwnWater.number()));
-    assert_eq!([ship(&sea, player).x, ship(&sea, player).y], [250_000.0, 150_000.0], "the ship stays");
+    assert_eq!(sea.travel(player, &[[250_000.0, 300_000.0]], 10), Ok(()));
+    assert_eq!(told(&sea, player), Some(0.0));
+    assert_eq!([ship(&sea, player).x, ship(&sea, player).y], [250_000.0, 299_600.0], "400 m short of its end");
+    assert_eq!(sea.hostiles.wait_of(player), Some(FIRST_ROLL_S), "its next roll waits as after any travel");
 }
 
 #[test]
@@ -132,6 +133,19 @@ fn a_travel_while_a_hostile_ship_chases_the_player_is_refused() {
         Hostile { quarry: Some(player), ..Hostile::standing(1, 7, commission, [270_000.0, 150_000.0], 0.0, true) };
     sea.hostiles.sailing.push(chaser);
     assert_eq!(sea.travel(player, &[[550_000.0, 150_000.0]], 10), Err(TravelRefused::Chased));
+}
+
+#[test]
+fn a_travel_from_home_waters_is_never_refused_as_chased() {
+    let (mut sea, traveller, _) = an_island_out_of_sight();
+    let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    let standing = Hostile::standing(1, 7, commission, [212_000.0, 150_000.0], 0.0, true);
+    sea.hostiles.sailing.push(Hostile { quarry: Some(traveller), sight_m: 10_000.0, ..standing });
+    let other = sea.join();
+    sea.course_anywhere(other, &[[215_000.0, 150_000.0]], 10).unwrap();
+    sea.tick();
+    assert!(sea.hostiles.sailing.iter().all(|hostile| hostile.quarry != Some(traveller)), "none hunts them there");
+    assert_eq!(sea.travel(traveller, &[[550_000.0, 300_000.0]], 10), Ok(()));
 }
 
 #[test]
@@ -159,25 +173,32 @@ fn a_travel_is_refused_as_any_course_is() {
     assert_eq!(sea.travel(player, &[[550_000.0, 150_000.0]], 7), Err(TravelRefused::Course(CourseRefused::BadPace)));
 }
 
-#[test]
-fn a_travel_whose_last_leg_meets_an_island_never_told_is_refused_and_leaves_the_ship_as_it_was() {
-    // Home waters to the west, where the traveller lies; a desert's to the east, where another player's ship has
-    // islands rolled round it, out of the traveller's sight.
+/// Home waters to the west, where a traveller lies within their reach; a desert's to the east, where another player's
+/// ship has an island rolled round it, out of the traveller's sight: the sea, the traveller, and where the island stands.
+fn an_island_out_of_sight() -> (Sea, PlayerId, [f64; 2]) {
     let text = r#"{ "continents": [
         { "id": "continent-1", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
         { "id": "continent-5", "climate": "desert", "outline": [[600000, 100000], [700000, 100000], [700000, 200000], [600000, 200000]] }
     ], "isles": [] }"#;
     let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
-    let traveller = at_sea(&mut sea);
+    let traveller = sea.join();
+    sea.course_anywhere(traveller, &[[205_000.0, 150_000.0]], 10).unwrap();
+    ticks(&mut sea, COURSE_EVERY_TICKS);
     let other = sea.join();
     sea.course_anywhere(other, &[[550_000.0, 40_000.0]], 10).unwrap();
     while sea.islands().standing().next().is_none() {
         assert!(sea.clock() < 60 * 60 * 10, "no island in ten minutes");
         sea.tick();
     }
-    let [x, y] = sea.islands().standing().next().unwrap().at;
-    assert_eq!(sea.islands().told(traveller, [250_000.0, 150_000.0]).count(), 0, "never told to the traveller");
+    let at = sea.islands().standing().next().unwrap().at;
     ticks(&mut sea, COURSE_EVERY_TICKS);
+    (sea, traveller, at)
+}
+
+#[test]
+fn a_travel_whose_last_leg_meets_an_island_never_told_is_refused_and_leaves_the_ship_as_it_was() {
+    let (mut sea, traveller, [x, y]) = an_island_out_of_sight();
+    assert_eq!(sea.islands().told(traveller, [205_000.0, 150_000.0]).count(), 0, "never told to the traveller");
     let before = ship(&sea, traveller);
     let across = sea.travel(traveller, &[[x - 20_000.0, y], [x + 20_000.0, y]], 10);
     assert_eq!(across, Err(TravelRefused::Course(CourseRefused::CrossesLand)));
@@ -186,33 +207,55 @@ fn a_travel_whose_last_leg_meets_an_island_never_told_is_refused_and_leaves_the_
 
 #[test]
 fn a_travel_refused_over_an_island_spends_no_course_turn() {
-    let text = r#"{ "continents": [
-        { "id": "continent-1", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
-        { "id": "continent-5", "climate": "desert", "outline": [[600000, 100000], [700000, 100000], [700000, 200000], [600000, 200000]] }
-    ], "isles": [] }"#;
-    let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
-    let traveller = at_sea(&mut sea);
-    let other = sea.join();
-    sea.course_anywhere(other, &[[550_000.0, 40_000.0]], 10).unwrap();
-    while sea.islands().standing().next().is_none() {
-        sea.tick();
-    }
-    let [x, y] = sea.islands().standing().next().unwrap().at;
-    ticks(&mut sea, COURSE_EVERY_TICKS);
-    assert!(sea.travel(traveller, &[[x - 20_000.0, y], [x + 20_000.0, y]], 10).is_err());
-    assert_eq!(sea.course(traveller, &[[260_000.0, 150_000.0]], 10), Ok(()), "a course at once after it");
+    let (mut sea, traveller, [x, y]) = an_island_out_of_sight();
+    let across = sea.travel(traveller, &[[x - 20_000.0, y], [x + 20_000.0, y]], 10);
+    assert_eq!(across, Err(TravelRefused::Course(CourseRefused::CrossesLand)));
+    assert_eq!(sea.course(traveller, &[[206_000.0, 150_000.0]], 10), Ok(()), "a course at once after it");
 }
 
 #[test]
 fn a_travel_refused_where_it_goes_waits_a_courses_wait_before_the_waters_are_searched_again() {
+    let (mut sea, traveller, [x, y]) = an_island_out_of_sight();
+    let across = sea.travel(traveller, &[[x - 20_000.0, y], [x + 20_000.0, y]], 10);
+    assert_eq!(across, Err(TravelRefused::Course(CourseRefused::CrossesLand)));
+    sea.tick();
+    let open = [[550_000.0, 300_000.0]];
+    assert_eq!(
+        sea.travel(traveller, &open, 10),
+        Err(TravelRefused::Course(CourseRefused::TooSoon)),
+        "nothing searched"
+    );
+    ticks(&mut sea, COURSE_EVERY_TICKS);
+    assert_eq!(sea.travel(traveller, &open, 20), Ok(()), "taken once the wait is over");
+}
+
+#[test]
+fn a_travel_of_no_point_is_refused_and_leaves_the_ship_and_its_course_as_they_were() {
     let mut sea = sea();
     let player = at_sea(&mut sea);
-    assert_eq!(sea.travel(player, &[[260_000.0, 150_000.0]], 10), Err(TravelRefused::OwnWater));
-    sea.tick();
-    let far = [[-1.0e9, 0.0]];
-    assert_eq!(sea.travel(player, &far, 10), Err(TravelRefused::Course(CourseRefused::TooSoon)), "nothing searched");
+    sea.course(player, &[[260_000.0, 150_000.0]], 10).unwrap();
     ticks(&mut sea, COURSE_EVERY_TICKS);
-    assert_eq!(sea.travel(player, &[[550_000.0, 300_000.0]], 20), Ok(()), "taken once the wait is over");
+    let before = ship(&sea, player);
+    assert_eq!(sea.travel(player, &[], 10), Err(TravelRefused::Course(CourseRefused::BadCourse)));
+    assert_eq!(ship(&sea, player), before, "still under way on its course");
+}
+
+#[test]
+fn a_travel_that_would_leave_the_ship_where_it_lies_is_refused_and_holds_no_roll() {
+    let mut sea = sea();
+    let player = at_sea(&mut sea);
+    ticks(&mut sea, 600);
+    let (before, wait) = (ship(&sea, player), sea.hostiles.wait_of(player));
+    let refused = Err(TravelRefused::Course(CourseRefused::BadCourse));
+    assert_eq!(sea.travel(player, &[[before.x.round(), before.y.round()]], 10), refused, "its own place");
+    ticks(&mut sea, COURSE_EVERY_TICKS);
+    let near = [before.x.round(), before.y.round() - 300.0];
+    assert_eq!(sea.travel(player, &[near], 10), refused, "300 m: laid at the leg's start, where it lies");
+    assert_eq!(ship(&sea, player), before, "the ship as it was");
+    assert!(sea.hostiles.wait_of(player) <= wait, "its roll not held back: {:?}", sea.hostiles.wait_of(player));
+    ticks(&mut sea, COURSE_EVERY_TICKS);
+    let bend = [before.x.round() + 5_000.0, before.y.round()];
+    assert_eq!(sea.travel(player, &[bend, [bend[0], bend[1] - 300.0]], 10), Ok(()), "a short last leg 5 km off");
 }
 
 #[test]

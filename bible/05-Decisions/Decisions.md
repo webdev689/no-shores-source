@@ -401,6 +401,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]
 - [[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]
 - [[What the Owner Kept, Walking the Open Questions]]
+- [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]
+- [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]
+- [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]
 
 ## Claude's calls
 

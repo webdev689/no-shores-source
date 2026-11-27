@@ -29,6 +29,8 @@ or only the ship's island's: "Only the ship's island".
 
 Replaces, for the waters' names, [[The Held Map Colours Each Water's Name by Its Difficulty]].
 
+A locked sea is not sailed or travelled into: [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]].
+
 The owner's answers on it:
 
 - [[What the Owner Kept, Walking the Open Questions]]

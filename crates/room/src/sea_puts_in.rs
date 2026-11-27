@@ -32,8 +32,9 @@ impl Sea {
     /// where the page asks. None where it may not put to sea.
     pub(super) fn puts_in(&self, player: PlayerId, asked: Point) -> Option<Point> {
         let left = self.harbour.accounts.get(&player).and_then(|owner| self.harbour.left.get(owner));
+        let left = left.and_then(|&[x, y, ..]| self.open_at([x, y]));
         let [x, y] = match left {
-            Some([x, y, ..]) => [*x, *y],
+            Some(at) => at,
             None if !self.harbour.harbours.puts_to_sea(asked) => return None,
             None if self.harbour.harbours.ports.is_empty() => return Some(asked),
             None => {
@@ -65,6 +66,9 @@ impl Sea {
             return;
         }
         let Some([x, y, heading, _]) = self.harbour.left.remove(&owner) else { return };
+        if self.open_at([x, y]).is_none() {
+            return;
+        }
         if self.fights.fighting(player) {
             self.leave_decks(player);
             self.fights.leave(player);

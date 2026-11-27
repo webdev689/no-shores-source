@@ -72,3 +72,6 @@ status: in force
   ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]).
 
 Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: no water is the pirates'; the fourth is the Grey Tithe's, and the contested seam, where the pirates fought the Tithe, is gone with them. The ruined cities' waters are the Lattice's, sailed by the Grey Tithe for now ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]).
+
+Replaced in part by [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]: home waters reach 10 km from Overlook's island's coast, and the Lantern Sea past them
+is the Grey Tithe's.

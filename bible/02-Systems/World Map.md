@@ -127,10 +127,13 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
   finite number has no water.
 - Each water's holder and name come from the table `WATERS`, by continent id. Claude named the waters; the owner can
   change any name.
+- Home waters reach `HOME_REACH_M`, 10 km, from their island's coast; past it the Grey Tithe holds the open sea of
+  the Lantern Sea, at its band ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). `water_at` gives the point's holder; the table gives each
+  water's, as near its coast.
 
 | Continent | Holder | Name |
 |---|---|---|
-| continent-1 | Home: no hostile ship | The Lantern Sea |
+| continent-1 | Home within 10 km of its coast, no hostile ship; the Grey Tithe past it | The Lantern Sea |
 | continent-2 | The Lattice | The Cairn Straits |
 | continent-3 | The Lattice | The Elmwater |
 | continent-4 | Grey Tithe | The Sunscorch Coves |
@@ -143,7 +146,7 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
 - The six ruined cities' waters (Cairnwatch's, Elmhaven's, Goldreach's, Mistfall's, Windmere's and Fenhallow's) are
   the Lattice's, and the Grey Tithe's ships sail them; the Grey Tithe holds the two living ports' waters past home,
   Sunspire's and Rimeholt's ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Every
-  point of a water is held as its island's water is. The doors name a holder "home", "grey-tithe" or "lattice".
+  point of a water is held as its island's water is, but the Lantern Sea's past 10 km. The doors name a holder "home", "grey-tithe" or "lattice".
 - `borders()` says which waters touch: the pairs whose sea cells lie side by side on a 10 km grid. On today's layout
   there are 17: 1-2, 1-3, 1-4, 1-5, 1-8, 1-9, 2-5, 2-6, 2-9, 3-7, 3-8, 3-9, 4-5, 4-8, 5-6, 7-8 and 7-9.
 - `grid(cell_m)` judges the frame at each cell's middle, row by row from the north-west: one byte a cell, the
@@ -162,7 +165,9 @@ Friendly ships sail between the port cities all the time, seen from land and sea
 The numbers are Claude's, under the owner's "Friendly ships should dynamically travel. Visible on land and sea".
 
 - **Main ports.** Three port cities remain: Overlook in home waters, Sunspire and Rimeholt in the Grey Tithe's
-  ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). `ports.rs` holds the list
+  ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). Sunspire's and Rimeholt's seas are locked
+  until their islands are named; the merchants still sail the lanes to them
+  ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]). `ports.rs` holds the list
   (`MAIN_PORTS`, `is_main_port`) for the traffic, the city crate and the page; the other six cities are no ports.
 - **Ports.** The caller passes in the cities (the crate reads no files); the traffic keeps those that are port cities,
   on a continent the layout holds, with a roadstead clear inside the frame, in the order given.
@@ -215,8 +220,9 @@ source of each.
 
 | Door | TypeScript | What it answers |
 |---|---|---|
-| `waters_open` | `open(layoutText, ports)` | The table: each water's continent index, id, name, holder and island's level band; the borders; the port cities' ids; each port city's id, name and roadstead; each route's ports, length and path |
+| `waters_open` | `open(layoutText, ports)` | The table: each water's continent index, id, name, holder and island's level band; the borders; the port cities' ids; each port city's id, name and roadstead; each route's ports, length and path; the sea's facts (the reach a hostile meets within, the furthest one holds a voyage, a port's repair reach, home waters' reach, how far short a travel lays the ship, the ships' names) |
 | `waters_at` | `waterAt(point)` | The water at a point as one grid byte; null on land |
+| `waters_holder` | `waterAt(point)` | Who holds the sea at a point as one byte (0 home, 1 the Grey Tithe, 2 the Lattice, 255 none): the Lantern Sea past 10 km the Grey Tithe's |
 | `waters_grid` | `grid(cellM)` | Columns and rows as u32s, then a byte a cell; cells finer than 1,000 m, or not a finite number, are refused |
 | `waters_ships` | `shipsNear(centre, radiusM, timeS)` | The ships near a point, 11 f64s each: id, route, from port, to port, hull, x, y, way x, way y, metres sailed, route length |
 | `waters_ship` | `ship(id, timeS)` | One ship by id, packed the same; nothing when it is not sailing |

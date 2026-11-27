@@ -5,8 +5,8 @@ import { Course } from '../../../generated/messages/ts/overlook/wire.ts';
 import { wholeIn } from './fleetMessages.ts';
 
 /** A ship's course as its bytes: the world points it sails through in turn, and its pace, one of the steps of a
- *  ship's speed. No points brings it to rest. With `travel`, the held map takes the ship to the other waters it ends
- *  in. */
+ *  ship's speed. No points brings it to rest. With `travel`, the held map takes the ship most of the way to where it
+ *  ends. */
 export function courseBytes(
   points: readonly (readonly [number, number])[],
   pace: number,

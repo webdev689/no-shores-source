@@ -580,14 +580,16 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   hove to, fires nothing, is never scuttled nor boarded, leaves the fight once they are 1,500 m off it (900 m once
   their ball is in), and lays and pays nothing as it goes down ([[Quests]], "The lessons").
 
-- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s; a roll that
-  falls due while they fight comes as the fight ends. A travel to other waters waits the next roll at least half a
+- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 30 to 70 s
+  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]); a roll that
+  falls due while they fight comes as the fight ends. Every travel, in the ship's own water or to another, waits the next roll at least half a
   minute, never sooner than it would have come, so travelling on brings no more ships than sailing. While fewer than three hostile ships sail within their sight of
   them, a roll brings a hostile ship by the band of the water the player is in, so their water sets how many come
   (`hostile_chance`): 0.18 in the first island's band (1 to 4), rising evenly by 0.0225 a band to 0.36 in the last (26
   to 30); a water with no band rolls as the first. (DFO's open sea brought one 0.24 of the time in every water.)
   The water at the player's ship decides who comes ([[The Waters Come From the Islands]], [[World Map]], "Waters"):
-  none in Overlook's home waters (the roll is spent), a Tithe ship in every other, the Lattice's waters too
+  none in Overlook's home waters, within 10 km of its coast (the roll is spent), a Tithe ship in every other, the
+  Lantern Sea past them and the Lattice's waters too
   ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Its rank comes by the lowest level of its water's band:
 
   | Band starts at | Minor | Major | Elite | Miniboss |
@@ -619,18 +621,21 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
 - **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at
   rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100 and 86.4 km at ×200, so one
   met head-on stays in sight half a minute and more. Each keeps the largest sight it has been given, from the pace of
-  the player nearest it, and goes once no player is within 1.1 times it.
+  the player nearest it, and goes once no player past home waters is within 1.1 times it.
 - **Where.** Between 0.9 and 1 of its sight out from the player, within 60 degrees of their heading while under way and
   anywhere at rest; a bold ship, under way above ×10, within its meeting cone off their course shrunk to 0.8 of it
   (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
   ten tries that fit, it takes the one nearest a friendly lane (a leg of a route between the port cities,
   `world::traffic`) within 50 km, heading along it the way nearer its slant toward the player; with no lane that near,
   the one nearest a coast, heading across the player's waters on a slant. A hostile ship sails at the Sloop's 2.4 m/s times its rank's way (Minor 0.9, Major 1, Elite 1.1,
-  Miniboss 1.2). Blocked by land or the edge of home waters, which no hostile ship enters (one a clash left inside them may
-  sail out), it takes the open heading nearest its last, a twenty-fourth of a turn at a time
+  Miniboss 1.2). Blocked by land or the edge of home waters, which no hostile ship enters (one a clash left inside them takes
+  only steps away from their coast, so it sails out), it takes the open heading nearest its last, a twenty-fourth of a turn at a time
   either way, so it follows the coast round; with none open it goes about. Its temper is its
   seed's: an Elite and a Miniboss are always bold, any other one in four.
-- **Coming for the player.** A bold ship that has sighted a player who is not fighting comes for them (`come_for`):
+- **Home waters end a fight.** Every captain afloat and unstruck in a fight whose players all lie inside home waters
+  breaks off and leaves it, as one out of reach does ([[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]).
+- **Coming for the player.** A bold ship that has sighted a player who is not fighting and not in home waters comes
+  for them (`come_for`; home waters shelter a player whole, [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]):
   it steers to intercept, heading to where their ship will be when it can reach it at its way on that player's
   clock (lead pursuit; straight at them where it cannot reach them, as when they sail away faster), turning at most
   at a Sloop's helm rate, 10 degrees a second of its clock. It keeps after the one it came for while they stay in
@@ -643,7 +648,8 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
 - **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of it
   begins the fight with it whatever its temper (outside home waters), as a bold ship that meets a player does; a wary
   one runs as captains run. The room lets go of the chase once it has left the sea.
-- **Its clock.** As DFO's sea keeps the world's time, a hostile ship sails on the clock of the player nearest it: their
+- **Its clock.** As DFO's sea keeps the world's time, a hostile ship sails on the clock of the player nearest it past
+  home waters, who keeps it at sea (a player inside them sets neither its clock nor its sight): their
   voyage's pace as it is held (144 m/s at ×60), the world's own while they lie at rest, and real time where another
   player sails within 1.2 km of that one, a shared sea.
 - **The voyage held.** As DFO holds a fast journey, a voyage eases down as a hostile ship comes near along its way: its
@@ -667,7 +673,7 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   friendly ship afloat (at once, one that strikes) sails on for its route's far port at the traffic's 5 m/s by what
   is left of its route (back to its leg first, then corner by corner), round any coast in its way, home waters or not, kept while a player is within 1.1 times its sight and gone at its port or once none is. Two that
   parted meet again only once they have been 750 m apart. None meets a friendly ship lying in Overlook's home waters,
-  which hold no hostile ship. A fight with no ship a player keeps at sea leaves the sea, as a ship does. Two Tithe
+  which hold no hostile ship. A fight with no ship a player past home waters keeps at sea leaves the sea, as a ship does. Two Tithe
   ships never meet.
 - **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight, or of a fight with players in
   it, joins it: their ship heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and

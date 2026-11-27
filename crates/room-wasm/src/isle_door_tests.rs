@@ -23,7 +23,7 @@ fn the_page_is_given_the_islands_plan_and_the_ground_its_room_stands_on() {
         .collect();
     let ground = movement::Heights::from_floats(&floats).expect("a grid");
     assert_eq!(ground, plan.ground_at(at), "the page predicts on the room's own ground");
-    assert!(plan_json(seed, "temperate-coast").is_empty() && heights_bytes(seed, "moon", at).is_empty());
+    assert!(plan_json(seed, "moon").is_empty() && heights_bytes(seed, "moon", at).is_empty());
     for nowhere in [[f64::NAN, 0.0], [0.0, f64::INFINITY]] {
         assert!(heights_bytes(seed, "tundra", nowhere).is_empty(), "no ground for a middle no number names");
     }
@@ -55,7 +55,7 @@ fn an_islands_room_opens_on_the_seas_word_with_its_guards() {
     let plan = Plan::new(seed, "steppe").expect("steppe dresses islands");
     assert_eq!(nodes(), plan.sites.nodes.len(), "its water's resource stands in each of its nodes");
     assert!(!open_island(br#"{"seed":"x","climate":"steppe","at":[0,0],"guards":0,"levels":null}"#));
-    assert!(!open_island(br#"{"seed":"5","climate":"temperate-coast","at":[0,0],"guards":0,"levels":null}"#));
+    assert!(!open_island(br#"{"seed":"5","climate":"moon","at":[0,0],"guards":0,"levels":null}"#));
 }
 
 #[test]

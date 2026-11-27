@@ -383,3 +383,23 @@ export function planSeaRoute(
   }
   return { ok: true, points: pulled, lengthM, toShore };
 }
+
+/** `mask` with every cell whose middle lies within `reachM` of a locked sea's (`locked` at a world point) made land,
+ *  so no route runs into a locked sea or along its edge; the mask itself is left as it was. */
+export function lockedOut(mask: SeaMask, locked: (x: number, y: number) => boolean, reachM: number): SeaMask {
+  const { width, height, leftM, topM, cellM } = mask;
+  const shut = new Uint8Array(width * height);
+  for (let row = 0; row < height; row++)
+    for (let column = 0; column < width; column++)
+      shut[row * width + column] = locked(leftM + (column + 0.5) * cellM, topM + (row + 0.5) * cellM) ? 1 : 0;
+  const reach = Math.ceil(reachM / cellM);
+  const land = Uint8Array.from(mask.land);
+  for (let row = 0; row < height; row++)
+    for (let column = 0; column < width; column++) {
+      if (!shut[row * width + column]) continue;
+      for (let down = Math.max(0, row - reach); down <= Math.min(height - 1, row + reach); down++)
+        for (let across = Math.max(0, column - reach); across <= Math.min(width - 1, column + reach); across++)
+          land[down * width + across] = 1;
+    }
+  return { ...mask, land };
+}
