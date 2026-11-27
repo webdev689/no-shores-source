@@ -138,7 +138,7 @@ test('a friendly ship the room keeps at sea is drawn where the room has it, in i
   const ships = new SeaShips(undefined, FAIR_LINES);
   const [, drawn] = ships.ships(1 / 60, 10, 0.4, OWN, [], [], 4, WATER, [friend]);
   assert.deepEqual([drawn?.hull, drawn?.look.side], [2, 'friendly'], 'never as a hostile ship');
-  assert.deepEqual(drawn?.look, friendlyLook(2_605), 'flying its house colours, as on its route');
+  assert.deepEqual(drawn?.look, { ...friendlyLook(2_605), dark: false }, 'flying its house colours, as on its route');
   assert.deepEqual([drawn?.place.x, drawn?.place.y, drawn?.place.heading], [600, -200, 0.5]);
   const [, footprint] = ships.hulls(OWN.lies, [], [], 4, [friend]);
   assert.equal(footprint?.halfLength, (hullWaterline(2).lengthM / 2) * 4);
