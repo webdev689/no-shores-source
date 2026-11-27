@@ -5,7 +5,6 @@
 // with, while a quest asks it), a puzzle's point used, a chapter of the lore lying there found, or a node within reach
 // gathered while E is held. The room judges every use; the rings and beams only show where.
 
-import type { DropsShown } from '../combat/drops.ts';
 import { markRing } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink } from '../network/roomConnection.ts';
@@ -15,7 +14,6 @@ import { SERVED_M, offerAt } from './plazaLife.ts';
 import { KEEPERS } from './keepers.ts';
 import { goalOf, puzzlePoints } from './quests/questBook.ts';
 import { shapeSpot } from './townsfolk.ts';
-import { chime } from './uiSounds.ts';
 import { chapterAt } from './compendium/loreBook.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -154,21 +152,6 @@ export function questRings(gear: GearState | null, floor: (x: number, y: number)
     markBeam(out, base, BEAM, [...WARD, Math.min(1, beat + 0.25)]);
   }
   return out;
-}
-
-/** The drops lying for the player (`lying`), flying and standing, seen from `eye`, laid after the marks in `out`, and
- *  where each came to rest this frame; a Rare or finer chimes as it comes to rest. */
-export function dropsLaid(
-  drops: DropsShown,
-  lying: Parameters<DropsShown['frame']>[0],
-  clock: number,
-  eye: readonly [number, number, number],
-  out: number[],
-) {
-  const shown = drops.frame(lying, clock, eye, out);
-  const rarest = Math.max(-1, ...shown.rested);
-  if (rarest >= 2) chime(rarest);
-  return shown;
 }
 
 /** On foot the story is always behind the page: every way there comes after it, played through or passed over (Begin

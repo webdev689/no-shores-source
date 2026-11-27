@@ -517,23 +517,41 @@ DFO's spoils ([[Pick - Loot Drops]]).
 
   | | A Vestige | Ammunition |
   |---|---|---|
-  | Leaves the body, its middle over the feet | 1.15 m | 1.01 m |
+  | Is drawn on the ground at, of its picture's size | twice (`VESTIGE_SCALE`) | 0.6 (`AMMO_SCALE`) |
+  | Leaves the body, its middle over the feet | 1.38 m | 0.886 m |
   | Pops up at | 4.4 to 5.4 m/s | 2.8 to 3.4 m/s |
   | Falls under | 16 m/s² | 16 m/s² |
   | Keeps of each bounce's speed, and of its way along the ground | 0.4, 0.55 | 0.3, 0.55 |
   | Settles once it lands slower than | 1.1 m/s | 1.6 m/s |
-  | Its middle over the ground bouncing, then hovering | 0.23 m, then 0.42 m | 0.31 m, then 0.5 m |
+  | Its middle over the ground bouncing, then hovering | 0.46 m, then 0.84 m | 0.186 m, then 0.3 m |
   | Rises to hover over | 0.35 s | 0.28 s |
   | Bobs | 5 cm | 6 cm |
   | Turns in the air, then at rest | 7, then 2.4 radians a second | 5, then 2.4 radians a second |
   | Is drawn as | its crystal, 12 frames of 27 pixels for 0.7 m | its Blender model, 12 frames of 0.038 m a pixel |
 
-  The heights keep every frame's lowest pixel over the ground. A Vestige's crystal is a faceted gem crusted with
+  The heights keep every frame's lowest pixel over the ground at its size, and where it leaves the body moves with
+  where it lies, so its flight lasts as long whatever its size. A poured Vestige leaves 0.93 m over the chest's foot,
+  its middle at the mouth. A Vestige's crystal is a faceted gem crusted with
   shards, in its rarity's white, green, yellow, red or cyan blue, each frame baked as its turn first reaches it,
   cel-shaded in five bands, its outline darkened and a halo of its glow round it, added light. An Ammo box or crate is
-  its model ([[Item Pictures]]). A thin line rises from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m,
-  Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs it, a Legendary's and an Atheric's
-  pulse, and a Rare or finer chimes as it settles ([[Interface]]).
+  its model ([[Item Pictures]]). Each lies in its rarity's light, ammunition in a pale one, drawn in cells as the
+  spells are and as light added (`dropLight.ts`):
+
+  - **Glow.** A soft halo about its picture, its middle the brightest, reaching 0.45 of its height and never below
+    0.1 m over the ground, pulsing slowly (every 2 s), in flight and at rest.
+  - **Landing burst.** As it settles, a flash at it, a star of cells, and a ring spreading 1.5 m on the ground about
+    it, both gone in 0.7 s; a drop told of already at rest does not burst. It lands with a sound in its rarity's
+    weight, from the game's own recordings: ammunition's thud alone (`drop.land`), and with it a glass bell's tap for
+    a Normal or a Magic (`amb.breach.crystal`), a tubular bell for a Rare (`music.bell`), a deep bell for a Legendary
+    or an Atheric (`breach.toll`) ([[Interface]], "The rest").
+  - **Pillar.** Once settled, a tall pillar of light rises from its top over 0.4 s, a white heart in its colour's
+    body with a dim edge, its light stepping down to its tip as a glint climbs it: Normal 4 m, Magic 6 m, Rare 9 m,
+    Legendary and Atheric 14 m, pulsing; ammunition's 1.2 m, pale and half as bright. Its cells grow with distance,
+    so it is seen from far off.
+  - **Motes.** At rest, motes drift up from it, 0.9 m in 1.6 s, fading in and out: a Normal's four, two more each
+    rarity up, ammunition's three.
+
+  A player who asks for reduced motion sees no ring and no motes, the glow and the pillar steady.
 
 ## The mail
 

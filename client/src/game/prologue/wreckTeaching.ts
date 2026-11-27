@@ -1,8 +1,9 @@
 // What the wreck's teaching stands on its deck: the player's sword and shield where the ram threw them, a way along the
 // quiet deck, and the bow where the boarder fell, each drawn as the item itself, as the Character page shows it, and
 // moving as a drop of loot does: popped up from the deck, bouncing to rest, then hovering and bobbing under its
-// rarity's line, until the player walks over it; and where the Tithe boarder the player meets one on one comes from.
-import { CRYSTAL_FEEL, inReach, markDropLine, motionAt, RISE_S } from '../../combat/drops.ts';
+// rarity's pillar of light, until the player walks over it; and where the Tithe boarder the player meets one on one
+// comes from.
+import { CRYSTAL_FEEL, inReach, markDropPillar, motionAt, RISE_S } from '../../combat/drops.ts';
 import type { GearItem, GearState } from '../../network/gearMessages.ts';
 import type { Card, CardAt, Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
@@ -90,7 +91,7 @@ export function boarderAt(layout: WreckLayout, x: number, y: number): { at: [num
 
 /** The story's item on the deck as the player sees it, the sword and shield or the bow: the item's own picture, once
  *  the forge has drawn it, upright and turned to the eye at its true size, popped up from where it lies the first time
- *  it is drawn and moving as a Vestige's crystal does (`motionAt`), under a Normal drop's line once it rests. */
+ *  it is drawn and moving as a Vestige's crystal does (`motionAt`), under a Normal drop's pillar once it rests. */
 export class LyingArms {
   private readonly item: GearItem;
   private readonly place: Point;
@@ -99,7 +100,7 @@ export class LyingArms {
   private card: Card | null = null;
   /** When they were first drawn, on the page's clock: their pop begins then. */
   private began: number | null = null;
-  /** Where their card's top stands this frame, and how long they have rested, for the line over them. */
+  /** Where their card's top stands this frame, and how long they have rested, for the pillar over them. */
   private top: Point | null = null;
   private rested = 0;
 
@@ -134,12 +135,12 @@ export class LyingArms {
     return { card: this.card, x, y, z, flip: false, scale: size, hovers: true };
   }
 
-  /** Lays the line of light over them into `out` once they rest, rising as a drop's does, for an eye at `eye`,
+  /** Lays the pillar of light over them into `out` once they rest, rising as a drop's does, for an eye at `eye`,
    *  `clock` seconds on the page's clock. */
   mark(out: number[], clock: number, eye: Point): void {
     if (!this.top || this.rested <= 0) return;
     const rise = Math.min(1, this.rested / RISE_S);
-    markDropLine(out, { place: this.top, rarity: this.item.rarity, over: 0, share: rise }, clock, eye);
+    markDropPillar(out, { place: this.top, rarity: this.item.rarity, over: 0, share: rise }, clock, eye);
   }
 
   /** Whether feet at `feet` stand over them, near enough to take them up. */
