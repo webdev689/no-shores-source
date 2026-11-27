@@ -26,9 +26,9 @@ export interface Card {
   readonly glow?: { readonly texture: GPUTexture; readonly look: GlowElement };
 }
 
-/** One card to draw: where its feet stand (world metres), whether it is mirrored, its flash as it is struck (its
- *  stage, `FLASH` in cardLooks.ts, and colour), how many times life size it stands (1 unless said: a figure aboard a
- *  ship drawn larger than life is drawn as large as it is), its statuses that show (Veiled, Exposed, Charged), how
+/** One card to draw: where its feet stand (world metres), whether it is mirrored, its flash as it is struck (its stage,
+ *  `FLASH` in cardLooks.ts, and colour), how many times life size it stands (1 unless said: a figure aboard a ship
+ *  drawn larger than life is drawn as large as it is), its statuses that show (Veiled, Exposed, Charged, Hasted), how
  *  many pixels it is shaken across, how far it has dissolved as it dies and in which element, how much of it is still
  *  to come as it arrives (1 none to 0 whole, `arrivals.ts`), the smear its own swing leaves behind it (figure pixels
  *  across the eye's right and up, and its colour; only the Test Ground draws one), and how hard its weapon's glow
@@ -44,6 +44,7 @@ export interface CardAt {
   readonly veiled?: boolean;
   readonly exposed?: boolean;
   readonly charged?: boolean;
+  readonly hasted?: boolean;
   readonly jitter?: number;
   readonly dissolve?: { readonly share: number; readonly look: GlowLook };
   readonly arrival?: number | undefined;

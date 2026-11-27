@@ -7,7 +7,7 @@ import type { FightEffects } from '../combat/fightEffects.ts';
 import type { Fighting } from '../combat/fighting.ts';
 import type { Flashes } from '../combat/flashes.ts';
 import type { FoeFigures } from '../combat/foeFigures.ts';
-import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
+import { castLookOf, hastedIn, veiledIn } from '../combat/spellLooks.ts';
 import type { Smear, Vector } from '../combat/swingArcs.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
@@ -70,7 +70,7 @@ export function otherCards(
     const feet = [placed.x, placed.y, placed.z] as const;
     const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip, glow, feet);
     const flash = effects.flashes.flashOf(number);
-    const veiled = veiledIn(fight, number);
+    const [veiled, hasted] = [veiledIn(fight, number), hastedIn(fight, number)];
     const moved = feel.shift(number, feel.otherViews.get(number) ?? null);
     const atFeet: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
     feel.drawnAt.set(number, { feet: atFeet, anim: placed.anim, flip });
@@ -79,7 +79,7 @@ export function otherCards(
     const facesEye = theirs?.kind === 'dead' && theirs.fell;
     const stand = cardStand(atFeet[0], atFeet[1], eyeX, eyeY, feel.nearest);
     const arrival = folk.arrivals.shareOf(number, clock);
-    if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled, facesEye, arrival });
+    if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled, hasted, facesEye, arrival });
   }
   otherGlides.keep(new Set(folk.otherPlayers.placed.keys()));
   const seconds = frameTicks * folk.tickSeconds;
@@ -152,7 +152,7 @@ export function ownCard(
   const statuses = fight.own?.statuses;
   const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
   const looks = { veiled: veiledIn(fight, fight.player), charged, exposed, smear: feel.smear(fight.player), arrival };
-  return { ...own, ...looks, facesEye: walker.fall !== null };
+  return { ...own, ...looks, hasted: hastedIn(fight, fight.player), facesEye: walker.fall !== null };
 }
 
 /** Where every figure is placed from this frame (x, y) and how near the eye one may stand: while a cutscene holds the

@@ -15,7 +15,7 @@ import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
-import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
+import { castLookOf, hastedIn, veiledIn } from '../combat/spellLooks.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { Hud } from '../combat/hud.ts';
@@ -400,8 +400,8 @@ async function start(): Promise<void> {
     if (ownCard) {
       const statuses = own?.statuses;
       const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
-      const veiled = veiledIn(fighting, fighting.player);
-      drawn.push({ ...ownCard, veiled, charged, exposed, smear: smear(fighting.player) });
+      const [veiled, hasted] = [veiledIn(fighting, fighting.player), hastedIn(fighting, fighting.player)];
+      drawn.push({ ...ownCard, veiled, charged, exposed, hasted, smear: smear(fighting.player) });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       figuresDrawn.set(fighting.player, { feet, anim: player.look.anim, flip: ownCard.flip });
     }
@@ -435,8 +435,9 @@ async function start(): Promise<void> {
       const drawnAt: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
       if (number !== undefined) figuresDrawn.set(number, { feet: drawnAt, anim: placed.anim, flip });
       const veiled = number !== undefined && veiledIn(fighting, number);
+      const hasted = number !== undefined && hastedIn(fighting, number);
       const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y, eye.nearest);
-      if (card) drawn.push({ card, ...stand, z: drawnAt[2], flip, flash, veiled });
+      if (card) drawn.push({ card, ...stand, z: drawnAt[2], flip, flash, veiled, hasted });
     }
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: figuresDrawn, smear };
     const { tickSeconds } = movement;

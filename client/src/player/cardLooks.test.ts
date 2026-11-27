@@ -22,6 +22,12 @@ test('a card’s look is its statuses, its look and its tint, in the order the s
   assert.deepEqual(values, [1, 1, 7, 0.5, 1, 2, -1, FLASH.outline, 1, 0.16, 0.1, 0]);
 });
 
+test('a Hasted card is told in the Charge’s number, 2 added, so a figure both Charged and Hasted shows each', () => {
+  assert.equal(cardLookValues({ ...plain, hasted: true }, 0)[4], 2);
+  assert.equal(cardLookValues({ ...plain, hasted: true, charged: true }, 0)[4], 3);
+  assert.equal(cardLookValues({ ...plain, charged: true }, 0)[4], 1);
+});
+
 test('an arriving card is drawn as a dissolve in its own look, still to come, which a death’s overrides', () => {
   assert.deepEqual(cardLookValues({ ...plain, arrival: 0.75 }, 0).slice(3, 6), [0.75, 0, 4]);
   const dying: CardAt = { ...plain, arrival: 0.75, dissolve: { share: 0.2, look: 1 } };

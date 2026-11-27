@@ -257,7 +257,9 @@ gives every one through one door, `Room::give`, for the status's own time unless
   counter, a telegraphed or iron blow, a shot, a spell, or an Atheric's leap, burst or bite ([[Gear]], "Atherics"); a
   leap's and a burst's say too which fighter they came from.
 - **Haste in the movement rules.** The movement rules step a body at a share of its pace on the ground; a Hasted
-  fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does.
+  fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does. A Hasted
+  player's figure is lit round its edge in Volt, and leaves no trail ([[Arts]], "Statuses";
+  [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]).
 - **A foe walking home** sheds its Expose and its Charge, with the Charge's stagger and the immunity after one, as it
   turns home, so its next fight is fresh ([[Foes]], "The leash").
 - **The Arts** give statuses through the same door: Quicken's Haste, Arc Lash's Charge, the Sunwell's Linked,

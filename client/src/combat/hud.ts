@@ -1,5 +1,6 @@
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
+import { rankSize } from '../rules/roster.ts';
 import type { Block, Body } from '../rules/movementRules.ts';
 import { PLATES } from '../plus/barLayout.ts';
 import { COMPASS, headingOf, type PlaceMark } from '../plus/compass.ts';
@@ -18,7 +19,7 @@ import { RING, arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './
 import { Callout, callTop } from './callout.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { type BannerTone, PublicBanner, type PublicShown, StoreBars } from './publicBanner.ts';
-import { cameraOf, landBlocks, PLATE_OVER_M } from './plateSight.ts';
+import { cameraOf, HEAD_M, landBlocks, PLATE_OVER_M, PLATE_RANGE_M } from './plateSight.ts';
 import { CARD_NEAREST_M, cardStand } from '../player/figures.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
@@ -113,8 +114,10 @@ const RING_KEPT = 6;
 /** How far a parry ring set at the screen's edge stands clear of the vitals and the Arts: its widest's half and a
  *  little more. */
 const RING_CLEAR = RING.widest / 2 + RING_KEPT;
-/** A word with no striker to meet stands this high over its fighter's feet (metres). */
+/** A word with no striker to meet stands this high over its fighter's feet, and "Dodge!" this high over a man-sized
+ *  foe's (metres). */
 const WORD_HIGH_M = 1.2;
+const DODGE_HIGH_M = 2.3;
 /** What the player is told on stepping onto an Ammo box they cannot take. */
 const AMMO_FULL = 'Ammo full';
 /** Foul water's edge: its sick green, how long one harm holds it (the floor harms once a second, seals.rs
@@ -243,7 +246,7 @@ export class Hud {
       const onScreen = project(frame.matrix, point, frame.width, frame.height);
       return onScreen && { ...onScreen, depth: clipOf(frame.matrix, point)[2] };
     };
-    const overHead = (view: FighterView) => spot([view.x, view.y, view.z + PLATE_OVER_M]);
+    const overHead = (view: FighterView, size: number) => spot([view.x, view.y, view.z + PLATE_OVER_M * size]);
     const lock = own?.target ?? null;
     const chosen = this.foeTarget.step({ player: frame.player, lock, foes: frame.foes, events: frame.events }, seconds);
     const { blocks = [], groundAt } = frame;
@@ -283,7 +286,7 @@ export class Hud {
     this.weapons.update(arms, own, seconds, caps.loadouts);
     this.edges = this.threats(frame);
     this.rings = this.parries(frame);
-    this.floatWords(frame, seconds);
+    this.floatWords(frame, seconds, viewing);
   }
 
   /** Round the head of each foe at a blow the player can parry, as its figure is drawn, a ring closing onto a fixed
@@ -296,13 +299,13 @@ export class Hud {
     const across = (share: number) => RING.closed + (RING.widest - RING.closed) * share;
     // Its figure's card stands nearer the eye than its body, and in first person no nearer than CARD_NEAREST_M.
     const eye = cameraOf(frame.matrix)?.eye ?? null;
-    return frame.foes.flatMap(({ view }): Hud['rings'] => {
+    return frame.foes.flatMap(({ view, rank }): Hud['rings'] => {
       if (frame.parryWindow === undefined) return [];
       const cue = parryCue(view, frame.player, frame.parryWindow, frame.parryOpen ?? true);
       if (!cue) return [];
       const nearest = frame.firstPerson ? CARD_NEAREST_M : 0;
       const stand = eye ? cardStand(view.x, view.y, eye[0], eye[1], nearest) : view;
-      const clip = clipOf(frame.matrix, [stand.x, stand.y, view.z + RING_HEIGHT]);
+      const clip = clipOf(frame.matrix, [stand.x, stand.y, view.z + RING_HEIGHT * rankSize(rank)]);
       const edge = edgeArrow(clip, frame.width, frame.height, keep);
       const [clipX, clipY, clipW] = clip;
       const spot = edge
@@ -372,13 +375,24 @@ export class Hud {
   }
 
   /** The events' words, each where its blow met the body, thrown the way the stroke went, and clear of the plates (in
-   *  first person, those on the player below the crosshair); a warning over a foe near the player as it begins an
-   *  iron wind-up; and "Ammo full" on the player as they step onto an Ammo box they cannot take. */
-  private floatWords(frame: HudFrame, seconds: number): void {
+   *  first person, those on the player below the crosshair), those of a fight the player is not in only where a plate
+   *  would show, as `viewing` sees; a warning over a foe near the player as it begins an iron wind-up; and "Ammo full"
+   *  on the player as they step onto an Ammo box they cannot take. */
+  private floatWords(frame: HudFrame, seconds: number, viewing: PlateViewing): void {
     const holding = (id: number) => frame.foes.find((foe) => foe.id === id)?.view.action.kind === 'telegraph';
     const projectWord = (point: readonly [number, number, number]) =>
       project(frame.matrix, point, frame.width, frame.height);
-    for (const said of wordsOf(frame.events, frame.player, holding)) {
+    const { camera } = viewing;
+    const inSight = (id: number) => {
+      const place = frame.where(id);
+      if (!place || !camera) return !!place;
+      const head = [place[0], place[1], place[2] + HEAD_M] as const;
+      const far = Math.hypot(head[0] - camera.eye[0], head[1] - camera.eye[1]) > PLATE_RANGE_M;
+      return !far && !viewing.blocked(camera.eye, head);
+    };
+    const mine = (event: FightEvent) => event.striker === frame.player || event.defender === frame.player;
+    const told = frame.events.filter((event) => mine(event) || inSight(event.defender));
+    for (const said of wordsOf(told, frame.player, holding)) {
       const place = frame.where(said.defender);
       if (!place) continue;
       const own = frame.firstPerson && said.defender === frame.player;
@@ -389,13 +403,14 @@ export class Hud {
       const contact = from ? contactOf(place, from) : ([place[0], place[1], place[2] + WORD_HIGH_M] as const);
       this.words.say(told, own ? null : contact, this.sideOf(said, place, from, contact, projectWord));
     }
-    for (const { id, view } of frame.foes) {
+    for (const { id, view, rank } of frame.foes) {
       const iron = view.action.kind === 'telegraph' && view.action.iron;
       const near = !!frame.own && Math.hypot(view.x - frame.own.x, view.y - frame.own.y) <= IRON_NEAR_M;
       if (!iron) this.ironTold.delete(id);
       else if (near && !this.ironTold.has(id)) {
         this.ironTold.add(id);
-        this.words.say({ text: 'Dodge!', tone: 'warn', tags: [] }, [view.x, view.y, view.z + 2.3], 0, 0.5);
+        const over: readonly [number, number, number] = [view.x, view.y, view.z + DODGE_HIGH_M * rankSize(rank)];
+        this.words.say({ text: 'Dodge!', tone: 'warn', tags: [] }, over, 0, 0.5);
       }
     }
     if (frame.ammoFull && frame.own) {

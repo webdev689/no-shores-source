@@ -546,6 +546,55 @@ test('a parry ring stands round the head of the foe swinging at the player, kept
   assert.equal(over?.float?.y, 51, 'its widest kept inside the top edge');
 });
 
+test('a Miniboss, drawn larger, has its plate and its parry ring over its own head, higher than a Major’s', () => {
+  const { matrix, foeAt, downAt, placeAt } = levelView();
+  const swing = {
+    kind: 'attack',
+    stroke: 1,
+    elapsed: 6,
+    strike: 24,
+    end: 60,
+    swing: 'plain',
+    leftHand: false,
+  } as const;
+  const shown = (rank: number) => {
+    const foe = foeAt(2, 'Runner', 6, 0);
+    const hud = new Hud();
+    const foes = [{ ...foe, rank, view: { ...foe.view, target: 1, action: swing } }];
+    hud.update(bare({ matrix, foes, parryWindow: 12 }), 1 / 60);
+    const nodes = allOf(drawn(hud));
+    const ring = nodes.find((node) => node.picture?.key.startsWith('parry'))?.float?.y ?? NaN;
+    const plate = nodes.find((node) => node.direction === 'row' && node.float?.anchor?.[1] === 1)?.float?.y ?? NaN;
+    return { ring, plate };
+  };
+  const [major, miniboss] = [shown(2), shown(4)];
+  const head = placeAt(6, 0);
+  assert.ok(Math.abs(major.ring - downAt([head.x, head.y, 1.6])) < 1, 'a Major’s round a man’s head');
+  assert.ok(miniboss.ring < major.ring - 10, `the Miniboss’s higher: ${miniboss.ring} against ${major.ring}`);
+  assert.ok(miniboss.plate < major.plate - 10, `its plate higher: ${miniboss.plate} against ${major.plate}`);
+});
+
+test('a blow neither by nor on the player says its number only where a plate would show: near, and not behind land', () => {
+  const { matrix, eye, forward, placeAt, foeAt } = levelView();
+  const ridge = (x: number, y: number) => {
+    const ahead = (x - eye[0]) * forward[0] + (y - eye[1]) * forward[1];
+    return Math.abs(ahead - 10) < 1.5 ? 5 : 0;
+  };
+  const said = (ahead: number, striker: number, groundAt: HudFrame['groundAt'] = null) => {
+    const foe = foeAt(2, 'Runner', ahead, 0);
+    const where = (id: number) => (id === 2 ? ([foe.view.x, foe.view.y, 0] as const) : null);
+    const hit = { tick: 0n, kind: EVENT.hit, how: 0, striker, defender: 2, amount: 37, stroke: 0 };
+    const hud = new Hud();
+    const own = { ...standing, ...placeAt(0, 0) };
+    hud.update(bare({ matrix, own, foes: [foe], where, events: [hit], groundAt }), 1 / 60);
+    return wordsIn(drawn(hud)).includes('37');
+  };
+  assert.equal(said(20, 7), true, 'another player’s blow 20 m off');
+  assert.equal(said(80, 7), false, 'another player’s blow 80 m off, past a plate’s 60 m');
+  assert.equal(said(20, 7, ridge), false, 'another player’s blow behind a ridge');
+  assert.equal(said(80, 1), true, 'the player’s own blow, however far');
+});
+
 test('a parry ring for a head off the screen stands at the edge the way it lies, behind the eye too, never in a corner', () => {
   const { matrix, foeAt, downAt, placeAt } = levelView();
   const swing = {

@@ -1,6 +1,6 @@
-// How a figure's card shows what befalls it, in its own pixels: struck (a stepped flash), Charged, Exposed, Veiled,
-// shaken, smeared by its own swing, dissolving as it dies, and built as it arrives. Both scenes that draw cards (the
-// Test Ground's and the game's) write the same numbers and read them with the same WGSL.
+// How a figure's card shows what befalls it, in its own pixels: struck (a stepped flash), Charged, Hasted, Exposed,
+// Veiled, shaken, smeared by its own swing, dissolving as it dies, and built as it arrives. Both scenes that draw cards
+// (the Test Ground's and the game's) write the same numbers and read them with the same WGSL.
 import { GLOW_RAMPS, type Rgb, wgslRgb } from '../elementGlow.ts';
 import type { CardAt } from './cards.ts';
 import { PX_PER_M } from './figures.ts';
@@ -24,9 +24,9 @@ export const ARRIVING = { player: 4, tithe: 5, lattice: 6 } as const;
 const WHITE = [1, 1, 1] as const;
 
 /** The numbers a card's look is drawn with at `time` (the status clock): Veiled, Exposed, the clock and how far it
- *  has dissolved (or is still to come, arriving); Charged, the element it dissolves in (or arriving), how far it is
- *  shaken (figure pixels) and its flash's stage; then its flash's colour. Drawn as its smear (`smear`), the tint is
- *  the smear's colour, marked so. */
+ *  has dissolved (or is still to come, arriving); Charged (1) and Hasted (2) added in one number, the element it
+ *  dissolves in (or arriving), how far it is shaken (figure pixels) and its flash's stage; then its flash's colour.
+ *  Drawn as its smear (`smear`), the tint is the smear's colour, marked so. */
 export function cardLookValues(shown: CardAt, time: number, smear = false): number[] {
   const values = new Array<number>(CARD_LOOK_FLOATS).fill(0);
   cardLookInto(values, 0, shown, time, smear);
@@ -47,7 +47,7 @@ export function cardLookInto(
   out[start + 1] = shown.exposed ? 1 : 0;
   out[start + 2] = time;
   out[start + 3] = shown.dissolve?.share ?? shown.arrival ?? 0;
-  out[start + 4] = shown.charged ? 1 : 0;
+  out[start + 4] = (shown.charged ? 1 : 0) + (shown.hasted ? 2 : 0);
   out[start + 5] = shown.dissolve?.look ?? (shown.arrival ? (shown.arriving ?? ARRIVING.player) : 0);
   out[start + 6] = shown.jitter ?? 0;
   out[start + 7] = smear ? FLASH.off : (flash?.stage ?? FLASH.off);
@@ -69,11 +69,11 @@ const ramps = (looks: readonly (readonly Rgb[])[]) => looks.flatMap((ramp) => ra
 
 /**
  * A card's look in WGSL, from its uniform's `status` (Veiled, Exposed, the clock, the dissolve's share), `look`
- * (Charged, the dissolve's element or an arrival's look, ARRIVING, the shake in pixels, the flash's stage) and `tint` (the flash's
- * colour; w 1 for a smear). `card_texel` is the picture's texel a fragment shows, shaken and, for a Cosmic death,
- * drawn in toward the chest in four whole steps; `card_shade` the colour it shows there, alpha 0 for none. Everything
- * is drawn on the figure's own pixels, so a Charge's arcs never leave its outline and a flash never fades through a
- * ghost.
+ * (Charged and Hasted, the dissolve's element or an arrival's look, ARRIVING, the shake in pixels, the flash's stage)
+ * and `tint` (the flash's colour; w 1 for a smear). `card_texel` is the picture's texel a fragment shows, shaken and,
+ * for a Cosmic death, drawn in toward the chest in four whole steps; `card_shade` the colour it shows there, alpha 0
+ * for none. Everything is drawn on the figure's own pixels, so a Charge's arcs and a Haste's light never leave its
+ * outline and a flash never fades through a ghost.
  */
 export const STATUS_WGSL = /* wgsl */ `
 const STATUS_ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
@@ -97,6 +97,11 @@ fn status_order(texel: vec2i) -> f32 {
 
 fn status_light(colour: vec3f) -> f32 {
   return dot(colour, vec3f(0.2126, 0.7152, 0.0722));
+}
+
+// Whether a card's look marks it Charged (1) or Hasted (2), the two added in its first number.
+fn status_marked(look: vec4f, mark: u32) -> bool {
+  return (u32(round(look.x)) & mark) == mark;
 }
 
 // Whether the picture is clear 'reach' texels from a drawn one, along either axis, or off the picture there.
@@ -124,7 +129,7 @@ fn card_texel(status: vec4f, look: vec4f, place: vec2i, size: vec2i, root: vec2f
   var shake = i32(round(look.z));
   let dissolving = status.w > 0.0;
   let element = u32(round(look.y));
-  if (look.x > 0.5 || (dissolving && element == 2u)) { shake += select(-1, 1, (strike & 1u) == 1u); }
+  if (status_marked(look, 1u) || (dissolving && element == 2u)) { shake += select(-1, 1, (strike & 1u) == 1u); }
   at.x -= shake;
   if (dissolving && element == 3u) {
     let scale = 1.0 - floor(status.w * 4.0) / 4.0;
@@ -244,7 +249,7 @@ fn card_shade(
     if (status_order(texel) >= 0.125) { return vec4f(0.0); }
     out = mix(out, status_ramp(3u, 0.0), 0.45);
   }
-  if (look.x > 0.5) {
+  if (status_marked(look, 1u)) {
     // Charged: three arcs struck afresh inside the figure, and its edge lit on alternate strikes.
     var near = 1e3;
     for (var arc = 0.0; arc < 3.0; arc += 1.0) { near = min(near, status_arc(vec2f(texel) + 0.5, root, strike, arc)); }
@@ -255,6 +260,11 @@ fn card_shade(
   if (status.y > 0.5 && (edge || status_clear_at(picture, texel, 2))) {
     // Exposed: two pixels of edge, stepping between Cosmic's body and light.
     return vec4f(status_ramp(3u, select(1.0, 2.0, fract(status.z * 2.0) > 0.5)), 1.0);
+  }
+  if (status_marked(look, 2u)) {
+    // Hasted: lit round its edge in Volt, its light outside and its blue a pixel in, held still.
+    if (edge) { return vec4f(status_ramp(2u, 2.0), 1.0); }
+    if (status_clear_at(picture, texel, 2)) { return vec4f(status_ramp(2u, 1.0), 1.0); }
   }
   return vec4f(out, 1.0);
 }

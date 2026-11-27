@@ -147,9 +147,10 @@ test("a place's words name its kind, and its island where the owner has named on
   assert.equal(placeWords({ kind: 'patrol', continent: 'continent-9' }), 'Patrol');
 });
 
-test('the world goes grey only once death is told, so a fall plays out in colour', () => {
-  assert.equal(greyed(standingOf('dead', 30, true, false)), false);
+test('the world goes grey as the player dies, a fall as a death in a fight, before its death is told', () => {
+  assert.equal(greyed(standingOf('dead', 30, true, false)), true, 'a fall still playing');
   assert.equal(greyed(standingOf('dead', 30, true, true)), true);
-  assert.equal(greyed(standingOf('dead', 0, false)), true, 'a death by straying is told at once');
+  assert.equal(greyed(standingOf('dead', 0, false)), true, 'a death by straying');
   assert.equal(greyed(standingOf('warned', 300)), false);
+  assert.equal(greyed(standingOf('inside', 0)), false);
 });

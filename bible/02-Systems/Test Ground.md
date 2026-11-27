@@ -255,8 +255,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   foe's Feint), gold or green when it is good for the player and red when bad, those said together (a stroke over each
   foe it struck) each standing clear of the rest; in first person, words about the player under the crosshair; an arrow
   at the screen's edge toward a foe out of view that swings, winds up or draws at the player; round the head of a foe
-  at a blow at the player that can be parried (1.6 m over its feet), a ring closing from 90 px across onto a fixed one
-  24 px across exactly as the blow lands, each 4 px wide over a dark edge, with a gold band on the fixed ring out to
+  at a blow at the player that can be parried (1.6 m over a man-sized foe's feet, higher on a Miniboss or a Boss), a
+  ring closing from 90 px across onto a fixed one 24 px across exactly as the blow lands, each 4 px wide over a dark edge, with a gold band on the fixed ring out to
   where the parry window opens, gold once a press of the guard would parry it (no band, and never gold, while the
   player's guard could open no window: a ranged weapon in hand, or hard on the heels of a parry missed)
   ([[Foes Show a Closing Parry Ring]], [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]),

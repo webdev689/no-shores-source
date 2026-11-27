@@ -916,10 +916,11 @@ and a fight's captains) are handed to the water at the size each is drawn; it ke
 way.
 Under way the player's ship stirs the water's ripples at its bow and quarters, as the World Editor's does, and the
 ripples follow it.
-In death the world drains to grey once death is told (a fall plays out in colour first, the camera holding and turning
-after the body, no key listed until Respawn is offered), and as soon as the player falls in a fight, and comes back in
-colour on respawn, a revive or on leaving: over 1.4 s
-each way, eased out, grey to 92%, at 72% of its light and 5% more contrast. The scene draws it last into its own
+In death the world drains to grey the moment the player dies, one look for every death
+([[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]): a fall in a fight, a fall from a height
+(which plays out in grey, the camera holding and turning after the body, no key listed until Respawn is offered) or
+straying, and the pointer is freed as it begins but for a fall in a fight. It comes back in colour on respawn, a
+revive or on leaving: over 1.4 s each way, eased out, grey to 92%, at 72% of its light and 5% more contrast. The scene draws it last into its own
 picture, so the interface the game draws over the world keeps its colour. In the same pass the arriving player's view
 blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, open by 1 s.
 

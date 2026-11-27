@@ -377,8 +377,14 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
 
 ## On screen
 
-- **Over each foe**, just over its head (1.9 m over its feet, over its parry ring round the head), its plate in the
-  [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
+- **A Miniboss and a Boss stand larger** than the ranks under them
+  ([[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]): a Miniboss is drawn 1.25 times its
+  type's size, a Boss 1.5 times (a Lattice foe's own size grown alike), and what stands on it grows with it: its plate
+  and the line to its head a plate is seen by, its parry ring, "Dodge!", a stagger's stars, the Exposed diamond, a
+  Lattice foe's looks and wave (`rankSize`). Only the drawing grows: the rules' body, its hit box and its reach, stays
+  its type's, and the crosshair rests on that body.
+- **Over each foe**, just over its head (1.9 m over a man-sized foe's feet, over its parry ring round the head), its
+  plate in the [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
   above a thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before
   the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]). An ally on the
