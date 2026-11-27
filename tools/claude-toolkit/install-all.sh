@@ -154,9 +154,10 @@ mkdir -p ~/.config/rtk && cat > ~/.config/rtk/config.toml <<'EOF'
 [hooks]
 # diff, wc, pytest, playwright, jq, curl and git with -C / -c / --no-pager / log -p / stash show were condensed too
 # (found by check-tools.sh): all exact now. npm run / npx too: rtk turned `npm run lint` into `rtk lint` (plain ESLint, not the
-# repo's lint script) and condensed `npm run types` / `npm run test:changed`, the repo's required gates.
+# repo's lint script) and condensed `npm run types` / `npm run test:changed`, the repo's required gates. git push
+# too: it showed a refused push as "Everything up-to-date".
 # rtk ignores this list inside ( ) subshells; rtk-guard.py (below) puts it back.
-exclude_commands = ["find", "grep", "rg", "cat", "head", "tail", "sed", "git diff", "git show", "git blame", "git -C", "git -c", "git --no-pager", "git log -p", "git log --patch", "git stash show", "git format-patch", "diff", "wc", "pytest", "npx playwright", "playwright", "jq", "curl", "make", "cargo test", "go test", "npx vitest", "vitest", "docker logs", "npm run", "npm test", "npx", "tsc", "eslint"]
+exclude_commands = ["find", "grep", "rg", "cat", "head", "tail", "sed", "git diff", "git show", "git blame", "git -C", "git -c", "git --no-pager", "git log -p", "git log --patch", "git stash show", "git format-patch", "diff", "wc", "pytest", "npx playwright", "playwright", "jq", "curl", "make", "cargo test", "go test", "npx vitest", "vitest", "docker logs", "npm run", "npm test", "npx", "tsc", "eslint", "git push"]
 
 [telemetry]
 enabled = false
@@ -166,7 +167,10 @@ cp "$KIT_DIR/hooks/syntax-check.py" ~/.claude/hooks/syntax-check.py
 # rtk guard: runs rtk's rewrite, then keeps NAME=... assignments
 # and excluded commands inside ( ) exact, and restores graphify-out/ before git pull/rebase/merge.
 cp "$KIT_DIR/hooks/rtk-guard.py" ~/.claude/hooks/rtk-guard.py
-python3 - <<'EOF'   # register the caveman sub-agent hook and the syntax hook, and put the rtk guard in rtk's place (idempotent)
+# Serena guard: undoes a replace_symbol_body / insert_before_symbol that drops doc comments or attributes.
+cp "$KIT_DIR/hooks/serena-guard.py" ~/.claude/hooks/serena-guard.py
+# Register the caveman sub-agent hook, the syntax and Serena hooks, and put the rtk guard in rtk's place (idempotent).
+python3 - <<'EOF'
 import json, os
 p = os.path.expanduser('~/.claude/settings.json')
 s = json.load(open(p)) if os.path.exists(p) else {}
@@ -185,8 +189,11 @@ for e in pre:
 pre[:] = [e for e in pre if e.get('hooks')]
 if not seen:
     pre.append({'matcher': 'Bash', 'hooks': [{'type': 'command', 'command': guard}]})
+serena = 'mcp__serena__replace_symbol_body|mcp__serena__insert_before_symbol'
 for ev, cmd, matcher in (('SubagentStart', 'python3 ~/.claude/hooks/caveman-subagent.py', None),
-                         ('PostToolUse', 'python3 ~/.claude/hooks/syntax-check.py', 'Edit|Write|MultiEdit')):
+                         ('PostToolUse', 'python3 ~/.claude/hooks/syntax-check.py', 'Edit|Write|MultiEdit'),
+                         ('PreToolUse', 'python3 ~/.claude/hooks/serena-guard.py', serena),
+                         ('PostToolUse', 'python3 ~/.claude/hooks/serena-guard.py', serena)):
     hooks = s.setdefault('hooks', {}).setdefault(ev, [])
     if not any(h.get('command') == cmd for e in hooks for h in e.get('hooks', [])):
         e = {'hooks': [{'type': 'command', 'command': cmd, 'timeout': 60 if matcher else 10}]}
@@ -235,9 +242,13 @@ fi
 
 # --- Commit guard, then the check ---
 # OmniRoute (AI gateway) is opt-in and NOT installed here: never in the API path without the owner's yes.
-# Commit guard in the local clone (worktrees share it): refuses zips, C2PA-stamped PNGs and line-ending flips.
+# Git hooks in the local clone (worktrees share them): pre-commit refuses zips, C2PA-stamped PNGs, line-ending
+# flips, symbolic links and unformatted files; commit-msg a joined first line or a missing session trailer;
+# pre-push a failed quick check or a publishing workflow started from a branch.
 if [ -d "${serena_proj:-/nonexistent}/.git" ]; then
-  cp "$KIT_DIR/git-hooks/pre-commit" "$serena_proj/.git/hooks/pre-commit" && chmod +x "$serena_proj/.git/hooks/pre-commit"
+  for h in pre-commit commit-msg pre-push; do
+    cp "$KIT_DIR/git-hooks/$h" "$serena_proj/.git/hooks/$h" && chmod +x "$serena_proj/.git/hooks/$h"
+  done
 fi
 set +x
 trap - ERR

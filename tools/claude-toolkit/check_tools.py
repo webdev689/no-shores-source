@@ -490,11 +490,141 @@ def _():
         sh('git add w.js && git commit -qm base', cwd=tmp)
         open(tmp + '/w.js', 'wb').write(b'a\nb\nc\n')
         rc_eol, _ = sh('git add w.js && git commit -qm eol', cwd=tmp)
+        sh('git checkout -q HEAD -- w.js', cwd=tmp)
+        os.symlink('/tmp', tmp + '/link')
+        rc_ln, _ = sh('git add link && git commit -qm link', cwd=tmp)
+        sh('git rm -q --cached link', cwd=tmp)
+        os.makedirs(tmp + '/node_modules/.bin')      # a stand-in Prettier that finds every file unformatted
+        open(tmp + '/node_modules/.bin/prettier', 'w').write('#!/bin/sh\necho "[warn] $*" >&2; exit 1\n')
+        os.chmod(tmp + '/node_modules/.bin/prettier', 0o755)
+        open(tmp + '/u.ts', 'w').write('const a=1\n')
+        rc_fmt, o_fmt = sh('git add u.ts && git commit -qm fmt', cwd=tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-    ok = rc_ok == 0 and rc_rom != 0 and rc_png != 0 and rc_eol != 0
-    out('PASS' if ok else 'FAIL', 'pre-commit guard', 'blocks a staged .zip, a C2PA-stamped PNG and a CRLF->LF flip, lets normal files through' if ok
-        else f'guard results wrong (normal rc {rc_ok}, rom rc {rc_rom}, c2pa png rc {rc_png}, eol rc {rc_eol})')
+    ok = rc_ok == 0 and rc_rom != 0 and rc_png != 0 and rc_eol != 0 and rc_ln != 0 and rc_fmt != 0 and 'u.ts' in o_fmt
+    out('PASS' if ok else 'FAIL', 'pre-commit guard', 'blocks a staged .zip, a C2PA-stamped PNG, a CRLF->LF flip, a symbolic link and a file '
+        'Prettier would rewrite, lets normal files through' if ok
+        else f'guard results wrong (normal rc {rc_ok}, rom rc {rc_rom}, c2pa png rc {rc_png}, eol rc {rc_eol}, link rc {rc_ln}, prettier rc {rc_fmt})')
+
+
+def scratch_repo(hooks):
+    """A throwaway repo with an origin, the clone's installed git hooks named in `hooks` copied in."""
+    tmp = tempfile.mkdtemp()
+    sh(f'git init -q --bare {tmp}/origin.git && git init -q -b main {tmp}/w', cwd=tmp)
+    w = tmp + '/w'
+    sh(f'git config user.email t@t && git config user.name t && git remote add origin {tmp}/origin.git', cwd=w)
+    for h in hooks:
+        shutil.copy(REPO + '/.git/hooks/' + h, w + '/.git/hooks/' + h)
+        os.chmod(w + '/.git/hooks/' + h, 0o755)
+    return tmp, w
+
+
+@check('commit-msg guard')
+def _():
+    hk = REPO + '/.git/hooks/commit-msg'
+    if not os.path.exists(hk) or 'message-guard' not in open(hk).read():
+        return out('FAIL', 'commit-msg guard', f'{hk} not installed (install-all.sh copies tools/claude-toolkit/git-hooks/commit-msg)')
+    tmp, w = scratch_repo(['commit-msg'])
+    plain = {'CLAUDECODE': '', 'CLAUDE_CODE_REMOTE_SESSION_ID': ''}
+    claude = {'CLAUDECODE': '1', 'CLAUDE_CODE_REMOTE_SESSION_ID': 'x'}
+    msg = lambda m, env: sh(['git', 'commit', '-q', '--allow-empty', '-F', '-'], cwd=w, inp=m, env=env)[0]
+    try:
+        r = {'plain': msg('A subject\n\nA body.\n', plain), 'long': msg('x' * 101 + '\n', plain),
+             'joined': msg('A subject Co-Authored-By: C <c@c>\n', plain), 'no trailer': msg('A subject\n\nA body.\n', claude),
+             'subject names it': msg('Document the Claude-Session: trailer rule\n', plain),
+             'trailer': msg('A subject\n\nA body.\n\nClaude-Session: https://claude.ai/code/x\n', claude)}
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = r['plain'] == 0 and r['trailer'] == 0 and r['subject names it'] == 0 and r['long'] and r['joined'] and r['no trailer']
+    out('PASS' if ok else 'FAIL', 'commit-msg guard', 'refuses a first line over 100 characters or holding a trailer, and a Claude session\'s '
+        'commit without its Claude-Session: trailer' if ok else f'wrong exit codes {r}')
+
+
+@check('pre-push guard')
+def _():
+    hk = REPO + '/.git/hooks/pre-push'
+    if not os.path.exists(hk) or 'push-guard' not in open(hk).read():
+        return out('FAIL', 'pre-push guard', f'{hk} not installed (install-all.sh copies tools/claude-toolkit/git-hooks/pre-push)')
+    tmp, w = scratch_repo(['pre-push'])
+    os.makedirs(tmp + '/bin')                     # stand-in cargo: `cargo xtask repo` fails when CARGO_FAILS=1
+    open(tmp + '/bin/cargo', 'w').write('#!/bin/sh\n[ "$CARGO_FAILS" = 1 ] && exit 3; exit 0\n')
+    os.chmod(tmp + '/bin/cargo', 0o755)
+    env = {'PATH': tmp + '/bin:' + os.environ['PATH'], 'CLAUDECODE': ''}
+    try:
+        os.makedirs(w + '/.github/workflows')
+        open(w + '/.github/workflows/pub.yml', 'w').write('on:\n  push:\n    paths: [tools/pub/**]\n  workflow_dispatch:\n')
+        open(w + '/.github/workflows/ci.yml', 'w').write('on:\n  push:\n    branches: [main]\n')
+        open(w + '/a.txt', 'w').write('a\n')
+        sh('git add -A && git commit -qm base && git push -q origin main', cwd=w, env=env)
+        sh('git checkout -q -b side', cwd=w)
+        os.makedirs(w + '/tools/pub/x')
+        open(w + '/tools/pub/x/b.txt', 'w').write('b\n')
+        sh('git add -A && git commit -qm pub', cwd=w)
+        rc_pub, o_pub = sh('git push -q origin side', cwd=w, env=env)
+        rc_allow, _ = sh('git push -q origin side', cwd=w, env={**env, 'ALLOW_PUBLISH': '1'})
+        open(w + '/a.txt', 'w').write('c\n')
+        sh('git commit -qam other', cwd=w)
+        rc_fail, o_fail = sh('git push -q origin side', cwd=w, env={**env, 'CARGO_FAILS': '1'})
+        rc_ok, _ = sh('git push -q origin side', cwd=w, env=env)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = rc_pub and 'pub.yml' in o_pub and rc_allow == 0 and rc_fail and 'cargo xtask repo' in o_fail and rc_ok == 0
+    out('PASS' if ok else 'FAIL', 'pre-push guard', 'refuses a push that starts a path-filtered publishing workflow from a branch (names it; ALLOW_PUBLISH=1 '
+        'passes) and a push whose `cargo xtask repo` fails (names the step)' if ok
+        else f'wrong results (publish rc {rc_pub}, allowed rc {rc_allow}, failing check rc {rc_fail}, clean rc {rc_ok}): {(o_pub + o_fail)[-200:]}')
+
+
+@check('serena guard')
+def _():
+    hk = HOME + '/.claude/hooks/serena-guard.py'
+    if not os.path.exists(hk):
+        return out('FAIL', 'serena guard', 'hook missing (install-all.sh copies hooks/serena-guard.py)')
+    tmp = tempfile.mkdtemp()
+    ev = lambda name, tid: json.dumps({'hook_event_name': name, 'tool_use_id': tid, 'cwd': tmp, 'tool_name': 'mcp__serena__replace_symbol_body',
+                                       'tool_input': {'relative_path': 'a.rs', 'name_path': 'f', 'body': ''}})
+    src = '/// Doc.\n#[must_use]\nfn f() -> u8 { 1 }\n'
+    try:
+        open(tmp + '/a.rs', 'w').write(src)
+        sh(['python3', hk], inp=ev('PreToolUse', 't1'))
+        open(tmp + '/a.rs', 'w').write('fn f() -> u8 { 2 }\n')            # the body sent without its doc and attribute
+        _, o_drop = sh(['python3', hk], inp=ev('PostToolUse', 't1'))
+        undone = open(tmp + '/a.rs').read() == src
+        sh(['python3', hk], inp=ev('PreToolUse', 't2'))
+        open(tmp + '/a.rs', 'w').write(src.replace('1 }', '3 }'))
+        _, o_keep = sh(['python3', hk], inp=ev('PostToolUse', 't2'))
+        kept = '3 }' in open(tmp + '/a.rs').read()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = undone and '"block"' in o_drop and kept and not o_keep.strip()
+    out('PASS' if ok else 'FAIL', 'serena guard', 'undoes a symbol edit that drops `///` or `#[` lines and says why; lets one that keeps them stand' if ok
+        else f'wrong (undone {undone}, said {o_drop[:80]!r}, kept {kept}, said {o_keep[:80]!r})')
+
+
+@check('bash guard')
+def _():
+    def denied(cmd, env=None, cwd=None):
+        p = subprocess.run(['python3', HOME + '/.claude/hooks/rtk-guard.py'], capture_output=True, text=True, timeout=20,
+                           input=json.dumps({'hook_event_name': 'PreToolUse', 'tool_name': 'Bash', 'cwd': cwd or HOME, 'tool_input': {'command': cmd}}),
+                           env={**os.environ, **(env or {})})
+        t = p.stdout.strip()
+        return bool(t) and json.loads(t).get('hookSpecificOutput', {}).get('permissionDecision') == 'deny'
+    cloud, local = {'CLAUDE_CODE_REMOTE': 'true'}, {'CLAUDE_CODE_REMOTE': ''}
+    tmp = tempfile.mkdtemp()
+    try:
+        sh('git init -q . && git config user.email t@t && git config user.name t && git commit -q --allow-empty -m a', cwd=tmp)
+        calm = denied('git stash', cwd=tmp)
+        open(tmp + '/.git/MERGE_HEAD', 'w').write('0' * 40 + '\n')
+        mid = denied('git stash', cwd=tmp) and denied('cd x && git stash push -m t', cwd=tmp) and not denied('git stash list', cwd=tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    want = {'pkill -f vite': True, 'pkill -P $(pgrep -f run-worker)': True, 'sleep 1; pkill -9f node': True, 'pkill vite': False,
+            'echo "never pkill -f x"': False, "cat > n.md <<'EOF'\npkill -f x\nEOF": False}
+    got = {c: denied(c) for c in want}
+    ci = (denied('gh pr checks 5', cloud), denied('gh run watch 1', cloud), denied('gh api repos/o/r/commits/x/check-runs', cloud),
+          denied('gh pr checks 5', local), denied('gh search code x', cloud), denied('gh api repos/o/r/actions/runs/7/rerun -X POST', cloud))
+    ok = got == want and ci == (True, True, True, False, False, False) and mid and not calm
+    out('PASS' if ok else 'FAIL', 'bash guard', 'refuses `pkill -f`, gh CI polling in a cloud session and `git stash` mid-merge, each saying what to do instead; '
+        'text in strings and heredocs passes' if ok else f'wrong: pkill {got}, gh {ci}, stash mid-merge {mid}, stash calm {calm}')
 
 
 @check('syntax hook')
@@ -515,6 +645,29 @@ def _():
     out('PASS' if ok else 'FAIL', 'syntax hook', 'flags broken .py/.js after Edit/Write, silent on good files' if ok else f'wrong exit codes {r}')
 
 
+
+@check('audit dropped docs')
+def _():
+    tmp = tempfile.mkdtemp()
+    try:
+        sh('git init -q . && git config user.email t@t && git config user.name t', cwd=tmp)
+        open(tmp + '/a.rs', 'w').write('#[test]\nfn a() {}\n\n/// Doc.\nfn b() {}\n')
+        sh('git add a.rs && git commit -qm base && git update-ref refs/remotes/origin/main HEAD', cwd=tmp)
+        open(tmp + '/a.rs', 'w').write('fn a() {}\n\nfn b() { 1; }\n')
+        sh('git commit -qam drop', cwd=tmp)
+        _, o = sh(['python3', KIT + '/workers/audit.py', tmp])
+        sh('git reset -q --hard origin/main && git rm -q a.rs && git commit -qm gone', cwd=tmp)   # whole items removed: fine
+        open(tmp + '/s.rs', 'w').write('fn c() {}\n#[derive(Debug)]\nstruct S;\n')
+        sh('git add s.rs && git commit -qm s && git update-ref refs/remotes/origin/main HEAD', cwd=tmp)
+        open(tmp + '/s.rs', 'w').write('fn c() {}\n')
+        sh('git commit -qam nos', cwd=tmp)
+        _, o2 = sh(['python3', KIT + '/workers/audit.py', tmp])
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = o.count('DROPPED DOCS') == 2 and 'DROPPED DOCS' not in o2
+    out('PASS' if ok else 'FAIL', 'audit dropped docs', 'audit.py flags a diff that drops `#[test]` or `///` above a function it keeps, not a removed function'
+        if ok else f'wrong: {o[:150]!r} / {o2[:150]!r}')
+
 print('== conflicts ==', flush=True)
 
 
@@ -523,7 +676,8 @@ def _():
     if not isinstance(settings, dict) or not settings:
         return out('FAIL', 'hooks', '~/.claude/settings.json missing or invalid JSON')
     ours = {('PreToolUse', 'python3 ~/.claude/hooks/rtk-guard.py'), ('SubagentStart', 'python3 ~/.claude/hooks/caveman-subagent.py'),
-            ('SessionStart', 'python3 ~/.claude/hooks/task-observer-start.py'), ('PostToolUse', 'python3 ~/.claude/hooks/syntax-check.py')}
+            ('SessionStart', 'python3 ~/.claude/hooks/task-observer-start.py'), ('PostToolUse', 'python3 ~/.claude/hooks/syntax-check.py'),
+            ('PreToolUse', 'python3 ~/.claude/hooks/serena-guard.py'), ('PostToolUse', 'python3 ~/.claude/hooks/serena-guard.py')}
     user = [(ev, c) for s, ev, m, c in HOOKS if s == 'user settings']
     probs = [f'{ev} "{c}" registered {user.count((ev, c))}x' for ev, c in ours if user.count((ev, c)) != 1]
     if ('PreToolUse', 'rtk hook claude') in user:
@@ -588,6 +742,7 @@ def _():
              '(cd /x; git diff)', '(cd /x && grep -n a b)', 'git rebase --continue', 'git merge --abort',
              'make -C /w test', 'cargo test', 'go test ./...', 'npx vitest run', 'docker logs x',
              'npm run lint', 'npm run types', 'npm run test:changed', 'npx tsc --noEmit', 'npx eslint src',
+             'git push -u origin x', 'git push origin --delete x',
              'echo "rtk S=1, then git pull"', "cat > /tmp/x.md <<'EOF'\ngit pull\nrtk S=1\nEOF"]   # text in strings/heredocs stays as written
     bad = [f'`{c}` -> `{r}`' for c in exact for r in [rtk_rewrite(c)] if r]
     keep = rtk_rewrite('d=/opt/toolkit; ls -la $d')

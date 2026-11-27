@@ -21,6 +21,8 @@ Tools (all are expected to be used; your final reply must say how):
   once first. Onboarding and its "ask the user" mode are off: you make the call. Its line numbers are 0-based. Plain
   Edit only for small in-line changes or files Serena can't parse (minified or generated code). Serena serves Rust and
   TypeScript only: read and edit Python and shell under tools/ with Read, Grep and Edit.
+  A symbol's range includes its doc comment and attributes: a replace_symbol_body body carries them, and after it
+  re-read the lines above the symbol. A hook undoes an edit that lowers the file's `///`, `/**` or `#[` lines.
 - claude-mem: search before re-investigating anything. Its smart_search/smart_outline are not for code: use Serena.
 - Headroom: headroom_compress outputs over ~10k chars (test logs, long greps) instead of re-reading them.
 - Context7: look up a library's current docs before guessing an API.
@@ -30,6 +32,9 @@ Tools (all are expected to be used; your final reply must say how):
   The repo's pre-commit hook refuses archives and C2PA-stamped PNGs: never bypass it with --no-verify.
   It also refuses a file whose line endings flipped:
   scripted rewrites keep them with open(f, newline='') for both the read and the write; check `git diff --stat`.
+  It refuses a symbolic link and a staged file Prettier would rewrite too. The commit-msg hook refuses a first line
+  over 100 characters, a trailer on it, or a missing Claude-Session: trailer: write the message with
+  `git commit -F - <<'EOF'`.
 - Test results: read failures from the raw log (`grep -n -E 'FAIL|ERROR|Error|Traceback' <log>`), never from a
   summary. If an output ever looks condensed, rerun it as `rtk bypass <command>`. Send a build's stderr to its log too
   (`> log 2>&1`). Never gate a commit on a piped check (`| tail` hides its exit code): run it bare or under
