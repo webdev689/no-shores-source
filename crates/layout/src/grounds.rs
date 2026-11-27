@@ -220,8 +220,8 @@ pub fn store_boxes(sites: &[Site], height: &dyn Fn(f64, f64) -> f64) -> Vec<Box3
         .collect()
 }
 
-/// The zones that hold public events: Saltmere's three, for now, at the owner's word.
-pub const EVENT_ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
+/// The zones that hold public events: Saltmere's one, the Saltgrass Downs, at the owner's word (`room::public::ZONES`).
+pub const EVENT_ZONES: [&str; 1] = ["saltgrass-downs"];
 /// How far round the fissure its event is fought, metres; and how far past its stores a raid's ground reaches, and
 /// the least it reaches from its middle.
 pub const FISSURE_RADIUS: f64 = 25.0;

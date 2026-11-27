@@ -29,8 +29,8 @@ fn the_places_are_each_islands_patrols_and_elite_dungeons_as_its_land_file_holds
     assert_eq!(ISLAND_PLACES.map(|island| island.continent), crate::world::ISLANDS.map(|(id, ..)| id));
     assert_eq!(elite_dungeons().count(), 18);
     assert_eq!(island_of("saltworm-warrens").map(|island| island.continent), Some("continent-7"));
-    assert_eq!(island_of("gullwing-vale").map(|island| island.continent), Some("continent-1"));
-    assert_eq!(elite_dungeon("gullwing-vale"), None, "a patrol is no Elite Dungeon");
+    assert_eq!(island_of("saltgrass-downs").map(|island| island.continent), Some("continent-1"));
+    assert_eq!(elite_dungeon("saltgrass-downs"), None, "a patrol is no Elite Dungeon");
 }
 
 #[test]
@@ -40,7 +40,7 @@ fn each_island_draws_one_of_its_patrols_dungeons_each_day_the_same_for_everyone(
     assert_eq!(
         drawn,
         [
-            ("gullwing-vale", 0),
+            ("saltgrass-downs", 1),
             ("highwater-fells", 0),
             ("elder-thicket", 0),
             ("ochre-wastes", 1),
@@ -51,7 +51,7 @@ fn each_island_draws_one_of_its_patrols_dungeons_each_day_the_same_for_everyone(
             ("whitewind-tundra", 0),
         ]
     );
-    assert_eq!(dungeon_of_the_day(20_775, "continent-1"), Some(("saltgrass-downs", 2)), "Tuesday's");
+    assert_eq!(dungeon_of_the_day(20_775, "continent-1"), Some(("saltgrass-downs", 0)), "Tuesday's");
     assert_eq!(dungeon_of_the_day(20_778, "continent-0"), None);
     for island in &ISLAND_PLACES {
         let seen: BTreeSet<_> = (0..365).map(|day| dungeon_of_the_day(20_000 + day, island.continent)).collect();

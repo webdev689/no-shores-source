@@ -45,7 +45,7 @@ const FINDING =
 const BREACH_BASE = /--breach-(normal|hard)$/;
 export const BREACH_OPENS = { normal: 25, hard: 29 } as const;
 /** Each Breach by the patrol zone its gate stands in (`gear::breach::BREACHES`): no other zone launches one. */
-export const BREACH_ZONES: Readonly<Record<string, string>> = { 'gullwing-vale': 'drowned-vale' };
+export const BREACH_ZONES: Readonly<Record<string, string>> = { 'saltgrass-downs': 'drowned-vale' };
 /** Why Hard is shut to one who has not won the Breach at Normal (`gear::gate::Shut::BreachHard`). */
 export const BREACH_HARD_SHUT = 'A Breach at Hard opens once you have won it at Normal.';
 /** The Breach a base launches, by its zone; null for a base that is no Breach's. */

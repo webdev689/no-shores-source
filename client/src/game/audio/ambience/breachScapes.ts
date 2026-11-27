@@ -108,7 +108,7 @@ export const BREACH_SCAPES: Readonly<Record<BreachKey, Scape>> = {
   ),
 };
 
-/** The gate's hollow in the Gullwing Vale, heard over the zone's own near it: its bed standing at the gate, and the
+/** The gate's hollow in the Saltgrass Downs, heard over the zone's own near it: its bed standing at the gate, and the
  *  Spire's hum at the Spire rising with its fill while the listener's company holds the Waking. */
 export const GATE_SCAPE: Scape = {
   title: 'The Sunken Gate: its hollow',

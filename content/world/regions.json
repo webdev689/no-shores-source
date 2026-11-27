@@ -3,8 +3,8 @@
     "island": "continent-1",
     "regions": [
       {"name": "The Beacon Shore", "centre": [2807193, 1207454], "anchorage": [2805282, 1196621], "nodes": ["saltgrass-downs", "burned-mill", "broken-causeway", "tern-strand-outpost", "ternwing-hythe-outpost", "driftweed-strand-outpost"]},
-      {"name": "The Weirlands", "centre": [2331755, 1815318], "anchorage": [2334343, 1824977], "nodes": ["gullwing-vale", "shrine-tides", "krakens-grotto", "maw-shallows", "saltwind-ness-outpost", "shingle-hythe-outpost", "chalkdown-haven-outpost"]},
-      {"name": "The Grey Reach", "centre": [2345544, 1244584], "anchorage": [2347355, 1237823], "nodes": ["driftwood-moors", "tidewall", "pearl-tomb", "weirstone-hythe-outpost", "gullcry-ness-outpost", "sheepwalk-hythe-outpost"]}
+      {"name": "The Weirlands", "centre": [2331755, 1815318], "anchorage": [2334343, 1824977], "nodes": ["shrine-tides", "krakens-grotto", "maw-shallows", "saltwind-ness-outpost", "shingle-hythe-outpost", "chalkdown-haven-outpost"]},
+      {"name": "The Grey Reach", "centre": [2345544, 1244584], "anchorage": [2347355, 1237823], "nodes": ["tidewall", "pearl-tomb", "weirstone-hythe-outpost", "gullcry-ness-outpost", "sheepwalk-hythe-outpost"]}
     ]
   },
   {

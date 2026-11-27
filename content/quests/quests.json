@@ -533,9 +533,9 @@
             },
             {
               "kind": "reach",
-              "node": "driftwood-moors",
+              "node": "saltgrass-downs",
               "place": "Grey Point Light",
-              "text": "Grey Point Light, on the Driftwood Moors"
+              "text": "Grey Point Light, on the Saltgrass Downs"
             }
           ],
           "reward": {
@@ -544,15 +544,16 @@
           "end": "stormQuicken"
         },
         {
-          "id": "run-down-moor-camp",
+          "id": "run-down-tithe-camp",
           "was": [
-            "catch-tally-riders"
+            "catch-tally-riders",
+            "run-down-moor-camp"
           ],
-          "task": "Run down the Tithe on the Moors",
+          "task": "Run down the Tithe at their camp",
           "goals": [
             {
               "kind": "kill",
-              "node": "driftwood-moors",
+              "node": "saltgrass-downs",
               "place": "Tithe Camp",
               "count": 5,
               "spawn": [
@@ -577,7 +578,7 @@
                   "Major"
                 ]
               ],
-              "text": "Tithe at the camp on the Moors"
+              "text": "Tithe at their camp on the Downs"
             },
             {
               "kind": "cast",
@@ -622,29 +623,30 @@
           "end": "stormRods"
         },
         {
-          "id": "race-river-road",
+          "id": "race-downs-road",
           "was": [
-            "light-grey-point"
+            "light-grey-point",
+            "race-river-road"
           ],
           "task": "Catch the tally riders",
           "start": "stormRiders",
           "goals": [
             {
               "kind": "race",
-              "node": "gullwing-vale",
+              "node": "saltgrass-downs",
               "checkpoints": [
-                "Weir Mill",
-                "Gullwing",
-                "The Water Meadows"
+                "Shingle Landing",
+                "Saltgrass",
+                "The Old Stones"
               ],
               "seconds": 270,
               "late": "stormSlow",
-              "text": "Run the river road from Weir Mill"
+              "text": "Run the Downs road from Shingle Landing"
             },
             {
               "kind": "kill",
-              "node": "gullwing-vale",
-              "place": "The Water Meadows",
+              "node": "saltgrass-downs",
+              "place": "The Old Stones",
               "count": 5,
               "spawn": [
                 [
@@ -668,7 +670,7 @@
                   "Minor"
                 ]
               ],
-              "text": "Riders at the Water Meadows"
+              "text": "Riders at the Old Stones"
             }
           ],
           "reward": {
@@ -683,7 +685,7 @@
           "goals": [
             {
               "kind": "puzzle",
-              "node": "gullwing-vale",
+              "node": "saltgrass-downs",
               "place": "The Old Stones",
               "points": [
                 {
@@ -1045,11 +1047,12 @@
           "end": "lampSunwell"
         },
         {
-          "id": "carry-light-vale",
+          "id": "carry-light-saltgrass",
           "was": [
-            "mend-hamlet"
+            "mend-hamlet",
+            "carry-light-vale"
           ],
-          "task": "Carry the light to the Vale",
+          "task": "Carry the light to Saltgrass",
           "goals": [
             {
               "kind": "cast",
@@ -1058,9 +1061,9 @@
             },
             {
               "kind": "reach",
-              "node": "gullwing-vale",
-              "place": "Gullwing",
-              "text": "Gullwing, in the Gullwing Vale"
+              "node": "saltgrass-downs",
+              "place": "Saltgrass",
+              "text": "Saltgrass, on the Saltgrass Downs"
             }
           ],
           "reward": {
@@ -1069,16 +1072,16 @@
           "end": "lampMend"
         },
         {
-          "id": "hold-gullwing",
+          "id": "hold-saltgrass",
           "was": [
-            "hold-saltgrass"
+            "hold-gullwing"
           ],
-          "task": "Hold Gullwing",
+          "task": "Hold Saltgrass",
           "goals": [
             {
               "kind": "defend",
-              "node": "gullwing-vale",
-              "place": "Gullwing",
+              "node": "saltgrass-downs",
+              "place": "Saltgrass",
               "ward": "The wounded",
               "waves": [
                 [
@@ -1164,14 +1167,14 @@
           "goals": [
             {
               "kind": "reach",
-              "node": "driftwood-moors",
+              "node": "saltgrass-downs",
               "place": "The Saltbreaker Hulks",
               "scene": "lampBuyer",
-              "text": "The Saltbreaker Hulks, on the Driftwood Moors"
+              "text": "The Saltbreaker Hulks, on the strand"
             },
             {
               "kind": "kill",
-              "node": "driftwood-moors",
+              "node": "saltgrass-downs",
               "place": "The Saltbreaker Hulks",
               "count": 4,
               "spawn": [
@@ -1210,7 +1213,7 @@
           "goals": [
             {
               "kind": "puzzle",
-              "node": "driftwood-moors",
+              "node": "saltgrass-downs",
               "place": "Grey Point Light",
               "points": [
                 {
@@ -1545,9 +1548,9 @@
             },
             {
               "kind": "reach",
-              "node": "driftwood-moors",
+              "node": "saltgrass-downs",
               "place": "Moorhold",
-              "text": "Moorhold, on the Driftwood Moors"
+              "text": "Moorhold, on the Saltgrass Downs"
             }
           ],
           "reward": {
@@ -1564,7 +1567,7 @@
           "goals": [
             {
               "kind": "kill",
-              "node": "driftwood-moors",
+              "node": "saltgrass-downs",
               "place": "Moorhold",
               "count": 4,
               "spawn": [
@@ -1643,8 +1646,8 @@
           "goals": [
             {
               "kind": "escort",
-              "node": "gullwing-vale",
-              "from": "Vale Mouth",
+              "node": "saltgrass-downs",
+              "from": "Shingle Landing",
               "to": "Hollow Coven",
               "who": "wren",
               "horse": "black",
@@ -1655,10 +1658,10 @@
             },
             {
               "kind": "reach",
-              "node": "gullwing-vale",
-              "place": "Orchard Farm",
+              "node": "saltgrass-downs",
+              "place": "Ewe Fold",
               "scene": "veilOrchard",
-              "text": "Orchard Farm, on the way"
+              "text": "Ewe Fold, on the way"
             }
           ],
           "reward": {
@@ -1673,8 +1676,8 @@
           "goals": [
             {
               "kind": "puzzle",
-              "node": "gullwing-vale",
-              "place": "Valeguard",
+              "node": "saltgrass-downs",
+              "place": "Moorhold",
               "points": [
                 {
                   "name": "The debt mark",

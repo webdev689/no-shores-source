@@ -119,11 +119,11 @@ pub struct Breach {
     pub horse: &'static str,
 }
 
-/// The first Breach: the Drowned Vale, under the Gullwing Vale.
+/// The first Breach: the Drowned Vale, the Gullwing Vale as it was, its gate in the Saltgrass Downs.
 pub const DROWNED_VALE: Breach = Breach {
     id: "drowned-vale",
     name: "The Drowned Vale",
-    zone: "gullwing-vale",
+    zone: "saltgrass-downs",
     area: "The Sunken Gate",
     encounters: &[
         Encounter { key: "waking", name: "The Waking", outside: true },
