@@ -1,5 +1,5 @@
 ---
-id: 317
+id: 342
 title: "wait-worker.sh's default reports folder (~/wt/reports, /root here) misses workers whose worktrees sit in /home/user/wt"
 status: open
 type: internal
