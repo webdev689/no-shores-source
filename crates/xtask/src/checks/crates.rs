@@ -84,6 +84,8 @@ pub const CRATES: &[CrateRule] = &[
         outside: &["serde", "serde_json"],
         door: false,
     },
+    // The tests' own: how many cases a sweep of the world checks. Only tests depend on it.
+    CrateRule { name: "sweep", workspace: &[], outside: &[], door: false },
     CrateRule { name: "xtask", workspace: &["*"], outside: &["*"], door: false },
 ];
 
