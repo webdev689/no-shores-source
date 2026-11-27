@@ -11,7 +11,7 @@ import type { Picture } from '../../player/picture.ts';
 import { WORN } from '../../player/gear.ts';
 import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
-import { uiScale } from '../../ui/uiRenderer.ts';
+import { interfaceScale } from '../../ui/interfaceSize.ts';
 import { characterPage } from '../characterPage.ts';
 import { emblemOf } from '../../plus/emblemArt.ts';
 import { Holds } from '../gearHold.ts';
@@ -61,7 +61,7 @@ export class InspectWindow {
     const width = Math.min(WINDOW.width, view.width - WINDOW.around);
     const height = Math.min(WINDOW.height, view.height - WINDOW.around);
     const room = { width: width - 40, height: Math.max(0, height - WINDOW.header - WINDOW.footer - 24) };
-    const sizes = sizesOf(view.width, view.height, uiScale(devicePixelRatio));
+    const sizes = sizesOf(view.width, view.height, interfaceScale(devicePixelRatio));
     const { details } = who;
     // Built once for each answer, so the item pictures, kept by item, are not drawn again each frame.
     if (this.gearOf.details !== details)
