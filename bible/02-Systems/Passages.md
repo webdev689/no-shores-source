@@ -214,8 +214,8 @@ passages' own pieces standing in it with their solids.
   in from the floor's edge, as under ground they keep inside the section. No band's member stands, and no beat (a
   Hunt's round included) walks, within 25 m of the arrival (the garrison's `SPAWN_CLEAR`) where its post stands
   27.5 m out, nor nearer than its post less a band's spread where the post stands nearer (the arrival's spawn taken
-  back from the post by what it lacks, and a metre more at a time where the navmesh stands a member nearer still, so
-  every band stands), a lamp's guard standing at the post nearest the lamp where beside it would be nearer.
+  back from the post by what it lacks, and up to 3 m more, a metre at a time, where the navmesh stands a member nearer
+  still), a lamp's guard standing at the post nearest the lamp where beside it would be nearer.
   A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
   Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
   A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find

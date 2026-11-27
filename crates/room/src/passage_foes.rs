@@ -55,6 +55,9 @@ const WAVE_MORE_MOST: usize = 3;
 const HEALTH_PER_PLAYER: f64 = 0.5;
 /// No held band stands, and no wave, nearer a player than this (m).
 pub(crate) const CLEAR_M: f64 = 12.0;
+/// How many metres more a post nearer the arrival than SPAWN_CLEAR and SPREAD may take its spawn back, a metre at a
+/// time, where the navmesh stands a member nearer than the post allows.
+pub(crate) const BACK_MOST_M: u32 = 3;
 /// How far from the lamp its first band stands (m).
 const LAMP_GUARD_M: f64 = 4.5;
 /// How far from a deal's foe's place the mesh is looked for where none lies within 4 m of it (m): a wave's place, a
@@ -210,10 +213,10 @@ impl Room {
         let (draws, beats) =
             (draws_of(self.world_seed ^ BAND_STREAM ^ nth), draws_of(self.world_seed ^ BAND_STREAM ^ 1 ^ nth));
         let lattice: &[(f64, f64)] = if group.farthest { &[] } else { &spots };
-        // The arrival stays a spawn, so no member stands within SPAWN_CLEAR of it and no beat walks within SPAWN_CLEAR and
-        // SPREAD, where the post stands that far out. A nearer post's spawn is taken back from it by what it lacks, so
-        // its members and its beat keep as far off the arrival as the post allows, never nearer than it less SPREAD;
-        // and where the mesh stands a member nearer still, a metre more at a time, so every band stands.
+        // The arrival stays a spawn, so no member stands within SPAWN_CLEAR of it and no beat walks within SPAWN_CLEAR
+        // and SPREAD, where the post stands that far out. A nearer post's spawn is taken back from it by what it lacks,
+        // so its members and its beat keep as far off the arrival as the post allows, never nearer than it less SPREAD;
+        // and where the mesh stands a member nearer still, a metre more at a time up to BACK_MOST_M, so its band stands.
         let back = |spawn: [f64; 2], more: f64| {
             let off = apart(spawn, at);
             let short = (SPAWN_CLEAR + SPREAD - off).max(0.0) + more;
@@ -222,7 +225,8 @@ impl Room {
             }
             [spawn[0] + (spawn[0] - at[0]) / off * short, spawn[1] + (spawn[1] - at[1]) / off * short]
         };
-        let stood = (0..=(SPAWN_CLEAR + SPREAD) as u32).find_map(|more| {
+        let near = section.spawns.iter().any(|&spawn| apart(spawn, at) < SPAWN_CLEAR + SPREAD);
+        let stood = (0..=if near { BACK_MOST_M } else { 0 }).find_map(|more| {
             let spawns = section.spawns.iter().map(|&spawn| back(spawn, f64::from(more))).collect();
             let section = Section { ring: ring.clone(), spawns, ..section.clone() };
             let (mut draws, mut beats) = (draws, beats);

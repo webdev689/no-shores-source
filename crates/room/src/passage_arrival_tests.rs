@@ -4,13 +4,14 @@
 
 use super::passages_tests::{BAND, ISLAND, diver, web, zone_room};
 use crate::garrison::SPREAD;
+use crate::passages::passage_foes::BACK_MOST_M;
 use crate::players::ARRIVAL_GRACE;
 use crate::{Input, PlayerId, Room};
 use combat::arms::Stroke;
 use combat::sight::{apart, bearing};
 use combat::{CombatInput, Intent};
 use gear::dive::Route;
-use passage::{BAND_OFF_ARRIVAL_M, Deal, Mission, Plan};
+use passage::{BAND_OFF_ARRIVAL_M, Deal, Mission, POST_OFF_ARRIVAL_M, Plan};
 
 /// How far a post's place on the navmesh may lie from its site's place, metres.
 const MESH_SLACK_M: f64 = 1.0;
@@ -103,7 +104,7 @@ fn no_band_member_stands_or_walks_within_25_m_of_a_zones_arrival_or_nearer_than_
         let web = web(week);
         for zone in &web.zones {
             let Some(plan) = Plan::of(&web, zone.number) else { continue };
-            // An under-ground Vault stands its dungeon's own garrison (`stand_dungeon_garrison`), not bands on the posts.
+            // An under-ground Vault stands its dungeon's own garrison (`stand_dungeon_garrison`), not bands on posts.
             if plan.zone.deal == Deal::Vault && matches!(plan.ground, passage::Laid::Under(_)) {
                 continue;
             }
@@ -115,17 +116,7 @@ fn no_band_member_stands_or_walks_within_25_m_of_a_zones_arrival_or_nearer_than_
                 Deal::Mission(Mission::Kindle | Mission::Hold | Mission::Ambush) => {}
                 Deal::Lamp => assert!(!posts.is_empty(), "week {week} zone {}: its guard stood", zone.number),
                 // A band on each post, stood or held back for room: none lost to the arrival's clearance.
-                _ => assert_eq!(
-                    posts.len() + held,
-                    plan.sites.posts.len(),
-                    "week {week} zone {} {:?} {:?} {:?} posts {:?} arrive {:?}",
-                    zone.number,
-                    zone.ground,
-                    zone.size,
-                    zone.deal,
-                    plan.sites.posts,
-                    plan.sites.arrive
-                ),
+                _ => assert_eq!(posts.len() + held, plan.sites.posts.len(), "week {week} zone {}", zone.number),
             }
             zones += 1;
             // A Hunt's marked band walks its round the longest: a minute and a half sees it round.
@@ -135,10 +126,16 @@ fn no_band_member_stands_or_walks_within_25_m_of_a_zones_arrival_or_nearer_than_
                     // Read each time, so a band held back and stood since is measured too.
                     let posts: Vec<usize> = room.zone().map(|zone| zone.round.guards.clone()).unwrap_or_default();
                     for &post in &posts {
+                        // BAND_OFF_ARRIVAL_M where the post stands so far and a band's spread out (the mesh holding it
+                        // a little off the site's place), else the post's distance less the spread and the metres its
+                        // spawn may go back.
                         let at = room.garrison[post].at;
-                        // A post stands where the mesh holds it, a little off the site's place: so much is allowed.
-                        let least =
-                            (apart([at[0], at[1]], plan.sites.arrive) - SPREAD - MESH_SLACK_M).min(BAND_OFF_ARRIVAL_M);
+                        let post_off = apart([at[0], at[1]], plan.sites.arrive);
+                        let least = if post_off >= POST_OFF_ARRIVAL_M + MESH_SLACK_M {
+                            BAND_OFF_ARRIVAL_M
+                        } else {
+                            post_off - SPREAD - f64::from(BACK_MOST_M) - MESH_SLACK_M
+                        };
                         for id in &room.garrison[post].standing {
                             let Some(foe) = room.foes.get(id) else { continue };
                             let off = apart([foe.fighter.body.x, foe.fighter.body.y], plan.sites.arrive);

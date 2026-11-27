@@ -286,8 +286,8 @@ impl Laying {
 }
 
 /// The sites of a hollow: its way in at one end, its onward mouths round the far end, its lamp toward the far end,
-/// and its posts (as many as `posts_wanted`, POST_OFF_ARRIVAL_M from the arrival where the floor holds them so far, else
-/// as far as it does) and spots on its floor, a Hold's `ring` first where it lies whole.
+/// and its posts (as many as `posts_wanted`, POST_OFF_ARRIVAL_M from the arrival where the floor holds them so far,
+/// else as far as it does) and spots on its floor, a Hold's `ring` first where it lies whole.
 fn sites(
     outline: &Outline,
     (onward_count, lamp, ring, wanted, posts_wanted): (usize, bool, bool, usize, usize),
@@ -343,7 +343,8 @@ fn sites(
         .collect();
     floor.sort_by(|one, other| apart(*one, arrive).total_cmp(&apart(*other, arrive)).then(one[0].total_cmp(&other[0])));
     let beyond = |off: f64| floor.iter().copied().filter(|at| apart(*at, arrive) >= off).collect::<Vec<_>>();
-    // As many posts as the floor holds 14 m out, from POST_OFF_ARRIVAL_M where it holds them so far, else as far as it does.
+    // As many posts as the floor holds 14 m out, from POST_OFF_ARRIVAL_M where it holds them so far, else as far as it
+    // does: each place's distance tried from the farthest in, the first at 14 m or more holding them all.
     let kept = posts_of(&beyond(POST_OFF_WAY_IN_M), arrive, posts_wanted).len();
     let nearer = floor.iter().rev().map(|at| apart(*at, arrive)).filter(|off| *off < POST_OFF_ARRIVAL_M);
     let posts = core::iter::once(POST_OFF_ARRIVAL_M)
