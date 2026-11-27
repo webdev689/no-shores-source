@@ -37,5 +37,8 @@ test('the pictures lay each kind of drop where the player faces, an item as itse
   assert.deepEqual([helm?.slot, helm?.item?.bucket, sword?.item?.bucket], [2, 2, 0], 'each in its own slot');
   near(helm?.at ?? [], [8, 14, 0]);
   assert.equal(new Set([crystal, box, sword, helm].map((drop) => drop?.id)).size, 4, 'each its own number');
+  // Facing east, its right south.
+  const [east] = qaDrops([{ what: 'crate', ahead: 3, aside: 1 }], [0, 0, 0], Math.PI / 2);
+  near(east?.at ?? [], [3, 1, 0]);
   assert.throws(() => qaDrops([{ what: 'shoe', ahead: 1 }], [0, 0, 0], 0), /shoe/);
 });

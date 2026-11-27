@@ -13,6 +13,9 @@ import type { Picture } from '../player/picture.ts';
 import type { PixelPicture } from './dropPictures.ts';
 import { crystalFrame } from './vestigeCrystal.ts';
 
+/** The first armour slot, the head's, by the gear crate's numbers. */
+const HEAD = SLOTS.indexOf('head');
+
 /** How tall a Vestige's crystal frame stands, metres: an item lying is as long as that. */
 const crystal = crystalFrame(0, 0).body;
 export const VESTIGE_M = crystal.rows.length * (crystal.pixelM ?? 0);
@@ -23,7 +26,7 @@ const COVERED = 128;
 /** An item's pixel as it lies, metres: an armour piece's or a cloak's the figure's, as it is worn; none for a weapon,
  *  which is laid a Vestige's frame long. */
 export const lyingPixelM = (kind: number): number | undefined =>
-  !isWeapon(kind) && slotOf(kind) < SLOTS.length ? 1 / PX_PER_M : undefined;
+  !isWeapon(kind) && slotOf(kind) >= HEAD && slotOf(kind) < SLOTS.length ? 1 / PX_PER_M : undefined;
 
 /** A picture as a drop's, cropped to what it draws: each colour a letter (`a` the first), a clear pixel a dot, its
  *  pixel `pixelM`, else such that its longer side is a Vestige's frame. */

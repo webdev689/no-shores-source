@@ -462,7 +462,11 @@ async function start(): Promise<void> {
     drawn.push(...foes.cards(fighting, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's gun as it faces.
     const fpMuzzle = inFirstPerson ? firstPerson.muzzle : null;
-    const dropped = dropsShown.frame([...(gear?.drops ?? []), ...qaLaid], clock, cameraOf(camera).eye);
+    const dropped = dropsShown.frame(
+      qaLaid.length > 0 ? [...(gear?.drops ?? []), ...qaLaid] : (gear?.drops ?? []),
+      clock,
+      cameraOf(camera).eye,
+    );
     const marks = effects.marks(fighting, running ? seconds : 0, {
       eye: cameraOf(camera).eye,
       blocks: STOOD,

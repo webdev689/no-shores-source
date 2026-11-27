@@ -60,6 +60,7 @@ test("an armour piece lies at its worn size, not stretched to a weapon's length"
     assert.equal(lyingPixelM(KINDS.indexOf(kind)), 1 / PX_PER_M, kind);
   for (const kind of ['sword', 'bow', 'pistolet', 'greatsword'] as const)
     assert.equal(lyingPixelM(KINDS.indexOf(kind)), undefined, `${kind} keeps a Vestige's length`);
+  assert.equal(lyingPixelM(0), undefined, 'no kind, no worn size');
 });
 
 test("an item at rest is its own picture in its rarity's light, and lands in its rarity for its sound", () => {
