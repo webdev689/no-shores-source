@@ -697,7 +697,10 @@ so every decision is Rust and the shell only carries bytes and time.
   where a new character first stands, takes anyone. Any other node's room takes a character that rejoins it; that
   lands from the sea at the room's seas (a social space's from any), the ship the sea kept in it (`ship_at`) lying
   within the landfall's 30 km of the node's island's coast, and 2 km more, since the ship heaves to a moment after
-  the page offers it, but never on an island not yet named, whose sea is locked ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]); that comes through a gate from a node whose gate leads there, at the same seas (the bake's
+  the page offers it, but never on an island not yet named, whose sea is locked ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]),
+  and for a node a region lists, only with the ship off that region, the region of the island whose centre is nearest
+  it, the rule the island's tiles keep (`arrival.ts` `offRegionOf`, over `overworld/regions.ts` `nearestRegion` and
+  `regionHolds`); a social space and any node no region lists, anywhere in reach of the island; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
   takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
   from its node at any seas. A run started at sea (`startedAtSea`: a playlist's, or an Elite Dungeon's marked `--sea`,

@@ -734,7 +734,8 @@ nodes of its side), the city's social space among them when docking, so each reg
 `islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid with space between them. First the
 island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner (only where the region holds
 the port); then every patrol zone, Elite Dungeon, mission, world boss and outpost of that region, with any place no
-region lists; gone ashore, the places alone. A click on a
+region lists; gone ashore, the places alone. The room a place lands in holds to the same rule: from the sea it takes
+only a player whose ship lies off the region that lists the place ([[Server]], "Arrivals"). A click on a
 tile does what it does: a place lands there (the player stands at its first spawn, facing inland from the ship, or at a
 social space out from its landmark over the city, as on arriving), choosing its node first; an Elite Dungeon opens its
 card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist. Tab, the arrows

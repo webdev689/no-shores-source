@@ -362,9 +362,9 @@ test('a player crossing from a patrol zone joins the next at the gate toward the
 });
 
 test('from the anchorage leaving a Saltmere patrol zone puts the ship at, that zone is landed on again', () => {
-  // The sea room puts the ship at the zone's region's anchorage (`came_from`); the room judges a landing by the whole
-  // island's coast, so this proves the anchorage lies in landfall reach of it. Saltmere's zones alone: every other
-  // island's sea is locked and lands no one from the sea.
+  // The sea room puts the ship at the zone's region's anchorage (`came_from`): it lies off that region, and in landfall
+  // reach of the island's coast. Saltmere's zones alone: every other island's sea is locked and lands no one from the
+  // sea.
   const zones = saltmere.nodes.filter((node) => node.kind === 'patrol');
   assert.deepEqual(
     zones.map((zone) => zone.id),
@@ -379,4 +379,35 @@ test('from the anchorage leaving a Saltmere patrol zone puts the ship at, that z
     assert.ok(there && toCoast(lying, there.coast) <= LANDFALL_M, `${id}: within ${LANDFALL_M} m of the coast`);
     assert.equal(arrives(`node-${id}`, 'sea', lying, there), true, id);
   }
+});
+
+test("from the sea a node a region lists is landed on only with the ship off that region; any other as the island's", () => {
+  const anchorage = (name: string): [number, number] => {
+    const [x = 0, y = 0] = regions[0]?.regions.find((region) => region.name === name)?.anchorage ?? [];
+    return [x, y];
+  };
+  const [weirlands, beacon] = [anchorage('The Weirlands'), anchorage('The Beacon Shore')];
+  const reachOfNode = (id: string, kind: string) =>
+    reachOf([{ id, kind, continent: 'continent-1' }, ...gates], layout.continents, id);
+  const gates = [{ id: 'saltgrass-downs', kind: 'patrol', continent: 'continent-1', gates: ['gullwing-vale'] }];
+  const vale = reachOfNode('gullwing-vale', 'patrol');
+  assert.ok(vale && toCoast(beacon, vale.coast) <= LANDFALL_M, 'off the Beacon Shore, in reach of the island');
+  assert.equal(arrives('node-gullwing-vale', 'sea', weirlands, vale), true, 'off the Weirlands');
+  assert.equal(arrives('node-gullwing-vale', 'sea', beacon, vale), false, 'off the Beacon Shore');
+  assert.equal(arrives('node-gullwing-vale--elite', 'sea--elite', beacon, vale), false, 'at any tier');
+  assert.equal(
+    arrives('node-gullwing-vale', 'node-saltgrass-downs', beacon, vale),
+    true,
+    'through a gate, from anywhere',
+  );
+  const mission = reachOfNode('shrine-tides', 'mission');
+  assert.equal(arrives('node-shrine-tides', 'sea', beacon, mission), false, 'a mission of the Weirlands');
+  assert.equal(arrives('node-shrine-tides', 'sea', weirlands, mission), true);
+  // An outpost, landed on from any seas as a social space is, still holds to the region that lists it.
+  const outpost = reachOfNode('tern-strand-outpost', 'outpost');
+  assert.equal(arrives('node-tern-strand-outpost', 'sea--elite', weirlands, outpost), false, 'off the Weirlands');
+  assert.equal(arrives('node-tern-strand-outpost', 'sea--elite', beacon, outpost), true, 'off the Beacon Shore');
+  // A city's social space no region lists is landed on from anywhere in reach of its island, as before.
+  const social = reachOfNode('overlook-social', 'social');
+  assert.equal(arrives('node-overlook-social', 'sea', weirlands, social), true);
 });
