@@ -25,16 +25,27 @@ Asked whether armour that drops as itself should lie on the ground as weapons do
 
 > "Yes armor also"
 
+On the first pillars, standing 4 to 14 m over the drops and cut square at both ends, the owner wrote:
+
+> "I dont like the how the light is so tall and on each end it's so flat"
+
 ## What it settles
 
 - **A weapon or a piece of armour that drops as itself lies on the ground** for its player, its own picture hovering
   in its rarity's light, and is taken by walking over it, as a Vestige is ([[Gear]], "Drops").
 - **A Vestige, a weapon and a piece of armour on the ground are twice their size**; an Ammo box or crate is 0.6
   of its size.
-- **Each drop has a tall pillar of light in its rarity's colour**, seen from far off, a Legendary's and an Atheric's
-  the tallest.
+- **Each drop has a pillar of light in its rarity's colour**, seen from far off, a Legendary's and an Atheric's the
+  tallest; not so tall, and never flat at either end: it fades in from the drop and tapers away at its top.
 - **Each drop bursts as it lands**: a flash and a ring on the ground, with a sound in its rarity's weight.
 - **Each drop glows in its rarity's colour**, motes drifting up from it and its glow pulsing.
+
+## Claude's calls
+
+| Call | Chosen | Why |
+|---|---|---|
+| The pillars' heights | Normal 1.4 m, Magic 2 m, Rare 3 m, Legendary and Atheric 4.5 m, ammunition's 0.6 m: about a third of the first | The owner's "so tall" |
+| Its ends | Its foot fades in from the drop's glow over its lowest quarter; its top tapers to a point and fades over its upper third | The owner's "on each end it's so flat" |
 
 Links: [[Gear]], [[Combat]], [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]],
 [[Commons Drop as Themselves, Never as Vestiges]].
