@@ -17,7 +17,7 @@ const coveredBy = (char: string) => {
 };
 
 test('a glyph read at its cells’ centres from the face’s outline is the drawing it was made from', () => {
-  for (const char of ['B', '(', '-', '▲', '☠', '☰', '”']) {
+  for (const char of ['B', '(', '-', '▲', '☠', '”']) {
     const drawing = DRAWINGS[char];
     assert.ok(drawing, char);
     assert.deepEqual(glyphRead(coveredBy(char), 0), { ...glyphDrawn(drawing), advance: 0 }, char);
@@ -48,4 +48,15 @@ test('a glyph with no ink is no cells wide, and a cell centre falls where the gr
   );
   assert.deepEqual(centreOf(0, 0), [115, 44]);
   assert.deepEqual(centreOf(2, 6), [295, 576.5]);
+});
+
+test('an apostrophe and a closing quote stand upright in whole cells, never leaning as a backtick does', () => {
+  for (const char of ["'", '\u2019']) {
+    const glyph = MENDED_GLYPHS.get(char.codePointAt(0) ?? 0);
+    assert.deepEqual([glyph?.width, glyph?.height, glyph?.bottom, [...(glyph?.cells ?? [])]], [1, 2, 5, [1, 1]], char);
+  }
+  for (const char of ['"', '\u201D']) {
+    const glyph = MENDED_GLYPHS.get(char.codePointAt(0) ?? 0);
+    assert.deepEqual([...(glyph?.cells ?? [])], [1, 0, 1, 1, 0, 1], char);
+  }
 });

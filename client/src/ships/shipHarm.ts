@@ -172,8 +172,10 @@ export class ShipHarm {
     return this.fallen.has(mast);
   }
 
-  /** Its gone parts drift astern of it as it sails on at `way` (m/s): a part in the water stays where it fell. */
+  /** Its gone parts drift astern of it as it sails on at `way` (m/s): a part in the water stays where it fell. With
+   *  none gone, nothing it draws moves. */
   step(seconds: number, way: number, now: number): void {
+    if (this.lost.size + this.fallen.size === 0) return;
     this.changes += 1;
     for (const gone of [...this.lost.values(), ...this.fallen.values()])
       if (now - gone.at >= FALL_S) gone.astern += Math.max(0, way) * seconds;

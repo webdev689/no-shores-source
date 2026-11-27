@@ -118,7 +118,7 @@ def handrail(piece, run, y):
 
 
 def windows(piece, aft):
-    """Windows across the stern wall, framed and mullioned, their panes dark."""
+    """Windows across the stern wall, framed and mullioned, their panes glass."""
     z0, tall = WINDOW_FROM_M, WINDOW_TALL_M
     width = half_width(z0) - 0.3
     spacing = 2 * width / WINDOWS
@@ -127,7 +127,7 @@ def windows(piece, aft):
         half = min(0.4, spacing / 2 - 0.08)
         piece.box((aft, y - half, z0 - 0.08), (aft + 0.06, y + half, z0 + tall + 0.08), 'spar')
         piece.quad([(aft + 0.065, y - half + 0.06, z0), (aft + 0.065, y + half - 0.06, z0),
-                    (aft + 0.065, y + half - 0.06, z0 + tall), (aft + 0.065, y - half + 0.06, z0 + tall)], 'iron',
+                    (aft + 0.065, y + half - 0.06, z0 + tall), (aft + 0.065, y - half + 0.06, z0 + tall)], 'glass',
                    (1, 0, 0))
         piece.box((aft + 0.06, y - 0.025, z0), (aft + 0.09, y + 0.025, z0 + tall), 'spar')
         piece.box((aft + 0.06, y - half + 0.06, z0 + tall / 2 - 0.02), (aft + 0.09, y + half - 0.06,

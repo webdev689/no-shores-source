@@ -47,3 +47,24 @@ test('the page’s own sea room opens with the ports, and with the layout alone'
   assert.doesNotThrow(() => LocalRoom.openSea(module, layoutText, () => undefined, 7, ports));
   assert.doesNotThrow(() => LocalRoom.openSea(module, layoutText, () => undefined, 7));
 });
+
+test('a water named for its name alone asks nothing of who holds the sea there', () => {
+  let asked = 0;
+  const rules = {
+    waterAt: () => ({
+      continent: 0,
+      get holder() {
+        asked += 1;
+        return 'home' as const;
+      },
+    }),
+  } as unknown as Parameters<typeof waterNamer>[0];
+  const table = { waters: [{ name: 'The Lantern Sea', levels: [1, 4] }] } as unknown as Parameters<
+    typeof waterNamer
+  >[1];
+  const named = waterNamer(rules, table)([0, 0]);
+  assert.equal(named?.name, 'The Lantern Sea');
+  assert.equal(asked, 0, 'no second search of the coasts for the name');
+  assert.equal(named?.holder, 'home');
+  assert.equal(asked, 1);
+});

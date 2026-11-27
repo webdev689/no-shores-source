@@ -24,8 +24,11 @@ pub mod crew;
 pub mod deck;
 mod deck_fight;
 mod drops;
+mod dungeon_bake;
 pub mod dungeon_ground;
+mod dungeon_lines;
 mod dungeon_room;
+pub use dungeon_room::balustrade_blocks;
 pub mod encounter_plan;
 pub mod encounters;
 mod entrances;
@@ -44,12 +47,15 @@ mod happening;
 pub mod harbour;
 pub mod hostiles;
 pub mod island;
+mod judged;
 mod judging;
 mod landing;
 mod left;
+mod lessons;
 pub mod lore;
 mod outpost;
 mod outpost_boss;
+mod passages;
 pub mod patrol;
 mod perks;
 mod plates;
@@ -92,6 +98,7 @@ pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, PATROL_FOES_MOST,
 pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
 pub use outpost::{Errand, Material, OutpostAsk, PENDING, What, guild_key};
+pub use passages::{PassageAsk, PassageSeen, passage_ground};
 pub use perks::trim_of;
 pub use plates::Plate;
 pub use players::{
@@ -242,7 +249,7 @@ pub struct Room {
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
     /// A dungeon's ways out: its exit door's middle and its return portal's, at their feet; none in any other room.
-    pub(crate) ways_out: Option<([f64; 2], [f64; 2])>,
+    pub(crate) ways_out: Option<([f64; 3], [f64; 3])>,
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
@@ -266,6 +273,8 @@ pub struct Room {
     pub(crate) respawning: revive::Respawning,
     /// What brings foes now, the Tithe's airships and the Lattice's crowns, and the foes arriving (`arrivals.rs`).
     pub(crate) arrivals: arrivals::Arrivals,
+    /// A passage zone's deal and its dive's word, or a patrol zone's mouths into its passages (`passages.rs`).
+    pub(crate) passage: Option<passages::Passage>,
 }
 
 impl Room {
@@ -354,6 +363,7 @@ impl Room {
             breach_gate: None,
             respawning: revive::Respawning::default(),
             arrivals: arrivals::Arrivals::default(),
+            passage: None,
         }
     }
 
@@ -499,7 +509,9 @@ impl Room {
         self.keep_checkpoints(checkpoint);
         self.keep_public();
         self.keep_cache();
+        self.keep_passage();
         self.keep_quests();
+        self.keep_lessons();
         self.give_guilds();
         self.keep_steps();
         self.pick_up_drops();
@@ -516,11 +528,15 @@ const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
 #[cfg(test)]
 mod balance_tests;
 #[cfg(test)]
+mod band_measure_tests;
+#[cfg(test)]
 mod climb_tests;
 #[cfg(test)]
 mod commons_tests;
 #[cfg(test)]
 mod course_tests;
+#[cfg(test)]
+mod deal_measure_tests;
 #[cfg(test)]
 mod faction_tests;
 #[cfg(test)]

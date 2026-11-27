@@ -24,8 +24,23 @@ const FLOATS = [
   'crates/protocol/src/pack.rs',
 ];
 
+/** The rules every page lays a passage zone by itself, as its room does: the passages' web, zones, mouths and posts,
+ *  their island's file, under ground the Forge's dungeons and above ground the islands' hollows, their tests apart. */
+const LAID = [
+  ...['crates/passage/src', 'crates/dungeon/src', 'crates/isle/src'].flatMap((folder) =>
+    readdirSync(folder, { encoding: 'utf8' })
+      .filter((name) => name.endsWith('.rs') && name !== 'tests.rs' && !name.endsWith('_tests.rs'))
+      .sort()
+      .map((name) => join(folder, name)),
+  ),
+  ...readdirSync('content/passages', { encoding: 'utf8' })
+    .filter((name) => name.endsWith('.json'))
+    .sort()
+    .map((name) => join('content/passages', name)),
+];
+
 /** Every file the version hashes, in order. */
-export const PROTOCOL_PATHS: readonly string[] = [...SCHEMAS, ...FLOATS, ...numbered.paths];
+export const PROTOCOL_PATHS: readonly string[] = [...SCHEMAS, ...FLOATS, ...LAID, ...numbered.paths];
 
 /** The version of the files as `read` gives them. */
 export function protocolOf(read: (path: string) => string | Uint8Array = readFileSync): number {

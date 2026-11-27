@@ -2,14 +2,15 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startRoomDoor } from '../../../server/roomDoor.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 /** The room-wasm crate's dungeon door holds the same asks and hash (crates/room-wasm/src/dungeon_door.rs): four
  *  patrols' dungeons, the last of five blocks with its last a style deeper, then one laid by a seed and a style. */
-const AGREED_HASH = '77bbf7516bd71735';
+const AGREED_HASH = pinned('dungeon.agreed');
 const AGREED_ASKS: readonly (readonly [string, string, number])[] = [
   ['saltgrass-downs', 'The Saltgrass Downs', 0],
-  ['highwater-glen', 'The Highwater Glen', 1],
-  ['aurora-wastes', 'The Aurora Wastes', 2],
+  ['highwater-fells', 'The Highwater Fells', 1],
+  ['whitewind-tundra', 'The Whitewind Tundra', 2],
   ['gullwing-vale', 'The Gullwing Vale', 0],
 ];
 const AGREED_SEEDED = [4242, 'caverns', 'The Gull Cove'] as const;

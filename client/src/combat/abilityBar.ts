@@ -3,10 +3,12 @@
 // sweeping clockwise away as it recharges, its last seconds counted in it, the ring lit once ready. Each has its key on
 // a keycap under it. A spell just cast flashes its frame white; while the player cannot cast (staggered, down, dead),
 // every icon greys under a hatch; one its road has not earned stands dark under a padlock, saying which road earns it.
+// While the room holds the Art unbounded (a house's horde running), each ability glows in the Art's colour, swelling
+// slowly (still where less motion is asked), under an infinity mark that says it costs nothing.
 // What it shows is worked out from the room's numbers alone; its rings and slots are `ringSlot.ts`'s.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { motionReduced } from '../plus/kit.ts';
-import { LOCK_MAP, mapSvg } from '../player/artGlyphs.ts';
+import { LOCK_MAP, mapSvg, UNBOUNDED_MAP } from '../player/artGlyphs.ts';
 import { roadOf } from '../player/factionNames.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import type { Child, Node } from '../ui/node.ts';
@@ -34,6 +36,8 @@ export const ABILITY_KEYS = ['R', 'Q', 'G'] as const;
 export const ANIMA_ROWS = 24;
 /** Float error left by a share worked out from ticks, kept from tipping a step. */
 const EPSILON = 1e-9;
+/** How strong the glow round each ability stands while the Art is unbounded: stronger than a ready one's. */
+export const UNBOUNDED_GLOW = 0.85;
 
 /** What the bar is shown from: the Art worn (its id in the Arts' file, 0 for none), how far the Anima has charged,
  *  and how far each Tenet has recharged, each a share from 0 (just cast) to 1 (ready); what its road has earned
@@ -45,16 +49,20 @@ export interface AbilityState {
   readonly tenets: readonly [number, number];
   readonly earned?: number;
   readonly recharge?: number;
+  /** Whether the room holds the worn Art unbounded for the player (a house's horde running): nothing costs. */
+  readonly unbounded?: boolean;
 }
 
 /** What the bar shows: the Art, how many of the Anima's rows are lit from the bottom, whether it is full, each
- *  Tenet's recharge, and which of the Anima and the Tenets its road has not yet earned. */
+ *  Tenet's recharge, which of the Anima and the Tenets its road has not yet earned, and whether the room holds the Art
+ *  unbounded. */
 export interface AbilityShown {
   readonly art: number;
   readonly animaRows: number;
   readonly animaFull: boolean;
   readonly tenets: readonly [Sweep, Sweep];
   readonly locked: readonly [boolean, boolean, boolean];
+  readonly unbounded: boolean;
 }
 
 /** The pictures the bar draws an Art with, as SVG: its Anima's icon and that icon's outline alone, its two Tenets'
@@ -86,6 +94,7 @@ export function abilityBarOf(state: AbilityState): AbilityShown {
       tenetShown(state.tenets[1], (tenets[1]?.rechargeS ?? 0) * (state.recharge ?? 1)),
     ],
     locked: [lockedOf(1), lockedOf(2), lockedOf(4)],
+    unbounded: state.unbounded === true,
   };
 }
 
@@ -145,14 +154,15 @@ export class AbilityBar {
     [this.shown, this.state] = [null, null];
   }
 
-  /** What a screen reader says of each ability: its name, then ready, charging with its share, or its seconds; or,
-   *  not yet earned, which road earns it. */
+  /** What a screen reader says of each ability: its name, then ready, charging with its share, or its seconds, said
+   *  unbounded while the room holds the Art so; or, not yet earned, which road earns it. */
   words(): readonly string[] {
     const shown = this.shown;
     const art = shown && arts.arts.find((each) => each.id === shown.art);
     if (!art || !shown || !this.state) return [];
     const unable = this.unable;
-    const lock = (index: number, how: string) => (shown.locked[index] ? `earned on ${roadOf(art.id)}` : how);
+    const free = shown.unbounded && !unable ? 'unbounded, ' : '';
+    const lock = (index: number, how: string) => (shown.locked[index] ? `earned on ${roadOf(art.id)}` : free + how);
     const animaWords = shown.animaFull ? 'ready' : `charging, ${Math.floor(share(this.state.animaShare) * 100)}%`;
     return [
       `${art.anima.name} (${capWords(this.keys[0])}), ${lock(0, unable ? 'cannot be cast now' : animaWords)}`,
@@ -183,6 +193,22 @@ export class AbilityBar {
     const glowing = (this.clock / 0.4) % 8;
     const pulse = still ? 2 : 1 + Math.floor(glowing < 4 ? glowing : 8 - glowing) / 1.5;
     const artElement = arts.arts.find((each) => each.id === shown.art)?.element ?? 0;
+    const unbounded = shown.unbounded && !unable;
+    // The unbounded glow swells over 4 s, slower than a full Anima's, from 2 to 4 pixels.
+    const swelling = (this.clock / 0.5) % 8;
+    const swell = still ? 3 : 2 + Math.floor(swelling < 4 ? swelling : 8 - swelling) / 2;
+    const unboundedGlow = { width: swell, colour: element.colour, opacity: UNBOUNDED_GLOW };
+    /** The infinity mark standing above an ability while the Art is unbounded: it costs nothing. One not earned keeps
+     *  its padlock alone, as its words say. */
+    const freeOver = (): Child =>
+      unbounded
+        ? {
+            width: 11 * unit,
+            height: 5 * unit,
+            picture: { key: `ability unbounded ${artElement}`, source: { svg: mapSvg(UNBOUNDED_MAP, artElement) } },
+            float: { at: [0.5, 0], anchor: [0.5, 1], z: 2 },
+          }
+        : null;
     /** A padlock over an ability its road has not earned. */
     const lockOver = (index: number): Child =>
       shown.locked[index]
@@ -206,7 +232,11 @@ export class AbilityBar {
           full ? 1 : animaLocked ? 0 : 0.45,
           flashing(this.used[0] ?? 0, still) ? 3 : full ? 1 : animaLocked ? 0.5 : 0.8,
         ],
-        full ? { width: Math.round(pulse * zoom), colour: element.colour, opacity: 0.45 } : null,
+        unbounded && !animaLocked
+          ? { ...unboundedGlow, width: Math.round(swell * zoom) }
+          : full
+            ? { width: Math.round(pulse * zoom), colour: element.colour, opacity: 0.45 }
+            : null,
         diamond,
         unable,
       ),
@@ -234,7 +264,7 @@ export class AbilityBar {
         ],
       },
       hatchOver(diamond, unable),
-      lockOver(0),
+      lockOver(0) ?? freeOver(),
       usedRing(this.used[0] ?? 0, still),
     ]);
     const tenet = (index: 0 | 1): Node => {
@@ -246,11 +276,11 @@ export class AbilityBar {
         icon: { key: keyOf(`tenet ${index}`), svg: pictures.tenets[index] },
         frame: [ready ? 1 : locked ? 0 : 0.45, ready ? 1.25 : locked ? 0.5 : 0.8],
         iconTurn: [ready ? 1 : locked ? 0 : 0.5, ready ? 1 : 0.7],
-        glow: ready ? { width: 2, colour: element.colour, opacity: 0.45 } : null,
+        glow: unbounded && !locked ? unboundedGlow : ready ? { width: 2, colour: element.colour, opacity: 0.45 } : null,
         sweep: locked ? null : recharge,
         unable,
         used: this.used[index + 1] ?? 0,
-        over: lockOver(index + 1),
+        over: lockOver(index + 1) ?? freeOver(),
       } as const;
       return ringNode(look, turned, cell, zoom, still);
     };

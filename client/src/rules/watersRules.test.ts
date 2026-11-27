@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { LAND_CELL, type PortInfo, startWatersRules } from './watersRules.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const WORLD = new URL('../../../content/world/', import.meta.url);
@@ -67,6 +68,8 @@ test('a city stands on land and the sea off it is its island water', async () =>
   assert.ok(overlook);
   assert.equal(rules.waterAt(overlook.centre), null);
   assert.deepEqual(rules.waterAt(table.ports[0]?.roadstead ?? [0, 0]), { continent: 0, holder: 'home' });
+  const open = rules.waterAt([2_400_000, 1_100_000]);
+  assert.deepEqual(open, { continent: 0, holder: 'grey-tithe' }, 'the Lantern Sea past home’s reach');
 });
 
 test('the held map grid has its cells, and agrees with the water at each cell middle', async () => {
@@ -85,7 +88,10 @@ test('the held map grid has its cells, and agrees with the water at each cell mi
 
 test('the table gives the sea’s facts as its rules have them: its reaches and every ship’s name', async () => {
   const { table } = await opened();
-  assert.deepEqual([table.sea.engageM, table.sea.repairReachM], [750, 3_000]);
+  assert.deepEqual(
+    [table.sea.engageM, table.sea.repairReachM, table.sea.homeReachM, table.sea.travelShortM],
+    [750, 3_000, 10_000, 400],
+  );
   assert.ok(table.sea.holdReachM > table.sea.engageM, `the hold reaches past its sight: ${table.sea.holdReachM}`);
   assert.deepEqual(table.sea.shipNames[1], ['Tithe Sloop', 'Tithe Schooner', 'Tithe Brig', 'Tithe Frigate']);
   assert.deepEqual(table.sea.shipNames[0], [
@@ -141,5 +147,5 @@ test('the sea by weather is calm in a roadstead and the deep sea holds to the fi
   assert.ok(Math.abs(Math.hypot(...swell.wind) - Math.hypot(swell.wind[0], swell.wind[1])) < 1e-9);
   const grid = rules.seaHeights([roadstead[0] - 2_000, roadstead[1] - 2_000], 1_000, 4, 4, time);
   assert.equal(grid.length, 16);
-  assert.equal(rules.seaHash(SEA_POINTS, time), 'aa8b7cd0624a292d');
+  assert.equal(rules.seaHash(SEA_POINTS, time), pinned('sea.world'));
 });

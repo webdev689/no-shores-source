@@ -72,7 +72,9 @@ they play in holds it while they are there.
   `/v1/discord/callback` to the page with a one-time code in the address's fragment; nothing is signed in or linked
   yet. The page takes the code from `POST /v1/discord/finish`, showing its nonce. A Discord account already linked
   signs in to its account; one not linked links to the ticket's account, which only a session of that account may
-  take, and otherwise becomes a new account. The state sent to Discord is used once and must match a cookie set as
+  take, and otherwise becomes a new account. A ticket given that is used, run out or no ticket answers 400 and starts
+  nothing, and a page holding a session whose ticket did not come (the ticket limit, the accounts out of reach) does not
+  go to Discord but says why, so a sign-in never makes a new account whose session takes the guest's place. The state sent to Discord is used once and must match a cookie set as
   the player left; the code is used once and taken only with the nonce of the tab that began it; each lapses after
   ten minutes. So no one can finish another's sign-in, hand a player their own session, or link a player's Discord
   to their own account. A session's token never travels in an address. The Discord app must list
@@ -148,9 +150,9 @@ they play in holds it while they are there.
   and gives it to the player, trimming their fight by it. One account is one player in a room: a second socket of theirs
   signed in (a rejoin before the room saw the first close, or a second tab) sends the first away as played elsewhere
   before it is given the character, so a run keeps the first one's body for it, and the rules refuse to note one account
-  for two players (`Room::own`). While the accounts hold what this room last saved of the first, and gave no errand's
+  for two players (`Room::own`; at sea `Sea::own`, so a second tab moves nothing floating or owed to the first). While the accounts hold what this room last saved of the first, and gave no errand's
   answer onto it since, the room's own body of it is the newest, and the second takes that on, saved anew under its
-  hold. A rejoin's old socket is one the page let go of already, so it plays on; a second tab's page stops there and
+  hold; first the first one's chests are opened and what lies for them is posted to their mail, as at a leave. A rejoin's old socket is one the page let go of already, so it plays on; a second tab's page stops there and
   joins no more, so two tabs never take the character back and forth.
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
@@ -186,16 +188,21 @@ they play in holds it while they are there.
   centimetre, and the way they faced, kept on the character by that room each tick while they stand there on their
   feet, alive (`keep_spots`), so a save made mid-jump or after a fall keeps the last spot they stood at. No other
   room writes it, so one who logs out in a patrol zone, a dungeon or on an island comes back to whichever of
-  the two they were in last. `GET /v1/me` answers it beside the account (`place`: `{ "kind": "sea" }`, or
-  `{ "kind": "social", "node", "at", "facing" }` in metres and radians, or null; `lastPlace.ts`). After the title the
-  page goes there (`relog.ts`): aboard, where the sea room puts the ship it kept; or into that social space, joining
+  the two they were in last, but a character on a dive whose last room was a room of its dive's zone, not homeward,
+  logs back into that zone, as does a public dive whose last room was the zone it went on from (reloaded on the way
+  between; a company's route there is its company's to find, so it comes back as above) ([[Passages]], "A dive"). `GET /v1/me` answers it beside the account (`place`:
+  `{ "kind": "sea" }`, `{ "kind": "social", "node", "at", "facing" }` in metres and radians,
+  `{ "kind": "passage", "room" }` the zone's first public room or its company's route's own, or null; `lastPlace.ts`). After the title the
+  page goes there (`relog.ts`): aboard, where the sea room puts the ship it kept; into the dive's zone, which takes
+  the dive back as its rejoin (`PassageGame.resumeIn`; a zone the page cannot lay or join leaves them at Overlook); or
+  into that social space, joining
   its room with `?relog=1`, and the room stands a player whose character last stood in it where they left it, on the
   floor they stood on (`stand_where_left`; where a body no longer fits there, at a spawn). Only logging back in asks
   it: travelling there, taking a gate or coming back from an activity arrives at the arrival. A link dropped and
   joined again keeps the ask, so one who logged back in stands again at the spot last saved. One who has just played
   the story through, one with none kept, or one whose social space is not open on the landmass arrives at Overlook.
   The sea's tier is Normal, as every voyage's begins. Offline, where no room keeps a character, the page keeps the
-  place itself in the browser (`noshores.place`, every 10 s and as the page hides or goes, `keepPlace`), the ship
+  place itself in the browser (`noshores.place`, within a second of each change and as the page hides or goes, `keepPlace`), the ship
   where it lay and the player's spot across, not its height, and resumes from it the same way, the player on the
   ground under the spot. A page reloaded the moment it leaves a room may read the place before that room has saved
   it, and so resumes at the one before.
@@ -273,14 +280,15 @@ Find a Company ([[Activities]]) matches players for an Elite Dungeon at Normal, 
 each playlist, never the Abyss Dungeon of the week, whose company forms it.
 
 - **The queue** is a Durable Object of the accounts' Worker, one for each run's base (`CompanyFinder`, `finder.ts`),
-  reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal, `node-<id>--elite` for the
-  week's from its door and `node-<id>--elite--sea` from the Playlist (its run named `--sea`, gone into from the sea),
+  reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal from its door and
+  `node-<id>--sea` from the sea, `node-<id>--elite` for the week's from its door and `node-<id>--elite--sea` from the
+  Playlist (each `--sea` base's run named `--sea`, gone into from the sea),
   `playlist-elite` and `playlist-abyss` for the playlists, one queue each for the whole game, whichever
   port the Playlist was opened beside, and `node-gullwing-vale--breach-normal` and `--breach-hard` for the Drowned
   Vale, the one zone a Breach's gate stands in (`BREACH_ZONES`). A socket's first message is its session's token; one that is no session, or that sends none within five
   seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with 4003 and "Sign in to find a company.". At most 64
-  sockets with a token wait in one (a search past them is answered 503; a Launch is always taken, as it is gone at the
-  next look), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never shut out
+  sockets with a token wait in one (a search past them is answered 503; a Launch is taken past searches, as it is gone
+  at the next look, but past 64 Launches with a token it is answered 503 too, `launchesFull`), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never shut out
   those that sign in; its clock stops once it holds none. It
   checks a base's shape alone, not that a rule lays it: the accounts' Worker does not load the rules, and the room
   judges the run.
@@ -344,7 +352,9 @@ table holds one row an account: what differs from the game's defaults, as JSON, 
   no object of controls, is refused and nothing changes. 120 reads and saves together an hour an account.
 - **The page** reads them once the account is known and binds them, and reads again when another account signs in
   (that account's, or the defaults where it kept none); each change is sent a moment and a half after the last
-  (`keepBinds`). It keeps what still reads, and a kept bind that clashes with a default goes back to its own. A save
+  (`keepBinds`). It keeps what still reads; a default that now stands on a key the player kept for another control
+  gives that key up, so what the player bound stays theirs, and two kept binds that clash both go back to their own
+  (`withOverrides`). A save
   waits on a read that answers, so nothing is kept over binds never read: what the player bound before the read is
   laid over what the account kept, and that is saved. Where the accounts do not answer, the game plays on with what
   it has, the defaults at first, and saves nothing until a read answers.

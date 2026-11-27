@@ -37,6 +37,9 @@ code:
   - client/src/ships/flag.ts#flagGrid
   - client/src/ships/flagPictures.ts#flagPictures
   - client/src/ships/shipModels.ts#openHull
+  - client/src/ships/lanterns.ts#lanternsLit
+  - client/src/ships/shipLights.ts#shipLanterns
+  - crates/naval/src/night.rs#runs_dark
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
@@ -48,7 +51,7 @@ code:
   - client/src/game/aboard.ts#Aboard
   - client/src/game/deckWalk.ts#DeckWalk
   - client/src/game/crew.ts#Crew
-  - client/src/cinema/sailAway.ts#SailAway
+  - client/src/cinema/travelFade.ts#TravelFade
   - client/src/game/seaTravel.ts#SeaTravel
   - client/src/game/charting.ts#Charting
 ---
@@ -57,7 +60,10 @@ code:
 How a ship sails: the helm from oars to sails, its way and turn, its sails against the wind, its pose on the swell
 and where it takes the ground. It is DFO's port of Come Sail Away ([[Come Sail Away's Sailing Comes Over]]),
 rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop in the [[World Editor]]; the captains
-sail the other hulls ([[Hulls]]) by the same laws.
+sail the other hulls ([[Hulls]]) by the same laws. A new player is taught the helm in the opening, once the
+Harbourmaster hands over the Sloop: aboard, under way, steered, trimmed (its pace changed, sailing on at ×60 or a voyage planned at ×200), the held map raised and a
+ball put in a Tithe hulk moored off Overlook, then home to dock, each step ticked by the sea from what the ship did
+([[Quests]], "The lessons"; [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]).
 
 ## How it works
 
@@ -192,6 +198,17 @@ picture's grain, the picture's lightness about its mean kept:
   3 cm of its breadth in its own slice, where the inside of a bulwark never lies. A face whose corners differ is
   painted to the halfway between them. Its deck,
   its fittings and the insides of its bulwarks keep their timber.
+- **Its lanterns.** A Schooner's, a Brig's and a Frigate's stern lantern stands on a post at its taffrail: its glass
+  between six iron posts under a cap and a ring, an empty named `Lantern` in its model at its middle, which the export
+  writes to its manifest (`lanterns`; the Sloop's model has none). Caged, it shows no flame ([[An Enclosed Light Hides Its Flame]]): the glass is lit from
+  inside as the city's lanterns are, by day as by night and brighter against the dark, glowing amber, brightest at
+  its middle, and a soft halo stands round it, brighter at night (`ShipModels`). Its glass and its light, a lamp
+  ([[Sky]], "Lamps at sea"), flicker alike as a lantern, seeded by the ship (`shipSeed`: its hull and its slot of that
+  hull's model), so no two ships drawn in a frame flicker in step; its light falls on its deck and hull, the sea round
+  it and the people aboard. Her other lanterns, at her quarters and her door ([[Hulls]], "Lanterns"), burn and light
+  alike. A ship settled more than three metres into the sea, sinking, a wreck, and a ship running dark ("Lanterns at
+  night") have their lanterns out
+  ([[Every Light Is Redesigned and Animated, and Each Casts Light]], [[Lights as Claude Builds Them]]).
 - **Its stripe** is 0.6 m deep along the line through the mouths of its upper tier of guns, rising with its sheer.
 - **Its flag** flies at the head of its tallest mast (the highest point of its spars), a tenth of its waterline's
   length long and two thirds as deep, its hoist down the mast. It streams the way the wind blows and waves along its
@@ -275,6 +292,32 @@ side's colours, its pose, its heel and its footprint on the water taken from its
   spray, at its drawn size ([[Water]], "A ship on it"); the player's ship also stirs the water's ripples at its bow
   and quarters each frame, as the editor's does.
 - **Its deck** and everyone on it lie with it: its heading, pitch, roll and drawn size (`deckToWorld`).
+- **Lying parked** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]). A
+  ship whose player is ashore lies at rest where they left it, at the coast nearest it within 5 km: the sea room sends
+  it to players within sight at sea, and the rooms on that island's own ground (a node's, or a sea island's) to the
+  players there, its own player among them ([[Server]], "Parked ships").
+
+## Lanterns at night
+
+Ships show their lanterns at night, as DFO's did ([[Ships' Lanterns Come Over From DFO]]): the friendly traffic between
+the ports, the Sloops moored at Overlook's pier, the players' ships and hostile ships, each on its own hull ([[Hulls]],
+"Lanterns"). Their glass burns by day and night ("Its lanterns" above); their light comes up as the daylight fades,
+through the dusk with the lamps ([[Sky]], "Lamps at sea").
+
+- **Who runs dark.** The Grey Tithe's ships sail with their lanterns out ([[Pirates Are Replaced by the Grey Tithe]]),
+  and a friendly ship running from an attack puts hers out: a merchant fleeing the Tithe ship she clashed with, as the
+  room sends her (`Friendly.dark`), and a friendly captain fleeing in a player's fight (`runs_dark`).
+- **Her stern windows.** A lit ship's stern windows burn with her lanterns, and a dark ship's stay dark
+  ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]], [[Hulls]], "Stern
+  windows").
+- **Near.** Each of a lit ship's lanterns is a lamp reaching 13 m, the nearest sixteen of the sky's lamps lit, lighting
+  her deck and the water round her ("Its lanterns" above).
+- **Far.** Past 45 m a lit ship shows up to four of her lanterns (her first, her last and spread between) as warm points
+  over the water, fading in over 45 m, half a metre across or 0.004 of their distance, whichever is more, so a ship
+  reads across the sea at night as her lanterns (`GlowPoints`).
+- **Seen by them.** By night a lit ship is spotted to 650 m and a dark one only to 220 m: by the captains in a fight,
+  the player's marks, a player joining a clash, and a hostile ship choosing whom to come for ([[Naval Combat]], "Night
+  sight").
 
 ## Its deck
 
@@ -303,41 +346,45 @@ A body walks its deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 
 ## Travel by the held map
 
-The [[Held Map]] takes the ship to other waters, seen sailing away
-([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). A course chosen into another water asks whether to
-travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks: the sea bar goes
-while it runs, Stop and the pace dial do nothing however they are asked, the menu does not open, and nothing takes the
-player elsewhere (the company's Go to them waits); a travel left behind any other way ends when they come aboard:
+The [[Held Map]] takes the ship anywhere at sea, in its own water or another, the picture fading out and in
+([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]],
+[[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]],
+[[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]). A course chosen asks
+whether to travel there; yes runs the travel (`TravelFade`, `SeaTravel`; with no sea room to ask, as when its link
+is lost, yes sails the course as Set sail does), which no key, press or wheel breaks: the ship's console goes
+while it runs, Stop and the view switch do nothing however they are asked, the menu does not open, and nothing takes
+the player elsewhere (the company's Go to them waits); a travel left behind any other way ends when they come aboard:
 
-1. The map lowers and the camera leaves the helm on an eased rail out to the ship's aft starboard quarter, 70 m off and
-   28 m up, carried along with the ship as it gets under way on the course at the world's own pace, 3 s.
-2. The camera holds there, looking at the ship as it sails off, while the picture fades to black over 2 s; the veil, the
-   loading screen with "Sailing for <water>" ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]), comes up in its last 0.7 s. The travel is asked of the sea room as the fade begins
-   ([[Server]], "The sea"): a course into other waters with the travel flag, sent in its turn as any course is, and no
-   other course sent in its place until the room answers. Too soon after a course, it is asked again; a room joined
-   since, or the same link joined again (which drops what it was sent), is asked again, once it has the ship at sea (a tier's room just joined puts it there when its keeper has
-   answered); one that gives no answer in 10 s, or whose room never shows the ship, is given up, and courses are sent again. A yes in a fight
+1. The map lowers and the picture fades to black from the helm's view over 1 s, the ship getting under way on the
+   course at the world's own pace; the veil, the loading screen with "Sailing for <water>"
+   ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]), comes up in its last 0.7 s. The travel is asked
+   of the sea room as the fade begins ([[Server]], "The sea"): the course with the travel flag, sent in its turn as any
+   course is, and no other course sent in its place until the room answers. Too soon after a course, it is asked
+   again; a room joined since, or the same link joined again (which drops what it was sent), is asked again, once it
+   has the ship at sea (a tier's room just joined puts it there when its keeper has answered); one that gives no
+   answer within 13 s of the yes, or whose room never shows the ship, is given up; one that would leave the ship where
+   it lies (none the map asks) is refused, and one into a locked sea ("That sea is locked.",
+   [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]), and courses are sent again. A yes in a fight
    sails the course as Set sail does.
-3. Black for at least 1.5 s, and longer until the room has answered, no continent near the ship's new place is
+2. Black for at least 0.5 s, and longer until the room has answered, no continent near the ship's new place is
    still to open (`Charting.waiting`), and frames drawn since the answer have shown the new waters whole (nothing
-   standing in, [[Game]]), the plants scattering at the veil's pace meanwhile; all waited on 15 s at most; the sea, its islands and the sky come with the room's word and the land.
-   Taken, the ship is laid where the room put it, 400 m short of the course's end on its last leg, with no easing
-   across the jump, and sails on to the end of the course the room was sent; the view over it snaps there too, and the old waters' islands, flotsam
-   and marks go with the room's next word.
-4. The black lifts over 1.5 s on a low wide shot off the ship's starboard bow, 110 m out and 5 m up, that pans round
-   its beam to a view from its stern, 60 m back and 16 m up, as it sails in, 4 s.
-5. The view eases back to the usual one over the ship over 1.5 s, and the player has the ship again, sailing on to
-   the course's end.
+   standing in, [[Game]]), the plants scattering at the veil's pace meanwhile; all waited on 15 s at most; the sea,
+   its islands and the sky come with the room's word and the land. Taken, the ship is laid where the room put it
+   once the picture is black (an answer that comes during the fade waits for it), 400 m short of the course's end on
+   its last leg, with no easing across the jump, and sails on to the end of the
+   course the room was sent; the old waters' islands, flotsam and marks go with the room's next word.
+3. The picture fades in over 1 s on the usual view over the ship, and the player has the ship again, sailing on to
+   the course's end. The view changes from the helm's only at black.
 
-A fight the room begins at any point of it ends the cinematic at once, the picture open: the page forgets the travel (a
+A fight the room begins at any point of it ends the travel at once, the picture open: the page forgets the travel (a
 late answer is no answer) and the view pans down to the fight as ever; if the room had already taken it, the fight is
 where the room put the ship. A voyage stopped before the fade asks nothing and is refused at once ("The voyage was
-stopped."). A refused travel fades back in where the ship is over 1.5 s: it heaves to, its voyage kept to be resumed,
+stopped."). A refused travel fades back in where the ship is over 1 s: it heaves to, its voyage kept to be resumed,
 and its line says why ("No travel while fighting.", "No travel off the helm.", "No travel with a hostile ship giving
-chase.", "That lies in these waters.", "The way there crosses land.", else "The sea would not take that course."). The
+chase.", "The way there crosses land.", else "The sea would not take that course."). The
 room judges a player's travel against the waters and the islands at most once a course's wait (half a second); one asked
 sooner is answered too soon and asked again by the page, and a refused one keeps no course of theirs waiting. A course
-set at another tier on the map begins the cinematic at once and enters that tier's sea room as setting sail does, the
+set at another tier on the map begins the travel at once and enters that tier's sea room as setting sail does, the
 travel asked of it by the fade; a tier the player's level shuts is never sailed for. The ship is drawn under way, sails
 set and wake behind, from the yes until it has arrived.
 

@@ -20,7 +20,7 @@ import rig
 VERSION = 1            # raised whenever the rig hangs a cloak differently: every cloak's strips drawn again
 CHAINS = 11           # the chains across the cloth, its two front edges among them
 LINKS = 5              # the links of each, from the yoke's foot to the hem
-STEP = 1.0 / 240       # seconds a step of the swing
+STEP = 1.0 / 120       # seconds a step of the swing
 DRAG = 2.0             # the air's hold on the cloth: its speed through the air lost this share a second
 HOLD = 1.0             # how hard the cloth is drawn back to the shape it hung in, as a share of gravity's pull on a
 LEVER_MIN = 0.1        # pendulum as long as the cloth above each point (no shorter than this, metres)
@@ -28,10 +28,10 @@ SLIM = 0.30            # the share of its width round the body the cloth keeps b
 SLIM_FROM = 6          # the row it leaves the shoulders' tops by, a hood's mantle sewn there (drape.py `MANTLE`)
 TAPER = 0.3            # the share of the way down from there over which it draws in to `SLIM`
 DAMP = 4.0             # its own swing lost this share a second
-SETTLE = 1.5           # seconds it hangs at the first key before the move begins
+SETTLE = 1.0           # seconds it hangs at the first key before the move begins
 REST = 0.25            # seconds it comes to rest at each key, so a frame shows it hanging, never thrown
-CYCLES = 3             # a move that goes round is carried round this many times, the last drawn
-ITERS = 12             # the passes a step puts its lengths and its capsules right
+CYCLES = 2             # a move that goes round is carried round this many times, the last drawn
+ITERS = 8              # the passes a step puts its lengths and its capsules right
 EASE = 0.012           # how far it lies off a capsule
 # where drape.PACE has none: seconds a key, whether it goes round, and the air the body meets (metres a second)
 PACE = {'run': (0.15, True, 2.5), 'gunrun': (0.15, True, 2.5), 'bowrun': (0.15, True, 2.5),

@@ -1,5 +1,6 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
+import { type MapRegion, nearestRegion } from '../overworld/regions.ts';
 import { alongNear, PACE_STEPS, type Pace, SHIP_SPEED, type Voyage } from '../overworld/voyage.ts';
 import { cellHeight, type Deck, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
@@ -23,23 +24,36 @@ export function firstAnchorage(landmass: Pick<Landmass, 'plan' | 'nodes' | 'heig
   return { anchorage, heading: bearingTo(anchorage, from) };
 }
 
-/** A ship's place off a harbour (`through`), out along the way from `from` to it; the harbour itself where no water
- *  that deep lies that way. */
+/** A ship's place off a harbour (`through`), out along the way from `from` to it (its roadstead); the harbour itself
+ *  where no water that deep lies that way. */
 export function offshore(heightAt: HeightAt, from: Point2, through: Point2): Point2 {
+  return offshoreStretch(heightAt, from, through).offing;
+}
+
+/** The water off a harbour or a shore (`through`), out along the way from `from` to it, unbroken from where it first
+ *  lies `OFFSHORE.depthM` deep and off `land` (the room's coasts, which judge a course) to `OFFSHORE.clearM` on: its
+ *  near end, just off the shore, and its far end, the offing. Both the harbour itself where none lies that way. */
+export function offshoreStretch(
+  heightAt: HeightAt,
+  from: Point2,
+  through: Point2,
+  land: (point: Point2) => boolean = () => false,
+): { readonly inshore: Point2; readonly offing: Point2 } {
   const length = Math.hypot(through[0] - from[0], through[1] - from[1]) || 1;
   const way = [(through[0] - from[0]) / length, (through[1] - from[1]) / length] as const;
+  const pointAt = (along: number): Point2 => [through[0] + way[0] * along, through[1] + way[1] * along];
   let deepFrom: number | null = null;
   for (let along = 0; along <= OFFSHORE.farthestM; along += OFFSHORE.stepM) {
-    const point: Point2 = [through[0] + way[0] * along, through[1] + way[1] * along];
+    const point = pointAt(along);
     const ground = heightAt(point[0], point[1]);
-    if (Number.isFinite(ground) && ground > -OFFSHORE.depthM) {
+    if ((Number.isFinite(ground) && ground > -OFFSHORE.depthM) || land(point)) {
       deepFrom = null;
       continue;
     }
     deepFrom ??= along;
-    if (along - deepFrom >= OFFSHORE.clearM) return point;
+    if (along - deepFrom >= OFFSHORE.clearM) return { inshore: pointAt(deepFrom), offing: point };
   }
-  return through;
+  return { inshore: through, offing: through };
 }
 
 /** A standing body's eye over its feet, metres (crates/movement/src/body.rs `TUNING.eye`). */
@@ -105,22 +119,19 @@ export type Landfall =
   | { readonly kind: 'isle'; readonly id: number; readonly words: string }
   | null;
 
-/** A landfall's offer in words, as its button and the menu say it. */
-export function landfallWords(landfall: NonNullable<Landfall>): string {
-  if (landfall.kind === 'dock') return `Dock at ${landfall.port}`;
-  return landfall.kind === 'isle' ? `Go ashore on ${landfall.words}` : 'Go ashore';
-}
-
 /** The landfall offered a ship that lies off an island's coast (`offCoast`), whose port, if it has one, has its harbour
- *  at `harbour`. */
+ *  at `harbour`, and which may be cut into `regions`. */
 export function landfallOf(
   ship: Point2,
   offCoast: boolean,
   port: { readonly name: string; readonly harbour: Point2 } | null,
+  regions: readonly Pick<MapRegion, 'centre'>[] = [],
 ): Landfall {
   if (!offCoast) return null;
   const toHarbour = port ? Math.hypot(port.harbour[0] - ship[0], port.harbour[1] - ship[1]) : Infinity;
-  return port && toHarbour <= DOCK_REACH_M ? { kind: 'dock', port: port.name } : { kind: 'ashore' };
+  // Cut into regions, the island docks only off the region that holds its port: off another, it goes ashore there.
+  const portHere = port !== null && nearestRegion(regions, ship) === nearestRegion(regions, port.harbour);
+  return port && portHere && toHarbour <= DOCK_REACH_M ? { kind: 'dock', port: port.name } : { kind: 'ashore' };
 }
 
 /** How near another continent's coast a ship comes before that landmass is opened and drawn in place of the open
@@ -241,17 +252,18 @@ export const heldNote = (sailed: SailedPace, room: RoomWord | null): string =>
 /** The world's own time, a pace of 1 (crates/room/src/sea.rs `WORLD_PACE`): a ship is sailed at it while watched close,
  *  so it is seen at its true speed. */
 export const WORLD_PACE = 1;
-/** The pace a ship is sailed at: its dial's step, or the world's own time while the view is close on it. */
+/** The pace a ship is sailed at: a step of the ladder, eased toward the pace its voyage was set at, or the world's own
+ *  time while the view is close on it. */
 export type SailedPace = Pace | typeof WORLD_PACE;
 /** The ladder the sailed pace eases along, DFO's steps down to the world's own time, and the seconds a step takes. */
 const EASED_LADDER: readonly SailedPace[] = [WORLD_PACE, ...PACE_STEPS];
 export const PACE_EASE_S = 0.15;
 
 /** The next step of the sailed pace eased toward the view's: down the ladder to the world's own time while the view is
- *  close on it (`watched`), back up to the dial's step while it is not. */
-export function easedPace(sailed: SailedPace, dial: Pace, watched: boolean): SailedPace {
-  const [from, to] = [EASED_LADDER.indexOf(sailed), EASED_LADDER.indexOf(watched ? WORLD_PACE : dial)];
-  return EASED_LADDER[from + Math.sign(to - from)] ?? dial;
+ *  close on it (`watched`), back up to the pace the voyage was `set` at while it is not. */
+export function easedPace(sailed: SailedPace, set: Pace, watched: boolean): SailedPace {
+  const [from, to] = [EASED_LADDER.indexOf(sailed), EASED_LADDER.indexOf(watched ? WORLD_PACE : set)];
+  return EASED_LADDER[from + Math.sign(to - from)] ?? set;
 }
 
 /** Whether the room's word on its pace (`room`) disagrees with the pace it is sailed at, so the page asks it again:
@@ -269,9 +281,9 @@ export function paceToAskAgain(
   return room.pace > sailed || !near;
 }
 
-/** What the voyage's line adds while the pace is eased under the dial's for the view. */
-export const easedNote = (sailed: SailedPace, dial: Pace): string =>
-  sailed < dial ? ' · Sailing at true speed while you watch close.' : '';
+/** What the voyage's line adds while the pace is eased under the voyage's for the view. */
+export const easedNote = (sailed: SailedPace, set: Pace): string =>
+  sailed < set ? ' · Sailing at true speed while you watch close.' : '';
 
 /** What the sea's note says of its room: only a link lost, or a room being joined again; nothing while all is well. */
 export function roomWords(room: { readonly rejoining: boolean } | null, lost: boolean): string {

@@ -1,6 +1,7 @@
 use super::*;
 use crate::clash::tests::{at_sea, still};
 use naval::fight::CAPTAIN;
+use naval::guns::Shot;
 use naval::ranks::{GREY_TITHE, Rank};
 use sailing::HullKind;
 
@@ -150,4 +151,50 @@ fn a_player_who_leaves_and_comes_back_keeps_a_spent_last_stand_and_no_ship_numbe
     characters.insert(2, gear::Character::starting());
     fights.fit(&characters);
     assert!(fights.list[0].fight.fitting(back).is_some_and(|fitted| fitted.stood), "its stand spent this fight");
+}
+
+#[test]
+fn presses_sent_in_two_orders_within_one_tick_are_kept_until_a_step_uses_them() {
+    let mut fights = begun();
+    let quiet =
+        Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: true, load: None, boost: false };
+    let pressed =
+        Orders { helm: Helm { steer: 0.0, climb: 1 }, fire: true, load: Some(Shot::Chain), boost: true, ..quiet };
+    assert!(fights.orders(1, pressed));
+    // The page's next message carries no press: it must not undo the ones before it.
+    assert!(fights.orders(1, quiet));
+    let crew = fights.list[0].crews[&1];
+    assert!(crew.orders.fire && crew.orders.boost && crew.orders.brace);
+    assert_eq!((crew.orders.helm.climb, crew.orders.load), (1, Some(Shot::Chain)));
+    fights.step(&[], 0.0);
+    let crew = fights.list[0].crews[&1];
+    assert!(!crew.orders.fire && !crew.orders.boost && crew.orders.brace, "a step uses the presses once");
+    assert_eq!((crew.orders.helm.climb, crew.orders.load), (0, None));
+}
+
+#[test]
+fn only_captains_still_in_a_fight_with_players_are_where_its_captains_lie() {
+    let mut fights = begun();
+    let minor = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    assert!(fights.join_hostile(&at_sea(12, minor, 500.0, false), &[], 0.0));
+    assert_eq!(fights.captains_at().count(), 2, "the captain it began with and the one who joined");
+    for (id, end) in [(CAPTAIN, End::Sunk), (CAPTAIN + 1, End::Gone)] {
+        let vessel = fights.list[0].fight.ships.get_mut(&id).unwrap();
+        let naval::fight::Sailor::Captain(command) = &mut vessel.sailor else { panic!("a captain") };
+        command.gone = Some(end);
+        assert_eq!(fights.captains_at().count(), usize::from(id == CAPTAIN), "none sunk or sailed off");
+    }
+}
+
+#[test]
+fn a_captain_breaks_off_once_every_player_it_fights_lies_inside_home_waters() {
+    let mut fights = begun();
+    fights.break_off_home(|_| false);
+    assert!(fights.list[0].fight.vessel(CAPTAIN).is_some_and(Vessel::in_fight), "no player inside home waters");
+    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3], HullKind::Sloop), &[], 0.0));
+    fights.break_off_home(|[_, y]| y < 100.0);
+    assert!(fights.list[0].fight.vessel(CAPTAIN).is_some_and(Vessel::in_fight), "one still past them");
+    fights.break_off_home(|_| true);
+    assert!(fights.list[0].fight.vessel(CAPTAIN).is_some_and(|vessel| !vessel.in_fight()), "both inside: it sails off");
+    assert!(fights.list[0].pending.contains(&Event::Gone { ship: CAPTAIN, end: End::Gone }), "and the fight is told");
 }

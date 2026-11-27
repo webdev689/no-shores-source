@@ -110,6 +110,10 @@ test('off a coast the ship docks within reach of its harbour and goes ashore els
   assert.deepEqual(landfallOf([DOCK_REACH_M + 1, 0], true, port), { kind: 'ashore' });
   assert.deepEqual(landfallOf([100, 0], true, null), { kind: 'ashore' });
   assert.equal(landfallOf([100, 0], false, port), null);
+  // Cut into regions, the harbour's reach docks only off the region that holds the port.
+  const regions = [{ centre: [0, 0] as const }, { centre: [20_000, 0] as const }];
+  assert.deepEqual(landfallOf([9_000, 0], true, port, regions), { kind: 'dock', port: 'Overlook' });
+  assert.deepEqual(landfallOf([11_000, 0], true, port, regions), { kind: 'ashore' }, 'another region, within reach');
 });
 
 test("ships are drawn at the Overworld's scale on the sea's view and at their own on the view near it", () => {
@@ -173,33 +177,33 @@ test('at the helm the eye stands behind the wheel of the Sloop as it is drawn, r
   assert.equal(drawnZ, HELM.eyeM * 12);
 });
 
-test("the page sails its ship at the room's pace and draws it to where the room has it, the dial's till then", () => {
+test("the page sails its ship at the room's pace and draws it to where the room has it, its own till then", () => {
   const voyage = voyageOf([
     [0, 0],
     [0, -100_000],
   ]);
-  assert.equal(followed(voyage, 1_000, 1, 60, null), 1_000 + SHIP_SPEED * 60, "no word yet: the dial's x60");
+  assert.equal(followed(voyage, 1_000, 1, 60, null), 1_000 + SHIP_SPEED * 60, 'no word yet: its own ×60');
   const held = { x: 0, y: -1_000 - SHIP_SPEED, pace: 1 };
   assert.equal(followed(voyage, 1_000, 1, 60, held), 1_000 + SHIP_SPEED, 'held by the room to x1, where it has it');
   const behind = { x: 0, y: -900, pace: 1 };
   const drawn = followed(voyage, 1_000, 0.1, 60, behind);
   assert.ok(drawn < 1_000 && drawn > 900, `drawn back toward the room's place: ${drawn}`);
   assert.equal(heldNote(60, held), ' · Held to ×1: a hostile ship near');
-  assert.equal(heldNote(60, { ...held, pace: 60 }), '', 'sailing at the dial, nothing to say');
+  assert.equal(heldNote(60, { ...held, pace: 60 }), '', 'sailing at its own pace, nothing to say');
   assert.equal(heldNote(60, null), '');
   const torn = { x: 0, y: -1_000 - SHIP_SPEED * 0.6, pace: 1 };
   const sailedOn = followed(voyage, 1_000, 1, 60, torn, null, 0.6);
   assert.ok(Math.abs(sailedOn - (1_000 + SHIP_SPEED * 0.6)) < 1e-9, `at the way its canvas leaves: ${sailedOn}`);
 });
 
-test("the pace eases down DFO's ladder from the dial's step to the world's own time, and back up to the dial", () => {
+test("the pace eases down DFO's ladder from the pace set to the world's own time, and back up to it", () => {
   const down: number[] = [];
   for (let pace: SailedPace = 100; pace !== WORLD_PACE;) down.push((pace = easedPace(pace, 100, true)));
   assert.deepEqual(down, [60, 40, 30, 20, 10, 5, 1]);
   const up: number[] = [];
   for (let pace: SailedPace = WORLD_PACE; pace !== 30;) up.push((pace = easedPace(pace, 30, false)));
-  assert.deepEqual(up, [5, 10, 20, 30], 'back up no further than the dial');
-  assert.equal(easedPace(30, 30, false), 30, 'at the dial, it stays');
+  assert.deepEqual(up, [5, 10, 20, 30], 'back up no further than the pace set');
+  assert.equal(easedPace(30, 30, false), 30, 'at the pace set, it stays');
   assert.equal(easedPace(WORLD_PACE, 30, true), WORLD_PACE, "at the world's own time, it stays");
   assert.equal(easedNote(WORLD_PACE, 60), ' · Sailing at true speed while you watch close.');
   assert.equal(easedNote(60, 60), '');

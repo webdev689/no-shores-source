@@ -97,16 +97,6 @@ const outfit = (garments: string[], dyes: Record<string, string>, armour: Outfit
   hair: { style: 'crop', colour: 'brown' },
 });
 
-/** The dress of a station's keeper who deals with no one (the keepers who do wear their own, `keepers.ts`): what
- *  they deal in shows in what they wear. A garment a body is not drawn in is passed over, so each lists one for
- *  either body. */
-const OTHER_KEEPERS: Readonly<Record<string, Outfit>> = {
-  harbourmaster: outfit(['shirt_long_v', 'formal_tunic', 'formal_eodoric', 'breeches', 'tall_boots', 'formal_cloak'], {
-    formal_tunic: 'Blue',
-    formal_eodoric: 'Blue',
-    formal_cloak: 'Blue',
-  }),
-};
 /** The townsfolk's clothes by body, worn in turn and dyed in turn: only garments the forge draws on that body in
  *  every move the townsfolk make, at work and at play as well as walking, so no one at a post is left undrawn. */
 export const CLOTHES: Readonly<Record<'male' | 'female', readonly (readonly string[])[]>> = {
@@ -125,18 +115,11 @@ export const CLOTHES: Readonly<Record<'male' | 'female', readonly (readonly stri
 };
 const DYES = ['White', 'LightBrown', 'DarkBrown', 'Blue', 'Grey', 'Red', 'Green', 'Yellow', 'Purple', 'Aquamarine'];
 const RACES: readonly Race[] = ['human', 'human', 'felid', 'human', 'anole'];
-const STYLES: Readonly<Record<string, readonly string[]>> = {
-  male: ['crop', 'shoulder', 'tied'],
-  female: ['long', 'short', 'braid', 'tails'],
-};
 
-/** Someone's dress: a body, a race and tone, their clothes in their dyes, and their hair. */
-function dressOf(index: number, clothes: Outfit | null, random: () => number): Dress {
+/** Someone's dress: a body, a race and tone, and their clothes in their dyes. */
+function dressOf(index: number, random: () => number): Dress {
   const body = index % 2 === 0 ? 'male' : 'female';
   const race = RACES[index % RACES.length] ?? 'human';
-  const styles = STYLES[body] ?? ['crop'];
-  const hair = { style: styles[Math.floor(random() * styles.length)] ?? 'crop', colour: 'brown' };
-  if (clothes) return { body, race, tone: random(), outfit: { ...clothes, hair } };
   const worn = CLOTHES[body];
   const garments = [...(worn[Math.floor(index / 2) % worn.length] ?? [])];
   const dyes = Object.fromEntries(garments.map((garment) => [garment, DYES[Math.floor(random() * DYES.length)]]));
@@ -166,12 +149,12 @@ export class Townsfolk {
         y: station.keeper[1],
         facing: bearingTo(station.keeper, station.counter),
         anim: 'idle',
-        dress: keeperOf(station.kind)?.dress ?? dressOf(index, OTHER_KEEPERS[station.kind] ?? null, random),
+        dress: keeperOf(station.kind)?.dress ?? dressOf(index, random),
       },
     }));
     this.life = plaza.ways ? new TownLife(plaza.ways, plaza.posts ?? [], seed) : null;
     const count = this.life?.routines.length ?? 0;
-    this.dresses = Array.from({ length: count }, (unused, index) => dressOf(index + 1, null, random));
+    this.dresses = Array.from({ length: count }, (unused, index) => dressOf(index + 1, random));
     this.shapeId = this.keepers.length + count;
   }
 

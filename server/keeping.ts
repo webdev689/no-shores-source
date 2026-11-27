@@ -38,10 +38,13 @@ export const ACCOUNTS_TROUBLE = 'Something went wrong. Try again.';
 export interface KeptRoom {
   /** A player's character as kept with the account's vault and Aurem apart (`RoomDoor.keptApart`). */
   keptApart(player: number): { body: string; vault: string } | null;
+  /** Whether what a player's arrival in the next room is judged by moved since this was last asked; asking clears it. */
+  judgedMoved(player: number): boolean;
   /** Opens a leaving player's chests and posts what lies for them to their mail (`partFrom`). */
-  mailLying?(player: number): void;
-  /** Gives a player their character with the account's vault and Aurem joined in (`RoomDoor.restoreJoined`). */
-  restoreJoined(player: number, body: string, vault: string | null): boolean;
+  mailLying(player: number): void;
+  /** Gives a player their character with the account's vault and Aurem joined in (`RoomDoor.restoreJoined`), and
+   *  the room it came from. */
+  restoreJoined(player: number, body: string, vault: string | null, from?: string | null): boolean;
   /** Notes the account that keeps a player's character. */
   own(player: number, account: string): boolean;
   /** Names a player by their account's username, which others read over their head. */
@@ -98,6 +101,10 @@ interface Held {
   /** The character and vault as last saved (`savedKey`), so a change that changed nothing (a refused ask) is not
    *  saved again. */
   saved: string | null;
+  /** How many moves of what the next room judges their arrival by (`KeptRoom.judgedMoved`) the room has told of,
+   *  and how many of those a save holds. */
+  moves: number;
+  movesSaved: number;
   /** The save under way, which a leaving player's last save waits for so it is never overtaken by an older one. */
   inFlight: Promise<unknown> | null;
   /** When the room was last told the player's guild, and which it was told (undefined before it was). */
@@ -122,6 +129,8 @@ export class Keeper {
   /** Whether a character that came from a room, kept as it was claimed, may arrive here by a way that needs no one
    *  here (`arrival.ts`); null where the room judges no arrival. */
   private arrives: ((from: string | null, body: string | null) => boolean) | null = null;
+  /** Whether no one comes in by their company playing here alone, as a passage zone takes only its dives. */
+  private alone = false;
   /** A gate the room keeps shut until another room says otherwise: why it is shut, '' once open. */
   private gate: (() => Promise<string>) | null = null;
   /** Whether a player came by another way the accounts must say: launched for a Breach's run at its gate here. */
@@ -163,9 +172,11 @@ export class Keeper {
   }
 
   /** Judges where each kept character comes from: one that came by no way leading here is let go untouched, its
-   *  player sent away saying so, unless one of their company plays here (the Roster's join brings them in). */
-  judgingArrivals(arrives: (from: string | null, body: string | null) => boolean): this {
+   *  player sent away saying so, unless one of their company plays here (the Roster's join brings them in) and the
+   *  room is not `alone`. */
+  judgingArrivals(arrives: (from: string | null, body: string | null) => boolean, alone = false): this {
     this.arrives = arrives;
+    this.alone = alone;
     return this;
   }
 
@@ -255,15 +266,20 @@ export class Keeper {
     // A new account's character is the one the room holds, given back so the room keeps it as any other.
     // Either way, the account's vault and Aurem are joined in while the room holds it; a vault this room cannot read
     // leaves the character untouched, new or kept, so no save writes an empty one over it.
-    const own = claimed.body === null ? this.room.keptApart(player) : null;
-    const joined = own === null || this.room.restoreJoined(player, own.body, claimed.vault ?? own.vault);
     const body = claimed.body === null ? null : await this.answered(claimed.account, claimed.body, here);
-    const given = joined && (body === null || this.room.restoreJoined(player, body, claimed.vault));
-    if (!here() || !given || this.held.has(player)) {
-      // Gone already, or kept as nothing this room can read: let it go untouched rather than save over it.
+    // Another sign-in may have been kept while the errand was asked again: the room is judged full again, at last,
+    // before it is given the character, so a player turned away is never sent it as kept.
+    const full = this.fullWith(claimed.account);
+    const own = full === null && claimed.body === null ? this.room.keptApart(player) : null;
+    const joined =
+      full === null && (own === null || this.room.restoreJoined(player, own.body, claimed.vault ?? own.vault));
+    const given = joined && (body === null || this.room.restoreJoined(player, body, claimed.vault, claimed.from));
+    if (!here() || !given || this.held.has(player) || full !== null) {
+      // Gone already, full now, or kept as nothing this room can read: let it go untouched rather than save over it.
       await characters.release(claimed.account, holder, null, null).catch(() => false);
       // A run keeps no one unkept, and joining again would find the same body.
-      if (this.closed && !given && here()) this.lost(player, ACCOUNTS_TROUBLE, false);
+      if (full !== null && here()) this.lost(player, full);
+      else if (this.closed && !given && here()) this.lost(player, ACCOUNTS_TROUBLE, false);
       return false;
     }
     // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes.
@@ -274,7 +290,7 @@ export class Keeper {
       if (kept.account === claimed.account) {
         const lastSaved = claimed.body === null ? null : savedKey(claimed.body, claimed.vault);
         const takeOn = kept.saved === lastSaved && body === claimed.body;
-        if (takeOn) this.room.mailLying?.(other);
+        if (takeOn) this.room.mailLying(other);
         const newest = takeOn ? this.room.keptApart(other) : null;
         this.held.delete(other);
         this.lost(other);
@@ -296,6 +312,8 @@ export class Keeper {
       savedAt: now(),
       saving: false,
       saved: claimed.body === null ? null : savedKey(claimed.body, claimed.vault),
+      moves: 0,
+      movesSaved: 0,
       inFlight: null,
       guildAt: 0,
     });
@@ -342,6 +360,13 @@ export class Keeper {
     if (left && (await this.outsider(held.account, here)) && here()) this.lost(player, ANOTHER_GUILD);
   }
 
+  /** Why a run, or a public passage zone, is full with `account` kept too; null while it has room. It is full by the
+   *  accounts it keeps, so a member's own older socket never counts against them. */
+  private fullWith(account: string): string | null {
+    const others = new Set([...this.held.values()].map((held) => held.account).filter((one) => one !== account));
+    return runFull(this.name, others.size + 1);
+  }
+
   /** Why this room turns a character away ('' when it lets it in): its gate, in a run its four accounts and its
    *  company, its gate, and where it came from; undefined when the accounts cannot say who the company is. Nothing waits
    *  between this and keeping it. */
@@ -354,9 +379,7 @@ export class Keeper {
     const companions =
       this.company && characters ? await this.tried(() => characters.companions(account, this.name), here) : null;
     if (companions === undefined) return undefined;
-    // A run is full by the accounts it keeps, so a member's own older socket never counts against them.
-    const others = new Set([...this.held.values()].map((held) => held.account).filter((one) => one !== account));
-    const full = this.company ? runFull(this.name, others.size + 1) : null;
+    const full = this.fullWith(account);
     // A playlist's run is the server's: its first player must be one the server drew it for (`finding.ts`).
     const named = nodeRoom(this.name.slice('node-'.length));
     const drawn =
@@ -375,7 +398,18 @@ export class Keeper {
       (drawn ? '' : FROM_THE_PLAYLIST) ||
       (outsider ? ANOTHER_GUILD : '') ||
       gated;
-    if (shut !== '' || !characters || !this.arrives || this.arrives(from, body)) return shut;
+    if (shut !== '' || !characters || !this.arrives) return shut;
+    // A judge that throws (the room's module failing to lay the web) cannot judge: refused for now, as accounts that
+    // do not answer are, and said in the room's log.
+    let came: boolean;
+    try {
+      came = this.arrives(from, body);
+    } catch (error) {
+      console.error('arrival judge:', error);
+      return undefined;
+    }
+    if (came) return '';
+    if (this.alone) return NO_WAY_HERE;
     const launchedHere = this.launchedHere;
     const launched = launchedHere ? await this.tried(() => launchedHere(player, account), here) : false;
     if (launched === undefined) return undefined;
@@ -424,9 +458,9 @@ export class Keeper {
     if (here() && !signed()) this.lost(player, this.unsigned, false);
   }
 
-  /** Whether this room keeps no one it has not judged: a run, or a guild's outpost. */
+  /** Whether this room keeps no one it has not judged: a run, a guild's outpost, or a passage zone. */
   private get closed(): boolean {
-    return this.company || this.guild !== null;
+    return this.company || this.guild !== null || this.alone;
   }
 
   /** Why this room sends away a player it cannot keep. */
@@ -439,10 +473,17 @@ export class Keeper {
     return this.admitted.size === 0 || companions.some((account) => this.admitted.has(account));
   }
 
-  /** Notes that a player's character changed. */
+  /** Notes that a player's character changed. A move of what the next room judges their arrival by (a dive begun,
+   *  gone on, lit, gone home or ended; a lamp lit this week) is saved at once, not after SAVE_AFTER_CHANGE_MS, and so
+   *  is any change while such a move is still unsaved: the next room judges the arrival by the saved body. The room
+   *  tells of a move without the character being read. */
   changed(player: number): void {
     const held = this.held.get(player);
-    if (held) held.changed = true;
+    if (!held) return;
+    held.changed = true;
+    if (this.room.judgedMoved(player)) held.moves++;
+    else if (held.moves === held.movesSaved || held.saving) return;
+    void this.saveNow(player);
   }
 
   /** Saves each character that changed a while ago, or has gone unsaved long enough. */
@@ -489,6 +530,7 @@ export class Keeper {
     now: number,
   ) {
     held.saving = true;
+    const moves = held.moves;
     const before = held.inFlight;
     const saving = (async () => {
       await before;
@@ -506,6 +548,7 @@ export class Keeper {
     } else if (saved === true) {
       held.savedAt = Math.max(held.savedAt, now);
       held.saved = savedKey(body, vault);
+      held.movesSaved = Math.max(held.movesSaved, moves);
     } else {
       // The accounts could not be reached: try again soon.
       held.changed = true;

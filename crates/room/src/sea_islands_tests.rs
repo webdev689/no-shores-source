@@ -4,7 +4,8 @@ use crate::PlayerId;
 use crate::harbour::{Harbours, SUNK_KEPT, WASHED_UP};
 
 /// A square continent 100 km a side, its north-west corner 100 km from the frame's. Of `id` and `climate`: the
-/// fourth, a desert, sets the sea round it the Grey Tithe's; the first, Overlook's, makes it home waters.
+/// fourth, a desert, sets the sea round it the Grey Tithe's; the first, Overlook's, makes it home waters within 10 km
+/// of its coast and the Grey Tithe's past them.
 fn sea_round(id: &str, climate: &str) -> Sea {
     let text = format!(
         r#"{{ "continents": [{{ "id": "{id}", "climate": "{climate}", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }}], "isles": [] }}"#
@@ -14,8 +15,14 @@ fn sea_round(id: &str, climate: &str) -> Sea {
 
 fn ticks(sea: &mut Sea, count: u64) {
     for _ in 0..count {
-        sea.tick();
+        calm_tick(sea);
     }
+}
+
+/// One tick, every ship the sea's rolls send let go at once, so none takes on a player waiting near an island.
+fn calm_tick(sea: &mut Sea) {
+    sea.hostiles.sailing.clear();
+    sea.tick();
 }
 
 /// A way in to an anchorage the room must take: round the island 1.5 km out, to a point 1.5 km out on its landing's
@@ -55,15 +62,54 @@ fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_it() {
         assert!(island.anchorage != island.at);
     }
     let near = islands.iter().filter(|island| apart(island.at, [50_000.0, 50_000.0]) <= NEAR_M).count();
-    assert!(near <= 2, "{near} near the ship: more than it wants");
+    assert!(near <= 3, "{near} near the ship: more than it wants");
 }
 
 #[test]
-fn no_island_is_rolled_in_home_waters() {
+fn islands_keep_clear_of_the_friendly_ships_lanes() {
+    // A lane along y = 50 km, ships 4 km north of it: islands rolled round them fall on both sides of it.
+    let mut sea = sea_round("continent-4", "desert");
+    sea.chart.sailed = vec![[[0.0, 50_000.0], [600_000.0, 50_000.0]]];
+    for step in 0..10_u32 {
+        let player = sea.join();
+        sea.course(player, &[[230_000.0 + f64::from(step) * 20_000.0, 54_000.0]], 10).expect("open sea");
+    }
+    ticks(&mut sea, 60 * 60 * 3);
+    let islands = &sea.islands().standing;
+    assert!(islands.len() >= 10, "{} islands", islands.len());
+    for island in islands {
+        let off = (island.at[1] - 50_000.0).abs();
+        assert!(off >= isle::reach_of(island.seed) + 300.0, "island {} {off} m off the lane", island.id);
+    }
+}
+
+#[test]
+fn the_sea_rolls_islands_at_the_owners_rates() {
+    assert_eq!((super::WANTED_NEAR, super::ROLL_CHANCE, super::MOST), (3, 0.45, 144));
+    assert_eq!(super::ROLL_EVERY_TICKS, 10 * 60, "every ten seconds");
+}
+
+#[test]
+fn an_island_is_rolled_only_wholly_past_home_waters_its_anchorage_too() {
+    // The east coast is the line x = 200 km, home waters reaching to 210 km; each island reaches 250 m.
+    let lantern = sea_round("continent-1", "temperate-coast");
+    assert!(!super::clear_of_home(&lantern.chart, [210_100.0, 150_000.0], 250.0), "its west side in home waters");
+    assert!(super::clear_of_home(&lantern.chart, [210_400.0, 150_000.0], 250.0), "past them, its anchorage too");
+    let tithe = sea_round("continent-4", "desert");
+    assert!(super::clear_of_home(&tithe.chart, [203_000.0, 150_000.0], 250.0), "no home waters there");
+}
+
+#[test]
+fn no_island_is_rolled_in_home_waters_and_past_their_reach_they_are() {
     let mut sea = sea_round("continent-1", "temperate-coast");
-    at_rest(&mut sea);
+    let player = sea.join();
+    sea.course(player, &[[99_000.0, 150_000.0]], 10).expect("1 km off the coast: every roll 3 to 7 km off lies home");
     ticks(&mut sea, 60 * 60 * 5);
     assert!(sea.islands().standing.is_empty());
+    at_rest(&mut sea);
+    ticks(&mut sea, 60 * 60 * 5);
+    assert!(sea.islands().standing.iter().all(|island| island.guards == Some(::foes::factions::GREY_TITHE)));
+    assert!(!sea.islands().standing.is_empty(), "50 km off, the Lantern Sea's open sea");
 }
 
 #[test]
@@ -82,7 +128,7 @@ fn a_ship_finds_an_island_it_sails_near_and_is_told_of_those_in_sight() {
     let mut sea = sea_round("continent-4", "desert");
     let player = at_rest(&mut sea);
     while sea.islands().standing.is_empty() {
-        sea.tick();
+        calm_tick(&mut sea);
     }
     let (id, anchorage, at) = {
         let island = &sea.islands().standing[0];
@@ -94,7 +140,7 @@ fn a_ship_finds_an_island_it_sails_near_and_is_told_of_those_in_sight() {
     ticks(&mut sea, 30);
     sea.course(player, &round_to(at, anchorage, [50_000.0, 50_000.0]), 100).expect("the way in is open sea");
     for _ in 0..60 * 60 {
-        sea.tick();
+        calm_tick(&mut sea);
         if sea.ships().all(|(_, ship)| ship.pace == 0) {
             break;
         }
@@ -221,7 +267,7 @@ fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
     let mut sea = sea_round("continent-4", "desert");
     let player = at_rest(&mut sea);
     while sea.islands().standing.len() < 2 {
-        sea.tick();
+        calm_tick(&mut sea);
     }
     let (kept, left) = (sea.islands().standing[0].id, sea.islands().standing[1].id);
     let seed = |id| sea.islands().by_id(id).map(|island| island.seed).expect("it stands");
@@ -234,7 +280,7 @@ fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
             assert!(sea.hold_ashore(kept, kept_seed), "the island players stand on fell");
             assert!(!sea.hold_ashore(left, kept_seed), "an island is held by its own seed alone");
         }
-        sea.tick();
+        calm_tick(&mut sea);
     }
     assert!(sea.islands().by_id(kept).is_some(), "players ashore hold it");
     assert!(sea.islands().by_id(left).is_none(), "nothing held it");
@@ -245,7 +291,7 @@ fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
 fn a_player_washes_up_at_a_found_island_nearer_than_any_port_unrepaired() {
     let mut sea = sea_round("continent-4", "desert");
     let player = at_rest(&mut sea);
-    sea.harbour.harbours = Harbours { ports: vec![("far".into(), [5_000.0, 5_000.0])], ways: None };
+    sea.harbour.harbours = Harbours { ports: vec![("far".into(), [5_000.0, 5_000.0])], ways: None, locked: Vec::new() };
     while sea.islands().standing.is_empty() {
         sea.tick();
     }

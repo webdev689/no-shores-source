@@ -1,7 +1,7 @@
 // The hostile ships the sea's view tells of, and the water the ship is in: a mark for each hostile ship within its own
 // sight of the player's ship, by its faction's emblem, its rank's colour, its name as its plate gives it, its level and
-// its distance; the words on the voyage's line when one is first sighted or the ship sails into other waters; and
-// the water's name, band and holder for the sea's status line.
+// its distance; the words on the voyage's line when one is first sighted or the ship sails into another's hold of the
+// sea; and the water's name, band and holder for the sea's status line.
 import type { SeenHostile } from '../network/messages.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
@@ -11,6 +11,9 @@ import { rankMark } from '../rules/roster.ts';
 import type { WaterHolder, WatersRules, WatersTable } from '../rules/watersRules.ts';
 import { rankColour, shipName, sightedWords } from '../ships/shipBars.ts';
 import { distanceText } from '../plus/compass.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
+import { factionSide } from '../ships/dress.ts';
+import { lanternsLit } from '../ships/lanterns.ts';
 
 /** The least distance a hostile ship is sighted from, metres (crates/room/src/sighting.rs), read for a room that sends
  *  none. */
@@ -20,9 +23,14 @@ const HOSTILE_RISE_M = 20;
 /** Its mark's id: `hostile-` and its number in the room. */
 export const HOSTILE_PREFIX = 'hostile-';
 
-/** The distance a ship is sighted from. */
-export function sightOf(hostile: Pick<SeenHostile, 'sight'>): number {
-  return hostile.sight !== undefined && hostile.sight > 0 ? hostile.sight : SIGHT_LEAST_M;
+/** The distance a ship is sighted from: by night only as far as her lanterns show her (`sight`), and a Grey Tithe
+ *  ship sails dark. */
+export function sightOf(
+  hostile: Pick<SeenHostile, 'sight' | 'faction'>,
+  sight: (rangeM: number, lit: boolean) => number = SKY_NOW.current.sight,
+): number {
+  const byDay = hostile.sight !== undefined && hostile.sight > 0 ? hostile.sight : SIGHT_LEAST_M;
+  return sight(byDay, lanternsLit({ side: factionSide(hostile.faction) }));
 }
 
 const apart = (hostile: SeenHostile, ship: Point2) => Math.hypot(hostile.x - ship[0], hostile.y - ship[1]);
@@ -73,17 +81,28 @@ export function hostileMarks(hostiles: readonly SeenHostile[], ship: Point2): Ma
 
 /** The water the ship is in, as the page names it: its name, its holder and its band. */
 export interface WaterNamed {
+  /** The id of the continent whose water it is, as the sea room names the water a ship lies in. */
+  readonly island: string;
   readonly name: string | null;
   readonly holder: WaterHolder;
   readonly levels: readonly [number, number] | null;
 }
 
-/** The water at a point, named, from the opened waters' rules and their table; null on land. */
+/** The water at a point, named, from the opened waters' rules and their table; null on land. Who holds the sea there
+ *  is a second search of the coasts, made only when read: the place's line reads the name alone every frame. */
 export function waterNamer(rules: WatersRules, table: WatersTable): (point: Point2) => WaterNamed | null {
   return (point) => {
     const here = rules.waterAt(point);
     const water = here && table.waters[here.continent];
-    return water ? { name: water.name, holder: here.holder, levels: water.levels } : null;
+    if (!here || !water) return null;
+    return {
+      island: water.id,
+      name: water.name,
+      levels: water.levels,
+      get holder(): WaterHolder {
+        return here.holder;
+      },
+    };
   };
 }
 

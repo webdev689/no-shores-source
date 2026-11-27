@@ -160,9 +160,6 @@ fn snow_whitens_the_ground_and_never_wets_it_and_rain_the_other_way() {
     assert!(warm.iter().all(|(ground, _)| ground.snow == 0.0), "and never whitens it");
 }
 
-/// The weather sampled across the map and through a day; the client's test of land.wasm holds the same fingerprint.
-pub const WEATHER_HASH: &str = "9ad102e7d7c276ec";
-
 #[test]
 fn the_weather_samples_to_its_fingerprint() {
     let numbers = PLACES.iter().flat_map(|&(key, y)| {
@@ -176,7 +173,9 @@ fn the_weather_samples_to_its_fingerprint() {
                 .chain([weather.gust, weather.temperature_c])
         })
     });
-    assert_eq!(format!("{:016x}", fingerprint(numbers)), WEATHER_HASH);
+    // The weather sampled across the map and through a day; the client's test of land.wasm holds the same
+    // fingerprint.
+    assert_eq!(format!("{:016x}", fingerprint(numbers)), pinned("sky.weather"));
 }
 
 #[test]
@@ -197,3 +196,7 @@ fn print_each_fields_spread() {
         .unwrap();
     }
 }
+
+#[path = "../../land/tests/support/pinned.rs"]
+mod pinned;
+use pinned::pinned;

@@ -37,6 +37,19 @@ impl Repo {
         std::fs::metadata(self.root.join(path)).map(|meta| meta.len()).unwrap_or(0)
     }
 
+    /// A file's text as it stands at `commit` (`origin/main`), or `None` where the clone lacks that commit or the file.
+    pub fn at(&self, commit: &str, path: &str) -> Option<String> {
+        let output = Command::new("git").args(["show", &format!("{commit}:{path}")]).current_dir(&self.root).output();
+        output.ok().filter(|output| output.status.success()).and_then(|output| String::from_utf8(output.stdout).ok())
+    }
+
+    /// The commit where `HEAD` and `other` (`origin/main`) parted, or `None` where the clone cannot say.
+    pub fn merge_base(&self, other: &str) -> Option<String> {
+        let output = Command::new("git").args(["merge-base", "HEAD", other]).current_dir(&self.root).output();
+        let output = output.ok().filter(|output| output.status.success())?;
+        Some(String::from_utf8_lossy(&output.stdout).trim().to_owned())
+    }
+
     /// The text of every file whose path passes `keep`, and apart the paths of those that are not UTF-8, so a check
     /// can report them rather than pass over them.
     pub fn sources(&self, keep: impl Fn(&str) -> bool) -> (Vec<(String, String)>, Vec<String>) {
@@ -52,14 +65,44 @@ impl Repo {
     }
 }
 
-/// The workspace root: two folders above this crate's manifest.
+/// The checkout the command runs in, git's top folder from the current one: never the folder this binary was built
+/// from, which is another checkout's when two share a build folder.
 pub fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..").canonicalize().unwrap_or_else(|_| PathBuf::from("."))
+    let top =
+        Command::new("git").args(["rev-parse", "--show-toplevel"]).output().ok().filter(|out| out.status.success());
+    top.map_or_else(|| PathBuf::from("."), |out| PathBuf::from(String::from_utf8_lossy(&out.stdout).trim()))
+}
+
+/// Why a check here would test another checkout's build, or `None`. Two checkouts sharing one build folder
+/// (`CARGO_TARGET_DIR`) overwrite each other's binaries mid-run, so a result can be the other tree's.
+pub fn foreign_build(root: &Path, target: Option<PathBuf>) -> Option<String> {
+    let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    let built = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+    let built = built.canonicalize().unwrap_or(built);
+    if built != root {
+        return Some(format!("this xtask was built from {}, not {}", built.display(), root.display()));
+    }
+    let target = target?;
+    // shortcut: a cargo config file's `build.target-dir` is not seen; read `cargo metadata` once one is set.
+    let target = std::env::current_dir().map_or_else(|_| target.clone(), |cwd| cwd.join(&target));
+    let target = target.canonicalize().unwrap_or(target);
+    (!target.starts_with(&root)).then(|| {
+        format!("CARGO_TARGET_DIR is {}, outside the checkout: unset it, or point it inside", target.display())
+    })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Repo;
+    use super::{Repo, foreign_build, repo_root};
+
+    #[test]
+    fn a_build_folder_outside_the_checkout_is_refused_and_one_inside_is_not() {
+        let root = repo_root();
+        assert_eq!(foreign_build(&root, None), None);
+        assert_eq!(foreign_build(&root, Some(root.join("target"))), None);
+        let outside = std::env::temp_dir().join("shared-target");
+        assert!(foreign_build(&root, Some(outside)).is_some_and(|why| why.contains("outside the checkout")));
+    }
 
     #[test]
     fn a_file_that_is_not_utf8_is_reported_not_skipped() {

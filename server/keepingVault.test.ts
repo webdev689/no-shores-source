@@ -7,6 +7,7 @@ import course from '../content/testground/course.json' with { type: 'json' };
 import { handle } from './accounts/accounts.ts';
 import { Keeper } from './keeping.ts';
 import { world } from './keepingForTests.ts';
+import { keptRoomOn } from './keptRoom.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 const compiled = new WebAssembly.Module(
@@ -37,13 +38,8 @@ const keeperOf = (room: RoomDoor, kept: Awaited<ReturnType<typeof world>>['kept'
   new Keeper(
     kept,
     {
-      keptApart: (player) => room.keptApart(player),
-      restoreJoined: (player, body, vault) => room.restoreJoined(player, body, vault),
+      ...keptRoomOn(room, (call) => call()),
       own: (player, account) => room.own(player, account),
-      shut: (player, body) => room.shut(player, body),
-      name: (player, named) => room.name(player, named),
-      tag: (player, tag) => room.tag(player, tag),
-      guild: (player, told) => room.guild(player, told),
     },
     'test-room',
     () => undefined,

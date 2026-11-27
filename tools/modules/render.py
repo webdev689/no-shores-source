@@ -1,9 +1,10 @@
 """Pictures a module as Blender builds it, for a look before it goes into the game: a three-quarter view of its front
 (Blender's -y) under a low sun, each material its own plain colour near the game's (cloth the page's own dyes, glow
-lit), its parts drawn as red wire boxes when asked.
+lit), its parts drawn as red wire boxes when asked. With --no-ground it stands in the sky alone, so a module seen
+from below, such as an airship overhead, is pictured as players see it.
 
     python -I tools/modules/render.py <module> <picture.png> [--parts] [--turn degrees] [--high share] [--near share]
-        [--eye x,y,z]
+        [--eye x,y,z] [--no-ground]
 """
 import argparse
 import json
@@ -77,6 +78,7 @@ def main():
     parser.add_argument('--high', type=float, default=0.55, help='how high the eye stands, a share of its distance')
     parser.add_argument('--near', type=float, default=1.0, help='the eye this share of its usual distance away')
     parser.add_argument('--eye', help='the eye at this point, metres in the module\'s frame, as a player sees it')
+    parser.add_argument('--no-ground', action='store_true', help='no ground under the module')
     asked = parser.parse_args()
     kit.reset()
     module = kit.Module(asked.module, catalogue.SEEDS[asked.module])
@@ -113,27 +115,28 @@ def main():
     middle = (low + high) / 2
     reach = (high - low).length / 2
     scene = bpy.context.scene
-    if module.mouth:
-        # The land stands at the foot, opened along the mouth: the ground filled round the mouth's outline.
-        north, south = module.mouth
-        outline = [(x, y) for x, y, _ in north] + [(x, y) for x, y, _ in reversed(south)]
-        side = reach * 6
-        made = bmesh.new()
-        loops = [[made.verts.new((x, y, 0.0)) for x, y in ring]
-                 for ring in ([(-side, -side), (side, -side), (side, side), (-side, side)], outline)]
-        edges = [made.edges.new((loop[k], loop[(k + 1) % len(loop)])) for loop in loops for k in range(len(loop))]
-        bmesh.ops.triangle_fill(made, use_beauty=True, use_dissolve=False, edges=edges)
-        land = bpy.data.meshes.new('land')
-        made.to_mesh(land)
-        made.free()
-        item = bpy.data.objects.new('land', land)
-        scene.collection.objects.link(item)
-        bpy.context.view_layer.objects.active = item
-    else:
-        bpy.ops.mesh.primitive_plane_add(size=reach * 12, location=(middle.x, middle.y, min(low.z, 0.0) - 0.01))
-    ground = bpy.data.materials.new('ground')
-    ground.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (0.16, 0.2, 0.12, 1)
-    bpy.context.active_object.data.materials.append(ground)
+    if not asked.no_ground:
+        if module.mouth:
+            # The land stands at the foot, opened along the mouth: the ground filled round the mouth's outline.
+            north, south = module.mouth
+            outline = [(x, y) for x, y, _ in north] + [(x, y) for x, y, _ in reversed(south)]
+            side = reach * 6
+            made = bmesh.new()
+            loops = [[made.verts.new((x, y, 0.0)) for x, y in ring]
+                     for ring in ([(-side, -side), (side, -side), (side, side), (-side, side)], outline)]
+            edges = [made.edges.new((loop[k], loop[(k + 1) % len(loop)])) for loop in loops for k in range(len(loop))]
+            bmesh.ops.triangle_fill(made, use_beauty=True, use_dissolve=False, edges=edges)
+            land = bpy.data.meshes.new('land')
+            made.to_mesh(land)
+            made.free()
+            item = bpy.data.objects.new('land', land)
+            scene.collection.objects.link(item)
+            bpy.context.view_layer.objects.active = item
+        else:
+            bpy.ops.mesh.primitive_plane_add(size=reach * 12, location=(middle.x, middle.y, min(low.z, 0.0) - 0.01))
+        ground = bpy.data.materials.new('ground')
+        ground.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (0.16, 0.2, 0.12, 1)
+        bpy.context.active_object.data.materials.append(ground)
     sun = bpy.data.objects.new('sun', bpy.data.lights.new('sun', 'SUN'))
     sun.data.energy = 2.6
     sun.data.angle = math.radians(3)

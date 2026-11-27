@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startSkyLaw } from './skyLaw.ts';
 import { DAY_S, EPOCH_UNIX_MS, WorldClock, hourOf, worldSeconds } from './worldClock.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/land_wasm.wasm', import.meta.url);
 
@@ -37,7 +38,7 @@ test('the weather agrees to the bit with the native build (weather_tests.rs hold
       return [cloud, falling, snowShare, storm, fog, sand, ...wind, gust, temperatureC];
     }).flat(),
   );
-  assert.equal(fingerprint(numbers), '9ad102e7d7c276ec');
+  assert.equal(fingerprint(numbers), pinned('sky.weather'));
 });
 
 test('noon stands half an hour after each midnight, and the sun is up then and down at midnight', async () => {
@@ -58,4 +59,17 @@ test('the world clock takes a room’s word at once, then eases toward later wor
   wall += 1000;
   clock.heard(121);
   assert.ok(clock.seconds() > 101.5 && clock.seconds() < 102.5, `${clock.seconds()}`);
+});
+
+test('by night the WebAssembly rules see a lit ship to 650 m and a dark one to 220 m, as the native (night_tests.rs)', async () => {
+  const law = await startSkyLaw(await readFile(MODULE));
+  for (const lit of [true, false]) assert.equal(law.nightSight(750, 1, lit), 750, 'by day, the whole range');
+  assert.equal(law.nightSight(750, 0, true), 650);
+  assert.equal(law.nightSight(750, 0, false), 220);
+  assert.equal(law.nightSight(400, 0, true), 400, 'never farther than by day');
+  assert.equal(law.nightSight(Infinity, 0, true), 650, 'a lookout who sees without end by day');
+  assert.equal(law.nightSight(Infinity, 1, true), Infinity);
+  // Night falls at the daylight 0.375, as the lamps are half up.
+  assert.equal(law.nightSight(750, 0.375, false), 220);
+  assert.equal(law.nightSight(750, 0.375 + 1e-9, false), 750);
 });

@@ -11,9 +11,6 @@ use room::{Floor, standing_on};
 use std::f64::consts::{FRAC_PI_2, PI};
 use std::path::Path;
 
-/// Both tests hold this value; a change to the land, the city or the moves changes it in both, on purpose.
-pub const NODE_RUN_HASH: &str = "b39c55dc0f1f3fe8";
-
 /// Ticks, then forward, sideways, yaw, run, and jump on the first tick only.
 type Phase = (usize, f64, f64, f64, bool, bool);
 
@@ -49,7 +46,7 @@ const RUNS: [Run; 4] = [
     Run {
         continent: "continent-6",
         node: "emerald-tangle",
-        bounds: [489_198.0, 2_279_225.0, 490_895.5, 2_280_145.0],
+        bounds: [489_114.5, 2_279_164.5, 490_901.0, 2_280_862.5],
         from: None,
         script: &[
             (600, 1.0, 0.0, 0.0, true, false),
@@ -157,5 +154,10 @@ fn the_runs_over_three_nodes_windows_move_to_their_fingerprint() {
     for mode in [Mode::Ground, Mode::Vault, Mode::Air] {
         assert!(bodies.iter().any(|body| body.mode == mode), "the runs never put the body in {mode:?}");
     }
-    assert_eq!(format!("{:016x}", fingerprint(&bodies)), NODE_RUN_HASH);
+    // Both tests hold this value; a change to the land, the city or the moves changes it in both, on purpose.
+    assert_eq!(format!("{:016x}", fingerprint(&bodies)), pinned("node.run"));
 }
+
+#[path = "../../land/tests/support/pinned.rs"]
+mod pinned;
+use pinned::pinned;

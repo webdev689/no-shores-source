@@ -72,7 +72,9 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
 - **Depth.** The seabed is seen through the water, bent by the surface and tinted by the water it is seen through:
   sand shows turquoise in the shallows, and the sea deepens to blue. Lakes and rivers are greener and murkier.
 - **Light.** The sky ([[Sky]]) and its clouds reflect, more at a glancing angle; the sun glints, its glitter
-  blurring far off; a crest glows green where the sun shines through it. Caustics dance on the bed.
+  blurring far off; a crest glows green where the sun shines through it. Caustics dance on the bed. The lamps near
+  the eye (a ship's lanterns, a sea fight's flashes and fires) light the surface round them, its foam fully and the
+  water a tenth as much ([[Sky]], "The nearest sixteen").
 - **Shadows.** The surface takes the sun's shadows: in a ship's, beside its waterline, it loses the sun's glints and a
   third of the light it scatters and reflects. The seabed's shadows fade with the water over them, about a seventh left
   three metres down, as the water scatters the light, so a ship's shadow lies on the surface by the ship and not on the
@@ -127,8 +129,11 @@ waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sail
 down, the crest at its stem rises over it faster than 1 m/s, and throws spray.
 
 Its footprint is its own hull line at its waterline, read from its mesh where its faces cross it (16 stations, stern
-to bow; a fair hull until its mesh comes), a hair inside it: it holds no water, so none shows in its open hull or over
-its gunwale. Under way:
+to bow, closer together at its ends, where the line turns fastest; a fair hull until its mesh comes, read once as its
+model is opened, for every ship drawn in that hull: at sea, in a fight, moored or in the World Editor), a hair inside
+it: it holds no water, so none shows in its open hull or over its gunwale. Between two stations it runs evenly, and a
+station is lowered wherever that would stand past the hull, so no cut water shows past a thin stern post or
+cutwater. Under way:
 
 - **Foam along its hull line**, 0.8 m wide at its true size, most at its bow, whole at 2 m/s.
 - **Its wake**: the Kelvin wake's two arms from its quarters, 19.5 degrees either side of its track, laid as foam and

@@ -4,20 +4,22 @@
 import { addPolygon, cross, dot, type MeshData, minus, normalised, type Vector } from './mesh.ts';
 import { moduleHeight, moduleMesh } from './modules.ts';
 import type { Solid } from './plan.ts';
+import { type Grain, grainUvs } from './walkGrain.ts';
 import { rockMesh } from '../rules/rockMesh.ts';
 
 /** Texels a metre a solid's picture is laid at: coarser than the forged models' forty, so a landmark's or a wall's
  *  courses read as monumental ashlar from the plaza and across the city, not as a fine grain. */
 export const SOLID_TEXELS_PER_METRE = 24;
 
-/** The picture a solid wears: its layer and its size in texels, which sets how its UVs tile. */
 /** A solid's picture: its layer and size. A ground's (`grounded`) top takes its pattern from the world, not from the
- *  solid, so its pieces join as one surface where they meet or overlap. */
+ *  solid, so its pieces join as one surface where they meet or overlap; a top with a `grain` (a walk's piece, the
+ *  hub's paving) from that grain. */
 export type Surface = {
   readonly layer: number;
   readonly width: number;
   readonly height: number;
   readonly grounded?: boolean;
+  readonly grain?: Grain;
 };
 
 type Uv = readonly [number, number];
@@ -567,8 +569,13 @@ export function meshSolid(solid: Solid, origin: readonly [number, number], surfa
       return [turned[0] + place[0], turned[1] + place[1], turned[2] + place[2]] as Vector;
     });
     const facing = solidTurn(solid, face.facing);
-    const laid = surface.grounded && facing[2] > 0.95 * Math.hypot(...facing);
-    const uvs = laid ? planarUvs(corners, [0, 0, 1], surface) : face.uvs;
+    const laid = (surface.grounded || surface.grain !== undefined) && facing[2] > 0.95 * Math.hypot(...facing);
+    const uvs =
+      laid && surface.grain
+        ? grainUvs(corners, surface.grain, origin, surface.width / SOLID_TEXELS_PER_METRE)
+        : laid
+          ? planarUvs(corners, [0, 0, 1], surface)
+          : face.uvs;
     addPolygon(
       into,
       corners,

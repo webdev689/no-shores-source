@@ -10,7 +10,7 @@ import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
-import { uiScale } from '../ui/uiRenderer.ts';
+import { interfaceScale } from '../ui/interfaceSize.ts';
 import { MARK, accountMark, markName } from './accountMark.ts';
 import { AccountPanel } from './accountTab.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
@@ -73,7 +73,7 @@ const ofGear = (view: View) => view === 'character' || view === 'inventory' || v
  * Journal, Compendium, Ship, Social, Guild, Settings), a station's screen in their place at its counter, and an item's
  * page over either. While open the world is dimmed and the pointer, keys and pad are its; Escape or the pad's B steps
  * back: the item's page, then a slot's flyout, then the menu. Gear shows as the room last sent it, each press an ask;
- * while `resting` (the story, all but the wreck, and a travel's cinematic) it never opens. The Journal, the Compendium and the bounty board read
+ * while `resting` (the story, all but the wreck, and a travel's fade) it never opens. The Journal, the Compendium and the bounty board read
  * `source`, the Compendium what is read with `lore`. Answers the layer that draws it, with the company and what the
  * player gains, shown in play too.
  */
@@ -249,7 +249,7 @@ export function startGearWindow(
 
   /** The menu this frame: the scrim and the window, its page, its footer, and the hover card. */
   const menu = (frame: Interface, shown: View, layer: { width: number; height: number }): Child[] => {
-    const sizes = sizesOf(layer.width, layer.height, uiScale(devicePixelRatio));
+    const sizes = sizesOf(layer.width, layer.height, interfaceScale(devicePixelRatio));
     const now = here();
     const gear = now?.gear ?? null;
     const station = isTab(shown) ? null : stationTitle(shown);
@@ -282,8 +282,9 @@ export function startGearWindow(
     if (frame.clicked('press-step')) stepOnce();
     if (view !== shown) return [];
     const body = frame.boxOf('gear-body');
-    // The Art's and the Appearance screens stand to the body's edges; every other page inside its padding.
-    const bleed = shown === 'character' && (appearance || (arts && Boolean(now?.gear?.arts))) && inspecting === null;
+    // The Art's, the Appearance and every station's screen stand to the body's edges; the rest inside its padding.
+    const opened = station !== null ? Boolean(now?.gear) : appearance || (arts && Boolean(now?.gear?.arts));
+    const bleed = (station !== null || shown === 'character') && opened && inspecting === null;
     const [aroundX, aroundY] = bleed ? [0, 0] : [40, 24];
     const room = {
       width: Math.max(0, (body?.width ?? 0) - aroundX),
@@ -437,9 +438,10 @@ export function startGearWindow(
           ? journal.hourglass(frame)
           : accountMark(frame, account, figure.picture, toAccount, sizes.ratio),
       ),
-      // On a short screen an item's page takes the banner's height back for its nodes.
+      // An item's page on a short screen takes the banner's room back; a station's crest holds what it shows.
       (named !== null || bannerGear !== null) &&
         !(item && sizes.short) &&
+        station === null &&
         bannerNode(frame, emblemOf(bannerGear?.emblem ?? 0), named, bannerGear, gear, shown !== 'inventory', sizes),
     ];
     cardFor(MARK, () => nameCard(sizes, markName(account)));
@@ -492,7 +494,7 @@ export function startGearWindow(
     holds.frame(frame);
     const box = frame.boxOf(LAYER) ?? { width: innerWidth, height: innerHeight };
     if (focusNext && view !== null && frame.boxOf(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
-    const sizes = sizesOf(box.width, box.height, uiScale(devicePixelRatio));
+    const sizes = sizesOf(box.width, box.height, interfaceScale(devicePixelRatio));
     const shown = view;
     const children: Child[] = [
       // The company stands under the fight's vitals while they show.

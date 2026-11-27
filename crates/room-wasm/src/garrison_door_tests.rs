@@ -59,9 +59,6 @@ pub const GARRISON_NODE: &str = r#"{ "id": "glade", "kind": "mission", "name": "
             "first_row": 0, "data": [-50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50,
             -50] } } }"#;
 
-/// Both tests hold this value; a change to the garrison, the foes or the fight changes it in both, on purpose.
-pub const GARRISON_HASH: &str = "45da60fd";
-
 /// Ticks the player runs north into the garrison, then stands and swings each SWING_EVERY ticks until RUN_TICKS.
 const RUN_IN: u32 = 420;
 const SWING_EVERY: u32 = 30;
@@ -71,12 +68,10 @@ const RUN_TICKS: u32 = 1500;
 fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {
     let (hash, most_alert, blows) = run_in(GARRISON_NODE);
     assert!(most_alert >= 3 && blows > 0, "the garrison fights: {most_alert} alert at once, {blows} events");
-    assert_eq!(format!("{hash:08x}"), GARRISON_HASH);
+    // Both tests hold this value; a change to the garrison, the foes or the fight changes it in both, on purpose.
+    assert_eq!(format!("{hash:08x}"), crate::door_tests::pinned("garrison.run"));
 }
 
-/// Both tests hold this value: the node as a patrol whose layout marks a foes' site the player runs near, so its
-/// group stands mid-run on a mesh baked round it then.
-pub const PATROL_SITE_HASH: &str = "40e5f5ec";
 const PATROL_SITE: [f64; 2] = [-60.0, 40.0];
 
 /// The node as a patrol, its file naming one foes' site at `site`.
@@ -94,7 +89,9 @@ fn a_patrol_s_foes_site_stands_its_group_to_the_same_fingerprint_natively_as_in_
     });
     assert_eq!(grounds, Some(1), "the site's group stood on a mesh baked round it");
     assert!(most_alert >= 1, "its foes fight");
-    assert_eq!(format!("{hash:08x}"), PATROL_SITE_HASH);
+    // Both tests hold this value: the node as a patrol whose layout marks a foes' site the player runs near, so its
+    // group stands mid-run on a mesh baked round it then.
+    assert_eq!(format!("{hash:08x}"), crate::door_tests::pinned("garrison.patrol_site"));
 }
 
 /// A player run north into the node's garrison for RUN_IN ticks, then standing and swinging each SWING_EVERY ticks
@@ -134,9 +131,6 @@ fn input_of(player: PlayerId, input: &room::Input) -> i32 {
     super::input(player, &protocol::input_bytes(input))
 }
 
-/// Both tests hold this value: two players in one node's room, the garrison's foes shared out between them.
-pub const GARRISON_PAIR_HASH: &str = "caf1e6c1";
-
 #[test]
 fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {
     assert!(open_node(GARRISON_NODE.as_bytes()));
@@ -166,7 +160,8 @@ fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_
         }
     }
     assert!(struck.iter().all(|blows| *blows > 0), "the garrison fights both players: {struck:?}");
-    assert_eq!(format!("{hash:08x}"), GARRISON_PAIR_HASH);
+    // Both tests hold this value: two players in one node's room, the garrison's foes shared out between them.
+    assert_eq!(format!("{hash:08x}"), crate::door_tests::pinned("garrison.pair"));
 }
 
 #[test]

@@ -20,13 +20,15 @@ import { USERNAME, refusalOf, skeleton } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
 /** What the API runs on: the database, the clock, the Discord app if its keys are set, the pages (by origin and
- *  path) a Discord sign-in may come back to, and the bot that says who is a developer (none: no one is). */
+ *  path) a Discord sign-in may come back to, the bot that says who is a developer (none: no one is), and the commit
+ *  the deploy stamped, which the health answer names so the deploy can tell its own code is live. */
 export interface Deps {
   readonly database: Db;
   readonly now: () => number;
   readonly discord: DiscordApp | null;
   readonly pages: readonly string[];
   readonly bot?: Developers | null;
+  readonly commit?: string;
 }
 
 const PASSWORD_LEAST = 8;
@@ -162,7 +164,7 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: HEADERS });
   switch (route) {
     case 'GET /v1/health':
-      return json({ ok: true, discord: deps.discord !== null });
+      return json({ ok: true, discord: deps.discord !== null, commit: deps.commit ?? '' });
     case 'POST /v1/guest': {
       // One network past its ten spends none of everywhere's 500.
       const allowed =
@@ -214,7 +216,7 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
         .first<{ slot: number }>();
       return json({
         account: shown(account),
-        place: await lastPlace(database, account.id),
+        place: await lastPlace(database, account.id, now),
         playing: playing?.slot ?? 0,
       });
     }

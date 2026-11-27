@@ -1,8 +1,9 @@
 //! A landmass's layouts, planned for every node it draws and laid on its ground: each patrol area with gates to the
-//! instances of its side (the mission, dungeon and boss nodes nearest it), each instance entered from that patrol
-//! area. Their sculpts carve the land, the buildings' seats become pads and the paths roads, so every later reading
-//! of the ground (a node's window, the browser's land, nature keeping off the paths) stands on them; then what is
-//! laid on the land (a block's streets, the paths) takes its heights from the ground as it now lies.
+//! instances of its side (the mission, dungeon and boss nodes of its region nearest it) and to every other patrol
+//! area of its island, each instance entered from that patrol area. Their sculpts carve the land, the buildings'
+//! seats become pads and the paths roads, so every later reading of the ground (a node's window, the browser's land,
+//! nature keeping off the paths) stands on them; then what is laid on the land (a block's streets, the paths) takes
+//! its heights from the ground as it now lies.
 
 use crate::book::Book;
 use crate::brief::Briefs;
@@ -98,10 +99,12 @@ struct Planned {
     bridges: Vec<f64>,
 }
 
-/// Which nodes each node's layout links to: a patrol area to the instances nearer it than any other patrol area, an
-/// instance to that patrol area. With no patrol area, nothing links; an outpost site links to nothing.
+/// Which nodes each node's layout links to: a patrol area to the instances nearer it than any other patrol area of
+/// their region (`region_of`, none for a node no region lists, which any patrol area may take) and to every other
+/// patrol area, an instance to its patrol area. An instance whose region holds no patrol area links to nothing, and is
+/// landed at from the sea; an outpost site links to nothing.
 #[must_use]
-pub fn links_of(nodes: &[Node]) -> BTreeMap<String, Vec<Link>> {
+pub fn links_of(nodes: &[Node], region_of: &dyn Fn(&str) -> Option<String>) -> BTreeMap<String, Vec<Link>> {
     let patrols: Vec<&Node> = nodes.iter().filter(|node| node.kind == NodeKind::Patrol).collect();
     let square =
         |from: [f64; 2], to: [f64; 2]| (to[0] - from[0]) * (to[0] - from[0]) + (to[1] - from[1]) * (to[1] - from[1]);
@@ -110,14 +113,27 @@ pub fn links_of(nodes: &[Node]) -> BTreeMap<String, Vec<Link>> {
         nodes.iter().filter(|node| !matches!(node.kind, NodeKind::Patrol | NodeKind::Social | NodeKind::Outpost))
     {
         let middle = middle_of(node);
-        let nearest = patrols.iter().min_by(|first, second| {
+        let region = region_of(&node.id);
+        let ours = patrols.iter().filter(|patrol| region.is_none() || region_of(&patrol.id) == region);
+        let nearest = ours.min_by(|first, second| {
             square(middle_of(first), middle)
                 .total_cmp(&square(middle_of(second), middle))
                 .then(first.id.cmp(&second.id))
         });
         if let Some(patrol) = nearest {
-            links.entry(node.id.clone()).or_default().push(Link { id: patrol.id.clone(), towards: middle_of(patrol) });
-            links.entry(patrol.id.clone()).or_default().push(Link { id: node.id.clone(), towards: middle });
+            let (id, towards) = (patrol.id.clone(), middle_of(patrol));
+            links.entry(node.id.clone()).or_default().push(Link { id, towards, patrol: false });
+            links.entry(patrol.id.clone()).or_default().push(Link {
+                id: node.id.clone(),
+                towards: middle,
+                patrol: false,
+            });
+        }
+    }
+    for patrol in &patrols {
+        for other in patrols.iter().filter(|other| other.id != patrol.id) {
+            let (id, towards) = (other.id.clone(), middle_of(other));
+            links.entry(patrol.id.clone()).or_default().push(Link { id, towards, patrol: true });
         }
     }
     links
@@ -142,7 +158,7 @@ fn dense(points: &[[f64; 2]], step: f64) -> Vec<(f64, f64)> {
 #[must_use]
 pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layout> {
     let nodes: Vec<Node> = landmass.edits.nodes.iter().filter(|node| node.kind != NodeKind::Social).cloned().collect();
-    let links = links_of(&nodes);
+    let links = links_of(&nodes, &|id| briefs.region_of(id).map(str::to_owned));
     let biome = landmass.biome.map(|biome| biome.key);
     let resource = crate::resources::of(&landmass.id);
     let claims: Vec<Vec<[f64; 2]>> =
@@ -271,16 +287,45 @@ mod tests {
             node("mill", NodeKind::Mission, 1_000),
             node("tomb", NodeKind::Dungeon, 9_000),
         ];
-        let links = links_of(&nodes);
+        let links = links_of(&nodes, &|_| None);
         assert_eq!(links["mill"][0].id, "west");
         assert_eq!(links["tomb"][0].id, "east");
-        assert_eq!(links["west"].iter().map(|link| link.id.as_str()).collect::<Vec<_>>(), ["mill"]);
+        assert_eq!(links["west"].iter().map(|link| link.id.as_str()).collect::<Vec<_>>(), ["mill", "east"]);
+    }
+
+    #[test]
+    fn an_instance_links_only_to_a_patrol_area_of_its_region_and_every_patrol_area_to_the_others() {
+        let nodes = [
+            node("west", NodeKind::Patrol, 0),
+            node("east", NodeKind::Patrol, 10_000),
+            node("north", NodeKind::Patrol, 20_000),
+            node("mill", NodeKind::Mission, 1_000),
+            node("tomb", NodeKind::Dungeon, 2_000),
+            node("cairn", NodeKind::Boss, 30_000),
+        ];
+        // The tomb lies nearest the west but in the east's region; the cairn's region holds no patrol area.
+        let region = |id: &str| {
+            let name = match id {
+                "west" | "mill" => "Shore",
+                "east" | "tomb" => "Reach",
+                "north" => "Heights",
+                _ => "Wastes",
+            };
+            Some(name.to_owned())
+        };
+        let links = links_of(&nodes, &region);
+        let ids = |id: &str| links[id].iter().map(|link| link.id.as_str()).collect::<Vec<_>>();
+        assert_eq!(ids("tomb"), ["east"], "no gate across a region");
+        assert_eq!(ids("west"), ["mill", "east", "north"]);
+        assert_eq!(ids("east"), ["tomb", "west", "north"]);
+        assert_eq!(ids("north"), ["west", "east"]);
+        assert!(!links.contains_key("cairn"), "landed at from the sea");
     }
 
     #[test]
     fn an_outpost_site_links_to_no_patrol_area() {
         let nodes = [node("west", NodeKind::Patrol, 0), node("cove", NodeKind::Outpost, 1_000)];
-        let links = links_of(&nodes);
+        let links = links_of(&nodes, &|_| None);
         assert!(!links.contains_key("cove") && !links.contains_key("west"), "{links:?}");
     }
 

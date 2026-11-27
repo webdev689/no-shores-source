@@ -1,5 +1,5 @@
 // Pictures of the key strip and the leave held, headless (`tools/uiShot.mjs`), over a plain dusk in place of the
-// world: on foot at rest with the leave half held, a melee weapon drawn, sailing over the sea bar, the pad's buttons,
+// world: on foot at rest with the leave half held, a melee weapon drawn, sailing over the ship's console, the pad's buttons,
 // and under a quest's tracker. The game never imports it.
 import { BINDS } from '../player/input.ts';
 import type { Node } from '../ui/node.ts';
@@ -49,19 +49,9 @@ export function stripMeleeShot(ui: Interface): Node {
   return hudOver(ui, 'melee', (hud) => hud.strip(withMapKey(footStrip({ ...REST, drawn: true, free: true }))));
 }
 
-/** Sailing, over the sea bar and its offer to dock. */
+/** Sailing in the Oversea view. */
 export function stripSeaShot(ui: Interface): Node {
-  return hudOver(ui, 'sea', (hud) => {
-    hud.strip(stripOf('sea'));
-    hud.seaBar({
-      pace: 2,
-      sailing: true,
-      resumable: false,
-      landfall: { kind: 'dock', port: 'Saltmere' },
-      canLeave: true,
-      canManage: true,
-    });
-  });
+  return hudOver(ui, 'sea', (hud) => hud.strip(stripOf('oversea')));
 }
 
 /** At rest on foot as the pad shows it. */

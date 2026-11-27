@@ -101,6 +101,23 @@ fn on_the_wreck_the_storm_is_given_worn_earned_and_charged_and_its_abilities_cas
 }
 
 #[test]
+fn the_storm_given_again_on_the_wreck_is_charged_full_again() {
+    let mut room = wreck();
+    let player = room.join().expect("a room with space");
+    room.story_wreck();
+    assert!(room.story_storm(player));
+    room.ask_cast(player, Some(crate::arts::Cast { spell: 3, aim: Some([0.0, -3.0, 2.3]) }));
+    for _ in 0..30 {
+        room.tick();
+    }
+    let spent = room.players[&player].casting;
+    assert!(spent.tenets[1] < 0.1, "Arc Lash cast, its charge spent: {:?}", spent.tenets);
+    assert!(room.story_storm(player), "the teaching charges it again, to be tried again");
+    let again = room.players[&player].casting;
+    assert_eq!((again.anima, again.tenets), (1.0, [1.0, 1.0]), "charged full");
+}
+
+#[test]
 fn the_wreck_s_boarders_are_the_grey_tithe_s_and_the_brig_s_crew_still_the_players() {
     let mut room = wreck();
     room.story_wreck();

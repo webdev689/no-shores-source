@@ -1,5 +1,6 @@
-// The islands' calm pieces, two for each family of climates, heard now and then while roaming with minutes of silence
-// between them: weathered, never bright, each closing on the world's leitmotif in its key. Green: Moorlight, E Aeolian
+// The islands' calm pieces, four for each family of climates (the second pair in islandPiecesMore.ts), heard now and
+// then while roaming with minutes of silence between them: weathered, never bright, each closing on the world's
+// leitmotif in its key. The first pair here. Green: Moorlight, E Aeolian
 // in 6/8 on a low whistle over a rolling harp; Cairn, E Dorian, horn calls over a pulsing piano. Dry: Sunscorch, A
 // Phrygian dominant, an oud's ostinato under the oboe; Dust Road, F sharp Phrygian, a lone cello over a sparse harp.
 // Wet: Mistwrack, F sharp Aeolian, a low marimba in three, three and two under the clarinet; Fen, C sharp minor, a
@@ -8,6 +9,7 @@
 
 import type { Family } from './directorLaw.ts';
 import { DRUMS, INSTRUMENTS, calmPiece, inRole } from './calm.ts';
+import { moreIslandPieces } from './islandPiecesMore.ts';
 import type { Song } from './score.ts';
 
 const { pad, strings, bass, piano, harp, oud, marimba, kalimba, cello, horn, flute, oboe, clarinet, bassoon } =
@@ -124,7 +126,7 @@ function cairn(): Song {
       {
         bars: 'Em | Cmaj7 | Bm | Em',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'E3:2 B3:2 | C4:4 | B3:4 | E3:4',
+        lead: 'E3:1 B3:3 | C4:4 | B3:4 | E3:4',
         level: 0.7,
       },
     ],
@@ -269,7 +271,7 @@ function mistwrack(): Song {
     sections: [
       { bars: 'F#m | D | F#m | E', parts: ['pad', 'arp', 'bass'], level: 0.7 },
       {
-        bars: 'F#m | D | A | E | F#m | D | Bm | C#m',
+        bars: 'F#m | D | A | C#m | F#m | D | Bm | C#m',
         parts: ['pad', 'arp', 'bass', 'lead', 'drums'],
         lead: 'F#3:1.5 G#3:.5 A3:2 | F#3:3 A3:1 | C#4:2 B3:1 A3:1 | G#3:4 | A3:1.5 B3:.5 C#4:2 | D4:2 C#4:1 A3:1 | B3:1.5 A3:.5 F#3:2 | G#3:4',
         level: 0.9,
@@ -281,14 +283,14 @@ function mistwrack(): Song {
         lead: 'D3:4 | E3:4 | E3:4 | F#3:4 | E3:4 | E3:4 | D3:4 | F#3:4',
       },
       {
-        bars: 'F#m | D | A | E | F#m | D | Bm | C#m',
+        bars: 'F#m | D | A | C#m | F#m | D | Bm | C#m',
         parts: ['pad', 'arp', 'bass', 'lead', 'drums'],
         lead: 'F#3:1.5 G#3:.5 A3:2 | F#3:3 A3:1 | C#4:2 B3:1 A3:1 | G#3:4 | A3:1.5 B3:.5 C#4:2 | D4:2 C#4:1 A3:1 | B3:1.5 A3:.5 F#3:2 | G#3:4',
       },
       {
         bars: 'F#m | D | C#m | F#m',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'F#3:2 C#4:2 | D4:4 | C#4:4 | F#3:4',
+        lead: 'F#3:3 C#4:1 | D4:4 | C#4:4 | F#3:4',
         level: 0.65,
       },
     ],
@@ -322,7 +324,7 @@ function fen(): Song {
     sections: [
       { bars: 'C#m | A | C#m | A', parts: ['pad', 'arp', 'bass'], level: 0.7 },
       {
-        bars: 'C#m | A | E | B | C#m | A | F#m | G#m',
+        bars: 'C#m | A | E | B | C#m | F#m | E | G#m',
         parts: ['pad', 'arp', 'bass', 'lead'],
         lead: 'C#3:2 E3:1 G#3:1 | A3:3 r:1 | G#3:1.5 F#3:.5 E3:2 | D#3:4 | E3:1.5 F#3:.5 G#3:2 | A3:2 C#4:2 | B3:1.5 A3:.5 F#3:2 | G#3:4',
       },
@@ -333,10 +335,10 @@ function fen(): Song {
         level: 0.9,
       },
       {
-        bars: 'C#m | A | E | B | C#m | A | F#m | G#m',
+        bars: 'C#m | A | E | B | C#m | F#m | E | G#m',
         parts: ['pad', 'arp', 'bass', 'lead', 'counter', 'drums'],
         lead: 'C#3:2 E3:1 G#3:1 | A3:3 r:1 | G#3:1.5 F#3:.5 E3:2 | D#3:4 | E3:1.5 F#3:.5 G#3:2 | A3:2 C#4:2 | B3:1.5 A3:.5 F#3:2 | G#3:4',
-        counter: 'G#3:4 | E3:4 | B3:4 | F#3:4 | E3:4 | C#4:4 | A3:4 | B3:4',
+        counter: 'G#3:4 | E3:4 | B3:4 | F#3:4 | E3:4 | C#4:4 | B3:4 | B3:4',
       },
       {
         bars: 'C#m | A | G#m | C#m',
@@ -368,7 +370,7 @@ function rime(): Song {
     sections: [
       { bars: 'Bm | G | Bm | G', parts: ['pad', 'arp', 'bass'], level: 0.7 },
       {
-        bars: 'Bm | G | D | A | Bm | G | Em | F#',
+        bars: 'Bm | G | D | A | Bm | Em | Em | F#',
         parts: ['pad', 'arp', 'bass', 'lead'],
         lead: 'B3:2 F#4:2 | D4:3 r:1 | A3:2 D4:2 | E4:4 | F#4:1.5 E4:.5 D4:2 | B3:4 | E4:2 G4:2 | F#4:4',
       },
@@ -380,7 +382,7 @@ function rime(): Song {
         level: 0.9,
       },
       {
-        bars: 'Bm | G | D | A | Bm | G | Em | F#',
+        bars: 'Bm | G | D | A | Bm | Em | Em | F#',
         parts: ['pad', 'arp', 'bass', 'lead', 'counter', 'drums'],
         lead: 'B3:2 F#4:2 | D4:3 r:1 | A3:2 D4:2 | E4:4 | F#4:1.5 E4:.5 D4:2 | B3:4 | E4:2 G4:2 | F#4:4',
         counter: 'B2:4 | G2:4 | A2:4 | C#3:4 | D3:4 | B2:4 | G2:4 | F#2:4',
@@ -434,17 +436,21 @@ function whiteout(): Song {
       {
         bars: 'Bm | Em | Bm | Bm',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'B2:2 F#3:2 | G3:4 | F#3:4 | B2:4',
+        lead: 'B2:3 F#3:1 | G3:4 | F#3:4 | B2:4',
         level: 0.65,
       },
     ],
   });
 }
 
-/** Each family's calm pieces, one at a time, never the same twice running. */
-export const islandPieces = (): Readonly<Record<Family, readonly Song[]>> => ({
-  green: [moorlight(), cairn()],
-  dry: [sunscorch(), dustRoad()],
-  wet: [mistwrack(), fen()],
-  cold: [rime(), whiteout()],
-});
+/** Each family's calm pieces, these two and the two of islandPiecesMore.ts, one at a time, never the same twice
+ *  running. */
+export const islandPieces = (): Readonly<Record<Family, readonly Song[]>> => {
+  const more = moreIslandPieces();
+  return {
+    green: [moorlight(), cairn(), ...more.green],
+    dry: [sunscorch(), dustRoad(), ...more.dry],
+    wet: [mistwrack(), fen(), ...more.wet],
+    cold: [rime(), whiteout(), ...more.cold],
+  };
+};

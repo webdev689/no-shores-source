@@ -1,9 +1,9 @@
 // The page's law of the sea's islands (crates/isle, crates/room/src/sea_islands.rs): which island a ship lies off and
-// is offered to go ashore on, the course round it to its anchorage, a voyage's legs bent round every island in sight
+// is offered to go ashore on, the way in to its anchorage, a voyage's legs bent round every island in sight
 // (the route planner's grid is far coarser than an island), and an island's room and place on foot.
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { SeenIsle } from '../network/seaHarbour.ts';
+import type { SeenIsle, SeenMark } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Use } from './footGear.ts';
 import type { IsleHeld } from './isles.ts';
@@ -65,9 +65,17 @@ export interface KeptClear {
   readonly radius: number;
 }
 
-/** What a voyage keeps clear of round each island: its built reach, or the farthest any reaches, and `KEEP_CLEAR_M`. */
-export function keptClear(isles: readonly IsleAt[]): KeptClear[] {
-  return isles.map((isle) => ({ at: isle.seen.at, radius: (isle.built?.reach ?? UNBUILT_REACH_M) + KEEP_CLEAR_M }));
+/** What a voyage keeps clear of round each island: its built reach, or the farthest any reaches, and `KEEP_CLEAR_M`;
+ *  and round each island the sea's chart `marks` that the room has not told of, as of one not built, since a travel's
+ *  last leg is refused across any island standing. */
+export function keptClear(isles: readonly IsleAt[], marks: readonly SeenMark[] = []): KeptClear[] {
+  const told = isles.map((isle) => ({
+    at: isle.seen.at,
+    radius: (isle.built?.reach ?? UNBUILT_REACH_M) + KEEP_CLEAR_M,
+  }));
+  const known = new Set(told.map(({ at }) => `${at[0]},${at[1]}`));
+  const marked = marks.filter(({ at, kind }) => kind !== 'hostile' && !known.has(`${at[0]},${at[1]}`));
+  return [...told, ...marked.map(({ at }) => ({ at, radius: UNBUILT_REACH_M + KEEP_CLEAR_M }))];
 }
 
 /** A voyage's points with each leg that passes through a circle bent round it: two points at 45 degrees either side
@@ -119,14 +127,12 @@ export function detour(points: readonly Point2[], circles: readonly KeptClear[],
   return out;
 }
 
-/** The course from `from` to an island's anchorage: out to sea on its landing's bearing first, then straight in, any
- *  leg round the island bent clear of it. */
-export function approach(from: Point2, isle: IsleAt): Point2[] {
-  if (!isle.built) return [from];
+/** The way in to an island's anchorage: its offing, out to sea on its landing's bearing past the ring a voyage keeps
+ *  clear of, which a ship makes for first, then straight in; none for an island not yet built. */
+export function approach(isle: IsleAt): { readonly offing: Point2; readonly anchorage: Point2 } | null {
+  if (!isle.built) return null;
   const { reach, anchorage, landing } = isle.built;
-  const offing = onBearing(isle.seen.at, landing, reach + KEEP_CLEAR_M * 2);
-  const circle = { at: isle.seen.at, radius: reach + KEEP_CLEAR_M };
-  return [...detour([from, offing], [circle]), anchorage];
+  return { offing: onBearing(isle.seen.at, landing, reach + KEEP_CLEAR_M * 2), anchorage };
 }
 
 /** An island's room's name: its number and its seed as 16 hex digits, and the tier of the sea room it was rolled in

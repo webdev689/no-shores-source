@@ -22,10 +22,12 @@ import {
   layOut,
   letterScale,
   type Lettering,
+  type MapLetter,
   markBox,
   nameBox,
-  nameWidth,
   PORT_PX,
+  SEA_PX,
+  SEA_FITS,
   WORD_PX,
 } from '../heldmap/mapLayout.ts';
 import { startWatersRules } from '../rules/watersRules.ts';
@@ -35,7 +37,13 @@ import { sitesOf } from './worldData.ts';
 // The held map's lettering laid out on the real world, as the game hands it the waters the rules open (mapLayout.ts).
 const WORLD = { width: 4_915_200, height: 3_072_000 } as const;
 /** A word's width in the map's face, units: Pixelify's letters are a little over half their size wide, taken wide. */
-const widthOf = (text: string, kind: string) => text.length * 0.62 * (kind === 'port' ? PORT_PX : WORD_PX);
+const widthOf = (text: string, kind: string) =>
+  text.length * 0.62 * (kind === 'water' ? SEA_PX : kind === 'port' || kind === 'island' ? PORT_PX : WORD_PX);
+/** The box a laid name covers, as the layout measured it. */
+const boxOf = (letter: MapLetter, scale: number) => {
+  const width = widthOf(letter.band ? `${letter.text}, ${letter.band}` : letter.text, letter.kind);
+  return nameBox(letter, (width * (letter.px ?? SEA_PX)) / SEA_PX, scale, letter.spread);
+};
 /** The key's panel as the map's face measures it, units. */
 const KEY = { width: 213, height: 84 } as const;
 
@@ -45,7 +53,7 @@ const overlaps = (one: Rect, other: Rect) =>
   one.y < other.y + other.height &&
   other.y < one.y + one.height;
 
-/** The real world: every island, port and node, the waters as the rules open them. */
+/** The real world: every island, port and ruin (no node is marked at sea), the waters as the rules open them. */
 async function realWorld() {
   const world = new URL('../../../content/world/', import.meta.url);
   const layoutText = await readFile(new URL('layout.json', world), 'utf8');
@@ -62,10 +70,7 @@ async function realWorld() {
   );
   const rules = startWatersRules(new WebAssembly.Module(bytes));
   const table = rules.open(layoutText, cities);
-  const waters = new HeldMapWaters(
-    mapWatersOf(table, rules.grid(4_800)),
-    (point) => rules.waterAt(point)?.continent ?? null,
-  );
+  const waters = new HeldMapWaters(mapWatersOf(table, rules.grid(4_800)), (point) => rules.waterAt(point), 400);
   const columns = WORLD.width / 4_800;
   const rows = WORLD.height / 4_800;
   const field = coastField(
@@ -96,6 +101,7 @@ function lettered(screen: { width: number; height: number }, view: View, real: A
   const ink = stage.ink;
   const onMap = (x: number, y: number) => x >= 0 && y >= 0 && x <= ink.width && y <= ink.height;
   const places = real.places
+    .filter((place) => place.kind === 'port' || place.kind === 'ruin')
     .map((place) => {
       const [x, y] = toInk(view, place.at[0], place.at[1]);
       return { text: place.name, x, y, kind: place.kind, chosen: false };
@@ -125,10 +131,10 @@ function lettered(screen: { width: number; height: number }, view: View, real: A
 /** Every box the lettering covers: each name's and each mark's, and the key's. */
 function boxesOf(ask: LayoutAsk, lettering: Lettering) {
   const names = lettering.letters.flatMap((letter) =>
-    letter.side ? [{ letter, box: nameBox(letter, letter.side, nameWidth(letter, widthOf), lettering.scale) }] : [],
+    letter.side ? [{ letter, box: boxOf(letter, lettering.scale) }] : [],
   );
   const marks = lettering.letters
-    .filter((letter) => letter.kind !== 'water')
+    .filter((letter) => !letter.side)
     .map((letter) => markBox(letter.kind, letter.x, letter.y, lettering.scale));
   if (ask.ship) marks.push(markBox('ship', ask.ship.x, ask.ship.y, lettering.scale));
   return { names, marks };
@@ -187,7 +193,7 @@ test('on the real world at five zooms no name overlaps another or a mark, and ea
       }
     }
   }
-  assert.ok(named > 100, `the world's places are named across the views (${named})`);
+  assert.ok(named > 40, `the world's seas are named across the views (${named})`);
 });
 
 test('on the real world no water’s name stands on land, at the opening view or any of five zooms', async () => {
@@ -205,7 +211,7 @@ test('on the real world no water’s name stands on land, at the opening view or
     for (const view of views) {
       const { lettering } = lettered(screen, view, real);
       for (const letter of lettering.letters.filter((each) => each.kind === 'water')) {
-        const box = nameBox(letter, 'centre', nameWidth(letter, widthOf), lettering.scale);
+        const box = boxOf(letter, lettering.scale);
         // Every island counted, known or not: a name is on the sea, not on any land.
         assert.ok(
           !landUnder(real.field, -1, view, box),
@@ -229,7 +235,7 @@ test('seen whole at 1280 x 720 and 1920 x 1080 every water is named on its own s
     const { names, marks } = boxesOf(ask, lettering);
     for (const letter of waters) {
       const continent = ask.waters.find((each) => each.text === letter.text)?.continent ?? -1;
-      const box = nameBox(letter, 'centre', nameWidth(letter, widthOf), lettering.scale);
+      const box = boxOf(letter, lettering.scale);
       const sea = onOwnSea(real.waters.waters, real.field, view, box, continent);
       assert.ok(sea >= 1, `${letter.text} on its own sea`);
       // Wholly on it, unless no spot of its sea seen has room for its name, clear of what was laid before it: then on
@@ -237,8 +243,7 @@ test('seen whole at 1280 x 720 and 1920 x 1080 every water is named on its own s
       const order = ask.waters.findIndex((each) => each.continent === continent);
       const before = names.filter(
         (other) =>
-          other.letter.kind === 'port' ||
-          (other.letter.kind === 'water' && ask.waters.findIndex((each) => each.text === other.letter.text) < order),
+          other.letter.kind === 'water' && ask.waters.findIndex((each) => each.text === other.letter.text) < order,
       );
       const blocked = [
         ...marks,
@@ -247,9 +252,10 @@ test('seen whole at 1280 x 720 and 1920 x 1080 every water is named on its own s
         ...(lettering.key ? [lettering.key.box] : []),
       ];
       const room = ask.waters[order]?.spots.some((spot) =>
-        ([1, 2] as const).some((lines) => {
-          const shape = { text: letter.text, kind: 'water', lines };
-          const there = nameBox({ ...spot, ...shape }, 'centre', nameWidth(shape, widthOf), lettering.scale);
+        SEA_FITS.some(({ spread, px }) => {
+          const shape = { text: letter.text, kind: 'water' };
+          const width = (widthOf(letter.text, 'water') * px) / SEA_PX;
+          const there = nameBox({ ...spot, ...shape }, width, lettering.scale, spread);
           const inside =
             there.x >= 0 && there.y >= 0 && there.x + there.width <= ink.width && there.y + there.height <= ink.height;
           return (
@@ -278,7 +284,7 @@ test('at the opening view and seen whole no two marks overlap, a port and a ruin
     ];
     for (const view of views) {
       const { ask, lettering } = lettered(screen, view, real);
-      const marked = lettering.letters.filter((letter) => letter.kind !== 'water');
+      const marked = lettering.letters.filter((letter) => !letter.side);
       assert.equal(marked.length, ask.places.length, 'every place keeps its mark');
       const boxes = marked.map((letter) => markBox(letter.kind, letter.x, letter.y, lettering.scale));
       boxes.forEach((box, index) => {

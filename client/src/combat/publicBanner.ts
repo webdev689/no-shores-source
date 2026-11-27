@@ -11,6 +11,7 @@ import { announce } from '../ui/announce.ts';
 import { cubicBezier } from '../ui/ease.ts';
 import type { Child, Node, Text } from '../ui/node.ts';
 import { drawMeter, thinBarNode } from './barDraw.ts';
+import { percentWords } from '../ui/percent.ts';
 
 /** The banner's tone: an event running, one turned heroic, its result, or one line, as an Elite Dungeon's or a
  *  Breach's between its encounters. */
@@ -408,7 +409,7 @@ export class StoreBars {
       return {
         ...thinBarNode({
           name: 'store',
-          label: `Store: ${Math.round(share * 100)}%`,
+          label: `Store: ${percentWords(share)}`,
           length: STORE_BAR.width,
           height: STORE_BAR.height,
           zoom,

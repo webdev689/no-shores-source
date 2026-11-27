@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startRoomDoor } from './roomDoor.ts';
+import { pinned } from './pinnedForTests.ts';
 
 const compiled = new WebAssembly.Module(
   await readFile(new URL('../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)).catch(() => {
@@ -9,8 +10,8 @@ const compiled = new WebAssembly.Module(
   }),
 );
 
-/** The isle crate's own test pins the same fingerprint natively (crates/isle/src/tests.rs, GROUND_41_DESERT). */
-const GROUND_41_DESERT = '5372bca559dd7c59';
+/** The isle crate's own test holds the same fingerprint natively (crates/isle/src/tests.rs). */
+const GROUND_41_DESERT = pinned('isle.ground_41_desert');
 
 /** FNV-1a over the numbers' bits, little-endian, as the crate's test takes it. */
 function fingerprint(numbers: Float64Array): string {
@@ -26,8 +27,8 @@ test("the page's WebAssembly builds an island's ground to the room's own bits", 
   assert.equal(fingerprint(door.isleHeights('41', 'desert', [0, 0])), GROUND_41_DESERT);
 });
 
-/** crates/room-wasm/src/isle_door_tests.rs pins the same of the room's own plans (PLANS): a cove and a quarry. */
-const PLANS = 'b34441b512d89694';
+/** crates/room-wasm/src/isle_door_tests.rs holds the same of the room's own plans: a cove and a quarry. */
+const PLANS = pinned('isle.plans');
 
 test("the page's WebAssembly lays every module, block and post of an island where the room does", () => {
   const door = startRoomDoor(compiled);
@@ -37,13 +38,13 @@ test("the page's WebAssembly lays every module, block and post of an island wher
   assert.equal(hash.toString(16).padStart(16, '0'), PLANS);
 });
 
-test("an island's plan comes to the page whole, and none for home waters' climate", () => {
+test("an island's plan comes to the page whole, and none for a climate the islands do not dress", () => {
   const door = startRoomDoor(compiled);
   const plan = JSON.parse(door.islePlan('41', 'desert')) as { kind: string; spawns: unknown[]; placements: unknown[] };
   assert.ok(['cove', 'ruin', 'quarry'].includes(plan.kind));
   assert.equal(plan.spawns.length, 3);
   assert.ok(plan.placements.length > 20);
-  assert.equal(door.islePlan('41', 'temperate-coast'), '');
+  assert.equal(door.islePlan('41', 'moon'), '');
   assert.equal(door.isleHeights('41', 'moon', [0, 0]).length, 0);
 });
 

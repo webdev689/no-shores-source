@@ -6,17 +6,29 @@
 // ambush) is said only as it happens or not at all.
 import type { GearState } from '../../network/gearMessages.ts';
 import { QUESTS, beginOf, linesBetween } from './questBook.ts';
-import { type Kept, behind, giftsBetween, greetBetween, keptOf, metBetween, momentsBetween } from './questNews.ts';
+import type { Notice } from '../obtained.ts';
+import {
+  type Kept,
+  behind,
+  houseGiftGiven,
+  houseGiftScene,
+  giftsBetween,
+  greetBetween,
+  keptOf,
+  metBetween,
+  momentsBetween,
+  stepsBetween,
+} from './questNews.ts';
 
 /** Where the browser keeps, for an account (`<key>.<account>`), the quests whose begin it has said, by id. */
 export const BEGUN_KEY = 'noshores.roads.begun';
 
 /** What a look finds new: the scenes to say in order, the moment's lines (said only if none like them waits), and the
- *  toasts. */
+ *  notices of what the player obtained. */
 export interface News {
   readonly scenes: readonly string[];
   readonly moments: readonly string[];
-  readonly toasts: readonly string[];
+  readonly notices: readonly Notice[];
 }
 
 /** What the browser keeps of the roads. */
@@ -42,7 +54,7 @@ export class QuestWatch {
    *  scenes found held until they are, the moment's lines dropped. */
   look(gear: GearState | null, past: boolean): News {
     const [before, after] = [this.kept, keptOf(gear)];
-    let [toasts, moments]: string[][] = [[], []];
+    let [notices, moments]: [Notice[], string[]] = [[], []];
     if (after && !before) {
       // The first word: where the player stands. One from before the roads, on a first task with nothing counted,
       // hears its road begin if this browser has not said it for the account.
@@ -50,12 +62,16 @@ export class QuestWatch {
       if (after.task === 0 && after.counts.every((count) => count === 0)) this.begin(after.quest);
     } else if (after && before && !behind(before, after)) {
       this.kept = after;
-      toasts = giftsBetween(before, after);
+      notices = [...stepsBetween(before, after), ...giftsBetween(before, after)];
       moments = past ? momentsBetween(before, after) : [];
       this.hold([...this.greet(before, after), ...metBetween(before, after), ...linesBetween(before, after)], 0);
-      if (after.task === 0 && before.quest !== after.quest) this.begin(after.quest);
+      const begins = after.task === 0 && before.quest !== after.quest && this.begin(after.quest);
+      // The house's own piece: its leader's line, unless the road's begin, which tells of it, is said instead.
+      const house = houseGiftGiven(before, after);
+      const line = house && !begins ? houseGiftScene(house) : undefined;
+      if (line) this.hold([line], 0);
     }
-    return { scenes: past ? this.release() : [], moments, toasts };
+    return { scenes: past ? this.release() : [], moments, notices };
   }
 
   /** The step's greeting, the first time its figure walks in this task. */
@@ -71,11 +87,12 @@ export class QuestWatch {
     this.held.push(...scenes.map((scene) => ({ scene, begins })));
   }
 
-  /** Holds the quest's begin, unless the browser has said it for this account or holds it already. */
-  private begin(place: number): void {
+  /** Holds the quest's begin, unless the browser has said it for this account or holds it already; whether it did. */
+  private begin(place: number): boolean {
     const quest = QUESTS[place - 1];
-    if (!quest || this.begun(quest.id) || this.held.some((each) => each.begins === place)) return;
+    if (!quest || this.begun(quest.id) || this.held.some((each) => each.begins === place)) return false;
     this.hold(beginOf(quest), place);
+    return true;
   }
 
   /** The scenes held, now to be said: a begin only of the quest walked now, so one left meanwhile (the opening left by

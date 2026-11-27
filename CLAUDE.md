@@ -8,9 +8,12 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 
 - **The owner sets the vision.** Never invent game design. Record a decision only once the owner makes it, in the
   owner's words (`bible/04-Procedures/Recording a Decision.md`). When a choice is the owner's, ask.
+  A question names only what the player sees or does, one effect a question, no code names or multipliers; for an
+  effect the owner names, first ask what it should look like, or which game's version they picture.
 - **More organisation, less bloat.** Whatever comes from DFO Online comes over better organised and smaller.
 - **Done means `cargo xtask check` passes in CI on the pull request's head.** Before a push, run `cargo xtask repo`
-  and the tests of what changed (after `npm ci` once); CI runs the whole check, and a merge waits for it to be green.
+  and the tests of what changed (after `npm ci` once); the kit's pre-push hook refuses a push whose quick checks fail.
+  CI runs the whole check, and a merge waits for it to be green.
 - **Ask before merging or deploying.** A pull request for each change; merge into `main`, deploy or release only
   after the owner says yes, every time. A merge deploys the page, the site, the rooms and the bot, and releases the
   desktop app when its code changed, so its yes covers them.
@@ -18,19 +21,25 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 - **Verify before claiming.** Before saying something is not in the source, check the file it would be in; until
   then call the claim "unchecked". Say "tested offline" or "tested live"; never call something fixed without the
   check that shows it. A run that is not of the head names the commit it covered; `cargo xtask check` prints it last.
+  A cause put to the owner is first reproduced (a failing test, a scratch run) or traced through the code that delivers
+  it, and checked against standing rules; else the question calls it unchecked. Report an edit only once its result is
+  back. When the owner reports a problem wider than what an audit found, ask where it happened before fixing.
 
 ## Every session
 
 1. From the repo root: `KIT_DIR=$PWD/tools/claude-toolkit REPO_DIR=$PWD bash tools/claude-toolkit/install-all.sh`.
    Read any FAIL line it prints.
-2. Read `bible/03-Code/Toolkit.md` (how to use each tool and worker) and `bible/Hand-off.md`.
+2. Read `bible/03-Code/Toolkit.md` (how to use each tool and worker) and `bible/Hand-off.md`. Before resuming work
+   from the hand-off, list the account's running sessions; if one names the same branch or plan, stop and ask.
 3. Run `graphify update .`, then task-observer's scan:
    `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh ${SHARED_DIR:-$HOME/toolkit-data}/task-observer`.
-4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `headroom learn --project . --apply` (say so if
-   Gemini is unreachable, or if it finds no data because the session started in another folder; never apply it to
-   that folder's repository), then rewrite `bible/Hand-off.md`, and last
+4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `headroom learn --project .` (it only suggests:
+   keep a lesson only once checked against this file; say so if Gemini is unreachable, or if it finds no data because
+   the session started in another folder), then `bash tools/claude-toolkit/held-branches.sh` (push each branch it
+   lists, or say it will be lost) and `bash tools/claude-toolkit/pr-state.sh`, rewrite `bible/Hand-off.md`, and last
    `bash tools/claude-toolkit/toolkit-data.sh save` (the observation log, to the branch `toolkit-data`), so nothing
-   logged after it is lost.
+   logged after it is lost. In the hand-off, each open pull request is one line under "Open pull requests" (its
+   number and title), appended to that list; its detail stays in the pull request.
 
 When a tool is skipped, clashes or misfires: fix the setup, log it with task-observer, and propose the rule change.
 Rules for keys, security and deploys need the owner's named approval.

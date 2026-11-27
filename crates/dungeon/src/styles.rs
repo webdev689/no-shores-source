@@ -1,8 +1,9 @@
 //! The six dungeon styles: the Forge's crypt, halls, cells and temple (the Sanctum), and its cave and mine (the Caverns
 //! and the Mines). Each says how many rooms a block holds, the forms its rooms take, their ceilings, its two picture
 //! sets, the style a dungeon breaks into on its way down, its rooms' purposes and its entrances.
+//! The passages have two more of their own, the chalk and the barrow, which only they lay.
 
-use crate::banks::{CAVERNS, CELLS, CRYPT, HALLS, MINES, SANCTUM};
+use crate::banks::{BARROW, CAVERNS, CELLS, CHALK, CRYPT, HALLS, MINES, SANCTUM};
 use crate::purposes::Bank;
 use crate::shapes::{Roof, Shape};
 
@@ -46,14 +47,15 @@ const fn form(shape: Shape, weight: usize, along: (usize, usize), across: (usize
 const MOUNDS: &[u16] = &[43601, 43602];
 const CAVE_MOUTHS: &[u16] = &[43603, 43604];
 
-/// The six styles. A great room, four cells or more each way, may take a shape a small one cannot.
+/// The six styles, their forms' sides grown by about half for the deeper dungeons. A room four cells or more each
+/// way may take a shape a small one cannot.
 pub const STYLES: [Style; 6] = [
     Style {
         key: "crypt",
         noun: "Crypt",
         rooms: (3, 5),
         forms: &[
-            form(Shape::Rectangle, 3, (2, 4), (2, 4)),
+            form(Shape::Rectangle, 3, (2, 6), (2, 6)),
             form(Shape::Octagon, 2, (4, 5), (4, 5)),
             form(Shape::Alcoves, 3, (3, 5), (3, 4)),
         ],
@@ -69,9 +71,9 @@ pub const STYLES: [Style; 6] = [
         noun: "Halls",
         rooms: (2, 4),
         forms: &[
-            form(Shape::Rectangle, 4, (3, 7), (3, 7)),
-            form(Shape::Ell, 3, (4, 7), (4, 7)),
-            form(Shape::Cross, 3, (6, 7), (4, 7)),
+            form(Shape::Rectangle, 4, (3, 10), (3, 10)),
+            form(Shape::Ell, 3, (4, 10), (4, 10)),
+            form(Shape::Cross, 3, (6, 10), (4, 10)),
         ],
         heights: (4.0, 5.6),
         roof: Roof::Arched,
@@ -97,10 +99,10 @@ pub const STYLES: [Style; 6] = [
         noun: "Sanctum",
         rooms: (2, 4),
         forms: &[
-            form(Shape::Rectangle, 3, (3, 6), (3, 6)),
-            form(Shape::Ell, 2, (4, 6), (4, 6)),
-            form(Shape::Cross, 2, (6, 6), (4, 6)),
-            form(Shape::Octagon, 3, (4, 6), (4, 6)),
+            form(Shape::Rectangle, 3, (3, 10), (3, 10)),
+            form(Shape::Ell, 2, (4, 10), (4, 10)),
+            form(Shape::Cross, 2, (6, 10), (4, 10)),
+            form(Shape::Octagon, 3, (4, 10), (4, 10)),
         ],
         heights: (4.4, 5.6),
         roof: Roof::Arched,
@@ -113,7 +115,7 @@ pub const STYLES: [Style; 6] = [
         key: "caverns",
         noun: "Caverns",
         rooms: (2, 4),
-        forms: &[form(Shape::Rectangle, 1, (3, 6), (3, 6)), form(Shape::Cave, 5, (3, 6), (3, 6))],
+        forms: &[form(Shape::Rectangle, 1, (3, 6), (3, 6)), form(Shape::Cave, 5, (3, 8), (3, 8))],
         heights: (4.4, 5.6),
         roof: Roof::Rough,
         pictures: [120, 119],
@@ -127,9 +129,9 @@ pub const STYLES: [Style; 6] = [
         rooms: (2, 4),
         // Its galleries are long and two cells wide, its stopes caves.
         forms: &[
-            form(Shape::Rectangle, 3, (5, 8), (2, 2)),
+            form(Shape::Rectangle, 3, (5, 12), (2, 2)),
             form(Shape::Rectangle, 1, (2, 5), (2, 5)),
-            form(Shape::Cave, 3, (3, 5), (3, 5)),
+            form(Shape::Cave, 3, (3, 8), (3, 8)),
         ],
         heights: (3.2, 4.4),
         roof: Roof::Flat,
@@ -140,10 +142,58 @@ pub const STYLES: [Style; 6] = [
     },
 ];
 
+/// The passages' own two, kept out of `STYLES` so no patrol's or the sea's draw takes them and every pinned dungeon
+/// stays where it is.
+pub const PASSAGE_STYLES: [Style; 2] = [
+    Style {
+        key: "chalk",
+        noun: "Chalk",
+        rooms: (3, 5),
+        // Cut, never grown: long galleries two cells wide, square cuttings, and the odd turned working.
+        forms: &[
+            form(Shape::Rectangle, 3, (4, 7), (2, 2)),
+            form(Shape::Rectangle, 2, (3, 5), (3, 4)),
+            form(Shape::Ell, 1, (4, 6), (4, 6)),
+        ],
+        heights: (3.2, 4.0),
+        roof: Roof::Flat,
+        // Daggerfall's 123, whose walls are the palest in a temperate climate, for the cut chalk; 120, the palest
+        // across the climates, its second.
+        pictures: [123, 120],
+        below: "barrow",
+        purposes: &CHALK,
+        entrances: CAVE_MOUTHS,
+    },
+    Style {
+        key: "barrow",
+        noun: "Barrow",
+        rooms: (3, 5),
+        // Chambers off a lined way: small rooms, side cells, and round corbelled chambers.
+        forms: &[
+            form(Shape::Rectangle, 3, (2, 4), (2, 4)),
+            form(Shape::Alcoves, 3, (3, 5), (3, 4)),
+            form(Shape::Octagon, 3, (4, 5), (4, 5)),
+        ],
+        heights: (3.6, 4.8),
+        roof: Roof::Arched,
+        // Daggerfall's 124, its walls small stones in courses, for the lined ways and their dry-stone walling; 122,
+        // the larger laid blocks, its second.
+        pictures: [124, 122],
+        below: "caverns",
+        purposes: &BARROW,
+        entrances: MOUNDS,
+    },
+];
+
+/// Every style, the six and the passages' two, for the tests that lay each.
+#[cfg(test)]
+pub(crate) const EVERY_STYLE: [Style; 8] =
+    [STYLES[0], STYLES[1], STYLES[2], STYLES[3], STYLES[4], STYLES[5], PASSAGE_STYLES[0], PASSAGE_STYLES[1]];
+
 impl Style {
-    /// The style its last block breaks into on the way down.
+    /// The style its last block breaks into on the way down, of the six or the passages' two.
     #[must_use]
     pub fn style_below(&self) -> Style {
-        STYLES.into_iter().find(|style| style.key == self.below).unwrap_or(*self)
+        STYLES.into_iter().chain(PASSAGE_STYLES).find(|style| style.key == self.below).unwrap_or(*self)
     }
 }

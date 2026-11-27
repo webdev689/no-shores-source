@@ -72,7 +72,7 @@ const CAPE = item({ id: 40, kind: 17, bucket: 6, at: 8, rarity: 3, named: 'lampl
 
 /** A level 12 character pledged to the Lamplighters, their cape worn, two roads done (the house's and the
  *  Stormcallers') and walking the Lamplighters' at its fifth task, with the day's board. */
-const GEAR: GearState = state({
+export const GEAR: GearState = state({
   level: 12,
   prestige: 0,
   defense: 35,
@@ -108,13 +108,13 @@ const JUGGLER = modifier('juggler', 'Juggler', 'No ammunition drops.');
 const BRAWLER = modifier('brawler', 'Brawler', 'Melee deals 50% more damage.');
 const ISLES: readonly [string, number, number][] = [
   ['gullwing-vale 0', 1, 4],
-  ['greystone-tors 1', 4, 7],
-  ['oakshade-weald 2', 7, 10],
+  ['highwater-fells 0', 4, 7],
+  ['elder-thicket 0', 7, 10],
   ['ochre-wastes 0', 10, 13],
   ['lion-grasslands 0', 13, 16],
-  ['rainshadow-canopy 2', 16, 19],
-  ['horsehead-mounds 1', 19, 22],
-  ['blackwater-marsh 1', 22, 26],
+  ['emerald-tangle 0', 16, 19],
+  ['kurgan-plateau 2', 19, 22],
+  ['bogmire-sloughs 0', 22, 26],
   ['whitewind-tundra 0', 26, 30],
 ];
 
@@ -171,7 +171,7 @@ function weekOf(now: number, untilDay = 20 * HOUR + 55 * 60_000, untilWeek = 2 *
 
 /** The menu as the game starts it, over `gear` and the day's word, opened at `view`, one a picture: built afresh for
  *  each interface a shot draws with, `then` run once it is open. */
-function menuShot(view: View, then: () => void = () => undefined, gear = GEAR): (ui: Interface) => Node {
+export function menuShot(view: View, then: () => void = () => undefined, gear = GEAR): (ui: Interface) => Node {
   const layers = new WeakMap<Interface, Layer>();
   return (ui) => {
     let layer = layers.get(ui);
@@ -219,7 +219,7 @@ export const settingsShot = menuShot('settings');
 
 /** Three letters at the Postmaster's: a Rare Vestige left lying, a Legendary hull salvaged into a full mailbox, and a
  *  piece with no name sent on. */
-const LETTERS: GearState = {
+export const LETTERS: GearState = {
   ...GEAR,
   mail: [
     {
@@ -231,24 +231,35 @@ const LETTERS: GearState = {
     },
     { id: 32, from: 4, crowded: true, vestige: null, item: item({ id: 0, rarity: 3, kind: 25, bucket: 8, level: 6 }) },
     { id: 33, from: 1, crowded: false, vestige: null, item: item({ id: 0, rarity: 1, kind: 2, level: 11 }) },
+    // The Postmaster's own gift on the opening's round (`mail::Source::Gift`).
+    {
+      id: 34,
+      from: 6,
+      crowded: false,
+      vestige: { id: 0, rarity: 1, slot: 5, level: 1, vaulted: false, source: 0 },
+      item: null,
+    },
   ],
 };
-/** The Postmaster's screen, his three letters waiting. */
+/** The Postmaster's screen, his four letters waiting, the last his gift on the round. */
 export const postmasterShot = menuShot('mail', undefined, LETTERS);
-
-/** A new arrival at the smiths with the stranger's 400 Aurem: each smith's stock, the day's six then the starter
- *  pieces at 50 (`gear::vendor::stock`), the Armorsmith's armour, the Weaponsmith's Sword & Shield and bow. */
+/** The Postmaster's screen holding his gift on the opening's round alone. */
+export const postmasterGiftShot = menuShot('mail', undefined, { ...LETTERS, mail: LETTERS.mail?.slice(-1) ?? [] });
+/** A new arrival at the smiths, the Weaponsmith's gift owed: each smith's stock, the day's six then the starter pieces
+ *  (`gear::vendor::stock`), the Armorsmith's armour at 50, the Weaponsmith's every Melee and Ranged kind free. */
 const day = (kinds: readonly number[], bucket = 2) =>
   kinds.map((kind, place) =>
     item({ id: place, kind, bucket, rarity: place < 3 ? 2 : 1, level: 1, price: place < 3 ? 2_000 : 600 }),
   );
-const plain = (kinds: readonly (readonly [number, number])[]) =>
-  kinds.map(([kind, bucket], place) => item({ id: 6 + place, kind, bucket, rarity: 0, level: 1, price: 50 }));
-const ARRIVED: GearState = {
+const plain = (kinds: readonly (readonly [number, number])[], price = 50) =>
+  kinds.map(([kind, bucket], place) => item({ id: 6 + place, kind, bucket, rarity: 0, level: 1, price }));
+/** The Weaponsmith's starter stock in `Vendor::starter_kinds`' order: thirteen Melee kinds, then five Ranged. */
+const WEAPONS = [12, 2, 22, 19, 18, 1, 3, 21, 20, 4, 6, 5, 7, 8, 9, 10, 23, 11];
+export const ARRIVED: GearState = {
   ...GEAR,
   level: 1,
   defense: 0,
-  aurem: 400,
+  aurem: 0,
   cratePrice: 300,
   crates: 0,
   wares: [
@@ -260,10 +271,10 @@ const ARRIVED: GearState = {
       [16, 5],
     ]),
     ...day([12, 2, 1, 3, 7, 10], 0),
-    ...plain([
-      [12, 0],
-      [8, 1],
-    ]),
+    ...plain(
+      WEAPONS.map((kind, place) => [kind, place < 13 ? 0 : 1] as const),
+      0,
+    ),
   ],
 };
 /** The Armorsmith's screen, its starter stock first. */
@@ -272,6 +283,12 @@ export const armorsmithShot = menuShot('armorsmith', undefined, ARRIVED);
 export const weaponsmithShot = menuShot('weaponsmith', undefined, ARRIVED);
 /** The Weaponsmith's screen for one who carries all five Ammo crates, which the supplies' row says. */
 export const weaponsmithFullShot = menuShot('weaponsmith', undefined, { ...ARRIVED, crates: 5 });
+/** The Weaponsmith's screen once her gift is taken: the day's wares first, her plain pieces after at 50 Aurem. */
+export const weaponsmithTakenShot = menuShot('weaponsmith', undefined, {
+  ...ARRIVED,
+  aurem: 400,
+  wares: ARRIVED.wares.map((ware) => (ware.price === 0 ? { ...ware, price: 50 } : ware)),
+});
 
 /** The Abyss Dungeon of the week's card at its entrance: its rules, its three modifiers and what it pays. */
 const ABYSS_CARD: EntranceCard = {

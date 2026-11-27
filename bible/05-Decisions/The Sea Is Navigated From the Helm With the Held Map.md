@@ -37,9 +37,11 @@ The owner's answers to the questions that followed:
 ## What it settles
 
 - **At sea, near an island**, the player is offered to dock, at a port, or to land, off any other coast. Either one
-  flies the view up over the island's side and shows all the nodes that can be reached there ([[Game]]).
+  flies the view up over the island's side and shows all the nodes that can be reached there ([[Game]]) (replaced: a
+  click on a port's icon or its island asks to dock, and the island's nodes stand in a panel, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
 - **At sea, no nodes are shown.** A port city shows an icon over it when the ship is near.
-- **A navigation panel** is open at sea. Its first option is the map.
+- **A navigation panel** is open at sea. Its first option is the map (replaced: the ship's console, whose Oversea view
+  plans a voyage on the map, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
 - **The map** takes the view down to the player's ship, in first person at the helm, and raises the first-person hands
   holding the map, from the owner's own art. It shows the whole world under fog of war: only the islands, ports and
   nodes the player has discovered, and later what their quests track ([[World Map]]) (replaced: no fog,

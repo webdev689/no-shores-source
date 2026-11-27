@@ -1,6 +1,7 @@
-// The helm's keys at sea in the Overworld's view, as in a fight: A and D turn it while held, W sets it sailing
-// straight ahead at the pace dial, S heaves it to. Straight ahead is a course to the farthest point that way short of
-// the first coast, so the sea room, which refuses a course whose leg meets a coast, takes every one sent.
+// The helm's keys at sea in the Sealevel view, as in a fight: A and D turn it while held, W sets it sailing
+// straight ahead at ×60, eased to true speed while watched close, S heaves it to. Straight ahead is a course to the
+// farthest point that way short of the first coast, so the sea room, which refuses a course whose leg meets a coast,
+// takes every one sent.
 import { WORLD_FRAME } from '../overworld/worldFrame.ts';
 import type { Point2 } from '../overworld/ground.ts';
 

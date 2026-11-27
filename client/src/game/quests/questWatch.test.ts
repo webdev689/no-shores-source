@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import factions from '../../../../content/gear/factions.json' with { type: 'json' };
-import type { GearState } from '../../network/gearMessages.ts';
-import { standing, state } from '../../network/gearForTests.ts';
+import type { GearItem, GearState } from '../../network/gearMessages.ts';
+import { item, standing, state } from '../../network/gearForTests.ts';
 import { QUESTS } from './questBook.ts';
-import { BEGUN_KEY, QuestWatch } from './questWatch.ts';
+import { giftNotice, houseGiftNotice } from './questNews.ts';
+import { BEGUN_KEY, type News, QuestWatch } from './questWatch.ts';
 
 /** A character's gear on quest `quest` at task `task`: that task's counts, pledged to `pledge`, each quest done by
  *  `done`, each Art's road earned by `earned` and its fragment choices waiting by `choices`, each goal's failures, the
@@ -22,16 +23,19 @@ function gear(
     figures?: number[];
     aurem?: number;
     claimed?: boolean;
+    offered?: number;
+    items?: GearItem[];
   } = {},
 ): GearState {
   const { counts = [], pledge = 0, done = [0, 0, 0, 0], earned = [0, 0, 0], choices = [0, 0, 0] } = more;
-  const { fails = [], figures = [], aurem = 0, claimed = true } = more;
+  const { fails = [], figures = [], aurem = 0, claimed = true, offered = 0, items = [] } = more;
   const walking = figures.map((figureState) => ({ look: 22, x: 0, y: 0, z: 0, facing: 0, state: figureState }));
   return state({
     aurem,
+    items,
     standing: standing({ pledge }),
     arts: { art: 0, cores: [], anima: 0, tenets: [0, 0], earned },
-    quest: { quest, task, counts, done, choices, at: null, fails, figures: walking, claimed },
+    quest: { quest, task, counts, done, choices, at: null, fails, figures: walking, claimed, offered },
   });
 }
 
@@ -77,12 +81,12 @@ test('a task done says its end, then the next task’s start, in order; each onc
 test('a word not on the player’s own character is nothing: neither where they stand nor news', () => {
   // A page loading mid-road hears the room's starting character first, then their own: neither says anything.
   const watch = new QuestWatch();
-  assert.deepEqual(watch.look(gear(1, 0, { claimed: false }), true), { scenes: [], moments: [], toasts: [] });
+  assert.deepEqual(watch.look(gear(1, 0, { claimed: false }), true), { scenes: [], moments: [], notices: [] });
   const own = gear(LAMP, 6, { pledge: 2, done: [1, 0, 0, 0], earned: [0, 3, 0] });
-  assert.deepEqual(watch.look(own, true), { scenes: [], moments: [], toasts: [] }, 'their own, however late it comes');
+  assert.deepEqual(watch.look(own, true), { scenes: [], moments: [], notices: [] }, 'their own, however late it comes');
   // A room joined later does the same, its starting character never taken for where they stand.
   assert.deepEqual(watch.look(gear(1, 0, { claimed: false }), true).scenes, []);
-  assert.deepEqual(watch.look(own, true), { scenes: [], moments: [], toasts: [] });
+  assert.deepEqual(watch.look(own, true), { scenes: [], moments: [], notices: [] });
   assert.deepEqual(
     watch.look(gear(LAMP, 7, { pledge: 2, done: [1, 0, 0, 0], earned: [0, 3, 0] }), true).scenes,
     said(ending(LAMP, 6), starting(LAMP, 7)),
@@ -92,8 +96,8 @@ test('a word not on the player’s own character is nothing: neither where they 
 test('a word that goes back is never news', () => {
   const own = gear(STORM, 3, { pledge: 1, done: [1, 0, 0, 0], earned: [1, 0, 0] });
   const watch = heard(own);
-  assert.deepEqual(watch.look(gear(1, 0), true), { scenes: [], moments: [], toasts: [] }, 'unpledged, nothing earned');
-  assert.deepEqual(watch.look(own, true), { scenes: [], moments: [], toasts: [] });
+  assert.deepEqual(watch.look(gear(1, 0), true), { scenes: [], moments: [], notices: [] }, 'unpledged, nothing earned');
+  assert.deepEqual(watch.look(own, true), { scenes: [], moments: [], notices: [] });
 });
 
 test('a road begins as it is pledged to, once; a switch back to a road on its first task says nothing again', () => {
@@ -160,14 +164,19 @@ test('a browser that keeps nothing says a begin once in the page', () => {
   assert.deepEqual(watch.look(pledged, true).scenes, [], 'kept in the page');
 });
 
-test('what a road gives is toasted: its Art, each Tenet, a fragment to choose, and one paid in Aurem instead', () => {
+/** A look's notices, each its title and line. */
+const noticed = (news: News): string[] => news.notices.map((notice) => `${notice.title}: ${notice.line}`);
+
+test('what a road gives is noticed: its Art, each Tenet, a fragment to choose, and one paid in Aurem instead', () => {
   const watch = heard(gear(STORM, 2, { pledge: 1 }));
-  assert.deepEqual(watch.look(gear(STORM, 3, { pledge: 1, earned: [1, 0, 0] }), true).toasts, [
-    'Storm Art earned: Tempest',
+  const steps = QUESTS[STORM - 1]?.tasks ?? [];
+  assert.deepEqual(noticed(watch.look(gear(STORM, 3, { pledge: 1, earned: [1, 0, 0] }), true)), [
+    `Step done: ${steps[2]?.task}`,
+    'Storm Art earned: Tempest is yours. Press {key} to see it.',
   ]);
-  assert.deepEqual(watch.look(gear(STORM, 4, { pledge: 1, earned: [3, 0, 0] }), true).toasts, [
-    'Tenet earned: Quicken',
-  ]);
+  const tenet = watch.look(gear(STORM, 4, { pledge: 1, earned: [3, 0, 0] }), true).notices.at(-1);
+  assert.equal(tenet?.title, 'Tenet earned: Quicken');
+  assert.equal(tenet?.key, 'character', 'its key opens the character screen');
   // The first task that gives fragments, done: a choice, or its price where the Art has none left to choose.
   const giving = QUESTS[STORM - 1]?.tasks.findIndex((task) => (task.reward?.fragments ?? 0) > 0) ?? -1;
   const before = gear(STORM, giving, { pledge: 1, earned: [3, 0, 0], aurem: 1000 });
@@ -175,14 +184,30 @@ test('what a road gives is toasted: its Art, each Tenet, a fragment to choose, a
     gear(STORM, giving + 1, { pledge: 1, earned: [3, 0, 0], choices: [1, 0, 0] }),
     true,
   );
-  assert.deepEqual(chosen.toasts, ['A Storm fragment to choose']);
+  assert.equal(chosen.notices.at(-1)?.title, 'A Storm fragment to choose');
   const price = 1000 + factions.fragmentAurem;
   const paid = heard(before).look(gear(STORM, giving + 1, { pledge: 1, earned: [3, 0, 0], aurem: price }), true);
-  assert.deepEqual(paid.toasts, [
-    `No Storm fragment left to choose: ${factions.fragmentAurem.toLocaleString('en')} Aurem instead`,
-  ]);
+  assert.equal(
+    noticed(paid).at(-1),
+    `No Storm fragment left to choose: ${factions.fragmentAurem.toLocaleString('en')} Aurem instead.`,
+  );
   const spent = heard(gear(STORM, 7, { pledge: 1, choices: [1, 0, 0] }));
-  assert.deepEqual(spent.look(gear(STORM, 7, { pledge: 1 }), true).toasts, [], 'a choice spent is no gift');
+  assert.deepEqual(spent.look(gear(STORM, 7, { pledge: 1 }), true).notices, [], 'a choice spent is no gift');
+});
+
+test('a quest acquired, a step done and a quest done are noticed', () => {
+  const round = QUESTS[0]?.tasks.findIndex((task) => task.id === 'find-your-way') ?? -1;
+  const watch = heard(gear(1, round, { offered: 13 }));
+  assert.deepEqual(noticed(watch.look(gear(1, round), true)), [
+    'Quest acquired: A House of Your Own. Follow its steps in the tracker.',
+  ]);
+  const last = (QUESTS[STORM - 1]?.tasks.length ?? 1) - 1;
+  const ending = heard(gear(STORM, last, { pledge: 1 }));
+  const ended = ending.look(gear(STORM + 1, 0, { pledge: 1, done: [1, 1, 0, 0] }), true);
+  assert.deepEqual(noticed(ended).slice(0, 2), [
+    `Step done: ${QUESTS[STORM - 1]?.tasks[last]?.task}`,
+    `Quest done: ${QUESTS[STORM - 1]?.name}`,
+  ]);
 });
 
 test("a goal's own line is said as its failures rise, once while it waits or is said; dropped while the welcome holds", () => {
@@ -203,7 +228,10 @@ function madeWalk(run: (walk: number) => void): void {
   const road = QUESTS[LAMP - 1] as unknown as { tasks: unknown[] };
   const walk = road.tasks.length;
   const goals = [
-    { kind: 'escort', text: 'Walk', node: 'moors', from: 'a', to: 'b', greet: 'madeGreet', shout: 'madeShout' },
+    {
+      ...{ kind: 'escort', text: 'Walk', node: 'moors', from: 'a', to: 'b' },
+      ...{ greet: 'madeGreet', shout: 'madeShout', mount: 'madeMount' },
+    },
     { kind: 'reach', text: 'There', node: 'moors', place: 'b', scene: 'madeThere' },
   ];
   road.tasks.push({ id: 'made-walk', task: 'Walk', goals, end: 'madeEnd' });
@@ -233,6 +261,17 @@ test("an escort's greeting as it first walks, once a task; its shout as an ambus
   });
 });
 
+test('an escort waiting for its player to mount says so as it begins to wait; it greets them as it sets off', () => {
+  madeWalk((walk) => {
+    const walking = (figure: number) => gear(LAMP, walk, { pledge: 2, figures: [figure] });
+    const watch = heard(walking(0));
+    assert.deepEqual(watch.look(walking(5), true).moments, ['madeMount'], 'near, on foot');
+    assert.deepEqual(watch.look(walking(5), true).moments, [], 'once while it waits');
+    assert.deepEqual(watch.look(walking(1), true).scenes, ['madeGreet'], 'mounted: they set off');
+    assert.deepEqual(watch.look(walking(5), true).moments, ['madeMount'], 'off the horse again');
+  });
+});
+
 test("a goal's scene is said as the room meets it, before its task's end where the same word ends it", () => {
   madeWalk((walk) => {
     const counts = (there: number) => gear(LAMP, walk, { pledge: 2, counts: [0, there] });
@@ -249,4 +288,86 @@ test("a goal's scene is said as the room meets it, before its task's end where t
     held.look(counts(1), false);
     assert.deepEqual(held.look(counts(1), true).scenes, ['madeThere'], 'held through the welcome');
   });
+});
+
+test("each keeper's gift on the round is announced as it is given, through the one notice", () => {
+  const round = QUESTS[0]?.tasks.findIndex((task) => task.id === 'find-your-way') ?? -1;
+  const goals = QUESTS[0]?.tasks[round]?.goals.length ?? 0;
+  const counts = (heard: number) => Array.from({ length: goals }, (_none, index) => (index < heard ? 1 : 0));
+  const gifts = (news: News) => news.notices.filter((notice) => notice.title !== 'Step done');
+  const watch = heard(gear(1, round, { counts: counts(0) }));
+  assert.deepEqual(gifts(watch.look(gear(1, round, { counts: counts(1) }), true)), [giftNotice('weapons')]);
+  assert.deepEqual(gifts(watch.look(gear(1, round, { counts: counts(3) }), true)), [
+    giftNotice('armour'),
+    giftNotice('vestige'),
+  ]);
+  assert.deepEqual(gifts(watch.look(gear(1, round, { counts: counts(6) }), true)), [
+    giftNotice('cloak'),
+    giftNotice('dye'),
+    giftNotice('horse'),
+  ]);
+  // The last keeper heard ends the round: the next task begins with nothing counted. The ride's steps tick in the
+  // tracker alone, and the ship is noticed as its task is done.
+  assert.deepEqual(gifts(watch.look(gear(1, round + 1, { counts: [0] }), true)), [giftNotice('letter')]);
+  const ridden = watch.look(gear(1, round + 1, { counts: [1, 1, 1, 1, 1, 1] }), true).notices;
+  assert.deepEqual(ridden, [], "a lesson's steps: no notice");
+  const rode = watch.look(gear(1, round + 2, { counts: [0] }), true);
+  assert.deepEqual(gifts(rode), [], 'the ride done');
+  assert.deepEqual(noticed(rode), ['Step done: Ride the Bay'], "the task's own notice stays");
+  assert.deepEqual(gifts(watch.look(gear(1, round + 3, { counts: [0] }), true)), [giftNotice('ship')]);
+  assert.match(`${giftNotice('weapons').title} ${giftNotice('weapons').line}`, /Weaponsmith.*Melee.*Ranged/);
+  assert.equal(giftNotice('armour').key, 'character', 'the armour: the key to put it on');
+  assert.equal(giftNotice('horse').key, 'mount', 'the horse: the key to ride');
+  assert.ok(giftNotice('dye').icon?.svg.startsWith('<svg'), "each its keeper's mark");
+});
+
+test('a first pledge before the round is done announces the gifts the round still held, as the rules give them', () => {
+  const round = QUESTS[0]?.tasks.findIndex((task) => task.id === 'find-your-way') ?? -1;
+  const watch = heard(gear(1, round, { counts: [1, 1, 0, 0, 0, 0, 0] }));
+  const pledged = watch
+    .look(gear(STORM, 0, { pledge: 1 }), true)
+    .notices.filter((notice) => notice.title !== 'Step done');
+  assert.deepEqual(
+    pledged,
+    ['vestige', 'cloak', 'dye', 'letter'].map(giftNotice),
+    'the Tack and the ship at their counters',
+  );
+});
+
+test("the house pledged to gives its own piece once, its leader's line said unless its road's begin says it", () => {
+  const torsos = ['stormcallers_hauberk', 'lamplighters_vestments', 'veiled_coat'];
+  const piece = (house: number) => item({ id: 90 + house, named: torsos[house - 1] ?? '', rarity: 1 });
+  const given = (news: News) => news.notices.filter((notice) => notice.line.includes('Hauberk'));
+  const watch = heard(gear(1, 1));
+  // A first pledge: the piece given, and the road's begin said in place of its own line.
+  const storm = watch.look(gear(STORM, 0, { pledge: 1, done: [1, 0, 0, 0], items: [piece(1)] }), true);
+  assert.deepEqual(given(storm), [houseGiftNotice(1)]);
+  assert.deepEqual(storm.scenes, said(QUESTS[STORM - 1]?.begin, starting(STORM, 0)));
+  // A switch to a road walked before: the piece given, its leader's own line said.
+  const lamp = watch.look(gear(LAMP, 2, { pledge: 2, done: [1, 0, 0, 0], items: [piece(1), piece(2)] }), true);
+  assert.deepEqual(given(lamp), [houseGiftNotice(2)]);
+  assert.deepEqual(lamp.scenes, ['giftLamp']);
+  // Back to a house whose piece was given: nothing.
+  const back = watch.look(gear(STORM, 1, { pledge: 1, done: [1, 0, 0, 0], items: [piece(1), piece(2)] }), true);
+  assert.deepEqual([given(back), back.scenes], [[], []]);
+  // A house's Legendary, bought, is no gift.
+  const bought = { ...piece(3), rarity: 3 };
+  const veil = watch.look(
+    gear(LAMP + 1, 1, { pledge: 3, done: [1, 0, 0, 0], items: [piece(1), piece(2), bought] }),
+    true,
+  );
+  assert.deepEqual(given(veil), []);
+  assert.match(`${houseGiftNotice(1).title} ${houseGiftNotice(1).line}`, /Arlo Kestrel.*Stormcaller Hauberk/);
+  assert.equal(houseGiftNotice(3).key, 'character', 'the key to wear it');
+});
+
+test("the house's piece posted, the bag and the vault full, is told as given as one carried is", () => {
+  const piece = item({ id: 91, named: 'stormcallers_hauberk', rarity: 1 });
+  const watch = heard(gear(1, 1));
+  const posted = { id: 1, from: 6, crowded: true, vestige: null, item: piece };
+  const pledged = watch.look({ ...gear(STORM, 0, { pledge: 1, done: [1, 0, 0, 0] }), mail: [posted] }, true);
+  assert.deepEqual(
+    pledged.notices.filter((notice) => notice.line.includes('Hauberk')),
+    [houseGiftNotice(1)],
+  );
 });

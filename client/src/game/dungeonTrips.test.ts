@@ -129,6 +129,16 @@ test("a company member in a patrol's dungeon is joined in that dungeon, at their
   assert.deepEqual(ways, [['into', '', 'node-saltgrass-downs--elite--dungeon-2--run-m9n8b7v6', name, 'elite']]);
 });
 
+test("a patrol's dungeon's run asked by its name is gone into with its patrol's file, as the room alone reads it", async () => {
+  const { trips, happenings, ways, settled } = recorded({ foot: null });
+  trips.intoRun(patrol, 'node-saltgrass-downs--elite--dungeon-2--run-qaqa0001');
+  await settled();
+  const name = 'The Caverns of the Saltgrass Downs';
+  const file = JSON.stringify({ id: 'saltgrass-downs', kind: 'patrol', name: 'The Saltgrass Downs' });
+  assert.deepEqual(happenings, [{ kind: 'enter', node: 'saltgrass-downs--dungeon-2', name }]);
+  assert.deepEqual(ways, [['into', file, 'node-saltgrass-downs--elite--dungeon-2--run-qaqa0001', name, 'elite']]);
+});
+
 test('a patrol’s dungeon at Abyss is a run of its own, or the company’s where it is in one', async () => {
   const alone = recorded({ foot: standing(patrol, 'abyss') });
   alone.trips.enter(1, 'The Halls of the Saltgrass Downs');
@@ -280,6 +290,30 @@ test('a company that falls is taken out by the way it came in, the veil saying i
   await sea.settled();
   assert.deepEqual(sea.happenings[1], { kind: 'surface', name: 'The Caverns of the Sea', fell: true });
   assert.deepEqual(sea.ways[1], ['sea', { x: 1, y: 0.5, facing: 0 }]);
+});
+
+test('a dungeon left leads nowhere from the next place under ground, a passage zone among them', async () => {
+  const here = { foot: standing(patrol, 'normal') as object | null };
+  const { trips, ways, settled } = recorded(here);
+  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  await settled();
+  trips.leave();
+  await settled();
+  assert.equal(ways.length, 2, 'in and out again');
+  // Later, under ground in a passage zone, which the page went into by no trip of these.
+  here.foot = { ...standing(patrol, 'normal'), dungeon: { room: 'passage-continent-1-w2921-z3' } };
+  trips.leave();
+  trips.fell();
+  await settled();
+  assert.equal(ways.length, 2, 'no way out of the dungeon left before');
+  // A dungeon left by another road (its room shut, the player sent to their ship) leads nowhere either.
+  here.foot = standing(patrol, 'normal');
+  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  await settled();
+  here.foot = { ...standing(patrol, 'normal'), dungeon: { room: 'passage-continent-1-w2921-z3' } };
+  trips.fell();
+  await settled();
+  assert.equal(ways.length, 3, 'in, and no way out of it from the passage zone');
 });
 
 test('a dungeon is shown with the entrance gone in by, so its exit door wears that door', async () => {

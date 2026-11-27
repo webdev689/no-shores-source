@@ -1,15 +1,15 @@
 // The heads-up display's pieces as nodes, each set against the view where it stands: the place's name, the warning
-// and its count, death's words, the status line, the notices, the sea bar and the offers over it, and Manage's panel
+// and its count, death's words, the status line, the notices, the offers at the foot of the screen, and Manage's panel
 // (the key strip is `keyStrip.ts`). Each answers its node for a frame, or nothing while it does not show; presses run
 // what they are handed.
 import { NOTICE_LOOK, type NoticeRow, slidIn } from '../plus/notices.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { boundWord, withKey } from './controls.ts';
+import { withKey } from './controls.ts';
 import { edged } from '../combat/barDraw.ts';
 import type { BannerTone } from '../combat/publicBanner.ts';
-import { footer, header, hudPress, rail, ruleUnder, said } from './hudParts.ts';
+import { footer, header, hudPress, ruleUnder, said } from './hudParts.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import type { Fallen } from './footRevive.ts';
 
@@ -153,70 +153,7 @@ export function statusNode(view: HudView, text: string): Node | null {
   };
 }
 
-/** What the sea bar shows and does. */
-export interface SeaBarState {
-  readonly pace: number;
-  readonly sailing: boolean;
-  readonly resumable: boolean;
-  readonly canLeave: boolean;
-  readonly canManage: boolean;
-}
-
-/** What the presses of the sea bar and Manage's panel do. */
-export interface SeaBarActions {
-  readonly map: () => void;
-  readonly voyage: () => void;
-  readonly pace: (direction: number) => void;
-  readonly manage: () => void;
-  readonly leave: () => void;
-}
-
-/** The navigation panel at sea: the map, stopping or resuming the voyage, the pace dial, and the ship's presses, each
- *  group after the first behind an engraved rail. */
-export function seaBarNode(ui: Interface, state: SeaBarState, act: SeaBarActions): Node {
-  const label = (words: string): Node => said(words, { colour: DIM, wrap: false, tracking: 3 });
-  const group = (first: boolean, ...children: Node[]): Node => ({
-    gap: 8,
-    alignY: 'center',
-    padding: first ? 0 : [0, 0, 0, 18],
-    draw: first ? undefined : rail(),
-    children,
-  });
-  const voyage = state.sailing || state.resumable;
-  return {
-    id: 'sea:bar',
-    role: 'window',
-    gap: 18,
-    alignY: 'center',
-    padding: [10, 16],
-    float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: -28 },
-    children: [
-      group(
-        true,
-        label('NAVIGATION'),
-        hudPress(ui, 'sea:map', withKey('Map', 'map'), act.map),
-        ...(voyage
-          ? [hudPress(ui, 'sea:voyage', withKey(state.sailing ? 'Stop' : 'Resume voyage', 'voyage'), act.voyage)]
-          : []),
-      ),
-      group(
-        false,
-        label('PACE'),
-        hudPress(ui, 'sea:slower', withKey('−', 'slower'), () => act.pace(-1)),
-        { minWidth: 44, alignX: 'center', children: [said(`×${state.pace}`, { size: 2, wrap: false })] },
-        hudPress(ui, 'sea:faster', [boundWord('faster'), '+'].filter(Boolean).join('  '), () => act.pace(1)),
-      ),
-      group(
-        false,
-        label('SHIP'),
-        hudPress(ui, 'sea:manage', withKey('Manage', 'manage'), act.manage, { disabled: !state.canManage }),
-        hudPress(ui, 'sea:leave', withKey('Leave the helm', 'leaveHelm'), act.leave, { disabled: !state.canLeave }),
-      ),
-    ],
-  };
-}
-
-/** An offer over the sea bar's place, in brass: to dock or go ashore, take the helm, or go through a gate. */
+/** An offer over the foot of the screen, in brass: to take the helm, or go through a gate. */
 export function offerNode(ui: Interface, id: string, words: string, take: () => void): Node {
   return {
     float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: -94 },

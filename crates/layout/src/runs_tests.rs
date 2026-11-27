@@ -45,7 +45,14 @@ fn basin() -> (Vec<[f64; 2]>, Vec<Area>, Sculpts) {
     let middles = [[0.0, 0.0], [600.0, 0.0], [0.0, -600.0]];
     let areas: Vec<Area> = middles
         .iter()
-        .map(|&at| Area { kind: AreaKind::Wilds, name: "The Wilds".into(), at, radius: 48.0, leads_to: None })
+        .map(|&at| Area {
+            kind: AreaKind::Wilds,
+            name: "The Wilds".into(),
+            at,
+            radius: 48.0,
+            leads_to: None,
+            crosses: false,
+        })
         .collect();
     let sculpt = Sculpt {
         claim: claim.clone(),
@@ -256,8 +263,14 @@ fn a_building_run_off_a_raised_floor_is_reached_by_a_ramp_down_to_its_mouth() {
 
 #[test]
 fn a_building_run_s_ramp_stops_short_of_its_area_s_middle_by_its_half_width() {
-    let areas =
-        [Area { kind: AreaKind::Coven, name: "The Coven".into(), at: [0.0, 0.0], radius: 30.0, leads_to: None }];
+    let areas = [Area {
+        kind: AreaKind::Coven,
+        name: "The Coven".into(),
+        at: [0.0, 0.0],
+        radius: 30.0,
+        leads_to: None,
+        crosses: false,
+    }];
     let run = |top: f64| Run {
         name: "The Keep".into(),
         kind: RunKind::Keep,

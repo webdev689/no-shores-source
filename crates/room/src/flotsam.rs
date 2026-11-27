@@ -7,6 +7,7 @@
 
 use crate::PlayerId;
 use crate::battle::Sank;
+use crate::sea::islands::off_leg;
 use gear::character::{Character, Vestige};
 use gear::dice::{Dice, Purpose};
 use gear::rewards::Foe;
@@ -132,12 +133,13 @@ impl Flotsam {
     }
 
     /// One tick at `clock`: every piece drifts down its wind (east and south) and those that have lain their time
-    /// are gone; then each player's ship at `ships` gathers each of their pieces within `GATHER_M`, its contents
-    /// going to their character where they have one. Answers each piece gathered, and what it held.
+    /// are gone; then each player's ship gathers each of their pieces within `GATHER_M` of the leg it sailed this
+    /// tick (`ships`, from where it lay to where it lies), its contents going to their character where they have one.
+    /// Answers each piece gathered, and what it held.
     pub fn tick(
         &mut self,
         clock: u64,
-        ships: &[(PlayerId, [f64; 2])],
+        ships: &[(PlayerId, [[f64; 2]; 2])],
         characters: &mut std::collections::BTreeMap<PlayerId, Character>,
     ) -> Vec<(Event, PlayerId, Held)> {
         self.pieces.retain(|piece| clock < piece.until);
@@ -149,9 +151,9 @@ impl Flotsam {
                 let drift = piece.wind.map(|along| along / speed * DRIFT_M_S * movement::TICK_SECONDS);
                 piece.at = [piece.at[0] + drift[0], piece.at[1] + drift[1]];
             }
-            let near = ships.iter().any(|(player, at)| {
-                *player == piece.player && libm::hypot(at[0] - piece.at[0], at[1] - piece.at[1]) <= GATHER_M
-            });
+            // Along the whole leg: at a pace of 200 a ship sails farther than GATHER_M in a tick.
+            let near = (ships.iter())
+                .any(|(player, [from, to])| *player == piece.player && off_leg(piece.at, *from, *to) <= GATHER_M);
             // Only a player whose character the room holds can take what it holds: for anyone else it floats on.
             let Some(character) = characters.get_mut(&piece.player).filter(|_| near) else { return true };
             let held = open(piece, seed, self.difficulty, character);

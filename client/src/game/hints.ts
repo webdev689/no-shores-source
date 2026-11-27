@@ -36,13 +36,14 @@ const MAP: StripHint = ['landMap', 'Map'];
 
 /** The keys each moment shows, the strip's last entry with them. */
 export const HINTS = {
-  landMap: [['Drag', 'Pan'], ['Wheel', 'Zoom'], ['landMap / Esc', 'Close'], ALL_CONTROLS],
+  landMap: [['Drag', 'Pan'], ['Wheel', 'Zoom'], ['legend', 'Legend'], ['landMap / Esc', 'Close'], ALL_CONTROLS],
   dead: [['respawn', 'Respawn'], ALL_CONTROLS],
-  sea: [
-    ['Left button', 'Sail there'],
+  oversea: [['Left button', 'Sail there'], ['map', 'Plan a voyage'], ['seaView', 'Sea level'], ALL_CONTROLS],
+  sealevel: [
     ['steerLeft / steerRight', 'Steer'],
     ['sailOn', 'Sail on'],
     ['heaveTo', 'Heave to'],
+    ['seaView', 'Oversea'],
     ALL_CONTROLS,
   ],
   manage: [['Drag', 'Turn'], ['Wheel', 'Zoom'], ['manage', 'Back'], ALL_CONTROLS],
@@ -67,17 +68,19 @@ export const HINTS = {
     ['Wheel', 'Zoom'],
     ['Left button', 'Choose'],
     ['confirm', 'Set sail'],
+    ['legend', 'Legend'],
     ['Esc', 'Close'],
     ALL_CONTROLS,
   ],
-  landing: [['Left button', 'Choose; again to land'], ['confirm', 'Land'], ['Esc', 'Back'], ALL_CONTROLS],
+  landing: [['Left button', 'Land or open'], ['confirm', 'Land or open the lit tile'], ['Esc', 'Back'], ALL_CONTROLS],
 } as const satisfies Record<string, readonly StripHint[]>;
 
 /** Each moment's name, as the strip's head says it. */
 const TITLES: Readonly<Record<keyof typeof HINTS, string>> = {
   landMap: 'Map',
   dead: 'Fallen',
-  sea: 'Sailing',
+  oversea: 'Oversea',
+  sealevel: 'Sea level',
   manage: 'Manage',
   deck: 'On deck',
   fight: 'Sea fight',
@@ -325,8 +328,10 @@ export function withMapKey(strip: Strip): Strip {
 }
 
 /** What the player is doing at sea, for the keys shown: fighting and aiming the guns, choosing a landing, at the helm
- *  with the map, walking its deck (the mouse free for a click to take it or not), managing it, or sailing. */
+ *  with the map, walking its deck (the mouse free for a click to take it or not), managing it, or sailing in the view
+ *  switched to (`level`). */
 export interface AtSea {
+  readonly level: 'oversea' | 'sealevel';
   readonly fighting: boolean;
   readonly aiming: boolean;
   readonly landing: boolean;
@@ -342,5 +347,5 @@ export function seaStrip(state: AtSea): Strip {
   if (state.landing) return stripOf('landing');
   if (state.atHelm) return stripOf('map');
   if (state.walking) return state.free ? { ...stripOf('deck'), hints: [LOOK, ...HINTS.deck] } : stripOf('deck');
-  return stripOf(state.managing ? 'manage' : 'sea');
+  return stripOf(state.managing ? 'manage' : state.level);
 }

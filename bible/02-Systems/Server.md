@@ -64,6 +64,11 @@ code:
   - server/keeping.ts#rename
   - server/arrival.ts#arrives
   - server/arrival.ts#cameOutOf
+  - server/roomNames.ts#passageRoom
+  - server/roomNames.ts#passageAsk
+  - server/passageHost.ts#openPassageRoom
+  - server/keeping.ts#changed
+  - crates/room/src/judged.rs#mark
   - crates/room/src/entrances.rs#stand_at_spawn
   - crates/room-wasm/src/lib.rs#refusal
   - crates/room/src/course.rs#stand_foe_at
@@ -94,7 +99,8 @@ on Cloudflare.
 - **Its ground:** a node's room stands its bodies on the node's window of the [[Land]], among the boxes of its city a
   body runs into ([[Movement]]). A dungeon's room stands them on the dungeon's own ground in its own frame, whose
   rock, doorways' jambs and pillars are walls no body passes or climbs, kept a body's half-width off ([[Dungeons]]).
-  Any other room stands them on its course of blocks on open ground at 0 m, or, for a course laid over open sea
+  A passage zone's room stands them on its zone's ground in the zone's own frame, the Forge's under ground or a
+  hollow's heights above it, among its pieces' solids, and runs its deal ([[Passages]]). Any other room stands them on its course of blocks on open ground at 0 m, or, for a course laid over open sea
   (`room_open_over_sea`, the [[Prologue]]'s wreck), on its blocks over the sea at 0 m.
 - **Joining:** a player gets a number no one else in the room has had, and comes in with all three healing charges
   ([[Combat]], "Healing charges"; [[Three Healing Charges, Refilled by Blows and Kills]]) and whole, unless their
@@ -162,9 +168,10 @@ on Cloudflare.
   ([[Dungeons]], "In the rooms"). Every draw is made on the room's loot seed, on a stream and a count of its own, at
   its first tick, after its host seeds it. A player opens each find once: it stays for the rest, and the room keeps it
   opened for their account however often they rejoin. Opened, it pays them ([[Gear]], "A find"): a chest's Vestige
-  poured out of it toward them (`pour`; [[Gear]], "Drops"), a container's thrown to their feet. A player's gear carries the chests standing they have not opened, five numbers each
-  (number, x, y, z, facing), the containers, eight each (number, box, foot, top, model), and the number of the last
-  find the room paid them for (`opened`).
+  poured out of it toward them (`pour`; [[Gear]], "Drops"), a container's thrown to their feet. A player's gear carries the chests standing they have not opened, six numbers each
+  (number, x, y, z, facing, 1 for a vault's chest), the containers, eight each (number, box, foot, top, model), the
+  number of the last find the room paid them for (`opened`), and in a dungeon how many of its chests they have opened
+  of all it stands (`chests_opened`, `chests_total`; `Room::chests_counted`).
 - **A patrol's dungeon** has a room of its own ([[Dungeons]], "In the rooms"), opened from its patrol's node file:
   its floor, its one spawn at the way in, a body standing there facing into the room, and the patrol's island band
   for its garrison's levels. The Grey Tithe's dungeon garrison stands where the Forge puts foes ([[Enemies]]). Beside
@@ -268,12 +275,16 @@ The room named `sea` holds every player's ship at Normal; `sea--elite` and `sea-
 voyage's harder difficulty, each a room of its own whose ships come at the levels that difficulty raises them to
 (`room_difficulty` after `room_open_sea`). A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s,
-or 1, the world's own time, which the page sails it at while its view is close on it ([[Game]], "At sea").
+200 (2,400 m/s), at which a voyage planned on the held map sails, or 1, the world's own time, which the page sails it
+at while its view is close on it ([[Game]], "At sea").
 A ship not yet at sea puts in only by a port city, its course's first point within 3 km of the roadstead, and then at
 that roadstead itself, never the page's own point, the page told so (`Sea::puts_in`; a sea opened with no port cities
 puts it to sea where the page asks); a ship its owner sailed before comes back where the sea last had it, however far
 the page puts it, as a ship sails nowhere while its player is away
-([[The Audit's Leftovers Are Fixed as Claude Suggested]]); one at sea starts the course from where it is, to the nearest
+([[The Audit's Leftovers Are Fixed as Claude Suggested]]). A ship last had off one region of an island (in its waters,
+off the region of it whose centre is nearest) whose course's first point lies within 3 km of another region's anchorage
+there (`content/world/regions.json`) puts in at that anchorage, as the page leaving a patrol zone asks by its region's
+anchorage ([[Game]], "Landings"); a ship with none on record never puts in at an anchorage; one at sea starts the course from where it is, to the nearest
 metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
 facing when it holds one: the helm turned while it lies still. A player sets one course, facings among them, each half
 second, and one sooner is dropped: judging a course against the coasts takes up to a few
@@ -282,17 +293,22 @@ will take it, by the room's own tick.
 
 - Each tick, each ship sails its pace's distance along its course, turning onto each leg as it comes to it, and comes
   to rest at the course's end. Its heading is the bearing of the leg it sails, clockwise from north.
+- **Locked seas.** A course is refused whole when any of its points lies in a locked sea, the sea of an island not
+  yet named (`world::islands`, from `content/world/islands.json`, which the server opens the sea with as the
+  request's `islands`; a sea opened without them locks nothing), and a ship about to cross into one stops at its edge; a ship
+  the sea kept in one comes back at Overlook's roadstead, and no ship washes up, puts in or is repaired at a port in
+  one ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]).
 - A course is refused whole when any point lies on a continent, or any leg, from where the ship is on, crosses or
   touches a continent's coast in the layout ([[World Map]]). The coasts are judged in whole metres, in integer
   arithmetic. A pace neither one of the steps nor 1, a point outside the world's frame, and a course of more than 64
   points are refused.
 - **Travel.** A course asked with the travel flag (the held map's, [[Sailing]], "Travel by the held
   map") takes the ship most of the way at once (`sea_travel.rs`). It is refused while the player fights, stands on a deck or boards,
-  is off the helm, or is any hostile ship's quarry, when the course ends in the water the ship is in, and as any
-  course is refused; its last leg and the place it would lie are judged besides against every standing island, told
+  is off the helm, or is any hostile ship's quarry, when it would leave the ship where it lies, and as any course is
+  refused; its last leg and the place it would lie are judged besides against every standing island, told
   to the player or not, and judged before anything is set, so a refusal there leaves the ship, its course and its turn as they were. Taken, the ship lies on the course's last leg 400 m short of its end (at the leg's start where the
   leg is shorter), heading along it, its course the end alone at the pace asked, and the player's next roll for a
-  hostile ship waits its first 30 s again; the hostile ships no player keeps go as ever. Either way the player is told
+  hostile ship waits its first 30 s again; the hostile ships no player past home waters keeps go as ever. Either way the player is told
   (code 24: taken, or the reason's number), and a refused travel leaves the ship as it was.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
 - The Grey Tithe's ships sail among the players', each with its rank, and a bold one that meets a player fights them
@@ -328,7 +344,11 @@ will take it, by the room's own tick.
   (a fight met from the page's spot meanwhile is over for it), or as asked once the host says none is kept
   (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives it
   back where it was kept). A character given back with no place kept in it (a new one) puts to sea at Overlook's
-  roadstead, wherever the page put it or asks. A new account's
+  roadstead, wherever the page put it or asks. One given back from a patrol zone's own room (`node-<id>`, at Elite or
+  Abyss `--elite` or `--abyss`; never its dungeon, a run, a passage or one started at sea), the room the accounts say
+  it came from, which the keeper hands the sea with it (`restoreJoined`'s `from`), lies at the anchorage of that zone's
+  region when its ship lies in the waters of the zone's island off another of its regions (the one whose centre is
+  nearest it), facing as before (`Sea::came_from`, `world::regions`). A new account's
   character is the one the room holds, given back to it. The account the
   keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
   they join once more. Whatever
@@ -339,14 +359,17 @@ will take it, by the room's own tick.
   snapshot carries what floats for each player, each ship's kept hurts and its repair's seconds left, what each player
   is told beside their fight's view (the naval crate's numbers, or the sea's own: washed up, what a piece held, who
   joined with its hull, moored; their codes one export on the page, `seaHarbour.ts` `TOLD`), whether each fighting
-  player may board now (`may_board`), and each deck boarded with its boarders and its room's own snapshot. The host takes the snapshot
+  player may board now (`may_board`) and whether their fight is the Harbourmaster's hulk's (`lesson`), and each deck boarded with its boarders and its room's own snapshot. The host takes the snapshot
   once a tick (`room_snapshot_prepare`) and sends each socket its own cut (`room_snapshot_for`): what floats, kept
   hurts, what is told and a deck's own snapshot reach only the players they are for, and each player is sent only the
   ships near them: the hostile ships within 1.1 times the distance each is sighted from (the share that keeps it at
-  sea), the other players' within 60 km (the page's farthest view at sea), and every player in their fight. Once in
+  sea), the other players' and the ships lying parked within 60 km (the page's farthest view at sea), and every player
+  in their fight. Once in
   each second of the sea's clock, however many ticks the host stepped at once, every player is also sent the sea's
-  chart (`charted`): every ship in the room, their own among them, where it lies and its captain's name, for the
-  [[Held Map]]; the snapshots between carry none. Every snapshot of that tick carries it, however many times it is
+  chart (`charted`): every ship in the room, their own among them, where it lies and its captain's name, and with it
+  every hostile ship, sailing or still in a player's fight, and standing island in the water their own ship lies in
+  (`chart_marks`), for the [[Held Map]];
+  the snapshots between carry none. Every snapshot of that tick carries it, however many times it is
   prepared, and a sea opened again charts its first. A boarding is refused when its deck would hold no crew.
 - **Measured** (`room-wasm/src/load_tests.rs`, by hand in release): the tick and every player's snapshot, players 60 km
   apart with three wary ships each: 432, 568 and 590 bytes a player a tick at 1, 8 and 16 players (tested offline).
@@ -369,7 +392,8 @@ will take it, by the room's own tick.
   within 20 km of their ship and those they found, keeps every course and hostile ship off their coasts, and lets each
   fade ten minutes after nothing holds it ([[Islands]]). An island's room is `isle-<number>-<seed>`: the host opens it
   only on the `sea` room's word that the island stands with that seed (a call between the two Durable Objects), and
-  while players stand ashore it tells the sea each minute, so the island is held under them. As an account joins it, the
+  while players stand ashore it names them to the sea every 15 seconds, which holds the island under them ("Parked
+  ships", below). As an account joins it, the
   room asks the sea whether that account is landed on the island (its ship at rest at the island's anchorage) and lets
   go of one that is not; only landed accounts scavenge. An island's dungeon (`sea-dungeon-...`) opens the same way: only
   when the sea of its tier holds an island whose door leads there, named from that island's seed, water and style
@@ -377,6 +401,35 @@ will take it, by the room's own tick.
   players are in it, lets go of an account the sea has not landed there (one the sea did not answer for, or not within
   20 seconds, may join again), and plays each input before the sea's answer as standing still, though a dress sent then
   is shown as any other.
+- **Parked ships** (`sea_parked.rs`, `ashore.ts`;
+  [[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]). A player who leaves
+  the sea with their ship at rest within 5 km of a continent's coast or a standing sea island's (`PARKED_REACH_M`:
+  where a docked ship lies), out of a fight and their account no guest's (`unkept:`), leaves it lying parked where it
+  is, kept by their account. It lies at the one
+  coast nearest it of those within 5 km, a continent's or a standing sea island's, as a sea island may stand 3 km off
+  a coast or another island. It is never one of the sea's ships: no hostile ship or fight heeds it, and a sea island
+  is rolled 1.2 km clear of it. Every room on an island (a node's room, its dungeons' and runs', a passage zone's
+  under its island, a sea island's room and its dungeon's) names the players it holds to all three seas, as a player
+  may come ashore from any tier's (a social space or an outpost from any, an Elite Dungeon's run, a Breach's zone and
+  run and a passage zone from a node at any), as each account is known and every 15 seconds after (`ashoreWord`,
+  `room_sea_ashore`), with its island (its node's or a passage zone's continent, a sea island's number and seed, or
+  none for a run started at sea) and the host's time in seconds. Each player named carries their account and, as their
+  character has them now (`room_named`, `ShipLook::of`), the ship they sail as others see it and their level, which
+  their parked ship takes on: a ship bought, dressed or renamed ashore, or a level gained, shows on it. Every naming
+  is timed by the host's time, which the sea keeps, carries on by its own ticks between words, holds at its most
+  rather than overflowing, and never puts before the minute the host sets as it starts ticking, since a sea room stops
+  ticking while nobody sails it. A named account's parked ship lying at that island (a run's wherever it lies) is seen
+  for 45 seconds more; one no room has named for 45 seconds lies unseen, seen again once a room names it (its player
+  back on the island), and is let go after a day unnamed (`KEPT_S`) or as its player comes back to any sea: the sea
+  that learns their account tells the other two, by the same word naming no one (`afloat`), to let go of theirs. The
+  sea keeps 1,024 parked ships at most, letting go of the one parked longest ago first. It sends each ship seen to the
+  players within 60 km of it, at rest, with its looks and its plate, under the number its player had as they left, and
+  answers each naming with every ship seen at that island. A room whose page draws them (a node's own ground or a sea
+  island's, not a dungeon, a run or a passage zone) sends those in its snapshots to every player, the ship's own too,
+  so a page reloaded ashore still draws its own (`room_parked`; every room numbers the Elite and Abyss seas' ships
+  2^30 and 2^31 past their own), and hands on a sea's last answer for 45 seconds at most once that sea stops
+  answering. Parked ships live only in the sea room's memory: they are lost as it restarts, on a deploy or once the
+  host evicts it idle.
 
 ## A fleet
 
@@ -429,10 +482,13 @@ the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the three fact
 it (none in any other node); and whether it is locked: each patrol area and mission the open list,
 `content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"), and each social space but
 Overlook's ([[Only Overlook's Social Space Opens for Now]]); and its gates: the nodes its layout's gates and way in
-lead to, each with a layout of its own, as the [[Game]]'s passages go. The index lists each node's id, kind, name,
+lead to, each with a layout of its own, as the [[Game]]'s passages go (a patrol area's instances of its region and
+the other patrol areas of its island, [[World Map]], "Regions"); the host lets a player into a node from any node
+whose gates lead there (`server/arrival.ts`, `gatedFrom`), so one of Saltmere's zones is walked into from both
+others. The index lists each node's id, kind, name,
 continent, rect and gates, which the host reads to judge arrivals. A locked node's room opens but takes no player, and so does
 each dungeon's room of a locked patrol, its runs among them, which open only with the patrol's file. The bake takes
-about 18 s for the nine continents' 99 nodes, a few at a time, and writes about 50 MB in all, a patrol area's file
+about 14 s for the nine continents' 92 nodes, a few at a time, and writes about 35 MB in all, a patrol area's file
 the largest at about 1.6 MB (the Gullwing Vale's, its boxes keeping to what is drawn, [[Layouts]], "Boxes"). `server`, `server:bundle` and
 `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is called
 `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2--run-00000000`, of at
@@ -450,11 +506,11 @@ an older reader skips them.
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim, the point an aimed shot is laid on and a drink asked), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the Grey Tithe's type in that role, a foe, a Major or its first rank), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go), whether a menu is open on their screen, and whether they hold Use to revive a fallen ally |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading it faces at rest; in a fight, its orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the Grey Tithe's Major) or every one sent off |
-| Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window (none in a dungeon's room, which stands on no land), and the protocol's version: the hash of the schema, of the files laying out the fights' numbers that cross as plain lists (`FLOATS` in `server/protocolVersion.ts`: a fighter with its body, statuses and trim, an intent and a glance, the sea fight's view and lay, the foes' list and how others' numbers are packed) and of the content and rules the wire numbers by place (`tools/numbered.json`, `server/protocolVersion.ts`: cosmetics, emblems, factions, items, resources, rolled names, the ships' dresses, the shipyard's hulls and name words, the Arts, the lore's chapters, the quests' tasks, the keepers spoken with and their counters' numbers, the cast's speakers, the items' kinds and slots, and the smiths' stock), so a page built from another schema, other layouts or another order of that content loads again, once; and everyone's plate |
+| Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window (none in a dungeon's room, which stands on no land), and the protocol's version: the hash of the schema, of the files laying out the fights' numbers that cross as plain lists (`FLOATS` in `server/protocolVersion.ts`: a fighter with its body, statuses and trim, an intent and a glance, the sea fight's view and lay, the foes' list and how others' numbers are packed) and of the content and rules the wire numbers by place (`tools/numbered.json`, `server/protocolVersion.ts`: cosmetics, emblems, factions, items, resources, rolled names, the ships' dresses, the shipyard's hulls and name words, the Arts, the lore's chapters, the quests' tasks, the keepers spoken with and their counters' numbers, the cast's speakers, the items' kinds and slots, the smiths' stock, the passages' mouths and the Atheric bounties' steps), so a page built from another schema, other layouts or another order of that content loads again, once; and everyone's plate |
 | Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 24 numbers their body, its rider's boost's two clocks among them, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; the plates changed since it, each player's newest alone; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; and the name a foe stands under, if it has one (an event's great foe's); the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); in a Breach's run, or a zone that holds its gate, the Breach whole (`breach`, `BreachSeen`: each
 encounter's phase, the stage reached, the seals open, the attempt's revives, the Lodestone, the Rewritten, the chests
 open and the encounter under way; at its gate, the Waking, the company holding it, who it is open to and the companies
-inside; [[Breaches]]); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest, and as its player keeps it, its hull, its four dresses, its name's two words and its player's emblem ([[Shipyard]], "Seen by others"); every hostile ship near them (the Grey Tithe's, sailing or in a clash): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; each traffic id the room has taken off its route (`taken`) and each friendly ship it keeps at sea that the player's ship keeps in sight, as a hostile ship is kept (`friendlies`: its traffic id, position, heading and hull), none when there are none; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire"); and on land whether the room is a darkness zone (`darkness`) and each fallen player being revived, with their reviver and the hold's share per mille (`reviving`, [[Revives]]) |
+inside; [[Breaches]]); and at sea every ship near the player (as "The sea" cuts it), those lying parked among them: its player, position, heading and pace, 0 at rest, and as its player keeps it, its hull, its four dresses, its name's two words and its player's emblem ([[Shipyard]], "Seen by others"); every hostile ship near them (the Grey Tithe's, sailing or in a clash): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; each traffic id the room has taken off its route (`taken`) and each friendly ship it keeps at sea that the player's ship keeps in sight, as a hostile ship is kept (`friendlies`: its traffic id, position, heading and hull), none when there are none; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire"); and on land whether the room is a darkness zone (`darkness`) and each fallen player being revived, with their reviver and the hold's share per mille (`reviving`, [[Revives]]); and on an island's own ground (a node's room or a sea island's) every ship parked at the room's island, the player's own too, as the sea sends a ship (`ships`, at rest), left out of one built on a base while they stand as the base's, one that has none where its base had some sent whole; and in a passage zone its deal as it stands for the player (`passage`, [[Passages]], "On the wire") |
 
 **Plates.** On land each player's plate, what others read over their head ([[Interface]], "Players"), crosses as a table
 of its own: their number, their username (none for a guest), their level, whether a menu is open on their screen, as their
@@ -525,7 +581,7 @@ seeing the last one that did. A browser takes
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; on a sea island, the wrecks they have scavenged there (`scavenged`); whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); the clock's day the room's word is of (each beginning at 09:00 UTC), which a smith's ware and a bounty's ask are asked by; in a patrol or an Elite Dungeon's node, its dungeons' entrances, each where it stands, the ground's height there, its model's yaw and which model it is; whether they have finished the prologue; their day's and week's record as kept (the day it is for and the tiers of the dungeon of the day cleared then, the week it is for, the week's two cleared and the Abyss boon), sent raw for the page to judge against its own day and week; and the day's bounties on the board as they stand for them, the town's six, then the pledged faction's three, then any other faction's held that day (each one's words, target, count, whether held and whether turned in, none held from another day), each one's pool (on land, at sea or in dungeons), name, tier, place on the board and the faction that posts it, and what a first tier's pays them at their level; and their ship's part (`GearShip`, [[Ship Power]]), with the ships they keep (each one's hull, name and dress), the hull sailed and every dress kept ([[Shipyard]]) |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; on a sea island, the wrecks they have scavenged there (`scavenged`); whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); the clock's day the room's word is of (each beginning at 09:00 UTC), which a smith's ware and a bounty's ask are asked by; in a patrol or an Elite Dungeon's node, its dungeons' entrances, each where it stands, the ground's height there, its model's yaw and which model it is; whether they have finished the prologue; their day's and week's record as kept (the day it is for and the tiers of the dungeon of the day cleared then, the week it is for, the week's two cleared and the Abyss boon), sent raw for the page to judge against its own day and week; and the day's bounties on the board as they stand for them, the town's eight (its six, then the passages' two at places 15 and 16), then the pledged faction's three, then any other faction's held that day (each one's words, target, count, whether held and whether turned in, none held from another day), each one's pool (on land, at sea, in dungeons or in the passages), name, tier, place on the board and the faction that posts it, and what a first tier's pays them at their level; and their ship's part (`GearShip`, [[Ship Power]]), with the ships they keep (each one's hull, name and dress), the hull sailed and every dress kept ([[Shipyard]]); and their dive in an island's passages with its haul and whether it is homeward, the lamps lit this week on each island and its day's lamp, and their Atheric bounties ([[Passages]]) |
 
 ## The host
 
@@ -543,15 +599,20 @@ so every decision is Rust and the shell only carries bytes and time.
   room opens a Test Ground. A node with no baked file answers 404, as does a dungeon
   whose node is no patrol. Any other spelling of a node's room is no room, but for the tiers' old names: `--rough`
   and `--storm` are read as `--elite` and `--abyss` (`canonicalRoom`), so a page that still builds them joins its
-  room and loads again. A name is 64 characters at most.
+  room and loads again. A name is 64 characters at most. The Worker answers 404 itself to a name no room is spelled as,
+  and 426 to a room asked for without a WebSocket (`joinedRoom`), before an object is made; an object makes its room's
+  WebAssembly only when first used.
 - **Runs** (`roomNames.ts`): a name ending `--run-<instance>`, eight lowercase letters or digits, is a private room,
   a run ([[Activities]]): `node-<patrol>--elite--dungeon-<n>--run-<i>` or `--abyss--` a patrol's dungeon at Elite or
   Abyss, `node-<Elite Dungeon>--run-<i>` an Elite Dungeon, `node-<Elite Dungeon>--elite--run-<i>` or `--abyss--`
   the week's two, and `node-<Elite Dungeon>--elite--playlist-<foes' level>--run-<i>` or `--abyss--` a playlist's run
   (`nodeRoom`'s `playlist`, which `runAsk` hands the room module as the ask's `playlist`; [[Activities]], "The
-  Playlist"). The week's run the Playlist launches is marked `--sea` before its instance
-  (`node-<Elite Dungeon>--abyss--sea--run-<i>`): it opens as the week's run, and `startedAtSea` reads it and a
-  playlist's run as started at sea. A sea island's dungeon is `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
+  Playlist"). An Elite Dungeon's run started at sea is marked `--sea` before its instance: the week's the Playlist
+  launches (`node-<Elite Dungeon>--abyss--sea--run-<i>`) opens as the week's run, and one at Normal from the island's
+  tile (`node-<Elite Dungeon>--sea--run-<i>`, no tier before the mark) as the Elite Dungeon's run at Normal.
+  `startedAtSea` reads these and a playlist's run as started at sea; `sea` is never read as a tier, a patrol's dungeon
+  takes no `--sea`, and `--sea` with no run after it is no room. A sea island's dungeon is
+  `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
   Normal, with `--elite--run-<i>` or `--abyss--run-<i>` after it a run (`seaDungeonRoom`). A Breach's run names its
   gate's patrol zone and its tier, `node-<zone>--breach-<normal|hard>--run-<i>` (`nodeRoom`'s `breach`), and opens from
   `breachAsk`'s ask; it lets a character in only once its zone's room says its company's gate opened, and holds eight
@@ -593,7 +654,10 @@ so every decision is Rust and the shell only carries bytes and time.
   its address stands them before that entrance's door, and an entrance it does not have is an ordinary join. They
   stay there only once the room keeps their character as come out of that entrance's dungeon or its run: one whose
   character came from anywhere else, who sends no token within five seconds or who plays unkept is stood at the next
-  spawn (`outOfDoor`). In a social space's room, `?relog=1` asks, once the room keeps the character, to stand the
+  spawn (`outOfDoor`). Across a crossing gate from another patrol zone, `?from=<node id>` stands them at the room's
+  gate toward that node, as its node file lists its crossings (`bake::crossings_of`), and they stay there only once
+  the room keeps their character as come from that node's room at the same seas, else at the next spawn
+  (`outOfDoor`). In a social space's room, `?relog=1` asks, once the room keeps the character, to stand the
   player where that character left the space (`standWhereLeft`; [[Accounts]], "Where a player logs back in"). Each
   binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
@@ -608,8 +672,9 @@ so every decision is Rust and the shell only carries bytes and time.
   player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. As a
   player leaves, the host first has the room send every Vestige still lying for them to their mail (`mailLying`, at sea
   from the captain's deck they stand on; [[Gear]], "The mail"), then reads their character for its last save, then lets
-  the room take them out, so the save keeps what they left lying. Not yet so: a player whose socket a second sign-in
-  replaces, and every player of a room a deploy restarts or a fault stops, leave without that last save. A socket there
+  the room take them out, so the save keeps what they left lying. A player whose socket a second sign-in replaces has
+  their chests opened and what lies for them mailed too, into the body the second takes on (`keptRoomOn`). Not yet so:
+  every player of a room a deploy restarts or a fault stops leaves without that last save. A socket there
   that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no
   session, is closed with 4003 and "Sign in to play online." (in a run, "Sign in to enter this run."), so sockets that
   never sign in cannot hold a room's places; every page of the game sends one, a guest's included. Nor can one address
@@ -636,11 +701,16 @@ so every decision is Rust and the shell only carries bytes and time.
   where a new character first stands, takes anyone. Any other node's room takes a character that rejoins it; that
   lands from the sea at the room's seas (a social space's from any), the ship the sea kept in it (`ship_at`) lying
   within the landfall's 30 km of the node's island's coast, and 2 km more, since the ship heaves to a moment after
-  the page offers it; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
+  the page offers it, but never on an island not yet named, whose sea is locked ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]),
+  and for a node a region lists, only with the ship off that region, the region of the island whose centre is nearest
+  it, the rule the island's tiles keep (`arrival.ts` `offRegionOf`, over `overworld/regions.ts` `nearestRegion` and
+  `regionHolds`); a social space and any node no region lists, anywhere in reach of the island; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
   takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
-  from its node at any seas. A run started at sea (`startedAtSea`: a playlist's, or the week's marked `--sea`) takes
-  one from the sea alone, as the Playlist beside a port launches it, and never leads out to its node or by its door,
+  from its node at any seas. A run started at sea (`startedAtSea`: a playlist's, or an Elite Dungeon's marked `--sea`,
+  the week's or one at Normal) takes one from the sea alone, as the Playlist beside a port or the island's tile
+  starts it (one at Normal only with the ship within 32 km of its island's coast, where its tile stands), and never
+  leads out to its node or by its door,
   so no run carries a player across the sea onto an island. A character that came by none of these ways may still join one of its company who plays
   in the room, as the Roster's "Go to them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
   this place from where you were.", so the page takes the player back to their ship, saying so. A player unkept is
@@ -659,6 +729,47 @@ so every decision is Rust and the shell only carries bytes and time.
   still get the tick. When the last player leaves it stops, and the room goes with the object.
 - Each second, and before its first tick, the host gives the room the Unix minute; the rules read the day and the week
   from it (`gear::clock`).
+
+## A passage zone's room
+
+- **Its name** (`passageRoom`): `passage-<island>-w<week>-z<zone>`, the island's continent's id, its web's week as
+  `gear::clock::week_of` counts it and the zone's number in the web ([[Passages]]), each number without leading
+  zeros. That is the zone's first public room; `--2` to `--9` after it (`PASSAGE_COPIES`, as many as the page tries)
+  are the next public rooms, each opened when the ones before were full, and `--run-<instance>` a company's route, a run as any other (`privateRun`). Any other
+  spelling is no room, so no other spelling opens a fresh room, nor a public copy of a route. A page may join any
+  copy by its number; each dive is still paid a zone's cache once.
+- **Opening** (`passageHost.ts`): the first join opens the room from its name with the room module's
+  `open_passage`, its ask the island, week, zone, route and the minute (`passageAsk`). Last week's web ("The passage
+  has shifted"), any other week but this one ("That week's passages are gone.") and a zone the web does not hold ("No
+  such passage.") open nothing, the zone never laid, and the host takes the socket only to close it with 4003 and
+  why. A room opened in its week refuses every join with "The passage has shifted" once the week on its clock turns,
+  judged as each join comes (`refusal`).
+- **Who comes in**: it keeps characters as a node's room does. A public room holds eight accounts (`PASSAGE_MOST`),
+  judged as each signs in and again as each is kept, so two signing in together never make nine, and a ninth is
+  closed with 4003 and "This passage is full.", for the page to join the next copy; nor is one judged full before its
+  character is given to it, so a ninth is never sent it as kept. Its sockets are held to sixteen, and a socket past
+  them is closed with "This passage is full." too (`roomFull`), so the page joins the next copy. A judge of arrivals
+  that throws (the module not laying the web) refuses for now, as accounts that do not answer do. As in a run, no one plays before the room keeps their character, and it
+  keeps no one unkept. A route keeps to its company and its four accounts as a run does. A
+  company's member taking its route joins the room of a member already in that zone's route, as the page finds it
+  among the company's places (`sharedRun`), else the page draws a new instance (`runInstance`).
+- **Arrivals** (`arrives`, judged from the keeper's copy of the character, never the page's): only a character on a
+  dive (`gear::dive::Dive`) of the room's island, week and zone, by its route (a company's dive into a route, a public
+  one into a public room), and only from the island's patrol zone at the seas the dive began at (`Dive::seas`), where
+  the dive begins at the mouth leading to the zone or at the zone's lamp lit this week; from a passage zone of the
+  same web and route whose ways on lead to it, where the rules went on only once its deal was done; from another
+  public copy of its zone, as a full one sends the page on; or rejoining its own room with the dive still in it. Once
+  the week turns, last week's rooms take no one, whoever is still in them. No company playing there lets anyone else
+  in. Out of a lamp's zone a character comes home to the island's patrol zone at the seas its dive began at, once its
+  dive went home from that zone (`go_home`, its lamp lit this dive): the dive is judged, not the week's lamps, which a
+  week turned since may have cleared. The web is laid by the room's own module (`room_passage_web`).
+- **What an arrival is judged by is saved at once** when it moves (`Keeper.changed`): the dive's island, week, zone,
+  route, lamp and Home, and the lamps lit this week with their week. The room keeps a mark of these for each player,
+  set from the character as restored and compared as their gear changes (`crates/room/src/judged.rs`), and the host
+  asks it whether it moved (`room_judged_moved`), so no change reads the character. A move is saved without waiting
+  `SAVE_AFTER_CHANGE_MS`, so the next room reads where the dive went; while a move is unsaved, the next change tries
+  again. A join to
+  any land room that is not the dive's zone ends the dive, its haul lost, as the room's rules do.
 
 ## An outpost's room
 
@@ -837,7 +948,7 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   its room standing its fallen again unasked; the [[Game]] does both, and fights there. A server's node room takes no
   ask for a foe; only a room a page plays alone is told to (`take_foe_asks`).
 - A dungeon's room bakes its navmesh over the dungeon's whole rectangle: two to five blocks laid in a chain that never
-  crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 27 patrols lays all three
+  crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 11 patrols lays all three
   entrances; a dungeon's room opens for its number whether or not its patrol's land found room for its entrance. A
   patrol's room takes `?entrance=` only from a character that came out of that entrance's dungeon; a player who
   plays unkept stands there for up to five seconds, until the host stands them at a spawn. Movement has no ceilings;

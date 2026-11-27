@@ -68,9 +68,9 @@ table Input {
 // in the naval crate's numbers (crates/naval/src/wire.rs), and no points. Off the helm, a step of the player's walk on
 // its deck instead: its controls in the movement crate's order and its number, 1, 2, 3 and so on from the helm left. Or
 // the helm left (1), or taken again at the wheel (2), or a chase (3): the hostile ship it chases by that ship's number,
-// `chase`, 0 for none. Or an ask: its repair by a port city (1), to board a captain who struck (2), or to leave the
-// captain's deck once its crew has fallen (3). A course asked with `travel` takes the ship to other waters by the held
-// map (crates/room/src/sea_travel.rs).
+// `chase`, 0 for none. Or an ask: its repair by a port city (1), to board a captain who struck (2), to leave the
+// captain's deck once its crew has fallen (3), or the held map raised at the helm (4), told to a sailing lesson. A
+// course asked with `travel` takes the ship anywhere at sea by the held map (crates/room/src/sea_travel.rs).
 table Course {
   points: [double];
   pace: ushort;
@@ -322,13 +322,15 @@ table Ship {
 }
 
 // A friendly ship of the traffic the room has taken off its route: its traffic id, where it is, its heading in radians
-// clockwise from north, and its hull (as Hostile numbers it).
+// clockwise from north, its hull (as Hostile numbers it), and whether she runs dark, her lanterns out, running from
+// the Tithe ship that attacked her.
 table Friendly {
   traffic: ulong;
   x: double;
   y: double;
   heading: double;
   hull: ubyte;
+  dark: bool;
 }
 
 // A ship on the sea's chart (Snapshot.charted): its player's number, where it lies, and its captain's name, which the
@@ -338,6 +340,14 @@ table Charted {
   x: double;
   y: double;
   name: string;
+}
+
+// A mark on the sea's chart (Snapshot.chart_marks): a hostile ship or a standing island in the water the player's ship
+// lies in, where it lies (x, y in metres), and what it is (0 a hostile ship, 1 a cove, 2 a ruin, 3 a quarry).
+table ChartMark {
+  x: double;
+  y: double;
+  kind: ubyte;
 }
 
 // A hostile ship at sea, the Grey Tithe's: its number, where it is, its heading in radians clockwise from north, its
@@ -362,7 +372,8 @@ table Hostile {
 // its captain's faction, rank and hull, as Hostile numbers them. Then the other captains in the fight, their count and
 // each one's numbers (the number its events name it by, its faction and rank, its ship and its mind; none when
 // there are none), which the view leaves out so a page that knows one captain reads it whole. Last, whether the player
-// may board a captain of it now: the sea would take the boarding they asked (crates/room/src/battle.rs `alongside`).
+// may board a captain of it now: the sea would take the boarding they asked (crates/room/src/battle.rs `alongside`);
+// and whether it is the fight of the Harbourmaster's hulk, the sailing lesson's (crates/room/src/sea_lessons.rs).
 table SeaFight {
   player: uint;
   view: [double];
@@ -371,6 +382,7 @@ table SeaFight {
   others: [double];
   hull: ubyte;
   may_board: bool;
+  lesson: bool;
 }
 
 // One ship in a fleet room: its number; whether a captain sails it; its helm's numbers in the sailing crate's order
@@ -666,6 +678,30 @@ table Snapshot {
   charted: [Charted];
   // On land, every airship and crown bringing foes (Arrival), whole in each snapshot while it lasts.
   arrivals: [Arrival];
+  // In a passage zone, its deal as it stands for the player; none in any other room.
+  passage: PassageSeen;
+  // At sea, with the chart: every hostile ship and standing island in the water the player's ship lies in, for the
+  // held map.
+  chart_marks: [ChartMark];
+}
+
+// A passage zone's deal for one player: its key (crates/passage's `Deal::key`), whether it is done, its dead lamps
+// lit and its targets down (a bit each, in their order), the share of a Hold's ring held, the seconds left (a Hold's,
+// a Gauntlet's, or until a public deal begins again), the waves called, whether the zone's mouths are open for the
+// player and its lamp lit for them, and the hold of E under way (its target, a dead lamp's number or 255 the lamp,
+// and its share; 254 and 0 with none).
+table PassageSeen {
+  deal: string;
+  done: bool;
+  lit: ubyte;
+  broken: ubyte;
+  held: double;
+  left: double;
+  wave: ubyte;
+  open: bool;
+  lamp_lit: bool;
+  holding: ubyte = 254;
+  holding_share: double;
 }
 
 // What a room sends: exactly one of these is present.

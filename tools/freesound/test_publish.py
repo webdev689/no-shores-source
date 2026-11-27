@@ -1,8 +1,9 @@
 """publish.py as the freesound workflow runs it, on a machine with no numpy, over downloads made here: a cue of one
 pick written whole with its credit, a cue of several written as its variations with each one's credit, DFO's own
-kept, and a cue no longer picked dropped; a pick already on R2 kept there, beside a new one sent, as a single pick
-becomes several; a cut cue of several published from each pick's own cut; and a music cue's root checked by its
-pattern. Nothing goes to R2: its door is stood in for by a counter.
+kept, and a cue no longer picked dropped; a download of some cues keeping the others as published; a pick already on
+R2 kept there, beside a new one sent, as a single pick becomes several; a cut cue of several published from each
+pick's own cut; and a music cue's root checked by its pattern. Nothing goes to R2: its door is stood in for by a
+counter.
 
     python3 -I tools/freesound/test_publish.py"""
 import json
@@ -88,6 +89,17 @@ class Picks(unittest.TestCase):
 
 
 class RootsWithoutNumpy(unittest.TestCase):
+    def test_a_download_of_some_cues_keeps_the_others_as_published_and_one_neither_read_nor_published_stops(self):
+        cues = [{'id': 'one', 'picked': 11}, {'id': 'kept', 'picked': [21, 22]}]
+        before = {'kept': {'keys': ['sounds/k21.mp3', 'sounds/k22.mp3'],
+                           'credits': [{'freesound': 21}, {'freesound': 22}], 'changes': 'Unchanged.'}}
+        sounds, _ = published(cues, before, [pick('one', 11, 'picks/one.mp3')])
+        self.assertEqual(sounds['kept'], before['kept'])
+        self.assertEqual(sounds['one']['freesound'], 11)
+        with self.assertRaises(SystemExit):
+            published(cues, {'kept': dict(before['kept'], credits=[{'freesound': 21}])},
+                      [pick('one', 11, 'picks/one.mp3')])
+
     def test_a_music_cue_keeps_its_root(self):
         self.assertEqual(publish.root_of('music.harp', {'root': 'C3-38'}), {'root': 'C3-38'})
 

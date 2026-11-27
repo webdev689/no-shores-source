@@ -57,7 +57,7 @@ pub fn open_run(text: &[u8], patrol: &[u8]) -> bool {
         DungeonAsked::Patrol { patrol: id, number } => {
             let file = serde_json::from_slice::<PatrolFile>(patrol).ok();
             let Some(file) = file.filter(|file| file.kind == NodeKind::Patrol && file.id == id) else { return false };
-            (RunOf::Patrol { patrol: id, number }, crate::lock_words(file.locked, &file.name))
+            (RunOf::Patrol { patrol: id, number }, crate::dungeon_door::lock_words(file.locked, &file.name))
         }
         DungeonAsked::Place { place } => match asked.playlist {
             Some(foes_at) => (RunOf::Playlist { place, foes_at }, None),
@@ -242,6 +242,9 @@ mod tests {
         assert_eq!(revives(), -1, "an Elite run counts none");
         assert!(open(json!({ "seed": 4_242, "style": "caverns", "continent": "continent-4" }), 0));
         assert!(!open(json!({ "place": "krakens-grotto" }), 2), "not this week's Abyss");
+        assert!(open(json!({ "place": "krakens-grotto" }), 0), "any Elite Dungeon at Normal");
+        assert!(!open(json!({ "place": "gullwing-vale" }), 0), "a patrol is no Elite Dungeon");
+        assert!(!open(json!({ "place": "nowhere" }), 0));
         assert!(!open(json!({ "seed": 4_242, "style": "caverns", "continent": "continent-0" }), 0));
         assert!(!open(json!({ "place": "krakens-grotto" }), 3), "no fourth tier");
         assert!(!open_run(b"not an ask", b""));

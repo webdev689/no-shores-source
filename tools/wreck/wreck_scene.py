@@ -31,6 +31,8 @@ BOW = {'pivot': (16.0, 0.0, SEA_Z), 'at': (34.0, 6.5, SEA_Z + 0.2), 'heading_deg
 SLOOP = {'at': (25.0, -15.0, SEA_Z - 0.5), 'heading_deg': 95.0, 'roll_deg': 88.0, 'pitch_deg': 1.5,
          'pivot': (0.0, 0.0, SEA_Z)}
 BREAK_X = 0.0
+# Where the Brig's mainmast stands along her, metres: snapped to a stump in her fallen waist, the wisp's mast.
+BRIG_MAINMAST_X = -3.55
 
 
 def collection(name):
@@ -46,7 +48,7 @@ def brig(sloop, seed):
     rng = seeded(seed)
     deck = hull.deck
     # Her mainmast went over the side with all its hamper; her foremast stands, its canvas burning to rags.
-    snap_mast(stern, (-3.55, 0.0, deck(-3.55)), 1.6, 9.5, rng)
+    snap_mast(stern, (BRIG_MAINMAST_X, 0.0, deck(BRIG_MAINMAST_X)), 1.6, 9.5, rng)
     tear_sails(stern, keep_share=0.5, seed=seed, near_foot=0.9)
     # Her waist on the side the Frigate struck fell into her hold; the guns there went with it.
     waist = (-9.3, -4.7, -0.4, 0.6)

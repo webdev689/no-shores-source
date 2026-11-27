@@ -153,3 +153,12 @@ export type ToPage =
   /** The game has started: an error after this is the game's to bear, not a reason to stop the page. */
   | { readonly kind: 'started' }
   | { readonly kind: 'stopped'; readonly message: string };
+
+/** A side button going down or up as the game hears it besides: a key of its name ('Mouse3', which `keyNameOf` names
+ *  `mouse3`, as it is bound) at the window, so it acts where its control acts and every window that keeps the keys from
+ *  the game keeps it too, the chat's typing among them. */
+export function sideKey(type: string, button: number, pointer: Pointer): ToGame | null {
+  if ((button !== 3 && button !== 4) || (type !== 'mousedown' && type !== 'mouseup')) return null;
+  const fields = { key: `Mouse${button}`, code: '', repeat: false };
+  return { kind: 'event', on: 'window', type: type === 'mousedown' ? 'keydown' : 'keyup', fields, pointer };
+}

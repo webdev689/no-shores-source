@@ -1,4 +1,5 @@
 import { ruinedName } from '../ruinedName.ts';
+import { type MapRegion, regionsOf } from '../overworld/regions.ts';
 import { type Post, type StationInfo, type Ways, socialLocked } from './nodes.ts';
 
 /** A node's kind, as the edits files and the plans name it. */
@@ -39,12 +40,16 @@ export interface NodeInfo {
   readonly foes?: readonly Point[];
   /** The places its layout names, which a quest's goals stand at (layouts.ts `placesOf`); none for a node not laid. */
   readonly places?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
+  /** Its runs' sealed doors by name (layouts.ts `doorsOf`), where its room lays the passages' mouths. */
+  readonly doors?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
   /** Its layout's paths, each its points, along which its room lays where the fallen stand again (respawns.rs). */
   readonly paths?: readonly (readonly Point[])[];
   /** A patrol area's chest places and its props, of which a room playing alone keeps those that hold things
    *  (layouts.ts `findsOf`). */
   readonly chests?: readonly (readonly [number, number, number])[];
   readonly holderProps?: readonly (readonly [number, number, number, number, number, number])[];
+  /** Gone to across a crossing gate, the patrol area crossed from: its room stands the player at its gate toward it. */
+  readonly across?: string;
 }
 
 /** A continent's port city, as its edits file names it. */
@@ -70,6 +75,8 @@ export interface WorldData {
   readonly continents: readonly ContinentInfo[];
   readonly cities: readonly CityInfo[];
   readonly nodes: readonly NodeInfo[];
+  /** Every island's three regions (`content/world/regions.json`), as the held map lights and sails for them. */
+  readonly regions?: readonly MapRegion[];
 }
 
 interface EditsFile {
@@ -143,7 +150,11 @@ export async function loadWorld(base: string): Promise<WorldData> {
     if (!response.ok) throw new Error(`world/${path}: ${response.status}`);
     return response.text();
   };
-  const [layoutText, openText] = await Promise.all([text('layout.json'), text('open.json')]);
+  const [layoutText, openText, regionsText] = await Promise.all([
+    text('layout.json'),
+    text('open.json'),
+    text('regions.json'),
+  ]);
   const open = JSON.parse(openText) as string[];
   const layout = JSON.parse(layoutText) as { continents: { id: string; outline: Point[]; climate?: string }[] };
   const continents = await Promise.all(
@@ -162,7 +173,7 @@ export async function loadWorld(base: string): Promise<WorldData> {
     if (sites.city) cities.push(sites.city);
     nodes.push(...sites.nodes);
   }
-  return { layoutText, continents, cities, nodes };
+  return { layoutText, continents, cities, nodes, regions: regionsOf(regionsText, continents) };
 }
 
 /** Where a player arriving at the node `id` lands: its continent, and its id and name; a city's social space is

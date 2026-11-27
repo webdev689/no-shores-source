@@ -1,6 +1,7 @@
 import { sphereAround } from '../frustum.ts';
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import { farPlace, ShadowMap } from '../shadow.ts';
+import { lightMotion, motionCode } from '../sky/flicker.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { PLAYER_LOOK, type ShipLook } from './dress.ts';
@@ -10,11 +11,13 @@ import type { HullPaint } from './hulls.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
 import type { ShipHarm } from './shipHarm.ts';
-import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
+import { type ShipMesh, shipLanterns, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 import { cellShows, flagAt, harmedCanvas, mastFalls } from './harmDrawn.ts';
 import {
   bufferOf,
+  LANTERN_FLOATS_AT,
   MAST_FLOATS_AT,
+  MOST_LANTERNS,
   MOST_MASTS,
   MOST_YARDS,
   PLACE_FLOATS,
@@ -24,6 +27,8 @@ import {
   YARD_FLOATS_AT,
 } from './shipShader.ts';
 import { tagShip, type ShipTags } from './shipTags.ts';
+import { lanternMesh } from './lanternMesh.ts';
+import type { Lantern } from './lanterns.ts';
 
 export { FRONT_FACE } from './shipShader.ts';
 
@@ -207,16 +212,26 @@ export const SHIP_SLOTS = 20;
  *  picture, its side's paint on its shell, its yards braced with its square sails, and its sails' canvas and its
  *  flag as its rig sets them: one model, up to `slots` ships of it a frame, each with its own place and canvas. */
 export class ShipView {
-  private readonly gpu: Gpu;
+  readonly gpu: Gpu;
   private readonly device: GPUDevice;
   private readonly kit: ShipKit;
   private readonly vertices: GPUBuffer;
   private readonly indices: GPUBuffer;
   /** Each slot's canvas as last laid: from which rig, as it and its harm had changed then, for which side (its
-   *  flag's), and how many of its indices are drawn. A moored ship's furled rig never changes, so its canvas is laid
-   *  once; a sailing one's once a frame for the shadows' passes and the picture alike. */
+   *  flag's), whether its flag showed, how many of its indices are drawn, and the clock its flag was flown at. A
+   *  settled or furled rig's sails are laid once; its flag, which flies on the clock, is laid again each frame. */
   private readonly laid: (
-    { rig: SailRig; changes: number; harm: ShipHarm; harmed: number; flag: number; indices: number } | undefined
+    | {
+        rig: SailRig;
+        changes: number;
+        harm: ShipHarm;
+        harmed: number;
+        flag: number;
+        shows: boolean;
+        indices: number;
+        flown: number;
+      }
+    | undefined
   )[] = [];
   private readonly slots: {
     readonly uniforms: GPUBuffer;
@@ -238,10 +253,23 @@ export class ShipView {
   private canvasBytes: DataView | undefined;
   /** Its bounding sphere in its own frame, made once (`shipSphere`). */
   private readonly sphere: readonly number[];
+  /** Where its lanterns stand in its own frame, as its manifest says (`shipLanterns`). */
+  readonly lanterns: readonly (readonly [number, number, number])[];
+  /** Where each of its lanterns' light burns in its own frame: its manifest's, then those of ours hung on it (at its
+   *  quarters, its door; the Sloop's taffrail). */
+  readonly lamps: readonly (readonly [number, number, number])[];
 
-  /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the device's kit made if it is not yet. */
-  static async open(gpu: Gpu, mesh: ShipMesh, sails: readonly SailCorners[], paint: HullPaint, slots = SHIP_SLOTS) {
-    return new ShipView(gpu, await shipKit(gpu), mesh, sails, paint, slots);
+  /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the lanterns `hung` on it, and the device's
+   *  kit made if it is not yet. */
+  static async open(
+    gpu: Gpu,
+    mesh: ShipMesh,
+    sails: readonly SailCorners[],
+    paint: HullPaint,
+    slots = SHIP_SLOTS,
+    hung: readonly Lantern[] = [],
+  ) {
+    return new ShipView(gpu, await shipKit(gpu), mesh, sails, paint, slots, hung);
   }
 
   private constructor(
@@ -251,6 +279,7 @@ export class ShipView {
     sails: readonly SailCorners[],
     paint: HullPaint,
     slots: number,
+    hung: readonly Lantern[],
   ) {
     this.gpu = gpu;
     this.device = gpu.device;
@@ -261,12 +290,25 @@ export class ShipView {
     this.paint = paint;
     this.tags = tagShip(mesh, sails);
     this.sphere = shipSphere(mesh, sails);
+    this.lanterns = shipLanterns(mesh.name).slice(0, MOST_LANTERNS);
+    this.lamps = [...this.lanterns, ...hung.map((lantern) => lantern.at)];
     if (this.tags.yards.length > MOST_YARDS) throw new Error(`a ship of ${this.tags.yards.length} yards is too many`);
     if (this.tags.masts.length > MOST_MASTS) throw new Error(`a ship of ${this.tags.masts.length} masts is too many`);
     this.flat = [flagFlat()];
-    this.vertices = bufferOf(gpu.device, this.tags.vertices, BUFFER_USAGE.vertex);
-    this.indices = bufferOf(gpu.device, mesh.indices, BUFFER_USAGE.index);
-    this.indexCount = mesh.indices.length;
+    // Its hung lanterns after its own vertices, once its tags are laid: none of them is its shell, a yard or a mast.
+    const extra = lanternMesh(hung);
+    const vertices = new Uint8Array(this.tags.vertices.byteLength + extra.vertices.byteLength);
+    vertices.set(new Uint8Array(this.tags.vertices));
+    vertices.set(new Uint8Array(extra.vertices), this.tags.vertices.byteLength);
+    const indices = new Uint32Array(mesh.indices.length + extra.indices.length);
+    indices.set(mesh.indices);
+    indices.set(
+      extra.indices.map((corner) => corner + mesh.vertexCount),
+      mesh.indices.length,
+    );
+    this.vertices = bufferOf(gpu.device, vertices.buffer, BUFFER_USAGE.vertex);
+    this.indices = bufferOf(gpu.device, indices, BUFFER_USAGE.index);
+    this.indexCount = indices.length;
     // Its sails' grids, then its flag's: each slot's own, as each ship's holes are its own.
     const gridBytes = canvasIndices(sails.length + 1).byteLength;
     this.slots = Array.from({ length: slots }, () => {
@@ -312,7 +354,9 @@ export class ShipView {
 
   /** Draws it into a pass the land's pipelines draw into (its formats, samples and reversed depth), in its own
    *  `slot` of the frame, in its side's colours as light as `look` says, and its yards, canvas and flag as `rig` sets
-   *  them (none without a rig, its yards square), lit by the sun through `shadow`'s maps (none unless given). */
+   *  them (none without a rig, its yards square), lit by the sun through `shadow`'s maps (none unless given); its
+   *  lanterns alight, flickering as a lantern's light does at `seconds` by the ship's `seed`, where it is given (a
+   *  wreck's are out). */
   drawInto(
     pass: GPURenderPassEncoder,
     place: ShipPlace,
@@ -321,8 +365,10 @@ export class ShipView {
     look: ShipLook = PLAYER_LOOK,
     rig: SailRig | null = null,
     shadow: ShadowMap = ShadowMap.none(this.gpu),
+    seconds: number | null = null,
+    seed = slot + 1,
   ): void {
-    const canvas = this.prepare(place, camera, slot, look, rig);
+    const canvas = this.prepare(place, camera, slot, look, rig, seconds, seed);
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.pipeline, shadow.receiverGroup(this.kit.pipeline));
   }
 
@@ -357,6 +403,8 @@ export class ShipView {
     slot: number,
     look: ShipLook,
     rig: SailRig | null,
+    seconds: number | null = null,
+    seed = slot + 1,
   ): number | null {
     const drawn = this.slots[slot];
     if (!drawn) return null;
@@ -369,7 +417,12 @@ export class ShipView {
     for (let index = 0; index < 12; index++) turn[index] = (turn[index] ?? 0) * (place.scale ?? 1);
     values.set(turn, 16);
     values.set([place.x - camera.eye[0], place.y - camera.eye[1], place.z - camera.eye[2], 0], 32);
-    values.set([look.shade ?? 1, 0, 0, 0], 36);
+    // Its lanterns' glass: how bright it glows now, flickering as its lamp does (a lantern's motion, as the sky's
+    // lamps take it), each ship's on a beat of its own.
+    const burn = seconds === null ? 0 : lightMotion(Math.fround(motionCode('lantern', seed)), seconds);
+    values.set([look.shade ?? 1, burn, 0, 0], 36);
+    if (seconds !== null)
+      this.lanterns.forEach((lantern, index) => values.set([...lantern, 1], LANTERN_FLOATS_AT + index * 4));
     const paint = look.painted ?? sidePainted(look.side);
     [paint.hull, paint.stripe, paint.canvas].forEach((colour, index) =>
       values.set(colour ? [...colour, 1] : [0, 0, 0, 0], 40 + index * 4),
@@ -387,22 +440,41 @@ export class ShipView {
     if (!rig) return 0;
     const laid = this.laid[slot];
     const { changes, harm } = rig;
+    const flown = flagAt(this.masthead, rig.harm, this.tags.masts, now);
+    const flag = flagGrid(flown.at, this.waterline.lengthM, rig.offDeg, rig.time);
+    const flagLayer = paint.flagLayer;
     if (
       laid?.rig === rig &&
       laid.changes === changes &&
       laid.harm === harm &&
       laid.harmed === harm.changes &&
-      laid.flag === paint.flagLayer
-    )
+      laid.flag === flagLayer &&
+      laid.shows === flown.shows
+    ) {
+      // The sails stand as laid: only the flag, last of the canvas, is laid again, once a frame.
+      if (laid.flown !== now && laid.indices > 0) {
+        const flagBytes = canvasVertices([flag], this.flat, [flagLayer]);
+        const offset = this.sails.length * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES;
+        this.device.queue.writeBuffer(drawn.canvas, offset, flagBytes.buffer, 0, flagBytes.byteLength);
+      }
+      laid.flown = now;
       return laid.indices;
-    const flown = flagAt(this.masthead, rig.harm, this.tags.masts, now);
-    const flag = flagGrid(flown.at, this.waterline.lengthM, rig.offDeg, rig.time);
-    const flagLayer = paint.flagLayer;
+    }
     const sails = harmedCanvas(rig.canvas(this.tags.pivots), rig.harm, this.tags.masts, this.waterline.beamM / 2, now);
     const grid = canvasIndices(this.sails.length + 1, (sail, cell) =>
       sail < this.sails.length ? cellShows(rig.harm, sail, cell, now) : flown.shows,
     );
-    this.laid[slot] = { rig, changes, harm, harmed: harm.changes, flag: flagLayer, indices: grid.length };
+    const shows = flown.shows;
+    this.laid[slot] = {
+      rig,
+      changes,
+      harm,
+      harmed: harm.changes,
+      flag: flagLayer,
+      shows,
+      indices: grid.length,
+      flown: now,
+    };
     if (grid.length === 0) return 0;
     this.device.queue.writeBuffer(drawn.canvasIndices, 0, grid);
     this.device.queue.writeBuffer(

@@ -4,7 +4,8 @@
 import type { IsleBuilt } from '../network/islePlans.ts';
 import type { SeenIsle } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
-import { type IslePlan, type IsleShown, readIslePlan } from '../islands/islePlan.ts';
+import { groundHeight } from '../islands/isleGround.ts';
+import { gridOf, type IslePlan, type IsleShown, readIslePlan } from '../islands/islePlan.ts';
 import type { IsleAt } from './isleLaw.ts';
 
 /** An island built: the room's word on it, its climate, its plan, and its ground's numbers in the world's metres (what
@@ -108,6 +109,15 @@ export class Isles {
     const held = this.built();
     if (ashore && !held.includes(ashore)) held.push(ashore);
     return held.map(({ seen, climate, plan, own }) => ({ id: seen.id, at: seen.at, climate, plan, heights: own }));
+  }
+
+  /** The ground's height at a world point on any island built, null off every one: where a click at sea meets it. */
+  groundAt(x: number, y: number): number | null {
+    for (const { heights } of this.built()) {
+      const height = groundHeight(gridOf(heights), x, y);
+      if (height !== null) return height;
+    }
+    return null;
   }
 
   /** An island built, by its number, while the room tells of it. */

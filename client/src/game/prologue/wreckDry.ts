@@ -4,7 +4,7 @@
 // fitted to the ground nearest it: its middle and length to the ground's, its outline station by station.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
 import { headingFrame } from '../../rules/landRules.ts';
-import { HULL_FIT, type HullMask, hullEdge, STATIONS } from '../../water/hullMask.ts';
+import { HULL_FIT, type HullMask, hullEdge, STATIONS, stationPlace } from '../../water/hullMask.ts';
 import { SQUARE_M } from './wreckGround.ts';
 
 /** How far past a square's middle its corners stand, and a hair more, metres: the footprint covers the whole square. */
@@ -40,7 +40,7 @@ function fitted(mask: HullMask, middles: readonly Point[]): HullMask {
   for (const [along, across] of frame) {
     const need = (Math.abs(across - midAcross) + SQUARE_REACH_M) / beam;
     // Every station the square spans, and the one past each end of it: the outline is straight between stations.
-    const stationOf = (offset: number) => ((Math.min(1, Math.max(-1, offset / length)) + 1) / 2) * (STATIONS - 1);
+    const stationOf = (offset: number) => stationPlace(offset / length);
     const [first, last] = [stationOf(along - midAlong - SQUARE_REACH_M), stationOf(along - midAlong + SQUARE_REACH_M)];
     for (let index = Math.floor(first); index <= Math.ceil(last); index++)
       line[index] = Math.max(line[index] ?? 0, need);

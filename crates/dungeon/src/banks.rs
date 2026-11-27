@@ -366,3 +366,108 @@ pub(crate) const MINES: Bank = Bank {
         &[BRAZIERS_FLANK, POST_LANTERNS, lanterns(8)],
     ),
 };
+
+/// The chalk the passages are cut through: its cutters' ways, faces and props, and the shells the old sea left in it.
+pub(crate) const CHALK: Bank = Bank {
+    way_in: purpose(
+        "cutters-way",
+        "Cutters' Way",
+        &[walls(4, &[POSTS, BEAMS, LADDERS]), rubble(10, &[ROCKS])],
+        &[POST_LANTERNS, lanterns(10)],
+    ),
+    rooms: &[
+        Purpose {
+            shapes: &[Shape::Rectangle],
+            ..purpose(
+                "flint-gallery",
+                "Flint Gallery",
+                &[walls(3, &[POSTS, BEAMS]), rubble(8, &[ROCKS])],
+                &[POST_LANTERNS, lanterns(10)],
+            )
+        },
+        purpose("chalk-face", "Chalk Face", &[rubble(3, &[ROCKS, GREAT_ROCKS]), one(&[LADDERS])], &[lanterns(6)]),
+        purpose(
+            "shell-gallery",
+            "Shell Gallery",
+            &[rubble(4, &[ROCKS, RUBBLE]), walls(6, &[POSTS])],
+            &[POST_LANTERNS, lanterns(8)],
+        ),
+        purpose(
+            "tally-room",
+            "Tally Room",
+            &[middle(&[TABLES]), walls(3, &[SHELVES, CRATES, BENCHES]), rubble(10, &[SMALL_CRATES])],
+            &[tops(2), lanterns(10)],
+        ),
+        purpose("dust-hollow", "Dust Hollow", &[rubble(3, &[ROCKS, RUBBLE, LOGS])], &[lanterns(12)]),
+        purpose(
+            "cutters-rest",
+            "Cutters' Rest",
+            &[one(&[HEARTHS]), walls(3, &[BENCHES, CRATES, TABLES])],
+            &[HEARTH_FIRES, tops(1)],
+        ),
+    ],
+    end: purpose(
+        "deep-face",
+        "Deep Face",
+        &[rubble(4, &[ROCKS, GREAT_ROCKS]), walls(5, &[CRATES, POSTS, LADDERS])],
+        &[BRAZIERS_FLANK, lanterns(8)],
+    ),
+};
+
+/// The barrows: ways and chambers lined with the grey-green stone, the dead in their cists and cells, and the goods
+/// laid with them.
+pub(crate) const BARROW: Bank = Bank {
+    way_in: purpose(
+        "entrance-passage",
+        "Entrance Passage",
+        &[walls(6, &[STANDING_STONES]), rubble(12, &[ROCKS])],
+        &[BRAZIERS_FLANK],
+    ),
+    rooms: &[
+        Purpose {
+            shapes: &[Shape::Alcoves],
+            ..purpose(
+                "side-cells",
+                "Side Cells",
+                &[alcoves(&[TOMBS, GRAVE_SLABS]), walls(6, &[HEADSTONES])],
+                &[BRAZIER_MIDDLE],
+            )
+        },
+        purpose(
+            "bone-chamber",
+            "Bone Chamber",
+            &[walls(4, &[SHELVES, TOMBS]), rubble(10, &[GRAVE_SLABS, ROCKS])],
+            &[BRAZIER_MIDDLE],
+        ),
+        purpose(
+            "grave-goods",
+            "Chamber of Grave Goods",
+            &[walls(3, &[PEDESTALS, CRATES, SHELVES]), middle(&[TABLES])],
+            &[tops(2)],
+        ),
+        purpose(
+            "stone-lined-way",
+            "Stone-Lined Way",
+            &[walls(2, &[STANDING_STONES, OBELISKS]), rubble(14, &[ROCKS])],
+            &[BRAZIER_MIDDLE],
+        ),
+        purpose(
+            "cist-chamber",
+            "Cist Chamber",
+            &[rows(Facing::Along, &[SARCOPHAGI, GRAVE_SLABS]), walls(8, &[HEADSTONES])],
+            &[BRAZIERS_FLANK],
+        ),
+        purpose(
+            "offering-chamber",
+            "Offering Chamber",
+            &[middle(&[PEDESTALS, OBELISKS]), flank(&[STANDING_STONES]), walls(6, &[TROUGHS])],
+            &[tops(2), BRAZIER_MIDDLE],
+        ),
+    ],
+    end: purpose(
+        "inner-chamber",
+        "Inner Chamber",
+        &[flank(&[STANDING_STONES, OBELISKS]), walls(5, &[TOMBS, SARCOPHAGI]), alcoves(&[SARCOPHAGI])],
+        &[BRAZIER_MIDDLE, tops(2)],
+    ),
+};

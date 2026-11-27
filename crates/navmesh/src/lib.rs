@@ -48,6 +48,9 @@ pub struct Agent {
     pub cell_size: f64,
     /// The grid's voxel, up.
     pub cell_height: f64,
+    /// Whether ground beside a drop is floor: a slope is taken up to the higher ground beside alone, so a way stays
+    /// walked to the edge of a drop, as a dungeon's floors run to the storey under them; else both ways.
+    pub walks_to_drops: bool,
 }
 
 /// The game's body: its radius, step and standing height from the movement rules. Cells are DFO's 0.25 m. A
@@ -60,6 +63,7 @@ pub const AGENT: Agent = Agent {
     max_slope: 0.7,
     cell_size: 0.25,
     cell_height: TUNING.step / 2.0,
+    walks_to_drops: false,
 };
 
 /// The open sea at 0 m under a course laid over it, where no body climbs, as its rim holds them (`Heights::rim`): its

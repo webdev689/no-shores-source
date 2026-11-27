@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { startRoomDoor } from '../../../server/roomDoor.ts';
-import { FAR_STRIDE, GROUND_FLOATS, groundHeight, groundMesh } from './isleGround.ts';
+import { FAR_STRIDE, GROUND_FLOATS, groundHeight, groundLook, groundMesh, groundTilesOf } from './isleGround.ts';
+import { TILE_LAYERS } from '../groundGrain.ts';
 import { MODULE_NAMES, packUrl, PARTS, readKitPack, roleOf, VERTEX_BYTES } from './isleModules.ts';
 import { gridOf, type IslePlacement, readIslePlan } from './islePlan.ts';
 import { instancesOf, isleBox, placedPoint } from './isleView.ts';
@@ -287,6 +288,16 @@ test('instances sort by module, a run each, the trees and cliffs marked for the 
   assert.ok(Math.abs((floats[5] ?? 0) + 1) < 1e-6);
 });
 
+test('a placement stood cold carries it in its instance’s last float; one with no word of it stands lit', () => {
+  const lamp = MODULE_NAMES.indexOf('passage.lamp');
+  const { floats } = instancesOf([
+    [lamp, 0, 0, 0, 0, 1, 1, 1],
+    [lamp + 1, 0, 0, 0, 0, 1, 1],
+  ]);
+  assert.equal(floats[7], 1);
+  assert.equal(floats[15], 0);
+});
+
 test("the room module's own plans and ground read, every module named", { skip: !existsSync(ROOM) }, () => {
   const door = startRoomDoor(new WebAssembly.Module(readFileSync(ROOM)));
   for (const [seed, climate] of [
@@ -301,4 +312,27 @@ test("the room module's own plans and ground read, every module named", { skip: 
     assert.equal(grid.cell, 2);
     assert.ok(groundMesh(grid).indices.length > 0);
   }
+});
+
+test("a ground wears the land's tiles: a climate's grass and dirt, a floor of one ground the tile nearest its colour", () => {
+  const tile = (name: (typeof TILE_LAYERS)[number]) => TILE_LAYERS.indexOf(name);
+  const floor = (inland: readonly [number, number, number], paved = false) => ({
+    inland,
+    high: inland,
+    snowM: 1e4,
+    paved,
+  });
+  assert.deepEqual(
+    groundTilesOf(groundLook('desert')),
+    [tile('grass'), tile('dirt')],
+    "a climate's own, as the land's",
+  );
+  assert.deepEqual(groundTilesOf(floor([0.6, 0.58, 0.53], true)), [tile('paving'), tile('paving')], 'a court is paved');
+  assert.deepEqual(groundTilesOf(floor([0.8, 0.72, 0.54])), [tile('sand'), tile('sand')], 'a strand is sand');
+  assert.deepEqual(groundTilesOf(floor([0.46, 0.37, 0.25])), [tile('dirt'), tile('dirt')], 'a ravine is earth');
+  assert.deepEqual(groundTilesOf(floor([0.4, 0.44, 0.28])), [tile('grass'), tile('grass')], 'shelves are turf');
+  assert.deepEqual(groundTilesOf(floor([0.36, 0.28, 0.18])), [tile('dirt'), tile('dirt')], 'a grove is leaf litter');
+  assert.deepEqual(groundTilesOf(floor([0.82, 0.8, 0.72])), [tile('stone'), tile('stone')], 'chalk is stone');
+  assert.deepEqual(groundTilesOf(floor([0.66, 0.64, 0.55])), [tile('sand'), tile('sand')], 'a shell bed is sand');
+  assert.deepEqual(groundTilesOf(floor([0.5, 0.48, 0.45])), [tile('stone'), tile('stone')], 'bare rock is stone');
 });

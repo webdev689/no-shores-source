@@ -1,14 +1,13 @@
 // What the story leaves to play on foot in Overlook's social space: the stranger's last moment (`Epilogue`), in which
-// she welcomes the player to Overlook (`tour.ts`). While she speaks the view is hers, flown from place to place, and
-// the player's keys are held; a press of Space (jump) moves her words on a line. Her farewell asks the room for her
-// gift. Leaving the place ends it all at once, the view and the keys the player's again.
+// she welcomes the player to Overlook (`tour.ts`). While she speaks the view is hers, on the pair face to face, and
+// the player's keys are held; a press of Continue moves her words on a line (`dialogue.ts`). Her farewell asks the
+// room to hear her task done. Leaving the place ends it all at once, the view and the keys the player's again.
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import type { CardAt } from '../../player/cards.ts';
 import { IDLE, type InputFrame } from '../../player/input.ts';
 import type { Block } from '../../rules/movementRules.ts';
 import { FIRELIGHT, type LampPlace } from '../../sky/lamps.ts';
 import type { Shot } from '../camera.ts';
-import type { StationInfo } from '../nodes.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
 import { COUNTERS, talkAt } from '../quests/questBook.ts';
 import { lineClear } from './framing.ts';
@@ -17,7 +16,7 @@ import { StrangerWelcome } from './tour.ts';
 /** How far along her way the player is turned to look as she walks off, metres. */
 const AHEAD_M = 3;
 /** While she speaks no figure is drawn nearer the tour's eye than this, metres: a townsman walking past the camera
- *  would fill the view. Her pair stands some 9 m off it and a keeper at least 5.5 m (`framing.ts`). */
+ *  would fill the view. Her pair stands some 9 m off it (`framing.ts`). */
 export const TOUR_CLEAR_M = 4;
 
 /** The soft warm light over the pair while she speaks: a lantern of the town's (`glowLamps`), dimmer, hung over the
@@ -49,10 +48,10 @@ export function clearOfEye<Card extends { readonly x: number; readonly y: number
 
 type You = { readonly x: number; readonly y: number; readonly z: number; readonly facing: number };
 
-/** Where the player stands as the stranger meets them: the place's kind and counters, the floor a figure stands on,
+/** Where the player stands as the stranger meets them: the place's kind, the floor a figure stands on,
  *  the blocks the camera's lines must clear, this room's word on the player's gear, and how an ask reaches it. */
 export interface Arrival {
-  readonly node: { readonly kind: string; readonly stations?: readonly StationInfo[] };
+  readonly node: { readonly kind: string };
   readonly floor: (x: number, y: number) => number;
   readonly blocks: readonly Block[];
   readonly gear: GearState | null;
@@ -62,7 +61,7 @@ export interface Arrival {
 }
 
 /** Whether a word of the room on the player's own character (`claimed`) shows the stranger's task waiting. */
-const owed = (gear: GearState | null): boolean =>
+const waiting = (gear: GearState | null): boolean =>
   gear?.quest?.claimed === true && talkAt(gear.quest, 'stranger') !== null;
 
 export class AfterStory {
@@ -70,11 +69,11 @@ export class AfterStory {
   private epilogue: Epilogue | null = null;
   /** Her welcome, set on the first frame in a social space. */
   private welcome: StrangerWelcome | null = null;
-  /** Whether her farewell has asked for her gift, and whether the room has been asked for it in this page. */
+  /** Whether her farewell has been said, and whether the room has been asked to hear her in this page. */
   private farewell = false;
   /** The bearing to turn the player to as she walks off, until the frame takes it. */
   private turn: number | null = null;
-  private gifted = false;
+  private told = false;
   /** Whether the lamp over the pair is lit. */
   private lit = false;
   /** Where the player stood on the last frame. */
@@ -95,7 +94,7 @@ export class AfterStory {
     veiled: boolean,
     here: Arrival,
   ): CardAt[] {
-    this.gift(here);
+    this.hear(here);
     this.you = you;
     const epilogue = this.epilogue;
     if (!epilogue || epilogue.done) {
@@ -104,10 +103,9 @@ export class AfterStory {
       return [];
     }
     if (!this.welcome && here.node.kind === 'social') {
-      const place = { stations: here.node.stations ?? [], groundAt: here.floor, blocks: here.blocks };
-      const welcome = new StrangerWelcome(place, {
+      const welcome = new StrangerWelcome(here.blocks, {
         play: (scene) => epilogue.say(scene),
-        gift: () => {
+        heard: () => {
           this.farewell = true;
           this.turn = this.toward(epilogue);
         },
@@ -132,13 +130,13 @@ export class AfterStory {
     return cards;
   }
 
-  /** Her gift, asked of the room once in a page: after her farewell, or owed with no welcome to hear in a social space
-   *  (a reload mid-welcome, a browser that played the story before); never before this room's gear is the player's
-   *  own and shows her task waiting, so no temporary character, nor another room's, takes it. */
-  private gift(here: Arrival): void {
+  /** Her task, asked heard of the room once in a page: after her farewell, or waiting with no welcome to hear in a
+   *  social space (a reload mid-welcome, a browser that played the story before); never before this room's gear is
+   *  the player's own and shows her task waiting, so no temporary character, nor another room's, has it heard. */
+  private hear(here: Arrival): void {
     const due = here.node.kind === 'social' && (this.farewell || this.past);
-    if (this.gifted || !due || !owed(here.gear)) return;
-    this.gifted = true;
+    if (this.told || !due || !waiting(here.gear)) return;
+    this.told = true;
     here.ask({ kind: ASKS.speakWith, column: COUNTERS.stranger ?? 0 });
   }
 
@@ -175,13 +173,14 @@ export class AfterStory {
     return this.welcome?.holding ?? false;
   }
 
-  /** The keys the player's own play hears this frame of those pressed (`controls`): none while she speaks, Space
+  /** The keys the player's own play hears this frame of those pressed (`controls`): none while she speaks, Continue
    *  moving her words on apart from them (`gameKeys`). */
   heard(controls: InputFrame): InputFrame {
     return this.holding ? IDLE : controls;
   }
 
-  /** Space pressed while she speaks: her words move on a line. */
+  /** Continue pressed while she speaks under Auto: her words move on a line. A line that waits for the press is
+   *  moved on as every waiting line is (`gameFrame.ts`). */
   press(): void {
     if (this.holding) this.epilogue?.advance();
   }

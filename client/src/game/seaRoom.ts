@@ -20,6 +20,7 @@ import {
   type SeenDeck,
   type SeenFlotsam,
   type SeenCharted,
+  type SeenMark,
   type SeenFriendly,
   type SeenIsle,
   type SeenKept,
@@ -60,6 +61,8 @@ export class SeaRoom {
   /** Every ship in the sea, the player's own among them, with its captain's name, as the room last charted them (about
    *  once a second). */
   charted: readonly SeenCharted[] = [];
+  /** Every hostile ship and standing island in the water the player's ship lies in, as the room last charted them. */
+  chartMarks: readonly SeenMark[] = [];
   /** The room's last word on the player's body on deck, off the helm (the number of their last step it took), or
    *  null while they hold it; and how many words it has sent, so each is taken once. */
   onDeck: { readonly acknowledged: number; readonly body: Body } | null = null;
@@ -75,6 +78,8 @@ export class SeaRoom {
   private told: number[][] = [];
   /** Whether the sea would take a boarding the player asked now, as its last word said. */
   mayBoard = false;
+  /** Whether the player's fight is the Harbourmaster's hulk's, as the sea's last word said. */
+  hulk = false;
   /** Their ship's kept hurts and repair, what floats for them, and the deck they stand on, as the room last said. */
   kept: SeenKept | null = null;
   flotsam: readonly SeenFlotsam[] = [];
@@ -156,7 +161,8 @@ export class SeaRoom {
     this.plates = new Map(snapshot.plates.map((plate) => [plate.player, plate]));
     this.hostiles = snapshot.hostiles;
     [this.friendlies, this.taken] = [snapshot.friendlies, new Set(snapshot.taken)];
-    if (snapshot.charted.length > 0) this.charted = snapshot.charted;
+    // The chart always holds the player's own ship; its marks, sent with it, may be none.
+    if (snapshot.charted.length > 0) [this.charted, this.chartMarks] = [snapshot.charted, snapshot.chartMarks];
     const walking = snapshot.players.find((seen) => seen.player === this.own);
     this.onDeck = walking ? { acknowledged: walking.acknowledged, body: walking.body } : null;
     this.words += 1;
@@ -169,6 +175,7 @@ export class SeaRoom {
     this.told.push(...snapshot.told.filter((told) => told.player === this.own).map((told) => [...told.numbers]));
     const own = snapshot.fights.find((fight) => fight.player === this.own);
     this.mayBoard = own?.mayBoard ?? false;
+    this.hulk = own?.lesson ?? false;
     if (own) {
       const who = { name: shipName(own.faction, own.hull), faction: own.faction, rank: own.rank };
       const view = fightViewOf(own.view, who, shipName);
@@ -285,7 +292,7 @@ export class SeaRoom {
     this.sendCourse();
   }
 
-  /** Asks to travel a course to the other waters it ends in: sent as a course is, in its turn, and no course sent
+  /** Asks to travel a course to where it ends: sent as a course is, in its turn, and no course sent
    *  in its place until the room answers. */
   travel(points: readonly Point2[], pace: SailedPace): void {
     [this.waitingCourse, this.waitingFacing, this.travelAsked] = [courseBytes(points, pace, true), false, true];
@@ -361,7 +368,14 @@ export class SeaRoom {
    *  the room's word is gone with it: no ship of its is shown, and a fight in it is over, the ship having left it. */
   pump(seconds: number): void {
     if (this.link.rejoining) {
-      [this.ships, this.hostiles, this.friendlies, this.charted, this.onDeck] = [[], [], [], [], null];
+      [this.ships, this.hostiles, this.friendlies, this.charted, this.chartMarks, this.onDeck] = [
+        [],
+        [],
+        [],
+        [],
+        [],
+        null,
+      ];
       this.leaveFight();
     }
     this.link.pump(seconds);

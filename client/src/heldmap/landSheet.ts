@@ -15,6 +15,8 @@ export type Segment = readonly [Point2, Point2];
 export interface MapMarks {
   readonly others: readonly { readonly at: Point2; readonly company: boolean }[];
   readonly events: readonly { readonly at: Point2; readonly name: string; readonly clock: string }[];
+  /** At sea, the hostile ships in the water the ship lies in. */
+  readonly hostiles?: readonly { readonly at: Point2 }[];
 }
 
 export interface LandMark {
@@ -48,15 +50,31 @@ export interface LandSheet extends Relief {
   readonly rivers: readonly { readonly from: Point2; readonly to: Point2; readonly width: number }[];
   readonly grounds: readonly { readonly kind: GroundKind; readonly quad: Quad }[];
   readonly walks: readonly Quad[];
-  /** Each path as wide as it is laid, metres: a track cased, a footpath dashed. */
-  readonly paths: readonly { readonly track: boolean; readonly width: number; readonly points: readonly Point2[] }[];
+  /** Each path as wide as it is laid, metres: a track cased, a footpath dashed, a `faint` one a thin pale line, an
+   *  `inked` one a thin solid line of the map's ink. */
+  readonly paths: readonly {
+    readonly track: boolean;
+    readonly width: number;
+    readonly points: readonly Point2[];
+    readonly faint?: boolean;
+    readonly inked?: boolean;
+  }[];
   readonly standing: readonly Quad[];
   readonly low: readonly Quad[];
   readonly overhead: readonly Quad[];
   readonly plants: readonly { readonly tree: boolean; readonly at: Point2 }[];
   readonly ring: readonly Point2[];
-  readonly places: readonly { readonly name: string; readonly at: Point2 }[];
+  /** Each place's name where it stands: one `near` is lettered only beside its mark, never moved off it; one `loss`
+   *  in the loss's red ink. */
+  readonly places: readonly {
+    readonly name: string;
+    readonly at: Point2;
+    readonly near?: boolean;
+    readonly loss?: boolean;
+  }[];
   readonly marks: readonly LandMark[];
+  /** How much of it the map opens across, metres: 400 round the player unless said (the passages' web, whole). */
+  readonly span?: number;
 }
 
 /** The rise between two lines of the ground's relief, and between two index lines, metres. */

@@ -4,6 +4,7 @@
 
 use crate::kinds::Slot;
 use crate::quest_defs::RewardDef;
+use crate::quest_lessons::{Ride, Sail, Use};
 use crate::quests::{Event, Kill};
 use serde::de::{Deserializer, Error as _};
 use serde::{Deserialize, Serialize};
@@ -34,6 +35,9 @@ pub enum GoalKind {
     Race,
     Buy,
     Wear,
+    Ride,
+    Sail,
+    Use,
 }
 
 impl GoalKind {
@@ -53,7 +57,10 @@ impl GoalKind {
             | Self::Scavenge
             | Self::Enter
             | Self::Buy
-            | Self::Wear => false,
+            | Self::Wear
+            | Self::Ride
+            | Self::Sail
+            | Self::Use => false,
         }
     }
 }
@@ -132,8 +139,9 @@ pub struct Arrival {
     pub node: String,
 }
 
-/// A figure met at a place and walked to another while the player keeps within `near`: who, the scene said as they
-/// meet (`greet`), an ambush stood halfway and its bark.
+/// A figure met at a place and ridden to another at a gallop while the player rides within `near`: who, the coat of
+/// the horse they ride (`horse`), the scene said as they set off (`greet`), an ambush stood halfway and its bark, and
+/// the line said as they wait for the player to get on their horse (`mount`).
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Escort {
@@ -141,11 +149,13 @@ pub struct Escort {
     pub from: String,
     pub to: String,
     pub who: String,
+    pub horse: String,
     pub near: f64,
     pub greet: Option<String>,
     #[serde(default)]
     pub ambush: Foes,
     pub shout: Option<String>,
+    pub mount: Option<String>,
 }
 
 /// A figure followed from place to place, never nearer than `far` nor past `near`: a speaker's look or a roster
@@ -164,7 +174,9 @@ pub struct Tail {
     pub noticed: Option<String>,
 }
 
-/// A ward held at a place through its waves: named, or a speaker's figure, and the line said as it falls.
+/// A ward held at a place through its waves: named, or a speaker's figure, and the line said as it falls. A horde
+/// has no ward: its waves come at the player, who fights them with their Art unbounded, and the line is said as the
+/// player falls.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Defend {
@@ -174,7 +186,12 @@ pub struct Defend {
     pub who: Option<String>,
     pub waves: Vec<Foes>,
     pub lost: Option<String>,
+    #[serde(default)]
+    pub horde: bool,
 }
+
+/// The most foes a horde's wave holds, so one always fits the room's cap on foes beside its garrison.
+pub const HORDE_WAVE_MOST: usize = 8;
 
 /// One of a puzzle's points: its name, and where it stands from the place's middle: a bearing in degrees from north
 /// and metres out.
@@ -250,6 +267,9 @@ pub enum Goal {
     Race(Race),
     Buy(InSlot),
     Wear(InSlot),
+    Ride(Ride),
+    Sail(Sail),
+    Use(Use),
 }
 
 /// One goal: the tracker's words, how many times it is met (1 when left out), the scene said as it is met, what it
@@ -307,6 +327,9 @@ impl Goal {
             Goal::Race(_) => GoalKind::Race,
             Goal::Buy(_) => GoalKind::Buy,
             Goal::Wear(_) => GoalKind::Wear,
+            Goal::Ride(_) => GoalKind::Ride,
+            Goal::Sail(_) => GoalKind::Sail,
+            Goal::Use(_) => GoalKind::Use,
         }
     }
 
@@ -331,7 +354,10 @@ impl Goal {
             | Goal::Land(_)
             | Goal::Scavenge(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => None,
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_)
+            | Goal::Use(_) => None,
         }
     }
 
@@ -356,7 +382,10 @@ impl Goal {
             | Goal::Tail(_)
             | Goal::Race(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => None,
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_)
+            | Goal::Use(_) => None,
         }
     }
 
@@ -380,7 +409,10 @@ impl Goal {
             | Goal::Scavenge(_)
             | Goal::Enter(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => None,
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_)
+            | Goal::Use(_) => None,
         }
     }
 
@@ -404,7 +436,10 @@ impl Goal {
             | Goal::Puzzle(_)
             | Goal::Race(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => Box::new(core::iter::empty()),
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_)
+            | Goal::Use(_) => Box::new(core::iter::empty()),
         }
     }
 
@@ -412,7 +447,7 @@ impl Goal {
     #[must_use]
     pub fn lines(&self) -> Vec<&str> {
         let lines: Vec<&Option<String>> = match self {
-            Goal::Escort(escort) => vec![&escort.greet, &escort.shout],
+            Goal::Escort(escort) => vec![&escort.greet, &escort.shout, &escort.mount],
             Goal::Tail(tail) => vec![&tail.greet, &tail.noticed],
             Goal::Defend(defend) => vec![&defend.lost],
             Goal::Puzzle(puzzle) => vec![&puzzle.wrong],
@@ -429,7 +464,10 @@ impl Goal {
             | Goal::Scavenge(_)
             | Goal::Enter(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => Vec::new(),
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_)
+            | Goal::Use(_) => Vec::new(),
         };
         lines.into_iter().filter_map(Option::as_deref).collect()
     }
@@ -467,6 +505,9 @@ impl Goal {
             Goal::Race(_) => stepped(GoalKind::Race),
             Goal::Buy(buy) => matches!(event, Event::Bought(slot) if *slot == buy.slot),
             Goal::Wear(wear) => matches!(event, Event::Worn(slot) if *slot == wear.slot),
+            Goal::Ride(ride) => matches!(event, Event::Ride { act, at } if ride.met_by(*act, *at)),
+            Goal::Sail(sail) => matches!(event, Event::Sail(act) if *act == sail.act),
+            Goal::Use(done) => matches!(event, Event::Used(act) if *act == done.act),
         }
     }
 }

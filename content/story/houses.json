@@ -2,39 +2,53 @@
   "scenes": {
     "roundBegin": [
       { "who": "weaponsmith", "say": "You there, the one the stranger brought in. You can't walk about unarmed." },
-      { "who": "weaponsmith", "say": "Come and see me first. Then meet the rest of them." }
+      { "who": "weaponsmith", "say": "Come and see me first. I've a gift for you." }
+    ],
+    "roundOffer": [
+      { "who": "weaponsmith", "say": "Every keeper in Overlook has a gift for a newcomer. Hear them all." },
+      { "who": "weaponsmith", "say": "Learn the Tack's horse and the Harbourmaster's ship. Then choose a house." }
     ],
     "roundWeaponsmith": [
-      { "who": "weaponsmith", "say": "Swords, shields, bows. Buy plain, and it'll keep you breathing." },
-      { "who": "weaponsmith", "say": "The finer pieces change with the day. Come back and look often." }
+      { "who": "weaponsmith", "say": "Pick one blade and one to shoot with. Both are my gift." },
+      { "who": "weaponsmith", "say": "Plain steel's always here. The finer pieces change with the day." }
     ],
     "roundArmorsmith": [
-      { "who": "armorsmith", "say": "Head, body, arms, legs. I'll fit all four, and you'll want all four." },
-      { "who": "armorsmith", "say": "Start plain. Plain's what you can afford, and plain still stops a blade." }
+      { "who": "armorsmith", "say": "Head, body, arms, legs. Here's a plain set of all four, on me." },
+      { "who": "armorsmith", "say": "Wear them when you can. Plain still stops a blade." }
     ],
     "roundMage": [
-      { "who": "mage", "say": "Vestiges wash up sealed tight. Bring them to me." },
-      { "who": "mage", "say": "I open them. Whatever's inside is yours, however strange it turns out." }
+      { "who": "mage", "say": "Vestiges wash up sealed tight. Here's one, to start you off." },
+      { "who": "mage", "say": "Hand it back and I'll open it. Whatever's inside is yours." }
     ],
     "roundVault": [
+      { "who": "vaultkeeper", "say": "I've laid a cloak in your vault. Take it out, it's yours." },
       { "who": "vaultkeeper", "say": "Bring me what you cannot carry. I count it in, and count it out." }
     ],
     "roundTailor": [
-      { "who": "tailor", "say": "Dyes for your armour, emblems for your back. I mix every colour myself." },
-      { "who": "tailor", "say": "Wear them proudly. Grey gets you mistaken for the Tithe." }
+      { "who": "tailor", "say": "Dyes for your armour, emblems for your name. Harbour Blue, on the house." },
+      { "who": "tailor", "say": "Wear it proudly. Grey gets you mistaken for the Tithe." }
     ],
     "roundTack": [
       { "who": "tack", "say": "First horse is on me. This Bay's never thrown anyone." },
       { "who": "tack", "say": "Barding too, to dress them in. A good mount spares your legs." }
     ],
     "roundMail": [
-      { "who": "postmaster", "say": "Whatever you drop and leave behind finds its way to my shelves." },
-      { "who": "postmaster", "say": "Letters come here too. Sign for them, and they're yours." }
+      { "who": "postmaster", "say": "There's a letter for you already. Sign for it, and it's yours." },
+      { "who": "postmaster", "say": "Whatever you drop and leave behind finds its way to my shelves." }
     ],
     "roundHarbour": [
-      { "who": "harbourmaster", "say": "So the sea gave you back. You'll want a deck under you." },
-      { "who": "harbourmaster", "say": "The Sloop at the end of the quay is yours. Bring it back afloat." }
+      { "who": "harbourmaster", "say": "The sea gave you back, then. The Sloop at the quay is yours." },
+      { "who": "harbourmaster", "say": "There's a Tithe hulk moored offshore. Put a ball in it, then come home." }
     ],
+    "rideBegin": [
+      { "who": "harbourmaster", "say": "When you've a horse under you, ride down to my stall. A ship's waiting." }
+    ],
+    "sailHome": [
+      { "who": "harbourmaster", "say": "Back afloat, and that hulk the worse for it. You'll do." }
+    ],
+    "giftStorm": [{ "who": "stormcaller", "say": "Our colours, for your back. Wear them, and the Storm knows its own." }],
+    "giftLamp": [{ "who": "maren", "say": "Our colours, child. Wear them, and every lamp on the shore knows you." }],
+    "giftVeil": [{ "who": "veiled", "say": "Our colours. Wear them. We will know you, and the Tithe will not." }],
     "houseBegin": [
       { "who": "stormcaller", "say": "You'll hear all three of us. Start with the loudest. Me." }
     ],
@@ -70,8 +84,17 @@
       { "who": "stormcaller", "say": "They knocked it down. Plant it again, and this time hold it." }
     ],
     "stormCalled": [
-      { "who": "stormcaller", "say": "Hold it up. Stand still. Let the storm decide." },
-      { "who": "stormcaller", "say": "There. It's in you now, and it'll answer whenever you call." }
+      { "who": "stormcaller", "say": "Hold it up. Stand still. Let the storm decide." }
+    ],
+    "stormHorde": [
+      { "who": "stormcaller", "say": "There. It's in you, and here comes the Tithe. Call it, and keep calling." }
+    ],
+    "stormOverrun": [
+      { "who": "stormcaller", "say": "Up. The storm's still yours. Get back to the Downs and call it." }
+    ],
+    "stormSpent": [
+      { "who": "stormcaller", "say": "That was the storm with nothing holding it. It won't run that free again." },
+      { "who": "stormcaller", "say": "But it's yours now, and it'll answer whenever you call." }
     ],
     "stormTrail": [
       { "who": "pell", "say": "Arlo? It's done. Don't come looking for me." },
@@ -138,10 +161,13 @@
       { "who": "maren", "say": "False lights, lit where our Beacon should have reached. Keep that boy safe." }
     ],
     "lampFold": [
-      { "who": "maren", "say": "Ewe Fold will take him in. Walk him there, and keep him close." }
+      { "who": "maren", "say": "Ewe Fold will take him in. Ride with him there, and keep him close." }
     ],
     "lampWalk": [
       { "who": "tobin", "say": "Stay close? The ones who lit those lights could be watching." }
+    ],
+    "lampMount": [
+      { "who": "tobin", "say": "Get up on your horse. I'm not riding out there alone." }
     ],
     "lampBarrows": [
       { "who": "maren", "say": "Those are our barrows. That's where the false lights burn. Keep him moving." }
@@ -153,8 +179,17 @@
       { "who": "tobin", "say": "They were waiting for us to break. I heard them laughing." },
       { "who": "maren", "say": "He's safe now. Go back up, and put out every false light." }
     ],
+    "lampDark": [
+      { "who": "maren", "say": "Dark again. Their purses hold Tithe silver, paid out at Gullwing in the Vale." }
+    ],
+    "lampHorde": [
+      { "who": "maren", "say": "Here come the rest. The light's in you now. Burn them all." }
+    ],
+    "lampOverrun": [
+      { "who": "maren", "say": "They dragged you down. Get up, and bring the light back to the barrows." }
+    ],
     "lampSunwell": [
-      { "who": "maren", "say": "Dark again. Their purses hold Tithe silver, paid out at Gullwing in the Vale." },
+      { "who": "maren", "say": "Enough. It won't pour out of you like that again." },
       { "who": "maren", "say": "Now hang a sun where you stand. All beneath it heal. That's the Sunwell." }
     ],
     "lampMend": [
@@ -226,9 +261,18 @@
     "veilSeen": [
       { "who": "veiled", "say": "They saw you. Get clear, and try again." }
     ],
+    "veilUnseen": [
+      { "who": "veiled", "say": "You came unseen. Good. The reckoner has gone to Moorhold, on the Moors." }
+    ],
+    "veilHorde": [
+      { "who": "veiled", "say": "They found the adit empty, and they're coming. Give them all of the dark." }
+    ],
+    "veilOverrun": [
+      { "who": "veiled", "say": "They had you. Get back to the adit, and let the dark out again." }
+    ],
     "veilRaven": [
-      { "who": "veiled", "say": "You came unseen. Good. The reckoner has gone to Moorhold, on the Moors." },
-      { "who": "veiled", "say": "Take the dark with you. Its raven wounds them, and heals you." }
+      { "who": "veiled", "say": "Enough. The dark won't come that freely again." },
+      { "who": "veiled", "say": "Take it with you. Its raven wounds them, and heals you." }
     ],
     "veilDaggers": [
       { "who": "veiled", "say": "His guards hold Moorhold, too many to walk past. So do not walk." },
@@ -249,6 +293,9 @@
     ],
     "veilWren": [
       { "who": "wren", "say": "You're the one Thule couldn't drown. Keep up, and keep quiet." }
+    ],
+    "veilMount": [
+      { "who": "wren", "say": "On your horse. We ride hard, or we don't ride." }
     ],
     "veilOrchard": [
       { "who": "wren", "say": "Collectors work this orchard. Head down, and carry something." }

@@ -16,11 +16,11 @@ on:
   workflow_dispatch:
     inputs:
       anims:
-        description: "The moves to draw, comma-separated"
+        description: 'The moves to draw, comma-separated'
         required: true
         default: ''
       layers:
-        description: "Only these layers, comma-separated; empty for every layer of every set"
+        description: 'Only these layers, comma-separated; empty for every layer of every set'
         required: false
         default: ''
 

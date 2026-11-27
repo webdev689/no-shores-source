@@ -7,6 +7,7 @@ import {
   ANCHORED_M,
   type DungeonDoor,
   type IsleAt,
+  KEEP_CLEAR_M,
   approach,
   detour,
   dungeonRoomName,
@@ -75,13 +76,14 @@ test('a voyage is bent round every island its legs pass through, and left alone 
   assert.deepEqual(detour(clear, keptClear(isles)), clear);
 });
 
-test('the way to an island goes round it to its offing and in to its anchorage', () => {
+test('the way in to an island is from its offing, out on its landing bearing past the ring a voyage keeps clear of', () => {
   const isle = built(1, [0, 0]);
-  const course = approach([0, 3000], isle);
-  assert.deepEqual(course.at(-1), [0, -125]);
-  assert.ok(keepsOff(course, [0, 0], 80 + LAND_PAST_REACH_M), 'round the island, not over it');
-  const last = course.at(-2) ?? [0, 0];
-  assert.ok(last[1] < -125 - ANCHORED_M, 'in from the open sea on its landing bearing');
+  const way = approach(isle);
+  assert.deepEqual(way?.anchorage, [0, -125]);
+  const [offingX, offingY] = way?.offing ?? [0, 0];
+  assert.ok(Math.abs(offingX) < 1e-9, 'on its landing bearing');
+  assert.ok(offingY < -(80 + KEEP_CLEAR_M) && offingY < -125 - ANCHORED_M, 'out at sea, clear of it');
+  assert.equal(approach({ ...isle, built: null }), null, 'none for an island not yet built');
 });
 
 test('a voyage for an anchorage from the far side comes in through its gate, not over the island', () => {
@@ -156,4 +158,29 @@ test('E scavenges a wreck within reach until the room says it is spent, else ope
   atDoor?.run();
   assert.deepEqual(doors, [{ room: 'sea-dungeon-continent-4-caverns-000000ff--elite', at: [1000, 2030], facing: 2.5 }]);
   assert.equal(uses(1000, 2100, ask), null);
+});
+
+test('a voyage keeps clear of an island marked on the map that the room has not told of, as of one not built', () => {
+  const told = built(1, [0, 0]);
+  const marks = [
+    { at: [0, 0] as Point2, kind: 'cove' as const },
+    { at: [0, 2_000] as Point2, kind: 'ruin' as const },
+    { at: [0, 4_000] as Point2, kind: 'hostile' as const },
+  ];
+  assert.deepEqual(
+    keptClear([told], marks).map((circle) => circle.at),
+    [
+      [0, 0],
+      [0, 2_000],
+    ],
+    'the told island once, the marked one besides, no hostile ship',
+  );
+  const course = detour(
+    [
+      [0, 1_000],
+      [0, 3_000],
+    ],
+    keptClear([], marks),
+  );
+  assert.ok(keepsOff(course, [0, 2_000], 250), 'round the marked island');
 });

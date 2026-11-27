@@ -198,6 +198,10 @@ pub struct Character {
     /// Where the sea last kept their ship, to the whole metre; none before it first put to sea.
     #[serde(default)]
     pub ship_at: Option<[i64; 2]>,
+    /// The way the ship lay turned there, in thousandths of a radian clockwise from north; none where no heading was
+    /// kept (a save from before, or a ship left mid-fight, which lies at a port).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ship_heading: Option<i64>,
     /// The experience the ship has earned in sea fights, which raises it to level 20 (`ship.rs`).
     #[serde(default)]
     pub ship_xp: u64,
@@ -244,6 +248,12 @@ pub struct Character {
     /// Where they last left the overworld or a social space, to log back in there (`last.rs`); none before either.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last: Option<crate::last::Last>,
+    /// The dive under way in an island's passages, with its haul (`dive.rs`); none outside one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub passage: Option<crate::dive::Dive>,
+    /// The Atheric bounties held and finished (`atheric_bounty.rs`).
+    #[serde(default, skip_serializing_if = "crate::atheric_bounty::Bounties::is_empty")]
+    pub atheric_bounties: crate::atheric_bounty::Bounties,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -330,6 +340,7 @@ impl Character {
             story: crate::story::Story::default(),
             ship: whole_ship(),
             ship_at: None,
+            ship_heading: None,
             ship_xp: 0,
             ship_fitted: false,
             fleet: crate::ship::fleet::Fleet::none(),
@@ -345,6 +356,8 @@ impl Character {
             left: None,
             errand: None,
             last: None,
+            passage: None,
+            atheric_bounties: crate::atheric_bounty::Bounties::default(),
             unknown: UnknownKeys::new(),
         };
         let pieces = [

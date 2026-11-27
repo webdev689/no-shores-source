@@ -25,6 +25,7 @@ import type { Node, Text } from '../ui/node.ts';
 import { lineHeight } from '../ui/text.ts';
 import { drawMeter, grownBy, keycapNode, paintBox, thinBarNode } from './barDraw.ts';
 import { type CapFace, capWords, ShipAbilityBar, shipBarSize } from './shipAbilityBar.ts';
+import { percentWords } from '../ui/percent.ts';
 
 /** The hull's low blink (on for its first half), and the warning's pulse (its lit look for the second half of each),
  *  in seconds: slower while its battery's tell burns, faster once it may fire. */
@@ -275,7 +276,7 @@ export class SeaFightReadout {
       gap: 5,
       width: '76%',
       maxWidth: 340,
-      label: `${card.name}, ${card.sub}${state ? `, ${state}` : ''}: hull ${Math.round(card.hull * 100)}%`,
+      label: `${card.name}, ${card.sub}${state ? `, ${state}` : ''}: hull ${percentWords(card.hull)}`,
       children: [
         !ally && {
           role: 'chip',

@@ -5,9 +5,9 @@ usage: bash check-tools.sh [--worker] [--quiet]
               plus the conflict checks (hooks, MCP names/scopes, exact output, Caveman scope, Headroom path,
               Context7 key on disk, Serena pin, worker kit wiring). About 1-2 minutes.
   --worker  : also one combined headless worker (run-worker.sh) that calls every tool in one session, then audit.py
-              and transcript checks. About 5-8 minutes and some tokens; run after any kit change.
+              and transcript checks. About 10 minutes and some tokens; run after any kit change.
 Prints one line per check: PASS / WARN / FAIL <tool>: detail. Exit 1 if any FAIL.
-Drop-in checks: tools/checks.d/*.sh print lines in the same format (for tools other threads add)."""
+Drop-in checks: tools/claude-toolkit/checks.d/*.sh print lines in the same format (for tools other threads add)."""
 import glob, json, os, re, select, shutil, ssl, subprocess, sys, tempfile, time, urllib.request
 
 HOME = os.path.expanduser('~')
@@ -254,6 +254,15 @@ def _():
     m = re.search(r'Found (\d+) result', t)
     if not m and 'no results' not in t.lower():
         return out('FAIL', 'claude-mem', 'search answered without results: ' + t[:120].replace('\n', ' '))
+    # With chroma down a search still answers, by keyword only, and finds little: ask the worker whether chroma is up.
+    port = (jload(HOME + '/.claude-mem/worker.pid', {}) or {}).get('port')
+    try:
+        ch = json.load(urllib.request.build_opener(urllib.request.ProxyHandler({})).open(
+            f'http://127.0.0.1:{port}/api/chroma/status', timeout=10)) if port else {}
+    except (OSError, ValueError):
+        ch = {}
+    if ch and not ch.get('connected'):
+        return out('FAIL', 'claude-mem', f'chroma is down, so search is keyword only: {str(ch)[:120]}')
     out('PASS', 'claude-mem', f'MCP search answered ({m.group(1) if m else 0} results for "setup")')
 
 
@@ -297,7 +306,7 @@ def _():
     Google answers even a keyless call with a JSON error; a proxy block gives no body at all."""
     rc, o = sh('curl -s --max-time 10 https://generativelanguage.googleapis.com/v1beta/models')
     if '"error"' in o or '"models"' in o:
-        return out('PASS', 'headroom learn', 'Gemini reachable: end-of-thread `headroom learn --project . --apply` can run here')
+        return out('PASS', 'headroom learn', 'Gemini reachable: end-of-thread `headroom learn --project .` can run here')
     out('WARN', 'headroom learn', 'Gemini blocked here (a thread linked to the PC?): skip `headroom learn` at thread end, say so, '
         'and run it from a thread that is not linked')
 
@@ -463,7 +472,7 @@ def _():
 def _():
     hk = REPO + '/.git/hooks/pre-commit'
     if not os.path.exists(hk) or 'commit-guard' not in open(hk).read():
-        return out('FAIL', 'pre-commit guard', f'{hk} not installed (install-all.sh copies tools/git-hooks/pre-commit)')
+        return out('FAIL', 'pre-commit guard', f'{hk} not installed (install-all.sh copies tools/claude-toolkit/git-hooks/pre-commit)')
     tmp = tempfile.mkdtemp()
     try:
         sh('git init -q . && git config user.email t@t && git config user.name t', cwd=tmp)
@@ -478,19 +487,144 @@ def _():
         rc_png, _ = sh('git add p.png && git commit -qm png', cwd=tmp)
         sh('git rm -q --cached p.png', cwd=tmp)
         open(tmp + '/w.js', 'wb').write(b'a\r\nb\r\n')
-        os.makedirs(tmp + '/graphify-out')
-        open(tmp + '/graphify-out/g.json', 'w').write('1')
-        sh('git add w.js graphify-out && GRAPHIFY_COMMIT=1 git commit -qm base', cwd=tmp)
+        sh('git add w.js && git commit -qm base', cwd=tmp)
         open(tmp + '/w.js', 'wb').write(b'a\nb\nc\n')
         rc_eol, _ = sh('git add w.js && git commit -qm eol', cwd=tmp)
         sh('git checkout -q HEAD -- w.js', cwd=tmp)
-        open(tmp + '/graphify-out/g.json', 'w').write('2')
-        rc_gr, _ = sh('git add graphify-out && git commit -qm g', cwd=tmp)
+        os.symlink('/tmp', tmp + '/link')
+        rc_ln, _ = sh('git add link && git commit -qm link', cwd=tmp)
+        sh('git rm -q --cached link', cwd=tmp)
+        os.makedirs(tmp + '/node_modules/.bin')      # a stand-in Prettier that finds every file unformatted
+        open(tmp + '/node_modules/.bin/prettier', 'w').write('#!/bin/sh\necho "[warn] $*" >&2; exit 1\n')
+        os.chmod(tmp + '/node_modules/.bin/prettier', 0o755)
+        open(tmp + '/u.ts', 'w').write('const a=1\n')
+        rc_fmt, o_fmt = sh('git add u.ts && git commit -qm fmt', cwd=tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-    ok = rc_ok == 0 and rc_rom != 0 and rc_png != 0 and rc_eol != 0 and rc_gr != 0
-    out('PASS' if ok else 'FAIL', 'pre-commit guard', 'blocks a staged .zip, a C2PA-stamped PNG, a CRLF->LF flip and graphify-out/, lets normal files through' if ok
-        else f'guard results wrong (normal rc {rc_ok}, rom rc {rc_rom}, c2pa png rc {rc_png}, eol rc {rc_eol}, graphify rc {rc_gr})')
+    ok = rc_ok == 0 and rc_rom != 0 and rc_png != 0 and rc_eol != 0 and rc_ln != 0 and rc_fmt != 0 and 'u.ts' in o_fmt
+    out('PASS' if ok else 'FAIL', 'pre-commit guard', 'blocks a staged .zip, a C2PA-stamped PNG, a CRLF->LF flip, a symbolic link and a file '
+        'Prettier would rewrite, lets normal files through' if ok
+        else f'guard results wrong (normal rc {rc_ok}, rom rc {rc_rom}, c2pa png rc {rc_png}, eol rc {rc_eol}, link rc {rc_ln}, prettier rc {rc_fmt})')
+
+
+def scratch_repo(hooks):
+    """A throwaway repo with an origin, the clone's installed git hooks named in `hooks` copied in."""
+    tmp = tempfile.mkdtemp()
+    sh(f'git init -q --bare {tmp}/origin.git && git init -q -b main {tmp}/w', cwd=tmp)
+    w = tmp + '/w'
+    sh(f'git config user.email t@t && git config user.name t && git remote add origin {tmp}/origin.git', cwd=w)
+    for h in hooks:
+        shutil.copy(REPO + '/.git/hooks/' + h, w + '/.git/hooks/' + h)
+        os.chmod(w + '/.git/hooks/' + h, 0o755)
+    return tmp, w
+
+
+@check('commit-msg guard')
+def _():
+    hk = REPO + '/.git/hooks/commit-msg'
+    if not os.path.exists(hk) or 'message-guard' not in open(hk).read():
+        return out('FAIL', 'commit-msg guard', f'{hk} not installed (install-all.sh copies tools/claude-toolkit/git-hooks/commit-msg)')
+    tmp, w = scratch_repo(['commit-msg'])
+    plain = {'CLAUDECODE': '', 'CLAUDE_CODE_REMOTE_SESSION_ID': ''}
+    claude = {'CLAUDECODE': '1', 'CLAUDE_CODE_REMOTE_SESSION_ID': 'x'}
+    msg = lambda m, env: sh(['git', 'commit', '-q', '--allow-empty', '-F', '-'], cwd=w, inp=m, env=env)[0]
+    try:
+        r = {'plain': msg('A subject\n\nA body.\n', plain), 'long': msg('x' * 101 + '\n', plain),
+             'joined': msg('A subject Co-Authored-By: C <c@c>\n', plain), 'no trailer': msg('A subject\n\nA body.\n', claude),
+             'subject names it': msg('Document the Claude-Session: trailer rule\n', plain),
+             'trailer': msg('A subject\n\nA body.\n\nClaude-Session: https://claude.ai/code/x\n', claude)}
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = r['plain'] == 0 and r['trailer'] == 0 and r['subject names it'] == 0 and r['long'] and r['joined'] and r['no trailer']
+    out('PASS' if ok else 'FAIL', 'commit-msg guard', 'refuses a first line over 100 characters or holding a trailer, and a Claude session\'s '
+        'commit without its Claude-Session: trailer' if ok else f'wrong exit codes {r}')
+
+
+@check('pre-push guard')
+def _():
+    hk = REPO + '/.git/hooks/pre-push'
+    if not os.path.exists(hk) or 'push-guard' not in open(hk).read():
+        return out('FAIL', 'pre-push guard', f'{hk} not installed (install-all.sh copies tools/claude-toolkit/git-hooks/pre-push)')
+    tmp, w = scratch_repo(['pre-push'])
+    os.makedirs(tmp + '/bin')                     # stand-in cargo: `cargo xtask repo` fails when CARGO_FAILS=1
+    open(tmp + '/bin/cargo', 'w').write('#!/bin/sh\n[ "$CARGO_FAILS" = 1 ] && exit 3; exit 0\n')
+    os.chmod(tmp + '/bin/cargo', 0o755)
+    env = {'PATH': tmp + '/bin:' + os.environ['PATH'], 'CLAUDECODE': ''}
+    try:
+        os.makedirs(w + '/.github/workflows')
+        open(w + '/.github/workflows/pub.yml', 'w').write('on:\n  push:\n    paths: [tools/pub/**]\n  workflow_dispatch:\n')
+        open(w + '/.github/workflows/ci.yml', 'w').write('on:\n  push:\n    branches: [main]\n')
+        open(w + '/a.txt', 'w').write('a\n')
+        sh('git add -A && git commit -qm base && git push -q origin main', cwd=w, env=env)
+        sh('git checkout -q -b side', cwd=w)
+        os.makedirs(w + '/tools/pub/x')
+        open(w + '/tools/pub/x/b.txt', 'w').write('b\n')
+        sh('git add -A && git commit -qm pub', cwd=w)
+        rc_pub, o_pub = sh('git push -q origin side', cwd=w, env=env)
+        rc_allow, _ = sh('git push -q origin side', cwd=w, env={**env, 'ALLOW_PUBLISH': '1'})
+        open(w + '/a.txt', 'w').write('c\n')
+        sh('git commit -qam other', cwd=w)
+        rc_fail, o_fail = sh('git push -q origin side', cwd=w, env={**env, 'CARGO_FAILS': '1'})
+        rc_ok, _ = sh('git push -q origin side', cwd=w, env=env)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = rc_pub and 'pub.yml' in o_pub and rc_allow == 0 and rc_fail and 'cargo xtask repo' in o_fail and rc_ok == 0
+    out('PASS' if ok else 'FAIL', 'pre-push guard', 'refuses a push that starts a path-filtered publishing workflow from a branch (names it; ALLOW_PUBLISH=1 '
+        'passes) and a push whose `cargo xtask repo` fails (names the step)' if ok
+        else f'wrong results (publish rc {rc_pub}, allowed rc {rc_allow}, failing check rc {rc_fail}, clean rc {rc_ok}): {(o_pub + o_fail)[-200:]}')
+
+
+@check('serena guard')
+def _():
+    hk = HOME + '/.claude/hooks/serena-guard.py'
+    if not os.path.exists(hk):
+        return out('FAIL', 'serena guard', 'hook missing (install-all.sh copies hooks/serena-guard.py)')
+    tmp = tempfile.mkdtemp()
+    ev = lambda name, tid: json.dumps({'hook_event_name': name, 'tool_use_id': tid, 'cwd': tmp, 'tool_name': 'mcp__serena__replace_symbol_body',
+                                       'tool_input': {'relative_path': 'a.rs', 'name_path': 'f', 'body': ''}})
+    src = '/// Doc.\n#[must_use]\nfn f() -> u8 { 1 }\n'
+    try:
+        open(tmp + '/a.rs', 'w').write(src)
+        sh(['python3', hk], inp=ev('PreToolUse', 't1'))
+        open(tmp + '/a.rs', 'w').write('fn f() -> u8 { 2 }\n')            # the body sent without its doc and attribute
+        _, o_drop = sh(['python3', hk], inp=ev('PostToolUse', 't1'))
+        undone = open(tmp + '/a.rs').read() == src
+        sh(['python3', hk], inp=ev('PreToolUse', 't2'))
+        open(tmp + '/a.rs', 'w').write(src.replace('1 }', '3 }'))
+        _, o_keep = sh(['python3', hk], inp=ev('PostToolUse', 't2'))
+        kept = '3 }' in open(tmp + '/a.rs').read()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = undone and '"block"' in o_drop and kept and not o_keep.strip()
+    out('PASS' if ok else 'FAIL', 'serena guard', 'undoes a symbol edit that drops `///` or `#[` lines and says why; lets one that keeps them stand' if ok
+        else f'wrong (undone {undone}, said {o_drop[:80]!r}, kept {kept}, said {o_keep[:80]!r})')
+
+
+@check('bash guard')
+def _():
+    def denied(cmd, env=None, cwd=None):
+        p = subprocess.run(['python3', HOME + '/.claude/hooks/rtk-guard.py'], capture_output=True, text=True, timeout=20,
+                           input=json.dumps({'hook_event_name': 'PreToolUse', 'tool_name': 'Bash', 'cwd': cwd or HOME, 'tool_input': {'command': cmd}}),
+                           env={**os.environ, **(env or {})})
+        t = p.stdout.strip()
+        return bool(t) and json.loads(t).get('hookSpecificOutput', {}).get('permissionDecision') == 'deny'
+    cloud, local = {'CLAUDE_CODE_REMOTE': 'true'}, {'CLAUDE_CODE_REMOTE': ''}
+    tmp = tempfile.mkdtemp()
+    try:
+        sh('git init -q . && git config user.email t@t && git config user.name t && git commit -q --allow-empty -m a', cwd=tmp)
+        calm = denied('git stash', cwd=tmp)
+        open(tmp + '/.git/MERGE_HEAD', 'w').write('0' * 40 + '\n')
+        mid = denied('git stash', cwd=tmp) and denied('cd x && git stash push -m t', cwd=tmp) and not denied('git stash list', cwd=tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    want = {'pkill -f vite': True, 'pkill -P $(pgrep -f run-worker)': True, 'sleep 1; pkill -9f node': True, 'pkill vite': False,
+            'echo "never pkill -f x"': False, "cat > n.md <<'EOF'\npkill -f x\nEOF": False}
+    got = {c: denied(c) for c in want}
+    ci = (denied('gh pr checks 5', cloud), denied('gh run watch 1', cloud), denied('gh api repos/o/r/commits/x/check-runs', cloud),
+          denied('gh pr checks 5', local), denied('gh search code x', cloud), denied('gh api repos/o/r/actions/runs/7/rerun -X POST', cloud))
+    ok = got == want and ci == (True, True, True, False, False, False) and mid and not calm
+    out('PASS' if ok else 'FAIL', 'bash guard', 'refuses `pkill -f`, gh CI polling in a cloud session and `git stash` mid-merge, each saying what to do instead; '
+        'text in strings and heredocs passes' if ok else f'wrong: pkill {got}, gh {ci}, stash mid-merge {mid}, stash calm {calm}')
 
 
 @check('syntax hook')
@@ -511,6 +645,29 @@ def _():
     out('PASS' if ok else 'FAIL', 'syntax hook', 'flags broken .py/.js after Edit/Write, silent on good files' if ok else f'wrong exit codes {r}')
 
 
+
+@check('audit dropped docs')
+def _():
+    tmp = tempfile.mkdtemp()
+    try:
+        sh('git init -q . && git config user.email t@t && git config user.name t', cwd=tmp)
+        open(tmp + '/a.rs', 'w').write('#[test]\nfn a() {}\n\n/// Doc.\nfn b() {}\n')
+        sh('git add a.rs && git commit -qm base && git update-ref refs/remotes/origin/main HEAD', cwd=tmp)
+        open(tmp + '/a.rs', 'w').write('fn a() {}\n\nfn b() { 1; }\n')
+        sh('git commit -qam drop', cwd=tmp)
+        _, o = sh(['python3', KIT + '/workers/audit.py', tmp])
+        sh('git reset -q --hard origin/main && git rm -q a.rs && git commit -qm gone', cwd=tmp)   # whole items removed: fine
+        open(tmp + '/s.rs', 'w').write('fn c() {}\n#[derive(Debug)]\nstruct S;\n')
+        sh('git add s.rs && git commit -qm s && git update-ref refs/remotes/origin/main HEAD', cwd=tmp)
+        open(tmp + '/s.rs', 'w').write('fn c() {}\n')
+        sh('git commit -qam nos', cwd=tmp)
+        _, o2 = sh(['python3', KIT + '/workers/audit.py', tmp])
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    ok = o.count('DROPPED DOCS') == 2 and 'DROPPED DOCS' not in o2
+    out('PASS' if ok else 'FAIL', 'audit dropped docs', 'audit.py flags a diff that drops `#[test]` or `///` above a function it keeps, not a removed function'
+        if ok else f'wrong: {o[:150]!r} / {o2[:150]!r}')
+
 print('== conflicts ==', flush=True)
 
 
@@ -519,7 +676,8 @@ def _():
     if not isinstance(settings, dict) or not settings:
         return out('FAIL', 'hooks', '~/.claude/settings.json missing or invalid JSON')
     ours = {('PreToolUse', 'python3 ~/.claude/hooks/rtk-guard.py'), ('SubagentStart', 'python3 ~/.claude/hooks/caveman-subagent.py'),
-            ('SessionStart', 'python3 ~/.claude/hooks/task-observer-start.py'), ('PostToolUse', 'python3 ~/.claude/hooks/syntax-check.py')}
+            ('SessionStart', 'python3 ~/.claude/hooks/task-observer-start.py'), ('PostToolUse', 'python3 ~/.claude/hooks/syntax-check.py'),
+            ('PreToolUse', 'python3 ~/.claude/hooks/serena-guard.py'), ('PostToolUse', 'python3 ~/.claude/hooks/serena-guard.py')}
     user = [(ev, c) for s, ev, m, c in HOOKS if s == 'user settings']
     probs = [f'{ev} "{c}" registered {user.count((ev, c))}x' for ev, c in ours if user.count((ev, c)) != 1]
     if ('PreToolUse', 'rtk hook claude') in user:
@@ -584,6 +742,7 @@ def _():
              '(cd /x; git diff)', '(cd /x && grep -n a b)', 'git rebase --continue', 'git merge --abort',
              'make -C /w test', 'cargo test', 'go test ./...', 'npx vitest run', 'docker logs x',
              'npm run lint', 'npm run types', 'npm run test:changed', 'npx tsc --noEmit', 'npx eslint src',
+             'git push -u origin x', 'git push origin --delete x',
              'echo "rtk S=1, then git pull"', "cat > /tmp/x.md <<'EOF'\ngit pull\nrtk S=1\nEOF"]   # text in strings/heredocs stays as written
     bad = [f'`{c}` -> `{r}`' for c in exact for r in [rtk_rewrite(c)] if r]
     keep = rtk_rewrite('d=/opt/toolkit; ls -la $d')
@@ -669,6 +828,40 @@ def _():
         'log never restored (toolkit-data-test.sh)' if rc == 0 else o.strip()[-300:])
 
 
+@check('numbers in flight')
+def _():
+    rc, o = sh(['bash', KIT + '/numbers-in-flight-test.sh'], timeout=120)
+    out('PASS' if rc == 0 else 'FAIL', 'numbers in flight', "numbers-in-flight.sh lists a pull request's new asks, "
+        'refusals and foe types, and none of a merged one (numbers-in-flight-test.sh)' if rc == 0 else o.strip()[-300:])
+
+
+@check('task-observer patch')
+def _():
+    rc, o = sh(['bash', KIT + '/task-observer/new-observation-test.sh'], timeout=60)
+    out('PASS' if rc == 0 else 'FAIL', 'task-observer patch', o.strip()[-300:] + ('' if rc == 0 else ' (install-all.sh patches it)'))
+
+
+@check('pr-state')
+def _():
+    rc, o = sh(['bash', KIT + '/pr-state-test.sh'], timeout=120)
+    out('PASS' if rc == 0 else 'FAIL', 'pr-state', 'pr-state.sh names a conflict with origin/main and an unpushed head '
+        '(pr-state-test.sh)' if rc == 0 else o.strip()[-300:])
+
+
+@check('R2 ship mesh')
+def _():
+    """The page's tests fetch ship meshes from R2 (shipTags.test.ts); a cloud environment's proxy may refuse it."""
+    ships = jload(REPO + '/content/ships/ships.json')
+    if not ships:
+        return out('WARN', 'R2 ship mesh', f'no content/ships/ships.json in {REPO}: not probed')
+    url = ships['base'] + next(iter(ships['ships'].values()))['mesh']
+    rc, code = sh(['curl', '-s', '-r', '0-0', '-o', '/dev/null', '-w', '%{http_code}', '--max-time', '20', url])
+    if code.strip() in ('200', '206'):
+        return out('PASS', 'R2 ship mesh', f'fetched the first byte of {url}')
+    out('FAIL', 'R2 ship mesh', f'{url} answered {code.strip() or rc}: the full check fetches it; start the session in '
+        'the `no-shores-source` environment, whose network rule allows the R2 host')
+
+
 @check('worker kit')
 def _():
     rw = open(KIT + '/workers/run-worker.sh').read()
@@ -685,7 +878,7 @@ def _():
             probs.append(f'run-worker.sh: --allowedTools lacks mcp__{s}__*')
     if 'TASK_OBSERVER_ROLE=worker' not in rw:
         probs.append('run-worker.sh: TASK_OBSERVER_ROLE=worker missing')
-    if 'npm run -s wasm' not in rw or '"$MAIN/node_modules"' not in rw or 'cargo test -q -p protocol' not in rw:
+    if 'npm run -s fixtures' not in rw or '"$MAIN/node_modules"' not in rw:
         probs.append("run-worker.sh: a worktree's ignored builds (node_modules, generated/, the WebAssembly, the protocol's fixtures) are not prepared, so its client tests fail")
     if 'Skill superpowers:verification-before-completion, the reviewer sub-agent, then Skill ponytail:ponytail-review' not in tpl:
         probs.append('brief template lost the ALWAYS verification + reviewer + ponytail line')
@@ -693,11 +886,28 @@ def _():
         probs.append('brief template lacks the OBSERVATIONS: line')
     if 'MCP_TIMEOUT' not in rw or 'serena_up' not in rw or 'still has:' not in rw:
         probs.append('run-worker.sh: Serena warm-up, MCP_TIMEOUT or the unfilled-brief refusal missing')
+    # run-worker.sh's refusals, run where they stop before any work: a brief naming vitest, and a start past the cap.
+    tmp = tempfile.mkdtemp()
+    try:
+        os.makedirs(tmp + '/w'); os.makedirs(tmp + '/reports')
+        open(tmp + '/vitest.md', 'w').write('Run `npx vitest run` before committing.\n')
+        open(tmp + '/ok.md', 'w').write('A task.\n')
+        for n in ('a', 'b'):   # two live workers: this check's own pid stands for both
+            open(f'{tmp}/reports/{n}.pid', 'w').write(str(os.getpid()))
+        rc_v, o_v = sh(['bash', KIT + '/workers/run-worker.sh', tmp + '/w', tmp + '/vitest.md'], timeout=30)
+        rc_c, o_c = sh(['bash', KIT + '/workers/run-worker.sh', tmp + '/w', tmp + '/ok.md'], timeout=30)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    if rc_v != 2 or 'vitest' not in o_v:
+        probs.append(f'run-worker.sh did not refuse a brief naming vitest (rc {rc_v}): {o_v[-120:]}')
+    if rc_c != 3 or 'cap is 2' not in o_c:
+        probs.append(f'run-worker.sh did not refuse a start past the 2-worker cap (rc {rc_c}): {o_c[-120:]}')
     if 'INBOX NOT ACKED' not in open(KIT + '/workers/audit.py').read():
         probs.append('audit.py no longer flags unanswered inbox items')
     if 'INBOX=' not in rw or 'WORKER_INBOX' not in rw or '.pid' not in rw:
         probs.append('run-worker.sh: worker inbox ($WORKER_INBOX) or pid file missing')
-    for k, why in (('WORKER_INBOX', 'inbox re-read before each commit'), ('stop-worker.sh', 'stop rule (never pkill -f)'), ('graphify-out', 'graphify pull rule'),
+    for k, why in (('WORKER_INBOX', 'inbox re-read before each commit'), ('stop-worker.sh', 'stop rule (never pkill -f)'), ('graphify-out', 'never-commit-graphify-out rule'),
+                   ('$WORKER_BASE', 'reviewer base'), ('npm run -s types', 'fixed check list'),
                    ('replace_content', 'Serena nested-edit rule'),
                    ("newline=''", 'line-ending rule for scripted edits'), ('rtk bypass', 'raw test-log rule'),
                    ('Scope:', 'finish-the-briefed-scope rule'), ('no diff', 'no-diff verification rule'), ('Image checks', 'image self-check rule'),
@@ -735,6 +945,7 @@ if '--worker' in sys.argv:
         if os.path.exists(wt):
             sh(['git', 'worktree', 'remove', '--force', wt], cwd=REPO)
             shutil.rmtree(wt, ignore_errors=True)
+        sh(['git', 'worktree', 'prune'], cwd=REPO)   # a toolcheck folder deleted under git leaves its registration
         rc, o = sh(['git', 'worktree', 'add', '-q', '--detach', wt, 'HEAD'], cwd=REPO, timeout=300)
         if rc:
             return out('FAIL', 'combined worker', 'git worktree add failed: ' + o[:150])
@@ -744,14 +955,15 @@ if '--worker' in sys.argv:
         os.makedirs('/tmp/claude-0/logs', exist_ok=True)
         open(brief, 'w').write(open(KIT + '/workers/toolcheck-brief.md').read().replace('{TARGET}', TARGET).replace('{KIT}', KIT))
         t0 = time.time()
-        rc, o = sh(['bash', KIT + '/workers/run-worker.sh', wt, brief], timeout=1500, cwd=wt)
+        # The tool check is a short third worker, run by a worker after a kit change: let it past the cap of 2.
+        rc, o = sh(['bash', KIT + '/workers/run-worker.sh', wt, brief], timeout=1500, cwd=wt, env={'WORKERS_MAX': '3'})
         log = open(WT_ROOT + '/reports/toolcheck.log', errors='ignore').read()
         tr = sorted(glob.glob(os.path.expanduser('~/.claude/projects/' + re.sub(r'[^A-Za-z0-9]', '-', wt)) + '/*.jsonl'), key=os.path.getmtime)
         if not tr:
             return out('FAIL', 'combined worker', 'no transcript; log tail: ' + log[-300:])
         raw = open(tr[-1], errors='ignore').read()
         sub = ''.join(open(f, errors='ignore').read() for f in glob.glob(os.path.dirname(tr[-1]) + '/*/subagents/*.jsonl'))
-        rc, aud = sh(['python3', KIT + '/workers/audit.py', wt], timeout=60)
+        rc, aud = sh(['python3', KIT + '/workers/audit.py', wt], timeout=2000)   # it runs the full type check
         print('     audit: ' + aud.strip().replace('\n', '\n     audit: '), flush=True)
         calls, results_txt, final = [], {}, ''
         for l in raw.splitlines():

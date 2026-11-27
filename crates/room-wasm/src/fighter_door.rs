@@ -56,8 +56,8 @@ pub fn set_ground(text: &[u8]) -> bool {
 
 /// Keeps a dungeon's ground for predicting a fighter without a room, from the JSON ask `room_dungeon` takes (a
 /// patrol's id and name and its number, an Elite Dungeon's place, or a seed and a style), and its course: an Elite
-/// Dungeon's Ascents' pads, as its room stands them, and none in any other; a dungeon's jambs and pillars are its
-/// ground's own. Answers whether the ask was a dungeon.
+/// Dungeon's Ascents' pads and any gallery's balustrades, as its room stands them; a dungeon's jambs and pillars are
+/// its ground's own. Answers whether the ask was a dungeon.
 pub fn set_dungeon(text: &[u8]) -> bool {
     let Some((seed, style, blocks)) = crate::dungeon_door::asked(text) else { return false };
     let laid = dungeon::Dungeon::forge_within(seed, style, blocks);
@@ -83,6 +83,16 @@ pub fn set_breach(open: u8, tick: u64) -> bool {
     BREACH.with(|kept| kept.set(Some(key)));
     FLOOR.with(|floor| *floor.borrow_mut() = Floor::Dark);
     COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(plan.blocks_at(open, tick)));
+    true
+}
+
+/// Keeps a passage zone's ground for predicting a fighter without a room, from the JSON ask `room_open_passage` takes
+/// (its island, week and zone): under ground the Forge's floor and the pieces' solids, above ground the hollow's
+/// heights and its blocks, as `Room::passage` stands bodies on them. Answers whether the ask named a zone.
+pub fn set_passage(text: &[u8]) -> bool {
+    let Some((floor, blocks)) = crate::passage_room_door::ground_of(text) else { return false };
+    FLOOR.with(|kept_floor| *kept_floor.borrow_mut() = floor);
+    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(blocks));
     true
 }
 
@@ -261,6 +271,17 @@ pub unsafe extern "C" fn fighter_ground(address: *const u8, length: usize) -> u3
 pub unsafe extern "C" fn fighter_dungeon(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_dungeon(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the passage zone asked for by the JSON written at `address` for predicting (`set_passage`); 1 if it was one,
+/// 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_passage(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_passage(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Keeps a Breach's run for predicting at room tick `tick` with the seals `open` (`set_breach`); 1 if made anew.

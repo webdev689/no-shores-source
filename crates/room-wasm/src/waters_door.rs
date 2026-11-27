@@ -9,7 +9,7 @@ use serde_json::{Value, json};
 use std::cell::RefCell;
 use world::layout::Layout;
 use world::traffic::{Port, Traffic, TrafficShip};
-use world::waters::{Waters, name_of};
+use world::waters::{Holder, Waters, name_of};
 
 /// `waters_at`'s answer when no waters are open.
 pub const NOT_OPEN: u32 = 256;
@@ -94,7 +94,8 @@ fn table_of(layout: &Layout, waters: &Waters, traffic: &Traffic) -> Value {
 }
 
 /// What the page reads of the sea's rules beside its waters: the reach a hostile ship meets a player within, the
-/// furthest one may hold a voyage, metres; the reach of a port city's repairs; and each ship's name, by its faction's
+/// furthest one may hold a voyage, metres; the reach of a port city's repairs; how far from its coast a home water
+/// stays home; how far short of its course's end a travel lays the ship; and each ship's name, by its faction's
 /// number (0 a friendly ship's, 1 the Grey Tithe's) and then its hull's.
 fn sea_facts() -> Value {
     let factions = [naval::ranks::PLAYERS, naval::ranks::GREY_TITHE].into_iter();
@@ -105,6 +106,8 @@ fn sea_facts() -> Value {
         "engage_m": naval::captain::ENGAGE_RANGE,
         "hold_reach_m": room::threat::hold_reach_m(),
         "repair_reach_m": room::harbour::REPAIR_REACH_M,
+        "home_reach_m": world::waters::HOME_REACH_M,
+        "travel_short_m": room::sea::travel::SHORT_OF_END_M,
         "ship_names": names,
     })
 }
@@ -116,6 +119,20 @@ pub fn water_byte(x: f64, y: f64) -> u32 {
         open.borrow().as_ref().map_or(NOT_OPEN, |(waters, _)| match waters.water_at([x, y]) {
             None => u32::from(world::waters::LAND_CELL),
             Some(water) => water.continent as u32,
+        })
+    })
+}
+
+/// Who holds the sea at a point: 0 home, 1 the Grey Tithe, 2 the Lattice; 255 on land; `NOT_OPEN` before the waters are
+/// opened. A home water's sea past its reach is the Grey Tithe's (`world::waters::HOME_REACH_M`).
+#[must_use]
+pub fn holder_byte(x: f64, y: f64) -> u32 {
+    OPEN.with(|open| {
+        open.borrow().as_ref().map_or(NOT_OPEN, |(waters, _)| match waters.water_at([x, y]).map(|water| water.holder) {
+            None => u32::from(world::waters::LAND_CELL),
+            Some(Holder::Home) => 0,
+            Some(Holder::GreyTithe) => 1,
+            Some(Holder::Lattice) => 2,
         })
     })
 }
@@ -205,6 +222,12 @@ pub unsafe extern "C" fn waters_open(address: *const u8, length: usize) -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn waters_at(x: f64, y: f64) -> u32 {
     water_byte(x, y)
+}
+
+/// Who holds the sea at a point (`holder_byte`).
+#[unsafe(no_mangle)]
+pub extern "C" fn waters_holder(x: f64, y: f64) -> u32 {
+    holder_byte(x, y)
 }
 
 /// The waters over the frame as bytes (`grid_bytes`).

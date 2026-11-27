@@ -57,12 +57,10 @@ fn the_grounds_bits_are_the_ones_the_page_pins() {
         .iter()
         .flat_map(|number| number.to_bits().to_le_bytes())
         .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
-    assert_eq!(format!("{hash:016x}"), GROUND_41_DESERT);
+    assert_eq!(format!("{hash:016x}"), pinned("isle.ground_41_desert"));
 }
 
-const GROUND_41_DESERT: &str = "5372bca559dd7c59";
-
-const GOLDEN: [u64; 3] = [11_144_284_493_814_852_190, 2_909_213_143_875_111_928, 13_246_981_835_577_183_042];
+const GOLDEN: [u64; 3] = [11_144_284_493_814_852_190, 2_909_213_143_875_111_928, 8_242_008_013_292_094_504];
 
 #[test]
 fn seeds_and_climates_make_different_islands() {
@@ -96,9 +94,10 @@ fn coves_are_about_150_m_across_and_isles_300_to_500() {
 }
 
 #[test]
-fn the_home_climate_and_an_unknown_one_make_no_island() {
-    assert!(Plan::new(1, "temperate-coast").is_none());
+fn an_unknown_climate_makes_no_island_and_the_lantern_seas_open_sea_dresses_its_as_woodland() {
     assert!(Plan::new(1, "moon").is_none());
+    let dressing = |climate: &str| format!("{:?}", catalog().climates[climate]);
+    assert_eq!(dressing("temperate-coast"), dressing("woodland"), "past home's reach, islands as woodland's");
 }
 
 #[test]
@@ -303,3 +302,7 @@ fn the_contract_gives_every_biome_kit_the_same_pieces_and_every_climate_its_tree
         );
     }
 }
+
+#[path = "../../land/tests/support/pinned.rs"]
+mod pinned;
+use pinned::pinned;

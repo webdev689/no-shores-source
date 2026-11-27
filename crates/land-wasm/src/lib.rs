@@ -136,10 +136,10 @@ fn with_open(change: impl FnOnce(&mut Landmass) -> Result<(), String>) -> Vec<u8
 
 /// Opens one continent of a layout: `{ "layout": <layout file>, "id": <continent id>, "edits": <edits file or null>,
 /// "keep": bool, "rmb": <the RMB index or null>, "rmbBlocks": [<each RMB block file>], "forged": { "buildings",
-/// "props" }, "briefs": <the briefs> }`, the last three optional. Generates its land with the edits on it and answers
-/// its view, or a header holding only `error`. Only a kept landmass stays open for strokes, its city settled on it
-/// with the RMB index's blocks, or none, and its nodes' layouts with what they are built with; one not kept is a
-/// preview and leaves the open one alone.
+/// "props" }, "briefs": <the briefs>, "regions": <the regions> }`, the last four optional. Generates its land with
+/// the edits on it and answers its view, or a header holding only `error`. Only a kept landmass stays open for
+/// strokes, its city settled on it with the RMB index's blocks, or none, and its nodes' layouts with what they are
+/// built with; one not kept is a preview and leaves the open one alone.
 #[must_use]
 pub fn open_view(request: &[u8]) -> Vec<u8> {
     let opened = read(request).and_then(|request| {
@@ -507,6 +507,17 @@ pub unsafe extern "C" fn land_sea_wind(address: *const u8, length: usize) -> u64
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     let request = unsafe { std::slice::from_raw_parts(address, length) };
     hand_over(floats_bytes(&sky_door::sea_wind_numbers(&floats_of(request))))
+}
+
+/// How far a ship is seen under the sky, as `sky_door::night_sight_numbers` reads the request.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_night_sight(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(floats_bytes(&sky_door::night_sight_numbers(&floats_of(request))))
 }
 
 /// The climates' keys in their numbers' order, as JSON text.

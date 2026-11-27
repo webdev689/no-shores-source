@@ -10,7 +10,7 @@ use crate::PlayerId;
 use crate::battle::Fights;
 pub use crate::battle::{QUIET, SeaFight};
 use crate::chart::{Charted, SeaChart};
-use crate::clash::{Clash, ship_at, step_clashes};
+use crate::clash::{Clash, light_fight, ship_at, step_clashes};
 pub(crate) use crate::coast::{Coast, leg_meets_land, on_land};
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::friendlies::{Friendlies, Friendly};
@@ -28,8 +28,9 @@ use world::traffic::Port;
 
 /// A ship's speed at a pace of 1, metres a second.
 pub const SHIP_SPEED_M_S: f64 = 12.0;
-/// The paces a player may set a ship to, as multiples of its speed: DFO's steps.
-pub const PACES: [u16; 7] = [5, 10, 20, 30, 40, 60, 100];
+/// The paces a player may set a ship to, as multiples of its speed: DFO's steps, and 200, the pace a voyage planned on
+/// the held map sails at.
+pub const PACES: [u16; 8] = [5, 10, 20, 30, 40, 60, 100, 200];
 /// The world's own time, a pace of 1: the page sails its ship at it while the view is close on it, so it is seen
 /// at its true speed.
 pub const WORLD_PACE: u16 = 1;
@@ -62,6 +63,8 @@ pub enum CourseRefused {
     Fighting,
     /// A course while the player is off the helm: the ship's helmsman keeps the one it has.
     OffTheHelm,
+    /// A point in a locked sea, the sea of an island not yet named.
+    Locked,
 }
 
 /// Why leaving or taking the helm was refused.
@@ -131,6 +134,8 @@ pub struct Sea {
     harbour: crate::harbour::Harbour,
     decks: decks::Decks,
     islands: islands::Islands,
+    parked: parked::ParkedShips,
+    lessons: lessons::Lessons,
     /// The minute it is, counted from the Unix epoch, as the host sets it.
     pub minute: u64,
 }
@@ -167,6 +172,8 @@ impl Sea {
             },
             decks: decks::Decks::default(),
             islands: islands::Islands::new(seed, layout.continents.iter().map(islands::climate_and_resource).collect()),
+            parked: parked::ParkedShips::new(layout),
+            lessons: lessons::Lessons::default(),
             minute: 0,
         }
     }
@@ -181,6 +188,7 @@ impl Sea {
     }
 
     pub fn leave(&mut self, player: PlayerId) {
+        self.park(player);
         self.remember_left(player);
         self.stop_repair(player);
         self.leave_decks(player);
@@ -278,6 +286,9 @@ impl Sea {
             Some(ship) => whole(&ports::in_frame([ship.x, ship.y])).ok_or(CourseRefused::BadCourse)?,
             None => self.puts_in(player, whole_points[0]).ok_or(CourseRefused::BadCourse)?,
         };
+        if whole_points.iter().any(|point| self.chart.locked([point.x as f64, point.y as f64])) {
+            return Err(CourseRefused::Locked);
+        }
         let legs = std::iter::once(start).chain(whole_points.iter().copied());
         let path: Vec<Point> = legs.collect();
         if self.crosses_land(player, &path) {
@@ -354,6 +365,9 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         let (hostiles, sailing_count) = (self.hostiles(), self.hostiles.sailing.len());
+        // Where each ship lay, then each turn of its course it passes this tick: the way flotsam is gathered along.
+        let mut sailed: BTreeMap<PlayerId, Vec<[f64; 2]>> =
+            self.ships().map(|(player, ship)| (player, vec![[ship.x, ship.y]])).collect();
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
@@ -374,23 +388,39 @@ impl Sea {
             sailing.ship.rate = if self.fights.fighting(*player) {
                 0
             } else {
-                ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
+                way::ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
             };
             // Its way is its pace's by the canvas it keeps, never under half, and its hull's class.
             let way = berth.kept[1].max(0.5) * class.way;
-            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way);
+            let turns = sailed.entry(*player).or_default();
+            let reached = turns.len();
+            way::sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way, turns);
+            // No ship sails into a locked sea: one about to cross into it stops at its edge.
+            if self.chart.locked([sailing.ship.x, sailing.ship.y]) && !self.chart.locked([ship.x, ship.y]) {
+                (sailing.ship, sailing.course) = (Ship { pace: 0, rate: 0, ..ship }, VecDeque::new());
+                turns.truncate(reached);
+            }
         }
-        self.tick_harbour();
+        self.tick_harbour(&sailed);
         self.give_guilds();
         self.tick_islands();
         self.fights.fit(&self.harbour.characters);
+        let chart = &self.chart;
+        self.fights.break_off_home(|at| chart.home(at));
+        let world_s = self.weather.world_start_s + time;
+        let fights = self.fights.list.iter_mut().map(|fought| &mut fought.fight);
+        for fight in fights.chain(self.clashes.iter_mut().map(|clash| &mut clash.fight)) {
+            light_fight(fight, world_s);
+        }
         let (outcomes, sank) = self.fights.step(&self.coasts, time);
         self.friendlies.back_from_clash(&[], std::mem::take(&mut self.fights.freed));
         self.after_fights(outcomes, &sank);
         self.tick_decks();
         let players: Vec<[f64; 2]> = self.ships().map(|(_, ship)| [ship.x, ship.y]).collect();
+        // A clash, as a hostile ship, stays at sea for no player inside home waters.
+        let past_home: Vec<[f64; 2]> = players.iter().copied().filter(|&at| !self.chart.home(at)).collect();
         let at_sea = (&mut self.hostiles, &mut self.friendlies);
-        step_clashes(&mut self.clashes, at_sea, &players, (&self.coasts, time));
+        step_clashes(&mut self.clashes, at_sea, &past_home, (&self.coasts, time));
         // Each player's waters run at the pace they sail, the world's own time at rest.
         let ships: Vec<Voyager> = self
             .ships()
@@ -408,19 +438,23 @@ impl Sea {
             .collect();
         let islands: Vec<&Coast> = self.islands.coasts().collect();
         let chart = SeaChart { coasts: &self.coasts, charted: &self.chart, islands: &islands };
+        self.hostiles.clock_s = Some(world_s);
         let mut met = self.hostiles.tick(TICK_SECONDS, &ships, &chart);
         ports::wary_meet(&mut self.hostiles, &self.berths, &ships, &mut met);
-        let world_s = self.weather.world_start_s + time;
         self.friendlies.sail(TICK_SECONDS, &players, (self.chart.traffic.as_ref(), &chart), world_s);
         let traffic = (self.chart.traffic.as_ref(), &chart);
         for (tithe, friend) in self.friendlies.meet(&mut self.hostiles, traffic, world_s) {
             let weather = self.weather.at([tithe.x, tithe.y], time);
-            self.clashes.push(Clash::begin((tithe, friend), weather, &self.coasts, time));
+            let mut clash = Clash::begin((tithe, friend), weather, &self.coasts, time);
+            // Lit now, as a player may come in sight of it this tick.
+            light_fight(&mut clash.fight, world_s);
+            self.clashes.push(clash);
         }
         let mut heave = |player| heave_to((&mut self.berths, &mut self.aboard, &mut self.harbour), player);
         let at_sea = (&mut self.clashes, &mut self.hostiles);
         let joined = self.fights.take_in(met, &ships, at_sea, &mut heave, (&self.coasts, &self.weather, time));
         self.tell_joined(&joined);
+        self.keep_lessons();
     }
 
     /// Sets the world time the room's clock started at, seconds since the Unix epoch: its fights' weather is the world's
@@ -446,6 +480,13 @@ impl Sea {
     pub fn hostiles(&self) -> Vec<Hostile> {
         let clashing = self.clashes.iter().flat_map(Clash::ships);
         self.hostiles.sailing.iter().copied().chain(clashing).collect()
+    }
+
+    /// Where every hostile ship lies, as the held map marks them: each `hostiles` gives, and each captain still in a
+    /// player's fight, where its fight has it.
+    #[must_use]
+    pub fn hostiles_marked(&self) -> Vec<[f64; 2]> {
+        self.hostiles().iter().map(|hostile| [hostile.x, hostile.y]).chain(self.fights.captains_at()).collect()
     }
 
     /// The friendly ships the room keeps at sea: each sailing on for its port, then each in a clash, where its fight
@@ -498,52 +539,6 @@ fn heave_to(
     Some((player, ship_at(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0), kept, hull))
 }
 
-/// The bearing of each leg a ship sails through within `reach` metres along its course, from where it is.
-fn ways_ahead(sailing: &Sailing, reach: f64) -> Vec<f64> {
-    let (mut at, mut left, mut ways) = ([sailing.ship.x, sailing.ship.y], reach, Vec::new());
-    for &[to_x, to_y] in &sailing.course {
-        let (along_x, along_y) = (to_x - at[0], to_y - at[1]);
-        let length = (along_x * along_x + along_y * along_y).sqrt();
-        if length > 0.0 {
-            ways.push(libm::atan2(along_x, -along_y));
-        }
-        left -= length;
-        if left <= 0.0 {
-            break;
-        }
-        at = [to_x, to_y];
-    }
-    ways
-}
-
-/// Moves a ship `distance` metres along its course.
-fn sail(sailing: &mut Sailing, distance: f64) {
-    let mut left = distance;
-    while left > 0.0 {
-        let Some(&[to_x, to_y]) = sailing.course.front() else {
-            (sailing.ship.pace, sailing.ship.rate) = (0, 0);
-            return;
-        };
-        let (along_x, along_y) = (to_x - sailing.ship.x, to_y - sailing.ship.y);
-        let length = (along_x * along_x + along_y * along_y).sqrt();
-        if length > 0.0 {
-            sailing.ship.heading = libm::atan2(along_x, -along_y);
-        }
-        if length <= left {
-            (sailing.ship.x, sailing.ship.y) = (to_x, to_y);
-            sailing.course.pop_front();
-            left -= length;
-        } else {
-            sailing.ship.x += along_x * (left / length);
-            sailing.ship.y += along_y * (left / length);
-            left = 0.0;
-        }
-    }
-    if sailing.course.is_empty() {
-        (sailing.ship.pace, sailing.ship.rate) = (0, 0);
-    }
-}
-
 #[path = "sea_decks.rs"]
 pub mod decks;
 #[cfg(test)]
@@ -553,16 +548,30 @@ pub(crate) mod fight_measure_tests;
 mod guilds;
 #[path = "sea_islands.rs"]
 pub mod islands;
+#[path = "sea_lessons.rs"]
+pub mod lessons;
+#[path = "sea_parked.rs"]
+pub mod parked;
 #[path = "sea_plates.rs"]
 mod plates;
 pub use plates::ShipLook;
+#[path = "sea_locked.rs"]
+mod locked;
 #[path = "sea_ports.rs"]
 mod ports;
 #[path = "sea_puts_in.rs"]
 mod puts_in;
 #[path = "sea_travel.rs"]
 pub mod travel;
+#[path = "sea_way.rs"]
+mod way;
 
+#[cfg(test)]
+#[path = "sea_home_tests.rs"]
+mod sea_home_tests;
+#[cfg(test)]
+#[path = "sea_locked_tests.rs"]
+mod sea_locked_tests;
 #[cfg(test)]
 #[path = "sea_tests.rs"]
 mod sea_tests;

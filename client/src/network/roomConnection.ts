@@ -104,6 +104,8 @@ function hear(socket: WebSocket, heard: Heard): void {
 
 /** The words a join fails with when the room speaks another protocol than the page. */
 const UPDATED = 'The game was updated. Load the page again.';
+/** Why a room was not joined, as the player is told it. */
+const UNREACHED = 'the room could not be reached';
 
 /** A browser's WebSocket to one room: it joins, sends the player's input for each tick (or, at sea, their ship's
  *  course), and hands on every snapshot. When its socket closes for a deploy or a dropped network, it joins the room
@@ -194,9 +196,13 @@ export class RoomConnection implements RoomLink {
       const told = (shot: Snapshot) => (made ? made.snapshot(shot) : snapshot(shot));
       const came = (shot: Snapshot, kept: boolean) => made?.came(shot, kept);
       hear(socket, { welcomed, snapshot: told, gear: (sent) => (made ? made.heard(sent) : gear(sent)), came });
-      socket.addEventListener('error', () => reject(new Error(`the room at ${url} could not be reached`)));
+      // The player is told in words; the room's address is for the console.
+      socket.addEventListener(
+        'error',
+        () => (console.warn(`${url} could not be reached`), reject(new Error(UNREACHED))),
+      );
       socket.addEventListener('close', (event) =>
-        reject(new Error(`the room at ${url} closed: ${event.reason || 'it gave no reason'}`)),
+        reject(new Error(`the room closed: ${event.reason || 'it gave no reason'}`)),
       );
     });
   }

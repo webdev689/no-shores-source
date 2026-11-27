@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ARTS } from './artsCards.ts';
 import type { GearItem, GearShip, GearState } from '../network/gearMessages.ts';
-import { gainsOf } from './gains.ts';
+import { gainsOf, lootNotices } from './gains.ts';
 
 const item = (id: number, rarity: number, place = 0): GearItem => ({
   id,
@@ -253,7 +253,7 @@ test('a ship handed over or bought and a ship’s dress bought are gains; a ship
 });
 
 test('a chest opened or a container searched is named, with no count, over the Aurem it gave', () => {
-  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0 };
+  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0, vault: false };
   const wardrobe = { number: 9, box: [0, 0, 1, 1] as const, foot: 0, top: 1.8, model: 41003 };
   const before = state({ aurem: 100, chests: [chest], searchables: [wardrobe] });
   const opened = gainsOf(before, state({ aurem: 130, chests: [], searchables: [wardrobe], opened: 7 }));
@@ -269,10 +269,13 @@ test('a chest opened or a container searched is named, with no count, over the A
   assert.equal(searched[0]?.name, 'Searched the wardrobe');
   const moved = gainsOf(before, state({ aurem: 100, chests: [{ ...chest, number: 8 }], searchables: [wardrobe] }));
   assert.deepEqual(moved, [], 'a chest that moved on gave nothing');
+  const vaulted = state({ aurem: 100, chests: [{ ...chest, vault: true }], searchables: [] });
+  const vault = gainsOf(vaulted, state({ aurem: 250, chests: [], searchables: [], opened: 7 }));
+  assert.equal(vault[0]?.name, 'Vault chest', "a dungeon's vault's chest named as the finer one");
 });
 
 test('a chest that moved on while a kill paid Aurem is no gain: only the room naming it opened makes one', () => {
-  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0 };
+  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0, vault: false };
   const before = state({ aurem: 100, chests: [chest], searchables: [] });
   const moved = state({ aurem: 110, chests: [{ ...chest, number: 8 }], searchables: [] });
   assert.deepEqual(
@@ -280,4 +283,39 @@ test('a chest that moved on while a kill paid Aurem is no gain: only the room na
     ['Aurem'],
     "the kill's Aurem, no chest",
   );
+});
+
+test('only the finest pieces and Vestiges found are noticed at the foot too, each with the key to the inventory', () => {
+  const found = (rarity: number, compact = false, key = `item-${rarity}`) =>
+    ({
+      key,
+      name: `Piece ${rarity}`,
+      count: 1,
+      rarity,
+      glyph: 'item',
+      tint: 0,
+      item: null,
+      emblem: null,
+      icon: null,
+      compact,
+      word: null,
+    }) as const;
+  const notices = lootNotices([found(1), found(2), found(3), found(4), found(4, true)]);
+  assert.deepEqual(
+    notices.map((notice) => notice.title),
+    ['Piece 3', 'Piece 4'],
+  );
+  // A Legendary dye or barding bought, or a ship's dress, is no find: it stands in the feed alone.
+  const bought = lootNotices([
+    { ...found(3, false, 'cosmetic-25'), name: 'Dye' },
+    { ...found(4, false, 'dress-1'), name: 'Dress' },
+    { ...found(3, false, 'vestige-3'), name: 'Vestige' },
+  ]);
+  assert.deepEqual(
+    bought.map((notice) => notice.title),
+    ['Vestige'],
+    'the Vestige alone',
+  );
+  assert.equal(notices[0]?.key, 'inventory');
+  assert.ok(notices[0]?.icon?.svg.includes('<svg'), "the rarity's crystal for a piece with no glyph");
 });

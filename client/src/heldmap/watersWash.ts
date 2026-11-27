@@ -109,16 +109,24 @@ function rgbOf(hex: string): readonly [number, number, number] {
   ];
 }
 
-/** A cell's holder: its water's; null on land. */
-export function holderOf(waters: MapWaters, index: number): WaterHolder | null {
-  const water = waters.water[index] ?? -1;
-  if (water < 0) return null;
-  return waters.waters[water]?.holder ?? 'home';
+/** How far each cell lies from the nearest coast, metres (the coast field's, on the same cells), and how far from its
+ *  coast a home water stays home (crates/world/src/waters.rs `HOME_REACH_M`). */
+export interface HomeReach {
+  readonly distance: Float32Array;
+  readonly reachM: number;
 }
 
-/** The wash over the waters. Each cell blends the sea cells within one of it, so a border is soft over a cell or two
- *  once the map samples it between cells. */
-export function washOf(waters: MapWaters): WatersWash {
+/** A cell's holder: its water's, but the Grey Tithe's over a home water's open sea past its `reach`; null on land. */
+export function holderOf(waters: MapWaters, index: number, reach?: HomeReach): WaterHolder | null {
+  const water = waters.water[index] ?? -1;
+  if (water < 0) return null;
+  const holder = waters.waters[water]?.holder ?? 'home';
+  return holder === 'home' && reach && (reach.distance[index] ?? 0) > reach.reachM ? 'grey-tithe' : holder;
+}
+
+/** The wash over the waters, home waters' open sea past their `reach` washed as the Grey Tithe's. Each cell blends the
+ *  sea cells within one of it, so a border is soft over a cell or two once the map samples it between cells. */
+export function washOf(waters: MapWaters, reach?: HomeReach): WatersWash {
   const { columns, rows } = waters;
   const cells = waters.water;
   const colours = Object.fromEntries(
@@ -134,7 +142,7 @@ export function washOf(waters: MapWaters): WatersWash {
           const [x, y] = [column + across, row + down];
           if (x < 0 || y < 0 || x >= columns || y >= rows) continue;
           const near = y * columns + x;
-          const holder = holderOf(waters, near);
+          const holder = holderOf(waters, near, reach);
           if (!holder) continue;
           const [cellRed, cellGreen, cellBlue] = colours[holder];
           [red, green, blue, sea] = [red + cellRed, green + cellGreen, blue + cellBlue, sea + 1];
@@ -152,6 +160,36 @@ export function washOf(waters: MapWaters): WatersWash {
       hatch.set([Math.round((lattice / sea) * 255), Math.round((tithe / sea) * 255)], index * 2);
     }
   return { colour, hatch };
+}
+
+/** A locked sea's shade a cell at a time, a byte each: 255 over the sea of each water in `locked` (by continent index)
+ *  and over its island's land, a cell inside one of `lands` (a byte a cell, 1 inside a locked island's outline) or
+ *  whose nearest coast is the island's (`field`), blended over the cells either side so its edge is soft once the map
+ *  samples it between cells. */
+export function shutCells(
+  waters: MapWaters,
+  field: { readonly island: Uint8Array },
+  locked: ReadonlySet<number>,
+  lands: readonly Uint8Array[] = [],
+): Uint8Array {
+  const { columns, rows } = waters;
+  const shut = (index: number) => {
+    const water = waters.water[index] ?? -1;
+    if (water >= 0) return locked.has(water);
+    return locked.has(field.island[index] ?? -1) || lands.some((inside) => inside[index] === 1);
+  };
+  const cells = new Uint8Array(columns * rows);
+  for (let row = 0; row < rows; row++)
+    for (let column = 0; column < columns; column++) {
+      let count = 0;
+      for (let down = -1; down <= 1; down++)
+        for (let across = -1; across <= 1; across++) {
+          const [x, y] = [column + across, row + down];
+          if (x >= 0 && y >= 0 && x < columns && y < rows && shut(y * columns + x)) count++;
+        }
+      cells[row * columns + column] = Math.round((count / 9) * 255);
+    }
+  return cells;
 }
 
 /** Each water's label point by continent index: the middle of its sea cell farthest, counted in cells, from land,
@@ -200,10 +238,4 @@ export function labelPoints(waters: MapWaters): Map<number, readonly [number, nu
   for (const [own, { index }] of best)
     points.set(own, [((index % columns) + 0.5) * cellM, (Math.floor(index / columns) + 0.5) * cellM]);
   return points;
-}
-
-/** A water's words on the map: its name and its level band, "The Fen Deeps, 22-26". */
-export function waterWords(water: MapWater): string {
-  const name = water.name ?? water.id;
-  return water.levels ? `${name}, ${water.levels[0]}-${water.levels[1]}` : name;
 }

@@ -13,13 +13,18 @@ const movement = await startMovementRules(await readFile(new URL(`${RELEASE}move
 const combat = startCombatRules(
   new WebAssembly.Module(await readFile(new URL(`${RELEASE}room_wasm.wasm`, import.meta.url))),
 );
-const rules = readFileSync(new URL('../../../crates/room/src/public/fissure.rs', import.meta.url), 'utf8');
+/** Written by `cargo test -p room` (public/page_numbers_tests.rs): the room's spires and how far they are sunk. */
+const rules = JSON.parse(
+  readFileSync(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8'),
+) as {
+  spires: number[][];
+  spireSunk: number;
+};
 
 test("the page's spires are the room's: its SPIRES, sunk as far, at the mark, on the ground under each middle", () => {
-  const listed = /SPIRES: \[\[f64; 6\]; 4\] = \[([^;]*)\];/.exec(rules)?.[1] ?? '';
-  const spires = [...listed.matchAll(/\[([^\]]+)\]/g)].map((row) => (row[1] ?? '').split(',').map(Number));
+  const { spires } = rules;
   assert.equal(spires.length, 4);
-  assert.equal(Number(/const SPIRE_SUNK: f64 = ([\d.]+);/.exec(rules)?.[1]), SPIRE_SUNK_M);
+  assert.equal(rules.spireSunk, SPIRE_SUNK_M);
   const floor = (x: number, y: number) => 0.01 * x + 0.02 * y;
   const blocks = spireBlocks(500, 300, floor);
   blocks.forEach((block, index) => {

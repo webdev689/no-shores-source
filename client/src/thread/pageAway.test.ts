@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { addressOf, HeardEvents, KeptStorage, pageAway } from './pageAway.ts';
-import type { Start, ToPage } from './pageOps.ts';
+import { type Start, type ToPage, sideKey } from './pageOps.ts';
 import { BROWSERS_SIGN_INS, SIGN_INS, useSignIns } from '../ui/page.ts';
 import { type DesktopInfo, askDesktop, desktop, useDesktop } from '../desktop.ts';
 
@@ -167,10 +167,30 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
     assert.equal(desktop(), told);
     askDesktop({ ask: 'drawn' });
     assert.deepEqual(sent.at(-1), { kind: 'desktop', ask: { ask: 'drawn' } });
+    // A picture driver's hook that throws still answers, saying why.
+    Object.assign(globalThis, {
+      __qaBroken: () => {
+        throw new Error('no such view');
+      },
+    });
+    away.heard({ kind: 'qa', id: 7, hook: '__qaBroken', args: [] });
+    await new Promise((settled) => setTimeout(settled));
+    assert.deepEqual(sent.at(-1), { kind: 'qa', id: 7, answer: 'Error: no such view' });
+    delete (globalThis as { __qaBroken?: unknown }).__qaBroken;
   } finally {
     useDesktop(null, () => undefined);
     for (const [name, descriptor] of before)
       if (descriptor) Object.defineProperty(globalThis, name, descriptor);
       else delete (globalThis as Record<string, unknown>)[name];
   }
+});
+
+test('a side button goes to the game a second time, as a key of its name at the window; no other button does', () => {
+  const asKey = (type: string, button: number) => {
+    const sent = sideKey(type, button, null);
+    return sent?.kind === 'event' ? [sent.on, sent.type, sent.fields['key']] : sent;
+  };
+  assert.deepEqual(asKey('mousedown', 3), ['window', 'keydown', 'Mouse3']);
+  assert.deepEqual(asKey('mouseup', 4), ['window', 'keyup', 'Mouse4']);
+  assert.deepEqual([asKey('mousedown', 0), asKey('mousedown', 2), asKey('click', 3)], [null, null, null]);
 });

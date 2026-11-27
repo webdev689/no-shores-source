@@ -62,7 +62,11 @@ test('Today and This week each carry their reset’s icon and its one countdown;
   );
   assert.ok(!said.includes('LATER'), 'a Breach is open: nothing waits under Later');
   const rows = nodesOf(tree()).filter((node) => node.id?.startsWith('timer-row-'));
-  assert.equal(rows.length, 6, 'a row each: the day’s dungeon, the bounties, the week’s two, the boon, Breaches');
+  assert.equal(
+    rows.length,
+    8,
+    'a row each: the day’s dungeon, the bounties, Saltmere’s lamp of the day, the week’s two, the boon, its lamps, Breaches',
+  );
   const drawn = (row: Node) =>
     nodesOf(row).some((node) => node.role === 'well' && nodesOf(node).some((inner) => inner.picture));
   assert.ok(rows.every(drawn), 'each its icon in a well');
@@ -171,4 +175,25 @@ test('the day’s islands read down three columns, one on a phone, and each head
     const box = boxOf(phone.ui, id);
     assert.ok(box.x + box.width <= panel.x + panel.width, `${id} within the panel`);
   }
+});
+
+test('Saltmere’s lamps: today whether its day’s lamp has paid, this week each of its four lit or not', async () => {
+  const record = { day: 20_778, cleared: [1], week: 2_968, elite: false, abyss: false, boon: true };
+  const drawn = thisWeekOf(activitiesAt(await module, FRIDAY_NINE), null, record, named);
+  const week = { ...drawn, lamps: [{ island: 'continent-1', lamps: [1, 2], dayLamp: true }] };
+  const { tree } = timers(
+    () => week,
+    () => FRIDAY_AT,
+  );
+  const said = wordsIn(tree());
+  for (const words of ['Saltmere’s lamp of the day', 'Saltmere’s lamps']) assert.ok(said.includes(words), words);
+  // Each lamp's mark is gold once lit and grey while cold: the week's row draws the first two alike, the last two so.
+  const pictures = (id: string) =>
+    nodesOf(byId(tree(), id)).flatMap((node) => (node.picture ? [node.picture.key] : []));
+  const marks = pictures('timer-row-lamps-continent-1').slice(1);
+  assert.equal(marks.length, 4);
+  assert.equal(marks[0], marks[1]);
+  assert.equal(marks[2], marks[3]);
+  assert.notEqual(marks[1], marks[2]);
+  assert.equal(pictures('timer-row-day-lamp-continent-1').slice(1)[0], marks[0], 'the day’s lamp lit, as gold');
 });

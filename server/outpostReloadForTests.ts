@@ -6,6 +6,7 @@ import { accounts } from './accounts/accountsForTests.ts';
 import { type Characters, characters } from './accounts/characters.ts';
 import { guildKey } from './accounts/outpostStores.ts';
 import { Keeper, partFrom } from './keeping.ts';
+import { keptRoomOn } from './keptRoom.ts';
 import { OutpostHost, outpostGround } from './outpostHost.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
@@ -59,13 +60,8 @@ const guarded = <T>(call: () => T, fallback: T) => {
 /** A room that keeps characters, its keeper, and how a player joins and leaves it, as the worker does. */
 function keptRoom(room: RoomDoor, kept: Characters, name: string, lost: number[]) {
   const keeping = {
-    keptApart: (player: number) => room.keptApart(player),
-    restoreJoined: (player: number, body: string, vault: string | null) => room.restoreJoined(player, body, vault),
+    ...keptRoomOn(room, (call) => call()),
     own: (player: number, account: string) => room.own(player, account) && room.hold(player, false),
-    shut: (player: number, body: string | null) => room.shut(player, body),
-    name: (player: number, named: string) => room.name(player, named),
-    tag: (player: number, tag: string) => room.tag(player, tag),
-    guild: (player: number, told: string) => room.guild(player, told),
   };
   const keeper = new Keeper(
     kept,

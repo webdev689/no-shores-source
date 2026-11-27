@@ -1,7 +1,7 @@
 //! The body a player leaves a room with, kept with their character (`gear::left`): their health and healing charges
 //! for two minutes, their Anima and Tenets for ten, so leaving and coming back, to this room or another, heals nothing
-//! and readies nothing. One who left fallen comes back
-//! fallen, to stand again at a spawn.
+//! and readies nothing. One who left fallen comes back fallen, to stand again at a spawn; once the body no longer
+//! holds, whole, but in a passage zone without its haul.
 
 use crate::players::Player;
 use crate::{PlayerId, Room};
@@ -81,17 +81,17 @@ impl Room {
             art: found.character.arts.worn,
             anima: share(found.casting.anima),
             tenets: found.casting.tenets.map(share),
-            out: !fallen && self.at_way_out([fighter.body.x, fighter.body.y]),
+            out: !fallen && self.at_way_out([fighter.body.x, fighter.body.y, fighter.body.z]),
         }
     }
 
     /// Whether a body standing at `at` stands at one of a dungeon's ways out, within WAY_OUT_REACH of its exit door or
-    /// of its return portal while that stands open, as the page offers "Leave" there.
-    fn at_way_out(&self, at: [f64; 2]) -> bool {
+    /// of its return portal while that stands open, on its storey, as the page offers "Leave" there.
+    fn at_way_out(&self, at: [f64; 3]) -> bool {
         let open = self.cache.is_some_and(|cache| cache.open);
+        let near = crate::encounters::seals::near;
         self.ways_out.is_some_and(|(door, portal)| {
-            combat::sight::apart(at, door) <= WAY_OUT_REACH
-                || (open && combat::sight::apart(at, portal) <= WAY_OUT_REACH)
+            near(at, door) <= WAY_OUT_REACH || (open && near(at, portal) <= WAY_OUT_REACH)
         })
     }
 
@@ -103,7 +103,8 @@ impl Room {
     }
 
     /// Gives a returning player the body their character left with, what of it still holds at the room's minute; a
-    /// boarder comes onto a hostile's deck from their own ship, unhurt.
+    /// boarder comes onto a hostile's deck from their own ship, unhurt; one left fallen whose body no longer holds
+    /// loses a passage zone's haul.
     fn give_left_back(&mut self, player: PlayerId) {
         let (minute, on_deck) = (self.minute, matches!(self.floor, crate::Floor::Deck(_)));
         let Some(found) = self.players.get_mut(&player) else { return };
@@ -119,6 +120,10 @@ impl Room {
         if left.arts_hold(minute) && found.character.arts.worn == left.art {
             found.casting.anima = whole_of(left.anima);
             found.casting.tenets = left.tenets.map(whole_of);
+        }
+        // One who left fallen and comes back whole, the body no longer kept, stood again as a respawn does.
+        if left.health == 0 && !left.body_holds(minute) {
+            self.lose_haul(player);
         }
     }
 }

@@ -8,9 +8,10 @@
 //! its fallen again as soon as they may, and a Breach as its rules say (`breach/fallen.rs`).
 
 use crate::players::GRACE;
-use crate::{EventKind, PlayerId, Room};
+use crate::{EventKind, Input, PlayerId, Room};
 use combat::fighter::{Action, FighterId, player};
 use combat::tuning::{FOE_GONE, RESPAWN};
+use combat::{Fighter, player_tick};
 use movement::Body;
 use reach::Standing;
 use std::collections::BTreeMap;
@@ -63,7 +64,6 @@ impl Room {
             // One the section killed too stands again only by its own respawn, which ends that death as well.
             .filter(|(_, found)| !matches!(found.standing, Standing::Dead { .. }))
             .filter(|(_, found)| unasked || found.respawn_asked)
-            .filter(|(_, found)| !self.dark_at(found.fighter.body.x, found.fighter.body.y))
             .filter(|(id, _)| !self.breach_holds(**id))
             .map(|(id, found)| (*id, found.fighter.body))
             .chain(self.breach_stands_now())
@@ -72,11 +72,7 @@ impl Room {
             found.respawn_asked = false;
         }
         for (id, lain) in fallen {
-            if !self.revive() {
-                continue;
-            }
-            let body = self.stand_again(id, lain.x, lain.y);
-            self.stand_up(id, body, None);
+            self.respawn(id, lain);
         }
         let gone: Vec<FighterId> = self
             .foes
@@ -96,25 +92,31 @@ impl Room {
     /// Whether the darkness holds a player where they are now (`dark_at`): none for one not in the room.
     #[must_use]
     pub fn darkness_for(&self, player: PlayerId) -> bool {
-        self.players.get(&player).is_some_and(|found| self.dark_at(found.fighter.body.x, found.fighter.body.y))
+        self.players
+            .get(&player)
+            .is_some_and(|found| self.dark_at([found.fighter.body.x, found.fighter.body.y, found.fighter.body.z]))
     }
 
-    /// Whether a body at (x, y) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell of an
+    /// Whether a body at (x, y, z) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell of an
     /// Elite Dungeon's Court while its Boss stands, so one come back down at the way in may still respawn.
-    fn dark_at(&self, x: f64, y: f64) -> bool {
+    fn dark_at(&self, at: [f64; 3]) -> bool {
         let in_court = self.encounters.as_ref().is_some_and(|encounters| {
-            encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.court_cells.contains(&cell))
+            encounters.plan.cell_at(at).is_some_and(|cell| encounters.court_cells.contains(&cell))
         });
-        self.revives() == Some(0) || (in_court && self.boss().is_some())
+        self.revives() == Some(0) || (in_court && self.boss().is_some()) || self.gloomy()
     }
 
     /// Whether every player the room judges (those it keeps, where it keeps anyone) is down while the Court's Boss
-    /// stands, the last of them for RESPAWN, so the company sees itself fall before it falls back.
+    /// stands, the last of them for RESPAWN, so the company sees itself fall before it falls back; one the section
+    /// killed counts once it may respawn, so a Gloom that refuses it that does not leave it lying.
     fn fallen_in_darkness(&self) -> bool {
         let keeps = self.players.values().any(|found| found.owner.is_some());
         let mut judged = self.players.values().filter(|found| !keeps || found.owner.is_some());
-        let lain = |found: &crate::players::Player| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN);
-        self.boss().is_some() && !self.players.is_empty() && judged.all(lain)
+        let lain = |found: &crate::players::Player| {
+            matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN)
+                || found.standing.may_respawn()
+        };
+        (self.boss().is_some() || self.gloomy()) && !self.players.is_empty() && judged.all(lain)
     }
 
     /// A company fallen together while the Court's Boss stands: each player is told, shots, blows waiting and spells
@@ -133,6 +135,8 @@ impl Room {
             let Some(lain) = self.players.get(&id).map(|found| found.fighter.body) else { continue };
             let body = self.stand_again(id, lain.x, lain.y);
             self.stand_up(id, body, None);
+            // A company all down in a passage zone's dark is as good as respawned: its haul is lost.
+            self.lose_haul(id);
         }
         self.court_start_over();
     }
@@ -231,6 +235,33 @@ impl Room {
             progress: share(*ticks).unwrap_or(1000),
         })
         .collect()
+    }
+
+    /// A dead player's input: the body falls under its own weight (`lying_still`), the input taken without steering
+    /// it, and one asking to respawn, once the section allows, stands it where a respawn stands a player.
+    pub(crate) fn step_dead(&mut self, id: PlayerId, input: Input, seen: u64, view: &[(FighterId, Fighter)]) {
+        let may_respawn = self.may_respawn(id);
+        let Some(found) = self.players.get_mut(&id) else { return };
+        found.chain = crate::chain::Chain::default();
+        found.shown = input.shown;
+        found.remember(seen);
+        let (lying, dead) = (crate::players::lying_still(&found.fighter), found.armed(found.fighter));
+        found.fighter = player_tick(id, &dead, &lying, view, &self.blocks, &self.floor).0;
+        if input.respawn && found.standing.may_respawn() && may_respawn {
+            let lain = found.fighter.body;
+            self.respawn(id, lain);
+        }
+    }
+
+    /// A fallen player stands again by their own respawn, however they fell: not in a darkness, taking a run's
+    /// revive where it counts them, and in a passage zone with its haul lost.
+    fn respawn(&mut self, id: PlayerId, lain: Body) {
+        if self.dark_at([lain.x, lain.y, lain.z]) || !self.revive() {
+            return;
+        }
+        let body = self.stand_again(id, lain.x, lain.y);
+        self.stand_up(id, body, None);
+        self.lose_haul(id);
     }
 }
 

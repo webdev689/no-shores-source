@@ -277,7 +277,8 @@ fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level
     let bought = character.items.values().find(|(item, _)| item.level == 12).expect("the ware");
     assert_eq!(bought.1, At::Carried);
     assert_eq!(
-        character.ask(Ask::Vend { vendor: Vendor::Weaponsmith, ware: 9, day: 20_400 }, here, &DICE),
+        // Past the day's six and the eighteen of the starter stock.
+        character.ask(Ask::Vend { vendor: Vendor::Weaponsmith, ware: 24, day: 20_400 }, here, &DICE),
         Err(Refusal::NoSuchItem)
     );
 }

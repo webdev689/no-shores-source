@@ -53,8 +53,18 @@ const FIRST: FightView = {
 const ROOM = { orders: () => undefined, takeFight: () => null } as unknown as SeaRoom;
 const MARKS = { drawInto: () => undefined } as unknown as MarkDrawer;
 const WATERLINE = { lengthM: 18.6775, beamM: 5.5684, draughtM: 1.8 };
+/** Each hull's own line, as if its mesh had come: its number at every station, so a footprint shows whose it holds. */
+const LINES = { line: (hull: number) => new Float32Array(16).fill(hull + 1) };
 /** The Sloop drawn 75 m long on the sea's view. */
 const SEA_SCALE = 75 / WATERLINE.lengthM;
+
+test("a fight's footprints each hold their own hull's line, the player's too, once its mesh has come", () => {
+  // A Frigate's captain, drawn as the Brig until the Frigate's own model comes: its footprint is the hull drawn.
+  const frigate = { ...FIRST, captain: { ...captain, hull_kind: 3 } };
+  const fight = new SeaCombat(ROOM, frigate, MARKS, 0, (hull) => (hull === 3 ? 2 : hull));
+  const lines = fight.hulls(3, LINES).map((hull) => hull.line?.[0]);
+  assert.deepEqual(lines, [LINES.line(0)[0], LINES.line(2)[0]], "the player's Sloop's, then the captain's as drawn");
+});
 
 test('a fight draws every ship, its footprint, everyone aboard and each bar at the size the view shows it', () => {
   const fight = new SeaCombat(ROOM, FIRST, MARKS, 0);
@@ -67,7 +77,7 @@ test('a fight draws every ship, its footprint, everyone aboard and each bar at t
     ],
   );
   assert.deepEqual(
-    fight.hulls(3).map((hull) => [hull.halfLength, hull.halfBeam]),
+    fight.hulls(3, LINES).map((hull) => [hull.halfLength, hull.halfBeam]),
     Array.from({ length: 2 }, () => [(WATERLINE.lengthM / 2) * 3, (WATERLINE.beamM / 2) * 3]),
   );
   assert.deepEqual(
@@ -142,7 +152,7 @@ test("in a fight the player's footprint comes first, then the captains nearest i
   const near = { ...captain, ship: [5100, 6000, 0, 0, 0, 0, 0, 2] as typeof captain.ship };
   const sunk = { ...captain, ship: [5050, 6000, 0, 0, 0, 0, 0, 2] as typeof captain.ship, state: 'sunk' as const };
   const fight = new SeaCombat(ROOM, { ...FIRST, captain: far, others: [sunk, near] }, MARKS, 0);
-  const hulls = fight.hulls(4);
+  const hulls = fight.hulls(4, LINES);
   assert.deepEqual(
     hulls.map((hull) => [hull.x, hull.way > 0, hull.scale]),
     [
@@ -469,6 +479,7 @@ async function roomInFight() {
     taken: [],
     friendlies: [],
     charted: [],
+    chartMarks: [],
     plates: [],
   };
   return { room, nothingFought: () => hand(empty as unknown as Snapshot) };

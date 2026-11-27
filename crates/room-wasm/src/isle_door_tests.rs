@@ -1,4 +1,4 @@
-use super::{heights_bytes, hold_ashore, isle_landing, open_island, plan_json, sea_dungeon, sea_island, sea_landed};
+use super::{heights_bytes, isle_landing, open_island, plan_json, sea_dungeon, sea_island, sea_landed};
 use crate::{Opened, with_open};
 use isle::{Kind, Plan};
 
@@ -23,7 +23,7 @@ fn the_page_is_given_the_islands_plan_and_the_ground_its_room_stands_on() {
         .collect();
     let ground = movement::Heights::from_floats(&floats).expect("a grid");
     assert_eq!(ground, plan.ground_at(at), "the page predicts on the room's own ground");
-    assert!(plan_json(seed, "temperate-coast").is_empty() && heights_bytes(seed, "moon", at).is_empty());
+    assert!(plan_json(seed, "moon").is_empty() && heights_bytes(seed, "moon", at).is_empty());
     for nowhere in [[f64::NAN, 0.0], [0.0, f64::INFINITY]] {
         assert!(heights_bytes(seed, "tundra", nowhere).is_empty(), "no ground for a middle no number names");
     }
@@ -55,21 +55,21 @@ fn an_islands_room_opens_on_the_seas_word_with_its_guards() {
     let plan = Plan::new(seed, "steppe").expect("steppe dresses islands");
     assert_eq!(nodes(), plan.sites.nodes.len(), "its water's resource stands in each of its nodes");
     assert!(!open_island(br#"{"seed":"x","climate":"steppe","at":[0,0],"guards":0,"levels":null}"#));
-    assert!(!open_island(br#"{"seed":"5","climate":"temperate-coast","at":[0,0],"guards":0,"levels":null}"#));
+    assert!(!open_island(br#"{"seed":"5","climate":"moon","at":[0,0],"guards":0,"levels":null}"#));
 }
 
 #[test]
 fn with_no_sea_open_there_is_no_word_on_an_island() {
     assert!(open_island(br#"{"seed":"5","climate":"desert","at":[0,0],"guards":0,"levels":null}"#));
     assert!(sea_island(1).is_empty());
-    assert!(!hold_ashore(1, 5));
+    let word = br#"{"named":[],"island":1,"seed":"5","seconds":1800000000}"#;
+    assert!(crate::parked_door::sea_ashore(word).is_empty(), "a word that reads, answered by no sea");
 }
 
 /// The plans of a cove and a quarry, pinned: server/isle.test.ts pins the same of the page's WebAssembly, so every
 /// module, block and post stands where the room has it on every machine, not only the ground.
 const PLANS_PINNED: [(u64, &str); 2] = [(41, "desert"), (QUARRY_SEED, "rainforest")];
 const QUARRY_SEED: u64 = 2;
-const PLANS: &str = "b34441b512d89694";
 
 #[test]
 fn the_plans_bits_are_the_ones_the_page_pins() {
@@ -78,7 +78,7 @@ fn the_plans_bits_are_the_ones_the_page_pins() {
     let hash = text
         .bytes()
         .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
-    assert_eq!(format!("{hash:016x}"), PLANS);
+    assert_eq!(format!("{hash:016x}"), crate::door_tests::pinned("isle.plans"));
 }
 
 #[test]

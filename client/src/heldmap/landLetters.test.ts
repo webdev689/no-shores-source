@@ -35,6 +35,8 @@ const SHEET: LandSheet = {
     { name: 'Well', at: [195, 121] },
     { name: 'Pump', at: [200, 119] },
     { name: 'Cistern', at: [201, 120] },
+    { name: 'Spring', at: [199, 120] },
+    { name: 'Drain', at: [200, 121] },
   ],
   marks: [
     { glyph: 'mage', at: [100, 100], word: 'The Mage' },
@@ -100,13 +102,20 @@ test('the plan says no keeper by name: each is a glyph, and the table says what 
   );
 });
 
-test("a place's name that would fall on one before it stands over its middle, else farther off, else is left off", () => {
+test('the table hidden, as a player asked, paints nothing of itself, and every name and mark still shows', () => {
+  const words = paint({ legend: false }).texts();
+  for (const word of ['Overlook', 'The Mage', 'Vault', 'You']) assert.ok(!words.includes(word), word);
+  assert.ok(!words.some((word) => typeof word === 'string' && word.endsWith(' m')), 'nor its bar');
+  for (const word of ['Watch Court', 'Fountain']) assert.ok(words.includes(word), word);
+});
+
+test("a place's name that would fall on one before it stands over its middle, else farther off, else beside it, else is left off", () => {
   const words = paint().texts();
   assert.ok(
-    ['Fountain', 'Well', 'Pump'].every((name) => words.includes(name)),
+    ['Fountain', 'Well', 'Pump', 'Cistern', 'Spring'].every((name) => words.includes(name)),
     `${words.join(', ')}`,
   );
-  assert.ok(!words.includes('Cistern'));
+  assert.ok(!words.includes('Drain'));
 });
 
 test("a place's name keeps clear of the gauntlets: under a thumb it stands over its middle instead", () => {
@@ -158,6 +167,96 @@ test("the player's arrow points the way they look: east, a quarter turn from nor
   const placed = calls.findIndex((call) => call.name === 'translate' && call.args[0] === 300 && call.args[1] === 120);
   const tip = calls.slice(placed).find((call) => call.name === 'moveTo')?.args as number[];
   assert.ok(Math.abs((tip[0] ?? 0) - 9) < 1e-9 && Math.abs(tip[1] ?? 0) < 1e-9, `${tip}`);
+});
+
+test("a place's name by the map's edge stands whole inside it, not cut by the edge", () => {
+  const name = 'The first lamp, lit';
+  const sheet = { ...SHEET, places: [{ name, at: [2, 3] as const }], marks: [] };
+  const { calls } = paint({ sheet });
+  const written = calls.findIndex((call) => call.name === 'fillText' && call.args[0] === name);
+  const placed = calls
+    .slice(0, written)
+    .filter((call) => call.name === 'translate')
+    .at(-1)?.args as number[];
+  // The test painter measures six units a letter; the map is 800 by 500.
+  const half = (name.length * 6) / 2;
+  assert.ok(written > 0, 'lettered');
+  assert.ok((placed[0] ?? 0) >= half, `left edge ${placed}`);
+  assert.ok((placed[1] ?? 0) >= 15 * 0.6, `top edge ${placed}`);
+});
+
+test("no place's name is lettered under the table: the table takes the corner with fewest, the names keep clear", () => {
+  // Names in every corner of the map (two units a metre on an 800 by 500 map): wherever the table stands, the
+  // name there moves clear of it or is left off, never written under it.
+  const corners = [
+    [30, 20],
+    [370, 20],
+    [30, 230],
+    [370, 230],
+  ] as const;
+  const places = corners.map((corner, index) => ({ name: `Corner Place ${index}`, at: corner }));
+  const { calls, table } = paint({ sheet: { ...SHEET, places, marks: [] } });
+  const box = table.box;
+  const lettered = calls.flatMap((call, index) => {
+    if (call.name !== 'fillText' || !String(call.args[0]).startsWith('Corner Place')) return [];
+    return [
+      calls
+        .slice(0, index)
+        .filter((each) => each.name === 'translate')
+        .at(-1)?.args as number[],
+    ];
+  });
+  assert.ok(lettered.length >= 3, `${lettered.length} names lettered`);
+  for (const [x = 0, y = 0] of lettered)
+    assert.ok(x < box.x || x > box.x + box.width || y < box.y || y > box.y + box.height, `${[x, y]} under the table`);
+});
+
+test('two names on one line keep a gap: the second does not run on from the first', () => {
+  // At two units a metre, Westmarch's name under its place ends at 227; East's would begin at 230.
+  const places = [
+    { name: 'Westmarch', at: [100, 150] as const },
+    { name: 'East', at: [121, 150] as const },
+  ];
+  const { calls } = paint({ sheet: { ...SHEET, places, marks: [] } });
+  const placedAt = (name: string) => {
+    const written = calls.findIndex((call) => call.name === 'fillText' && call.args[0] === name);
+    assert.ok(written > 0, `${name} lettered`);
+    return calls
+      .slice(0, written)
+      .filter((call) => call.name === 'translate')
+      .at(-1)?.args as number[];
+  };
+  const [west, east] = [placedAt('Westmarch'), placedAt('East')];
+  const sameLine = west[1] === east[1];
+  const apart = (east[0] ?? 0) - 12 - ((west[0] ?? 0) + 27);
+  assert.ok(!sameLine || apart >= 6, `${west} ${east}`);
+});
+
+test("a name kept by its mark stands only where it is nearer its own mark than any other's, else is left off", () => {
+  // Kindle's mark at (200, 200) on the map; its name under it would stand nearer the Hold's mark below and right.
+  const near = (other: readonly [number, number]): LandSheet => ({
+    ...SHEET,
+    places: [{ name: 'Kindle', at: [100, 100], near: true }],
+    marks: [
+      { glyph: 'kindle', at: [100, 100], word: 'Kindle' },
+      { glyph: 'hold', at: other, word: 'Hold' },
+    ],
+  });
+  const placed = (sheet: LandSheet) => {
+    const { calls } = paint({ sheet });
+    const named = calls.findIndex((call) => call.name === 'fillText' && call.args[0] === 'Kindle');
+    return named < 0
+      ? null
+      : calls
+          .slice(0, named)
+          .filter((call) => call.name === 'translate')
+          .at(-1)?.args;
+  };
+  assert.deepEqual(placed(near([150, 100])), [200, 218], 'alone, under its mark');
+  // Its glyph clear of the name under Kindle's, but 8.2 from it where Kindle's mark stands 9 off.
+  const crowded = placed(near([113.1, 109]));
+  assert.ok(crowded, 'lettered elsewhere by its own mark');
+  assert.notDeepEqual(crowded, [200, 218], 'not under it, nearer the Hold’s mark than its own');
 });
 
 /** Other players and the event in the world: the sheet's origin is (1000, 2000), and the view 2 pixels a metre. */

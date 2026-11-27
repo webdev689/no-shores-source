@@ -16,6 +16,8 @@ import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { GAME_PALETTE } from './appearance/gamePalette.ts';
 import { EMBLEMS } from '../plus/emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
+import { glyphSvg } from './gearGlyphs.ts';
+import type { Notice } from './obtained.ts';
 import { bardingSvg, keeperMarkSvg, markSvg, shapesSvg } from './npc/npcMarks.ts';
 import { holderName } from './finds.ts';
 import { CHEST_PICTURE, SEARCH_PICTURE } from './overheadMarks.ts';
@@ -174,7 +176,7 @@ function findGains(before: GearState, after: GearState): Gain[] {
   const opened = after.opened ?? 0;
   if (opened === 0 || opened === before.opened) return [];
   const chest = before.chests?.find((find) => find.number === opened);
-  if (chest) return [gain(`find-${opened}`, 'Chest', 1, { icon: CHEST_SVG, bare: true })];
+  if (chest) return [gain(`find-${opened}`, chest.vault ? 'Vault chest' : 'Chest', 1, { icon: CHEST_SVG, bare: true })];
   const held = before.searchables?.find((find) => find.number === opened);
   const searched = held && `Searched the ${holderName(held.model)}`;
   return searched ? [gain(`find-${opened}`, searched, 1, { icon: SEARCH_SVG, bare: true })] : [];
@@ -236,4 +238,30 @@ export function gainsOf(before: GearState, after: GearState): Gain[] {
   const sent = (after.mail ?? []).filter((letter) => !posted.has(letter.id)).length;
   if (sent > 0) gains.push(gain('mail', 'Sent to the mail', sent, { icon: keeperMarkSvg('mail') }));
   return gains;
+}
+
+/** The rarity from which what is found is noticed at the foot of the screen too: Legendary. */
+const NOTICED_RARITY = 3;
+
+/** The notices of the finest things gained (`obtained.ts`): each Legendary or Atheric piece or Vestige, its key to
+ *  the inventory; the rest stand in the feed alone. */
+export function lootNotices(gains: readonly Gain[]): Notice[] {
+  return gains.flatMap((gain): Notice[] => {
+    const rarity = RARITIES[gain.rarity ?? -1];
+    // A piece or a Vestige found; a cosmetic or a ship's dress bought at its rarity is no find.
+    const found = gain.key.startsWith('item-') || gain.key.startsWith('vestige-');
+    if (!rarity || !found || (gain.rarity ?? 0) < NOTICED_RARITY || gain.compact) return [];
+    // A piece the forge draws has no glyph: its rarity's crystal stands for it.
+    const crystal = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="${rarity.shade}" d="M3 0h2v1h1v1h1v1h1v2H7v1H6v1H5v1H3V7H2V6H1V5H0V3h1V2h1V1h1z"/><path fill="${rarity.colour}" d="M3 1h2v1h1v1h1v2H6v1H5v1H3V6H2V5H1V3h1V2h1z"/><path fill="${rarity.lit}" d="M3 2h1v1H3zM2 3h1v1H2z"/></svg>`;
+    const svg = gain.icon ?? (gain.glyph === 'item' ? crystal : glyphSvg(gain.glyph, gain.rarity ?? 0, gain.tint));
+    return [
+      {
+        title: gain.name,
+        line: `${rarity.name}. Press {key} to open your inventory.`,
+        icon: svg ? { key: `gain ${gain.key}`, svg } : null,
+        key: 'inventory',
+        opens: 'Open Inventory',
+      },
+    ];
+  });
 }
