@@ -51,7 +51,8 @@ jobs:
           echo "passed=$passed" >> "$GITHUB_OUTPUT"
 
   # The check in its three parts, side by side, each on a runner of its own (`cargo xtask check <part>`), the Rust
-  # tests shared over two: every part runs to its end, so one run shows each part's failures.
+  # tests built once into an archive and shared over two runners (the jobs `archive` and `rust`, below): every part
+  # runs to its end, so one run shows each part's failures.
   part:
     needs: earlier
     if: ${{ !cancelled() && needs.earlier.outputs.passed != 'yes' }}
@@ -66,7 +67,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        part: [rest, rust 1/2, rust 2/2, page]
+        part: [rest, page]
     runs-on: ubuntu-latest
     # The longest part runs about 20 minutes on a hosted runner; the limit stops only a hung one.
     timeout-minutes: 60
@@ -76,23 +77,13 @@ jobs:
         run: rustup toolchain install
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
-          key: ${{ startsWith(matrix.part, 'rust') && 'rust' || matrix.part }}
+          key: ${{ matrix.part }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
       - name: Install the TypeScript tools
         run: npm ci
-      # cargo-nextest, which runs every crate's tests at once, as its release built it, checked against its hash.
-      - name: Install cargo-nextest
-        if: startsWith(matrix.part, 'rust')
-        run: |
-          set -euo pipefail
-          release="cargo-nextest-0.9.152"
-          curl -sSfLo "$RUNNER_TEMP/nextest.tar.gz" \
-            "https://github.com/nextest-rs/nextest/releases/download/$release/$release-x86_64-unknown-linux-gnu.tar.gz"
-          echo "d039b43c3e0958441b6ad0a39c8884d018b3d2e8fb9928f209074b1100b5e17a  $RUNNER_TEMP/nextest.tar.gz" | sha256sum -c --quiet -
-          tar -xzf "$RUNNER_TEMP/nextest.tar.gz" -C "$HOME/.cargo/bin"
       # What the page's tests read from R2, kept between runs by the manifest that names it, and fetched with retries
       # on a 429 or a 5xx: a rate-limited r2.dev answer then cannot fail main's check and skip its deploys.
       - name: Keep the island packs
@@ -142,22 +133,114 @@ jobs:
         if: matrix.part == 'rest'
         run: python3 -I tools/test_forge_lattice.py MergeFoe
 
+  # Every Rust test built once, with what the check builds first, into a nextest archive for the two runners that share
+  # running them: each would otherwise compile the whole workspace's tests for its half.
+  archive:
+    needs: earlier
+    if: ${{ !cancelled() && needs.earlier.outputs.passed != 'yes' }}
+    name: check (rust archive)
+    concurrency:
+      group: >-
+        ${{ github.event_name == 'pull_request' && format('part-{0}-rust-archive', github.run_id) || 'main-part-rust-archive' }}
+      cancel-in-progress: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: rust
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install the TypeScript tools
+        run: npm ci
+      # cargo-nextest, which runs every crate's tests at once, as its release built it, checked against its hash.
+      - name: Install cargo-nextest
+        run: |
+          set -euo pipefail
+          release="cargo-nextest-0.9.152"
+          curl -sSfLo "$RUNNER_TEMP/nextest.tar.gz" \
+            "https://github.com/nextest-rs/nextest/releases/download/$release/$release-x86_64-unknown-linux-gnu.tar.gz"
+          echo "d039b43c3e0958441b6ad0a39c8884d018b3d2e8fb9928f209074b1100b5e17a  $RUNNER_TEMP/nextest.tar.gz" | sha256sum -c --quiet -
+          tar -xzf "$RUNNER_TEMP/nextest.tar.gz" -C "$HOME/.cargo/bin"
+      - name: cargo xtask check rust archive
+        run: cargo xtask check rust archive "$RUNNER_TEMP/rust-tests.tar.zst"
+      # Already compressed, and read once by this run's two runners.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: rust-tests
+          path: ${{ runner.temp }}/rust-tests.tar.zst
+          compression-level: 0
+          retention-days: 1
+
+  # Each runner's share of the Rust tests, run from the archive in a checkout of the same commit, where the tests read
+  # their files as they would where they were built.
+  rust:
+    needs: archive
+    name: check (rust ${{ matrix.share }})
+    concurrency:
+      group: >-
+        ${{ github.event_name == 'pull_request' && format('part-{0}-rust-{1}', github.run_id, matrix.share) ||
+        format('main-part-rust-{0}', matrix.share) }}
+      cancel-in-progress: ${{ github.event_name != 'pull_request' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        share: [1/2, 2/2]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
+      # Only xtask is built here, so its cache is apart from the tests'.
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: rust-share
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install the TypeScript tools
+        run: npm ci
+      # cargo-nextest, which runs every crate's tests at once, as its release built it, checked against its hash.
+      - name: Install cargo-nextest
+        run: |
+          set -euo pipefail
+          release="cargo-nextest-0.9.152"
+          curl -sSfLo "$RUNNER_TEMP/nextest.tar.gz" \
+            "https://github.com/nextest-rs/nextest/releases/download/$release/$release-x86_64-unknown-linux-gnu.tar.gz"
+          echo "d039b43c3e0958441b6ad0a39c8884d018b3d2e8fb9928f209074b1100b5e17a  $RUNNER_TEMP/nextest.tar.gz" | sha256sum -c --quiet -
+          tar -xzf "$RUNNER_TEMP/nextest.tar.gz" -C "$HOME/.cargo/bin"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: rust-tests
+          path: ${{ runner.temp }}
+      - name: cargo xtask check rust ${{ matrix.share }}
+        run: cargo xtask check rust ${{ matrix.share }} "$RUNNER_TEMP/rust-tests.tar.zst"
+
   # The one check a merge waits on and the deploys follow: every part passed, or main's merge is code its pull request's
   # check passed.
   check:
-    needs: [earlier, part]
+    needs: [earlier, part, archive, rust]
     # A run whose parts a newer merge cancelled checks nothing, so nothing after it deploys.
-    if: ${{ !cancelled() && needs.part.result != 'cancelled' }}
+    if: >-
+      ${{ !cancelled() && needs.part.result != 'cancelled' && needs.archive.result != 'cancelled' &&
+      needs.rust.result != 'cancelled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Every part passed, or the pull request's check did
         env:
           EARLIER: ${{ needs.earlier.outputs.passed }}
-          PARTS: ${{ needs.part.result }}
+          PARTS: ${{ needs.part.result }} ${{ needs.archive.result }} ${{ needs.rust.result }}
         run: |
           echo "passed on the pull request: ${EARLIER:-no}; the parts here: $PARTS"
-          [ "$EARLIER" = yes ] || [ "$PARTS" = success ]
+          [ "$EARLIER" = yes ] || [ "$PARTS" = "success success success" ]
 
   # Publishes to GitHub Pages from main, once this same commit has passed the check and the rooms have deployed or
   # had nothing to, so no page is published on a protocol no room speaks. A called workflow's jobs get at most what
