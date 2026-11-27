@@ -108,4 +108,6 @@ owner has said "later" or "not now", the owner's words follow the question.
   - At Normal an Elite Dungeon's Court is no darkness zone, so a company down there stands again by its own asks and
     the Court runs on as it stood, its Boss's health with it; at Elite and Abyss a company wiped falls back and the
     Court starts over. Whether a wipe at Normal should start the Court over too.
+  - A Breach space's foe paths are baked as it is first reached and never again, so no foe paths through a seal
+    opened since: whether a space should be baked again as its seal opens, which changes how its foes move.
 - **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): more emblems and where they come from.
