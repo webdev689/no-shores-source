@@ -7,7 +7,14 @@ import type { Activities, Gates } from './activities.ts';
 import { TEXEL } from './islandArt.ts';
 import { gridOf, islandPanelNode, islandScreen } from './islandPanel.ts';
 import { regionsOf } from '../overworld/regions.ts';
-import { type DepthsEntry, entriesOf, type IslandEntry, type IslandPanel, islandPanelOf } from './islandWords.ts';
+import {
+  type DepthsEntry,
+  entriesOf,
+  type IslandEntry,
+  type IslandPanel,
+  islandPanelOf,
+  kindOf,
+} from './islandWords.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const WHERE = { continent: 'continent-1', ring: [], spawns: [], centre: [0, 0] as const };
@@ -461,6 +468,7 @@ test("a region's dungeons of the day are named as the rooms name them, met at a 
   const band = DRAWN.bands['continent-1']?.[first.tier];
   assert.equal(first.levels, band && `Lv ${band[0]}–${band[1]}`, "its levels at its tier, in the island's band");
   assert.deepEqual(first.act, { words: 'Go in from the sea', does: 'depths' });
+  assert.equal(kindOf(first), `${['Normal', 'Elite', 'Abyss'][first.tier]} dungeon`, 'its tile says its tier');
   assert.ok(first.glyphs.some((glyph) => glyph.icon === ['seas-normal', 'seas-elite', 'seas-abyss'][first.tier]));
 });
 

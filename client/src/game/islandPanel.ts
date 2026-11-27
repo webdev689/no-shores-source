@@ -20,7 +20,7 @@ import {
   type PlaylistBanner,
   entriesOf,
   islandPanelOf,
-  KIND_WORDS,
+  kindOf,
   tagOf,
 } from './islandWords.ts';
 import { drawFrame, frameKey } from './islandFrame.ts';
@@ -170,7 +170,7 @@ function glyphsNode(entry: IslandEntry): Node {
  *  if it is, and what a click does. Kept on the screen and never clipped by the list. */
 const CARD_WIDE = 264;
 function detailsCard(entry: IslandEntry, side: 'left' | 'right'): Node {
-  const tag = tagOf(entry.name, entry.levels, KIND_WORDS[entry.kind]);
+  const tag = tagOf(entry.name, entry.levels, kindOf(entry));
   const row = (icon: Node, says: string, dim = false): Node => ({
     width: 'grow',
     gap: 8,
@@ -231,7 +231,7 @@ function entryTile(
     ...(style && { style, tier: entry.tier ?? 0 }),
   };
   const look = `${entry.abyss === true} ${entry.tier ?? '-'}`;
-  const tag = tagOf(entry.name, entry.levels, KIND_WORDS[entry.kind]);
+  const tag = tagOf(entry.name, entry.levels, kindOf(entry));
   const details = [
     ...entry.glyphs.map((glyph) => glyph.says),
     ...entry.rows.map(([label, value]) => `${label}: ${value}`),

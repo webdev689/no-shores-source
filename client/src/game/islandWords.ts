@@ -69,6 +69,10 @@ export const KIND_WORDS: Readonly<Record<IslandEntry['kind'], string>> = {
   outpost: 'Outpost',
 };
 
+/** What kind of place an entry is, in a word or two: a region's dungeon by the tier it is met at. */
+export const kindOf = (entry: Pick<IslandEntry, 'kind' | 'tier'>): string =>
+  entry.kind === 'depths' ? `${TIER_WORDS[entry.tier ?? 0] ?? 'Normal'} dungeon` : KIND_WORDS[entry.kind];
+
 /** A tile's line under its title: its levels and its kind, the kind left out where the title says it already. */
 export const tagOf = (name: string, levels: string | null, kind: string): string =>
   [levels, name === kind ? null : kind].filter((part) => part !== null).join(' · ');
@@ -313,14 +317,14 @@ function playlistBanner(city: string, facts: IslandFacts): PlaylistBanner {
 /** The tiers' words and their seas' icons, by the gear crate's numbers. */
 const TIER_WORDS = ['Normal', 'Elite', 'Abyss'] as const;
 const TIER_ICONS = ['seas-normal', 'seas-elite', 'seas-abyss'] as const;
-/** The styles' words, as a dungeon's kind reads them. */
+/** What each style is, in a few words. */
 const STYLE_WORDS: Readonly<Record<string, string>> = {
-  crypt: 'crypt',
-  halls: 'halls',
-  cells: 'cells',
-  sanctum: 'sanctum',
-  caverns: 'caverns',
-  mines: 'mines',
+  crypt: 'A crypt of the dead',
+  halls: 'A fortress hewn in the rock',
+  cells: 'A gaol and its cells',
+  sanctum: 'A sunken temple',
+  caverns: 'Caverns of raw rock',
+  mines: 'Worked-out mines',
 };
 
 /** The region's dungeons of the day, each at the tier the character meets it at, drawn among the tiers their level
@@ -334,10 +338,9 @@ function depthsEntries(island: string, region: number, facts: IslandFacts): Dept
     const id = `depths-${island}-r${region}-n${dungeon.slot}`;
     const tier = drawnTier(id, day, open);
     const band = drawn.bands[island]?.[tier];
-    const style = STYLE_WORDS[dungeon.style] ?? dungeon.style;
     const rows: [string, string][] = [
-      ['Tier', `${TIER_WORDS[tier] ?? 'Normal'}, the seas your level opens`],
-      ['Kind', `A ${style} laid by the Forge`],
+      ['Tier', TIER_WORDS[tier] ?? 'Normal'],
+      ['Kind', STYLE_WORDS[dungeon.style] ?? dungeon.style],
       ['Company', 'Alone or with your company'],
       ['Pays', 'Kills, chests and the cache'],
       ['Drawn', 'A new one each day'],
@@ -347,7 +350,7 @@ function depthsEntries(island: string, region: number, facts: IslandFacts): Dept
       ...detailGlyphs(rows.slice(1)),
       ...(tier === 2 ? [{ icon: 'revive', says: 'Five revives shared; a wipe starts it over' } as const] : []),
     ];
-    const name = facts.dungeonName?.(dungeon.seed, dungeon.style) ?? `The ${style}`;
+    const name = facts.dungeonName?.(dungeon.seed, dungeon.style) ?? 'A dungeon';
     const kind = `${TIER_WORDS[tier] ?? 'Normal'} dungeon`;
     return {
       ...{ id, kind: 'depths', name, rows, glyphs, shut: null, dungeon, tier },

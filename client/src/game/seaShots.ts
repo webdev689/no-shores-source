@@ -3,6 +3,7 @@
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { Activities } from './activities.ts';
+import { dungeonName, type StyleKey } from './dungeonLayout.ts';
 import { islandPanelNode } from './islandPanel.ts';
 import { islandPanelOf } from './islandWords.ts';
 import { landingAskNode } from './seaLandings.ts';
@@ -63,7 +64,8 @@ export const landingAskShot = (ui: Interface): Node =>
 const WHERE = { continent: 'continent-1', ring: [], spawns: [], centre: [0, 0] as const };
 const node = (id: string, kind: NodeInfo['kind'], name: string, more: object = {}) =>
   ({ ...WHERE, id, kind, name, ...more }) as unknown as NodeInfo;
-/** Saltmere as docked at Overlook: its city, its three patrol zones, two Elite Dungeons, missions, boss and outpost. */
+/** Saltmere as docked at Overlook: its city, its three patrol zones and two Elite Dungeons in one region, and the
+ *  missions, boss and outpost no tile lists yet. */
 const SALTMERE = {
   id: 'continent-1',
   plan: {
@@ -103,6 +105,9 @@ const SALTMERE = {
     node('maw', 'boss', 'The Maw of the Shallows'),
     node('tern-strand', 'outpost', 'Tern Strand'),
   ],
+  regions: [
+    { island: 'continent-1', name: 'The Beacon Shore', centre: [0, 0], anchorage: [0, 0], nodes: [], outline: [] },
+  ],
 } as unknown as Parameters<typeof islandPanelOf>[0];
 const DRAWN = {
   ofTheDay: [{ continent: 'continent-1', patrol: 'saltgrass-downs', number: 1 }],
@@ -121,7 +126,22 @@ const DRAWN = {
     brawler: { name: 'Brawler', words: '' },
     trickle: { name: 'Trickle', words: '' },
   },
+  minute: 29_919_420,
 } as unknown as Activities;
+/** Every tier open, so the region's dungeons are met at each. */
+const OPEN = {
+  day: [null, null, null],
+  eliteDungeon: null,
+  weekElite: null,
+  weekAbyss: null,
+  seas: [null, null, null],
+  playlists: [null, null],
+};
+/** The room module, read once before the shots, so the region's dungeons are named as the rooms name them. */
+let rooms: WebAssembly.Module | null = null;
+export async function readRooms(): Promise<void> {
+  rooms = await WebAssembly.compile(await (await fetch('/room.wasm')).arrayBuffer());
+}
 const OUTLINE = [
   [-900, -300],
   [-400, -700],
@@ -138,11 +158,17 @@ const OUTLINE = [
 const panelShot =
   (chosen: string | null) =>
   (ui: Interface): Node => {
-    const panel = islandPanelOf(SALTMERE, true, {
-      activities: DRAWN,
-      gates: null,
-      named: (id) => (id === 'coral-halls' ? 'The Coral Halls' : id),
-    });
+    const panel = islandPanelOf(
+      SALTMERE,
+      true,
+      {
+        activities: DRAWN,
+        gates: OPEN,
+        named: (id) => (id === 'coral-halls' ? 'The Coral Halls' : id),
+        dungeonName: (seed, style) => (rooms ? dungeonName(rooms, seed, style as StyleKey) : style),
+      },
+      [600, 260],
+    );
     const chart = { id: 'continent-1', outline: OUTLINE, harbour: [420, 60] as const, ship: [600, 260] as const };
     const acts = { choose: nothing, act: nothing, back: nothing };
     return over(ui, [islandPanelNode(ui, panel, chosen, chart, acts)]);
@@ -151,3 +177,4 @@ const panelShot =
 export const islandPortShot = panelShot(null);
 export const islandPatrolShot = panelShot('saltgrass-downs');
 export const islandDungeonShot = panelShot('krakens-grotto');
+export const islandDepthsShot = panelShot('depths-continent-1-r0-n2');
