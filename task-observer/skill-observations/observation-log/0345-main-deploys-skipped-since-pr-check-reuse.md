@@ -1,5 +1,5 @@
 ---
-id: 343
+id: 345
 title: "Since main reuses the PR's check (#237), a merge's rooms, desktop, pages and site deploys are skipped: a skipped ancestor job skips every job whose `if` has no status function"
 status: open
 type: internal
