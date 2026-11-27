@@ -78,8 +78,10 @@ and their firing spots by it, and climb and drop where its links say.
    column's lowest floor is that room's) and the edge of a flight's landing stay floor where they meet the drop.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
-5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so
-   no poly is larger than 12 m², and merged, the longest shared edge first, into convex polys of up to six corners.
+5. **Polys.** Each outline, its holes bridged in, is cut into triangles (a diagonal that only touches a bridge's
+   corner where the bridge visits it again is no crossing, so every hole stays out of them), sliced on one lattice
+   across the room so no poly is larger than 12 m², and merged, the longest shared edge first, into convex polys of
+   up to six corners.
    Polys that share an edge are neighbours, across regions too.
 6. **Heights.** Each corner is set on the surface nearest its own level: a block's top, or the ground where no block
    stands on it, blended between cell centres.
