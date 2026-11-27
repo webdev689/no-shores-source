@@ -1,6 +1,6 @@
 // The passages' map: held in a passage zone, the held map shows the week's web instead of the land, as a land sheet
 // (heldmap/landSheet.ts) the map paints as it paints any land: every zone a mark at its place on the island, a mission
-// by its kind's glyph, named beside its mark by its kind or its lamp and its foes' levels; every way of the web
+// by its kind's glyph, named beside its mark by its foes' levels (a lamp by its number too); every way of the web
 // faintly, the week's public way inked, the way the player has come as a track and the ways on from where they stand
 // as footpaths. It is built
 // only in a passage zone: the sea, the island's side and the land's map show nothing of the web.
@@ -40,10 +40,12 @@ export const DEAL_MARKS: Readonly<Record<PassageDeal, { readonly glyph: LandGlyp
   lamp: { glyph: 'beacon', word: 'A lamp' },
 };
 
-const LAMP_WORDS = ['The first lamp', 'The second lamp', 'The third lamp', 'The fourth lamp'];
+/** A lamp by its number, as the map, the mouths' choice and the tracker say it: "Lamp 2". */
+export const lampWords = (lamp: number): string => `Lamp ${lamp}`;
 
-/** A lamp by its number, as the mouths' choice offers it: "The second lamp". */
-export const lampWords = (lamp: number): string => LAMP_WORDS[lamp - 1] ?? `Lamp ${lamp}`;
+/** A zone's foes' levels as the page says them, as the sea's map says a water's band: "15-18". */
+export const levelsWords = ([low, high]: readonly [number, number]): string =>
+  low === high ? `${low}` : `${low}-${high}`;
 
 /** A zone's kind as the page names it: a lamp by its place among the lamps, any other deal by its kind's name. */
 export const kindWords = (zone: Pick<PassageZone, 'deal' | 'lamp'>): string =>
@@ -89,11 +91,12 @@ export function passageSheet(
   const local = (place: Point2): Point2 => [place[0] - origin[0], place[1] - origin[1]];
   const marks: LandMark[] = web.zones.map((zone) => ({ ...DEAL_MARKS[zone.deal], at: local(zone.at) }));
   if (patrol) marks.push({ glyph: 'gate', at: local(patrol.at), word: patrol.name });
-  // Each zone named by its kind (a lamp lit this week said to be) and its foes' levels.
+  // Each zone named by its foes' levels alone, its glyph and the table saying its kind; a lamp by its number too, and
+  // lit this week said to be.
   const label = (zone: PassageZone): string[] => {
-    const lit = zone.lamp !== null && where.lit.includes(zone.lamp) ? ', lit' : '';
-    const levels = zone.levels ? [`${zone.levels[0]} to ${zone.levels[1]}`] : [];
-    return [`${kindWords(zone)}${lit}`, ...levels];
+    const lit = zone.lamp !== null && where.lit.includes(zone.lamp) ? ' lit' : '';
+    const lamp = zone.lamp !== null ? [`${lampWords(zone.lamp)}${lit}`] : [];
+    return [...lamp, ...(zone.levels ? [levelsWords(zone.levels)] : [])];
   };
   const hard = (zone: PassageZone) => tooHard(zone, where.level ?? null);
   const come = where.come.flatMap((number) => {
@@ -149,12 +152,10 @@ export function passageSheet(
     overhead: [],
     plants: [],
     ring: [],
-    places: web.zones.map((zone) => ({
-      name: label(zone).join(' · '),
-      at: local(zone.at),
-      near: true,
-      loss: hard(zone),
-    })),
+    places: web.zones.flatMap((zone) => {
+      const name = label(zone).join(' · ');
+      return name ? [{ name, at: local(zone.at), near: true, loss: hard(zone) }] : [];
+    }),
     marks,
   };
   return { sheet, you: local(here.at) };

@@ -82,6 +82,7 @@ test('the view marks every sighted hostile ship, never thinned away by a port be
 });
 
 const water = (name: string, holder: WaterNamed['holder'], levels: [number, number] | null): WaterNamed => ({
+  island: 'continent-1',
   name,
   holder,
   levels,

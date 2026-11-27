@@ -1,10 +1,9 @@
-//! Every continent's outpost site as the bake lays it: its plot level to within 5 cm across its whole square on the
+//! Every outpost slot as the bake lays it: its plot level to within 5 cm across its whole square on the
 //! baked ground, near its landing, and bare of every piece, path, planting, outcrop and site but its corner stones.
 
 use land::sites::NodeKind;
 use layout::Layout;
-use layout::areas::{PLOT_FROM_LANDING_M, PLOT_HALF_M};
-use layout::brief::AreaKind;
+use layout::areas::PLOT_FROM_LANDING_M;
 use layout::field::distance;
 use std::path::Path;
 use std::sync::OnceLock;
@@ -16,8 +15,8 @@ struct Site {
     continent: String,
     layout: Layout,
     outpost: Option<bake::OutpostGround>,
-    /// The ground's height every 2 m across the plot's square, read on the node's baked window.
-    heights: Vec<f64>,
+    /// How far the plot's ground stands off its level at most on the node's baked window (`bake::plot_off`).
+    off: f64,
 }
 
 fn sites() -> &'static [Site] {
@@ -49,15 +48,8 @@ fn sites() -> &'static [Site] {
                                 let [west, north, east, south] = bake::bounds_of(&layout.ring);
                                 let window = landmass.surface.window(west, north, east, south);
                                 let outpost = bake::outpost_of(&layout, &window);
-                                let plot = outpost.map_or([0.0, 0.0], |outpost| outpost.plot);
-                                let steps = (-16..=16).flat_map(|row| (-16..=16).map(move |column| (column, row)));
-                                let heights = steps
-                                    .map(|(column, row)| {
-                                        let x = plot[0] + PLOT_HALF_M * f64::from(column) / 16.0;
-                                        window.height_at(x, plot[1] + PLOT_HALF_M * f64::from(row) / 16.0)
-                                    })
-                                    .collect();
-                                Site { continent: continent.id.clone(), layout, outpost, heights }
+                                let off = outpost.map_or(f64::INFINITY, |outpost| bake::plot_off(&outpost, &window));
+                                Site { continent: continent.id.clone(), layout, outpost, off }
                             })
                             .collect::<Vec<_>>()
                     })
@@ -69,13 +61,13 @@ fn sites() -> &'static [Site] {
 }
 
 #[test]
-fn every_continent_has_one_outpost_site_whose_plot_is_level_across_its_square_near_its_landing() {
+fn every_outpost_slot_s_plot_is_level_across_its_square_near_its_landing() {
     let sites = sites();
-    assert_eq!(sites.len(), 9, "one outpost site a continent");
+    assert_eq!(sites.len(), 81, "three outpost slots in each of a continent's three regions");
     for site in sites {
         let id = format!("{} {}", site.continent, site.layout.id);
         let outpost = site.outpost.unwrap_or_else(|| panic!("{id}: no plot, muster ground or landing"));
-        let off = site.heights.iter().map(|height| (height - outpost.level).abs()).fold(0.0, f64::max);
+        let off = site.off;
         assert!(off <= LEVEL_WITHIN_M, "{id}: its plot stands {off:.3} m off its level {:.2}", outpost.level);
         let from_landing = distance(outpost.plot, outpost.landing);
         assert!(from_landing <= PLOT_FROM_LANDING_M, "{id}: its plot lies {from_landing:.0} m from its landing");
@@ -85,60 +77,7 @@ fn every_continent_has_one_outpost_site_whose_plot_is_level_across_its_square_ne
 #[test]
 fn nothing_stands_on_a_plot_but_its_corner_stones() {
     for site in sites() {
-        let layout = &site.layout;
-        let Some(plot) = layout.areas.iter().find(|area| area.kind == AreaKind::Plot) else { continue };
-        let on = |[west, north, east, south]: [f64; 4]| {
-            let reach = PLOT_HALF_M;
-            west < plot.at[0] + reach
-                && east > plot.at[0] - reach
-                && north < plot.at[1] + reach
-                && south > plot.at[1] - reach
-        };
-        let point = |at: [f64; 2]| on([at[0], at[1], at[0], at[1]]);
-        let mut found: Vec<String> = Vec::new();
-        let seating = &layout.seating;
-        for seated in seating.buildings.iter().chain(&seating.props).filter(|seated| on(seated.footprint)) {
-            found.push(format!("model {} at {:.0},{:.0}", seated.model, seated.at[0], seated.at[1]));
-        }
-        // A corner stone stands just outside its corner, reaching a little over it.
-        let corner = |at: [f64; 3]| {
-            let (east, south) = ((at[0] - plot.at[0]).abs(), (at[1] - plot.at[1]).abs());
-            (east - PLOT_HALF_M).abs() < 1.0 && (south - PLOT_HALF_M).abs() < 1.0
-        };
-        let solids = seating.solids.iter().chain(&seating.rooms).filter(|solid| !corner(solid.at));
-        for solid in solids.filter(|solid| {
-            let [west, north, east, south, ..] = solid.bounds();
-            on([west, north, east, south])
-        }) {
-            found.push(format!("a solid at {:.0},{:.0}", solid.at[0], solid.at[1]));
-        }
-        let corners = seating.solids.iter().filter(|solid| corner(solid.at)).count();
-        if corners != 4 {
-            found.push(format!("{corners} corner stones"));
-        }
-        // Every metre along each way, so no segment crosses the square between its ends.
-        let walked = layout.paths.iter().flat_map(|path| path.points.windows(2)).flat_map(|pair| {
-            let steps = distance(pair[0], pair[1]).ceil().max(1.0) as usize;
-            (0..=steps).map(move |step| {
-                let share = step as f64 / steps as f64;
-                [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share]
-            })
-        });
-        if let Some(at) = walked.into_iter().find(|&at| point(at)) {
-            found.push(format!("a path at {:.0},{:.0}", at[0], at[1]));
-        }
-        for planted in layout.plantings.iter().flat_map(|planting| &planting.points).filter(|&&at| point(at)) {
-            found.push(format!("a planting at {:.0},{:.0}", planted[0], planted[1]));
-        }
-        let reach = PLOT_HALF_M * std::f64::consts::SQRT_2;
-        for outcrop in
-            layout.sculpt.outcrops.iter().filter(|outcrop| distance(outcrop.at, plot.at) - outcrop.radius < reach)
-        {
-            found.push(format!("an outcrop at {:.0},{:.0}", outcrop.at[0], outcrop.at[1]));
-        }
-        for marked in layout.sites.iter().filter(|marked| point(marked.at)) {
-            found.push(format!("a {:?} site", marked.kind));
-        }
-        assert!(found.is_empty(), "{} {}: {found:#?}", site.continent, layout.id);
+        let found = bake::on_plot(&site.layout);
+        assert!(found.is_empty(), "{} {}: {found:#?}", site.continent, site.layout.id);
     }
 }

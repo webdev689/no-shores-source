@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readShipMesh, shipSails, VERTEX_BYTES } from './shipMesh.ts';
+import { readShipMesh, shipLanterns, shipSails, shipWaterline, VERTEX_BYTES } from './shipMesh.ts';
 
 const WATERLINE = { length_m: 6, beam_m: 2, draught_m: 0.5 };
 
@@ -77,4 +77,14 @@ test("the Brig's sails are its two staysails, six square sails each on its four 
     shipSails('sloop').map((sail) => sail.kind),
     ['stay', 'gaff'],
   );
+});
+
+test("each built hull's stern lantern is in its manifest, on its centreline over its taffrail; the Sloop has none", () => {
+  assert.deepEqual(shipLanterns('sloop'), []);
+  for (const name of ['schooner', 'brig', 'frigate']) {
+    const [lantern, ...more] = shipLanterns(name);
+    assert.equal(more.length, 0, name);
+    const [x, y, z] = lantern ?? [0, 0, 0];
+    assert.ok(x < -shipWaterline(name).lengthM / 2 + 2 && y === 0 && z > 3, `${name}: ${String(lantern)}`);
+  }
 });

@@ -19,7 +19,7 @@ import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
 import { arriving, type Flow, type Happening, next, onTheSea } from './flow.ts';
 import { keepPlace, placeKept, placeNow, resume } from './relog.ts';
-import { lieOffRegionLeft } from './regionLeft.ts';
+import { lieOffRegionLeft, zoneLeft } from './regionLeft.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { enterBreachRun, enterDungeon } from './footEntries.ts';
 import type { TripGame } from './dungeonTrips.ts';
@@ -233,7 +233,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
 
   const goSea = async (start?: { readonly anchorage: Point2; readonly heading: number }) => {
     leaveHere();
-    const left = playing.foot?.node.id ?? null;
+    const left = zoneLeft(playing.foot);
     playing.foot?.leave();
     playing.foot = null;
     scene.sky.shelterUnder([]);

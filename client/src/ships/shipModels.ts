@@ -1,9 +1,15 @@
 // Every hull's model on the GPU, fetched from R2 the first time a ship of that hull is drawn and kept, and a frame's
 // ships drawn by them: each in its own hull, its side's colours and its rig, a slot of its model each. A hull still
-// coming is drawn as the Sloop, so a ship is never a footprint with nothing over it.
+// coming is drawn as the Sloop, so a ship is never a footprint with nothing over it. Each ship's lanterns light what
+// stands round them, as the land's lamps do, and glow through a soft halo.
 import type { ShadowMap } from '../shadow.ts';
 import { sphereSeen, viewPlanes } from '../frustum.ts';
 import type { Gpu } from '../gpu.ts';
+import { CITY_LAMPS, type LampPlace, lampsLit } from '../sky/lamps.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
+import type { Mark } from './effects.ts';
+import { PuffView } from './puffView.ts';
+import { shipAxes } from './shipAxes.ts';
 import type { ShipLook } from './dress.ts';
 import { type HullName, hullName, hullPaint, hullSails, SLOOP_HULL } from './hulls.ts';
 import type { SailRig } from './sails.ts';
@@ -40,6 +46,45 @@ export function openHull(gpu: Gpu, slots = SHIP_SLOTS, load = loadShip): OpenHul
  *  most. */
 export const RETRY_MS = { first: 5_000, most: 60_000 } as const;
 
+/** A ship's lantern's light: as far as a carried lantern's reaches, its colour a shielded flame's. */
+export const LANTERN_LIGHT = { reachM: 13, light: [1.0, 0.74, 0.44] } as const;
+/** A ship settled this far into the sea, metres, is sinking: its lanterns are out. A storm's swell heaves a ship
+ *  afloat less. */
+const SINKING_M = 3;
+/** The soft halo round a lantern's glass, metres across it, and how bright it is by day and at night. */
+const HALO = { radiusM: 0.55, day: 0.25, night: 0.7 } as const;
+
+/** A lamp place kept from frame to frame, moved as its source moves. */
+interface Kept {
+  at: [number, number, number];
+  reachM: number;
+  light: [number, number, number];
+  seed: number;
+  readonly motion: 'lantern';
+}
+
+/** A ship's seed, its lanterns' glass and light flicker by: its hull and its slot of that hull's model, so no two
+ *  ships drawn in a frame flicker in step. */
+export function shipSeed(hull: number, slot: number): number {
+  return hull * SHIP_SLOTS + slot + 1;
+}
+
+/** Where a lantern (`lantern`, in its ship's frame) burns for a ship drawn at `place`, in the place's metres. */
+export function lanternAt(
+  place: ShipPlace,
+  lantern: readonly [number, number, number],
+  into: [number, number, number] = [0, 0, 0],
+): [number, number, number] {
+  const [ahead, starboard, up] = shipAxes(place.heading, place.pitch, place.roll);
+  const scale = place.scale ?? 1;
+  const middle = [place.x, place.y, place.z] as const;
+  for (let axis = 0; axis < 3; axis++)
+    into[axis] =
+      (middle[axis] ?? 0) +
+      scale * ((ahead[axis] ?? 0) * lantern[0] + (starboard[axis] ?? 0) * lantern[1] + (up[axis] ?? 0) * lantern[2]);
+  return into;
+}
+
 /** The hulls' models, each fetched once, by hull number. */
 export class ShipModels {
   private readonly open: OpenHull;
@@ -51,6 +96,13 @@ export class ShipModels {
   private readonly failed = new Map<HullName, { at: number; waitMs: number; said: boolean }>();
   /** Hulls a caller of `load` waits on. */
   private readonly loading = new Set<HullName>();
+  /** The lamps the last frame's lanterns lit, kept and moved; and what `shine` last lit with them. */
+  private readonly lanterns: Kept[] = [];
+  private lanternCount = 0;
+  private lit: LampPlace[] = [];
+  /** The lanterns' halos, made with the first model's device. */
+  private halo: PuffView | null = null;
+  private readonly halos: Mark[] = [];
 
   constructor(open: OpenHull, fail: (error: unknown) => void = console.error, now = () => performance.now()) {
     [this.open, this.fail, this.now] = [open, fail, now];
@@ -124,13 +176,80 @@ export class ShipModels {
   /** Draws a frame's ships, each by its hull's model once it has come, the ships of one hull in its slots in turn, in
    *  the sun's shadows when a map is given. A ship out of view is not drawn but keeps its slot, so every other ship
    *  stays in the slot its shadow was cast from. */
-  draw(pass: GPURenderPassEncoder, ships: readonly DrawnShip[], camera: ShipCamera, shadow?: ShadowMap): void {
+  draw(
+    pass: GPURenderPassEncoder,
+    ships: readonly DrawnShip[],
+    camera: ShipCamera,
+    shadow?: ShadowMap,
+    seconds: number | null = null,
+  ): void {
     const planes = viewPlanes(camera.fromEye);
+    this.lanternCount = 0;
+    this.halos.length = 0;
     this.each(ships, (model, ship, slot) => {
+      // Its lanterns light round them whether or not it is in view: a ship astern lights the water ahead. A ship
+      // sinking has them out.
+      const lit = seconds !== null && ship.place.z > -SINKING_M ? seconds : null;
+      const seed = shipSeed(ship.hull, slot);
+      if (lit !== null) for (const lantern of model.lanterns) this.light(ship, lantern, seed);
       const bounds = model.boundsAt(ship.place, camera.eye, ship.rig);
       if (!bounds || sphereSeen(planes, ...bounds))
-        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow);
+        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow, lit, seed);
+      if (!this.halo && model.lanterns.length > 0) this.halo = new PuffView(model.gpu);
     });
+    this.halo?.set(this.halos, camera);
+  }
+
+  /** Lights `lantern` of `ship` this frame: its lamp, moved to where it burns, flickering as a lantern by the ship's
+   *  `seed` as its glass does, and its halo. */
+  private light(ship: DrawnShip, lantern: readonly [number, number, number], seed: number): void {
+    const kept = (this.lanterns[this.lanternCount] ??= {
+      at: [0, 0, 0],
+      reachM: LANTERN_LIGHT.reachM,
+      light: [...LANTERN_LIGHT.light],
+      seed: 0,
+      motion: 'lantern',
+    });
+    this.lanternCount += 1;
+    lanternAt(ship.place, lantern, kept.at);
+    kept.reachM = LANTERN_LIGHT.reachM * (ship.place.scale ?? 1);
+    kept.seed = seed;
+    const glow = HALO.day + (HALO.night - HALO.day) * lampsLit(SKY_NOW.current.look.daylight);
+    this.halos.push({
+      x: kept.at[0],
+      y: kept.at[1],
+      z: kept.at[2],
+      radius: HALO.radiusM * (ship.place.scale ?? 1),
+      colour: LANTERN_LIGHT.light,
+      blend: 'glow',
+      alpha: glow,
+    });
+  }
+
+  /** Lights the sky's lamps with this frame's lanterns and `more` (a sea fight's flashes and fires, in the same
+   *  metres), in place of the last frame's: the land's lamps are told only when the list itself changes, its places
+   *  moved where they stand. */
+  shine(more: readonly LampPlace[] = []): void {
+    const count = this.lanternCount + more.length;
+    const same =
+      count === this.lit.length &&
+      this.lit.every((lamp, index) =>
+        index < this.lanternCount ? lamp === this.lanterns[index] : lamp === more[index - this.lanternCount],
+      );
+    if (same) return;
+    this.lit = [...this.lanterns.slice(0, this.lanternCount), ...more];
+    CITY_LAMPS.set(this, this.lit);
+  }
+
+  /** The lanterns' halos over the finished picture, after the water, hidden where `depth` stands nearer: soft round
+   *  the glass, which stands in front of their middle. */
+  overWater(encoder: GPUCommandEncoder, target: GPUTextureView, depth: GPUTexture): void {
+    this.halo?.drawOver(encoder, target, depth);
+  }
+
+  /** The lanterns' glow into the light layer's pass. */
+  lightInto(pass: GPURenderPassEncoder): void {
+    this.halo?.drawLight(pass);
   }
 
   /** Draws a frame's ships' shadows into the cascade of the sun's map being drawn, each in the slot `draw` gives it. */

@@ -397,8 +397,9 @@ impl Sea {
     /// it, turned as it lay there, wherever the page first put it to sea: a fight they met from the page's spawn is
     /// over for them. With nowhere kept (a new character) it puts to sea by the starting port alone
     /// (`Harbours::starting`): where the page put it, or the course held for them, within reach of its roadstead, else
-    /// at that roadstead. In a sea with no port cities the course held for them sails. Come back from a node of a
-    /// region the ship does not lie off (`came_from`), it lies at that region's anchorage instead, facing as before.
+    /// at that roadstead. In a sea with no port cities the course held for them sails. Come back from a patrol zone of
+    /// a region of the island the ship lies off, not its own (`came_from`), it lies at that region's anchorage instead,
+    /// facing as before.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         // Taken first, so a restore refused never leaves it for a later one.
         let came_from = self.harbour.came_from.remove(&player);
@@ -449,14 +450,21 @@ impl Sea {
         self.harbour.came_from.insert(player, room.to_owned());
     }
 
-    /// The anchorage of the region of the node whose room (`node-<id>`, or `node-<id>--<tier>`) a player came from,
-    /// where their ship lies off another region or nowhere: leaving a zone finds the ship off its side of the island.
-    /// None for a room of no region's node, or a ship already off it.
+    /// The anchorage of the region of the patrol zone whose own room a player came from (`world::regions::zone_left`),
+    /// where their ship lies at `at` off another region of that zone's island: leaving a zone finds the ship off its
+    /// side of the island. None for any other room, a ship off the zone's region already, or off another island.
     fn anchorage_left(&self, room: &str, at: Option<[f64; 2]>) -> Option<[f64; 2]> {
-        let node = room.strip_prefix("node-")?;
-        let region = world::regions::of_node(node.split_once("--").map_or(node, |(id, _)| id))?;
-        let off = at.and_then(world::regions::off).map(|off| off.name.as_str());
-        (off != Some(region.name.as_str())).then_some(region.anchorage).and_then(|at| self.open_at(at))
+        let region = world::regions::zone_left(room)?;
+        at.is_some_and(|at| self.off_another_region(region, at))
+            .then_some(region.anchorage)
+            .and_then(|at| self.open_at(at))
+    }
+
+    /// Whether a ship at `at` lies in the waters of `region`'s island, off another of its regions (the one whose
+    /// centre is nearest, within the island).
+    pub(super) fn off_another_region(&self, region: &world::regions::Region, at: [f64; 2]) -> bool {
+        self.chart.water_id(at) == Some(region.island.as_str())
+            && world::regions::off(&region.island, at).is_some_and(|off| off.name != region.name)
     }
 }
 

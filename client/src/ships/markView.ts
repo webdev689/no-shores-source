@@ -218,6 +218,8 @@ export class MarkView {
   readonly gpu: Gpu;
   /** The see-through puffs, set aside as the solid marks are drawn and drawn after the water. */
   private readonly puffs: PuffView;
+  /** The last `drawInto`'s lights (a muzzle's flash, a fire, a blast), window metres: the sky's lamps cast them. */
+  lights: readonly Mark[] = [];
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -300,6 +302,7 @@ export class MarkView {
       every.filter((mark) => mark.blend),
       camera,
     );
+    this.lights = every.filter((mark) => mark.blend === 'light');
     const marks = every.filter((mark) => !mark.blend);
     const count = Math.min(marks.length, MOST_MARKS);
     if (count === 0) return;

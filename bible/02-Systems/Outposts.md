@@ -29,16 +29,29 @@ code:
   - crates/room-wasm/src/outpost_door.rs
   - server/accounts/migrations/20261123230738_outpost_errands.sql
   - tools/modules/catalogue.py#OUTPOST
+  - crates/bake/src/bin/outpost_slots.rs
 ---
 # Outposts
 
 A guild's outpost is its own plot of land on an island, where its founder and admins place structures that earn for
 it and its members ([[Guilds Gain Banners, Levels, Bounties and Outposts]],
-[[Guilds and Outposts as Claude Shapes Them]]). Each island has one outpost site, and each guild that raises an
-outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart from every other guild's ([[Guilds]],
+[[Guilds and Outposts as Claude Shapes Them]]). Each region of every island has three outpost sites, its outpost slots
+([[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]), and each guild that raises an outpost at
+one plays it in a room of its own, `node-<site>--guild-<key>`, apart from every other guild's ([[Guilds]],
 [[Server]]).
 
 ## How it works
+
+- **The slots.** Each slot is a node of kind `outpost` in its island's `content/world/land/<continent>.json`, listed in
+  `content/world/regions.json` under its region, 81 in all. The tool `cargo run -p bake --bin outpost_slots` draws
+  them: in a region short of three it draws points from the island's seed out round the region's centre, brings each
+  to the strand 450 m inland of the nearest coast, and keeps one that lies nearest its own region's centre, 4 km or
+  more from the port city and 300 m clear of every other node's ring, whose 357 m ring stays on the land; then it lays
+  the island and passes over any slot whose plot is not level, bare and within reach of its landing, or whose layout
+  stands a box across one of its ways, drawing again past it. It names each from its island's own words and a shore's
+  ending (Strand, Cove, Hythe, Ness, Haven, Landing), a name no place has, and its id is the name's with `-outpost`
+  after. A region already holding three is
+  left as it is, so the slots never move. The bake's tests hold every region to three, each plot level and bare.
 
 - **The law is shared.** `content/guilds/outposts.json` holds every number: the plot (16 cells of 4 m a side), the
   cost to raise one, the levels that allow a second and third outpost and each tier, the structures with their cells,

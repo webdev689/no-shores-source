@@ -17,13 +17,17 @@ test('Lanternfall’s bounty held on its third step: two done, the third under w
   );
   const said = card ? wordsIn(athericCardNode(card)) : [];
   assert.ok(said.includes('37/100'));
-  assert.ok(said.includes('Cold Lantern. Cold, and heavier than it looks. Something in it still wants to burn.'));
+  assert.ok(said.includes('3. Defeat 100 foes there with a thunderlock'));
+  assert.ok(
+    !said.some((line) => line.includes('heavier than it looks')),
+    'the find’s words are its moment’s, not the card’s',
+  );
 });
 
 test('a bounty finished shows every step done; one not held shows no card', () => {
   const [card] = athericCards([{ id: 'lanternfall', step: 0, count: 0, finished: true }]);
   assert.ok(card?.steps.every((step) => step.state === 'done'));
-  assert.ok(card && wordsIn(athericCardNode(card)).includes('Finished: Lanternfall is yours.'));
+  assert.ok(card && wordsIn(athericCardNode(card)).includes('Lanternfall is yours'));
   assert.deepEqual(athericCards([]), []);
   assert.deepEqual(athericCards(undefined), []);
 });

@@ -9,6 +9,7 @@ import type { MarkDrawer } from '../../editor/naval.ts';
 import { SAILS_RUNG } from '../../editor/sailing.ts';
 import type { CaptainAt, FightCaptain, FightEvent, FightVessel, FightView, ShipState } from '../../rules/fightRules.ts';
 import type { Swell } from '../../rules/landRules.ts';
+import { CITY_LAMPS, type LampPlace } from '../../sky/lamps.ts';
 import { SailRig, type SailCorners, windOff } from '../../ships/sails.ts';
 import { HULL_LINES, type HullLines } from '../../ships/hullLines.ts';
 import { HULL_NAMES } from '../../ships/hulls.ts';
@@ -125,6 +126,8 @@ export function happenedOf(events: readonly FightEvent[]): Happening[] {
 /** The ambush: the sea fight on the land worker's door, every event it answers kept for the story, and each ship's
  *  rig, the player's ship's the Brig's and each captain's a Sloop's. */
 export class StoryFight {
+  /** The fight's lights as the sky's lamps last lit them. */
+  private lit: readonly LampPlace[] = [];
   private readonly land: LandWorker;
   private readonly combat: SeaCombat;
   private readonly heard: FightEvent[];
@@ -342,9 +345,12 @@ export class StoryFight {
     this.combat.wheel(steps, performance.now() / 1000);
   }
 
-  /** The balls aloft, the lay's arcs and the effects, as SeaCombat draws them. */
+  /** The balls aloft, the lay's arcs and the effects, as SeaCombat draws them; its flashes, blasts and fires light
+   *  what stands round them as lamps, told anew only when one comes or goes. */
   draw(pass: GPURenderPassEncoder, camera: ShipCamera, time: number): void {
     this.combat.draw(pass, camera, time);
+    const lamps = this.combat.lamps();
+    if (lamps !== this.lit) CITY_LAMPS.set(this, (this.lit = lamps));
   }
 
   /** The see-through puffs and the lay's aim, over the finished picture after the water (SeaCombat.overWater). */
@@ -359,6 +365,7 @@ export class StoryFight {
 
   /** Ends the fight on the land worker: the captains and their balls are gone. */
   end(): Promise<void> {
+    CITY_LAMPS.set(this, (this.lit = []));
     return this.land.fightEnd();
   }
 }
