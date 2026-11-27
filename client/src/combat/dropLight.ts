@@ -60,7 +60,7 @@ const lit = (colour: Rgb, light: number, white = 0): [number, number, number] =>
 };
 
 /** The way across the eye's view at `place`, along the ground. */
-function acrossFrom(eye: Point, place: Point): [number, number] {
+export function acrossFrom(eye: Point, place: Point): [number, number] {
   const [east, south] = [place[0] - eye[0], place[1] - eye[1]];
   const length = Math.hypot(east, south) || 1;
   return [-south / length, east / length];
@@ -144,7 +144,8 @@ export function markBurst(out: number[], { ground, middle, colour, ring, since, 
     const share = since / FLASH_S;
     const light = stepped(1 - share) * 1.5;
     const cell = 2 * cellAt(eye, middle);
-    const arm = Math.round(2 + 3 * share) * cell;
+    // With motion reduced the star fades where it stands, never growing.
+    const arm = (still ? 3 : Math.round(2 + 3 * share)) * cell;
     const half = cell / 2;
     const across = acrossFrom(eye, middle);
     const hot = lit(colour, light, 0.5);

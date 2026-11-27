@@ -13,6 +13,7 @@ import {
   AMMO_PILLAR_M,
   PALE,
   PILLAR_M,
+  acrossFrom,
   glowPulse,
   markBurst,
   markGlow,
@@ -342,13 +343,6 @@ function put(
   return index + 7;
 }
 
-/** The way across the eye's view at `base`, along the ground. */
-function acrossFrom(eye: Point, base: Point): [number, number] {
-  const [east, south] = [base[0] - eye[0], base[1] - eye[1]];
-  const length = Math.hypot(east, south) || 1;
-  return [-south / length, east / length];
-}
-
 /** A picture standing on `base`, turned to the eye, each rectangle of one colour two triangles, as marks' vertices
  *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat). */
 export function markPicture(
@@ -454,8 +448,9 @@ export function markDropPillar(
 ): void {
   const crown: Point = [place[0], place[1], place[2] + over + LIFT_M];
   const tall = (PILLAR_M[rarity] ?? AMMO_PILLAR_M) * share;
-  const strength = share * pillarPulse(rarity, seconds, motionReduced());
-  markPillar(out, crown, tall, RARITY_COLOURS[rarity] ?? WHITE, strength, seconds, eye);
+  const still = motionReduced();
+  const strength = share * pillarPulse(rarity, seconds, still);
+  markPillar(out, crown, tall, RARITY_COLOURS[rarity] ?? WHITE, strength, still ? 0 : seconds, eye);
 }
 
 /** How near the player's feet come to a drop to take it, across and up, metres (crates/room/src/drops.rs
@@ -552,7 +547,8 @@ export class DropsShown {
       const top =
         (drop.kind === DROPPED.crate ? CRATE_TOP_M : drop.kind === DROPPED.ammoBox ? BOX_TOP_M : CROWN_M) * scale;
       const crown: Point = [middle[0], middle[1], middle[2] + top + LIFT_M];
-      markPillar(marks, crown, tall, colour, strength, seconds, eye);
+      // With motion reduced its glint holds where it is.
+      markPillar(marks, crown, tall, colour, strength, still ? 0 : seconds, eye);
     }
     for (const key of this.began.keys())
       if (!lying.has(key)) {

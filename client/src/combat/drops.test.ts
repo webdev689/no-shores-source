@@ -259,6 +259,15 @@ test('a drop bursts as it lands, a ring on the ground; reduced motion keeps no r
   assert.equal(onGround(landing(false, BURST_S + 0.5)), 0, 'gone after');
   assert.equal(onGround(landing(true, 0.1)), 0, 'none with motion reduced');
   assert.ok(landing(true, 2).length < landing(false, 2).length, 'nor motes');
+  const pillar = (seconds: number) => {
+    const marks = new DropsShown(() => true).frame([drop({ rarity: 3, flying: 0 })], seconds, EYE).marks;
+    const top = Math.max(...heightsOf(marks, false));
+    // Its colours a metre and more over the picture: the pillar's alone.
+    return Array.from({ length: marks.length / MARK_FLOATS }, (unused, vertex) => vertex * MARK_FLOATS)
+      .filter((start) => marks[start + 6] === -1 && (marks[start + 2] ?? 0) > top + 1)
+      .map((start) => marks.slice(start + 3, start + 6).join());
+  };
+  assert.deepEqual(pillar(0.3), pillar(0.9), 'and its pillar holds still');
   const late = new DropsShown(() => false).frame([drop({ rarity: 3, flying: 0 })], 0, EYE).marks;
   assert.equal(onGround(late), 0, 'one told of at rest never bursts');
   const ringOf = (kind: number) => {

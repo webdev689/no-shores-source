@@ -527,7 +527,7 @@ DFO's spoils ([[Pick - Loot Drops]]).
   | Rises to hover over | 0.35 s | 0.28 s |
   | Bobs | 5 cm | 6 cm |
   | Turns in the air, then at rest | 7, then 2.4 radians a second | 5, then 2.4 radians a second |
-  | Is drawn as | its crystal, 12 frames of 27 pixels for 0.7 m | its Blender model, 12 frames of 0.038 m a pixel |
+  | Is drawn as | its crystal, 12 frames of 27 pixels for 0.7 m, drawn 1.4 m | its Blender model, 12 frames of 0.038 m a pixel, drawn 0.0228 m |
 
   The heights keep every frame's lowest pixel over the ground at its size, and where it leaves the body moves with
   where it lies, so its flight lasts as long whatever its size. A poured Vestige leaves 0.93 m over the chest's foot,
