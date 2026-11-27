@@ -4,7 +4,7 @@
 
 use super::passages_tests::{BAND, ISLAND, diver, web, zone_room};
 use crate::garrison::SPREAD;
-use crate::passages::passage_foes::BACK_MOST_M;
+use crate::passages::passage_foes::{BACK_MOST_M, beside_lamp};
 use crate::players::ARRIVAL_GRACE;
 use crate::{Input, PlayerId, Room};
 use combat::arms::Stroke;
@@ -104,10 +104,6 @@ fn no_band_member_stands_or_walks_within_25_m_of_a_zones_arrival_or_nearer_than_
         let web = web(week);
         for zone in &web.zones {
             let Some(plan) = Plan::of(&web, zone.number) else { continue };
-            // An under-ground Vault stands its dungeon's own garrison (`stand_dungeon_garrison`), not bands on posts.
-            if plan.zone.deal == Deal::Vault && matches!(plan.ground, passage::Laid::Under(_)) {
-                continue;
-            }
             let modifiers = gear::passages::week_modifiers(ISLAND, week);
             let mut room = Room::passage(&plan, BAND, modifiers, (ISLAND, week, Route::Public)).expect("a room");
             let posts: Vec<usize> = room.zone().map(|zone| zone.round.guards.clone()).unwrap_or_default();
@@ -115,6 +111,12 @@ fn no_band_member_stands_or_walks_within_25_m_of_a_zones_arrival_or_nearer_than_
             match plan.zone.deal {
                 Deal::Mission(Mission::Kindle | Mission::Hold | Mission::Ambush) => {}
                 Deal::Lamp => assert!(!posts.is_empty(), "week {week} zone {}: its guard stood", zone.number),
+                // An under-ground Vault stands its dungeon's own garrison (`stand_dungeon_garrison`), not bands on
+                // posts: every band of it stood, none emptied by the arrival's clearance.
+                Deal::Vault if matches!(plan.ground, passage::Laid::Under(_)) => {
+                    let emptied = posts.iter().any(|&post| room.garrison[post].members.is_empty());
+                    assert!(posts.len() > 1 && !emptied, "week {week} zone {}", zone.number);
+                }
                 // A band on each post, stood or held back for room: none lost to the arrival's clearance.
                 _ => assert_eq!(posts.len() + held, plan.sites.posts.len(), "week {week} zone {}", zone.number),
             }
@@ -125,12 +127,23 @@ fn no_band_member_stands_or_walks_within_25_m_of_a_zones_arrival_or_nearer_than_
                 if tick % 30 == 0 {
                     // Read each time, so a band held back and stood since is measured too.
                     let posts: Vec<usize> = room.zone().map(|zone| zone.round.guards.clone()).unwrap_or_default();
-                    for &post in &posts {
+                    for (nth, &post) in posts.iter().enumerate() {
                         // BAND_OFF_ARRIVAL_M where the post stands so far and a band's spread out (the mesh holding it
                         // a little off the site's place), else the post's distance less the spread and the metres its
-                        // spawn may go back.
+                        // spawn may go back. A lamp's guard is measured by the farthest of the places it may stand
+                        // (beside the lamp or the post nearest it), and a vault's garrison by its dungeon's, which
+                        // holds a band so far out.
                         let at = room.garrison[post].at;
-                        let post_off = apart([at[0], at[1]], plan.sites.arrive);
+                        let post_off = match (plan.zone.deal, plan.sites.lamp) {
+                            (Deal::Lamp, Some(lamp)) if nth == 0 => beside_lamp(lamp, &plan.sites.posts)
+                                .into_iter()
+                                .map(|choice| apart(choice, plan.sites.arrive))
+                                .fold(0.0, f64::max),
+                            (Deal::Vault, _) if matches!(plan.ground, passage::Laid::Under(_)) => {
+                                POST_OFF_ARRIVAL_M + MESH_SLACK_M
+                            }
+                            _ => apart([at[0], at[1]], plan.sites.arrive),
+                        };
                         let least = if post_off >= POST_OFF_ARRIVAL_M + MESH_SLACK_M {
                             BAND_OFF_ARRIVAL_M
                         } else {

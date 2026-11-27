@@ -215,9 +215,14 @@ passages' own pieces standing in it with their solids.
   Hunt's round included) walks, within 25 m of the arrival (the garrison's `SPAWN_CLEAR`) where its post stands
   27.5 m out, nor nearer than its post less a band's spread where the post stands nearer (the arrival's spawn taken
   back from the post by what it lacks, and up to 3 m more, a metre at a time, where the navmesh stands a member nearer
-  still), a lamp's guard standing at the post nearest the lamp where beside it would be nearer.
+  still). A lamp's guard stands 4.5 m beside the lamp where that is 27.5 m or more from the arrival, else at the farthest
+  from it of its four places beside the lamp and the post nearest the lamp.
   A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
-  Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
+  Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. Its foes keep off the arrival as
+  the passage's bands do: each stands on its room's cells 27.5 m or more from the arrival nearest the room's middle;
+  a room without enough such cells gives its band to the room whose walk from the way in is nearest its own that has
+  them to spare (the end room's among them, past its Miniboss), and only where none has does the band keep its room,
+  on its farthest cells. A guard never stands again by itself.
   A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find
   (`lamps::KILL_SHARE`), and so of the officer and boon XP that follow it; Bountiful's more Vestiges are paid whole
   ([[A Passage Kill's Share Scales the XP That Follows It, and the Passages Read Gear's Week]]).
