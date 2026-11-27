@@ -674,8 +674,8 @@ Landing asks first ([[The Sea Has Two Views, Docking Asks First, and an Island's
 `landingAsk.ts`, `seaLandings.ts`). A click on a port's icon, or anywhere on its island's land, asks "Dock at
 Overlook?"; on a coast with no living port (a ruined city's harbour is no port, `portOf`), "Go ashore on Cairnwatch?";
 on an island cut into regions ([[World Map]], "Regions"), its land asks to dock only within the region that holds the
-living port, and within any other region to go ashore on it ("Go ashore on the Weirlands?"), the coast nearest the
-point clicked, so each region's view is reached from the sea;
+living port, and within any other region to go ashore on it ("Go ashore on the Weirlands?"), each judged at the coast
+nearest the point clicked, where the ship comes in, so each region's view is reached from the sea;
 on one of the sea's islands, its own ground (which a click meets as it meets the land's, `Isles.groundAt`) or the
 water within 400 m of its reach, "Go ashore on the cove?", before the open landmass's. L, Enter or the pad's A asks
 after what the sea offers where the ship lies, by the same rule off an island cut into regions: off the port's region,
@@ -685,7 +685,7 @@ pad's B or Cancel no, and a click elsewhere puts it by, as does a fight, the hel
 sea.
 
 Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,
-to dock there; anywhere else, to go ashore. Yes within reach docks in sight at once, or once nothing else holds the
+and on an island cut into regions off the region that holds the port, to dock there; anywhere else, to go ashore. Yes within reach docks in sight at once, or once nothing else holds the
 player (another landmass opening); out of reach the ship makes for the harbour (or the coast nearest the point clicked)
 at ×60 and docks in sight once it is within reach, which the console names ("Bound for Overlook's harbour, to dock").
 Another course
@@ -721,7 +721,7 @@ and is the player's to sail from there. A course the player sets first, or the r
 berth, leaves it as it is; either way it is docked no more.
 
 Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
-framed on the nodes of the region it lies off, the one whose centre is nearest it (on an island with no regions, the
+framed on the places of the region it lies off, the one whose centre is nearest it (on an island with no regions, the
 nodes of its side), the city's social space among them when docking, so each region has its own view ([[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
 `islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid with space between them. First the
 island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner (only where the region holds

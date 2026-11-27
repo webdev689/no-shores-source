@@ -78,4 +78,15 @@ test('a landfall frames only the nodes on its side, its city among them when doc
     ['sunspire-social', 'moors'],
     'a region frames its own places, wherever they lie, and not the side’s others',
   );
+  const unlisted: Mark = { ...far, id: 'cairn' };
+  assert.deepEqual(
+    landfallMarks([...island, far, unlisted], ship, centre, false, regions).map((mark) => mark.id),
+    ['moors', 'cairn'],
+    'and a place no region lists',
+  );
+  assert.deepEqual(
+    landfallMarks(island, ship, centre, false, [{ centre: ship, nodes: ['elsewhere'] }]).map((mark) => mark.id),
+    ['downs'],
+    'a region with none of its places marked frames the side',
+  );
 });

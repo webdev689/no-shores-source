@@ -6,8 +6,8 @@
 type Point2 = readonly [number, number];
 
 /** One region as the map knows it: the island it is of (its continent's id), its name, its centre, the anchorage a
- *  ship sails for, 3 km off its coast where the coast is nearest its centre, its nodes, and its island's outline (none for an
- *  island the layout does not draw). */
+ *  ship sails for, 3 km off its coast where the coast is nearest its centre, its nodes, and its island's outline
+ *  (none for an island the layout does not draw). */
 export interface MapRegion {
   readonly island: string;
   readonly name: string;

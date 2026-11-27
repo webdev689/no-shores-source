@@ -7,7 +7,7 @@ import type { CameraPose, Viewport } from '../overworld/overworldCamera.ts';
 import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';
 import type { Point2, Vec3 } from '../overworld/ground.ts';
 import { sideNodes } from '../overworld/islandView.ts';
-import { type MapRegion, nearestRegion } from '../overworld/regions.ts';
+import { type MapRegion, nearestRegion, regionHolds } from '../overworld/regions.ts';
 import type { ScreenMark } from './hud.ts';
 import { distanceText } from '../plus/compass.ts';
 import { HOSTILE_PREFIX, hostileLook, hostileMarks, hostileNote } from './seaHostiles.ts';
@@ -42,8 +42,8 @@ export function islandMarksOf(landmass: Pick<Landmass, 'nodes' | 'plan' | 'heigh
 }
 
 /** The nodes over the island's side a landfall frames, the ship at `ship` off an island whose middle is `centre`: the
- *  nodes listed by the region of `regions` it lies off, wherever they lie, else those on the ship's side; the city's social space among
- *  them when `docking`. */
+ *  places the region of `regions` it lies off holds, wherever they lie, else those on the ship's side; the city's
+ *  social space among them when `docking`. */
 export function landfallMarks(
   island: readonly Mark[],
   ship: Point2,
@@ -53,7 +53,8 @@ export function landfallMarks(
 ): Mark[] {
   const nodes = island.filter((mark) => mark.kind !== 'port');
   const region = nearestRegion(regions, ship);
-  const listed = region ? nodes.filter((mark) => region.nodes.includes(mark.id)) : [];
+  const own = (mark: Mark) => region !== null && mark.kind !== 'social' && regionHolds(regions, region, mark.id);
+  const listed = nodes.filter(own);
   const near = listed.length ? listed : sideNodes(ship, centre, nodes);
   const social = nodes.find((mark) => mark.kind === 'social');
   return docking && social && !near.includes(social) ? [social, ...near] : near;

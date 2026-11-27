@@ -56,7 +56,7 @@ export interface LandingsGame {
 /** What a click is judged against: the open landmass's living port, its coast's name, its regions, and the sea's
  *  islands built. */
 export function clickContext(
-  landmass: Pick<Landmass, 'id' | 'plan' | 'regions'>,
+  landmass: Pick<Landmass, 'id' | 'plan' | 'regions' | 'outline'>,
   isles: Pick<Isles, 'all'>,
 ): ClickContext {
   const port = portOf(landmass.plan);
@@ -73,8 +73,9 @@ export function clickContext(
       });
       return isle ? { id: isle.seen.id, words: isleWords(isle.seen) } : null;
     },
+    // Judged where the ship would come in, the coast nearest the point, as the landing it asks is made there.
     regionOf: (point) => {
-      const region = nearestRegion(regions, point);
+      const region = regions.length ? nearestRegion(regions, coastPoint(point, landmass.outline)) : null;
       return region && { coast: regionWords(region.name), port: region === portRegion };
     },
   };

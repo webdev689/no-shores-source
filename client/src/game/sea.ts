@@ -194,7 +194,7 @@ export class Sea {
     if (isle) return { kind: 'isle', id: isle.seen.id, words: isleWords(isle.seen) };
     const offCoast = nearestIsland(this.position, [this.landmass.outline]) !== null;
     const { plan } = this.landmass;
-    return landfallOf(this.position, offCoast, portOf(plan));
+    return landfallOf(this.position, offCoast, portOf(plan), this.landmass.regions);
   }
 
   /** Where the ship lies and heads, as the held map shows it. */

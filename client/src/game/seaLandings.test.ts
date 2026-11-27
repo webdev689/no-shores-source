@@ -184,9 +184,11 @@ test('regions: the port’s region docks, another’s goes ashore on it, and L a
     ]),
     [],
   );
-  const here = clickContext({ id: 'continent-1', plan: PLAN, regions } as never, NO_ISLES);
+  const here = clickContext({ id: 'continent-1', plan: PLAN, regions, outline: COAST } as never, NO_ISLES);
   assert.deepEqual(here.regionOf([2_000, 5_000]), { coast: 'the Beacon Shore', port: true });
   assert.deepEqual(here.regionOf([58_000, 5_000]), { coast: 'the Weirlands', port: false });
+  const inland: Point2 = [31_000, 60_000];
+  assert.deepEqual(here.regionOf(inland), { coast: 'the Beacon Shore', port: true }, 'by the coast it comes in at');
   assert.equal(clickContext({ id: 'continent-1', plan: PLAN } as never, NO_ISLES).regionOf([0, 0]), null);
   const ashore = { kind: 'ashore' } as const;
   assert.deepEqual(aimOf(ashore, here, [58_000, -2_000]), {
