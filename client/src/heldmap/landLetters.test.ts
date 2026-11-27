@@ -102,6 +102,13 @@ test('the plan says no keeper by name: each is a glyph, and the table says what 
   );
 });
 
+test('the table hidden, as a player asked, paints nothing of itself, and every name and mark still shows', () => {
+  const words = paint({ legend: false }).texts();
+  for (const word of ['Overlook', 'The Mage', 'Vault', 'You']) assert.ok(!words.includes(word), word);
+  assert.ok(!words.some((word) => typeof word === 'string' && word.endsWith(' m')), 'nor its bar');
+  for (const word of ['Watch Court', 'Fountain']) assert.ok(words.includes(word), word);
+});
+
 test("a place's name that would fall on one before it stands over its middle, else farther off, else beside it, else is left off", () => {
   const words = paint().texts();
   assert.ok(

@@ -108,6 +108,15 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 - **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
   and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
   the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
+- **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
+  browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
+  2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
+  13 ms at 1920 x 1080, measured natively), and its picture's repaint and upload (4 to 18 MB) are unmeasured; lighting
+  the water under the pointer takes some 14 ms each time it crosses into another (`litCells`); the sea map's own
+  marks (islands, hostile ships) say nothing under the pointer, the landings' tiles alone do; the Legend has no pad
+  button until one is bound. Its audit's leftovers: the sea's summed tables (`CellSums`) take some 2.6 MB each, the
+  land and each continent asked, kept for the page's life; Firefox's keeping of a side button from going back is
+  unchecked.
 - **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
   third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
   a walk through a three-storey dungeon and its vault. Headless pictures of three (`dungeon-plan.ts`) were taken before
