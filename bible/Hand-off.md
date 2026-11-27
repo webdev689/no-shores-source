@@ -9,8 +9,9 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`).
+- **For the owner's yes**: #235 (hostile ships at sea come out 1 km off at the helm, still seen and kept from 5 km;
+  [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]); #159 (the rooms' worker tests wait for what
+  they check; it conflicts with `main` in `roomThread.test.ts`).
 - **Other sessions' work under way**: #221 (hostile ships and islands on the sea map, travel anywhere at sea; it
   shares the sea's files with #216, merged, so it takes `main` in again).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
@@ -60,7 +61,7 @@ yet played by hand or with other players in a deployed room.
   voices; the seams between a long recording's chunks; whether a browser drops an MP3's 25 to 40 ms of padding, as
   ffmpeg does, so each hoofbeat plays to its cut.
 - **Played by hand**: the prologue in one run; an hour's day; a ranged weapon's fight on foot; the travel's cinematic
-  from the helm; a clash of a Tithe ship and a merchant, joined; the welcome's tour with its 400 Aurem and a starter
+  from the helm; a hostile ship coming out 1 km off at the helm (#235); a clash of a Tithe ship and a merchant, joined; the welcome's tour with its 400 Aurem and a starter
   piece bought; the key strip, the leave held and a real pad's View held; the hit fixes; the Passages (every deal, a dive's way across zones, a public round, the held
   map's public way, the sea's new ranks and salvage, the week's Abyss Dungeon run again); the escort on its horse and
   the hulk at sea.
