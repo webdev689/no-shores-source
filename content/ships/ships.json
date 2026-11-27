@@ -407,8 +407,8 @@
       }
     },
     "schooner": {
-      "mesh": "ships/e9d2504151b87abc1ddfaf37432cad44f42435f4ad87786f2e24431750c53312.mesh",
-      "source": "sources/6c48e651543924eeddf6b1e14c04f8528357a5a266f62a6fcfd17268a4283c70.blend",
+      "mesh": "ships/2d5079b54a8e8ad4137e733b8f11ed72123cb83c240de5e27a8213e61cd8cd59.mesh",
+      "source": "sources/bad4d4b278ab4ad617889590eb390b3a58d618f86389f150eec0107414878961.blend",
       "waterline": {
         "level_m": 1.2,
         "length_m": 25.1942,
@@ -941,7 +941,7 @@
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 230, null, null, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, null, null, null, null, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, 291, null, null, 230, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 230, null, null, null, 292, 292, 292, 292, 292, 292, 292, 292, 292, null, null, null, null, 292, 292, 292, 292, 292, 292, 292, 292, 292, null, null, null, 230, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 231, null, null, null, 292, 292, 292, 292, 292, 292, 292, 292, null, null, null, null, 292, 292, 292, 292, 292, 292, 292, 292, null, null, null, 231, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 232, null, null, null, 293, 293, 293, 293, 293, 293, 293, null, null, 293, 293, 293, 293, 293, 293, 293, null, null, null, 232, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 232, null, null, null, 293, 293, 293, 293, 293, 293, null, null, null, null, 293, 293, 293, 293, 293, 293, null, null, null, 232, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 392, null, null, 294, 294, 294, 294, 294, null, null, 294, 294, 294, 294, 294, null, null, 392, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 392, null, null, 294, 294, 294, null, null, 294, 294, 294, null, null, 392, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
@@ -960,13 +960,13 @@
         [
           -11.2002,
           0.0,
-          4.463
+          4.4627
         ]
       ]
     },
     "brig": {
-      "mesh": "ships/4ceb950de760c0734dcdfd08c337763024f1f1d2cd979b5de8301a6953ca5d5b.mesh",
-      "source": "sources/367dd430ffe3b7dbe0f6c1f187d3d3700c718242c9faae9574a4c4009fc145f2.blend",
+      "mesh": "ships/0df01cfcbcd4dd3cd84f69816aca40bcd16032cebdbc196978aefc072b1375b8.mesh",
+      "source": "sources/d204f3f051e420c2ac9db397dee7be309cfca00db4854c98047eeba905095088.blend",
       "waterline": {
         "level_m": 1.2,
         "length_m": 30.7446,
@@ -1838,13 +1838,13 @@
         [
           -13.9653,
           0.0,
-          4.916
+          4.9162
         ]
       ]
     },
     "frigate": {
-      "mesh": "ships/d1a4a78b9c0d281693c560fd598f59baea4691de73247a28036956e853ffa730.mesh",
-      "source": "sources/baadf71c0eeef8d7d5044b19362bc2aea5f67e076d4213894b17c6f05860dbd2.blend",
+      "mesh": "ships/74b3074e2317ac108dd0166d45221851749f45c415e68f8092e205de30d1e3bf.mesh",
+      "source": "sources/3e517709481e7492e88c7da4774cec3a7b4c32bac1175048a3cc0348ce78506a.blend",
       "waterline": {
         "level_m": 1.2,
         "length_m": 38.0581,
@@ -2927,7 +2927,7 @@
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 308, null, 487, null, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, null, null, null, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, null, null, null, 389, 389, 389, 389, 389, 389, 389, 389, 389, 389, null, 487, null, 308, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 308, null, 488, null, 390, 390, 390, 390, 390, 390, 390, 390, 390, null, 390, null, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, null, 390, null, 390, 390, 390, 390, 390, 390, 390, 390, 390, null, 488, null, 308, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 309, null, 488, null, 390, 390, 390, 390, 390, 390, 390, 390, null, null, null, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, 390, null, null, null, 390, 390, 390, 390, 390, 390, 390, 390, null, 488, null, 309, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 309, null, null, null, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, null, null, null, 309, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 309, null, null, null, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, null, null, null, null, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, null, null, null, 309, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 309, 310, null, null, null, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, null, null, null, null, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, 391, null, null, null, 310, 309, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 310, null, null, null, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, null, null, null, null, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, null, null, null, 310, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 310, 311, null, null, null, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, null, null, null, null, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, 392, null, null, null, 311, 310, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
@@ -2950,7 +2950,7 @@
         [
           -17.5996,
           0.0,
-          5.47
+          5.4702
         ]
       ]
     }
