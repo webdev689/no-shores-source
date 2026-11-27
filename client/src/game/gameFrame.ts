@@ -111,9 +111,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   const showStanding = (shown: Standing, fallen: Fallen | null = null) => {
     hud.reach(shown, fallen);
-    // Death's grey over the world is the one mark of it, once death is told (a fall plays out in colour first) or as
-    // the player falls in the fight: standing again, or leaving the place, takes it off. A fall in a fight keeps the
-    // pointer, to look round while an ally comes; Respawn's key works either way.
+    // Death's grey over the world is the one mark of it, the same for every death, from the moment the player dies:
+    // standing again, or leaving the place, takes it off. A fall in a fight keeps the pointer, to look round while an
+    // ally comes; Respawn's key works either way.
     const [dead, wasDead] = [greyed(shown) || fallen !== null, drain.dead];
     if (greyed(shown) && !wasDead) document.exitPointerLock();
     drain.toward(dead);
