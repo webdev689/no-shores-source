@@ -75,9 +75,8 @@ const MESSAGE_MOST = 8192;
  * sea rolled, each opened on that sea's word; `passage-...` a passage zone's room (`passageRoom`); `fleet-<name>` a
  * fleet's place; `test-<name>` the Test Ground's course.
  * Each binary message on a player's WebSocket is an input. While anyone is in, it ticks the room with the clock and
- * sends each player each tick's snapshot. Its sockets live and die with it: the room is kept in memory (what its
- * Breach keeps stored too), so a socket must never outlast it. A browser's one text message is its session's token,
- * which keeps its character.
+ * sends each player each tick's snapshot. Its sockets live and die with it, the room kept in its memory (what its
+ * Breach keeps, stored), so a socket never outlasts it. A browser's one text message, its token, keeps its character.
  */
 export class RoomHost extends DurableObject<Env> {
   private readonly room: RoomDoor = startRoomDoor(roomModule);
