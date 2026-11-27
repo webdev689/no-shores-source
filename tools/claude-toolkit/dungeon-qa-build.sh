@@ -166,8 +166,8 @@ pub extern "C" fn room_qa_move(x: f64, y: f64) {
     });
 }
 ''')
-edit('crates/room-wasm/src/lib.rs', '        Opened::Land { room, refusal: None, .. } => room.join(),',
-     '        Opened::Land { room, refusal: None, .. } => dungeon_door::qa_entrance().and_then(|number| room.join_at(number)).or_else(|| room.join()),')
+edit('crates/room-wasm/src/lib.rs', '        Opened::Land { room, refusal: None, .. } if !room.shifted() => room.join(),',
+     '        Opened::Land { room, refusal: None, .. } if !room.shifted() => dungeon_door::qa_entrance().and_then(|number| room.join_at(number)).or_else(|| room.join()),')
 edit('crates/room/src/lib.rs', '    /// The player leaves: blows waiting on them are dropped',
      QA_HOLD + '    /// The player leaves: blows waiting on them are dropped')
 pathlib.Path('crates/room/src/lib.rs').write_text(pathlib.Path('crates/room/src/lib.rs').read_text() +

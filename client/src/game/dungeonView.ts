@@ -1,10 +1,13 @@
 // A dungeon drawn on WebGPU: its floor's mesh, dressed in its styles' pieces and landmarks and an Elite Dungeon's
 // encounters, its drowned floors' water while their seals hold, and its cache in its pictures, painted by the city's
-// painter, lit by the lights nearest the eye, each fragment by those its cluster lists. A Drawer the dungeon's scene
-// draws into its pass, its depth first and then lit.
+// painter, lit by the lights nearest the eye, each fragment by those its cluster lists, the light a player carries
+// among them. A Drawer the dungeon's scene draws into its pass, its depth first and then lit; its torches', fixtures'
+// and lamps' flames are fires (`flames`), each seeded by its light's number so it flickers with the light it casts.
 import { CITY_BUFFER_USAGE } from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
 import { CityPainter, painting } from '../city/painter.ts';
+import { Flames } from '../cinema/flames.ts';
+import { CARRIED_SEED, HAND_M } from '../sky/lamps.ts';
 import { standIn } from '../standIns.ts';
 import { MATERIALS } from '../city/pictures.ts';
 import type { CityClimate } from '../city/plan.ts';
@@ -31,6 +34,18 @@ import { LIGHT_FLOATS, lightFloats, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from 
 
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
+/** Each flame after a light's first is seeded this much past it, so a cluster's candles burn each their own way. */
+const FLAME_SEED_STEP = 0.37;
+
+/** The flames of the dungeon last shown, which its scene draws over the finished picture; none once it is let go. */
+export const DUNGEON_FLAMES: { current: Flames | null } = { current: null };
+
+/** The light a player carries under ground: where it burns, moved each frame, and how. */
+type CarriedLight = {
+  readonly at: [number, number, number];
+  readonly number: number;
+  readonly burning: Light['burning'];
+};
 
 type Buffers = { vertices: GPUBuffer; indices: GPUBuffer; count: number };
 
@@ -67,6 +82,8 @@ type Drawn = {
   /** A passage zone's pieces from their pack, and what they were last laid for. */
   pieces: Buffers | null;
   piecesKey: string;
+  /** The light the player carries, while they carry one. */
+  carried: CarriedLight | null;
 };
 
 export class DungeonView {
@@ -77,10 +94,42 @@ export class DungeonView {
   private readonly frame = new Float32Array(VIEW_FLOATS.grid);
   private readonly burningFloats = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
   private readonly clusters = new LightClusters(MOST_LIGHTS);
+  /** The flames its lights burn from, drawn as fires over the finished picture: one of the scene's drawers. */
+  readonly flames: Flames;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     this.pipelines = dungeonPipelines(gpu);
+    this.flames = new Flames(gpu);
+  }
+
+  /** Lights a fire for each flame the lights burn from, seeded by the light's number. */
+  private lightFlames(lights: readonly Light[]): void {
+    this.flames.clear();
+    for (const { number, flames } of lights)
+      flames?.forEach((flame, index) =>
+        this.flames.light(flame.at, flame.sizeM, number + index * FLAME_SEED_STEP, flame.along),
+      );
+  }
+
+  /** Picks each frame's lights from the dungeon's, a passage's pieces' and the carried one's, and the portal's while
+   *  it stands open. */
+  private pickerOf(drawn: Drawn): NearestLights {
+    const carried = drawn.carried ? [drawn.carried] : [];
+    return new NearestLights([...drawn.burning, ...drawn.pieceLights, ...carried], drawn.portalLight);
+  }
+
+  /** The light the player carries (`torch` or `lantern`), at the hand over their `feet` (the dungeon's metres), or
+   *  none. */
+  setCarried(light: 'torch' | 'lantern' | null, feet: readonly [number, number, number]): void {
+    const drawn = this.drawn;
+    if (!drawn) return;
+    const burning = light && LIGHT_KINDS[light];
+    if ((drawn.carried?.burning ?? null) !== burning) {
+      drawn.carried = burning ? { at: [0, 0, 0], number: CARRIED_SEED, burning } : null;
+      drawn.picker = this.pickerOf(drawn);
+    }
+    if (drawn.carried) drawn.carried.at.splice(0, 3, feet[0], feet[1], feet[2] + HAND_M);
   }
 
   /** Lays a model into a vertex and an index buffer, each vertex wearing its picture's layer. */
@@ -190,6 +239,8 @@ export class DungeonView {
       burning: LIGHT_KINDS.portal,
     };
     const floor = this.buffersOf(model, book);
+    this.lightFlames(burning);
+    DUNGEON_FLAMES.current = this.flames;
     this.drawn = {
       layout,
       burning,
@@ -214,6 +265,7 @@ export class DungeonView {
       nearest: null,
       pieces: null,
       piecesKey: '',
+      carried: null,
     };
   }
 
@@ -225,7 +277,8 @@ export class DungeonView {
     drawn.piecesKey = key;
     const after = drawn.portalLight.number + 1;
     drawn.pieceLights = lit.map((light, index) => ({ ...light, number: after + index }));
-    drawn.picker = new NearestLights([...drawn.burning, ...drawn.pieceLights], drawn.portalLight);
+    drawn.picker = this.pickerOf(drawn);
+    this.lightFlames([...drawn.burning, ...drawn.pieceLights]);
     for (const buffer of [drawn.pieces?.vertices, drawn.pieces?.indices]) buffer?.destroy();
     const mesh = meshBuilder();
     lay?.(mesh);
@@ -284,10 +337,10 @@ export class DungeonView {
     return lightAt(drawn.nearest ?? this.lights(drawn), point, time, MOODS[look?.style ?? layout.style]);
   }
 
-  /** The torches, the fixtures and the pieces' lights, and the portal while it stands open, which is while the cache
-   *  does. */
+  /** The torches, the fixtures, the pieces' lights and the carried one, and the portal while it stands open, which is
+   *  while the cache does. */
   private lights(drawn: Drawn): readonly Light[] {
-    const burning = [...drawn.burning, ...drawn.pieceLights];
+    const burning = [...drawn.burning, ...drawn.pieceLights, ...(drawn.carried ? [drawn.carried] : [])];
     return drawn.shown?.open ? [...burning, drawn.portalLight] : burning;
   }
 
@@ -343,6 +396,8 @@ export class DungeonView {
   clear(): void {
     const drawn = this.drawn;
     if (!drawn) return;
+    this.flames.clear();
+    if (DUNGEON_FLAMES.current === this.flames) DUNGEON_FLAMES.current = null;
     drawn.painter.destroy();
     for (const buffer of [
       drawn.view,

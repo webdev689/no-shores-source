@@ -11,7 +11,7 @@ import type {
   PassageWeb,
   PassageZone,
 } from '../../rules/passageRules.ts';
-import { kindWords, lampWords, tooHard } from './passageMap.ts';
+import { kindWords, lampWords, levelsWords, tooHard } from './passageMap.ts';
 
 /** What the player carries in a passage: items found as themselves, Vestiges picked up, materials and the cold lantern.
  *  Nothing of it is kept until a lamp is lit; a death or leaving loses it. */
@@ -58,17 +58,13 @@ export type Route = 'public' | 'company' | 'alone';
 
 /** The mouths' choice at a run's sealed door in the patrol zone: the run, the zone beyond and the week's modifiers;
  *  the routes on offer (a company's route only in a company, else one's own); and where to begin: the mouth itself,
- *  or each lamp lit this week on the island, and the zone of that lamp it lands in (`zone`, its name and foes). */
+ *  or each lamp lit this week on the island, said with the foes of that lamp's zone it lands in. */
 export interface MouthsChoice {
   readonly run: string;
   readonly beyond: OnwardSign;
   readonly modifiers: readonly PassageModifier[];
   readonly routes: readonly { readonly route: Route; readonly words: string }[];
-  readonly starts: readonly {
-    readonly lamp: number | null;
-    readonly words: string;
-    readonly zone?: { readonly words: string; readonly hard: boolean };
-  }[];
+  readonly starts: readonly { readonly lamp: number | null; readonly words: string }[];
 }
 
 /** An onward mouth's sign, seen on coming near it: the zone beyond, what it is (a mission by its kind's name), its
@@ -90,23 +86,23 @@ export interface OnwardSign {
 }
 
 /** A Gauntlet's far mouth, as its sign says it. */
-export const FAR_MOUTH = 'The Gauntlet’s far mouth: reach it in time.';
+export const FAR_MOUTH = 'The far mouth: reach it in time';
 /** The public way, as a sign and the mouths' card say it. */
-export const PUBLIC_WAY = 'On this week’s public way, where others pass.';
+export const PUBLIC_WAY = 'Public way';
 
-/** Each deal as a sign says it: what waits in the zone, a mission after its kind's name. */
+/** Each deal as a sign says it: what the zone asks, its kind's name standing beside it. */
 const DEAL_SIGNS: Readonly<Record<Exclude<PassageDeal, 'lamp'>, string>> = {
-  skirmish: 'A garrison holds it.',
-  kindle: 'A Kindle: three dead lamps wait to be lit.',
-  hold: 'A Hold: a ring to hold for 90 s.',
-  hunt: 'A Hunt: a marked Elite walks it with its band.',
-  reckoning: 'A Reckoning: three collectors carry its tallies.',
-  gauntlet: 'A Gauntlet: the far mouth, reached within 90 s.',
-  ambush: 'An Ambush: the mouths bar behind you until three waves are beaten.',
-  sever: 'A Sever: three tally posts stand guarded.',
-  vault: 'A vault, its keeper deep inside.',
-  vein: 'A vein of six nodes, guarded.',
-  reliquary: 'A reliquary under guard, which opens once its guard is down.',
+  skirmish: 'Bring down the garrison',
+  kindle: 'Light 3 dead lamps',
+  hold: 'Hold the ring 90 s',
+  hunt: 'Bring down the marked Elite',
+  reckoning: 'Bring down 3 collectors',
+  gauntlet: 'Reach the far mouth in 90 s',
+  ambush: 'Beat 3 waves, the mouths barred',
+  sever: 'Break 3 tally posts',
+  vault: 'Bring down the vault’s keeper',
+  vein: 'Bring down its guard, gather 6 nodes',
+  reliquary: 'Bring down its guard to open it',
 };
 
 /** Each deal as the tracker asks it, and what it counts to. */
@@ -133,12 +129,11 @@ const DEEPEST = 20;
 /** How long before the web shifts its tracker warns of it, seconds. */
 const SHIFT_WARNING_S = 600;
 
-/** How deep a zone lies, as the bounties count it: "8 zones deep". */
-const deepWords = (depth: number) => `${depth} ${depth === 1 ? 'zone' : 'zones'} deep`;
+/** How deep a zone lies: "Depth 8". */
+const deepWords = (depth: number) => `Depth ${depth}`;
 
-/** A zone's foes' levels as its sign says them: "Foes 15 to 18". */
-export const foesWords = ([low, high]: readonly [number, number]): string =>
-  low === high ? `Foes ${low}` : `Foes ${low} to ${high}`;
+/** A zone's foes' levels as its sign says them: "Foes 15-18". */
+export const foesWords = (levels: readonly [number, number]): string => `Foes ${levelsWords(levels)}`;
 
 /** A zone's name inside a sentence, its article small: "On to an old working". */
 export const inSentence = (name: string): string => name.replace(/^(A|An|The) /, (article) => article.toLowerCase());
@@ -158,7 +153,9 @@ export function onwardSign(
     kind: kindWords(zone),
     deal:
       zone.deal === 'lamp'
-        ? `${lampWords(lamp)}, ${lit.includes(lamp) ? 'lit by you this week.' : 'cold, its guard standing.'}`
+        ? lit.includes(lamp)
+          ? 'Lit by you this week'
+          : 'Bring down its guard, then light it'
         : DEAL_SIGNS[zone.deal],
     depth: deepWords(zone.depth),
     foes: zone.levels ? foesWords(zone.levels) : null,
@@ -203,21 +200,14 @@ export function mouthsChoice(
     beyond: onwardSign(zone, true, level, lit),
     modifiers: web.modifiers,
     routes: [
-      { route: 'public', words: 'The public passage' },
-      company
-        ? { route: 'company', words: 'Your company’s route' }
-        : { route: 'alone', words: 'Your own route, alone' },
+      { route: 'public', words: 'Public' },
+      company ? { route: 'company', words: 'Your company' } : { route: 'alone', words: 'Alone' },
     ],
     starts: [
       { lamp: null, words: 'Go in' },
       ...lamps.map((lamp) => {
-        const landing = lampZone(lamp);
-        const foes = landing?.levels ? ` · ${foesWords(landing.levels)}` : '';
-        const zoneOf = landing && {
-          words: `${lampWords(lamp)}: ${landing.name}${foes}`,
-          hard: tooHard(landing, level),
-        };
-        return { lamp, words: `Begin at ${lampWords(lamp).toLowerCase()}`, ...(zoneOf ? { zone: zoneOf } : {}) };
+        const levels = lampZone(lamp)?.levels;
+        return { lamp, words: levels ? `${lampWords(lamp)} · ${foesWords(levels)}` : lampWords(lamp) };
       }),
     ],
   };
@@ -234,14 +224,10 @@ export interface LampPrompt {
 export const LAMP_HOLD_S = 2;
 
 export function lampPrompt(lit: boolean, guarded: boolean, cold = false, onward = true): LampPrompt {
-  if (lit) return { lit, deed: 'Home', under: onward ? 'Or go on: the ways on are open' : null };
+  if (lit) return { lit, deed: 'Home', under: onward ? 'Or go on' : null };
   const deed = cold ? 'Kindle the lamp' : 'Light the lamp';
   if (guarded) return { lit, deed, under: 'Not while its guard stands' };
-  return {
-    lit,
-    deed,
-    under: cold ? 'Gone cold for you: the Tithe come while you hold' : 'What you carry is kept once it burns',
-  };
+  return { lit, deed, under: cold ? 'The Tithe come while you hold' : 'Keeps what you carry' };
 }
 
 /** The haul as its panel shows it: a line each, and the warning while anything is carried. */
@@ -250,7 +236,7 @@ export interface HaulView {
   readonly warning: string | null;
 }
 
-export const HAUL_WARNING = 'Carried, not kept. Fall or leave, and it is lost.';
+export const HAUL_WARNING = 'Lost if you fall or leave';
 
 export function haulView(haul: PassageHaul): HaulView {
   const lines = [
@@ -267,11 +253,11 @@ export function leaveWarning(haul: PassageHaul): string | null {
   return haulView(haul).lines.length > 0 ? 'What you carry is lost' : null;
 }
 
-/** Where a zone lies in the dive: its depth and the next lamp on, "Depth 7, the second lamp in 3". */
+/** Where a zone lies in the dive: its depth and the next lamp on, "Depth 7 · lamp 2 in 3". */
 export function depthWords(depth: number): string {
-  if (depth >= DEEPEST) return `Depth ${depth}, the deepest`;
+  if (depth >= DEEPEST) return `Depth ${depth} · the deepest`;
   const next = Math.floor(depth / LAMP_EVERY) + 1;
-  return `Depth ${depth}, ${lampWords(next).toLowerCase()} in ${next * LAMP_EVERY - depth}`;
+  return `Depth ${depth} · ${lampWords(next).toLowerCase()} in ${next * LAMP_EVERY - depth}`;
 }
 
 /** The steps of the deal itself as the room has it for the player: once their mouths are open, done, whatever the
@@ -284,7 +270,7 @@ function dealSteps(zone: PassageZone, word: PassageWord): Step[] {
   if (deal.late) return [{ text: 'Too late: the cache is lost', done: true }];
   if (!open && deal.done && word.public !== false) {
     const again = deal.again ?? 0;
-    return [{ text: 'Done before you came: it begins again', ...(again > 0 ? { clock: again } : {}) }];
+    return [{ text: 'Done before you came: begins again', ...(again > 0 ? { clock: again } : {}) }];
   }
   const step: Step = { text: task.text, done: deal.done || (open && zone.deal !== 'gauntlet') };
   const steps: Step[] = [];
@@ -309,10 +295,10 @@ export function dealTracker(zone: PassageZone, word: PassageWord, now: number): 
   if (zone.lamp !== null)
     steps.push({ text: word.lampCold && !lit ? 'Kindle the cold lamp' : 'Light the lamp', done: lit });
   const onward = zone.onward.length > 0;
-  if (zone.lamp !== null && lit) steps.push({ text: onward ? 'Go on, or Home from the lamp' : 'Home from the lamp' });
-  else if (open && onward) steps.push({ text: 'Go on through an open mouth' });
+  if (zone.lamp !== null && lit) steps.push({ text: onward ? 'Go on, or Home at the lamp' : 'Home at the lamp' });
+  else if (open && onward) steps.push({ text: 'Go on through a mouth' });
   const shift = (weekStart(weekOf(now) + 1) - now) / 1000;
-  if (shift <= SHIFT_WARNING_S) steps.push({ text: 'The web shifts: its ways lead elsewhere', clock: shift });
+  if (shift <= SHIFT_WARNING_S) steps.push({ text: 'The web shifts', clock: shift });
   // The zone's own name stands as the place's, over the tracker; here what it is and where it lies.
   return { name: depthWords(zone.depth), task: kindWords(zone), steps };
 }

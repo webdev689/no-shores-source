@@ -1,7 +1,7 @@
 // What the sea's snapshot carries after its fights (crates/protocol/src/sea_snapshot.rs): each piece of what floats
 // kept for a player, each player's ship's kept hurts with its repair's time left, what each player is told this tick
-// beside their fight's view, each deck boarded with its deck room's own snapshot, and the islands each player sees or
-// has found.
+// beside their fight's view, each deck boarded with its deck room's own snapshot, the islands each player sees or
+// has found, and with the chart, every hostile ship and standing island in the water the player's ship lies in.
 import type { Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PIECES } from './seaFight.ts';
 
@@ -62,6 +62,16 @@ export interface SeenFriendly {
   readonly hull: number;
 }
 
+/** What a mark on the sea's chart is, by its number on the wire: a hostile ship, or an island of its kind. */
+export const CHART_MARK_KINDS = ['hostile', ...ISLE_KINDS] as const;
+
+/** A hostile ship or a standing island in the water the player's ship lies in: where it lies (world metres), and
+ *  what it is. */
+export interface SeenMark {
+  readonly at: readonly [number, number];
+  readonly kind: (typeof CHART_MARK_KINDS)[number];
+}
+
 /** A ship on the sea's chart: its player's number, where it lies (world metres), and its captain's name. */
 export interface SeenCharted {
   readonly player: number;
@@ -81,6 +91,8 @@ export interface HarbourPart {
   readonly friendlies: readonly SeenFriendly[];
   /** Every ship in the sea, the player's own among them, about once a second: empty in the snapshots between. */
   readonly charted: readonly SeenCharted[];
+  /** With the chart, every hostile ship and standing island in the water the player's ship lies in. */
+  readonly chartMarks: readonly SeenMark[];
 }
 
 /** The sea's part of a snapshot: empty from any other room. */
@@ -142,5 +154,11 @@ export function harbourOf(snapshot: Snapshot): HarbourPart {
     if (!ship) throw new Error(`snapshot charted ${index} does not read`);
     return { player: ship.player(), at: [ship.x(), ship.y()], name: ship.name() ?? '' };
   });
-  return { flotsam, kept, told, decks, islands, taken, friendlies, charted };
+  const chartMarks = Array.from({ length: snapshot.chartMarksLength() }, (unused, index): SeenMark => {
+    const mark = snapshot.chartMarks(index);
+    const kind = mark && CHART_MARK_KINDS[mark.kind()];
+    if (!mark || !kind) throw new Error(`snapshot chart mark ${index} does not read`);
+    return { at: [mark.x(), mark.y()], kind };
+  });
+  return { flotsam, kept, told, decks, islands, taken, friendlies, charted, chartMarks };
 }

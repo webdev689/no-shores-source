@@ -3,7 +3,13 @@ import { test } from 'node:test';
 import { ASHORE_EVERY_MS, Ashore, placeOf } from './ashore.ts';
 import type { Reach } from './arrival.ts';
 
-const reach = (social: boolean): Reach => ({ social, continent: 'continent-1', coast: [], gatedFrom: [] });
+const reach = (social: boolean): Reach => ({
+  social,
+  continent: 'continent-1',
+  coast: [],
+  gatedFrom: [],
+  locked: false,
+});
 
 const SEAS = ['sea', 'sea--elite', 'sea--abyss'];
 

@@ -60,19 +60,29 @@ function currentNode(current: PassageCurrent, size: number): Node {
   };
 }
 
-/** What a sign says of the zone beyond, as lines: the mouth's goal over all (a Gauntlet's far mouth), its name, its
- *  depth, its deal, whether it lies on the public way, its foes' levels (in the loss's colour where they stand too far
- *  over the player) and its currents, `named` by their names alone on one line. */
+/** What a sign says of the zone beyond, as lines: the mouth's goal over all (a Gauntlet's far mouth), its name; its
+ *  kind, depth, foes' levels (in the loss's colour where they stand too far over the player) and whether it lies on the
+ *  public way, on one line; what its deal asks, and its currents, `named` by their names alone on one line. */
 function signLines(sign: OnwardSign, size: number, named = false): Child[] {
   const currents = named
     ? [sign.currents.length > 0 && words(sign.currents.map((current) => current.name).join(' · '), size, INK.faint)]
     : sign.currents.map((current) => currentNode(current, size));
+  const facts: Node = {
+    width: 'grow',
+    gap: 10,
+    wrap: true,
+    children: [
+      words(sign.kind, size, INK.word),
+      words(sign.depth, size, INK.faint),
+      sign.foes !== null && words(sign.foes, size, sign.hard ? INK.loss : INK.word),
+      sign.public && words(PUBLIC_WAY, size, INK.faint),
+    ],
+  };
   return [
     sign.goal !== null && { width: 'grow', text: { words: sign.goal, size, colour: INK.brassLit } },
     words(sign.name, size, INK.brassLit),
-    { width: 'grow', text: { words: `${sign.depth}. ${sign.deal}`, size, colour: INK.word } },
-    sign.public && { width: 'grow', text: { words: PUBLIC_WAY, size, colour: INK.faint } },
-    sign.foes !== null && words(sign.foes, size, sign.hard ? INK.loss : INK.word),
+    facts,
+    { width: 'grow', text: { words: sign.deal, size, colour: INK.word } },
     ...currents,
     sign.shut !== null && { width: 'grow', text: { words: sign.shut, size, colour: INK.loss } },
   ];
@@ -161,12 +171,6 @@ export class MouthsCardView {
           pressNode(routeId(route), said, route === this.route ? 'primary' : 'button', '', size),
         ),
       },
-      // Where each begin at a lamp lands: that lamp's zone of the mouth's lane, and its foes.
-      ...choice.starts.flatMap(({ zone }) =>
-        zone
-          ? [{ width: 'grow' as const, text: { words: zone.words, size, colour: zone.hard ? INK.loss : INK.faint } }]
-          : [],
-      ),
     ];
     return {
       width: 'grow',

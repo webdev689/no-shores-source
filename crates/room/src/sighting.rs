@@ -49,7 +49,8 @@ pub struct WaterHere {
 
 /// The sea as a hostile ship reads it.
 pub trait Chart {
-    /// Whether a ship may sail straight from one point to another: no land between, and no home water at the end.
+    /// Whether a ship may sail straight from one point to another: no land between, and no step into home waters, nor
+    /// within them but away from their coast.
     fn open(&self, from: [f64; 2], to: [f64; 2]) -> bool;
     /// Whether a friendly ship may: no land between, home waters or not.
     fn clear(&self, from: [f64; 2], to: [f64; 2]) -> bool {

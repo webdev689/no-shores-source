@@ -69,6 +69,8 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (its ships' slate), the Lattice its crystal's red
   lit a third again `#de3d49` (`CRYSTAL.red`). None darkens the parchment by more than 6 in lightness; two washes closer than 10 apart in
   CIEDE2000 are told apart by their hatching.
+  The Lantern Sea past its home waters' reach, 10 km from Overlook's coast by the coast field, is washed and hatched as
+  the Grey Tithe's, so a home band a cell or two wide lies along the coast.
   Each cell blends the sea within a cell of it (`washOf`), and the map samples between cells, so a border is
   soft over a cell or two and never stepped. The Lattice's waters are hatched over their wash with fine level lines in
   a dark crystal red (`#60141c` at 0.3), the Grey Tithe's with level lines in a dark slate (`#4a5563` at 0.3), each 7
@@ -89,7 +91,9 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Locked seas.** Every other island's sea, and its land, is darkened toward the ink by up to 0.42, softly at its
   edge (`shutCells` on the waters' grid, the land by its outline and its coast's island), and a padlock stands out at
   its label point, while it stands whole inside the map: the lock in the ink on a disc of the parchment ringed in the
-  ink (`paintLock`). A lock is never dropped for a name, and names keep clear of it.
+  ink (`paintLock`). A lock is never dropped for a name, and names keep clear of it. A locked sea is not sailed or
+  travelled into: a course whose end lies in one is refused ("That sea is locked."), and the route planner keeps a
+  4.8 km cell clear of every one (`SeaLock`, `lockedOut`; [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]).
 - **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the three
   holders' swatches (Home, Grey Tithe, The Lattice) and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
   its wash as the map shows it, over the map's parchment (`washedOver`), with the Tithe's and the Lattice's
@@ -107,12 +111,16 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]) is a faded anchor, in the lighter ink thinned,
   named "Ruins of <name>" (`ruinedPlaces`); until the waters are open every city is drawn as a port. A place's name
   shows only as the pointer comes within 16 px of its mark, on the card a region's name shows on, over the region's. The ship is a red-brown arrow along its heading, ringed in the parchment. The
-  voyage under way is inked as a dashed red-brown line. Found islands (`setIsles`) are marked in the lighter ink under
-  the words: a cove a small ring, an isle a wider ring with a tower in it (`paintIsle`, [[Island Drawing]]).
+  voyage under way is inked as a dashed red-brown line. Islands found, and every one standing in the water the ship
+  lies in (`setIsles`, `isleMarksOf`), are marked in the lighter ink under the words: a cove a small ring, an isle a
+  wider ring with a tower in it (`paintIsle`, [[Island Drawing]]).
 - **Other ships** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]).
   Every other player's ship in the sea's room, however far off, is a dot as on land (below), in their nameplate's
-  square's colour, over the words and under the ship's arrow (`chartMarksOf`, `dotInks`). The room sends the sea's
-  chart about once a second ([[Server]]); the map shows the last.
+  square's colour, over the words and under the ship's arrow (`chartMarksOf`, `dotInks`). Every hostile ship in the
+  water the ship lies in, sailing or still in a player's fight, is a hull under a sail in the Grey Tithe's dark slate `#4a5563`, edged in the parchment, beside
+  them (`paintHostile`; [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). The room sends the sea's chart, and with it each
+  player's hostile ships and standing islands in their water (`chart_marks`), about once a second ([[Server]]); the
+  map shows the last. A hostile ship's mark is drawn only whole on the map, never across its edge.
 - **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
@@ -166,17 +174,20 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   parchment's light and its edge with the other waters softly lined in the ink, where its cells' share crosses a half
   (`litCells`, on the page's grid of the waters, the world crate's rule judged once a 4.8 km cell). Its name, holder
   and level band are written small where the pointer came into it, kept inside the map ("The Elmwater · Grey Tithe ·
-  levels 8-14"), and painted again only as another water is lit, never at each move within one (they stand anew once the map is panned, zoomed or resized); they give way to the
+  levels 8-14"), the holder as the wash shows it under the pointer (the Lantern Sea past 10 km the Grey Tithe's), and
+  painted again only as another water is lit or the pointer crosses into another's hold of it, never at each move within one (they stand anew once the map is panned, zoomed or resized); they give way to the
   prompt while it asks. The ship's own water
   and land light nothing. Which water the ship and a course's end lie in is the exact rule's, the room's own
   (`WaterJudge`), never the grid's, which reads a coast's sea as land a cell from it. A course chosen whose planned end
-  lies in another water than the ship asks, and one whose end or ship's water is unknown asks nothing: on a card of parchment ringed in ink a quarter of the
-  way down the map and in its letters: "Travel to <water>?", its holder and level band, and "Yes <key> No <key>", each as the last device used names it (Enter and Escape, or the pad's A
+  lies anywhere at sea asks, in the ship's own water or another, and one whose end or ship's water is unknown asks
+  nothing, nor one no longer than the 400 m a travel lays the ship short of its end, which would leave it where it lies
+  (Set sail sails it): on a card of parchment ringed in ink a quarter of the
+  way down the map and in its letters: "Travel to <water>?", the holder at its end and its level band, and "Yes <key> No <key>", each as the last device used names it (Enter and Escape, or the pad's A
   and B)
   (`MapAsk`). Yes (the confirm key, the pad's A, or the card's press, which reads Travel while it asks) lowers the map
   and the ship travels to the water the prompt named, for the place chosen (a port or a node sailed for at its own
   point) ([[Sailing]], "Travel by the held map"); No (Escape, the pad's B) lets the prompt go and
-  keeps the course inked, to be sailed the long way with Set sail. A course within the ship's own water asks nothing.
+  keeps the course inked, to be sailed the long way with Set sail.
 - **The difficulty.** Beside Set sail the card offers the voyage's difficulty, Normal, Elite or Abyss
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or three
   levels higher, paying half again or twice the XP, Aurem and Vestiges. The difficulty picked is the voyage's only once

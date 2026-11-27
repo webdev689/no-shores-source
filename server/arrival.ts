@@ -9,6 +9,7 @@
  * comes from.
  */
 
+import islands from '../content/world/islands.json' with { type: 'json' };
 import { nodeRoom, passageRoom, seaRoom, startedAtSea } from './roomNames.ts';
 
 type Point = readonly [number, number];
@@ -31,6 +32,8 @@ export interface Reach {
   readonly continent: string;
   readonly coast: readonly Point[];
   readonly gatedFrom: readonly string[];
+  /** Whether its island has no name yet, so its sea is locked: no one comes ashore there from the sea. */
+  readonly locked: boolean;
 }
 
 /** A node as the bake's index lists it (`generated/nodes/index.json`). */
@@ -52,7 +55,14 @@ export function reachOf(
   const outline = continents.find((each) => each.id === node.continent)?.outline ?? [];
   const coast = outline.map(([x = 0, y = 0]): Point => [x, y]);
   const gatedFrom = index.filter((each) => each.gates?.includes(id)).map((each) => each.id);
-  return { social: node.kind === 'social' || node.kind === 'outpost', continent: node.continent, coast, gatedFrom };
+  const locked = !Object.hasOwn(islands, node.continent);
+  return {
+    social: node.kind === 'social' || node.kind === 'outpost',
+    continent: node.continent,
+    coast,
+    gatedFrom,
+    locked,
+  };
 }
 
 /** Where a kept character's ship lies, as the sea last kept it; null for none, or a character that does not read. */
@@ -93,7 +103,7 @@ export function arrives(
   // sea alone; one at Normal, from its island's tile, with the ship off that island's coast.
   if (startedAtSea(room)) {
     if (from === null || seaRoom(from) === null) return false;
-    const offIsland = !!ship && !!reach && toCoast(ship, reach.coast) <= LANDFALL_M;
+    const offIsland = !!ship && !!reach && !reach.locked && toCoast(ship, reach.coast) <= LANDFALL_M;
     return to.seas > 0 || to.playlist !== null || offIsland;
   }
   // A guild dungeon's run is entered from its guild's outpost alone and left back to it, at whatever tier it runs.
@@ -115,7 +125,7 @@ export function arrives(
   if (was && !inside(was) && was.seas === to.seas && reach?.gatedFrom.includes(was.id)) return true;
   // Ashore from the sea at the node's seas (a social space's from any), the ship off its island's coast.
   const seas = from ? seaRoom(from) : null;
-  if (seas === null || !reach || !ship || (!reach.social && seas !== to.seas)) return false;
+  if (seas === null || !reach || !ship || reach.locked || (!reach.social && seas !== to.seas)) return false;
   return toCoast(ship, reach.coast) <= LANDFALL_M;
 }
 
