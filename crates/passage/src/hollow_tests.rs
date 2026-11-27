@@ -25,6 +25,14 @@ fn hollows(weeks: core::ops::Range<u64>) -> impl Iterator<Item = (u64, Plan)> {
     })
 }
 
+/// The hollows of a run of weeks' webs a sweep checks, laid whole: every one on a full sweep, otherwise the first of
+/// each kind.
+fn swept_hollows(weeks: core::ops::Range<u64>) -> impl Iterator<Item = (u64, Plan)> {
+    let island = crate::island("continent-1").expect("Saltmere's passages");
+    let open = crate::tests::swept(weeks, |zone| matches!(zone.ground, crate::Ground::Open { .. }));
+    open.into_iter().filter_map(move |(week, number)| Plan::of(&Web::of(island, week), number).map(|plan| (week, plan)))
+}
+
 /// How far past the floor's ring a body may stand at most: the ring's half metre in, the wall's run and its lip,
 /// and the diagonal of the cell the ground ends at.
 const LIP_REACH_M: f64 = 0.5 + 5.0 + 2.0 + 2.0 * core::f64::consts::SQRT_2;
@@ -46,7 +54,7 @@ const DRIVEN_TICKS: u32 = 600;
 #[test]
 fn a_body_driven_at_a_hollows_wall_is_held_inside_its_bounds_by_the_ground() {
     let mut escaped = Vec::new();
-    for (week, plan) in hollows(2_900..2_916) {
+    for (week, plan) in swept_hollows(2_900..2_916) {
         let Laid::Open(hollow) = &plan.ground else { continue };
         // From the floor nearest every fourth point of the floor's ring, toward it and aslant, walking, running and
         // jumping: a body slides up a wall aslant, so only the ground's end holds it.

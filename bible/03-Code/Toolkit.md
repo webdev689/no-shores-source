@@ -23,7 +23,11 @@ when to install it and what each session does at its start and end; this note sa
 - After any change to the kit, run `bash tools/claude-toolkit/check-tools.sh --worker` and expect no FAIL line. It
   checks the repository it sits in (its main checkout), unless `REPO_DIR` names another.
 - After editing a file, run its own lint, types or clippy (`npx eslint <file>`, `npm run -s types`,
-  `cargo clippy -p <crate> --all-targets`) before the full check.
+  `cargo clippy -p <crate> --all-targets`).
+- A session or worker tests what it changed and runs `cargo xtask repo`, never the whole `cargo xtask check`: the tests
+  of each crate changed (`cargo test -p <crate>`), the page's of each file changed (`node --test <files>`). CI runs the
+  whole check on the pull request, and that is what says a change is done
+  ([[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]).
 - The install sets `NODE_USE_ENV_PROXY=1` in the settings' `env`, and `cargo xtask check` sets it for its steps:
   Node's fetch ignores `HTTPS_PROXY` without it, and the page's tests fetch ship meshes from R2. check-tools fetches
   one; its FAIL means the environment's network rule refuses R2, so start the session in `no-shores-source`.
