@@ -11,6 +11,9 @@ export interface Picture {
   readonly root?: readonly [number, number];
   /** Drawn level by the forge, its business end to the right (a weapon's large picture): never turned to lay it so. */
   readonly level?: boolean;
+  /** Drawn standing by the forge, from the front (an armour piece's, a cloak's or clothes' large picture): never laid
+   *  on a tile's diagonal, however tall. */
+  readonly upright?: boolean;
   /** The palette it keeps to (a weapon's large picture): shrunk to its box, it is cut at half cover and snapped to it
    *  again, so what shows is the palette's colours, as the figure's are. */
   readonly snap?: (pixels: Uint8ClampedArray) => void;

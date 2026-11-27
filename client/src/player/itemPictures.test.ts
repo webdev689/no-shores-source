@@ -28,7 +28,7 @@ const looks: ForgeLooks = {
       },
     },
   },
-  dye: ['staff_iron'],
+  dye: ['staff_iron', 'shirt_long_v'],
   metal: ['staff_iron'],
 };
 const SKIN = [200, 150, 120] as const;
@@ -197,6 +197,21 @@ test('a staff’s large picture takes its metal’s ramp on its greys, as the fi
   const pictures = new ItemPictures(forgeOver({ '@art/weapons/staff_iron.png': staff }, dyes));
   const drawnStaff = await drawn(pictures, item('staff', 0));
   assert.deepEqual(texels(drawnStaff), [[...(ramp[8] ?? [])], [...GRIP], [...(ramp[8] ?? [])], [...POMMEL]]);
+});
+
+test('a piece of clothing the forge draws large is its large picture, upright and dyed as its layer; else the cut-out', async () => {
+  const ramp: Rgb[] = Array.from({ length: 16 }, (unused, step) => [step * 10, 0, step * 5] as const);
+  const dyes = { palette: [], clothing: { White: ramp }, armour: {} };
+  const grey = [136, 136, 136] as const;
+  // A shirt three texels wide and five tall, much taller than wide, its collar a band of leather.
+  const shirt = strip([GRIP, GRIP, GRIP, ...Array.from({ length: 12 }, () => grey)], 3);
+  const pictures = new ItemPictures(forgeOver({ '@art/armour/male/shirt_long_v.png': shirt }, dyes));
+  const drawnShirt = await drawn(pictures, item('torso', 3));
+  assert.deepEqual([drawnShirt?.width, drawnShirt?.height, drawnShirt?.upright], [3, 5, true]);
+  assert.deepEqual(texels(drawnShirt).slice(2, 4), [[...GRIP], [...(ramp[8] ?? [])]], 'its greys on its dye, as worn');
+  // On a body the forge draws no large picture for, the shirt is what it adds to the figure.
+  const cutOut = await drawn(new ItemPictures(forgeOver({}, dyes)), item('torso', 3));
+  assert.deepEqual([cutOut?.upright, texels(cutOut)], [undefined, [[...(ramp[8] ?? [])]]]);
 });
 
 test('pictures past the most kept are let go, those asked for least lately first', { timeout: 20000 }, async () => {

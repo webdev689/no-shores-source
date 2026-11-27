@@ -104,6 +104,7 @@ code:
   - client/src/combat/weapons.ts#weaponsOf
   - client/src/combat/weaponPicture.ts#lengthwise
   - client/src/player/itemPictures.ts#ItemPictures
+  - client/src/player/itemPictures.ts#wornArt
   - client/src/player/picture.ts#overlapped
   - client/src/player/iconFit.ts#shrunk
   - client/src/combat/statusIcons.ts#StatusRow
@@ -815,10 +816,17 @@ never while a press is held. Each press is an ask the room answers.
   first's top edge a fifth of the way along it. Each is dyed as the figure's layer is, a faction's colour too, and
   snapped to the palette; a greatsword shows its metal's sword. Until every piece in hand has a large picture, a
   loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip, and one in
-  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is fitted to its place as
+  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. An armour piece, a cloak or
+  clothes is the forge's large picture of what it wears on the player's body
+  ([[Armour, Cloaks and Clothes Are Forged Large for the Gear Screens]]): standing, seen from the front, its slot's
+  pieces as one (a torso's cuirass and pauldrons, legs' greaves and boots, a shirt and what goes over it, breeches and
+  shoes), a pair of gauntlets side by side, a cloak's collar, clasp and lining toward the eye; dyed as the figure's
+  layer is (its metal, its dye, a faction's colour, the dye worn) and snapped to the palette. Until the forge publishes
+  it, it is the figure's cut-out. Each is fitted to its place as
   Enhanced Plus fits its icons, and one larger than its place is shrunk by an area average, each screen pixel the mean
-  of the pixels it covers, a weapon's large picture then cut at half cover and snapped to the palette again; an icon
-  long and thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny lays weapons, so it reads. Where
+  of the pixels it covers, a large picture then cut at half cover and snapped to the palette again; an icon long and
+  thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny lays weapons, so it reads, but never one
+  the forge drew standing. Where
   the forge draws nothing of a piece, its slot shows its name's initials. A Vestige is its crystal, still and turned
   broadside, 18 pixels square (12 where it is drawn at 24), its halo see-through ([[Gear]], "Drops"). Each island's
   resource, the Ammo box and the Ammo crate are baked from Blender models at 18 cells, each resource mostly in its

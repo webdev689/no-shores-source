@@ -220,12 +220,12 @@ export function boxWithin(picture: Pixels, width: number, height: number): numbe
 
 /** A picture in a box `box` CSS pixels a side, its clear margin trimmed and fitted as Enhanced Plus fits its icons
  *  (`fitIcon`), never past `cap` to a pixel of its own; an icon long and thin is laid on the box's diagonal, as a
- *  weapon is, unless capped. Drawn at the screen's own pixels: grown by whole pixels, then smoothed down once only
- *  where it must be; one larger than its box (a weapon's large picture) shrunk to it by an area average instead. */
+ *  weapon is, unless capped or drawn upright. Drawn at the screen's own pixels: grown by whole pixels, then smoothed
+ *  down once only where it must be; one larger than its box (a large picture) shrunk to it by an area average instead. */
 export function pictureNode(picture: Pixels, box: number, ratio: number, cap?: number): Node {
   const [, , width, height] = boundsOf(picture);
   const key = `${nameOf(picture)} ${box} ${ratio} ${cap ?? 'icon'}`;
-  const laid = cap === undefined ? diagonalFit(width, height, box, ratio) : null;
+  const laid = cap === undefined && !picture.upright ? diagonalFit(width, height, box, ratio) : null;
   if (laid)
     return {
       width: box,

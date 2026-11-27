@@ -4,6 +4,7 @@ status: live
 code:
   - tools/forge/tools/sprite-forge/layers.py
   - tools/forge/tools/sprite-forge/weaponart.py
+  - tools/forge/tools/sprite-forge/armourart.py
   - tools/forge/tools/sprite-forge/fanout.py
   - tools/forge/tools/forgeViewer/pack.py
   - tools/forge_publish.py#publish
@@ -89,6 +90,17 @@ business end to the right. Each is made, lit, graded (a bow's grip on the armour
 laid grey for its dye as the man's layer in hand is, so the page colours it as it colours that layer. They are published as `@art/weapons/<layer>.png`; a left hand's twin
 (`dagger_iron_l`) is its right hand's picture.
 
+It draws armour, cloaks and clothes large in the same way for the gear screens (`armourart.py`,
+[[Armour, Cloaks and Clothes Are Forged Large for the Gear Screens]]), on each body: every armour set's slots where
+the set has their pieces (`head_<set>`, the helm; `torso_<set>`, the cuirass with its pauldrons; `arms_<set>`, the
+gauntlets; `legs_<set>`, the greaves and boots), and each garment look an item wears alone in its slot
+(`specs/armour-art.json`: a shirt, a shirt and what goes over it, breeches or a skirt and what is on the feet, and the
+two cloaks), its garments joined by `+`. Each is the figure's own layers, made, lit and graded as their strips are, at
+the weapons' four times the body's pixels a metre, worn standing and seen from the front as the strips are (looking
+down 8 degrees), the body left out; a slot's layers are joined by depth, and a pair of gauntlets is brought side by
+side, 6 texels apart. They are published as `@art/armour/<body>/<look>.png`. A page test holds the garment looks to
+those the gear wears (`armourArt.test.ts`).
+
 The Lattice's foes are drawn by it, with their own looks and moves, from beside it: [[Lattice]].
 
 ## Where it lives
@@ -149,10 +161,13 @@ python -I tools/sprite-forge/forgepoints.py --body male
 A layer takes its set's or metal's own grades by its name (`layers.set_of`), a pair's left twin (`_l`) and a short
 sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
-The `forge` workflow renders the Arts' birds, the weapons drawn large, the material nodes and the first person's flask,
-and adds them to what is published whenever `artbirds.py`, `weaponart.py`, the item forge's models (`items/`, which
+The `forge` workflow renders the Arts' birds, the weapons and the armour, cloaks and clothes drawn large, the material
+nodes and the first person's flask, and adds them to what is published whenever `artbirds.py`, `weaponart.py`,
+`armourart.py` or its spec, the item forge's models (`items/`, which
 the nodes are laid from), `itempics.py`, the nodes' rows, `fpflask.py`, the flask's specs or their pinned packages
-change on main, or when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends with the
+change on main, or when a run is asked for on a branch. The armour, cloaks and clothes, its longest step (19 minutes on
+the owner's PC), are drawn only when `armourart.py` or its spec is among what was pushed, or a run asks for them
+(`armour`); what was drawn before stays published. The job that renders holds no secret and stages them, and its log ends with the
 manifest; a second job uploads them with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes the
 manifest into `content/forge/renders.json`.
 A run asked for may also draw the first person's dagger and sword blade layers (`firstperson`: runs split by `;`, each
