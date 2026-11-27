@@ -489,12 +489,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       .catch(() => void (onTheSea(playing.flow) && sea.sailAlone(sail, PLANNED_PACE)));
   };
 
-  const helm = {
-    mark: (id: string) => landings.click({ kind: 'mark', id }),
-    groundAt,
-    passageMap: passages.map,
-    mouthRuns: passages.mouthRuns,
-  };
+  const helm = { mark: (id: string) => landings.click({ kind: 'mark', id }), groundAt, passages };
   const { openMap, manage, leaveHelm, takeHelm, stopOrResume, choose } = helmControls(playing, input, helm);
 
   const respawn = () => (playing.foot ?? playing.sea?.boarding.foot)?.respawn();

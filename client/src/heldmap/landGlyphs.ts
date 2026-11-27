@@ -23,16 +23,7 @@ export type KeeperGlyph =
   | 'veiled';
 export type MissionGlyph = 'kindle' | 'hold' | 'hunt' | 'reckoning' | 'gauntlet' | 'ambush' | 'sever';
 export type SiteGlyph =
-  | 'landing'
-  | 'event'
-  | 'gate'
-  | 'crossing'
-  | 'door'
-  | 'passage'
-  | 'objective'
-  | 'foes'
-  | 'beacon'
-  | MissionGlyph;
+  'landing' | 'event' | 'gate' | 'crossing' | 'door' | 'passage' | 'objective' | 'foes' | 'beacon' | MissionGlyph;
 export type ResourceGlyph = 'resource';
 export type LandGlyph = KeeperGlyph | SiteGlyph | ResourceGlyph;
 

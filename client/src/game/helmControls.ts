@@ -13,8 +13,10 @@ import type { NodeInfo } from './worldData.ts';
 interface HelmGame {
   readonly mark: (id: string) => void;
   readonly groundAt: (x: number, y: number) => number | null;
-  readonly passageMap: () => LandSheet | null;
-  readonly mouthRuns: (node: NodeInfo) => readonly string[];
+  readonly passages: {
+    readonly map: () => LandSheet | null;
+    readonly mouthRuns: (node: NodeInfo) => readonly string[];
+  };
 }
 
 /** The helm's and the map's controls over `playing`, the pointer `input` locked to walk the deck. */
@@ -29,12 +31,12 @@ export function helmControls(playing: Playing, input: { lock(): void }, game: He
     else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen) {
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
-      const passage = game.passageMap();
+      const passage = game.passages.map();
       // In a dungeon the same key opens its own map; in a passage zone, under ground or not, the web's.
       if (!passage && foot.dungeon) DUNGEON_MAP.toggle();
       else if (passage || !foot.mapless)
         playing.helmMap.openLand(
-          passage ?? landSheetOf(foot.node, playing.landmass, groundAt, game.mouthRuns(foot.node)),
+          passage ?? landSheetOf(foot.node, playing.landmass, groundAt, game.passages.mouthRuns(foot.node)),
         );
       else return;
       document.exitPointerLock();
