@@ -1,5 +1,6 @@
 use crate::files::repo_root;
 use crate::shaders;
+use std::path::Path;
 use std::process::Command;
 
 /// One toolchain step: a name for the report, a program and its arguments, and the parts of the check it runs in.
@@ -33,6 +34,31 @@ impl Part {
     }
 }
 
+/// How much of the Rust tests a run takes, and where they are built.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Share<'a> {
+    /// Every test, built and run here.
+    All,
+    /// Every test built into this nextest archive and none run, so CI compiles them once for the runners that share
+    /// them.
+    Archive(&'a str),
+    /// That share (`1/2`), built here, or run from the archive another runner built.
+    Slice(&'a str, Option<&'a str>),
+}
+
+impl<'a> Share<'a> {
+    /// The share the words after `check rust` name: none, `archive <file>`, `1/2`, or `1/2 <archive>`.
+    pub fn named(words: &[&'a str]) -> Option<Self> {
+        match *words {
+            [] => Some(Self::All),
+            ["archive", file] => Some(Self::Archive(file)),
+            [slice] if slice.contains('/') => Some(Self::Slice(slice, None)),
+            [slice, file] if slice.contains('/') => Some(Self::Slice(slice, Some(file))),
+            _ => None,
+        }
+    }
+}
+
 const ALL: &[Part] = &[Part::Rest, Part::Rust, Part::Page];
 const REST: &[Part] = &[Part::Rest];
 
@@ -48,7 +74,7 @@ enum Program {
 }
 
 /// The toolchains' own checks, Rust and TypeScript side by side, in the order a failure is cheapest to read.
-const STEPS: [Step; 17] = [
+const STEPS: [Step; 18] = [
     Step { name: "messages (FlatBuffers)", program: Program::Npm, args: &["run", "-s", "schema"], parts: ALL },
     Step { name: "format (Rust)", program: Program::Cargo, args: &["fmt", "--all", "--check"], parts: REST },
     Step { name: "format (TypeScript)", program: Program::Npm, args: &["run", "-s", "format:check"], parts: REST },
@@ -64,7 +90,14 @@ const STEPS: [Step; 17] = [
     Step { name: "shaders (valid WGSL)", program: Program::Shaders, args: &[], parts: REST },
     Step { name: "tests (Rust)", program: Program::RustTests, args: &[], parts: &[Part::Rust] },
     // The files the page's tests read, written by these Rust tests: all of the messages', and three more. A test that
-    // writes one more is added here, or the page's part fails on the file it misses.
+    // writes one more is added here, or the page's part fails on the file it misses. They are built first in one go,
+    // side by side (protocol holds nothing but its library), then each crate's run with its own filter.
+    Step {
+        name: "tests' files (built)",
+        program: Program::Cargo,
+        args: &["test", "--locked", "--no-run", "-p", "protocol", "-p", "room", "-p", "room-wasm", "--lib"],
+        parts: &[Part::Page],
+    },
     Step {
         name: "tests' files (messages)",
         program: Program::Cargo,
@@ -106,21 +139,47 @@ const STEPS: [Step; 17] = [
 
 /// Runs each step and stops at the first that fails, naming it.
 pub fn run_all() -> Result<(), String> {
-    run_steps(|_| true, None)
+    run_steps(|_| true, Share::All)
 }
 
-/// Runs each step of one part of the check, and stops at the first that fails. `slice` (`1/2`) runs that share of the
-/// Rust tests alone, with nextest, so CI spreads them over runners.
-pub fn run_part(part: Part, slice: Option<&str>) -> Result<(), String> {
-    run_steps(|step| step.parts.contains(&part), slice)
+/// Runs each step of one part of the check, and stops at the first that fails. A share other than all of the Rust
+/// tests takes nextest: CI builds them once into an archive and spreads running it over runners.
+pub fn run_part(part: Part, share: Share) -> Result<(), String> {
+    run_steps(|step| step.parts.contains(&part), share)
 }
 
 /// Runs each step whose name starts with `prefix`, and stops at the first that fails.
 pub fn run_matching(prefix: &str) -> Result<(), String> {
-    run_steps(|step| step.name.starts_with(prefix), None)
+    run_steps(|step| step.name.starts_with(prefix), Share::All)
 }
 
-fn run_steps(chosen: impl Fn(&Step) -> bool, slice: Option<&str>) -> Result<(), String> {
+/// nextest's arguments for the Rust tests: built and run here, archived for other runners, or one share of them run
+/// from an archive, whose tests read this checkout's files as they would where it was built.
+fn rust_tests(share: Share, root: &Path) -> Vec<String> {
+    let root = root.display().to_string();
+    let mut args = vec!["nextest", "run"];
+    match share {
+        Share::Archive(file) => {
+            return words(&["nextest", "archive", "--workspace", "--locked", "--archive-file", file]);
+        }
+        Share::Slice(_, Some(file)) => args.extend(["--archive-file", file, "--workspace-remap", &root]),
+        Share::All | Share::Slice(_, None) => args.extend(["--workspace", "--locked"]),
+    }
+    args.push("--no-fail-fast");
+    let partition;
+    if let Share::Slice(slice, _) = share {
+        partition = format!("slice:{slice}");
+        args.extend(["--partition", &partition]);
+    }
+    words(&args)
+}
+
+/// Arguments as the command takes them.
+fn words(args: &[&str]) -> Vec<String> {
+    args.iter().map(|&arg| arg.to_owned()).collect()
+}
+
+fn run_steps(chosen: impl Fn(&Step) -> bool, share: Share) -> Result<(), String> {
     let root = repo_root();
     if !root.join("node_modules").is_dir() {
         println!("== the TypeScript tools are not installed: run `npm ci` first");
@@ -128,19 +187,18 @@ fn run_steps(chosen: impl Fn(&Step) -> bool, slice: Option<&str>) -> Result<(), 
     }
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let nextest = Command::new(&cargo).args(["nextest", "--version"]).output().is_ok_and(|out| out.status.success());
-    if slice.is_some() && !nextest {
-        println!("== a share of the Rust tests needs cargo-nextest: `cargo install cargo-nextest --locked`");
+    if share != Share::All && !nextest {
+        println!(
+            "== a share of the Rust tests, or their archive, needs cargo-nextest: `cargo install cargo-nextest --locked`"
+        );
         return Err("cargo-nextest".to_owned());
     }
     for step in STEPS.iter().filter(|step| chosen(step)) {
-        let owned = |args: &[&str]| args.iter().map(|&arg| arg.to_owned()).collect::<Vec<_>>();
-        let (program, mut args) = match step.program {
-            Program::Cargo => (cargo.as_str(), owned(step.args)),
-            Program::Npm => ("npm", owned(step.args)),
-            Program::RustTests if nextest => {
-                (cargo.as_str(), owned(&["nextest", "run", "--workspace", "--locked", "--no-fail-fast"]))
-            }
-            Program::RustTests => (cargo.as_str(), owned(&["test", "--workspace", "--locked", "--no-fail-fast"])),
+        let (program, args) = match step.program {
+            Program::Cargo => (cargo.as_str(), words(step.args)),
+            Program::Npm => ("npm", words(step.args)),
+            Program::RustTests if nextest => (cargo.as_str(), rust_tests(share, &root)),
+            Program::RustTests => (cargo.as_str(), words(&["test", "--workspace", "--locked", "--no-fail-fast"])),
             Program::Shaders => {
                 println!("== {}: naga over {}", step.name, shaders::WRITTEN);
                 let problems = shaders::problems_written(&root);
@@ -154,9 +212,6 @@ fn run_steps(chosen: impl Fn(&Step) -> bool, slice: Option<&str>) -> Result<(), 
                 continue;
             }
         };
-        if let (Program::RustTests, Some(slice)) = (step.program, slice) {
-            args.extend(["--partition".to_owned(), format!("slice:{slice}")]);
-        }
         println!("== {}: {program} {}", step.name, args.join(" "));
         // Node's fetch ignores HTTPS_PROXY without NODE_USE_ENV_PROXY, and the page's tests fetch from R2.
         let passed = Command::new(program)
