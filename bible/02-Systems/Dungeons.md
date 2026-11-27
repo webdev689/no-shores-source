@@ -5,7 +5,7 @@ code:
   - crates/dungeon/src/lib.rs#of_patrol
   - crates/room/src/playlist_run.rs#playlist_run
   - crates/dungeon/src/lib.rs#style_of
-  - crates/dungeon/src/lib.rs#name
+  - crates/dungeon/src/names.rs#named
   - crates/dungeon/src/styles.rs#STYLES
   - crates/dungeon/src/dungeon.rs#Dungeon
   - crates/dungeon/src/block.rs#BlockLayout

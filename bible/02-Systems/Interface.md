@@ -9,7 +9,7 @@ code:
   - client/src/game/seaScreen.ts#seaLayer
   - client/src/game/seaLandings.ts#landingAskNode
   - client/src/game/islandPanel.ts#islandPanelNode
-  - client/src/game/islandPanel.ts#outpostsNode
+  - client/src/game/islandFrame.ts#drawFrame
   - client/src/game/playlistParts.ts#crestOf
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox

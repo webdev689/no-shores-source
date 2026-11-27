@@ -301,7 +301,6 @@ export class RoomHost extends DurableObject<Env> {
     const reached = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
     const passage = passageRoom(name);
     if (reached?.guild) this.keeper.forGuild(reached.guild);
-    // A region's dungeon's run takes only a character come from the sea off its region (`arrives`).
     const region = regionDungeonRoom(name);
     const judged = (reached !== null && !tested) || passage !== null || region !== null;
     const reach =
