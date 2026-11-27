@@ -239,7 +239,10 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     keeps no stall, a sealed letter on a slate coin, the blue of his vest toward the ink; each faction's coin in its
     cloth with its banner's emblem (the Stormcallers' bolt, the Lamplighters' flame over a lamp, the Veiled's crescent
     and star). Each site: a landing's chevrons, a public event's red-brown diamond, a gate's open arch and a sealed
-    door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
+    door's barred one; a way across to another of the island's patrol zones an ink coin with an arrow out along a
+    dashed way, its zone named beside it; a sealed door that is one of the passages' mouths ([[Passages]]) a passage
+    gate, the open arch on the route's red-brown with a chevron down in it
+    ([[The Patrol Map's Legend Names Each Way Across and the Passage Gates]]); an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
     a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
     where they look.
   - **What moves on it** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]): every other player in the room the player stands in, a patrol zone's or a social
@@ -257,7 +260,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     never painted again for them, and the gauntlets cover them as they cover the coin.
   - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
     (keeping its corner while it can), the names then laid again clear of it: the land's name at its head; then each
-    glyph the land holds, once, beside what it is ("The Mage", "Public event"), in columns of at most seven, and the
+    glyph the land holds beside what it is ("The Mage", "Public event"), once for each name its marks carry (each way
+    across by its zone: "To the Gullwing Vale"; "Passage gate" apart from "Sealed door"), in columns of at most seven, and the
     player's arrow, "You", then "Your company" and "Other players" while the map shows one; under them a bar
     of the ground's length at the map's zoom ("25 m").
   - **Other land** (an island's): its ground, edge and landing.
