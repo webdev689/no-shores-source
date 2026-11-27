@@ -144,16 +144,46 @@ const crestsOver = (banner: PlaylistBanner, size: TileSize): Node[] => {
 };
 
 /** Its glyphs in a row at the tile's head, a padlock first while it is shut. Nine fit a tile at its narrowest; more
- *  wrap onto a second row under the first, never past the tile's edge. */
-const glyphsNode = (entry: IslandEntry): Node => ({
-  width: 'grow',
-  gap: 4,
-  alignX: 'end',
-  wrap: true,
-  children: [
-    entry.shut !== null && iconNode('locked', 24),
-    ...entry.glyphs.map((glyph) => ({ ...iconNode(glyph.icon, 24, glyph.tones), ...(glyph.dim && { opacity: 0.4 }) })),
-  ],
+ *  wrap onto a second row under the first, never past the tile's edge. The pointer on one says what it means, as a
+ *  player asked, in a card over it. */
+function glyphsNode(ui: Interface, id: string, entry: IslandEntry): Node {
+  // The tile takes the pointer, so a glyph is under it where the tile is and the pointer is in the glyph's box.
+  const under = (glyphId: string) => {
+    const [box, spot] = [ui.boxOf(glyphId), ui.pointerAt];
+    return (
+      ui.hovered(id) &&
+      !!box &&
+      !!spot &&
+      spot.x >= box.x &&
+      spot.y >= box.y &&
+      spot.x < box.x + box.width &&
+      spot.y < box.y + box.height
+    );
+  };
+  const glyph = (key: string, icon: Node, says: string): Node => {
+    const glyphId = `${id}:glyph:${key}`;
+    return { ...icon, id: glyphId, children: under(glyphId) ? [glyphCard(says)] : [] };
+  };
+  return {
+    width: 'grow',
+    gap: 4,
+    alignX: 'end',
+    wrap: true,
+    children: [
+      entry.shut !== null && glyph('locked', iconNode('locked', 24), `Shut: ${entry.shut}`),
+      ...entry.glyphs.map((each, place) =>
+        glyph(String(place), { ...iconNode(each.icon, 24, each.tones), ...(each.dim && { opacity: 0.4 }) }, each.says),
+      ),
+    ],
+  };
+}
+
+/** What a glyph means, in a small dark card over it, kept on the screen and never clipped by its tile. */
+const glyphCard = (says: string): Node => ({
+  padding: [5, 8],
+  fill: 'rgba(8,9,12,0.88)',
+  float: { to: 'parent', anchor: [0.5, 1], at: [0.5, 0], y: -6, z: 30, clipped: false, kept: true },
+  children: [said(says, { colour: TONES.word })],
 });
 
 /** One entry's tile: its scene, its glyphs, and at its foot its name over its levels; a click does what it does, and
@@ -192,7 +222,7 @@ function entryTile(
       {
         ...WITHIN,
         children: [
-          glyphsNode(entry),
+          glyphsNode(ui, id, entry),
           { height: 'grow' },
           {
             width: 'grow',

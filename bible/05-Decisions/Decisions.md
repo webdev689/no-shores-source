@@ -10,6 +10,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
+- [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]
 - [[The Music Repeats Less, Patrol Zones First]]
 - [[TypeScript and Rust]]
 - [[Server-Authoritative Multiplayer]]
