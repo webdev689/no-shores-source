@@ -15,5 +15,8 @@ serde.workspace = true
 serde_json.workspace = true
 libm.workspace = true
 
+[dev-dependencies]
+sweep = { path = "../sweep" }
+
 [lints]
 workspace = true
