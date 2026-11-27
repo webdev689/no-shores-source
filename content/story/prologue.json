@@ -2,7 +2,7 @@
   "scenes": {
     "sighted": [
       { "who": "lookout", "say": "Sails off the bow!", "kind": "bark", "emote": "alert" },
-      { "who": "bosun", "say": "Three! No colours!", "kind": "bark", "emote": "alert" },
+      { "who": "bosun", "say": "Three! No lights!", "kind": "bark", "emote": "alert" },
       { "who": "mate", "say": "Running dark in a storm like this? They're not here to trade.", "emote": "anger" },
       { "who": "gunner", "say": "Guns are run out both sides, Captain. Say the word.", "emote": "alert" }
     ],

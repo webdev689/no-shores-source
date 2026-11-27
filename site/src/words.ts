@@ -142,7 +142,7 @@ const WORLD = {
   'world.expanseHead': 'The Pale Expanse',
   'world.expanseAlt': 'Open sea under the stars, and a burned port smoking on a far coast.',
   'world.titheHead': 'The Grey Tithe',
-  'world.titheAlt': 'Grey, unmarked sails closing out of the mist on a lone ship.',
+  'world.titheAlt': 'Grey sails closing out of the mist on a lone ship.',
   'world.overlookHead': 'Overlook',
   'world.ambushHead': 'The ambush',
   'world.ambushAlt': 'A huge dark flagship beside a smaller ship broken in two and burning, under a red sky.',

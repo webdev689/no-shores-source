@@ -70,7 +70,7 @@ function expanse(): Sheet {
   return sheet;
 }
 
-/** The Grey Tithe: grey, unmarked sails closing out of the mist on one ship with its lantern lit. */
+/** The Grey Tithe: grey sails closing out of the mist on one ship with its lantern lit. */
 function greyTithe(): Sheet {
   const sheet = makeSheet(WIDE, TALL);
   const horizon = 100;

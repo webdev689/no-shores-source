@@ -19,6 +19,21 @@ of several chapters, each chapter found once, through the world, through a quest
 menu's Compendium ([[Interface]], "Compendium"). The rules keep what each player has found; the page shows it, and keeps
 what they have read.
 
+## The mystery
+
+Behind the lore stands one mystery ([[Raum's Lore Is Adapted Into One Mystery]]): **the Axis**, a name given by the
+people who have witnessed it. A perfect black shape that should not exist, turning on axes it should not have, it
+changes whatever it touches: the crystal that overtakes the living, the islands rewritten, history garbled. Those it
+takes are placed in a sort of peaceful state, their consciousness intact. It is a benevolent force that does not
+understand how it is transforming the world and its people
+([[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]). The call in
+the deep is not the Axis.
+
+The game shows it and explains almost none of it
+([[The Game Shows the Mystery and Explains Almost None of It]]). The prologue names it nowhere. The lore names it
+once, in Soundings' "The Green", where a man of Gullwing kneels into the crystal smiling and says *the Axis* would
+keep them, his eyes still moving behind the red. How long it stays unseen is open.
+
 ## The file
 
 `content/lore/lore.json` holds:
@@ -58,6 +73,9 @@ The lore's words keep to the owner's: no em or en dashes; and every bold and ita
 set in and a break alone, or a check fails.
 How they are written, detailed and shown rather than explained:
 [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
+The Grey Tithe's ships fly their colours and flag, grey canvas under the balance, and the lore says so: the tally
+ships fly the balance at the masthead as every Tithe ship does
+([[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]]).
 
 The Breaches' category, "The Breaches", holds *Soundings* (deep teal, the spire), the Drowned Vale's ten chapters: one
 at each of its encounters' first clear and the Descent's, and one in each hidden chest (`found` of kind `breach`, by

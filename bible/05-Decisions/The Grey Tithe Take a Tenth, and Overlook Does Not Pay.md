@@ -38,6 +38,10 @@ status: in force
 
 Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: there are no pirates for the Tithe to hunt.
 
+Replaced in part by [[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]]:
+the Tithe's ships fly their colours and flag, grey canvas under the balance. The opening's ships are unknown because
+they come running dark through the storm, with no lantern lit to show their flag.
+
 The owner's answers on it:
 
 - [[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]]

@@ -28,7 +28,7 @@ const PROP_FLOATS = 16;
 /** No lamps and nothing drawn, shared, so a place with no props makes nothing a frame. */
 const NO_LAMPS: readonly LampPlace[] = [];
 const NONE_DRAWN: readonly [EventProp, Made, number][] = [];
-/** The props whose canvas is the Tithe's unmarked grey, as its sails are (its banner, its airship's); every other
+/** The props whose canvas is the Tithe's grey, as its sails' is (its banner, its airship's); every other
  *  canvas is oiled tan. */
 const GREY_CANVAS: ReadonlySet<EventProp['module']> = new Set<PropModule>(['tithe-banner', 'tithe-airship']);
 
