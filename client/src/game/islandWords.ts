@@ -3,6 +3,8 @@
 // Dungeons, missions, world boss and outpost, each with its levels, its state and what a click on it does, in words
 // short enough for a tile. The day's and week's draws (`activities.ts`) add what is on there today and this week;
 // before they are read it says what the island holds alone.
+import type { Point2 } from '../overworld/ground.ts';
+import { nearestRegion, regionHolds, regionWords } from '../overworld/regions.ts';
 import type { Activities, Gates } from './activities.ts';
 import { type IconName, modifierIcon } from './journalIcons.ts';
 import { levelWords } from './activityWords.ts';
@@ -296,20 +298,26 @@ function playlistBanner(city: string, facts: IslandFacts): PlaylistBanner {
   };
 }
 
-/** The panel over `landmass`, `docked` at its port or gone ashore on its coast. A desolate city's social space is no
- *  landing and is listed nowhere. */
+/** The panel over `landmass`, `docked` at its port or gone ashore on its coast. With the `ship`'s place, an island
+ *  cut into regions shows the region it lies off (whose centre is nearest): its places, and the port and the Playlist
+ *  only where it holds the port. A desolate city's social space is no landing and is listed nowhere. */
 export function islandPanelOf(
-  landmass: Pick<Landmass, 'id' | 'plan' | 'nodes'>,
+  landmass: Pick<Landmass, 'id' | 'plan' | 'nodes' | 'regions'>,
   docked: boolean,
   facts: IslandFacts,
+  ship?: Point2,
 ): IslandPanel {
   const island = ISLANDS[landmass.id] ?? landmass.plan?.name ?? 'The island';
-  const port = docked ? portEntry(landmass) : null;
+  const regions = landmass.regions ?? [];
+  const region = ship ? nearestRegion(regions, ship) : null;
+  const harbour = landmass.plan?.harbour ?? null;
+  const portHere = !region || (harbour !== null && nearestRegion(regions, harbour) === region);
+  const port = docked && portHere ? portEntry(landmass) : null;
   const city = docked && port && landmass.plan ? landmass.plan.id : null;
   const normal = facts.activities?.bands[landmass.nodes[0]?.continent ?? landmass.id]?.[0];
   const groups = GROUPS.flatMap(({ kind, title, line }) => {
     const entries = landmass.nodes
-      .filter((node) => node.kind === kind)
+      .filter((node) => node.kind === kind && (!region || regionHolds(regions, region, node.id)))
       .map((node): IslandEntry => {
         const shut = shutOf(node);
         if (kind === 'patrol') return patrolEntry(node, facts, shut);
@@ -319,9 +327,11 @@ export function islandPanelOf(
       });
     return entries.length ? [{ title, entries }] : [];
   });
+  const named = region ? regionWords(region.name) : null;
+  const ashore = named ? `Ashore on ${named}` : `Ashore on the coast of ${island}`;
   return {
     title: island,
-    where: docked && port ? `Docked at ${port.name}` : `Ashore on the coast of ${island}`,
+    where: port ? `Docked at ${port.name}${named ? `, on ${named}` : ''}` : ashore,
     levels: normal ? shortBand(normal) : null,
     port,
     playlist: city ? playlistBanner(city, facts) : null,

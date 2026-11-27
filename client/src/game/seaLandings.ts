@@ -7,6 +7,7 @@
 // ship docked sails out from its berth. And the confirmation's card, in the middle of the view.
 import type { Point2 } from '../overworld/ground.ts';
 import { coastPoint } from '../overworld/islandView.ts';
+import { nearestRegion, regionWords } from '../overworld/regions.ts';
 import type { Pick as Picked } from '../overworld/overworldPick.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -18,7 +19,15 @@ import { berthOf } from './berths.ts';
 import { type Berthed, Docking } from './docking.ts';
 import { isleWords } from './isleLaw.ts';
 import type { IsleHeld, Isles } from './isles.ts';
-import { askWords, type ClickContext, clickAtSea, inReach, LandingCourse, type LandingAim } from './landingAsk.ts';
+import {
+  askWords,
+  type ClickContext,
+  clickAtSea,
+  inReach,
+  LandingCourse,
+  type LandingAim,
+  landingOn,
+} from './landingAsk.ts';
 import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import type { Sea } from './sea.ts';
@@ -38,16 +47,22 @@ export interface Asking {
  *  the island the ship lies off, to choose where, answering whether it was. */
 export interface LandingsGame {
   readonly sea: () => Sea | null;
-  readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'outline' | 'heightAt'>;
+  readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'outline' | 'heightAt' | 'regions'>;
   readonly isles: Isles;
   readonly free: () => boolean;
   readonly land: (aim: LandingAim) => boolean;
 }
 
-/** What a click is judged against: the open landmass's living port, its coast's name, and the sea's islands built. */
-export function clickContext(landmass: Pick<Landmass, 'id' | 'plan'>, isles: Pick<Isles, 'all'>): ClickContext {
+/** What a click is judged against: the open landmass's living port, its coast's name, its regions, and the sea's
+ *  islands built. */
+export function clickContext(
+  landmass: Pick<Landmass, 'id' | 'plan' | 'regions' | 'outline'>,
+  isles: Pick<Isles, 'all'>,
+): ClickContext {
   const port = portOf(landmass.plan);
   const coast = ISLANDS[landmass.id] ?? landmass.plan?.name ?? 'this coast';
+  const regions = landmass.regions ?? [];
+  const portRegion = port ? nearestRegion(regions, port.harbour) : null;
   return {
     port: port && landmass.plan ? { id: `${landmass.plan.id}-port`, name: port.name, harbour: port.harbour } : null,
     coast,
@@ -58,6 +73,11 @@ export function clickContext(landmass: Pick<Landmass, 'id' | 'plan'>, isles: Pic
       });
       return isle ? { id: isle.seen.id, words: isleWords(isle.seen) } : null;
     },
+    // Judged where the ship would come in, the coast nearest the point, as the landing it asks is made there.
+    regionOf: (point) => {
+      const region = regions.length ? nearestRegion(regions, coastPoint(point, landmass.outline)) : null;
+      return region && { coast: regionWords(region.name), port: region === portRegion };
+    },
   };
 }
 
@@ -66,7 +86,8 @@ export function aimOf(landfall: Landfall, here: ClickContext, ship: Point2): Lan
   if (!landfall) return null;
   if (landfall.kind === 'isle') return { kind: 'isle', id: landfall.id, words: landfall.words };
   if (landfall.kind === 'dock' && here.port) return { kind: 'dock', port: here.port.name, harbour: here.port.harbour };
-  return { kind: 'ashore', coast: here.coast, toward: ship };
+  // Cut into regions, the region the ship lies off is landed on as a click on its land would be.
+  return here.regionOf(ship) ? landingOn(here, ship) : { kind: 'ashore', coast: here.coast, toward: ship };
 }
 
 /** The sea's clicks and the landings they ask after, answered, made for and docked in sight: on the open landmass's

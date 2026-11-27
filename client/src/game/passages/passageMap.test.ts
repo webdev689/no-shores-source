@@ -57,18 +57,18 @@ test('every zone of the week is a mark at its place, a mission by its kind’s g
   assert.equal(third.at[0] - first.at[0], 2_000, 'each at its place on the island');
 });
 
-test('each zone is named beside its mark by its kind and its foes’ levels, too strong ones in the loss’s ink', () => {
+test('each zone is named beside its mark by its foes’ levels alone, a lamp by its number, too strong in the loss’s ink', () => {
   const where = { here: 0, come: [], lit: [1], level: 11 };
   const { sheet } = passageSheet(web, where, 'The passages', patrol);
   assert.deepEqual(
     sheet.places.map((place) => [place.name, place.near, place.loss]),
     [
-      ['Reliquary · 1 to 4', true, false],
-      ['The first lamp, lit · 12 to 15', true, true],
-      ['Kindle', true, false],
+      ['1-4', true, false],
+      ['Lamp 1 lit · 12-15', true, true],
     ],
+    'a zone with no levels said is left unnamed, its glyph saying its kind',
   );
-  assert.equal(lampWords(2), 'The second lamp');
+  assert.equal(lampWords(2), 'Lamp 2');
 });
 
 test('every way of the web is drawn faint, so a route can be planned past the ways on from here', () => {

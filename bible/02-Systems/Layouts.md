@@ -526,7 +526,9 @@ does nothing.
 The game draws the layouts within 4 km of the eye with the city layer ([[Cities]]), gathered again once the eye has
 moved 1.5 km: a plan of placed pieces (each building and prop where its layout stood it, a building walked into with
 its doorways open) and solids (plinths, set pieces, great works, rock, rooms), on a grid of cells just large enough
-to hold them, with no plates. Nature keeps off the buildings' yards, each place's open ground and the paths, and grows each
+to hold them, with no plates. Their lights are the city's ([[Cities]], `cityLights.ts`): a camp's, a watchtower's and
+a brazier's fire burns on its coals and casts its light, a post's lantern and the lighthouse's lantern room glow
+with their lamps, a sunstone breathes. Nature keeps off the buildings' yards, each place's open ground and the paths, and grows each
 layout's plantings where they were planted, as its own kind (`plantedOf`).
 
 The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within
