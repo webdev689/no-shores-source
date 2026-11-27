@@ -7,7 +7,7 @@ import { lampsLit } from '../sky/lamps.ts';
 import { SKY_NOW } from '../sky/skyDriver.ts';
 import { LAMP_COLOUR, LAMP_NEAR_M, lampAlpha, lampPoints, lampSize, lanternsLit } from './lanterns.ts';
 import { shipAxes } from './shipAxes.ts';
-import type { DrawnShip } from './shipModels.ts';
+import { type DrawnShip, shipSeed, SINKING_M } from './shipModels.ts';
 
 type Point = readonly [number, number, number];
 
@@ -25,9 +25,15 @@ export function shipLanterns(
 ): GlowPoint[] {
   const glows: GlowPoint[] = [];
   if (lampsLit(daylight) <= 0) return glows;
-  ships.forEach((ship, nth) => {
+  // Each ship's slot of its hull's model, counted as `ShipModels` counts them, so a point flickers with its ship's lamps.
+  const slots = new Map<number, number>();
+  for (const ship of ships) {
     const lanterns = lanternsOf(ship.hull);
-    if (!lanterns || !lanternsLit(ship.look)) return;
+    if (!lanterns) continue;
+    const slot = slots.get(ship.hull) ?? 0;
+    slots.set(ship.hull, slot + 1);
+    // A ship sinking has her lanterns out, as `ShipModels` draws her.
+    if (!lanternsLit(ship.look) || ship.place.z <= -SINKING_M) continue;
     const { x, y, z, heading, pitch, roll, scale = 1 } = ship.place;
     const axes = shipAxes(heading, pitch, roll);
     const hung = lanterns.map((middle): Point => {
@@ -42,10 +48,10 @@ export function shipLanterns(
         at: place,
         colour: [LAMP_COLOUR[0] * alpha, LAMP_COLOUR[1] * alpha, LAMP_COLOUR[2] * alpha],
         sizeM: lampSize(distance) / HALO_SHARE,
-        seed: nth,
+        seed: shipSeed(ship.hull, slot),
       });
     }
-  });
+  }
   return glows;
 }
 

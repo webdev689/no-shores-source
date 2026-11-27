@@ -106,7 +106,7 @@ The Schooner, the Brig and the Frigate each carry four windows round their stern
 its stern wall; the Sloop's model has none, its transom one plain face
 ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]). Each pane is built in
 the part `glass`, which `paint_ship.py` keeps, and `export_ship.py` writes it as iron with its vertices' second part
-byte 2 (`GLASS_SHELL`), every other byte as before. The game draws it as it draws a lantern's glass, burning evenly
+byte 2 (`GLASS_SHELL`). The game draws it as it draws a lantern's glass, burning evenly
 while its ship's lanterns burn and flickering with them, and pale horn on a ship running dark ([[Sailing]], "Lanterns
 at night"). The `ships` workflow tests the
 export's bytes (`tools/ships/test_export.py`) before it builds.

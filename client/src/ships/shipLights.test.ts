@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { ShipLook } from './dress.ts';
 import { LAMP_NEAR_M } from './lanterns.ts';
 import { shipLanterns } from './shipLights.ts';
-import type { DrawnShip } from './shipModels.ts';
+import { type DrawnShip, shipSeed } from './shipModels.ts';
 
 const LANTERNS: readonly (readonly [number, number, number])[] = [
   [-9, 0, 4],
@@ -39,4 +39,14 @@ test('a lantern stands where its ship lies and heads, with her: a ship heading e
 
 test('the Grey Tithe and a ship running dark show nothing far off', () => {
   assert.deepEqual(far([ship(400, { side: 'tithe' }), ship(500, { side: 'friendly', dark: true })], NIGHT), []);
+});
+
+test("a sinking ship's far lanterns are out, as her near ones are", () => {
+  const sinking = { ...ship(400), place: { ...ship(400).place, z: -4 } };
+  assert.deepEqual(far([sinking], NIGHT), []);
+});
+
+test("a far point flickers by its ship's seed, her hull and her slot of that hull's model, as her lamps do", () => {
+  const seeds = far([ship(400), ship(500), { ...ship(600), hull: 1 }], NIGHT).map((glow) => glow.seed);
+  assert.deepEqual([...new Set(seeds)], [shipSeed(0, 0), shipSeed(0, 1), shipSeed(1, 0)]);
 });

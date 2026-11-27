@@ -165,14 +165,14 @@ fn vertex_main(
   return drawn;
 }
 
-// A lantern's glass, lit from inside, at 'at' in its frame: an enclosed light, it shows no flame, only an amber glow
-// flickering with its light, brightest at its middle. Alpha 0 off every lantern's glass. It burns by day as by night,
-// brighter against the dark, as the city's lanterns do.
 // The light within burning through glass, 'share' of its brightest: amber, flickering with its ship's lanterns.
 fn glass_fire(share: f32) -> vec3f {
   return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * place.shade.y * share;
 }
 
+// A lantern's glass, lit from inside, at 'at' in its frame: an enclosed light, it shows no flame, only an amber glow
+// flickering with its light, brightest at its middle. Alpha 0 off every lantern's glass. It burns by day as by night,
+// brighter against the dark, as the city's lanterns do.
 fn lantern_glass(at: vec3f) -> vec4f {
   for (var index = 0u; index < MOST_LANTERNS; index++) {
     let lantern = place.lanterns[index];
@@ -223,9 +223,9 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
     return vec4f(glass_fire(0.5), 1.0);
   }
   if (drawn.part == IRON_PART) {
-    let glass = lantern_glass(drawn.at);
-    if (glass.a > 0.0) {
-      return vec4f(glass.rgb, 1.0);
+    let lantern = lantern_glass(drawn.at);
+    if (lantern.a > 0.0) {
+      return vec4f(lantern.rgb, 1.0);
     }
   }
   return vec4f(colour * place.shade.x * light, 1.0);
