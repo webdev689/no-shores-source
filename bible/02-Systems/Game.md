@@ -33,6 +33,7 @@ code:
   - client/src/combat/marksOver.ts#marksSeen
   - client/src/game/footGround.ts#standOn
   - client/src/game/plazaLife.ts#PlazaLife
+  - client/src/game/zoneFolk.ts#ZoneFolk
   - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/footTrips.ts#tripAt
   - client/src/game/dungeonTrips.ts#dungeonTrips
@@ -311,6 +312,17 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   keeps a whole number of the walkers' 600 s loops, staying at the round's first post until it is up, and the walkers
   are drawn clear of the sweeper's walks, so none walks in another however long the clock runs. The fight never takes
   them for targets.
+- **A patrol zone's folk** (`zoneFolk.ts`, placed as a social space's people are): no foe holds a hamlet, a farm or a
+  mill ([[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]); its layout marks a folk site
+  there instead ([[Layouts]]), and Overlook's guards and townsfolk go about their own business on the zone's paths
+  within it. The paths through each, 8 m and more from its middle, where they meet, are cut into stretches of 24 m
+  with 8 m between; the six nearest its middle are walked, each by one person there and back at the townsfolk's
+  stroll, stopping a while at each end facing on along the way, looking about, sweeping or carrying. The farthest out
+  is a guard of Overlook, an iron helm and chain over the townsfolk's clothes and a sword at the hip, who stops only to
+  look out. Each is dressed and laid on the world clock from the site's middle, so every browser and visit has the
+  same folk in the same places. The page alone draws them: the room knows nothing of them, they take no blows and the
+  fight never takes them for targets, and they keep their rounds while the Tithe raids their hamlet. None is drawn in
+  a dungeon or a Breach's run.
 - **Over what a player can use** (`overheadMarks`, `marksOver`; [[What a Player Can Use Wears Its Mark Over It]]),
   drawn among the fight's marks, after DFO's marks over the people who do something: over each keeper who deals with
   the player their own mark as their screen shows it, their sign in its brass diamond (the Harbourmaster's an anchor)

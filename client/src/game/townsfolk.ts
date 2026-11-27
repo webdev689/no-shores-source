@@ -117,7 +117,7 @@ const DYES = ['White', 'LightBrown', 'DarkBrown', 'Blue', 'Grey', 'Red', 'Green'
 const RACES: readonly Race[] = ['human', 'human', 'felid', 'human', 'anole'];
 
 /** Someone's dress: a body, a race and tone, and their clothes in their dyes. */
-function dressOf(index: number, random: () => number): Dress {
+export function dressOf(index: number, random: () => number): Dress {
   const body = index % 2 === 0 ? 'male' : 'female';
   const race = RACES[index % RACES.length] ?? 'human';
   const worn = CLOTHES[body];

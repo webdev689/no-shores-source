@@ -43,6 +43,9 @@ pub enum SiteKind {
     Fissure,
     /// A place a patrol's chest may stand, tucked against something tall, its front facing away from it (`chests`).
     Chest,
+    /// Where folk live and work the land, and no foe holds the ground: Overlook's guards and its townsfolk go about
+    /// their own business there (the page's `zoneFolk`); the site names the area.
+    Folk,
 }
 
 /// A site: what it is for, where, how much ground it takes, and what it holds or leads to.
@@ -161,19 +164,23 @@ pub fn mark(
             }
             _ => {}
         }
-        // Foes hold every area but where players arrive or pass, where folk live, where public events are fought, a
-        // Breach's hollow and a guild's plot: a patrol's territories across its zone, each standing its group as a
-        // player comes near (the owner's "Territories across the zone").
-        let held = !matches!(
-            area.kind,
-            AreaKind::Landing
-                | AreaKind::Entrance
-                | AreaKind::Gate
-                | AreaKind::Hamlet
-                | AreaKind::Wilds
-                | AreaKind::Breach
-                | AreaKind::Plot
-        );
+        // Foes hold every area but where players arrive or pass, where folk live and work the land (a hamlet, a farm
+        // or a mill, which hold civilians only), where public events are fought, a Breach's hollow and a guild's plot:
+        // a patrol's territories across its zone, each standing its group as a player comes near.
+        let homely = matches!(area.kind, AreaKind::Hamlet | AreaKind::Farm | AreaKind::Mill);
+        if homely {
+            sites.push(site(SiteKind::Folk, area.at, area.radius * 0.8, Some(area.name.clone())));
+        }
+        let held = !homely
+            && !matches!(
+                area.kind,
+                AreaKind::Landing
+                    | AreaKind::Entrance
+                    | AreaKind::Gate
+                    | AreaKind::Wilds
+                    | AreaKind::Breach
+                    | AreaKind::Plot
+            );
         if held {
             sites.push(site(SiteKind::Foes, area.at, area.radius * 0.8, Some(area.name.clone())));
         }
@@ -239,6 +246,33 @@ mod tests {
     use super::*;
     use crate::paths::Tier;
     use city::solids::Solid;
+
+    #[test]
+    fn hamlets_farms_and_mills_hold_folk_and_no_foes() {
+        let field = Field::level(-300.0, -300.0, 75, 75);
+        let area = |kind: AreaKind, x: f64| Area {
+            kind,
+            name: format!("{kind:?}"),
+            at: [x, 0.0],
+            radius: 40.0,
+            leads_to: None,
+            crosses: false,
+        };
+        let homes = [area(AreaKind::Hamlet, -200.0), area(AreaKind::Farm, -100.0), area(AreaKind::Mill, 0.0)];
+        let held = [area(AreaKind::Camp, 100.0), area(AreaKind::Tower, 200.0)];
+        let sites = mark(&field, &[&homes[..], &held[..]].concat(), &[], &Seating::default(), 7, None);
+        let holds = |kind: SiteKind, name: &str| {
+            sites.iter().any(|site| site.kind == kind && site.holds.as_deref() == Some(name))
+        };
+        for area in &homes {
+            assert!(holds(SiteKind::Folk, &area.name), "{} holds its folk", area.name);
+            assert!(!holds(SiteKind::Foes, &area.name), "{} holds no foes", area.name);
+        }
+        for area in &held {
+            assert!(holds(SiteKind::Foes, &area.name), "{} holds foes", area.name);
+            assert!(!holds(SiteKind::Folk, &area.name), "{} holds no folk", area.name);
+        }
+    }
 
     #[test]
     fn no_beacon_or_resource_stands_on_a_modules_foot() {
