@@ -114,6 +114,8 @@ fn no_band_member_stands_or_walks_within_25_m_of_a_medium_or_large_hollows_arriv
             let ticks = if plan.zone.deal == Deal::Mission(Mission::Hunt) { 90 * 60 } else { 1 };
             for tick in 0..ticks {
                 if tick % 30 == 0 {
+                    // Read each time, so a band held back and stood since is measured too.
+                    let posts: Vec<usize> = room.zone().map(|zone| zone.round.guards.clone()).unwrap_or_default();
                     for &post in &posts {
                         for id in &room.garrison[post].standing {
                             let Some(foe) = room.foes.get(id) else { continue };

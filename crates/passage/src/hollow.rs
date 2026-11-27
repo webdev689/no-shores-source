@@ -286,7 +286,8 @@ impl Laying {
 }
 
 /// The sites of a hollow: its way in at one end, its onward mouths round the far end, its lamp toward the far end,
-/// and its posts (as many as `posts_wanted`, none nearer the arrival than `posts_off`) and spots on its floor, a Hold's `ring` first where it lies whole.
+/// and its posts (as many as `posts_wanted`, none nearer the arrival than `posts_off`) and spots on its floor, a
+/// Hold's `ring` first where it lies whole.
 fn sites(
     outline: &Outline,
     (onward_count, lamp, ring, wanted, (posts_wanted, posts_off)): (usize, bool, bool, usize, (usize, f64)),
