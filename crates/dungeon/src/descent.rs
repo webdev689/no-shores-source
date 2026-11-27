@@ -58,6 +58,11 @@ impl Flight {
         Some((along(self.head, self.down, -1)?, along(self.head, self.down, FLIGHT_CELLS as isize)?))
     }
 
+    /// Whether it runs on a storey: its upper one or the one under it.
+    pub(crate) fn spans(&self, storey: usize) -> bool {
+        storey == self.upper || storey == self.upper + 1
+    }
+
     /// The rock beside it, both sides of each cell, on both its storeys.
     pub(crate) fn walls(&self) -> Vec<At> {
         let across = [self.down.clockwise(), self.down.clockwise().opposite()];
@@ -162,9 +167,15 @@ pub(crate) fn doorways(seed: u32, squares: &[(usize, usize)], storeys: &[usize])
 
 /// Whether the cells inside the rim that are not `closed` join every one of `ends`, none of them closed.
 fn joined(ends: &[At], closed: &[At]) -> bool {
-    let Some(&first) = ends.first() else { return true };
+    open_round(ends, closed).is_some()
+}
+
+/// The cells inside the rim that are not `closed` a walk from the first of `ends` reaches, where they join every one
+/// of `ends`, none of them closed: none where there are no ends; None where they do not join.
+fn open_round(ends: &[At], closed: &[At]) -> Option<usize> {
+    let Some(&first) = ends.first() else { return Some(0) };
     if ends.iter().any(|end| closed.contains(end)) {
-        return false;
+        return None;
     }
     let mut reached = vec![first];
     let mut todo = vec![first];
@@ -180,7 +191,17 @@ fn joined(ends: &[At], closed: &[At]) -> bool {
             }
         }
     }
-    ends.iter().all(|end| reached.contains(end))
+    ends.iter().all(|end| reached.contains(end)).then_some(reached.len())
+}
+
+/// Whether the ways round a storey's ends are room enough for its rooms: at least half the cells inside the rim that
+/// are not `closed`, so two flights' landings walled in together are never a pocket no room reaches.
+fn roomy(ends: &[At], closed: &[At]) -> bool {
+    let open = (1..BLOCK_CELLS - 1)
+        .flat_map(|y| (1..BLOCK_CELLS - 1).map(move |x| (x, y)))
+        .filter(|cell| !closed.contains(cell))
+        .count();
+    open_round(ends, closed).is_some_and(|round| ends.is_empty() || 2 * round >= open)
 }
 
 /// Shuffles a list on a lane.
@@ -226,8 +247,8 @@ impl BlockPlan {
             .collect()
     }
 
-    /// Whether a flight's cells and walls are clear of every storey's flights, walls, landings and openings, and its
-    /// cells and landings inside the rim.
+    /// Whether a flight's cells and walls are clear of every storey's flights, walls, landings and openings, its cells
+    /// and landings inside the rim, and every storey's ends joined with room round them (`roomy`).
     fn fits(&self, flight: &Flight) -> bool {
         let (Some(cells), Some((top, bottom))) = (flight.cells(), flight.landings()) else { return false };
         let reserved: Vec<At> = self.storeys.iter().flat_map(|storey| storey.reserved.iter().copied()).collect();
@@ -241,14 +262,15 @@ impl BlockPlan {
         let clear = cells.into_iter().chain([top, bottom]).all(inside)
             && cells.into_iter().chain(flight.walls()).all(|cell| !taken.contains(&cell))
             && [top, bottom].iter().all(|landing| !reserved.contains(landing));
-        let mut kept: Vec<At> = cells.into_iter().chain(flight.walls()).collect();
-        kept.extend(reserved);
         clear
             && (0..self.storeys.len()).all(|storey| {
+                let mut kept: Vec<At> = cells.to_vec();
+                kept.extend(flight.spans(storey).then(|| flight.walls()).into_iter().flatten());
+                kept.extend(self.storeys[storey].reserved.iter().copied());
                 let mut ends = self.ends(storey);
                 ends.extend((storey == flight.upper).then_some(top));
                 ends.extend((storey == flight.upper + 1).then_some(bottom));
-                joined(&ends, &kept)
+                roomy(&ends, &kept)
             })
     }
 
@@ -260,11 +282,15 @@ impl BlockPlan {
         inner.chain(plan.landings.iter().copied()).collect()
     }
 
-    /// Takes a flight: its cells and walls rock on every storey, its landings ways on its two storeys.
+    /// Takes a flight: its cells rock on every storey, so nothing stands over or under it; its walls on its two
+    /// storeys, the rest free for rooms and ways; its landings ways on its two storeys.
     fn add(&mut self, flight: Flight) {
         let (Some(cells), Some((top, bottom))) = (flight.cells(), flight.landings()) else { return };
-        for storey in &mut self.storeys {
-            storey.reserved.extend(cells.into_iter().chain(flight.walls()));
+        for (storey, plan) in self.storeys.iter_mut().enumerate() {
+            plan.reserved.extend(cells);
+            if flight.spans(storey) {
+                plan.reserved.extend(flight.walls());
+            }
         }
         self.storeys[flight.upper].landings.push(top);
         self.storeys[flight.upper + 1].landings.push(bottom);
@@ -292,15 +318,18 @@ impl BlockPlan {
         }
     }
 
-    /// Now and then a storey of the six styles is a warren: never the way in's, nor a great room.
-    pub(crate) fn plan_warrens(&mut self, seed: u32, number: usize, style: &Style) {
+    /// Now and then a storey of the six styles is a warren: never the way in's, nor a great room, nor the last block's
+    /// deepest, where the end lies in a room of its own.
+    pub(crate) fn plan_warrens(&mut self, seed: u32, number: usize, style: &Style, last: bool) {
         if !deep(style) {
             return;
         }
         let mut lane = Lane::named(&format!("warren:{seed}:{number}"));
+        let deepest = self.storeys.len() - 1;
         for (storey, plan) in self.storeys.iter_mut().enumerate() {
             let warren = lane.chance(WARREN_SHARE);
-            plan.maze = warren && plan.great.is_none() && (number, storey) != (0, 0);
+            let end = last && storey == deepest;
+            plan.maze = warren && plan.great.is_none() && (number, storey) != (0, 0) && !end;
         }
     }
 
@@ -376,7 +405,7 @@ pub(crate) fn plan_blocks(
         .map(|(number, openings)| {
             let mut plan = BlockPlan::planned(seed, number, openings);
             plan.plan_great(seed, number, &styles[number]);
-            plan.plan_warrens(seed, number, &styles[number]);
+            plan.plan_warrens(seed, number, &styles[number], number + 1 == squares.len());
             plan
         })
         .collect();

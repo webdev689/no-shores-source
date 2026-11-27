@@ -79,6 +79,35 @@ impl Heights {
         (((x - self.west) / self.cell).floor() as i64, ((y - self.north) / self.cell).floor() as i64)
     }
 
+    /// The height at (x, y) read between the cells' centres, each of the four round it weighed by its nearness; but
+    /// where those four differ by more than `cliff`, as at a cliff's or a storey's edge, the height of the cell it
+    /// lies in, since a blend there is the height of neither floor. A wall's off the grid or where no cell holds one.
+    #[must_use]
+    pub fn edged_height_at(&self, x: f64, y: f64, cliff: f64) -> f64 {
+        let Some(own) = self.cell_at(x, y) else { return self.wall };
+        let across = (x - self.west) / self.cell - 0.5;
+        let down = (y - self.north) / self.cell - 0.5;
+        let (column, row) = (across.floor(), down.floor());
+        let (east, south) = (across - column, down - row);
+        let (column, row) = (column as i64, row as i64);
+        let corners = [
+            (self.at(column, row), (1.0 - east) * (1.0 - south)),
+            (self.at(column + 1, row), east * (1.0 - south)),
+            (self.at(column, row + 1), (1.0 - east) * south),
+            (self.at(column + 1, row + 1), east * south),
+        ];
+        let held = corners.iter().filter_map(|&(height, _)| height);
+        let (low, high) = held.fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), at| (low.min(at), high.max(at)));
+        if high - low > cliff {
+            return own;
+        }
+        let (sum, weight) = corners
+            .iter()
+            .filter_map(|&(height, weight)| height.map(|height| (height * weight, weight)))
+            .fold((0.0, 0.0), |(sum, total), (part, weight)| (sum + part, total + weight));
+        if weight > 0.0 { sum / weight } else { self.wall }
+    }
+
     /// The height of the cell (x, y) lies in, or none.
     fn cell_at(&self, x: f64, y: f64) -> Option<f64> {
         let (column, row) = self.index_of(x, y);
@@ -141,25 +170,7 @@ impl Terrain for Heights {
     /// how near each is, those that hold no height left out. The point's own cell is one of the four, at a quarter of
     /// the weight or more, so a blend always has something to blend.
     fn height_at(&self, x: f64, y: f64) -> f64 {
-        if self.cell_at(x, y).is_none() {
-            return self.wall;
-        }
-        let across = (x - self.west) / self.cell - 0.5;
-        let down = (y - self.north) / self.cell - 0.5;
-        let (column, row) = (across.floor(), down.floor());
-        let (east, south) = (across - column, down - row);
-        let (column, row) = (column as i64, row as i64);
-        let corners = [
-            (self.at(column, row), (1.0 - east) * (1.0 - south)),
-            (self.at(column + 1, row), east * (1.0 - south)),
-            (self.at(column, row + 1), (1.0 - east) * south),
-            (self.at(column + 1, row + 1), east * south),
-        ];
-        let (sum, weight) = corners
-            .iter()
-            .filter_map(|&(height, weight)| height.map(|height| (height * weight, weight)))
-            .fold((0.0, 0.0), |(sum, total), (part, weight)| (sum + part, total + weight));
-        if weight > 0.0 { sum / weight } else { self.wall }
+        self.edged_height_at(x, y, f64::INFINITY)
     }
 
     fn climbs(&self) -> bool {

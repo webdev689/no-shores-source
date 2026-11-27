@@ -89,15 +89,18 @@ pub struct Bank {
     pub end: Purpose,
 }
 
-/// The words a name takes before it when it is used again: "the Old Ossuary". A dungeon has twenty rooms at most,
-/// eighteen of them drawn, and a shape suits five of a bank's six purposes at least, so none is used past a fourth time.
-const AGAIN: [&str; 6] = ["Old", "Lower", "Far", "Hidden", "Silent", "Forgotten"];
+/// The words a name takes before it when it is used again: "the Old Ossuary". A dungeon five storeys deep holds some
+/// fifty rooms, a name used again past the words takes two: "the Old Lower Ossuary".
+const AGAIN: [&str; 10] =
+    ["Old", "Lower", "Far", "Hidden", "Silent", "Forgotten", "Sunken", "Nameless", "Drowned", "Deepest"];
 
 /// A purpose's name the `times`-th time it is used in a dungeon, from 0.
 fn named(name: &str, times: usize) -> String {
+    let words = AGAIN.len();
     match times.checked_sub(1) {
         None => format!("the {name}"),
-        Some(again) => format!("the {} {name}", AGAIN[again.min(AGAIN.len() - 1)]),
+        Some(again) if again < words => format!("the {} {name}", AGAIN[again]),
+        Some(again) => format!("the {} {} {name}", AGAIN[(again / words - 1) % words], AGAIN[again % words]),
     }
 }
 

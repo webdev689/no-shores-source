@@ -99,7 +99,7 @@ pub(crate) fn outline(shape: Shape, width: usize, depth: usize, lane: &mut Lane)
         Shape::Ring => stones = ring_core(&mut takes, width, depth),
         Shape::Tee => {
             let bar = (depth / 3).max(1);
-            let stem = ((width + 2) / 3).max(1);
+            let stem = width.div_ceil(3).max(1);
             let (from, far) = ((width - stem) / 2, lane.chance(0.5));
             for y in 0..depth {
                 for x in 0..width {

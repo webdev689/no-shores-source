@@ -99,6 +99,7 @@ impl Dungeon {
             props: Vec::new(),
             fixtures: Vec::new(),
             landmarks: Vec::new(),
+            warrens: Vec::new(),
         };
         let layouts: Vec<Vec<BlockLayout>> = plans
             .iter()
@@ -129,6 +130,13 @@ impl Dungeon {
             dungeon.lay_plan(squares[number], &plans[number]);
             owned.push(own);
         }
+        dungeon.warrens = layouts
+            .iter()
+            .enumerate()
+            .flat_map(|(number, storeys)| {
+                storeys.iter().enumerate().filter(|(_, layout)| layout.warren).map(move |(storey, _)| (number, storey))
+            })
+            .collect();
         dungeon.pillars = (0..dungeon.rooms.len()).flat_map(|room| dungeon.pillars_of(room)).collect();
         if let Some((x, y, side)) = layouts[0][0].exit_spot() {
             let cell = dungeon.cell_of(squares[0], 0, x, y);

@@ -283,7 +283,8 @@ fn the_cache_opens_with_a_dungeons_clear_for_each_player_in_when_the_reeve_falls
     assert!((apart([x, y], [post[0], post[1]]) - CACHE_FROM_POST_M).abs() < 1e-9 && open == 0.0, "shut by the Reeve");
     assert!((facing - bearing([x, y], [post[0], post[1]])).abs() < 1e-12, "facing the Reeve's post");
     let Floor::Dungeon(ground) = &room.floor else { panic!("a dungeon's ground") };
-    assert!(ground.clear_between([post[0], post[1]], [x, y], 0.0, 0), "nothing between the Reeve and the cache");
+    let storey = ground.storey_at(post[2]);
+    assert!(ground.clear_between([post[0], post[1]], [x, y], 0.0, storey), "nothing between the Reeve and the cache");
     let players: Vec<PlayerId> = (0..2).map(|_| room.join().expect("room")).collect();
     run(&mut room, 1);
     assert!(players.iter().all(|player| room.drops_for(*player).count() == 0));

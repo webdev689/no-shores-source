@@ -393,8 +393,11 @@ mod tests {
         assert!(crate::fighter_door::set_dungeon(climbs.as_bytes()));
         let pads = crate::fighter_door::COURSE.with(|course| movement::Near::all(&*course.borrow()).len());
         assert!(pads >= room::encounter_plan::ASCENT_PADS.0, "its pads: {pads}");
+        // A patrol's dungeon stands no pads: its course is its galleries' balustrades alone.
         assert!(crate::fighter_door::set_dungeon(AGREED_ASKS[0]));
-        assert_eq!(crate::fighter_door::COURSE.with(|course| movement::Near::all(&*course.borrow()).len()), 0);
+        let (seed, style) = dungeon::of_patrol("saltgrass-downs", 0);
+        let rails = room::balustrade_blocks(&dungeon::Dungeon::forge(seed, style)).len();
+        assert_eq!(crate::fighter_door::COURSE.with(|course| movement::Near::all(&*course.borrow()).len()), rails);
     }
 
     /// A JSON object's keys, in order.

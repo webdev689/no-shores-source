@@ -357,8 +357,8 @@ pub(crate) const CAVERNS: Bank = Bank {
             &[middle(&[GREAT_ROCKS, STANDING_STONES]), rubble(4, &[ROCKS, STANDING_STONES])],
             &[crystals(6)],
         ),
-        purpose("nest", "Nest", &[rubble(3, &[ROCKS, RUBBLE, LOGS]), walls(8, &[GREAT_ROCKS])], &[fungus(10)]),
-        purpose("gnawed-den", "Gnawed Den", &[rubble(4, &[ROCKS, RUBBLE]), walls(6, &[LOGS, ROCKS])], &[]),
+        purpose("nest", "Nest", &[rubble(3, &[ROCKS, LOGS]), walls(8, &[GREAT_ROCKS])], &[fungus(10)]),
+        purpose("gnawed-den", "Gnawed Den", &[rubble(4, &[ROCKS, LOGS]), walls(6, &[GREAT_ROCKS, ROCKS])], &[]),
     ],
     end: purpose(
         "deep-cavern",
@@ -406,13 +406,13 @@ pub(crate) const MINES: Bank = Bank {
         purpose(
             "sealed-drift",
             "Sealed Drift",
-            &[rubble(3, &[RUBBLE, ROCKS, BEAMS]), walls(6, &[POSTS, CRATES])],
+            &[rubble(3, &[ROCKS, BEAMS, LOGS]), walls(6, &[POSTS, CRATES])],
             &[lanterns(12)],
         ),
         purpose(
             "drowned-shaft",
             "Drowned Shaft",
-            &[walls(5, &[LADDERS, BEAMS, POSTS]), rubble(6, &[SMALL_CRATES, RUBBLE])],
+            &[walls(5, &[LADDERS, BEAMS, POSTS]), rubble(6, &[SMALL_CRATES, ROCKS])],
             &[],
         ),
     ],

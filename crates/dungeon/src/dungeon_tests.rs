@@ -239,6 +239,7 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         props: Vec::new(),
         fixtures: Vec::new(),
         landmarks: Vec::new(),
+        warrens: Vec::new(),
     };
     let _ = laid.walk();
     assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, u32::MAX]);
