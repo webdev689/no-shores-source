@@ -1,6 +1,7 @@
 // What a shot leaves where it stops, by what it struck: a body takes a star of light (and keeps an arrow until it
 // falls), the ground throws dust and keeps a ball's hole or an arrow for 8 s, stone throws chips (its sparks are
 // the fight's own), and water throws a splash and rings. A ball also flashes where it stops.
+import type { GroundAt } from '../player/crosshair.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { markRing, markStuckArrow } from './marks.ts';
 import { POWDER, STEEL, WATER, type Ramp, layPicture, rampOf, crossStar } from './markSprites.ts';
@@ -44,7 +45,7 @@ export function surfaceAt(
   point: Point,
   blocks: readonly Block[],
   bodies: readonly Point[],
-  groundAt?: (x: number, y: number) => number | null,
+  groundAt?: GroundAt,
   sea = true,
 ): { surface: Surface; feet?: Point } | null {
   const [x, y, z] = point;
@@ -53,7 +54,7 @@ export function surfaceAt(
     if (Math.hypot(x - feet[0], y - feet[1]) <= BODY_REACH.radius && high >= -0.1 && high <= BODY_REACH.height)
       return { surface: 'body', feet };
   }
-  const ground = groundAt?.(x, y) ?? 0;
+  const ground = groundAt?.(x, y, z) ?? 0;
   if (sea && z <= SEA_LEVEL + TOUCH_M && ground < SEA_LEVEL - 0.02) return { surface: 'water' };
   if (z <= ground + TOUCH_M) return { surface: 'ground' };
   const touches = (block: Block) =>

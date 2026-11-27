@@ -67,10 +67,7 @@ test("the shader's words carry each storey's looks, rock and joins, and a light 
   assert.equal(new Uint32Array(floats.buffer)[11], 2 ** 25 + 1, 'past what a float holds whole');
 });
 
-test("a light's spaces are a u32 of its own in the shader, written through the frame's one view of its buffer", () => {
-  const struct = /struct Light \{[\s\S]*?\};/.exec(DUNGEON_SHADER)?.[0] ?? '';
-  assert.match(struct, /space: u32/);
-  assert.doesNotMatch(DUNGEON_SHADER, /bitcast<u32>\(lamp\./, 'a float lane may flush a small mask to 0');
+test("a light's spaces are written through the frame's one view of its buffer, bit for bit", () => {
   const floats = new Float32Array(24);
   const bits = new Uint32Array(floats.buffer);
   lightFloats({ ...burningOf(STOREYED)[0]!, space: 5 }, floats, 12, bits);

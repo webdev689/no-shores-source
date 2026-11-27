@@ -326,12 +326,15 @@ export function ceilingAt(layout: DungeonLayout, x: number, y: number, z = 0): n
 
 /** A dungeon's ground and ceiling as the player feels them, the camera's line among them: at a point, from the height
  *  `z` stands at there (the feet's where unsaid), never under the feet's own (`feet`), so a line behind a body on a
- *  flight meets the treads and the sloped ceiling over it, and one under the floor never the storey under. */
+ *  flight meets the treads and the sloped ceiling over it, and one under the floor never the storey under. A shot's
+ *  `line` is felt from its own height, under the feet too, so one from a gallery falls on the hall's floor; the slabs
+ *  between storeys (`seenBlocks`) stop a line under a floor. */
 export function feltAt(layout: DungeonLayout, feet: () => number) {
   const from = (z: number | undefined) => Math.max(z ?? feet(), feet());
   return {
     ground: (x: number, y: number, z?: number) => groundAt(layout, x, y, from(z)),
     roof: (x: number, y: number, z?: number) => ceilingAt(layout, x, y, from(z)),
+    line: (x: number, y: number, z?: number) => groundAt(layout, x, y, z ?? feet()),
   };
 }
 

@@ -2,6 +2,8 @@
 // slope, a Void's fall, the rooms' names by storey, and the solids and slabs standing on their own floors.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { surfaceAt } from '../combat/shotMarks.ts';
+import { Tracers } from '../combat/tracers.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { roomNameAt } from './footTrips.ts';
 import {
@@ -109,4 +111,20 @@ test('a lower room under rock is capped up to the floor of the storey over it; o
     ['1,1', '2,1', '3,1', '4,1', '5,0', '5,1'],
     'the slab under room 0, and rock over the rest',
   );
+});
+
+test("a shot down from the gallery falls on the hall's floor under the storey over it, never on that storey's", () => {
+  const felt = feltAt(layout, () => 0);
+  const tracers = new Tracers();
+  // Through the open air at (0, 1) and on under room 0's floor at (1, 1), down to the hall's floor at -8.
+  tracers.fired([{ ranged: 1, at: [1.6, 4.8, -5], velocity: [20, 0, -20] }], () => [1.6, 4.8, -5]);
+  tracers.update(1, seenBlocks(layout), [], felt.line, [], false);
+  const [struck] = tracers.struck;
+  assert.equal(struck?.surface, 'ground');
+  assert.ok(Math.abs((struck?.at[2] ?? 0) + 8) < 0.05 && (struck?.at[0] ?? 0) > 3.2, `${struck?.at}`);
+});
+
+test('a line stopped on the storey over the player is told as ground, felt from where it stopped', () => {
+  const below = feltAt(layout, () => -8);
+  assert.deepEqual(surfaceAt([4.8, 4.8, 0], [], [], below.line, false), { surface: 'ground' });
 });

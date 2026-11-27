@@ -93,10 +93,10 @@ export class FightEffects {
    * The marks to draw from an eye at `eye`, as `marksMesh` lays them from `origin`: every telegraphed blow, everyone
    * else's arrows, the sparks and the tracers. The player's own shots leave the weapon at `muzzleOf`'s point; the
    * tracers run on by `seconds` (none while the fight waits), a shot stopped by `blocks`, the ground, the sea (unless
-   * `sea` says the place has none) or one of `bodies` (their feet) throwing sparks where it comes to rest; Dusk Daggers' ring while it is aimed; and every
-   * spell in the room, with the statuses that show on the world, laid at the figures where `drawn` has them; and
-   * where blows land and kills fall; and the dust each of the `riders`' horses throws as it boosts. The marks are
-   * handed back in the effects' own array, good until the next frame's.
+   * `sea` says the place has none) or one of `bodies` (their feet) throwing sparks where it comes to rest; Dusk
+   * Daggers' ring while it is aimed; and every spell in the room, with the statuses that show on the world, laid at the
+   * figures where `drawn` has them; and where blows land and kills fall; and the dust each of the `riders`' horses
+   * throws as it boosts. The marks are handed back in the effects' own array, good until the next frame's.
    */
   marks(
     fight: Fighting,

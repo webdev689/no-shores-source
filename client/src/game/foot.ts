@@ -82,12 +82,12 @@ export class Foot {
   readonly text: string;
   /** The seas of the room the player joined, which a trip into or out of its dungeons keeps. */
   readonly seas: Difficulty;
-  /** The ground's height under a world point as drawn: the land's, or a dungeon's floor felt from a height there. */
+  /** The ground's height under a world point as drawn: the land's, or a dungeon's floor under a height there. */
   readonly groundAt: GroundAt;
   /** The floor a placed figure stands on: in a social space on a podium or a landing (`floorOver`). */
   readonly floor: (x: number, y: number) => number;
-  /** The ceiling over a world point in a dungeon, which the camera stays under; none on a node's land. */
-  private readonly roof: ((x: number, y: number) => number | null) | null;
+  /** The ground and the ceiling (none on a node's land) the camera keeps between: a dungeon's, the feet's storey's. */
+  private readonly camera: { readonly ground: GroundAt; readonly roof: GroundAt | null };
   private readonly module: WebAssembly.Module;
   private readonly context: FootContext;
   private readonly link: RoomLink;
@@ -154,9 +154,9 @@ export class Foot {
     [this.run, this.launchedFor] = [opened.run ?? null, opened.launchedFor ?? null];
     this.module = people.module;
     people.held.entrances.namesFrom(people.module, node);
-    // In a dungeon, on the player's own storey.
     const felt = opened.dungeon?.layout && feltAt(opened.dungeon.layout, () => context.walker.player.body.z);
-    [this.groundAt, this.roof] = felt ? [felt.ground, felt.roof] : [opened.groundAt ?? context.groundAt, null];
+    const land = opened.groundAt ?? context.groundAt;
+    [this.groundAt, this.camera] = felt ? [felt.line, felt] : [land, { ground: land, roof: null }];
     this.link = parts.link;
     this.fight = parts.fight;
     this.player = new PlayerFight(parts.fight, parts.combat, context.walker);
@@ -338,7 +338,7 @@ export class Foot {
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
-    const [groundAt, sea] = [this.groundAt, !this.dungeon];
+    const [groundAt, sea, { ground: cameraGround, roof }] = [this.groundAt, !this.dungeon, this.camera];
     const { fight, foes, effects } = this;
     const bearer = bearing(this.held.breach, fight.player);
     dressInGear(walker, forge, this.held.gear, this.dressed, bearer !== null);
@@ -359,7 +359,7 @@ export class Foot {
     const followed = this.follow.following;
     const named = followed === null ? '' : (this.otherPlayers.plateOf(followed)?.name ?? '');
     this.followable = down && (company?.length ?? 0) > 0 ? named : null;
-    const aimed = () => playerCamera(this.follow.viewed(walker.player), movement, blocks, AIM, groundAt, this.roof);
+    const aimed = () => playerCamera(this.follow.viewed(walker.player), movement, blocks, AIM, cameraGround, roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const moved = walk ?? (still ? IDLE : { ...controls, locked: true });
     const shown = this.player.frame(moved, this.steps, seconds, clock, {
@@ -370,7 +370,7 @@ export class Foot {
       handsSeconds: feel.shownSeconds(fight.player, seconds),
       bearer,
     });
-    walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
+    walker.player = cameraFollowed(walker.player, movement, this.boxes, cameraGround, seconds);
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
     this.arrivals.told(events, clock);
@@ -384,7 +384,7 @@ export class Foot {
     const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const { x: fallX, y: fallY, z: fallZ } = walker.player.body;
-    const orbit = shotOfOrbit(kicked, WALK_LENS, groundAt, CAMERA_CLEARANCE_M);
+    const orbit = shotOfOrbit(kicked, WALK_LENS, cameraGround, CAMERA_CLEARANCE_M);
     const shot = this.follow.following === null ? this.falling.shot(orbit, [fallX, fallY, fallZ], seconds) : orbit;
     const eye = figuresEye(cutscene, shot.eye, firstPerson);
     const { x: eyeX, y: eyeY, nearest } = eye;

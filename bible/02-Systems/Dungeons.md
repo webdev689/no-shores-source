@@ -776,8 +776,10 @@ as standing none (`readDungeon`).
   may pass up to 2 m under the slope within it; a shot stops at the slope itself.
 - The encounter plan keeps a seal's pieces, pads and leaps clear of every storey's solids and props over a cell, so a
   room under a well-furnished one fits fewer seals than it could.
-- The page's ground and ceiling for marks and shots are those of the player's own storey, asked from the height a
-  ray or a shot passes at (never under the feet), so an aim up a flight meets its slope. A dungeon has no sea: its
+- The page's camera keeps between the player's own storey's ground and ceiling, asked from the height its line passes
+  (never under the feet). The crosshair, shots and blood ask the ground under the height they pass, under the feet
+  too, so an aim up a flight meets its slope and a shot from a gallery falls on the hall's floor, the slabs between
+  storeys stopping a line under a floor. A dungeon has no sea: its
   ground under 0 m is stone and floor, never water, for footsteps, splashes and shots. Its course stands a slab between
   two storeys' spans, and over a column whose top span is below the top storey, rock up to the floor of the next
   storey over its ceiling, where the rules stop a line too.
