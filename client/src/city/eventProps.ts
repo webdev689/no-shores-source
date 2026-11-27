@@ -142,6 +142,7 @@ const LAMPS = {
   chestReachM: 5,
   thrustReachM: 16,
   crownReachM: 14,
+  flameReachM: 9,
 } as const;
 /** The airship's thrusters' sockets (tools/modules/airship.py), each a fire lighting what is under it. */
 const THRUSTERS = ['thrust-1', 'thrust-2', 'thrust-3', 'thrust-4'] as const;
@@ -374,9 +375,15 @@ export function propLamps(props: readonly EventProp[]): LampPlace[] {
     const seed = index * 0.618;
     if (each.module === 'lattice-fissure')
       for (const along of LAMPS.fissureAlong)
-        lamps.push({ at: place([along, 0, 0.6]), reachM: LAMPS.fissureReachM * each.rise, light: red(strength), seed });
+        lamps.push({
+          at: place([along, 0, 0.6]),
+          reachM: LAMPS.fissureReachM * each.rise,
+          light: red(strength),
+          seed,
+          motion: 'stone',
+        });
     else if (each.module === 'lattice-growth')
-      lamps.push({ at: place([0, 0, 2.5]), reachM: LAMPS.growthReachM, light: red(strength), seed });
+      lamps.push({ at: place([0, 0, 2.5]), reachM: LAMPS.growthReachM, light: red(strength), seed, motion: 'stone' });
     else if (each.module === 'tithe-airship')
       // Its thrusters burn as hard as it drives (its glow); its lean and pitch are left out, a lamp's few metres.
       THRUSTERS.forEach((name, nth) => {
@@ -384,9 +391,21 @@ export function propLamps(props: readonly EventProp[]): LampPlace[] {
         lamps.push({ at: burning, reachM: LAMPS.thrustReachM, light: fire(strength), seed: seed + nth });
       });
     else if (each.module === 'lattice-crown')
-      lamps.push({ at: place([0, 0, 0]), reachM: LAMPS.crownReachM * each.scale, light: red(strength), seed });
+      lamps.push({
+        at: place([0, 0, 0]),
+        reachM: LAMPS.crownReachM * each.scale,
+        light: red(strength),
+        seed,
+        motion: 'stone',
+      });
     else if (each.module === 'lattice-shard')
-      lamps.push({ at: place([0, 0, 0.3]), reachM: LAMPS.shardReachM * each.scale, light: red(strength * 0.7), seed });
+      lamps.push({
+        at: place([0, 0, 0.3]),
+        reachM: LAMPS.shardReachM * each.scale,
+        light: red(strength * 0.7),
+        seed,
+        motion: 'stone',
+      });
     else if (each.module === 'tithe-banner')
       lamps.push({
         at: place([0, 0, BANNER_TOP_M - BANNER_LAMP.underTopM]),
@@ -405,6 +424,17 @@ export function propLamps(props: readonly EventProp[]): LampPlace[] {
         light: CHEST_LIGHT,
         seed,
       });
+    // Any other module's flames (an outpost's fire pit's, its braziers') light round them as a fire does, each its
+    // own glowing part flickering with its light.
+    else if (moduleNumber(each.module) >= 0)
+      for (const lit of moduleLights(moduleNumber(each.module)) ?? [])
+        if (lit.kind === 'fire')
+          lamps.push({
+            at: place(lit.at),
+            reachM: LAMPS.flameReachM * each.scale,
+            light: fire(strength),
+            seed: seed + lit.at[0],
+          });
   });
   return lamps;
 }

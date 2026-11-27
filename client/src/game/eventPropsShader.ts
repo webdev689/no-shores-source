@@ -7,6 +7,7 @@ import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { CRYSTAL_HOT, CRYSTAL_WGSL } from '../city/crystal.ts';
 import { CLOTH_COLOURS } from '../city/pictures.ts';
+import { LIGHT_MOTION_WGSL } from '../sky/flicker.ts';
 import { LAMPS_MOST } from '../sky/skyUniform.ts';
 import { MATERIALS, type Material } from './eventPropsPack.ts';
 
@@ -26,7 +27,8 @@ const CHASM_LEAD = 0.04;
 export const LOOK = { grey: 1, dark: 2 } as const;
 
 const PLACE_WGSL = /* wgsl */ `
-struct View { from_eye: mat4x4f }
+// x: the scene's seconds, which the lamps flicker by.
+struct View { from_eye: mat4x4f, time: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
 struct Prop { place: vec4f, shape: vec4f, about: vec4f, look: vec4f }
 @group(2) @binding(0) var<storage, read> props: array<Prop>;
@@ -89,6 +91,16 @@ ${SHADOW_WGSL}
 ${CRYSTAL_WGSL}
 ${LIGHT_WGSL}
 ${PLACE_WGSL}
+${LIGHT_MOTION_WGSL}
+
+// How a prop's glow moves: with its own lamp where one is lit near it (a fire pit's flame with its light, a crystal's
+// core with its), a 'stone' (crystal) only with a stone's; else by the prop it is, all of it together.
+fn glow_motion(from_eye: vec3f, prop: u32, stone: bool) -> f32 {
+  let own = select(1.0, 3.0, stone) + min(light_phase(f32(prop) * 0.618), 0.999);
+  let near = sky_lamp_motion(from_eye);
+  let keeps = near > 0.0 && (floor(near) == 3.0) == stone;
+  return light_motion(select(own, near, keeps), view.time.x);
+}
 
 const AMBIENT = 0.35;
 const BOUNCE = 0.15;
@@ -324,14 +336,14 @@ fn shade(in: Out) -> vec4f {
     sun *= sunlit(in.from_eye, facing);
   }
   if in.material == CRYSTAL {
-    return vec4f(crystal_colour(facing, in.from_eye, in.glow, sun), 1.0);
+    return vec4f(crystal_colour(facing, in.from_eye, in.glow * glow_motion(in.from_eye, in.prop, true), sun), 1.0);
   }
   // A ghost (a piece of decoration being placed) is washed in its tint, its fire too.
   let tint = look.yzw;
   let ghost = any(tint > vec3f(0.0));
   // A fire is its own light, not lit by the sky's.
   if in.material == ${id('glow')} {
-    let flame = material_colour(in.material, in.local, false);
+    let flame = material_colour(in.material, in.local, false) * glow_motion(in.from_eye, in.prop, false);
     return vec4f(select(flame, mix(flame, tint * 1.4, 0.6), ghost), 1.0);
   }
   // Stained glass is lit from behind, its panes laid across the face it looks out of in the module's own frame.

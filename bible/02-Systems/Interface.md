@@ -382,7 +382,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   in the interface; a captain's fight shows the game's own readout over the view.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG, hearing a shot's events on its second frame, once the first has laid what they press; a frame is
-  1/60 s, and the page asks for reduced motion unless the shots ask for `"motion": true`. `ui/gallery.ts`
+  1/60 s, and the page asks for reduced motion unless the shots ask for `"motion": true`. It serves on port 5173
+  where free, the next port otherwise, and fetches R2's packs for the page as from 5173 (through `HTTPS_PROXY` where
+  set), so a second checkout's pictures still draw the real pieces. `ui/gallery.ts`
   holds what a screen is mostly built of: a window under a header panel, presses at rest, primary, warn and disabled,
   words in a span's colour wrapping across a break, at two sizes, with a halo and with a hard shadow, a chip, a field
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
@@ -670,7 +672,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **In a passage zone** ([[Passages]], "Played"): the zone's deal stands in the task tracker, a public event's steps
   before it; an onward mouth's sign stands high in the view on coming near it; the haul is framed on the right while
   anything is carried; and the leave held adds "What you carry is lost" under its place. At a run's sealed door the
-  mouths' card is drawn as an entrance's card is.
+  mouths' card is drawn as an entrance's card is. Each says only what a choice or an act needs, in short words
+  ([[The Passages' New Interface Says Less and Reads Better]]).
 - **A sea fight's task**: the fight's task in the tracker says to defeat their crews, counts the ships fighting the
   player still afloat and their men, and says they need not be sunk, as the rules strike a ship whose men are gone
   or whose hull is beaten low. The ship's own state is the fight's readout ([[The Sea's Screens Wear Enhanced Plus]]). At sea DFO's messages are the
@@ -1045,7 +1048,7 @@ never while a press is held. Each press is an ask the room answers.
     taken and turned in at the board alone. The column stands at the right wherever it fits beside the quests, as wide
     as its head; on a phone (under 600 px) it stands under them. Under the board's, each Atheric bounty held or
     finished is a card of its own, as Destiny 1's exotic bounties stood apart: Lanternfall's name in the Atheric
-    colour, the cold lantern and its words, and its steps, each done with a tick, the one under way with its gauge and
+    colour and its steps, each done with a tick, the one under way with its gauge and
     count, those to come dimmed ([[Passages]], "The Journal and the board").
   - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
     Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
