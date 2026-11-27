@@ -124,7 +124,15 @@ test('a rune swells and fades slowly; a light that does not breathe is always fu
 });
 
 test("a landmark's glows burn beside the torches and the fixtures, each by its kind, numbered after them", () => {
+  // One room of one cell, its way in: a way in's torches never stand cold.
   const layout = {
+    columns: 1,
+    rows: 1,
+    cell: 10,
+    cells: [0],
+    rooms: [{ role: 'way-in', storey: 0 }],
+    wayIn: { room: 0 },
+    end: 0,
     torchReach: 8,
     torches: [[1, 2, 2.1, 0]],
     fixtures: [[3, 4, 1, 4]],
