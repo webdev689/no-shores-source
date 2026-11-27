@@ -1,5 +1,5 @@
 ---
-id: 314
+id: 320
 title: "A question to the owner about a code-level coupling was not understood: ask in what the player sees, one effect per question"
 status: open
 type: user-correction
