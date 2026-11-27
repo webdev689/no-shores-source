@@ -50,6 +50,9 @@ tiles' look and their text, and what a patrol zone's tile does; and it changes, 
 | The words | Its name in brass at the larger size and its levels in short ("Lv 1–5"); every other detail a glyph, from the Journal's icons and nine of the tiles' own in their style (`islandIconMaps.ts`), and all of it in the tile's label | The owner's "#1": name and levels, the rest as glyphs |
 | Motion | The tiles rise into place one after another as the view opens; a lit tile steps up 2 px with a brass edge | One moment as the island opens; still under reduced motion |
 
+Its words are replaced in part by [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]: each
+tile's title, level and kind.
+
 How it works: [[Interface]], "The island's tiles"; [[Game]], "Landings".
 
 Not built yet: the three landing zones, the zone's map to choose one from, and their fast travel. A patrol zone's tile

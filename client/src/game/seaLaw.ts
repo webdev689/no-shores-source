@@ -1,5 +1,6 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
+import { type MapRegion, nearestRegion } from '../overworld/regions.ts';
 import { alongNear, PACE_STEPS, type Pace, SHIP_SPEED, type Voyage } from '../overworld/voyage.ts';
 import { cellHeight, type Deck, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
@@ -119,15 +120,18 @@ export type Landfall =
   | null;
 
 /** The landfall offered a ship that lies off an island's coast (`offCoast`), whose port, if it has one, has its harbour
- *  at `harbour`. */
+ *  at `harbour`, and which may be cut into `regions`. */
 export function landfallOf(
   ship: Point2,
   offCoast: boolean,
   port: { readonly name: string; readonly harbour: Point2 } | null,
+  regions: readonly Pick<MapRegion, 'centre'>[] = [],
 ): Landfall {
   if (!offCoast) return null;
   const toHarbour = port ? Math.hypot(port.harbour[0] - ship[0], port.harbour[1] - ship[1]) : Infinity;
-  return port && toHarbour <= DOCK_REACH_M ? { kind: 'dock', port: port.name } : { kind: 'ashore' };
+  // Cut into regions, the island docks only off the region that holds its port: off another, it goes ashore there.
+  const portHere = port !== null && nearestRegion(regions, ship) === nearestRegion(regions, port.harbour);
+  return port && portHere && toHarbour <= DOCK_REACH_M ? { kind: 'dock', port: port.name } : { kind: 'ashore' };
 }
 
 /** How near another continent's coast a ship comes before that landmass is opened and drawn in place of the open

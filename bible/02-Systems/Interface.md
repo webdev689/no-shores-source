@@ -9,6 +9,7 @@ code:
   - client/src/game/seaScreen.ts#seaLayer
   - client/src/game/seaLandings.ts#landingAskNode
   - client/src/game/islandPanel.ts#islandPanelNode
+  - client/src/game/islandPanel.ts#outpostsNode
   - client/src/game/playlistParts.ts#crestOf
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
@@ -1341,7 +1342,10 @@ primary, with Enter's key) on its footer; Cancel names the pad's B while the pad
 
 Over an island docked at or gone ashore on, no node is marked on the map; the island's tiles hold them
 (`islandPanel.ts`, `islandWords.ts`, `islandArt.ts`, `islandScenes.ts`;
-[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]). They
+[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]],
+[[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). On an island cut into regions ([[World Map]], "Regions") they are the places of
+the region the ship lies off, the one whose centre is nearest it: those its nodes list, and any place no region lists;
+the port and the Playlist only where that region holds the living port. They
 are rectangles of one size in a grid with 16 px between them, across the view under the place's name (104 px down, 24
 in from each side), centred: each 280 to 340 px wide (narrower only on a view too narrow for one of 280), as many a row
 as fit up to five, as tall as three rows fit (176 to 220 px), their sides in 4-pixel steps so each is even and a
@@ -1351,12 +1355,13 @@ Playlist's card does (`scrolledNode`), with no fade over the island at their foo
 
 Each is a pixel scene painted as the website's pictures are (`client/src/art/`, [[Website]]), on a sheet half the
 tile's size, each texel two pixels across, dithered in one of the sheet's lights and seeded by its place, so no two
-are alike, drawn a little transparent (74%) so the island shows through; its foot darkens, dithered, where its words
+are alike, drawn 90% opaque so the island shows through a little; its foot darkens, dithered, where its words
 stand:
 
 - **The island's own**: the island charted on the night sea, its land rising inland in bands with contours, its rock
   at the coast and shoals dithered round it, the harbour's lantern and the ship; its name in brass at the larger size,
-  where the ship lies ("Docked at Overlook"), and Back (Esc, or the pad's B while the pad is in use).
+  where the ship lies, naming its region ("Docked at Overlook, on the Beacon Shore", "Ashore on the Weirlands"), and
+  Back (Esc, or the pad's B while the pad is in use).
 - **The port**, docked at a living port: Overlook by night, its town stepping up the rock to its beacon, the quay's
   lanterns streaking the water, a ship at anchor, the moon. A click lands in its plaza.
 - **The Playlist**, docked at a living port: a crystal night thick with stars and a pale nebula, its four crests
@@ -1373,17 +1378,22 @@ stand:
   or a windmill with its sails broken, in mist, at first light or at a fiery dusk; a lantern on a post. A click lands
   there.
 - **The world boss**: a horned shadow rising from an ember sea, its edges facing the fire lit, its eyes and its maw
-  burning, tentacles breaking the water and a ship burning beside it. **The outpost**: its palisade and watchtower on a
-  strand at dawn, a ship off it.
+  burning, tentacles breaking the water and a ship burning beside it.
+- **The Outposts tile**, one in a region's view for all the region's outpost sites, named for its region ("Outposts of
+  the Beacon Shore"), its levels the island's: an outpost's palisade and watchtower on a strand at dawn, a ship off
+  it. A click opens its sites (below).
 
-A tile's words are its name in brass at the larger size and its levels in short ("Lv 1–5"); every other detail is a
+A tile's words are its name in brass at the larger size and under it its levels in short and its kind ("Lv 1–5 ·
+Patrol zone"; the island's own "Island", then Port, Playlist, Patrol zone, Elite Dungeon, Mission, World boss and
+Outposts), the kind left out where the name says it already, as the Playlist's does; every other detail is a
 glyph at its head, each saying its words in the tile's label, in the Journal's icons (`journalIcons.ts`) and the
 tiles' own in their style (`islandIconMaps.ts`): the port's counters (a stall under its awning) and its moorings (an
 anchor); a patrol zone's dungeons (its door), its resources (a rock veined with ore), its foes (two blades crossed),
 its Elite and Abyss seas (dim while shut) and today's modifier; an Elite Dungeon's blocks (courses of stone), seals (a
 wax seal), company (two of it), pay (the cache's chest), its week, the Elite's or the Abyss's, and its modifiers; the
-Playlist's today, its week's two and its rewards; a mission's, a world boss's and an outpost's foes and named places (a
-pin), an outpost's what it is for (a palisade); a padlock on a place that is shut. Nine fit a tile at its narrowest;
+Playlist's today, its week's two and its rewards; a mission's and a world boss's foes and named places (a pin); the
+Outposts tile's sites (a stake flying a grey pennant over a roped plot, one a site) and how many hold the player's
+guild's outposts (a palisade each, one dim at none); a padlock on a place that is shut. Nine fit a tile at its narrowest;
 more wrap onto a second row. Its label reads all of it out: its name, its line, every glyph's meaning and its
 details. The tile the keys or the pad have focused is lit, else the one under the pointer, else the first place's: a
 brass edge two pixels wide, raised 2 px, its chevron bright. Over the tiles the interface takes the keys and the pad:
@@ -1391,6 +1401,16 @@ Tab, the arrows and the pad's cross walk them, and Enter or A presses the one fo
 yielding to it; with none focused, Enter does what the lit tile does. A tile still rising takes no click. A shut
 tile's name is dim and a click on it does nothing. A landing chooses its node before it lands, as the flow lands
 only at the node chosen. A desolate city's social space is listed nowhere.
+
+The Outposts tile's sites stand in the tiles' place as the Playlist's screen opens from its tile (`outpostsNode` in
+`islandPanel.ts`): a panel 104 px down, dark and nearly opaque, its region's name in brass, its levels and kind with
+"Choose a slot to land at", and a card for each site in a row that wraps, each 260 px wide: its name in brass, a small
+chart of the region (the coast round its sites, four times as wide as they lie apart, every site a dot, its own brass in a ring, one
+holding the player's guild's outpost green), and a palisade with "Your guild's outpost" or a stake with "No outpost of
+your guild's" (the guild read as the map's marks read it, [[Guilds]]); a shut one says why. The card the keys or the
+pad have focused is lit, else the one under the pointer, else the first open one, a brass edge raised 2 px. A click on
+a card, or Enter or A, lands at its site as a place's tile does; the arrows, Tab and the pad's cross walk the cards,
+the keys and the pad held to the panel while it stands. Back, Escape or the pad's B close it, back to the tiles.
 
 ## The character screen
 
