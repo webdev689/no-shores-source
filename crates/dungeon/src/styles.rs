@@ -22,7 +22,7 @@ pub struct Form {
 pub struct Style {
     /// Its name on the wire: crypt, halls, cells, sanctum, caverns or mines.
     pub key: &'static str,
-    /// Its name's noun: "The Crypt of the Saltgrass Downs".
+    /// What it is called in a word: "Crypt".
     pub noun: &'static str,
     /// How many rooms a block asks for, fewest and most.
     pub rooms: (usize, usize),

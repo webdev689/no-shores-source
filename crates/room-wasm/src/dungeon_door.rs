@@ -55,8 +55,8 @@ pub fn dungeon_json(text: &[u8]) -> String {
         return Value::Null.to_string();
     };
     let laid = Dungeon::forge_within(seed, style, blocks);
-    // An Elite Dungeon has a name of its own; any other is named for its style and its place.
-    let name = if found.place.is_some() { found.name } else { dungeon::name(&style, &found.name) };
+    // An Elite Dungeon has a name of its own; any other is named by its seed and style.
+    let name = if found.place.is_some() { found.name } else { dungeon::named(seed, &style) };
     let mut layout = layout_json(&laid, &name);
     // An Elite Dungeon's encounters, laid by the room's own rules from the same dungeon.
     if found.place.is_some() {
