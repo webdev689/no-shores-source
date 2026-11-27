@@ -97,12 +97,22 @@ fn a_gallerys_balustrades_are_blocks_a_body_climbs_and_its_vaults_stand_their_ch
         .find(|&(seed, style)| !Dungeon::forge(seed, style).balustrades.is_empty())
         .expect("a dungeon with a gallery");
     let laid = Dungeon::forge(seed, style);
-    let room = Room::laid_dungeon("gallery", &laid, LEVELS, (REEVE, Miniboss), None).expect("its room");
+    let mut room = Room::laid_dungeon("gallery", &laid, LEVELS, (REEVE, Miniboss), None).expect("its room");
+    room.tick();
     for &[min_x, min_y, max_x, max_y, bottom, top] in &laid.balustrades {
         let block = movement::Block { min_x, min_y, max_x, max_y, top, bottom };
         assert!(room.blocks.contains(&block), "a balustrade the room's block");
     }
-    assert_eq!(room.finds.vaults, laid.vaults, "each vault stands its chest");
+    assert!(!laid.vaults.is_empty(), "a dungeon with a vault");
+    for &vault in &room.finds.vaults {
+        let gold = room.finds.chests.iter().filter(|chest| chest.vault).any(|chest| {
+            let [x, y, z, _] = room.finds.places[chest.place];
+            laid.room_at(laid.cell_at([x, y, z])) == Some(vault)
+        });
+        assert!(gold, "vault {vault} stands its gold chest");
+    }
+    let golden = room.finds.chests.iter().filter(|chest| chest.vault).count();
+    assert_eq!(golden, room.finds.vaults.len(), "a gold chest for each vault it holds, none for one with no place");
 }
 
 #[test]

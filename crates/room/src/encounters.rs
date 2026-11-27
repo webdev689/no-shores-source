@@ -338,7 +338,7 @@ impl Room {
         for id in ids {
             let Some(foe) = self.foes.get_mut(id) else { continue };
             let body = foe.fighter.body;
-            let near = |at: &[f64; 3]| libm::hypot(at[0] - body.x, at[1] - body.y);
+            let near = |at: &[f64; 3]| seals::near(*at, [body.x, body.y, body.z]);
             let nearest = players.iter().min_by(|a, b| near(&a.1).total_cmp(&near(&b.1)));
             if let Some(&(player, at)) = nearest {
                 foe.brain.hunt(player, at, clock);

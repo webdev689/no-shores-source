@@ -201,17 +201,25 @@ impl Room {
         if left <= SLAM_WARNING { u32::try_from(left).unwrap_or(u32::MAX) } else { 0 }
     }
 
-    /// While warded, the Boss stands at its post: farther from it than AT_POST_M it runs back to it, and there it
-    /// turns and strikes where it stands. Its own blows it chooses as ever.
-    pub(crate) fn hold_ward(&self, id: FighterId, intent: &mut combat::Intent) {
+    /// While warded, the Boss stands at its post: farther from it than AT_POST_M it runs back to it, along the navmesh
+    /// from off its post's floor, and there it turns and strikes where it stands. Its own blows it chooses as ever.
+    pub(crate) fn hold_ward(&self, id: FighterId, intent: &mut combat::Intent, routes: &impl ::foes::Routes) {
         let warded = self.encounters.as_ref().is_some_and(|encounters| encounters.court.ward_up);
         if !warded || self.boss() != Some(id) {
             return;
         }
         let (Some(post), Some(foe)) = (self.garrison.first(), self.foes.get(&id)) else { return };
-        let (east, south) = (post.at[0] - foe.fighter.body.x, post.at[1] - foe.fighter.body.y);
+        let body = foe.fighter.body;
+        let feet = [body.x, body.y, body.z];
+        // Off its post's floor, on a flight or another storey, a straight line would run it into the rock.
+        let toward = if (feet[2] - post.at[2]).abs() > movement::TUNING.step {
+            routes.next_point(feet, post.at).unwrap_or(post.at)
+        } else {
+            post.at
+        };
+        let (east, south) = (toward[0] - body.x, toward[1] - body.y);
         let controls = &mut intent.controls;
-        if libm::hypot(east, south) > AT_POST_M {
+        if super::seals::near(feet, post.at) > AT_POST_M {
             (controls.yaw, controls.forward, controls.sideways, controls.run) =
                 (libm::atan2(east, -south), 1.0, 0.0, true);
         } else {
@@ -252,7 +260,7 @@ impl Room {
             })
             .filter(|(_, found)| {
                 let body = found.fighter.body;
-                libm::hypot(body.x - light[0], body.y - light[1]) > LIGHT_REACH_M
+                super::seals::near([body.x, body.y, body.z], light) > LIGHT_REACH_M
             })
             .map(|(id, _)| *id)
             .collect();

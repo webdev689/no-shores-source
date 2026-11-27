@@ -60,7 +60,7 @@ pub(crate) const fn plates_for(living: usize) -> usize {
 
 /// How near two points stand on the floor, metres; never near on different storeys, as rock stands between them.
 pub(crate) fn near(a: [f64; 3], b: [f64; 3]) -> f64 {
-    if (a[2] - b[2]).abs() >= dungeon::STOREY_M / 2.0 {
+    if ::foes::storeys_apart(a, b) {
         return f64::INFINITY;
     }
     libm::hypot(a[0] - b[0], a[1] - b[1])

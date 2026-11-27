@@ -160,11 +160,12 @@ strikes ([[Public Events]]).
   m from that place, or, farther from the foe than the 14 m it engages a target it sees within, stands on the ground
   off the room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up once no wind-up of its own is under way: its target, its turn,
   the blow it saw coming and its answer, its hunt, its search, its awareness, and a roar its health no longer calls for.
-  Within its leash, a target within those 14 m it never gives up on, wherever the target stands
+  Within its leash, a target within those 14 m on its storey (in a dungeon, one half a storey or more over or under it with another floor between is not close) it never gives up on, wherever the target stands
   ([[A Foe Gives Up Only When the Player Is Far Away]]).
   It sheds its Expose and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing each tick the
   share of what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 12 s),
-  then turns to face as its place does and stands idle. Walking back it heeds nothing it sees or hears and shows as
+  then turns to face as its place does and stands idle. A foe on another storey than its place (half a storey, 4 m,
+  or more apart in height: `storeys_apart`) is not home, however close across, so it walks on. Walking back it heeds nothing it sees or hears and shows as
   idle, so the one it gave up on cannot draw it out again at once. A blow on it brings it back, alert with the striker
   as its target; one struck from past its leash it gives up again. A foe a player asked for, or one a Boss called, has
   no post and never leashes. A foe a page playing a course alone stands where it wants it ([[Server]], "A course a page

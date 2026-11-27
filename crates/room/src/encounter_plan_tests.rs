@@ -1,7 +1,7 @@
 use super::*;
 use crate::Floor;
 use movement::blocks::ground_at;
-use movement::{Body, Controls, Mode, TICK_SECONDS, step_body};
+use movement::{Body, Controls, Mode, TICK_SECONDS, TUNING, step_body};
 
 /// Each of the 18 Elite Dungeons as its room lays it, and its plan.
 fn elite_plans() -> Vec<(String, Dungeon, EncounterPlan)> {
@@ -27,6 +27,7 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
             kinds_seen.insert(seal.kind as u8);
             assert!(seal.room != laid.end() && seal.room != laid.way_in.room, "{place}: never the way in or the end");
             assert!(!landmarked.contains(&seal.room), "{place}: never a landmark's room");
+            assert!(!laid.vaults.contains(&seal.room), "{place}: never a vault, which stands its gold chest");
             for other in &plan.seals[at + 1..] {
                 assert_ne!(seal.kind, other.kind, "{place}: never two alike");
                 assert_ne!(seal.room, other.room, "{place}: a room each");
@@ -34,7 +35,10 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
             for piece in &seal.pieces {
                 let cell = plan.cell_at(*piece).expect("a piece in the dungeon");
                 assert_eq!(laid.room_at(cell), Some(seal.room), "{place}: its pieces in its room");
-                let clear = laid.boxes().iter().all(|&[min_x, min_y, max_x, max_y, _, _]| {
+                // Another storey's solids and furniture stand over or under the room's floor, never on it.
+                let storey = laid.rooms[seal.room].storey;
+                let own = laid.boxes().into_iter().filter(|solid| laid.storey_under(solid[4]) == storey);
+                let clear = own.collect::<Vec<_>>().iter().all(|&[min_x, min_y, max_x, max_y, _, _]| {
                     let (east, south) =
                         ((min_x - piece[0]).max(piece[0] - max_x), (min_y - piece[1]).max(piece[1] - max_y));
                     libm::hypot(east.max(0.0), south.max(0.0)) >= SPOT_CLEAR_M - 1e-9
@@ -43,6 +47,7 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
                     assert!(clear, "{place}: a piece clear of every solid");
                     let furnished = (laid.props.iter().map(|prop| prop.at))
                         .chain(laid.fixtures.iter().map(|fixture| fixture.at))
+                        .filter(|at| laid.storey_under(at[2]) == storey)
                         .all(|at| libm::hypot(at[0] - piece[0], at[1] - piece[1]) >= PROP_CLEAR_M - 1e-9);
                     assert!(furnished, "{place}: no prop or fixture on a piece");
                 }
@@ -142,9 +147,9 @@ fn every_plate_of_a_weighing_is_in_plain_view_ahead_of_the_doorway_its_room_is_e
                 let seen = (0..=200).all(|step| {
                     let share = f64::from(step) / 200.0;
                     let [x, y] = [door[0] + (plate[0] - door[0]) * share, door[1] + (plate[1] - door[1]) * share];
-                    laid.boxes()
-                        .iter()
-                        .all(|&[min_x, min_y, max_x, max_y, _, _]| x < min_x || x > max_x || y < min_y || y > max_y)
+                    let storey = laid.rooms[seal.room].storey;
+                    let mut own = laid.boxes().into_iter().filter(|solid| laid.storey_under(solid[4]) == storey);
+                    own.all(|[min_x, min_y, max_x, max_y, _, _]| x < min_x || x > max_x || y < min_y || y > max_y)
                 });
                 assert!(seen, "{place}: a plate at {plate:?} hidden from the doorway at {door:?}");
                 // And ahead of a body coming in by the doorway from the open cell before it, within about 70 degrees
@@ -169,7 +174,7 @@ fn every_plate_of_a_weighing_is_in_plain_view_ahead_of_the_doorway_its_room_is_e
             }
         }
     }
-    assert!(weighings >= 3, "{weighings} Weighings among the 18");
+    assert!(weighings >= 4, "{weighings} Weighings among the 18");
 }
 
 #[test]
@@ -205,7 +210,8 @@ fn an_ascents_pads_rise_under_the_ceiling_clear_of_every_solid_and_doorway() {
                 let cell = plan.cell_at([middle[0], middle[1], pad.bottom]).expect("its cell");
                 assert!(!laid.frames.iter().any(|frame| frame.cell == cell), "{place}: no doorway");
                 assert!(cell != laid.way_in.cell && cell != laid.portal.cell);
-                let clear = boxes.iter().all(|&[min_x, min_y, max_x, max_y, _, _]| {
+                let mut own = boxes.iter().filter(|solid| laid.storey_under(solid[4]) == laid.rooms[seal.room].storey);
+                let clear = own.all(|&[min_x, min_y, max_x, max_y, _, _]| {
                     max_x <= pad.min_x || min_x >= pad.max_x || max_y <= pad.min_y || min_y >= pad.max_y
                 });
                 assert!(clear, "{place}: a pad meets no solid");
@@ -361,6 +367,30 @@ fn every_two_runes_of_a_litany_stand_two_metres_apart_at_the_least() {
                     let apart = libm::hypot(first[0] - second[0], first[1] - second[1]);
                     assert!(apart >= 2.0 - 1e-9, "{place}: runes {apart} m apart");
                 }
+            }
+        }
+    }
+}
+
+#[test]
+fn a_seal_fits_round_its_own_storeys_solids_and_furniture_alone() {
+    for (place, forged, _) in elite_plans().into_iter().filter(|(_, forged, _)| forged.storeys > 1) {
+        let reading = Reading::of(&forged);
+        for (room, found) in forged.rooms.iter().enumerate() {
+            // The dungeon with every other storey's solids and furniture taken away.
+            let on = |z: f64| forged.storey_under(z) == found.storey;
+            let mut alone = forged.clone();
+            alone.frames.retain(|frame| on(forged.floor_of(frame.cell)));
+            alone.pillars.retain(|pillar| on(pillar[2]));
+            alone.props.retain(|prop| on(prop.at[2]));
+            alone.fixtures.retain(|fixture| on(fixture.at[2]));
+            alone.landmarks.iter_mut().for_each(|placed| placed.solids.retain(|solid| on(solid[4])));
+            let own = Reading::of(&alone);
+            assert_eq!(reading.spots(room, false), own.spots(room, false), "{place}: room {room}'s spots");
+            for kind in [SealKind::Weighing, SealKind::Ascent] {
+                let (mut first, mut second) = (Lane::named(&place), Lane::named(&place));
+                let (seal, alone_seal) = (laid(&reading, &mut first, kind, room), laid(&own, &mut second, kind, room));
+                assert_eq!(seal, alone_seal, "{place}: room {room}'s {kind:?}");
             }
         }
     }
