@@ -38,10 +38,49 @@
 // offline behind the same `&spawn=` flag: { "views": [[east, south, bearing, "first" | "third,<m>[,<degrees down>]",
 // "name"], ...] or "<list.json>", "zone": "<key of the list>", "into": "<folder>", "settle": seconds } arrives the
 // body at each view in turn, inside the node the page loaded, waits `settle` seconds (the ground and the sky come in)
-// and writes `<into>/<name>.png`, or `<into>/<number>.png` without a name. A view outside the node is said to be
-// refused and skipped.
+// and writes `<into>/<name>.png`, or `<into>/<number>.png` without a name, once `__qaWhere` says the place is drawn
+// whole. A view outside the node is said to be refused and skipped. One run at a time holds the machine (a lock in
+// the temporary folder), and a server on the plan's port that serves another checkout is refused.
 const { chromium } = require('playwright');
-const { mkdirSync, readFileSync, writeFileSync } = require('node:fs');
+const { execFileSync } = require('node:child_process');
+const { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } = require('node:fs');
+const { tmpdir } = require('node:os');
+const { join } = require('node:path');
+
+/** Where the run that holds the machine's one picture run writes its pid. */
+const LOCK = join(tmpdir(), 'webgpu-shot.lock');
+
+// One picture run at a time on the machine: two at once outrun its memory and slow each other's frames. A lock whose
+// run has died is taken over.
+function takeLock(lock = LOCK) {
+  try {
+    writeFileSync(lock, String(process.pid), { flag: 'wx' });
+  } catch {
+    const holder = Number(readFileSync(lock, 'utf8'));
+    let alive = holder > 0 && holder !== process.pid;
+    try {
+      if (alive) process.kill(holder, 0);
+    } catch (error) {
+      alive = error.code === 'EPERM';
+    }
+    if (alive) throw new Error(`another picture run (pid ${holder}) holds ${lock}; wait for it`);
+    writeFileSync(lock, String(process.pid));
+  }
+  process.on('exit', () => {
+    if (existsSync(lock) && Number(readFileSync(lock, 'utf8')) === process.pid) unlinkSync(lock);
+  });
+}
+
+// A server on the plan's port that serves another checkout would picture that checkout's code. A dev server serves
+// its own checkout's files under /@fs/ and refuses another's; a built page names hashed scripts this checkout's
+// dist/ holds. A server not up yet is left to the page's own load to report.
+async function servesThisCheckout(url, top) {
+  const page = await fetch(url).then((response) => response.text(), () => null);
+  if (page === null) return true;
+  if (page.includes('/@vite/client')) return (await fetch(new URL(`/@fs${top}/package.json`, url))).ok;
+  const script = /\bsrc="[^"]*?(assets\/[^"]+\.js)"/.exec(page)?.[1];
+  return script !== undefined && existsSync(join(top, 'dist', script));
+}
 
 // Nothing reaches the GPU: put before OWN_TEXTURE, so its count of frames wraps the dropping submit.
 const DROP_SUBMITS = () => {
@@ -163,6 +202,10 @@ const OWN_TEXTURE = () => {
 async function main() {
   const plan = JSON.parse(readFileSync(process.argv[2], 'utf8'));
   if (plan.noGpu && plan.steps.some((step) => step.shot || step.views)) throw new Error('noGpu draws nothing to picture');
+  takeLock();
+  const top = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+  if (!(await servesThisCheckout(plan.url, top)))
+    throw new Error(`the server at ${new URL(plan.url).origin} serves another checkout than ${top}: stop it or use another port`);
   // Behind a proxy (a cloud session's HTTPS_PROXY), the browser and its routes' own fetches go through it, all but
   // the page's own server here.
   const proxy = process.env.HTTPS_PROXY
@@ -176,13 +219,11 @@ async function main() {
   const [width, height] = plan.size ?? [1280, 800];
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
   page.on('console', (message) => {
-    if (message.type() === 'error') console.log('console:', message.text().slice(0, 300));
+    // A failed load's own text names no resource: its location does.
+    const from = message.location().url;
+    if (message.type() === 'error') console.log('console:', message.text().slice(0, 300), from ? `(${from})` : '');
   });
   page.on('pageerror', (error) => console.log('page error:', error.message.slice(0, 300)));
-  for (const [part, file] of Object.entries(plan.routes ?? {}))
-    await page.route(`**/*${part}*`, (route) =>
-      route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
-    );
   // R2 answers CORS for port 5173 alone; with "anyPort" the page's cross-origin reads are fetched by the driver and
   // handed back open to any origin, so a worktree's Vite can serve on another port while 5173 is taken. Either way
   // the driver fetches R2's own reads, asking again on a 429 or a 5xx: a burst of them through the proxy is
@@ -217,6 +258,14 @@ async function main() {
       await route.fulfill({ response, headers: { ...response.headers(), ...open } });
     },
   );
+  // The plan's own routes are added after the R2 route, since Playwright tries the last added first: a local file
+  // stands in for one not yet on R2. Each never served is said at the end.
+  const unserved = new Set(Object.keys(plan.routes ?? {}));
+  for (const [part, file] of Object.entries(plan.routes ?? {}))
+    await page.route(`**/*${part}*`, (route) => {
+      unserved.delete(part);
+      return route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } });
+    });
   const patches = [...(plan.noGpu ? [DROP_SUBMITS] : []), OWN_TEXTURE, SHADER_ERRORS];
   for (const patch of patches) await page.addInitScript(patch);
   if (plan.init) await page.addInitScript({ content: plan.init });
@@ -236,11 +285,19 @@ async function main() {
     );
   });
   const driven = () => game ?? page;
+  // The words the game's interface shows, for a wait that timed out: what the page stood on instead.
+  const uiSaid = async () => {
+    const all = await driven()
+      .evaluate(() => self.__ui?.() ?? null)
+      .catch(() => null);
+    const words = all?.flatMap((node) => (node.words ? [node.words] : []));
+    return words ? `the interface shows: ${words.join(' | ').slice(0, 600) || 'no words'}` : 'no __ui';
+  };
   const framesOn = async (count) => {
     const from = await driven().evaluate(() => self.__shotFrames);
     const until = Date.now() + 600_000;
     while ((await driven().evaluate(() => self.__shotFrames)) < from + count) {
-      if (Date.now() > until) throw new Error(`${count} frames were not drawn in 10 minutes`);
+      if (Date.now() > until) throw new Error(`${count} frames were not drawn in 10 minutes; ${await uiSaid()}`);
       await page.waitForTimeout(100);
     }
   };
@@ -252,15 +309,16 @@ async function main() {
     await page.screenshot({ path });
     await page.evaluate(() => document.getElementById('__shot')?.remove());
   };
-  // The topmost node shown that `wanted` picks, once one shows.
+  // The topmost node shown that `wanted` picks, once one shows. While the arrival's veil stands (`hud:veil`), nothing
+  // under it can be acted on and its own words (the place's name) are not the place: none is picked.
   const shown = async (wanted, what, seconds = 180) => {
     const until = Date.now() + seconds * 1000;
     for (;;) {
       // Until the game's interface is up (its face read), there is no `__ui` yet.
       const all = await driven().evaluate(() => self.__ui?.() ?? null);
-      const found = all?.findLast(wanted);
+      const found = all?.some((node) => node.id === 'hud:veil') ? undefined : all?.findLast(wanted);
       if (found) return found;
-      if (Date.now() > until) throw new Error(`${what} did not show in ${seconds} s${all ? '' : ': no __ui'}`);
+      if (Date.now() > until) throw new Error(`${what} did not show in ${seconds} s; ${await uiSaid()}`);
       await page.waitForTimeout(250);
     }
   };
@@ -324,6 +382,14 @@ async function main() {
           continue;
         }
         console.log(`view ${number}: body at ${where.x.toFixed(1)}, ${where.y.toFixed(1)}${where.dead ? ' (fallen)' : ''}`);
+        // The place drawn whole first: a layout's city is built some minutes after the arrival, headless.
+        for (const until = Date.now() + 600_000; !(await driven().evaluate(() => self.__qaWhere().whole)); ) {
+          if (Date.now() > until) {
+            console.log(`view ${number}: still not drawn whole after 10 minutes; ${await uiSaid()}`);
+            break;
+          }
+          await page.waitForTimeout(1000);
+        }
         await framesOn(2);
         await shoot(`${step.into ?? '.'}/${view[4] ?? number}.png`);
       }
@@ -331,11 +397,12 @@ async function main() {
     else if (step.shot) await shoot(step.shot);
     console.log(`${JSON.stringify(step)} ${((Date.now() - started) / 1000).toFixed(1)} s`);
   }
+  for (const part of unserved) console.log(`route never served: ${part}`);
   await browser.close();
 }
 
 // The stall probe (webgpu-stall.cjs) puts the same patches in the game's worker.
-module.exports = { DROP_SUBMITS, OWN_TEXTURE, SHADER_ERRORS };
+module.exports = { DROP_SUBMITS, OWN_TEXTURE, SHADER_ERRORS, servesThisCheckout, takeLock };
 if (require.main === module)
   // Exits once done: R2's reads still asked again, with their pauses, would keep it running minutes after the close.
   main().then(

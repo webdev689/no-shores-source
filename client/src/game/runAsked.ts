@@ -1,5 +1,6 @@
-// Under `npm run dev` only: `&run=<room>` in the address goes into that dungeon's run once the player stands on foot,
-// so an Elite Dungeon's encounters can be pictured headless (`tools/claude-toolkit/webgpu-shot.cjs`).
+// Under `npm run dev` only: `&run=<room>` in the address goes into that dungeon's run, or a Breach's, once the player
+// stands on foot, so an Elite Dungeon's encounters and a Breach's run can be pictured headless
+// (`tools/claude-toolkit/webgpu-shot.cjs`).
 import { nodeOfRoom } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 

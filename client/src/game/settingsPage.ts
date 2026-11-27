@@ -43,7 +43,20 @@ export type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
 
 /** The address's asks that take the page past the title as it loads: the place to arrive at and how, and where the
  *  story starts. */
-const PAST_THE_TITLE = ['at', 'spawn', 'view', 'arrival', 'prologue', 'run', 'wisp', 'bow', 'armed', 'lash'];
+const PAST_THE_TITLE = [
+  'at',
+  'spawn',
+  'foes',
+  'minute',
+  'view',
+  'arrival',
+  'prologue',
+  'run',
+  'wisp',
+  'bow',
+  'armed',
+  'lash',
+];
 /** How long the page waits for its window to close before it says the browser kept it open, milliseconds. */
 const CLOSE_WAIT_MS = 500;
 /** How wide a tab's parts stand at most in its panel, CSS pixels, and at the larger words; Controls takes the panel's

@@ -1,24 +1,28 @@
 // Pictures of the interface drawn by the game, headless: starts Vite, opens a module of the client (no page), and
-// draws each shot asked through the real renderer, writing it as a PNG. `node tools/uiShot.mjs <shots.json>`, with
+// draws each shot through the real renderer to a PNG. `node tools/uiShot.mjs <shots.json> [--port 5173]`, with
 // { "size": [w, h], "scale": 2, "frames": 10, "motion": true, "shots": [{ "module": "/src/game/journalShots.ts",
 // "build": "journalShot", "out": "target/ui/journal.png", "events": [...], "at": 3 }] }: `build` answers the tree for
-// the interface it is given, as `client/src/ui/shot.ts` hears `events`, `at` and `frames` (a frame 1/60 s); or, with
-// "call": true, awaits `build(...args)` for a PNG's data URL. "before" names an export awaited first, given
-// "beforeArgs". The page asks for reduced motion unless `motion` is true.
+// the interface given it on every frame (1/60 s), so it keeps its state across them, as menuShot keeps its layer in a
+// WeakMap; `events` are heard on frame `at`, or an event's own `at`, each at its place or, with `on`, at the middle
+// of the node of that id. With "call": true, it awaits `build(...args)` for a PNG's data URL. "before" names an export
+// awaited first, given "beforeArgs". The page asks for reduced motion unless `motion` is true.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createRequire } from 'node:module';
+import { parseArgs } from 'node:util';
 import { createServer } from 'vite';
 
 // The container's own Playwright, found as CommonJS finds it, so no second copy is installed.
 const { chromium } = createRequire(import.meta.url)('playwright');
 
-const asked = JSON.parse(readFileSync(process.argv[2] ?? '', 'utf8'));
+const { values, positionals } = parseArgs({ allowPositionals: true, options: { port: { type: 'string' } } });
+const asked = JSON.parse(readFileSync(positionals[0] ?? '', 'utf8'));
 // Port 5173 where it is free, the only origin R2 answers, so the forge's pictures come; the next free one otherwise.
-const server = await createServer({ server: { port: 5173, strictPort: false }, logLevel: 'error' });
+const port = Number(values.port ?? 5173);
+const server = await createServer({ server: { port, strictPort: false }, logLevel: 'error' });
 await server.listen();
 const address = server.httpServer?.address();
-const base = `http://localhost:${typeof address === 'object' && address ? address.port : 5173}`;
+const base = `http://localhost:${typeof address === 'object' && address ? address.port : port}`;
 const browser = await chromium.launch({
   args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
   ...(process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY, bypass: 'localhost,127.0.0.1' } } : {}),

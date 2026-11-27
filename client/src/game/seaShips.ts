@@ -21,6 +21,7 @@ import { HULL_LINES, type HullLines } from '../ships/hullLines.ts';
 import { HULLS, type HullMask } from '../water/hullMask.ts';
 import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { MarkDrawer } from '../editor/naval.ts';
+import { QA_SHIP } from './qaShip.ts';
 import { HELM_TURN } from './seaHelm.ts';
 
 /** The way a ship under way shows the water, m/s: its bow wave foams whole. */
@@ -140,7 +141,10 @@ export class SeaShips {
   ) {
     this.shown = shown;
     this.lines = lines;
-    this.ownSeen = ownSeen;
+    this.ownSeen = () => {
+      const own = ownSeen();
+      return own && { ...own, ...QA_SHIP.look };
+    };
   }
 
   /** The hull the player's own ship is drawn as: the one they sail, as the room says, the Sloop before it says. */

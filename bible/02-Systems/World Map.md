@@ -95,7 +95,7 @@ patrol and mission nodes of the edits files, each once. The rooms read the list 
 reaches them at the next bake: a merge redeploys them, and locally `npm run bake` or `npm run server` bakes first.
 
 A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
-`&view=` picture it ([[Toolkit]], "Browser QA").
+`&view=` picture it ([[Browser QA]]).
 
 ## Regions
 

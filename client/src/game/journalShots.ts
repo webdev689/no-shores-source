@@ -171,7 +171,7 @@ function weekOf(now: number, untilDay = 20 * HOUR + 55 * 60_000, untilWeek = 2 *
 
 /** The menu as the game starts it, over `gear` and the day's word, opened at `view`, one a picture: built afresh for
  *  each interface a shot draws with, `then` run once it is open. */
-function menuShot(view: View, then: () => void = () => undefined, gear = GEAR): (ui: Interface) => Node {
+export function menuShot(view: View, then: () => void = () => undefined, gear = GEAR): (ui: Interface) => Node {
   const layers = new WeakMap<Interface, Layer>();
   return (ui) => {
     let layer = layers.get(ui);

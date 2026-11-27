@@ -298,8 +298,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **Sounds.** The world sounds on foot ([[Interface]], "World sounds"): the fight's blows, shots, steps and spells,
   the drops landing and the player standing again, each where it happens, through the World volume once the first
   press or key has woken the interface's sound. A cue not yet picked is silent; nothing new plays while a menu is open.
-- **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
-  by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
+- **Foes to try.** Under `npm run dev` only, `?foes=` asks the room played alone for foes as the player lands: types
+  by their numbers, each with a rank after a colon (`?foes=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`, `life/`): its keepers stand behind their counters and at their stalls and
   work, and its townsfolk walk the plan's ways (the city crate's `life`) from post to post, looking out, browsing,
   drinking, talking or carrying, keeping to the right; each keeps a routine laid on the world clock from the plan and a

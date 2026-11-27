@@ -3,7 +3,7 @@
 // washed up on Saltmere's shore, gives the game back to the player at Overlook's social space.
 import { HoldToSkip } from '../../cinema/cues.ts';
 import type { InputFrame } from '../../player/input.ts';
-import type { Shot } from '../camera.ts';
+import { type Shot, withQaEye } from '../camera.ts';
 import { boundWord } from '../controls.ts';
 import type { GearHere } from '../gearScreen.ts';
 import { hushed } from './music.ts';
@@ -45,6 +45,8 @@ interface Carried {
 /** How many of a beat's frames are drawn under the black before it fades in: its pictures' and pipelines' first
  *  making falls there, unseen. */
 const WARM_FRAMES = 3;
+/** The step a story played ahead undrawn takes, seconds (`Prologue.ahead`). */
+const AHEAD_STEP_S = 1 / 30;
 
 /** A shot over the storm's sea for a beat begun with nothing before it (a page started at a later beat). */
 function seaShot(story: Story): Shot {
@@ -74,6 +76,8 @@ export class Prologue {
   /** The black held before a beat that begins from it: how long it has held, and how many of the beat's frames have
    *  been drawn under it. */
   private held: { seconds: number; frames: number } | null = null;
+  /** Seconds of story asked played before the next frame is drawn (`ahead`). */
+  private aheadS = 0;
   /** Set once the story hands the player to the game. */
   end: StoryEnd | null = null;
 
@@ -262,10 +266,19 @@ export class Prologue {
   ): void {
     if (this.end) return;
     try {
+      for (; this.aheadS > 0 && !this.end; this.aheadS -= AHEAD_STEP_S)
+        this.play(controls, AHEAD_STEP_S, size, viewport, false);
       this.play(controls, seconds, size, viewport);
     } catch (error) {
       this.failed(this.beat, error);
     }
+  }
+
+  /** Plays `seconds` more of the story before the next frame is drawn, a short step at a time and undrawn, so a
+   *  headless picture reaches a moment without the frames to get there; a development page's (`__prologue`). A beat
+   *  still loading under the black spends them waiting, so ask once it shows. */
+  ahead(seconds: number): void {
+    this.aheadS += seconds;
   }
 
   private play(
@@ -273,6 +286,7 @@ export class Prologue {
     seconds: number,
     size: { width: number; height: number },
     viewport: { width: number; height: number },
+    drawn = true,
   ): void {
     const beat = this.beat;
     // A beat holding its world still holds the story's time, though its own frame still hears what is pressed.
@@ -312,7 +326,7 @@ export class Prologue {
     stage.parts.music.frame(beat.music?.() ?? hushed(), seconds);
     if (shown) {
       this.carried.shot = shown.shot;
-      stage.draw(shown, size, this.clock, passing);
+      if (drawn) stage.draw({ ...shown, shot: withQaEye(shown.shot) }, size, this.clock, passing);
     }
     if (held && shown && ++held.frames >= WARM_FRAMES) {
       this.fadeIn();

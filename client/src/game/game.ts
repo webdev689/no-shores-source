@@ -356,7 +356,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     node: () => playing.foot?.node ?? null,
     arrive: goFoot,
     sea: () => travel({ kind: 'return-to-ship' }, goSea),
-    ...{ walker, dead, game: playing },
+    ...{ walker, dead, game: playing, sky: scene.sky },
   });
   const landAt = (id: string) => {
     const landing = playing.sea?.view.landingOf(id);

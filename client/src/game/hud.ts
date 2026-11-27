@@ -444,6 +444,8 @@ export class Hud {
     const shown = this.veilShade.value(clock);
     if (shown <= 0) return null;
     return {
+      // Named while it stands, so a headless driver (`__ui()`) knows what lies under it cannot yet be acted on.
+      ...(this.veilShown && { id: 'hud:veil' }),
       width: 'grow',
       height: 'grow',
       float: { to: 'screen' },
