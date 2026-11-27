@@ -32,9 +32,10 @@ import type { Landing } from './worldSounds.ts';
 type Point = readonly [number, number, number];
 
 const TICK_S = 1 / 60;
-/** How much larger than its frame a Vestige is drawn on the ground, and ammunition: the knob each piece lying as an
- *  item follows. */
+/** How much larger than its frame a Vestige is drawn on the ground, a weapon or armour piece lying as an item, and
+ *  ammunition. */
 export const VESTIGE_SCALE = 2;
+export const ITEM_SCALE = 1.7;
 export const AMMO_SCALE = 0.6;
 /** How long its pillar takes to rise once it settles, seconds. */
 export const RISE_S = 0.4;
@@ -524,7 +525,7 @@ export class DropsShown {
         ? { body: (drop.item && this.itemPicture(drop.item)) ?? { rows: [], colours: [] }, halo: null }
         : pictureOf(drop, motion.turn);
       const ammo = isAmmo(drop.kind);
-      const scale = ammo ? AMMO_SCALE : VESTIGE_SCALE;
+      const scale = ammo ? AMMO_SCALE : item ? ITEM_SCALE : VESTIGE_SCALE;
       const tallM = body.rows.length * (body.pixelM ?? PIXEL_M) * scale;
       const { middle } = motion;
       const base: Point = [middle[0], middle[1], middle[2] - tallM / 2];

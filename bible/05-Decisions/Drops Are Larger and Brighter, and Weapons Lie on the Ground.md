@@ -29,12 +29,16 @@ On the first pillars, standing 4 to 14 m over the drops and cut square at both e
 
 > "I dont like the how the light is so tall and on each end it's so flat"
 
+On the weapons and armour lying at a Vestige's twice, the owner wrote:
+
+> "shrink the weapons and armor slighty"
+
 ## What it settles
 
 - **A weapon or a piece of armour that drops as itself lies on the ground** for its player, its own picture hovering
   in its rarity's light, and is taken by walking over it, as a Vestige is ([[Gear]], "Drops").
-- **A Vestige, a weapon and a piece of armour on the ground are twice their size**; an Ammo box or crate is 0.6
-  of its size.
+- **A Vestige on the ground is twice its size**, a weapon or a piece of armour a little smaller than that, and an Ammo
+  box or crate 0.6 of its size.
 - **Each drop has a pillar of light in its rarity's colour**, seen from far off, a Legendary's and an Atheric's the
   tallest; not so tall, and never flat at either end: it fades in from the drop and tapers away at its top.
 - **Each drop bursts as it lands**: a flash and a ring on the ground, with a sound in its rarity's weight.
@@ -46,6 +50,7 @@ On the first pillars, standing 4 to 14 m over the drops and cut square at both e
 |---|---|---|
 | The pillars' heights | Normal 1.4 m, Magic 2 m, Rare 3 m, Legendary and Atheric 4.5 m, ammunition's 0.6 m: about a third of the first | The owner's "so tall" |
 | Its ends | Its foot fades in from the drop's glow over its lowest quarter; its top tapers to a point and fades over its upper third | The owner's "on each end it's so flat" |
+| A weapon's and armour's size | 1.7 times, from a Vestige's 2 | The owner's "shrink ... slighty": about 15% smaller |
 
 Links: [[Gear]], [[Combat]], [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]],
 [[Commons Drop as Themselves, Never as Vestiges]].

@@ -9,6 +9,7 @@ import { AMMO_BOX, AMMO_CRATE, type PixelPicture, resourcePicture } from './drop
 import {
   AMMO_FEEL,
   AMMO_SCALE,
+  ITEM_SCALE,
   CRYSTAL_FEEL,
   DropsShown,
   type Feel,
@@ -185,6 +186,7 @@ const heightsOf = (marks: readonly number[], added: boolean) =>
 test('a Vestige lies twice its size and ammunition 0.6 of its own, raised to hover clear of the ground', () => {
   assert.equal(VESTIGE_SCALE, 2);
   assert.equal(AMMO_SCALE, 0.6);
+  assert.ok(ITEM_SCALE < VESTIGE_SCALE && ITEM_SCALE > 1.5, 'a weapon or armour piece a little smaller than a Vestige');
   for (const [kind, scale, feel] of [
     [DROPPED.vestige, VESTIGE_SCALE, CRYSTAL_FEEL],
     [DROPPED.ammoBox, AMMO_SCALE, AMMO_FEEL],
