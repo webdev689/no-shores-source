@@ -259,7 +259,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The fight's crosshair, plates and compass give way to the map while it is up.
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
-    const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
+    const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock, here.held.taken);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, her welcome, and her
     // gift asked of this room.
     const met = playing.after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', {

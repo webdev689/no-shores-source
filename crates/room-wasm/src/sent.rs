@@ -60,6 +60,8 @@ pub struct Sent {
     lines: VecDeque<(u64, Line)>,
     /// The ships parked at the room's island, each with its player's account (`parked_door`).
     parked: Rc<[Parked]>,
+    /// The traffic ids its seas have taken off their routes, sent whole in every snapshot (`parked_door`).
+    taken: Vec<u64>,
 }
 
 /// A ship parked at the room's island: its player's account, the number it is sent under, and the ship and its looks.
@@ -83,9 +85,9 @@ impl Sent {
         Self { middle, ..Self::default() }
     }
 
-    /// The ships parked at the room's island from now on.
-    pub fn park(&mut self, ships: Vec<Parked>) {
-        self.parked = ships.into();
+    /// The ships parked at the room's island, and the traffic ids its seas have taken, from now on.
+    pub fn park(&mut self, ships: Vec<Parked>, taken: Vec<u64>) {
+        (self.parked, self.taken) = (ships.into(), taken);
     }
 
     /// The room's tick taken in, once whatever asks first: what happened since is kept, and how everyone stands.
@@ -228,6 +230,7 @@ impl Sent {
             reviving: &now.reviving,
             arrivals: &now.arrivals,
             ships: &ships,
+            taken: &self.taken,
             passage: room.passage_seen(viewer),
         })
     }

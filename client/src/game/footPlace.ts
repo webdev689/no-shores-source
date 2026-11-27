@@ -178,8 +178,10 @@ export interface Held {
   passage: PassageSeenState | null;
   /** A Breach as its run or its gate's patrol zone last said; null in any other room. */
   breach: BreachSeen | null;
-  /** The other players' ships lying parked by the island the room stands on, as it last said. */
+  /** The other players' ships lying parked by the island the room stands on, and the traffic ships its seas have taken
+   *  off their routes, as it last said. */
   ships: readonly SeenShip[];
+  taken: ReadonlySet<number>;
 }
 
 /** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,

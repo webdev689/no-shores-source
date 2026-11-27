@@ -58,6 +58,7 @@ fn bare() -> Snapshot<'static> {
         reviving: &[],
         arrivals: &[],
         ships: &[],
+        taken: &[],
         passage: None,
     }
 }

@@ -93,12 +93,13 @@ export interface RoomDoor {
    *  island's `island` number and `seed` (which it holds), or neither for a run started at sea, and the host's time
    *  (`seconds` since the Unix epoch), by which the sea times its namings; or another sea's word naming no one, of the
    *  accounts back at that sea (`afloat`), whose ships parked here it lets go. The answer is JSON of the ships parked
-   *  at that island, each its `account`, `number`, `x`, `y`, `heading`, `hull`, `dress`, `name` and `emblem`. Empty
-   *  with no sea open. */
+   *  at that island (`ships`, each its `account`, `number`, `x`, `y`, `heading`, `hull`, `dress`, `name` and `emblem`)
+   *  and each traffic id the sea has taken off its route (`taken`). Empty with no sea open. */
   seaAshore(word: string): string;
-  /** Gives the open room on land the ships parked at its island, as its seas answered (`seaAshore`, each `number` as
-   *  the host gives it): its snapshots send every player all of them. Whether a room on land is open. */
-  parked(ships: string): boolean;
+  /** Gives the open room on land the ships parked at its island and the traffic ids taken off their routes, as its seas
+   *  answered (`seaAshore`, each `number` as the host gives it): its snapshots send every player all of them. Whether
+   *  a room on land is open. */
+  parked(answer: string): boolean;
   /** The number of the open sea's landing of an account on its island of that number and seed (its ship at rest at
    *  the island's anchorage when last at sea), or 0 if it is not landed there. */
   seaLanded(id: number, seed: string, account: string): number;
@@ -454,7 +455,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     seaDungeon: (room) => new TextDecoder().decode(take(openWithAnswer(exports.room_sea_dungeon, room))),
     seaAshore: (word) => new TextDecoder().decode(take(openWithAnswer(exports.room_sea_ashore, word))),
     named: (player) => new TextDecoder().decode(take(exports.room_named(player))),
-    parked: (ships) => openWith(exports.room_parked, ships),
+    parked: (answer) => openWith(exports.room_parked, answer),
     seaLanded: (id, seed, account) => {
       const bytes = new TextEncoder().encode(account);
       return lend(bytes, (address) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, bytes.length));

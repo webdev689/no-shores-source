@@ -294,10 +294,17 @@ export class FriendlyTraffic {
     return friendlyFrame(this.fleet, view, water, shown.hulls, { seconds, time, slots, taken });
   }
 
-  /** On foot: the ships within `SEEN_FROM_LAND_M` of the eye, at their true size. */
-  onFoot(eye: readonly number[], water: FriendlyWater, seconds: number, time: number): FriendlyFrame {
+  /** On foot: the ships within `SEEN_FROM_LAND_M` of the eye, at their true size; none the seas have `taken`, as the
+   *  island's room says. */
+  onFoot(
+    eye: readonly number[],
+    water: FriendlyWater,
+    seconds: number,
+    time: number,
+    taken: ReadonlySet<number>,
+  ): FriendlyFrame {
     if (!this.fleet) return { ships: [], hulls: [], marks: [] };
     const view = { centre: [eye[0] ?? 0, eye[1] ?? 0] as const, radiusM: SEEN_FROM_LAND_M, scale: 1 };
-    return friendlyFrame(this.fleet, view, water, [], { seconds, time, slots: () => this.perHull });
+    return friendlyFrame(this.fleet, view, water, [], { seconds, time, slots: () => this.perHull, taken });
   }
 }

@@ -657,7 +657,7 @@ table Snapshot {
   // of each other player's ship sent, every snapshot.
   plates: [Plate];
   // At sea, each traffic id the room has taken off its route, which the page draws no more, and those of its friendly
-  // ships the room keeps at sea.
+  // ships the room keeps at sea; on an island's own ground, each traffic id its seas have taken, as they told its room.
   taken: [ulong];
   friendlies: [Friendly];
   // In an Elite Dungeon's room, its encounters, sent whole in each snapshot; none in any other room.

@@ -4,7 +4,8 @@
  * as their character has them now, as each one's account is known and every 15 seconds after, with the host's time,
  * as a sea room stops ticking while nobody sails it. The sea keeps each named player's parked ship seen while it lies
  * at that island (a run started at sea keeps it seen wherever it lies), holds a sea island named, and answers with
- * every ship parked there, which an island's own ground sends in its snapshots (crates/room/src/sea_parked.rs).
+ * every ship parked there and every traffic ship it has taken off its route, which an island's own ground sends in its
+ * snapshots (crates/room/src/sea_parked.rs, crates/room-wasm/src/parked_door.rs).
  */
 
 import type { Reach } from './arrival.ts';
@@ -50,23 +51,29 @@ export function placeOf(
   return reach ? { seas: SEAS, island: { continent: reach.continent }, draws } : null;
 }
 
+/** A sea's answer to a naming: the ships parked at the island, and the traffic ids it has taken off their routes. */
+interface Answer {
+  readonly ships: readonly { number: number }[];
+  readonly taken: readonly number[];
+}
+
 /** A room's naming of its players ashore: where it stands (none for a room on no island, which names no one), each
  *  player whose account the room has learnt, and each sea's last answer with the time of the naming it answered. */
 export class Ashore {
   private place: Place | null = null;
   private readonly players = new Set<number>();
-  private readonly answers = new Map<string, { readonly at: number; readonly ships: readonly { number: number }[] }>();
+  private readonly answers = new Map<string, Answer & { readonly at: number }>();
   private told = 0;
   private readonly sea: (name: string) => { ashoreWord(word: string): Promise<string> };
-  private readonly give: (ships: string) => void;
+  private readonly give: (answer: string) => void;
   private readonly named: (player: number) => string;
 
-  /** `sea` reaches a sea's room by its name; `give` hands the room the ships parked at its island, as JSON; `named` is
-   *  the room's word on a player for the seas, their account and their ship and level as their character has them now
-   *  (`room_named`), empty for one it holds no account of. */
+  /** `sea` reaches a sea's room by its name; `give` hands the room the seas' answers made one (`Answer`), as JSON;
+   *  `named` is the room's word on a player for the seas, their account and their ship and level as their character
+   *  has them now (`room_named`), empty for one it holds no account of. */
   constructor(
     sea: (name: string) => { ashoreWord(word: string): Promise<string> },
-    give: (ships: string) => void,
+    give: (answer: string) => void,
     named: (player: number) => string,
   ) {
     [this.sea, this.give, this.named] = [sea, give, named];
@@ -101,8 +108,9 @@ export class Ashore {
     if (now - this.told >= ASHORE_EVERY_MS) this.name(now);
   }
 
-  /** Tells each sea who stands here, and hands the room every ship the seas answer are parked here: a sea that does
-   *  not answer keeps its last answer for `ANSWER_KEPT_MS`, one not open has none. */
+  /** Tells each sea who stands here, and hands the room every ship the seas answer are parked here and every traffic
+   *  ship they have taken: a sea that does not answer keeps its last answer for `ANSWER_KEPT_MS`, one not open has
+   *  none. */
   private name(now: number): void {
     const place = this.place;
     if (!place) return;
@@ -120,17 +128,20 @@ export class Ashore {
       void this.sea(sea)
         .ashoreWord(word)
         .then((answer) => {
-          const ships = answer ? (JSON.parse(answer) as { number: number }[]) : [];
+          const { ships, taken } = answer ? (JSON.parse(answer) as Answer) : { ships: [], taken: [] };
           const apart = ships.map((ship) => ({ ...ship, number: ship.number + index * SEA_APART }));
-          this.answers.set(sea, { at: now, ships: apart });
+          this.answers.set(sea, { at: now, ships: apart, taken });
           this.hand(place);
         })
         .catch(() => undefined);
     });
   }
 
-  /** Hands the room every ship the seas' last answers hold, where its page draws them. */
+  /** Hands the room every ship and taken traffic id the seas' last answers hold, where its page draws them. */
   private hand(place: Place): void {
-    if (place.draws) this.give(JSON.stringify([...this.answers.values()].flatMap((answer) => answer.ships)));
+    if (!place.draws) return;
+    const answers = [...this.answers.values()];
+    const ships = answers.flatMap((answer) => answer.ships);
+    this.give(JSON.stringify({ ships, taken: [...new Set(answers.flatMap((answer) => answer.taken))] }));
   }
 }
