@@ -42,6 +42,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Come Sail Away's Sailing Comes Over]]
 - [[Ships' Lanterns Come Over From DFO]]
 - [[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]
+- [[The Wreck's Stern Windows Glow]]
 - [[Ship Models Live on R2]]
 - [[The Sloop's Trim]]
 - [[The Server Gets Its Own Rules]]
