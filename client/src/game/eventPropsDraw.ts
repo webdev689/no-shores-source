@@ -68,6 +68,8 @@ export class EventPropsDraw implements Drawer {
   private pipes: Record<'draw' | 'chasm' | 'cast' | 'light', GPURenderPipeline> | null = null;
   private readonly viewLayout: GPUBindGroupLayout;
   private readonly view: GPUBuffer;
+  /** The scene's seconds as the view takes them, after its matrix. */
+  private readonly seconds = new Float32Array(4);
   private readonly viewGroup: GPUBindGroup;
   private readonly propsLayout: GPUBindGroupLayout;
   /** Every opening module's lips, and how many stations are taken. */
@@ -110,7 +112,7 @@ export class EventPropsDraw implements Drawer {
       usage: BUFFER_USAGE.storage | BUFFER_USAGE.copyDestination,
     });
     this.viewLayout = viewLayout;
-    this.view = device.createBuffer({ size: 64, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
+    this.view = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     this.viewGroup = device.createBindGroup({
       layout: viewLayout,
       entries: [{ binding: 0, resource: { buffer: this.view } }],
@@ -322,6 +324,8 @@ export class EventPropsDraw implements Drawer {
   ): void {
     const drawn = this.prepared(fromEye, shot.eye);
     if (drawn.length === 0 || !this.tableGroup) return;
+    this.seconds[0] = time;
+    this.gpu.device.queue.writeBuffer(this.view, 64, this.seconds);
     this.cloth.drawInto(pass, fromEye, shot.eye, time);
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(2, this.tableGroup);

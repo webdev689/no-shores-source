@@ -10,7 +10,7 @@ const drawer = (name: string, drawn: string[]): Drawer =>
 
 test('the city, its layouts and nature draw first, then a fight’s blood, the ships, the figures, and the fight’s marks over them', () => {
   const drawn: string[] = [];
-  const shipModels = { draw: () => drawn.push('ships') } as unknown as ShipModels;
+  const shipModels = { draw: () => drawn.push('ships'), shine: () => undefined } as unknown as ShipModels;
   const figureView = { drawInto: () => drawn.push('figures') } as unknown as FigureView;
   const parts = {
     city: drawer('city', drawn),

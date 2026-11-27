@@ -4,8 +4,11 @@
 // the eye, a bolt and the flash. Its blend keeps `alpha` of what is there and adds `rgb`, so one draw both dims the
 // sun's light and adds the weather's own, with no copy of the picture.
 
+import { LIGHT_MOTION_WGSL } from '../sky/flicker.ts';
+
 /** Each row of `Frame`, as atmosphere.ts packs it. */
 export const ATMOSPHERE_WGSL = /* wgsl */ `
+${LIGHT_MOTION_WGSL}
 struct Frame {
   eye: vec4f,      // world metres, then seconds
   forward: vec4f,  // then the depth law's scale
@@ -178,7 +181,7 @@ fn on_screen(offset: vec3f) -> vec3f {
       let surface = eye.xy + ray.xy * max(-eye.z, 1.0) / max(ray.z, 0.05);
       // The fire's light comes through the surface in patches that the waves break up and the flames flicker.
       let patches = smoothstep(0.35, 0.8, noise3(vec3f(surface * 0.18, frame.eye.w * 1.4)));
-      let flicker = (0.3 + 0.7 * patches) * (0.75 + 0.25 * noise3(vec3f(frame.eye.w * 9.0, 3.0, 0.0)));
+      let flicker = (0.3 + 0.7 * patches) * light_flicker(1.0, frame.eye.w, 1.25);
       let light = frame.glow.rgb * frame.glow.w * flicker * pow(upward, 2.5) * deep;
       laid = over(laid, light * 0.9, 1.0);
     }

@@ -106,7 +106,7 @@ fn measure_the_hollows_dressing() {
             match book.module(placement.module).role {
                 Role::Tree => row[1] += 1,
                 Role::Ruin => row[2] += 1,
-                Role::Wreck | Role::WreckBit => row[3] += 1,
+                Role::Wreck => row[3] += 1,
                 _ => {}
             }
         }
@@ -115,7 +115,7 @@ fn measure_the_hollows_dressing() {
     for ((form, size), [zones, trees, ruins, wrecks, posts]) in counts {
         let mean = |count: usize| count as f64 / zones as f64;
         eprintln!(
-            "{form:8} {size:6} {zones:4} zones: trees {:5.1} ruins {:4.1} wrecks {:4.1} posts {:4.1}",
+            "{form:8} {size:6} {zones:4} zones: trees {:5.1} ruins {:4.1} hulls {:4.1} posts {:4.1}",
             mean(trees),
             mean(ruins),
             mean(wrecks),
@@ -173,4 +173,54 @@ fn a_hollow_keeps_its_dressing_clear_of_its_arrival_by_its_footprint_and_stands_
     for (form, (laid, most)) in own {
         assert!(laid as f64 >= 0.8 * most as f64, "{form}: {laid} of its {most} laid");
     }
+}
+
+#[test]
+fn a_lamp_is_come_to_between_two_stones_and_a_holds_ring_and_the_plants_keep_off_the_pieces() {
+    use crate::plan::{Kind, RING_M};
+    use crate::sites::apart;
+    use isle::catalog::{Role, catalog};
+    let book = catalog();
+    let (mut lamps, mut rings, mut strands, mut bare) = (0, 0, 0, Vec::new());
+    for (week, plan) in hollows(2_900..2_916) {
+        let Laid::Open(hollow) = &plan.ground else { continue };
+        let zone = plan.zone.number;
+        for piece in &plan.pieces {
+            let middle = [piece.at[0], piece.at[1]];
+            if piece.kind == Kind::Lamp {
+                lamps += 1;
+                // Every stone stands clear of the straight way in from the arrival to the plinth.
+                let way = plan.sites.arrive;
+                for stone in Kind::Lamp.solids_at(piece.at, piece.facing).into_iter().skip(1) {
+                    let stone_middle = [(stone[0] + stone[2]) / 2.0, (stone[1] + stone[3]) / 2.0];
+                    let (east, south) = (way[0] - middle[0], way[1] - middle[1]);
+                    let along = ((stone_middle[0] - middle[0]) * east + (stone_middle[1] - middle[1]) * south)
+                        / (east * east + south * south);
+                    let near = [middle[0] + east * along.clamp(0.0, 1.0), middle[1] + south * along.clamp(0.0, 1.0)];
+                    assert!(apart(near, stone_middle) > 1.5, "week {week} zone {zone}: a stone in the way in");
+                }
+                // No plant the page draws reaches the stones.
+                for placement in hollow.placements.iter().filter(|placement| super::grows(placement.module)) {
+                    let reach = super::reach_of(placement.module, placement.scale);
+                    let at = [placement.at[0], placement.at[1]];
+                    assert!(apart(at, middle) - reach >= 4.0, "week {week} zone {zone}: a plant in the lamp's ring");
+                }
+            }
+            if piece.kind == Kind::Ring {
+                rings += 1;
+                for door in plan.sites.onward.iter().chain([&plan.sites.way_in]) {
+                    assert!(apart(door.at, middle) - RING_M >= 2.5, "week {week} zone {zone}: the ring by a mouth");
+                }
+            }
+        }
+        let hulls = hollow.placements.iter().filter(|placement| book.module(placement.module).role == Role::Wreck);
+        if matches!(plan.zone.ground, crate::Ground::Open { form: Form::Strand }) {
+            strands += 1;
+            if hulls.count() == 0 {
+                bare.push(format!("week {week} zone {zone} {:?}", plan.zone.size));
+            }
+        }
+    }
+    assert!(lamps > 10 && rings > 10, "{lamps} lamps and {rings} rings above ground");
+    assert!(bare.is_empty(), "{} of {strands} strands with no hull: {bare:?}", bare.len());
 }

@@ -335,6 +335,21 @@ test('a burning ship lights the hulls round it, three at most', () => {
   assert.equal(lights.length, 3);
 });
 
+test("a burning ship's light flickers by its own ship, the same whichever others burn", () => {
+  const ship = (number: number, fires: number): FeelShip => {
+    const one = brig();
+    return { ...one, vessel: { ...one.vessel, ship: [number * 40, 0, 0, 0], fires } };
+  };
+  const lightOf = (burning: readonly number[]) => {
+    const feel = new FightFeel(9);
+    frame(feel, new Map([1, 2].map((number) => [number, ship(number, burning.includes(number) ? 1 : 0)])), [], 0);
+    return feel.marks(1.37).filter((mark) => mark.blend === 'light' && mark.radius === 16);
+  };
+  const [alone, withOther] = [lightOf([2]), lightOf([1, 2])];
+  assert.equal(alone[0]?.alpha, withOther[1]?.alpha, 'the second ship flickers alike, first in the list or not');
+  assert.notEqual(withOther[0]?.alpha, withOther[1]?.alpha, 'two ships not in step');
+});
+
 test("its own next gun's ball, fired beside one already out, never whistles", () => {
   const feel = new FightFeel(10);
   const ships = new Map([[0, own()]]);

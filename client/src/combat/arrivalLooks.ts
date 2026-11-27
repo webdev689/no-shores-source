@@ -4,6 +4,7 @@
 // its hatch to the ground, a ring of light where the foe is built; dust thrown up where a foe lands. A crown's crystal
 // drawn in out of the air to its heart as it forms, a thread of its light down to each foe forming under it, and a
 // ring of crystal round each one's feet.
+import { flicker } from '../sky/flicker.ts';
 import { type Ramp, POWDER, SMOKE, rampOf } from './markSprites.ts';
 import { DUST, layFlat, layLine, layUpright, ringSprite, scorchSprite, starSprite } from './impactPixels.ts';
 import { CRYSTAL } from './latticeLooks.ts';
@@ -42,10 +43,9 @@ export function layFlame(
   seed: number,
 ): void {
   if (burn <= 0.02) return;
-  const flicker = (step: number) => 0.82 + 0.18 * Math.sin(clock * (23 + step * 7) + seed * 3.1 + step);
   const steps = [0.05, 0.25, 0.5, 0.78, 1];
   steps.forEach((along, step) => {
-    const reach = along * long * burn * flicker(step);
+    const reach = along * long * burn * flicker(seed * 8 + step, clock, 1.8);
     const disc: Point = [mouth[0] + way[0] * reach, mouth[1] + way[1] * reach, mouth[2] + way[2] * reach];
     const radius = Math.max(1, Math.round(((wide * (1 - along * 0.75)) / LOOKS.flameCell) * (0.6 + 0.4 * burn)));
     // The throat white-hot, the tip down to the furnace's red.

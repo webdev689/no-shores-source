@@ -21,12 +21,10 @@ export interface AthericStep {
   readonly state: 'done' | 'under way' | 'to come';
 }
 
-/** The card's view: the Atheric's name, the find's name and words, and each step. */
+/** The card's view: the Atheric's name, and each step. */
 export interface AthericCard {
   readonly id: string;
   readonly name: string;
-  readonly find: string;
-  readonly words: string;
   readonly finished: boolean;
   readonly steps: readonly AthericStep[];
 }
@@ -43,7 +41,7 @@ export function athericCards(held: readonly AthericBountyState[] | undefined): A
       const count = done ? step.count : now ? Math.min(state.count, step.count) : 0;
       return { words: step.words, count, target: step.count, state: done ? 'done' : now ? 'under way' : 'to come' };
     });
-    return [{ id: bounty.id, name, find: bounty.find, words: bounty.words, finished: state.finished, steps }];
+    return [{ id: bounty.id, name, finished: state.finished, steps }];
   });
 }
 
@@ -58,8 +56,8 @@ export function lampCold(held: readonly AthericBountyState[] | undefined, island
   });
 }
 
-/** The card as the Journal draws it: the Atheric's name in its rarity's colour, the find and its words, each step a
- *  line, the one under way with its gauge and count. */
+/** The card as the Journal draws it: the Atheric's name in its rarity's colour, each step a line, the one under way
+ *  with its gauge and count. */
 export function athericCardNode(card: AthericCard, size = 1): Node {
   const stepNode = (step: AthericStep, place: number): Node => ({
     width: 'grow',
@@ -100,12 +98,8 @@ export function athericCardNode(card: AthericCard, size = 1): Node {
     children: [
       words(card.name.toUpperCase(), size, ATHERIC.colour, { tracking: 1, ellipsis: true }),
       words('ATHERIC BOUNTY', size, INK.faint, { tracking: 3 }),
-      { width: 'grow', text: { words: `${card.find}. ${card.words}`, size, colour: INK.word } },
       ...card.steps.map(stepNode),
-      card.finished && {
-        width: 'grow',
-        text: { words: `Finished: ${card.name} is yours.`, size, colour: INK.brassLit },
-      },
+      card.finished && words(`${card.name} is yours`, size, INK.brassLit),
     ],
   };
 }
