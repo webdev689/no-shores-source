@@ -350,7 +350,9 @@ table holds one row an account: what differs from the game's defaults, as JSON, 
   no object of controls, is refused and nothing changes. 120 reads and saves together an hour an account.
 - **The page** reads them once the account is known and binds them, and reads again when another account signs in
   (that account's, or the defaults where it kept none); each change is sent a moment and a half after the last
-  (`keepBinds`). It keeps what still reads, and a kept bind that clashes with a default goes back to its own. A save
+  (`keepBinds`). It keeps what still reads; a default that now stands on a key the player kept for another control
+  gives that key up, so what the player bound stays theirs, and two kept binds that clash both go back to their own
+  (`withOverrides`). A save
   waits on a read that answers, so nothing is kept over binds never read: what the player bound before the read is
   laid over what the account kept, and that is saved. Where the accounts do not answer, the game plays on with what
   it has, the defaults at first, and saves nothing until a read answers.
