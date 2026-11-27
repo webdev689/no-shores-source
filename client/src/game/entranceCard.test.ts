@@ -18,6 +18,7 @@ test('the pad’s B closes an entrance’s card, as Escape does', () => {
   view.show({
     name: 'The Mire Cells',
     tier: 'Normal · Level 5',
+    rank: 0,
     rules: [],
     modifiers: [],
     pays: '',

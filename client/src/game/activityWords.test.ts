@@ -137,6 +137,7 @@ test('an entrance’s card says its run’s tier, level, modifiers and pay, and 
   assert.deepEqual(entranceCardOf(vale, drawn, twelve, today), {
     name: 'the way into gullwing-vale',
     tier: 'Elite seas · Levels 3 to 6',
+    rank: 1,
     rules: [],
     modifiers: [burn],
     pays: 'Taken today. It pays its kills and its cache.',
@@ -197,8 +198,9 @@ test('an entrance’s card says its run’s tier, level, modifiers and pay, and 
     today,
   );
   assert.deepEqual(
-    [warrens.tier, warrens.rules, warrens.shut, warrens.finds],
+    [warrens.rank, warrens.tier, warrens.rules, warrens.shut, warrens.finds],
     [
+      2,
       'Abyss Dungeon of the week · Level 30',
       [revives, 'Never matched. Bring your company.'],
       'This dungeon opens at level 28.',
@@ -220,6 +222,7 @@ test("a region's dungeon's card says its tier in its island's band, that it is t
   assert.deepEqual(elite, {
     name: 'The Weeping Ossuary',
     tier: `Elite seas · ${levelWords(band)}`,
+    rank: 1,
     rules: ['Drawn for today: tomorrow the region offers others.'],
     modifiers: [],
     pays: 'It pays its kills and its cache.',
@@ -228,4 +231,5 @@ test("a region's dungeon's card says its tier in its island's band, that it is t
   });
   const abyss = regionCardOf({ name: 'The Weeping Ossuary', island: 'continent-1', tier: 2 }, drawn);
   assert.deepEqual(abyss.rules.slice(1), [revives, 'Never matched. Bring your company.']);
+  assert.equal(abyss.rank, 2, 'three skulls');
 });

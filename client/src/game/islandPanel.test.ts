@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import type { Laid } from '../ui/node.ts';
 import { BINDS } from '../player/input.ts';
 import { byId, fakeInterface, wordsIn } from '../ui/uiForTests.ts';
 import { sidesOf } from '../ui/layout.ts';
@@ -425,6 +426,12 @@ test('the lit tile opens a card beside it saying what each of its glyphs means, 
   assert.ok(wordsIn(byId(shut, 'island:card:krakens-grotto') ?? shut).includes('Opens after the prologue.'));
 });
 
+/** Whether a laid node stands anywhere inside the node of `id`. */
+function within(laid: Laid, id: string): boolean {
+  for (let up = laid.parent; up; up = up.parent) if (up.node.id === id) return true;
+  return false;
+}
+
 test('each tile stands in a carved frame, in its tier’s tone where it is met at one, lit brighter', () => {
   const { ui } = clicked('island:island', DEPTHS[0] ?? null, { ...FACTS, gates: OPEN });
   const frames = ui.laid.filter((each) => each.node.picture?.key.startsWith('island frame') === true);
@@ -441,6 +448,11 @@ test('each tile stands in a carved frame, in its tier’s tone where it is met a
     assert.match(keyOf(entry.id) ?? '', new RegExp(` ${entry.id === DEPTHS[0] ? 'true' : 'false'} ${entry.tier}$`)),
   );
   assert.match(keyOf('saltgrass-downs') ?? '', / false -$/, 'a place of no tier wears the brass');
+  // Beside each such tile's name, its tier as skulls: one Normal, two Elite, three Abyss; none on a place of no tier.
+  const skullsOf = (id: string) =>
+    ui.laid.find((each) => each.node.label?.endsWith('of 3 skulls') && within(each, `island:${id}`))?.node.label;
+  depths.forEach((entry) => assert.equal(skullsOf(entry.id), `${(entry.tier ?? 0) + 1} of 3 skulls`));
+  assert.equal(skullsOf('saltgrass-downs'), undefined);
 });
 
 test("a region's dungeons of the day are named as the rooms name them, met at a tier the character's level opens", () => {

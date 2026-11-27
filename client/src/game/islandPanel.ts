@@ -24,7 +24,7 @@ import {
   tagOf,
 } from './islandWords.ts';
 import { drawFrame, frameKey } from './islandFrame.ts';
-import { iconNode } from './journalIcons.ts';
+import { iconNode, skullsNode } from './journalIcons.ts';
 import { CREST_SPOTS, type Scene, sceneSheet, TEXEL } from './islandArt.ts';
 import { rgbaOf } from '../art/sheet.ts';
 import { drawCrest } from './playlistCrest.ts';
@@ -166,6 +166,13 @@ function glyphsNode(entry: IslandEntry): Node {
   };
 }
 
+/** An entry's name, and beside it a dungeon's tier as skulls where it has one. */
+function nameRow(entry: IslandEntry): Node {
+  const name = said(entry.name, { size: 2, colour: entry.shut === null ? BRASS : DIM });
+  if (entry.tier === undefined) return name;
+  return { width: 'grow', gap: 8, alignY: 'center', wrap: true, children: [name, skullsNode(entry.tier, 12)] };
+}
+
 /** The tile's card, beside the lit tile: its name, its kind and levels, each glyph with what it means, why it is shut
  *  if it is, and what a click does. Kept on the screen and never clipped by the list. */
 const CARD_WIDE = 264;
@@ -197,7 +204,7 @@ function detailsCard(entry: IslandEntry, side: 'left' | 'right'): Node {
       kept: true,
     },
     children: [
-      said(entry.name, { size: 2, colour: entry.shut === null ? BRASS : DIM }),
+      nameRow(entry),
       tag !== '' && said(tag, { colour: DIM }),
       { width: 'grow', height: 1, fill: 'rgba(192,138,62,0.35)' },
       entry.shut !== null && row(iconNode('locked', 18), entry.shut),
@@ -265,10 +272,7 @@ function entryTile(
                 width: 'grow',
                 direction: 'column',
                 gap: 3,
-                children: [
-                  said(entry.name, { size: 2, colour: entry.shut === null ? BRASS : DIM }),
-                  tag !== '' && said(tag, { colour: DIM }),
-                ],
+                children: [nameRow(entry), tag !== '' && said(tag, { colour: DIM })],
               },
               entry.shut === null && { ...iconNode('next', 24), opacity: state.lit ? 1 : 0.45 },
             ],

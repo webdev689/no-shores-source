@@ -210,6 +210,8 @@ export interface AtEntrance {
 export interface EntranceCard {
   readonly name: string;
   readonly tier: string;
+  /** The tier in a number, 0 Normal, 1 Elite and 2 Abyss, its skulls beside the name. */
+  readonly rank: number;
   readonly rules: readonly string[];
   readonly modifiers: readonly KeyedModifier[];
   readonly pays: string;
@@ -242,6 +244,7 @@ export function entranceCardOf(
     return {
       name,
       tier: tierWords(SEAS[tier] ?? '', tier),
+      rank: tier,
       rules: metAt === 'abyss' ? [revivesWords(drawn)] : [],
       modifiers: ofTheDay && tier > 0 ? shown(drawn, [drawn.dayModifier]) : [],
       pays: ofTheDay ? dayPays : PLAIN_PAYS,
@@ -254,7 +257,7 @@ export function entranceCardOf(
   if (run.seas === 'normal') {
     const shut = gates?.eliteDungeon ?? null;
     const finds = shut === null ? nodeRoom(node, 'normal') : null;
-    return { name, tier: tierWords(run.words, 0), rules: [], modifiers: [], pays: PLAIN_PAYS, shut, finds };
+    return { name, tier: tierWords(run.words, 0), rank: 0, rules: [], modifiers: [], pays: PLAIN_PAYS, shut, finds };
   }
   const which = run.seas === 'elite' ? 'elite' : 'abyss';
   const weekOn = which === 'elite' ? drawn.weekElite : drawn.weekAbyss;
@@ -263,6 +266,7 @@ export function entranceCardOf(
   return {
     name,
     tier: `${run.words} · Level ${weekOn.level}`,
+    rank: which === 'elite' ? 1 : 2,
     rules: which === 'abyss' ? [revivesWords(drawn), NEVER_MATCHED] : [],
     modifiers: shown(drawn, weekOn.modifiers),
     pays: takenThisWeek(drawn, record, which) ? `Taken this week. ${PLAIN_PAYS}` : pays,
@@ -282,6 +286,7 @@ export function regionCardOf(
   return {
     name: dungeon.name,
     tier: band ? `${words} · ${levelWords(band)}` : words,
+    rank: dungeon.tier,
     rules: [
       'Drawn for today: tomorrow the region offers others.',
       ...(dungeon.tier === 2 ? [revivesWords(drawn), NEVER_MATCHED] : []),
