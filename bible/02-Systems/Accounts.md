@@ -303,7 +303,13 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   group. Only a playlist and a Breach launch: on an Elite Dungeon's base a launch waits as any search does. A Breach
   is only launched ("A Breach is launched by its company from the Playlist."): at its tier's level (24, Hard 28) and,
   at Hard, once the character has won it at Normal (`story.breaches`); its run is named for its zone's gate, and its
-  company may come to the gate from anywhere for half an hour after (`LAUNCH_ARRIVES_MS`). A playlist's run
+  company may come to the gate from anywhere for half an hour after (`LAUNCH_ARRIVES_MS`). Launched again by the
+  account or anyone of its company as it is now within its gate's day (`BREACH_RELAUNCH_MS`), it is the company's
+  newest run of that Breach and tier (`companyRunOf`), so a member who joined since goes to the same run; a run whose
+  gate shut again is forgotten (`forgetRun`, every row of it), and a company's leader, or a player alone, resets its
+  checkpoints with `company/reset` and the Breach's base (`{"base":"node-gullwing-vale--breach-normal"}`), forgetting
+  the company's runs of it, so the next Launch starts a new run. Anyone else is told "Only your company's leader can
+  reset its checkpoints." (403), and a base that is no Breach's "Choose a Breach." (400). A playlist's run
   lets in first one it was found or launched for, or one of their company (`launchedFor`), as it would let them
   in after them: a member back first, the room forgotten while empty, is not shut out.
 - **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks

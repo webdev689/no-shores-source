@@ -703,6 +703,14 @@ so every decision is Rust and the shell only carries bytes and time.
   not judged, as they keep nothing. The sea, its islands and their dungeons keep their own rules ("The sea").
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
+- **What a Breach keeps** outlives its room in the object's storage, under `breach` (`server/breach.ts`, `kept_json`):
+  a run's checkpoint and the hidden chests its attempt earned, and at a gate's zone the runs it opened and shut again.
+  The room is given it back as it opens (`restoring`), before anyone joins, and it is stored each second it changed,
+  and at once as a word from the other room changes it. A run's is let go a day after it last moved by the object's
+  alarm, which clears its storage; a gate lets its runs go itself. A run's word to its zone names the zone, whose room
+  opens for it where no one has joined it since an eviction or a deploy, so its gate answers as it stood. Each run a
+  gate shuts again, cleared or its day out, the accounts forget (`forgetRun`), so its company's next Launch starts a
+  new one ([[Breaches]]).
 - A full room closes the socket saying so (1013, "the room is full"), and so does one past its sockets, 64, the
   sea's guard, or a run's eight: the socket is taken only to be closed, since a page never reads a refused upgrade's
   status. A locked node's room takes no one, at any seas: the room answers every join with none and says why

@@ -154,6 +154,22 @@ fidelity of this insanely impressive" asked. The owner can change any of them.
 | The gate's ledges | A faced rock's outer row kept inside its box | The rock stands no further out than the ledge's solid face, but for its buttresses |
 | Stained glass | A material of its own, `glass`, in the Choir's rose and the shore's lancets | The windows read as glass, not lamps |
 
+## Its checkpoints and what lasts
+
+Claude's calls building [[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]
+([[Breaches]]). The owner can change any of them.
+
+| Call | Chosen | Why |
+|---|---|---|
+| The checkpoints | The run's stages as they stood: the Descent's top, each encounter's start, and the Broken Stair's; kept with the hidden chests the attempt earned | Each encounter's start was a stage already; a chest earned and left would be lost to a restart |
+| Launching again | The company's newest run of that Breach and tier, within its gate's day, unless its gate shut it | The gate's day is how long the run can be gone into; a cleared run has nothing left to come back to |
+| A reset | Forgets the company's runs of that Breach and tier, so the next Launch is a new run, from the Waking | "Starts the run fresh": the Waking is the run's first encounter, as the Vault's Spire was |
+| Who may reset | The company's leader, or a player alone; a member is told so | Destiny lets the fireteam leader's checkpoint stand |
+| The reset's press | Reset checkpoints (R) on the Breach's open tier, pressed twice | It throws away a company's progress: one stray key should not |
+| How long it is kept | A run's checkpoint a day after it last moved; a run the gate shut, remembered two days from its opening | Past its gate's day no one goes in; the accounts admit a run a day after its last launch |
+| What is not kept | The Waking under way and who stands in which run's company at the gate | Its foes and players are the room's; players are held again as they rejoin with their run |
+| Forged weapons' climb | Attack 263 to 315, Normal's 248 to 300: a level's Attack (15) further at each end | Hard's armour reaches the level past Normal's; a Forged weapon's blow reaches a level further |
+
 The owner's answers on it:
 
 - [[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]

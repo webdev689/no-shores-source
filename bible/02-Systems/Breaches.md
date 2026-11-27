@@ -8,6 +8,7 @@ code:
   - crates/room/src/breach/mod.rs#breach_run
   - crates/room/src/breach/plan.rs#drowned_vale
   - crates/room/src/breach/gate.rs#open_breach_gate
+  - crates/room/src/breach/kept.rs#Kept
   - crates/room/src/breach/fallen.rs#stands_after
   - crates/room/src/breach/fallen.rs#breach_lets_revive
   - crates/room/src/breach/lodestone.rs#Lodestone
@@ -45,7 +46,12 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   revive spends one of the attempt's 5 revives, none left meaning none (`breach_lets_revive`). Outside a running
   encounter the fallen stand again after 6 s at either tier (`stands_after`); a fall into the dark is not revived (one who leaves so comes back so), and
   waits as long. Every stand at the stage reached is a respawn there, the stage the Breach's checkpoint, told
-  `Checkpoint` as it moves on. At the Waking the same holds for the company holding the gate in its hollow, standing
+  `Checkpoint` as it moves on: the Descent's top, each encounter's start (the Mending's, the Choir's, the Ways', the
+  Two Shores' hall and the Steward's court) and the Broken Stair's. The checkpoint, and the hidden chests its attempt
+  earned, are kept in the run's object's storage (`kept.rs`, `server/breach.ts`), so a run its company left, or one
+  restarted or deployed afresh, opens again at it: each encounter before it won, its seals open, whoever joins
+  standing there. It is let go a day after it last moved (the host's alarm), past its gate's day. At the Waking the
+  same holds for the company holding the gate in its hollow, standing
   again at the gate's arrival, its fallen revived only by its own company. At Hard every blow on a player
   in the run, or of the company in its Waking, weighs 1.25 times. The whole company unwritten (`unwrite_all`) loses the attempt 3 s on, whoever stands again meanwhile
   (`Breach::lost`); and every living player down 3 s at once wipes the
@@ -59,7 +65,14 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 - **The company.** Companies hold eight, as a Breach is taken on by up to eight
   ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); a Breach's run holds eight and every other run four. It is
   launched from the Playlist: the finder (`/v1/find/node-gullwing-vale--breach-<tier>?launch`) starts the run for the
-  launcher's company at once, at its tier's level. Its room is `node-gullwing-vale--breach-<tier>--run-<8>`.
+  launcher's company at once, at its tier's level. Its room is `node-gullwing-vale--breach-<tier>--run-<8>`. A run
+  follows the company as the accounts hold it now, not as it was launched: one who joins the company later is held at
+  its gate and let into its run as its members are (`launchedFor`). Launched again within its gate's day, the
+  company's run is the one it launched (`BREACH_RELAUNCH_MS`), so it comes back through its gate, still open to it, to
+  the last checkpoint it reached; a run whose gate shut again, cleared or its day out, is forgotten by the accounts
+  (`forgetRun`), and the next Launch starts a new one. Reset checkpoints on the Playlist, asked by the company's leader
+  or a player alone (`company/reset`), forgets the company's runs of that Breach at that tier, so its next Launch starts
+  the Breach fresh, from the Waking.
 - **The opening, in the patrol zone.** The bake writes where the layout stood the Sunken Gate (the `breach-gate`
   module, area kind `breach`) into Gullwing Vale's node file, and its room stands the gate there. A launched player
   joins the zone with `?breach=<run>`, may arrive there from anywhere, and stands at the gate in their run's company.
@@ -69,7 +82,10 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   more for every two of the company's living holders, six at most, each growth's foes forming under a crown of the
   Lattice's crystal over it, and its perch's Ravager under its own; a Bulwark sent out forms under a crown over its
   mouth ([[Enemies]], "Arrivals"; [[Foe Arrivals as Claude Builds Them]]). The Spire woken, the gate opens to that company
-  alone until its Breach is cleared or a day has passed, and no company whose run opened takes the gate again; lost
+  alone until its Breach is cleared or a day has passed, and no company whose run opened takes the gate again (a run
+  it shut is remembered two days from its opening, `SPENT_MINUTES`). The runs it opened and shut outlive an eviction, a
+  restart or a deploy in the zone's object's storage, and a run asking whether its gate opened opens the zone's room
+  where no one has joined it since, so the gate answers as it stood; lost
   (a wipe, or the Spire standing empty a whole minute), the company stands whole at the gate's arrival and the gate is
   free. The zone hears only the runs it opened, so a run no one was let into shows no company inside. The gate's
   company holds eight at most, and only those the Breach would let in (its tier's level, and Hard's Normal win); one
@@ -116,7 +132,7 @@ alone:
 | The Descent | Down the old mill race: drops, the fallen wheel across a gap, a jump; a hidden chest off a ledge | A traversal |
 | The Mending | The drowned green: three seams | Three stages of 60 s (north; west and east; all three), waves between (every encounter's waves forming under a crown over each mouth they come from, [[Enemies]], "Arrivals"); Penitents walk to the nearest open seam (turning to another as one shuts, falling apart with none open; one every 5 s for four, as much more often for more) and fuse, each fusion overtaking ground round it (a tenth of health a second), the walkers standing whatever the waves; four fusions (Hard three) wipe; the Mender last |
 | The Choir | The chapel: seven bells, five desks, the font | No spell seeks or strikes a bell or a Watcher, so the Arts never break the order; Rounds of 3 to 7 bells waking 1 s apart (Hard 0.7 s) and ringing 8 s (Hard 6 s) after the last; broken in waking order (a few blows each) or they ring; a wave stands as each round wakes; a ring Rewrites every living player in the run; the font cleanses, stays lit 3 s for the rest to reach it, then rests 25 s. Then the Scrivener, warded, at a desk, its aimed shot telegraphed, at half health quicker with two Flickers called behind it: Ground breaks the ward; every 25 s it marks a desk for 4 s, blotted by a player standing on it, or it moves there; every 30 s it writes, unwriting the Rewritten; a bell wakes 22 s before each writing; fury at 8 minutes |
-| The Unlit Ways | The old town's streets between houses bricked shut, and its Watchers | The Watchers listen from 3 s in; a Watcher sees 14 m in a 40° cone on its sweep; a living player in its sight 0.75 s, or sprinting within 8 m, is seen: at Normal they are unwritten, at Hard the company in 3 s, whoever reaches the Stair meanwhile; Watchers cannot be harmed; won when every living member of the company stands on the Stair; the Heart's chest opens to an attempt in which no one was seen, and shuts once anyone is |
+| The Unlit Ways | The old town's streets between houses bricked shut, and its Watchers | The Watchers listen from 3 s in; a Watcher sees 14 m in a 40° cone on its sweep; a living player in its sight 0.75 s, or sprinting within 8 m, is seen: at Normal they are unwritten, at Hard the company in 3 s, whoever reaches the Stair meanwhile; Watchers cannot be harmed; won when every living player of the company in the run stands on the Stair, wherever the others stand, the fallen not counted; the Heart's chest opens to an attempt in which no one was seen, and shuts once anyone is |
 | The Broken Stair | Slabs over the dark | A traversal on the slabs' measure; a hidden chest on a side slab |
 | The Two Shores | The keep's hall: the Seam, two rifts | The Warden first; then each rift opens (3 s) while its mooring is held, and a Bulwark shuts it only from a mooring the company has left; inside, its Keeper; a Keeper's fall Rewrites its shore, again every 4 s while inside; a shore shut strands those in it (unwritten after 8 s); the Seam tolls every 30 s and fuses Husks, each fusion counted as the Mending's are (its own limit unwrites the company), though it overtakes no ground |
 | The Steward | Its court over the dark | Its first taking at 25 s, then every 70 s (Hard 60 s) on a fixed clock: half the living players in the run not away, up to four, into one shore, Rewritten; any still away when the next taking comes are unwritten first; there, five bells broken in the order shown in the court open the way back while the rift's mooring is held from the court (by two at Hard, or as many as are left there; with none left, the bells alone); it tolls 20 s after each taking and every 20 s; Grounded at its feet it lies bare 25 s, once between takings (blows on it five times, the Arts recharging three times as fast), and a company that never lays it bare cannot fell it before its last toll; it sweeps and lunges, at two thirds slams with two Husks called beside it, at one third rings; after the fourth taking, when a fifth would come it unwrites everyone, and every 20 s after; its fall wins, bringing back any still in a shore |
@@ -130,7 +146,8 @@ alone:
   [[Breach Weapons Come Normal and Forged]]; `itemName`), its Breach perks at their stronger Forged grade
   ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]; [[Gear]], "The Breaches' perks"). Normal's weapons
   never carry an element and the Forged always do
-  ([[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]).
+  ([[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]). The Forged climb further too, as
+  Hard's armour does: a Normal weapon's Attack 248 to 300 as any Legendary's, a Forged one's 263 to 315 ([[Gear]]).
 - **The Steward's first clear ever** keeps the banner, the emblem The Drowned Vale; by chance the dye Drowned Vale
   (1 in 5 at Normal, 1 in 3 at Hard) and the horse barding Drowned (1 in 20, 1 in 8), each once.
 - **Hidden chests** pay Essence once a week; every find keeps its lore chapter of the book *Soundings* ([[Lore]]).
@@ -138,7 +155,9 @@ alone:
 ## On the page
 
 - **Launched from the Playlist** (`playlistBreach.ts`, `breachTrips.ts`): its crest opens Find a Company's Launch at
-  its tier ("Launch", never "Go alone"); its card says it is played online with a company, the Prestige each tier
+  its tier ("Launch", never "Go alone"), with Reset checkpoints (R) beside it, pressed twice, the accounts' refusal
+  said in their words ("Only your company's leader can reset its checkpoints."); its card says it is played online
+  with a company, the Prestige each tier
   reaches and the standing-again times. The run found, the page travels to the Gullwing Vale joined with the run,
   standing at the gate. A refusal shows its words: the gate's own (112), "Too far from the gate." (100), that the gate
   did not answer, or why the gate's company shut a player out (`ShutOut`: full, under the level, Hard before Normal).
@@ -238,12 +257,12 @@ slowly and glints with the lamps over it ([[Modules]], "In the game").
   the rules changes it in the page too. A player already paid a hidden chest this week sees it shut.
 - **Small companies**: one or two cannot hold the Spire's three moorings; their Waking is lost when the Spire stands
   empty a minute.
-- **At Hard, a fall into the dark in the Unlit Ways** is not waited for: the living alone must reach the Stair, as the
-  Vault let a few finish its maze. Claude's reading; the owner may want every player.
 - **The Two Shores' crossing rule at Hard** (the Lodestone may not cross a rift) never binds yet: no Keeper is warded.
   A Hard ward on the Keepers would give it weight; that is a new mechanic, for the owner.
-- **The Ways wait on every living player of the company**, as the rule reads: one idle elsewhere in the run holds the
-  Ways unwon until they reach the Stair or fall. The owner's call whether those away from the Ways count.
+- **Not kept past a restart**: the Waking under way and who stands in which run's company at the gate. A restart lets
+  the Waking go, and its players are held again as they come back with their run. A company launched just as its
+  gate's day ran out, its zone standing empty so not yet told, arrives at a gate shut to it once; launching again
+  starts a new run.
 - **The Steward's bell order travels to every player.** The page draws it only in the court, and the taken see their
   bells' numerals alone; but the room sends one snapshot to all, so hiding the order from the taken's page would need
   a snapshot of its own for them.
