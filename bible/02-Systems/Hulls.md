@@ -14,6 +14,7 @@ code:
   - tools/ships/export_ship.py#main
   - client/src/ships/lanterns.ts#HULL_LANTERNS
   - client/src/ships/lanternMesh.ts#lanternMesh
+  - tools/ships/export_ship.py#GLASS_SHELL
 ---
 # Hulls
 
@@ -29,7 +30,7 @@ Every hull keeps what the Sloop's model holds, at its detail:
 
 - **Chunky, flat-shaded forms**: one hull mesh of broad faceted panels, no smoothing, and about 28,000 faces in all.
 - **Five painted parts**: hull, deck, spar, sail and iron. The game's painter lays planks, canvas and iron over them;
-  no hull carries a picture of its own.
+  no hull carries a picture of its own. A window's pane is glass (below, "Stern windows").
 - **Flat sails with clean corners**, which the game bellies and swings, on plain round spars.
 - **Tall bulwarks with gunports**, each gun its own object named `Cannon.Port.N` or `Cannon.Starboard.N`, fore to aft
   ([[Ship Models Live on R2]]).
@@ -98,6 +99,16 @@ from its published mesh (`HULL_LANTERNS`): the Schooner, the Brig and the Frigat
 glass between an iron foot and a peaked cap (`lanternMesh.ts`). The Sloop has no companionway of its own in its mesh, so
 it carries three: its taffrail's on a pole and its quarters'. The glass is pale horn by day and burns at night while its
 ship shows her lanterns ([[Sailing]], "Lanterns at night").
+
+## Stern windows
+
+The Schooner, the Brig and the Frigate each carry four windows round their stern, two a side, and the cabin six across
+its stern wall; the Sloop's model has none, its transom one plain face
+([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]). Each pane is built in
+the part `glass`, which `paint_ship.py` keeps, and `export_ship.py` writes it as iron with its vertices' second part
+byte 2 (`GLASS_SHELL`), every other byte as before. The game draws it as it draws a lantern's glass: pale horn by day,
+and burning while its ship shows her lanterns ([[Sailing]], "Lanterns at night"). The `ships` workflow tests the
+export's bytes (`tools/ships/test_export.py`) before it builds.
 
 ## What the code needs
 

@@ -8,7 +8,8 @@ import { VERTEX_BYTES } from './shipMesh.ts';
 
 type Point = readonly [number, number, number];
 
-/** The shell byte a lantern's glass carries: past the shell's 1 and the rest's 0. */
+/** The shell byte a lantern's glass carries, as a stern window's pane does in its hull's mesh
+ *  (tools/ships/export_ship.py GLASS_SHELL): past the shell's 1 and the rest's 0. */
 export const GLASS_SHELL = 2;
 /** A lantern of ours: its glass's radius and half height; its foot's and cap's radius, the cap's height; a pole's
  *  radius; the sleeve's radius and half height round a mesh's own lantern's glass (iron of 0.17 m across 0.4 m). */
