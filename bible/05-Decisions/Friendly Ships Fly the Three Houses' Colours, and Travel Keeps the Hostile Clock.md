@@ -19,6 +19,11 @@ Asked whether that meant the seas alone or every place with tiers, the owner ans
 
 > "The seas only"
 
+Asked whether a sea island and its dungeon, which took their tier from their sea, should lose Elite and Abyss with it,
+or whether sea dungeons should keep them, the owner answered:
+
+> "Keep their tiers"
+
 Asked whether a shipless player may join a companion where only the sea leads, the owner answered:
 
 > "Players can choose to travel with company members aboard their ship"
@@ -63,7 +68,9 @@ Asked whether each hull's eye frames well in the sea fight's aim, the owner answ
 - **Each friendly ship sails for one of the three houses** and flies its colours ([[The Waters Come From the Islands]],
   [[Factions]]).
 - **The seas lose their Elite and Abyss tiers for now**: every sea sails at Normal. Places on land with tiers keep
-  them ([[Revives, Respawns and Relogs as Claude Shapes Them]]).
+  them ([[Revives, Respawns and Relogs as Claude Shapes Them]]), and so do a sea island and its dungeon: each stands at
+  the tier the voyage set out at, as a node landed at does, and asks the one sea, at Normal, of its island
+  ([[Islands]]).
 - **A player may travel aboard a company member's ship** ([[Shipyard]], "Limits").
 - **A Boss still wins against a lone Sloop, but a Sloop can outsail it and escape** ([[Naval Combat]]).
 - **The hit side's red outline stays off the ship's console.**
@@ -76,7 +83,7 @@ Asked whether each hull's eye frames well in the sea fight's aim, the owner answ
 - **The sea fight's view outside the aim wants tweaking and a better design**: a pass for later, its specifics the
   owner's ([[Open Questions]]).
 
-Built ([[Sailing]], [[Naval Combat]], [[Server]]; Claude's calls in
+Built ([[Sailing]], [[Naval Combat]], [[Server]], [[Islands]]; Claude's calls in
 [[The Open Questions' Answers as Claude Builds Them]]). Already so: logging back in at sea came back at Normal. Not
 built yet: a friendly ship in a fight still flies Overlook's blue ([[Factions]], "Limits"); aboard another's ship a
 player cannot get off at will, sees no fight of their captain's, is still shown the helm's controls, cannot go ashore

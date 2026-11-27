@@ -272,7 +272,8 @@ on Cloudflare.
 
 The room named `sea` holds every player's ship, at Normal, whatever tier a voyage sets out at: the seas have no other
 tier for now ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]). No room opens as
-`sea--elite` or `sea--abyss` (`seaRoom`), so neither does an island or a dungeon of theirs; a sea room still takes a
+`sea--elite` or `sea--abyss` (`seaRoom`): an island landed at Elite or Abyss and its dungeon ask the one sea of their
+island ("Islands", below); a sea room still takes a
 tier, its ships coming at the levels it raises them to (`room_difficulty` after `room_open_sea`). A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s,
 200 (2,400 m/s), at which a voyage planned on the held map sails, or 1, the world's own time, which the page sails it
@@ -384,13 +385,16 @@ will take it, by the room's own tick.
 
 - **Islands.** The sea rolls its procedural islands near players' ships in hostile waters, tells each player those
   within 20 km of their ship and those they found, keeps every course and hostile ship off their coasts, and lets each
-  fade ten minutes after nothing holds it ([[Islands]]). An island's room is `isle-<number>-<seed>`: the host opens it
-  only on the `sea` room's word that the island stands with that seed (a call between the two Durable Objects), and
+  fade ten minutes after nothing holds it ([[Islands]]). An island's room is `isle-<number>-<seed>`, with `--elite` or
+  `--abyss` after it at the tier the voyage landed at, its guards raised to it and its gate shut to a level that
+  tier's seas shut, as a node's room is: the host opens it, whatever its tier, only on the `sea` room's word that the
+  island stands with that seed (a call between the two Durable Objects, `seaIsland.ts`), and
   while players stand ashore it names them to the sea every 15 seconds, which holds the island under them ("Parked
   ships", below). As an account joins it, the
   room asks the sea whether that account is landed on the island (its ship at rest at the island's anchorage) and lets
-  go of one that is not; only landed accounts scavenge. An island's dungeon (`sea-dungeon-...`) opens the same way: only
-  when the sea of its tier holds an island whose door leads there, named from that island's seed, water and style
+  go of one that is not; only landed accounts scavenge. An island's dungeon (`sea-dungeon-...`) opens the same way, at
+  the tier its name carries: only
+  when the one sea holds an island whose door leads there, named from that island's seed, water and style
   (`room_sea_dungeon`, `dungeon_room`), so no page opens one for a seed or a style it names. It holds that island while
   players are in it, lets go of an account the sea has not landed there (one the sea did not answer for, or not within
   20 seconds, may join again), and plays each input before the sea's answer as standing still, though a dress sent then
@@ -626,7 +630,7 @@ so every decision is Rust and the shell only carries bytes and time.
   `breachAsk`'s ask; it lets a character in only once its zone's room says its company's gate opened, and holds eight
   accounts ([[Breaches]]). No name opens a shared
   Elite or Abyss dungeon, a private Normal one, or a run without its whole instance. A run and a sea island's
-  dungeon (on its sea's word, "The sea") open from their name: `runAsk` makes the ask the room module's `open_run` takes, at the minute the first
+  dungeon (on the one sea's word, "The sea") open from their name: `runAsk` makes the ask the room module's `open_run` takes, at the minute the first
   player joins, and a patrol's dungeon's run is given its patrol's node file too, so it keeps the patrol's lock. One
   no rule lays, or whose patrol's file is missing, answers 404.
 - **A playlist's run is the server's**: its first character is given only to an account the server found or launched

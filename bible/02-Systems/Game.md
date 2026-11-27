@@ -415,8 +415,10 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   ([[Shipyard]], "Limits"). Let off as the captain leaves the sea (`SeaRoom.letOff`), the page says "Your company
   member left the sea." and goes back to the player's own ship, or, keeping none, to Overlook (`getOff`).
 - **A sea island's dungeon** is entered by E at its door on the island ([[Islands]], "The door") by its room's name
-  (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`), shared at Normal: its tier is its sea's,
-  and every sea sails at Normal ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]).
+  (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`) at its island's tier, the one the voyage
+  set out at, as a node's dungeon is entered at its node's, though every sea sails at Normal
+  ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]): shared at Normal, a run at
+  Elite or Abyss.
   It is laid by its seed and style and named "The <Style> of the Sea", the veil saying "Entering The Caverns of the
   Sea". Leaving it the veil says "Leaving" it and the player goes back to the sea, at their ship. An island standing a
   player at its door would stand them 1.5 m before it along its bearing out, facing that way (`back`, the door's point
