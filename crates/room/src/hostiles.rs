@@ -11,7 +11,7 @@ use crate::PlayerId;
 use crate::sea::SHIP_SPEED_M_S;
 use crate::sighting::{
     AHEAD_ARC_RAD, COME_OUT, Chart, HELM_TURN_RAD_S, KEEP_SHARE, LANE_REACH_M, SIGHT_LEAST_M, SLOW_PACE, WaterHere,
-    along_lane, faction_of, hostile_chance, intercept_heading, level_in, meeting_arc, rank_for, sight_for,
+    along_lane, daylight_at, faction_of, hostile_chance, intercept_heading, level_in, meeting_arc, rank_for, sight_for,
     turned_toward, way_of,
 };
 use combat::sight::apart;
@@ -20,6 +20,7 @@ use naval::captain::wary_takes;
 use naval::captain::{ENGAGE_RANGE, Temper, temper_for};
 use naval::class::class_of;
 use naval::fight::SPAWN_TRIES;
+use naval::night::night_sight;
 use naval::random::Mulberry32;
 use naval::ranks::Commission;
 use std::collections::BTreeMap;
@@ -113,6 +114,9 @@ pub struct Hostiles {
     chasing: BTreeMap<PlayerId, u32>,
     /// The sea's tier, which raises the levels of the ships it sends as it raises foes on land.
     pub difficulty: gear::Difficulty,
+    /// The world time over the sea, seconds since the Unix epoch, as its room tells it each tick: by night a ship sights
+    /// a player only within night sight. Until told, its ships sight as by day.
+    pub clock_s: Option<f64>,
 }
 
 #[cfg(test)]
@@ -156,13 +160,20 @@ pub(crate) fn round_the_coast(
 /// A ship's heading after `seconds` at its `clock`, and the player it comes for: the one it came for while still in
 /// its sight and not fighting, else the nearest such; it steers to intercept them, at most at the helm's rate. A bold
 /// ship comes for anyone; a wary one only for a ship it would take (`wary_takes`, DFO's `takesPrize`). One with no
-/// one to come for keeps its heading.
-fn come_for(hostile: &Hostile, ships: &[Voyager], (seconds, clock): (f64, f64)) -> (f64, Option<PlayerId>) {
+/// one to come for keeps its heading. Under `daylight` it sights a player as far as night sight lets it: a player's
+/// ship always shows her lanterns.
+fn come_for(
+    hostile: &Hostile,
+    ships: &[Voyager],
+    (seconds, clock): (f64, f64),
+    daylight: f64,
+) -> (f64, Option<PlayerId>) {
     let at = [hostile.x, hostile.y];
+    let sight = night_sight(hostile.sight_m, daylight, true);
     let takes = |ship: &Voyager| {
         hostile.bold || wary_takes(hostile.commission, hostile.strength(), (ship.hull_kind, ship.hull))
     };
-    let open = |ship: &&Voyager| !ship.fighting && hostile.sees(ship.at) && takes(ship);
+    let open = |ship: &&Voyager| !ship.fighting && apart(at, ship.at) <= sight && takes(ship);
     let kept = ships.iter().filter(open).find(|ship| Some(ship.player) == hostile.quarry);
     let nearest = || ships.iter().filter(open).min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
     let Some(ship) = kept.or_else(nearest) else { return (hostile.heading, None) };
@@ -184,6 +195,7 @@ impl Hostiles {
             sailing: Vec::new(),
             chasing: BTreeMap::new(),
             difficulty: gear::Difficulty::Normal,
+            clock_s: None,
         }
     }
 
@@ -228,7 +240,8 @@ impl Hostiles {
                 sight_for(f64::from(ship.pace), class_of(ship.hull_kind).way).max(hostile.sight_m)
             });
             let clock = clock_at(&hostile, ships);
-            let (heading, quarry) = come_for(&hostile, ships, (seconds, clock));
+            let daylight = self.clock_s.map_or(1.0, |unix_s| daylight_at(hostile.y, unix_s));
+            let (heading, quarry) = come_for(&hostile, ships, (seconds, clock), daylight);
             let step = way_of(hostile.commission.rank) * seconds * clock;
             let ahead = [hostile.x + libm::sin(heading) * step, hostile.y - libm::cos(heading) * step];
             let sailed = &mut self.sailing[index];
