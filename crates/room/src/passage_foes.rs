@@ -18,7 +18,7 @@ use combat::fighter::FighterId;
 use combat::sight::{apart, bearing};
 use movement::{TUNING, Terrain};
 use naval::random::Mulberry32;
-use passage::{Current, Deal, Form, Ground, Mission};
+use passage::{Current, Deal, Form, Ground, Mission, POST_OFF_ARRIVAL_M};
 use reach::Section;
 
 /// The bands' foes by depth: shallow (1 to 5), middle (6 to 10), deep (11 to 15) and deepest (16 to 20).
@@ -108,7 +108,7 @@ fn lamp_guard(lamp: u8, island: &str, week: u64) -> Option<(u8, Rank)> {
 
 /// Where a lamp's first band is tried, in turn: LAMP_GUARD_M east of the lamp, then north, west and south of it, where
 /// rock closes a side under ground; last the post nearest the lamp.
-fn beside_lamp(lamp: [f64; 2], posts: &[[f64; 2]]) -> Vec<[f64; 2]> {
+pub(crate) fn beside_lamp(lamp: [f64; 2], posts: &[[f64; 2]]) -> Vec<[f64; 2]> {
     let sides = [[1.0, 0.0], [0.0, -1.0], [-1.0, 0.0], [0.0, 1.0]];
     let nearest = posts.iter().copied().min_by(|first, second| apart(*first, lamp).total_cmp(&apart(*second, lamp)));
     sides
@@ -155,7 +155,7 @@ impl Room {
         let Some(zone) = self.zone() else { return };
         let (deal, depth, posts) = (zone.zone.deal, zone.zone.depth, zone.sites.posts.clone());
         let (island, week, lamp) = (zone.island, zone.week, passage::lamp_number(depth));
-        let near_lamp = zone.sites.lamp;
+        let (near_lamp, arrive) = (zone.sites.lamp, zone.sites.arrive);
         let mut draws = draws_of(self.world_seed ^ BAND_STREAM);
         let mut groups: Vec<Group> = match (deal, lamp) {
             (Deal::Lamp, Some(number)) => {
@@ -186,7 +186,13 @@ impl Room {
         let (mut standing, mut stood) = (0, 0);
         for (nth, group) in groups.into_iter().enumerate() {
             let tries = match (nth, near_lamp) {
-                (0, Some(lamp)) if deal == Deal::Lamp => beside_lamp(lamp, &posts),
+                (0, Some(lamp)) if deal == Deal::Lamp => {
+                    // Beside the lamp where that keeps POST_OFF_ARRIVAL_M off the arrival, else the farthest choice.
+                    let mut tries = beside_lamp(lamp, &posts);
+                    let off = |at: &[f64; 2]| apart(*at, arrive).min(POST_OFF_ARRIVAL_M);
+                    tries.sort_by(|first, second| off(second).total_cmp(&off(first)));
+                    tries
+                }
                 _ => vec![posts.get(nth).copied().unwrap_or(posts.first().copied().unwrap_or_default())],
             };
             // Crowded's extra foes do not count against the most: it holds as many bands.

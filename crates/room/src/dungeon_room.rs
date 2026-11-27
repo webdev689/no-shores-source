@@ -12,10 +12,11 @@ use crate::run::Run;
 use crate::{Floor, NODE_FOES_MOST, PlayerId, Room};
 use ::foes::Rank::{self, Miniboss};
 use ::foes::roster::REEVE;
-use combat::sight::bearing;
+use combat::sight::{apart, bearing};
 use dungeon::{CELL_M, Dungeon};
 use movement::{Block, Terrain};
 use navmesh::NavMesh;
+use passage::POST_OFF_ARRIVAL_M;
 use reach::Section;
 
 /// How far the cache stands from the Reeve's post (m).
@@ -138,6 +139,39 @@ fn band_rooms(dungeon: &Dungeon, most: usize) -> Vec<usize> {
     chosen
 }
 
+/// A passage zone's `band_rooms` kept off its arrival, each with its band's size: a room holding too few free cells
+/// POST_OFF_ARRIVAL_M from the arrival gives its band to the room nearest it by walk that holds them besides its own
+/// bands' and the end foe's; where none does, the band keeps its room.
+fn off_arrival(dungeon: &Dungeon, rooms: &[usize], arrive: [f64; 2]) -> Vec<(usize, usize)> {
+    let far = |room: usize| {
+        let cells = dungeon.nearest_middle(room, usize::MAX);
+        cells.into_iter().filter(|&cell| apart(dungeon.centre(cell), arrive) >= POST_OFF_ARRIVAL_M).count()
+    };
+    let size = |room: usize| band_size(dungeon.rooms[room].cells.len());
+    let mut load = vec![0; dungeon.rooms.len()];
+    load[dungeon.end()] = 1;
+    for &room in rooms {
+        load[room] += size(room);
+    }
+    rooms
+        .iter()
+        .map(|&room| {
+            let size = size(room);
+            if far(room) >= load[room] {
+                return (room, size);
+            }
+            load[room] -= size;
+            let walk = dungeon.rooms[room].walk;
+            let instead = (0..dungeon.rooms.len())
+                .filter(|&other| far(other) >= load[other] + size)
+                .min_by_key(|&other| (dungeon.rooms[other].walk.abs_diff(walk), other))
+                .unwrap_or(room);
+            load[instead] += size;
+            (instead, size)
+        })
+        .collect()
+}
+
 impl Room {
     /// A patrol's dungeon by its number as its patrol's shared room, its garrison standing at the patrol's island band
     /// of `levels`, its first clear at Normal paying the day's while it is its island's dungeon of the day: none for a
@@ -218,7 +252,7 @@ impl Room {
         let (arrival, _) = dungeon.arrival();
         let end = dungeon.end();
         let way_in_floor = dungeon.floor_of(dungeon.way_in.cell);
-        let reeve = self.placed(dungeon, end, 1).first().copied().unwrap_or([arrival[0], arrival[1], way_in_floor]);
+        let reeve = self.placed(dungeon, end, 0, 1).first().copied().unwrap_or([arrival[0], arrival[1], way_in_floor]);
         let members = vec![(number, rank, reeve, bearing([reeve[0], reeve[1]], arrival))];
         self.garrison.push(Post {
             at: reeve,
@@ -236,13 +270,21 @@ impl Room {
         });
         let mut draws = draws_of(self.world_seed);
         let mut bands = Vec::new();
-        for room in band_rooms(dungeon, self.foes_most) {
+        let rooms = band_rooms(dungeon, self.foes_most);
+        let sized: Vec<(usize, usize)> = match self.zone().map(|zone| zone.sites.arrive) {
+            Some(arrive) => off_arrival(dungeon, &rooms, arrive),
+            None => rooms.iter().map(|&room| (room, band_size(dungeon.rooms[room].cells.len()))).collect(),
+        };
+        let mut used = vec![0; dungeon.rooms.len()];
+        used[end] = 1;
+        for (room, size) in sized {
             let found = &dungeon.rooms[room];
             let middle = [
                 (found.x as f64 + found.width as f64 / 2.0) * CELL_M,
                 (found.y as f64 + found.depth as f64 / 2.0) * CELL_M,
             ];
-            let places = self.placed(dungeon, room, band_size(found.cells.len()));
+            let places = self.placed(dungeon, room, used[room], size);
+            used[room] += size;
             let members: Vec<(u8, Rank, [f64; 3], f64)> = places
                 .iter()
                 .map(|&place| {
@@ -272,12 +314,19 @@ impl Room {
         bands
     }
 
-    /// Where `count` foes stand in a room: its free cells nearest its middle on its own storey's floor, each on the
-    /// navmesh.
-    fn placed(&self, dungeon: &Dungeon, room: usize, count: usize) -> Vec<[f64; 3]> {
-        dungeon
-            .nearest_middle(room, count)
+    /// Where `count` foes stand in a room past the `skip` placed there before: its free cells nearest its middle on its
+    /// own storey's floor, each on the navmesh. In a passage zone's room (a vault) the cells POST_OFF_ARRIVAL_M or more
+    /// from the arrival come first, then the rest farthest first, so no member stands nearer than the room allows.
+    fn placed(&self, dungeon: &Dungeon, room: usize, skip: usize, count: usize) -> Vec<[f64; 3]> {
+        let mut cells = dungeon.nearest_middle(room, usize::MAX);
+        if let Some(arrive) = self.zone().map(|zone| zone.sites.arrive) {
+            let off = |cell: &usize| apart(dungeon.centre(*cell), arrive).min(POST_OFF_ARRIVAL_M);
+            cells.sort_by(|first, second| off(second).total_cmp(&off(first)));
+        }
+        cells
             .into_iter()
+            .skip(skip)
+            .take(count)
             .map(|cell| {
                 let [x, y, z] = dungeon.standing_point(cell);
                 let place = [x, y, self.floor.height_under(x, y, z)];
