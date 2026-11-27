@@ -1843,7 +1843,8 @@ button's corner and screen, and the Tailor's wares.
 - The small words in capitals of the fight's display and the menu (a boss's faction and phase, the poise's word,
   the weapons' counts, the menu's headings and labels) keep the face's own spacing, not a wider one; the heads-up
   display's take theirs (`Text.tracking`).
-- The Anima's edge frame is drawn with the fight's display, under the game's own windows, not over them.
+- The Anima's edge frame, and a drink's red edge as its heal comes ([[Combat]], "Healing charges"), are drawn with
+  the fight's display, under the game's own windows, not over them.
 - The fight's display tells a screen reader nothing: its labels (each vital, status, ability and weapon) wait on the
   interface speaking what is not focused.
 - The drawn menu is not doubled past 1440p: the interface draws at one scale, so the menu there stands at 1280 by

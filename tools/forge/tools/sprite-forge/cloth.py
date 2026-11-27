@@ -88,27 +88,40 @@ class Surface:
         X[j] -= slide * keep[:, None]
 
 
-def outside(P, h=0.01):
+SEAL = 4   # the most cells a body's surfaces are thickened on the air's grid to keep the air out of its inside
+
+
+def outside(P, h=0.01, inside=()):
     """Which of the points `P` (a body's surfaces, sampled finer than `h`) lie open to the air, and the way out of the
     body at each: never on skin folded in on itself where a joint bends (an arm's run on into the shoulder), sealed
     inside the body, which a cloth caught there would lie on inside it. The air is every cell of a grid round them
-    that reaches its edge without crossing a surface."""
+    that reaches its edge without crossing a surface, the surfaces thickened a cell so it never slips between points.
+
+    `inside`, points within the body (its spine's joints). Where the surfaces leave a gap a cell wide even so, as the
+    grid happens to fall across a seam of them, the air floods the body's inside too and the way out of half its skin
+    comes out reversed: a cloak laid on it is pushed into the back and crumples. So where the air reaches one of them,
+    the surfaces are thickened a cell more, and again, until it reaches none. Where it reaches none, all is as it was."""
     from scipy import ndimage
     lo = P.min(axis=0) - 4 * h
     at = np.floor((P - lo) / h).astype(np.int64)
-    solid = np.zeros(at.max(axis=0) + 5, bool)
-    solid[tuple(at.T)] = True
-    solid = ndimage.binary_dilation(solid)
-    cells, _ = ndimage.label(~solid)
-    edge = np.unique(np.concatenate([cells[0].ravel(), cells[-1].ravel(), cells[:, 0].ravel(), cells[:, -1].ravel(),
-                                     cells[:, :, 0].ravel(), cells[:, :, -1].ravel()]))
-    air = np.isin(cells, edge[edge > 0])
+    shell = np.zeros(at.max(axis=0) + 5, bool)
+    shell[tuple(at.T)] = True
+    held = np.floor((np.asarray(inside, float).reshape(-1, 3) - lo) / h).astype(np.int64)
+    held = held[((held >= 0) & (held < shell.shape)).all(axis=1)]
+    for thick in range(1, SEAL + 1):
+        solid = ndimage.binary_dilation(shell, iterations=thick)
+        cells, _ = ndimage.label(~solid)
+        edge = np.unique(np.concatenate([cells[0].ravel(), cells[-1].ravel(), cells[:, 0].ravel(),
+                                         cells[:, -1].ravel(), cells[:, :, 0].ravel(), cells[:, :, -1].ravel()]))
+        air = np.isin(cells, edge[edge > 0])
+        if not air[tuple(held.T)].any():
+            break
     # the way out of the body at each point, from the air round it: where skin folds over itself at a bent joint its
     # triangles turn inside out, and their own way out points into the body
     grad = np.gradient(ndimage.gaussian_filter(air.astype(float), 1.5))
     out = np.stack([g[tuple(at.T)] for g in grad], axis=1)
     out /= np.maximum(np.linalg.norm(out, axis=1, keepdims=True), 1e-12)
-    air = ndimage.binary_dilation(air, iterations=2)
+    air = ndimage.binary_dilation(air, iterations=thick + 1)   # back across the thickening to the skin
     return air[tuple(at.T)], out
 
 

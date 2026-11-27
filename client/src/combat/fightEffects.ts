@@ -14,7 +14,8 @@ import { CRYSTAL } from './latticeLooks.ts';
 import { KillLooks, warmKillPictures } from './killLooks.ts';
 import { MARK_FLOATS, type TelegraphMark, marksMesh } from './marks.ts';
 import { Sparks } from './sparks.ts';
-import type { AnimaScreen } from './animaMoment.ts';
+import { type AnimaScreen, QUIET, showAnimaEdge } from './animaMoment.ts';
+import { type HealScreen, QUIET_HEAL, showHealEdge } from './healLight.ts';
 import { type Drawn, SpellLooks, castLookOf } from './spellLooks.ts';
 import { IMPACT_SPARKS, type Struck, Tracers, othersArrows } from './tracers.ts';
 import { type GroundAt, shotBodies } from '../player/crosshair.ts';
@@ -89,6 +90,17 @@ export class FightEffects {
     return this.spellLooks.screen;
   }
 
+  /** The player's own screen as their heal takes it through their own eyes: a red edge and motes rising there. */
+  get heal(): HealScreen {
+    return this.spellLooks.healScreen;
+  }
+
+  /** Shows the player's own screen's edges from now on: the Anima's frame and the heal's red. */
+  showEdges(): void {
+    showAnimaEdge(this.anima);
+    showHealEdge(this.heal);
+  }
+
   /**
    * The marks to draw from an eye at `eye`, as `marksMesh` lays them from `origin`: every telegraphed blow, everyone
    * else's arrows, the sparks and the tracers. The player's own shots leave the weapon at `muzzleOf`'s point; the
@@ -157,4 +169,10 @@ export class FightEffects {
     }
     return this.mesh.subarray(0, total);
   }
+}
+
+/** Takes both edges off the player's screen: the fight is left. */
+export function quietEdges(): void {
+  showAnimaEdge(QUIET);
+  showHealEdge(QUIET_HEAL);
 }

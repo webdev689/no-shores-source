@@ -519,6 +519,12 @@ WEAPONS['crossbow'] = {'parts': {'crossbow': fpcrossbow.part}, 'mats': fptorch.m
                        'shape': fpcrossbow.SHAPE, 'posed': fpcrossbow.posed, 'length': fpcrossbow.length,
                        'girth': lambda S, part: 0.05, 'root_r': lambda S, part: 0.03, 'root_seen': True}
 
+# the healing flask drunk from in the right fist: the flask and the arm one rigid part (fpflask.py)
+import fpflask  # noqa: E402
+WEAPONS['flask'] = {'parts': {'flask': fpflask.part}, 'mats': fptorch.mats(None, fpflask.OWN), 'shape': fpflask.SHAPE,
+                    'posed': fpflask.posed, 'length': fpflask.length, 'girth': lambda S, part: 0.05,
+                    'root_r': lambda S, part: 0.02, 'root_seen': True}
+
 # the shields in the left fist (Shield Widget's): each kind a part, the shield and the arm one rigid piece (fpshield.py)
 import fpshield  # noqa: E402
 WEAPONS['shield'] = {'parts': {kind: fpshield.part_for(kind) for kind in fpshield.KINDS}, 'mats': fpshield.mats(),

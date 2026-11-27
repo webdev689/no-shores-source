@@ -6,7 +6,7 @@ import type { Climb } from '../firstperson/climbHands.ts';
 import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
 import type { Pace } from '../firstperson/weaponMachine.ts';
 import type { Look } from '../network/messages.ts';
-import type { Action, FighterView } from '../rules/fighters.ts';
+import { type Action, type FighterView } from '../rules/fighters.ts';
 import type { Body, MovementRules } from '../rules/movementRules.ts';
 import type { CardAt, Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
@@ -18,7 +18,7 @@ import { cardStand, type Placed, viewOf } from './figures.ts';
 import type { Action as Control, InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
 import { CAST_SECONDS, type Player, shownBody, updatePlayer } from './player.ts';
-import { likelyMoves, Loop, type Shown, shownMove, steadyMoves } from './playerMoves.ts';
+import { drinkMoves, likelyMoves, Loop, type Shown, shownMove, steadyMoves } from './playerMoves.ts';
 
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 export const HIDE_FIGURE_M = 0.6;
@@ -84,7 +84,7 @@ export function otherHand(dress: Dress): Dress | null {
 }
 
 /** Whether the figure and the hands hold the weapon out in a fight this frame. While the rules are busy they keep the
- *  weapon the frame before held (`kept`): they take up another only at rest. The forge has no drinking pose, so it is
+ *  weapon the frame before held (`kept`): they take up another only at rest. The drink's flask takes the hands, so it is
  *  put away while a drink lasts; and the frame after one (`drank`) it comes from the player's own dress (`worn`), as
  *  the frame before had it put away only for the drink. */
 export function drawnInFight(hands: {
@@ -344,6 +344,7 @@ export class Walker {
       pose: own ? guardPose(own.action) : null,
       zoom,
       pace: own ? paceOf(own.action, this.tickSeconds) : null,
+      drinking: own?.action.kind === 'drink' ? own.action.elapsed / FIGHT_TICKS.drink : null,
       spare: this.spare && {
         right: this.spare.right,
         left: this.spare.left,
@@ -356,7 +357,9 @@ export class Walker {
     const swing = firstPerson.swing;
     this.strokes = strokesAfter(this.strokes, this.swingWas, swing?.progress ?? null);
     this.swingWas = swing?.progress ?? null;
-    const held = own ? fightOf(own) : null;
+    const fought = own ? fightOf(own) : null;
+    // A look the quaff drops a layer of drinks standing or walking as it is, rather than lose a piece.
+    const held = fought?.kind === 'drink' && !forge.drawsWhole(dress, 'quaff') ? null : fought;
     this.shown = shownMove(
       {
         mode: body.mode,
@@ -399,8 +402,11 @@ export class Walker {
       const [inRight, inLeft] = [drawn ? right : null, drawn ? left : null];
       const likely = () =>
         steady
-          ? steadyMoves(inRight, inLeft, draws)
-          : likelyMoves(inRight, inLeft, draws, drawn ? (grip ?? null) : null, walking);
+          ? steadyMoves(inRight, inLeft, draws, walking)
+          : [
+              ...likelyMoves(inRight, inLeft, draws, drawn ? (grip ?? null) : null, walking),
+              ...drinkMoves(inRight, inLeft, draws, walking),
+            ];
       forge.warm(shown, likely, glow, owner);
     };
     warm(dress, outfit.drawn ? this.shownGlow[0] : 0, you.id);
