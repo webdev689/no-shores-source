@@ -17,6 +17,8 @@ import {
   toCoast,
 } from './arrival.ts';
 import { Keeper, type KeptRoom } from './keeping.ts';
+import layout from '../content/world/layout.json' with { type: 'json' };
+import regions from '../content/world/regions.json' with { type: 'json' };
 
 /** An island 100 km square, its coast at x and y from 1,000 km to 1,100 km. */
 const COAST: [number, number][] = [
@@ -356,4 +358,20 @@ test('a player crossing from a patrol zone joins the next at the gate toward the
   assert.equal(cameOutOf('node-saltgrass-downs', 'sea', 'gullwing-vale'), false, 'landed from the sea');
   assert.equal(cameOutOf('node-saltgrass-downs', 'node-tidewall', 'gullwing-vale'), false, 'from elsewhere');
   assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale--dungeon-0', 'gullwing-vale'), false);
+});
+
+test("a ship at a region's anchorage lands its player on every node of that region again", () => {
+  // Leaving a zone puts the ship at its region's anchorage (the sea room's `came_from`): from there the zone is in reach.
+  // Saltmere's alone, as every other island's sea is locked and lands no one from the sea.
+  for (const { island, regions: own } of regions.filter((each) => each.island === 'continent-1'))
+    for (const { name, anchorage, nodes } of own)
+      for (const node of nodes) {
+        const index = [{ id: node, kind: 'patrol', continent: island }];
+        const there = reachOf(index, layout.continents, node);
+        assert.equal(
+          arrives(`node-${node}`, 'sea', [anchorage[0] ?? 0, anchorage[1] ?? 0], there),
+          true,
+          `${name}: ${node}`,
+        );
+      }
 });

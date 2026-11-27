@@ -19,6 +19,7 @@ import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
 import { arriving, type Flow, type Happening, next, onTheSea } from './flow.ts';
 import { keepPlace, placeKept, placeNow, resume } from './relog.ts';
+import { lieOffRegionLeft } from './regionLeft.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { enterBreachRun, enterDungeon } from './footEntries.ts';
 import type { TripGame } from './dungeonTrips.ts';
@@ -234,6 +235,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
 
   const goSea = async (start?: { readonly anchorage: Point2; readonly heading: number }) => {
     leaveHere();
+    const left = playing.foot?.node.id ?? null;
     playing.foot?.leave();
     playing.foot = null;
     scene.sky.shelterUnder([]);
@@ -260,6 +262,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       playing.sea.facts = facts;
       playing.seaWord = new SeaWord(ports, facts);
     }
+    lieOffRegionLeft(playing.sea, left);
     playing.sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
     void playing.helmMap.made;

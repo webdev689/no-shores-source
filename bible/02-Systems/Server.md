@@ -280,7 +280,9 @@ A ship not yet at sea puts in only by a port city, its course's first point with
 that roadstead itself, never the page's own point, the page told so (`Sea::puts_in`; a sea opened with no port cities
 puts it to sea where the page asks); a ship its owner sailed before comes back where the sea last had it, however far
 the page puts it, as a ship sails nowhere while its player is away
-([[The Audit's Leftovers Are Fixed as Claude Suggested]]); one at sea starts the course from where it is, to the nearest
+([[The Audit's Leftovers Are Fixed as Claude Suggested]]). A course whose first point lies within 3 km of a region's
+anchorage (`content/world/regions.json`) puts in at that anchorage, and does so too for a ship last had off another
+region of the same island: the page leaving a zone asks by its region's anchorage ([[Game]], "Landings"); one at sea starts the course from where it is, to the nearest
 metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
 facing when it holds one: the helm turned while it lies still. A player sets one course, facings among them, each half
 second, and one sooner is dropped: judging a course against the coasts takes up to a few
@@ -340,7 +342,10 @@ will take it, by the room's own tick.
   (a fight met from the page's spot meanwhile is over for it), or as asked once the host says none is kept
   (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives it
   back where it was kept). A character given back with no place kept in it (a new one) puts to sea at Overlook's
-  roadstead, wherever the page put it or asks. A new account's
+  roadstead, wherever the page put it or asks. One given back from a node's room (the room the accounts say it came
+  from, which the keeper hands the sea with it, `restoreJoined`'s `from`) lies at the anchorage of that node's region
+  when its ship lies off another region (the one whose centre is nearest it), facing as before (`Sea::came_from`,
+  `world::regions`). A new account's
   character is the one the room holds, given back to it. The account the
   keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
   they join once more. Whatever

@@ -65,3 +65,20 @@ fn what_is_no_character_or_no_shared_part_is_refused() {
     assert!(!restore_joined(player, json!({ "body": "{}", "vault": null }).to_string().as_bytes()));
     assert!(!restore_joined(player, json!({ "body": body, "vault": "[1]" }).to_string().as_bytes()));
 }
+
+#[test]
+fn at_sea_the_room_a_kept_character_came_from_puts_its_ship_off_that_nodes_region() {
+    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(crate::open_sea(layout.as_bytes(), 7));
+    let player = room_join();
+    let mut body = gear::Character::starting();
+    assert!(body.give_first_ship(), "a ship the sea lets in");
+    body.ship_at = Some([2_809_000, 1_200_000]);
+    let given = json!({ "body": body.to_json(), "vault": null, "from": "node-gullwing-vale" });
+    assert!(restore_joined(player, given.to_string().as_bytes()));
+    let at = crate::with_open(|opened| {
+        let crate::Opened::Sea(sea) = opened else { panic!("a sea is open") };
+        sea.ships().find(|(each, _)| *each == player).map(|(_, ship)| (ship.x, ship.y))
+    });
+    assert_eq!(at, Some(Some((2_334_343.0, 1_824_977.0))), "at the Weirlands' anchorage, off the Gullwing Vale");
+}
