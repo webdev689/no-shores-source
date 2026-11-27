@@ -547,16 +547,19 @@ DFO's spoils ([[Pick - Loot Drops]]).
   spells are and as light added (`dropLight.ts`):
 
   - **Glow.** A soft halo about its picture, its middle the brightest, reaching 0.45 of its height and never below
-    0.1 m over the ground, pulsing slowly (every 2 s), in flight and at rest.
+    0.1 m over the ground, pulsing slowly (every 2 s), in flight and at rest. An item's is its own within 8 m;
+    farther off it grows, reaching its picture's ends by 20 m and a few pixels of the view past them, so a thin sword
+    or bow far off still shows where it lies.
   - **Landing burst.** As it settles, a flash at it, a star of cells, and a ring spreading 1.5 m on the ground about
     it (ammunition's 0.8 m, pale and half as bright), both gone in 0.7 s; a drop told of already at rest does not
     burst. It lands with a sound in its rarity's weight, from the game's own recordings: ammunition's thud alone (`drop.land`), and with it a glass bell's tap for
     a Normal or a Magic (`amb.breach.crystal`), a tubular bell for a Rare (`music.bell`), a deep bell for a Legendary
     or an Atheric (`breach.toll`) ([[Interface]], "The rest").
-  - **Pillar.** Once settled, a tall pillar of light rises from its top over 0.4 s, a white heart in its colour's
-    body with a dim edge, its light stepping down to its tip as a glint climbs it: Normal 4 m, Magic 6 m, Rare 9 m,
-    Legendary and Atheric 14 m, pulsing; ammunition's 1.2 m, pale and half as bright. Its cells grow with distance,
-    so it is seen from far off.
+  - **Pillar.** Once settled, a pillar of light rises from its top over 0.4 s, a white heart in its colour's body
+    with a dim edge, its light stepping down to its tip as a glint climbs it: Normal 1.4 m, Magic 2 m, Rare 3 m,
+    Legendary and Atheric 4.5 m, pulsing; ammunition's 0.6 m, pale and half as bright. No end is flat: its foot fades
+    in out of the glow over its lowest quarter, and over its upper third it narrows cell by cell to a point as it
+    fades out. Its cells grow with distance, so it is seen from far off.
   - **Motes.** At rest, motes drift up from it, 0.9 m in 1.6 s, fading in and out: a Normal's four, two more each
     rarity up, ammunition's three.
 

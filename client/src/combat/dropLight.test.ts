@@ -6,6 +6,7 @@ import {
   PILLAR_M,
   cellAt,
   glowPulse,
+  glowReach,
   markBurst,
   markGlow,
   markMotes,
@@ -54,6 +55,47 @@ test('a pillar stands its whole height in light added, in flat cells, brightest 
   const across = laid.map((one) => one.place[0]);
   const wide = Math.max(...across) - Math.min(...across);
   assert.ok(Math.abs(wide / cellAt(EYE, [0, 0, 1]) - Math.round(wide / cellAt(EYE, [0, 0, 1]))) < 1e-6, 'in cells');
+});
+
+test('a pillar is short, about a third of what it was: the rarer the taller, ammunition the shortest', () => {
+  assert.deepEqual(PILLAR_M, [1.4, 2, 3, 4.5, 4.5]);
+  assert.equal(AMMO_PILLAR_M, 0.6);
+});
+
+test('a pillar has no flat end: its foot fades in, and its top tapers to a point as it fades out', () => {
+  const out: number[] = [];
+  const [root, height] = [1, 3] as const;
+  markPillar(out, [0, 0, root], height, RED, 1, 0, EYE);
+  const laid = vertices(out);
+  const cell = cellAt(EYE, [0, 0, root]);
+  // Each band of the pillar by its share of the way up: its width across and its brightest light.
+  const band = (share: number) => {
+    const level = root + share * height;
+    const near = laid.filter((one) => Math.abs(one.place[2] - level) < height / 48);
+    const across = near.map((one) => one.place[0]);
+    return { wide: Math.max(...across) - Math.min(...across), light: Math.max(...near.map((one) => one.colour[0])) };
+  };
+  // Its light steps through a few stops, so neighbouring bands may share one.
+  assert.ok(band(0.01).light < band(0.12).light && band(0.12).light <= band(0.3).light, 'its foot fades in');
+  assert.ok(band(0.01).light > 0, 'from the glow, not from nothing');
+  assert.ok(band(0.5).wide > band(0.8).wide && band(0.8).wide > band(0.99).wide, 'its top narrows cell by cell');
+  assert.ok(band(0.99).wide <= 2 * cell + 1e-9, 'to a point a cell or two wide');
+  assert.ok(band(0.5).light > band(0.8).light && band(0.8).light >= band(0.99).light, 'and fades out');
+});
+
+test("an item's glow is its own up close, and reaches a few pixels past its picture far off", () => {
+  const long = 1.4;
+  assert.equal(glowReach(long, [0, 0, 1], EYE), 0, 'up close its own glow, no larger than its picture');
+  const reaches = [2, 6, 10, 20].map((far) => glowReach(long, [0, far, 1], EYE));
+  assert.ok(
+    reaches.every((reach, nth) => nth === 0 || reach > (reaches[nth - 1] ?? 0)),
+    'growing, never jumping',
+  );
+  for (const far of [30, 60, 120]) {
+    const past = glowReach(long, [0, far, 1], EYE) - long / 2;
+    // Far off a cell is about a pixel of the view.
+    assert.ok(past >= 2 * cellAt(EYE, [0, far, 1]), `${far} m: ${past} m past`);
+  }
 });
 
 test('a pillar is seen from far off: its cells grow with the distance, never smaller than an effect’s', () => {

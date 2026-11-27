@@ -16,6 +16,7 @@ import {
   PILLAR_M,
   acrossFrom,
   glowPulse,
+  glowReach,
   markBurst,
   markGlow,
   markMotes,
@@ -533,7 +534,10 @@ export class DropsShown {
       if (halo) markPicture(marks, halo, base, eye, scale, ADDED);
       const colour = ammo ? PALE : (RARITY_COLOURS[drop.rarity] ?? WHITE);
       const floor = drop.at[2] + GLOW_FLOOR_M;
-      markGlow(marks, middle, tallM * GLOW_SHARE, colour, glowPulse(seconds, still), eye, floor);
+      // An item's glow reaches its picture's ends, past them far off, so a thin sword or bow still shows there.
+      const longM = Math.max(body.rows.length, body.rows[0]?.length ?? 0) * (body.pixelM ?? PIXEL_M) * scale;
+      const glowM = item ? Math.max(tallM * GLOW_SHARE, glowReach(longM, middle, eye)) : tallM * GLOW_SHARE;
+      markGlow(marks, middle, glowM, colour, glowPulse(seconds, still), eye, floor);
       if (!motion.settled) continue;
       if (!this.rested.has(key)) {
         this.rested.add(key);

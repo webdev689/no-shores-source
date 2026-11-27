@@ -92,6 +92,28 @@ test("an item at rest is its own picture in its rarity's light, and lands in its
   assert.ok(PILLAR_M[3] > PILLAR_M[0], 'a rarer pillar taller');
 });
 
+test("an item's glow leads the eye to it far off, and is no larger than its picture up close", () => {
+  // A long thin piece, as a sword or a bow lies, told of at rest and drawn face on.
+  const laid = lyingPicture(picture(40, 4, 0));
+  const spans = (eye: readonly [number, number, number]) => {
+    const out = new DropsShown(
+      () => laid,
+      () => true,
+    ).frame([lying({ id: 9, rarity: 1 })], 10, eye).marks;
+    const added = (opacity: number) => opacity === -1;
+    const across = (light: boolean) =>
+      Array.from({ length: out.length / MARK_FLOATS }, (unused, vertex) => vertex * MARK_FLOATS)
+        .filter((start) => added(out[start + 6] ?? 0) === light && (out[start + 2] ?? 0) < REST[2] + 1.5)
+        .map((start) => out[start] ?? 0);
+    const width = (eastings: number[]) => Math.max(...eastings) - Math.min(...eastings);
+    return { picture: width(across(false)), glow: width(across(true)) };
+  };
+  const near = spans([0, -4, 1.6]);
+  assert.ok(near.glow <= near.picture + 1e-6, `up close: glow ${near.glow} m, picture ${near.picture} m`);
+  const far = spans([0, -60, 1.6]);
+  assert.ok(far.glow > far.picture + 0.1, `far off: glow ${far.glow} m past its picture ${far.picture} m`);
+});
+
 test('an item turns as it hovers: its picture narrows edge on, and shows its other face mirrored', () => {
   const laid = lyingPicture(picture(20, 6, 0));
   const span = (across: number) => {

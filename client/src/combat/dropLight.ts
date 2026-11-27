@@ -14,8 +14,8 @@ const ADDED = -1;
 
 /** How tall a pillar stands by rarity, metres: a Legendary's and an Atheric's the tallest. Ammunition's is short and
  *  pale. */
-export const PILLAR_M = [4, 6, 9, 14, 14] as const;
-export const AMMO_PILLAR_M = 1.2;
+export const PILLAR_M = [1.4, 2, 3, 4.5, 4.5] as const;
+export const AMMO_PILLAR_M = 0.6;
 export const PALE = [0.82, 0.88, 0.96] as const;
 /** A pillar's half-widths in cells: its white heart, its body and its dim edge; how many cells tall its light steps
  *  in; its glint's and its pulse's rates, cycles a second. */
@@ -25,6 +25,10 @@ const EDGE_CELLS = 4;
 const PILLAR_STEPS = 24;
 const CLIMB_HZ = 0.6;
 const PULSE_HZ = 1;
+/** A pillar's lowest share fades in out of the drop's glow, and its highest tapers to a point as it fades out: no
+ *  flat end. */
+const FOOT_SHARE = 0.25;
+const TIP_SHARE = 1 / 3;
 /** A pillar's light at its brightest, its root's. */
 const PILLAR_LIGHT = 0.6;
 /** How many stops light steps through, as a spell's cells do: no light blended between them. */
@@ -38,6 +42,11 @@ const FLASH_S = 0.3;
 /** A glow's cells are this many of an effect's; its pulse's rate, cycles a second. */
 const GLOW_CELLS = 3;
 const GLOW_HZ = 0.5;
+/** How many pixels of the view past its picture an item's glow reaches far off; nearer than `NEAR_M` its glow is its
+ *  own, and from `FAR_M` it reaches its picture's ends (metres). */
+const GLOW_PAST = 3;
+const NEAR_M = 8;
+const FAR_M = 20;
 /** A mote's life and how far it rises in it, seconds and metres. */
 const MOTE_S = 1.6;
 const MOTE_RISE_M = 0.9;
@@ -96,7 +105,8 @@ export const pillarPulse = (rarity: number | null, seconds: number, still: boole
   rarity !== null && rarity >= 3 && !still ? 1 + 0.35 * Math.sin(seconds * 2 * Math.PI * PULSE_HZ) : 1;
 
 /** A pillar of light rising `height` from `root`, turned to the eye, in `colour` times `strength`: a white heart, its
- *  body and a dim edge, its light stepping down toward its tip as a glint climbs it. */
+ *  body and a dim edge, its light stepping down toward its tip as a glint climbs it; its foot fading in, its top
+ *  narrowing cell by cell to a point as it fades out. */
 export function markPillar(
   out: number[],
   root: Point,
@@ -109,18 +119,23 @@ export function markPillar(
   if (height <= 0) return;
   const across = acrossFrom(eye, root);
   const cell = cellAt(eye, root);
-  const [core, body, edge] = [CORE_CELLS * cell, BODY_CELLS * cell, EDGE_CELLS * cell];
   for (let step = 0; step < PILLAR_STEPS; step += 1) {
     const rows: [number, number] = [
       root[2] + (step / PILLAR_STEPS) * height,
       root[2] + ((step + 1) / PILLAR_STEPS) * height,
     ];
+    const share = (step + 0.5) / PILLAR_STEPS;
+    const [foot, tip] = [Math.min(1, share / FOOT_SHARE), Math.min(1, (1 - share) / TIP_SHARE)];
+    const edgeCells = Math.max(1, Math.ceil(EDGE_CELLS * tip));
+    const [core, body, edge] = [Math.min(CORE_CELLS, edgeCells), Math.min(BODY_CELLS, edgeCells), edgeCells].map(
+      (cells) => cells * cell,
+    ) as [number, number, number];
     // Kept under white at its brightest, so over a pale sky it still shows its colour.
-    const light = stepped(PILLAR_LIGHT * pillarLight((step + 0.5) / PILLAR_STEPS, seconds)) * strength;
+    const light = stepped(PILLAR_LIGHT * pillarLight(share, seconds) * foot * tip) * strength;
     upright(out, root, across, [-core, core], rows, lit(colour, light, 0.25));
     for (const side of [-1, 1]) {
-      upright(out, root, across, [side * core, side * body], rows, lit(colour, light * 0.65));
-      upright(out, root, across, [side * body, side * edge], rows, lit(colour, light * 0.25));
+      if (body > core) upright(out, root, across, [side * core, side * body], rows, lit(colour, light * 0.65));
+      if (edge > body) upright(out, root, across, [side * body, side * edge], rows, lit(colour, light * 0.25));
     }
   }
 }
@@ -159,6 +174,15 @@ export function markBurst(out: number[], { ground, middle, colour, ring, since, 
   const outer = Math.max(2, Math.ceil((ring * (1 - (1 - share) ** 2)) / cell)) * cell;
   const [red, green, blue] = lit(colour, stepped(1 - share) * 1.2);
   markRing(out, ground, outer - 2 * cell, outer, [red, green, blue, ADDED]);
+}
+
+/** How far an item's glow reaches about its middle, `long` metres its picture's longest side, past its own: nothing
+ *  up close, where its own glow is no larger than its picture; growing farther off to its picture's ends, and a few
+ *  pixels of the view past them, as a pillar's cells grow, so a thin sword or bow far off still shows where it lies. */
+export function glowReach(long: number, middle: Point, eye: Point): number {
+  const past = Math.hypot(middle[0] - eye[0], middle[1] - eye[1], middle[2] - eye[2]) - NEAR_M;
+  if (past <= 0) return 0;
+  return Math.min(1, past / (FAR_M - NEAR_M)) * (long / 2) + GLOW_PAST * CELL_LEAST * past;
 }
 
 /** How strong a drop's glow stands at `seconds`: pulsing slowly, steady with motion reduced. */
