@@ -1,6 +1,7 @@
 //! Saltmere's public events' grounds as the bake plans them: each hamlet's three stores on clear ground beside its
 //! houses, off the ways, never under a building, each a box a body runs into; its raiders' approach and banners; each
-//! wilds' growth spot; and only Saltmere's three zones' node files carry grounds, which the room's events read.
+//! wilds' growth spot; and only the node file of Saltmere's zone, the Downs, carries grounds, which the room's events
+//! read.
 
 use layout::brief::AreaKind;
 use layout::field::{distance, ring_holds};

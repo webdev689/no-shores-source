@@ -1,5 +1,5 @@
 {
- "about": "Saltmere's two patrol zones cut from the island (the Gullwing Vale and the Driftwood Moors): their nodes and briefs as they stood, laid back into continent 1 by the tests alone, for what only they hold (a river, knolls and tors, a keep's citadel by a river, a coven's cavern, and runs of a rampart, a gorge and an undercroft). The game never reads this file.",
+ "about": "Saltmere's two patrol zones cut from the island (the Gullwing Vale and the Driftwood Moors): their nodes, briefs and regions as they stood, laid back into continent 1 by the tests alone, for what only they hold (a river and its wings, knolls and tors, an orchard and gorse thickets, a hillside hamlet, a second keep, and runs of a rampart, a gorge and an undercroft). The game never reads this file.",
  "nodes": [
   {
    "id": "gullwing-vale",
@@ -267,7 +267,8 @@
      "kind": "undercroft",
      "place": "rock"
     }
-   ]
+   ],
+   "region": "The Weirlands"
   },
   "driftwood-moors": {
    "theme": "Gorse moor above a wreck-strewn strand, a lighthouse on the point and the drowned buried where the sea gave them back.",
@@ -324,7 +325,8 @@
      "kind": "ledge",
      "place": "rock"
     }
-   ]
+   ],
+   "region": "The Grey Reach"
   }
  }
 }

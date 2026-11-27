@@ -1,11 +1,9 @@
 //! The two patrol zones cut from Saltmere (the Gullwing Vale and the Driftwood Moors), laid back into continent 1 by
-//! the tests alone: what only they hold (a river, knolls and tors, a keep's citadel, the Old Stones, a coven's cavern,
-//! ledges, and runs of a rampart, a gorge and an undercroft) stays walked, while the game lays the island as it is.
+//! the tests alone: what only they hold (a river and its wings, knolls and tors, an orchard and gorse thickets, a
+//! hillside hamlet, a second keep, and runs of a rampart, a gorge and an undercroft) stays tested on the generator,
+//! while the game lays the island as it is.
 
 use std::path::Path;
-
-/// The cut zones' ids.
-pub const CUT: [&str; 2] = ["gullwing-vale", "driftwood-moors"];
 
 fn fixture() -> serde_json::Value {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/support/cut_zones.json");
@@ -26,7 +24,7 @@ pub fn edits(text: &str) -> String {
     edits.to_string()
 }
 
-/// The briefs with the cut zones' own beside them.
+/// The briefs with the cut zones' own beside them, each in the region it stood in.
 pub fn briefs(briefs: &mut layout::brief::Briefs) {
     let cut = fixture()["briefs"].to_string();
     briefs.0.extend(layout::brief::Briefs::parse(&cut).expect("the cut zones' briefs").0);

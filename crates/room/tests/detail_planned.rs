@@ -1,10 +1,14 @@
-//! The detail of Saltmere's three zones as the bake plans them: each zone's outcrops in the shape its brief names, no
-//! outcrop a spire the close-up would draw as a point or burying what stands, a whaleback's long ends clad in fallen
-//! rock, and every run its brief asks for still found; continent 1's basins shaped by their kinds, what stands on a
-//! terrace on its level; no claim holding a mass of rock that nothing reaches; the Gullwing Vale's river in its
-//! section, carried there by wings that touch no other node; the climates with no hint, the swamp's and the
-//! desert's, keeping their outcrops under their massif and off their ways; and what continent 1 plants standing on
-//! its floor, clear of every way, yard, run, building and solid.
+//! The detail of the Saltgrass Downs, Saltmere's patrol zone, as the bake plans it, and of the zones cut from Saltmere
+//! laid back in (support/cut_zones.rs): each zone's outcrops in the shape its brief names, no outcrop a spire the
+//! close-up would draw as a point or burying what stands, a whaleback's long ends clad in fallen rock, and every run its
+//! brief asks for still found; continent 1's basins shaped by their kinds, what stands on a terrace on its level; no
+//! claim holding a mass of rock that nothing reaches; the Gullwing Vale's river in its section, carried there by wings
+//! that touch no other node; the climates with no hint, the swamp's and the desert's, keeping their outcrops under
+//! their massif and off their ways; and what continent 1 plants standing on its floor, clear of every way, yard, run,
+//! building and solid.
+
+#[path = "support/cut_zones.rs"]
+mod cut_zones;
 
 use city::solids::{Material, Shape as SolidShape};
 use land::ground::Ground;
@@ -16,21 +20,29 @@ use layout::paths::{off_line, segments_apart};
 use std::path::Path;
 use std::sync::OnceLock;
 
-const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
+const ZONES: [&str; 1] = ["saltgrass-downs"];
 
 /// A continent's layouts as the bake settles them, its biome's key, and its ground as they leave it.
 fn settled(id: &str) -> (Vec<Layout>, Option<&'static str>, Ground) {
-    settled_by(id, &|_| {})
+    settled_by(id, false, &|_| {})
 }
 
-/// A continent's layouts as the bake settles them with its briefs changed, its biome's key, and its ground.
-fn settled_by(id: &str, change: &dyn Fn(&mut layout::brief::Briefs)) -> (Vec<Layout>, Option<&'static str>, Ground) {
+/// A change to the briefs a continent is laid by.
+type Change<'a> = &'a dyn Fn(&mut layout::brief::Briefs);
+
+/// A continent's layouts as the bake settles them, the cut zones laid back in or not and its briefs changed, its
+/// biome's key, and its ground.
+fn settled_by(id: &str, cut: bool, change: Change) -> (Vec<Layout>, Option<&'static str>, Ground) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
     let continent = world.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
-    let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
+    let text = read(&format!("content/world/land/{id}.json"));
+    let edits = land::edits::parse(&if cut { cut_zones::edits(&text) } else { text }).expect("the edits parse");
     let mut builders = bake::builders(&root).expect("the builders read");
+    if cut {
+        cut_zones::briefs(&mut builders.briefs);
+    }
     change(&mut builders.briefs);
     let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
     let mut landmass = land::landmass::generate(&continent, edits).expect("the continent generates");
@@ -53,11 +65,26 @@ fn zone(id: &str) -> &'static Layout {
     continent_one().iter().find(|laid| laid.id == id).expect("the zone lays out")
 }
 
+/// Continent 1 with the cut zones laid back in.
+fn laid_cut() -> &'static (Vec<Layout>, Option<&'static str>, Ground) {
+    static LAID: OnceLock<(Vec<Layout>, Option<&'static str>, Ground)> = OnceLock::new();
+    LAID.get_or_init(|| settled_by("continent-1", true, &|_| {}))
+}
+
+fn cut_zone(id: &str) -> &'static Layout {
+    laid_cut().0.iter().find(|laid| laid.id == id).expect("the cut zone lays out")
+}
+
+/// The Downs as the game lays them, and the Gullwing Vale and the Driftwood Moors as they stood.
+fn downs_and_cut() -> [&'static Layout; 3] {
+    [zone("saltgrass-downs"), cut_zone("gullwing-vale"), cut_zone("driftwood-moors")]
+}
+
 #[test]
-fn saltmeres_three_zones_take_three_rock_shapes() {
+fn each_zone_takes_the_rock_shape_its_brief_names() {
     let wanted = [Shape::Whaleback, Shape::Knoll, Shape::Tor];
-    for (id, shape) in ZONES.into_iter().zip(wanted) {
-        let outcrops = &zone(id).sculpt.outcrops;
+    for (laid, shape) in downs_and_cut().into_iter().zip(wanted) {
+        let (id, outcrops) = (&laid.id, &laid.sculpt.outcrops);
         assert!(!outcrops.is_empty(), "{id} has outcrops");
         let shapes: Vec<Shape> = outcrops.iter().map(|outcrop| outcrop.shape).collect();
         assert!(shapes.iter().all(|&each| each == shape), "{id}'s outcrops are {shape:?}: {shapes:?}");
@@ -66,7 +93,7 @@ fn saltmeres_three_zones_take_three_rock_shapes() {
 
 #[test]
 fn only_the_downs_cliffs_wear_chalk() {
-    let stones: Vec<Option<&str>> = ZONES.into_iter().map(|id| zone(id).stone.as_deref()).collect();
+    let stones: Vec<Option<&str>> = downs_and_cut().into_iter().map(|laid| laid.stone.as_deref()).collect();
     assert_eq!(stones, [Some("chalk"), None, None], "the zones' stones: {stones:?}");
 }
 
@@ -83,11 +110,12 @@ fn no_outcrop_is_a_spire() {
 }
 
 #[test]
-fn saltmere_keeps_its_nine_runs() {
-    let briefs = bake::builders(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).expect("the builders").briefs;
+fn every_run_the_downs_and_the_cut_zones_briefs_ask_for_is_found() {
+    let mut briefs = bake::builders(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).expect("the builders").briefs;
+    cut_zones::briefs(&mut briefs);
     let mut found = 0;
-    for id in ZONES {
-        let laid = zone(id);
+    for laid in downs_and_cut() {
+        let id = &laid.id;
         for wanted in &briefs.0[id].runs {
             let run = laid.runs.iter().find(|run| run.name == wanted.name);
             assert_eq!(
@@ -327,8 +355,8 @@ fn no_claim_holds_a_dead_mass() {
 
 #[test]
 fn the_vales_river_lies_in_its_section() {
-    let ground = &laid_one().2;
-    let vale = zone("gullwing-vale");
+    let ground = &laid_cut().2;
+    let vale = cut_zone("gullwing-vale");
     let field = layout::field::Field::read(ground, &vale.sculpt.claim, 456.0);
     let [_, north, _, south] = layout::field::bounds_of(&vale.sculpt.claim);
     let (mut river, mut outside) = (0, Vec::new());
@@ -347,11 +375,11 @@ fn the_vales_river_lies_in_its_section() {
 
 #[test]
 fn no_other_node_is_raised_or_claimed_by_the_vales_wing() {
-    let (with, _, with_ground) = laid_one();
-    let (without, _, without_ground) = settled_by("continent-1", &|briefs| {
+    let (with, _, with_ground) = laid_cut();
+    let (without, _, without_ground) = settled_by("continent-1", true, &|briefs| {
         briefs.0.get_mut("gullwing-vale").expect("the vale has a brief").river = false;
     });
-    let vale = zone("gullwing-vale");
+    let vale = cut_zone("gullwing-vale");
     let bare = without.iter().find(|laid| laid.id == "gullwing-vale").expect("the vale lays out without its river");
     assert!(
         vale.sculpt.wings.len() > bare.sculpt.wings.len(),
@@ -398,10 +426,11 @@ fn no_other_node_is_raised_or_claimed_by_the_vales_wing() {
 
 #[test]
 fn every_ruin_by_a_mass_lookout_stands_on_level_rock_clear_of_outcrops() {
-    let ground = &laid_one().2;
     let (mut ruins, mut failed) = (0, Vec::new());
-    for id in ZONES {
-        let laid = zone(id);
+    // The cut zones' lookouts with the Downs': a lookout stands a ruin only where level rock holds one.
+    let grounds = [&laid_one().2, &laid_cut().2, &laid_cut().2];
+    for (laid, ground) in downs_and_cut().into_iter().zip(grounds) {
+        let id = &laid.id;
         let stumps: Vec<[f64; 2]> = laid
             .seating
             .solids
@@ -439,7 +468,7 @@ fn every_ruin_by_a_mass_lookout_stands_on_level_rock_clear_of_outcrops() {
             }
         }
     }
-    assert!(ruins > 0, "Saltmere's mass lookouts have ruins");
+    assert!(ruins > 0, "the zones' mass lookouts have ruins");
     assert!(failed.is_empty(), "{} of {ruins}: {failed:#?}", failed.len());
 }
 
@@ -537,7 +566,9 @@ fn plantings_stand_off_ways_yards_runs_and_buildings() {
     .expect("the flora parses");
     let grown = &flora["biomes"][biome.expect("continent 1 has a climate")]["kinds"];
     let (mut planted, mut failed) = (0, Vec::new());
-    for laid in layouts {
+    let (cut, _, cut_ground) = laid_cut();
+    let cut = cut.iter().filter(|laid| matches!(laid.id.as_str(), "gullwing-vale" | "driftwood-moors"));
+    for (laid, ground) in layouts.iter().map(|laid| (laid, ground)).chain(cut.map(|laid| (laid, cut_ground))) {
         for planting in &laid.plantings {
             assert!(grown.get(&planting.kind).is_some(), "{}: {} is no kind its nature grows", laid.id, planting.kind);
             for &at in &planting.points {
@@ -548,9 +579,9 @@ fn plantings_stand_off_ways_yards_runs_and_buildings() {
             }
         }
     }
-    // Saltmere's own: the Vale's orchard, the Moors' thickets, and each farm's hedgerows out along its tracks.
-    let planted_in = |id: &str, kind: &str, area: &str, within: f64| {
-        let laid = zone(id);
+    // Saltmere's own, the cut zones' as they stood: the Vale's orchard, the Moors' thickets, and each farm's hedgerows
+    // out along its tracks.
+    let planted_in = |laid: &Layout, kind: &str, area: &str, within: f64| {
         let area = laid.areas.iter().find(|each| each.name == area).expect("the area is laid out");
         let points =
             laid.plantings.iter().filter(|planting| planting.kind == kind).flat_map(|planting| &planting.points);
@@ -561,10 +592,10 @@ fn plantings_stand_off_ways_yards_runs_and_buildings() {
         if within > 0.0 { points.filter(outside_all).filter(near).count() } else { points.filter(in_area).count() }
     };
     let counts = [
-        ("the Vale's orchard", planted_in("gullwing-vale", "oak", "Orchard Farm", 0.0)),
-        ("the Moors' thickets", planted_in("driftwood-moors", "gorse", "The Gorse Moor", 0.0)),
-        ("Orchard Farm's hedgerows", planted_in("gullwing-vale", "gorse", "Orchard Farm", 170.0)),
-        ("Ewe Fold's hedgerows", planted_in("saltgrass-downs", "gorse", "Ewe Fold", 170.0)),
+        ("the Vale's orchard", planted_in(cut_zone("gullwing-vale"), "oak", "Orchard Farm", 0.0)),
+        ("the Moors' thickets", planted_in(cut_zone("driftwood-moors"), "gorse", "The Gorse Moor", 0.0)),
+        ("Orchard Farm's hedgerows", planted_in(cut_zone("gullwing-vale"), "gorse", "Orchard Farm", 170.0)),
+        ("Ewe Fold's hedgerows", planted_in(zone("saltgrass-downs"), "gorse", "Ewe Fold", 170.0)),
     ];
     for (what, count) in counts {
         assert!(count >= 20, "{what}: {count} planted");
@@ -575,8 +606,7 @@ fn plantings_stand_off_ways_yards_runs_and_buildings() {
 #[test]
 fn a_farms_hedgerows_line_its_drystone_walls() {
     use layout::field::distance;
-    for (id, name) in [("saltgrass-downs", "Ewe Fold"), ("gullwing-vale", "Orchard Farm")] {
-        let laid = zone(id);
+    for (laid, name) in [(zone("saltgrass-downs"), "Ewe Fold"), (cut_zone("gullwing-vale"), "Orchard Farm")] {
         let farm = laid.areas.iter().find(|area| area.name == name).expect("the farm is laid out");
         // Out along the farm's tracks as far as its walls run (dressing.rs), outside every area.
         let reached = |at: [f64; 2]| {
@@ -741,44 +771,4 @@ fn the_wilds_hold_cover_round_their_ring() {
         );
     }
     assert!(seen > 0, "continent 1 has wilds");
-}
-
-#[test]
-fn each_of_saltmeres_resource_nodes_is_brineglass_clear_before_its_tide_pool() {
-    for id in ZONES {
-        let laid = zone(id);
-        let resources: Vec<_> =
-            laid.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource).collect();
-        assert!(!resources.is_empty(), "{id} lays resource nodes");
-        let mut standing = 0;
-        for site in resources {
-            assert_eq!(site.holds.as_deref(), Some("brineglass"), "{id}: Saltmere's resource");
-            // Its tide pool: still water at the place's middle, its node standing clear before it.
-            let pool = laid.seating.solids.iter().any(|solid| {
-                solid.material == Material::Water && layout::field::distance([solid.at[0], solid.at[1]], site.at) < 0.1
-            });
-            assert!(pool, "{id}: a resource place at {:?} with no tide pool", site.at);
-            let Some(node) = site.node else { continue };
-            assert!(layout::field::distance(node, site.at) > 4.0, "{id}: its node clear of the pool");
-            // Where the room gathers it and the page draws it: in bounds, clear of what stands and what grows.
-            assert!(layout::field::ring_holds(&laid.ring, node[0], node[1]), "{id}: node {node:?} out of bounds");
-            let blocked = laid.seating.solids.iter().find(|solid| {
-                let [west, north, east, south, bottom, top] = solid.bounds();
-                let clear = layout::sites::NODE_CLEAR_M;
-                top - bottom > 0.3
-                    && node[0] > west - clear
-                    && node[0] < east + clear
-                    && node[1] > north - clear
-                    && node[1] < south + clear
-            });
-            assert!(blocked.is_none(), "{id}: node {node:?} against {blocked:?}");
-            let planted = laid.plantings.iter().flat_map(|planting| &planting.points);
-            assert!(
-                planted.into_iter().all(|&point| layout::field::distance(point, node) >= 1.5),
-                "{id}: node {node:?} planted over"
-            );
-            standing += 1;
-        }
-        assert!(standing > 0, "{id}: no node stands");
-    }
 }

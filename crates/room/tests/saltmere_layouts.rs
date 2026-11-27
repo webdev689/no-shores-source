@@ -1,7 +1,7 @@
-//! Saltmere's three built patrol zones (saltgrass-downs, gullwing-vale and driftwood-moors) as the bake lays them,
-//! measured where a body walks and fights: every walked line inside its section and the rock beside a run on the
-//! rock's top outside it, a building run walked into and back out of the place it breaks off, the map's passages along
-//! each run's line, and each cavern's chamber facing its tunnel under a roof no higher than the rock round it.
+//! Saltmere's built patrol zone, the Saltgrass Downs (saltgrass-downs), as the bake lays it, measured where a body
+//! walks and fights: every walked line inside its section and the rock beside a run on the rock's top outside it, a
+//! building run walked into and back out of the place it breaks off, the map's passages along each run's line, and
+//! each cavern's chamber facing its tunnel under a roof no higher than the rock round it.
 
 use city::solids::Shape;
 use land::ground::Ground;
@@ -16,7 +16,7 @@ use room::{Floor, standing_on};
 use std::path::Path;
 use std::sync::OnceLock;
 
-const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
+const ZONES: [&str; 1] = ["saltgrass-downs"];
 
 fn root() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -26,7 +26,7 @@ fn read(path: &str) -> String {
     std::fs::read_to_string(root().join(path)).expect("the world's files are in the repository")
 }
 
-/// Continent 1's layouts as the bake settles them, Saltmere's three zones among them, and its ground as carved.
+/// Continent 1's layouts as the bake settles them, Saltmere's zone among them, and its ground as carved.
 fn settled() -> &'static (Vec<Layout>, Ground) {
     static SETTLED: OnceLock<(Vec<Layout>, Ground)> = OnceLock::new();
     SETTLED.get_or_init(|| {
@@ -44,7 +44,7 @@ fn settled() -> &'static (Vec<Layout>, Ground) {
 
 fn zones() -> Vec<&'static Layout> {
     let found: Vec<&Layout> = settled().0.iter().filter(|layout| ZONES.contains(&layout.id.as_str())).collect();
-    assert_eq!(found.len(), ZONES.len(), "Saltmere's three zones are laid");
+    assert_eq!(found.len(), ZONES.len(), "Saltmere's zone is laid");
     found
 }
 
@@ -173,7 +173,7 @@ fn a_building_run_is_walked_into_from_its_place_and_back_out_to_it() {
             walked += 1;
         }
     }
-    assert!(walked >= 4, "Saltmere has its keeps, its mine and its undercroft: {walked}");
+    assert!(walked >= 2, "the Downs have their keep and their mine: {walked}");
 }
 
 #[test]

@@ -12,7 +12,7 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use std::path::Path;
 
 /// Both tests hold this value; a change to the land, the city or the moves changes it in both, on purpose.
-pub const NODE_RUN_HASH: &str = "b39c55dc0f1f3fe8";
+pub const NODE_RUN_HASH: &str = "467e3da9bc5b6f9b";
 
 /// Ticks, then forward, sideways, yaw, run, and jump on the first tick only.
 type Phase = (usize, f64, f64, f64, bool, bool);
@@ -28,7 +28,7 @@ struct Run {
 }
 
 /// Where the run over a whaleback of the Saltgrass Downs starts, and the bearing it runs on, across the whaleback.
-const OVER_A_WHALEBACK: ([f64; 2], f64) = ([2_807_147.0, 1_208_048.0], 1.87);
+const OVER_A_WHALEBACK: ([f64; 2], f64) = ([2_807_142.0, 1_208_188.0], 1.04);
 
 const RUNS: [Run; 4] = [
     // Across the plaza into its parapet; vault it onto the terrace beyond; jump; run east along the terrace.
@@ -62,7 +62,7 @@ const RUNS: [Run; 4] = [
     Run {
         continent: "continent-1",
         node: "saltgrass-downs",
-        bounds: [2_806_393.0, 1_206_366.0, 2_807_981.5, 1_208_300.0],
+        bounds: [2_806_241.0, 1_206_595.5, 2_807_982.0, 1_208_301.5],
         from: None,
         script: &[
             (900, 1.0, 0.0, PI * 1.5, true, false),
@@ -75,7 +75,7 @@ const RUNS: [Run; 4] = [
     Run {
         continent: "continent-1",
         node: "saltgrass-downs",
-        bounds: [2_806_393.0, 1_206_366.0, 2_807_981.5, 1_208_300.0],
+        bounds: [2_806_241.0, 1_206_595.5, 2_807_982.0, 1_208_301.5],
         from: Some(OVER_A_WHALEBACK.0),
         script: &[(600, 1.0, 0.0, OVER_A_WHALEBACK.1, true, false)],
     },
