@@ -77,7 +77,8 @@ function takeLock(lock = LOCK) {
 async function servesThisCheckout(url, top) {
   const page = await fetch(url).then((response) => response.text(), () => null);
   if (page === null) return true;
-  if (page.includes('/@vite/client')) return (await fetch(new URL(`/@fs${top}/package.json`, url))).ok;
+  if (page.includes('/@vite/client'))
+    return fetch(new URL(`/@fs${top}/package.json`, url)).then((response) => response.ok, () => true);
   const script = /\bsrc="[^"]*?(assets\/[^"]+\.js)"/.exec(page)?.[1];
   return script !== undefined && existsSync(join(top, 'dist', script));
 }
@@ -203,7 +204,8 @@ async function main() {
   const plan = JSON.parse(readFileSync(process.argv[2], 'utf8'));
   if (plan.noGpu && plan.steps.some((step) => step.shot || step.views)) throw new Error('noGpu draws nothing to picture');
   takeLock();
-  const top = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+  // This script's own checkout, wherever it is run from.
+  const top = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: __dirname, encoding: 'utf8' }).trim();
   if (!(await servesThisCheckout(plan.url, top)))
     throw new Error(`the server at ${new URL(plan.url).origin} serves another checkout than ${top}: stop it or use another port`);
   // Behind a proxy (a cloud session's HTTPS_PROXY), the browser and its routes' own fetches go through it, all but

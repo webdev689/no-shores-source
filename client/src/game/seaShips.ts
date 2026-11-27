@@ -143,7 +143,7 @@ export class SeaShips {
     this.lines = lines;
     this.ownSeen = () => {
       const own = ownSeen();
-      return own && { ...own, ...QA_SHIP.look };
+      return own && QA_SHIP.look ? { ...own, ...QA_SHIP.look } : own;
     };
   }
 

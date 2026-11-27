@@ -107,7 +107,8 @@ one that did nothing says why on the console, which the driver prints.
   plan's `routes`, hold the world at a clear hour with `&minute=`, and `waitFor` the HUD (`All controls`) before the
   first picture: the first frames are black.
 - **The story.** `?prologue=<beat>` starts a beat only under `npm run dev`, so run that dev server in a worktree of
-  its own, where no edit or merge reloads it. Click past "Click or press any key to start" first. `__qaEye` stands its
+  its own, where no edit or merge reloads it, and run that worktree's own driver: the driver refuses a server that
+  serves another checkout than its own. Click past "Click or press any key to start" first. `__qaEye` stands its
   camera, and `self.__prologue.ahead(seconds)` plays the story on that far before the next frame is drawn, once the
   beat shows.
 - **A sea island's plants.** The World Editor's Islands mode with `&islePlants=game`
@@ -115,7 +116,8 @@ one that did nothing says why on the console, which the driver prints.
 - **A Blender module.** `tools/modules/render.py <module> <png> --no-ground` leaves the ground out, so a module seen
   from below (an airship overhead) is pictured as players see it. Render "before" pictures from a `git archive` copy
   of the base, never from the worktree being edited. `tools/modules/bake.py <out> --only <prefix>` bakes only the
-  modules named so and rewrites only their manifest entries; CI's whole bake stays the check.
+  modules named so and rewrites only their manifest entries; CI's whole bake stays the check. Its folder then holds
+  only those meshes, so `publish.py` cannot publish from it.
 - **A dungeon.** `dungeon-qa-build.sh` builds a scratch room module that joins before an entrance and moves the
   player, and `dungeon-plan.ts` writes the plan that pictures each of its rooms ([[Toolkit]], Encounter pictures).
 

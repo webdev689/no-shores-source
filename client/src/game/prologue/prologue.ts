@@ -266,8 +266,9 @@ export class Prologue {
   ): void {
     if (this.end) return;
     try {
-      for (; this.aheadS > 0 && !this.end; this.aheadS -= AHEAD_STEP_S)
-        this.play(controls, AHEAD_STEP_S, size, viewport, false);
+      const steps = Math.round(this.aheadS / AHEAD_STEP_S);
+      this.aheadS = 0;
+      for (let step = 0; step < steps && !this.end; step++) this.play(controls, AHEAD_STEP_S, size, viewport, false);
       this.play(controls, seconds, size, viewport);
     } catch (error) {
       this.failed(this.beat, error);

@@ -138,7 +138,7 @@ test('a development page dresses the own ship as asked, and tells the sky, until
   assert.deepEqual(QA_SHIP.look, { hull: 2, dress: [2, 17] });
   target.__qaShip?.(null);
   assert.equal(QA_SHIP.look, null);
-  const reading = SKY_NOW.current.reading;
+  const before = SKY_NOW.current;
   SKY_NOW.current = { ...SKY_NOW.current, reading: { cloud: 0, falling: 0 } as unknown as SkyReading, worldS: 50 };
   try {
     assert.equal(target.__qaSky?.({ falling: 1 }), true);
@@ -146,7 +146,7 @@ test('a development page dresses the own ship as asked, and tells the sky, until
     target.__qaSky?.(null);
     assert.equal(sky.told, null);
   } finally {
-    SKY_NOW.current = { ...SKY_NOW.current, reading };
+    SKY_NOW.current = before;
   }
 });
 

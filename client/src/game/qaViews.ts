@@ -64,9 +64,9 @@ export function qaEye(eye: readonly number[] | null): boolean {
 
 /** Puts `__qaView(view)`, `__qaEye(eye)` and `__qaWhere()` on `target` for the picture driver, when the page plays
  *  alone (`offline`) and asks for a spawn, and on a development page (`dev`) `__qaLook(view)`, `__qaSea()`,
- *  `__qaSky(weather)` and `__qaShip(look)` too; a development page lends `__qaGame` whether it plays alone or in a live room. A view
- *  arrives again in the same node with its point as the spawn, as `&spawn=` does, then sets the camera. Each hook
- *  answers whether it did, and one that did nothing says why on the console. */
+ *  `__qaSky(weather)` and `__qaShip(look)` too; a development page lends `__qaGame` whether it plays alone or in a
+ *  live room. A view arrives again in the same node with its point as the spawn, as `&spawn=` does, then sets the
+ *  camera. Each hook answers whether it did, and one that did nothing says why on the console. */
 export function installQaViews(
   target: object,
   search: string,
@@ -106,7 +106,8 @@ export function installQaViews(
   // The trip sets out only from on foot: under the arrival's veil, or already under way, it is not taken.
   const toSea = () => {
     const mode = host.game?.flow.mode;
-    if (!host.sea || mode !== 'foot') return refused('__qaSea', `the player is ${mode ?? 'nowhere'}, not on foot`);
+    if (!host.sea) return refused('__qaSea', 'no way to sea lent');
+    if (mode !== 'foot') return refused('__qaSea', `the player is ${mode ?? 'nowhere'}, not on foot`);
     host.sea();
     return host.game?.flow.mode === 'loading' || refused('__qaSea', 'the trip to the ship was not taken');
   };
