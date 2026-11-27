@@ -148,7 +148,8 @@ pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, source: Source, dice
         let kinds: Vec<Kind> = slot.kinds().collect();
         let mut item = rolled(id, *kinds.get(dice.pick(Purpose::Which, 0, kinds.len()))?, rarity, slot, level, dice);
         item.source = source;
-        // A Breach's armour and weapons roll their perks from the Breaches' own; its Legendary armour climbs further.
+        // A Breach's armour and weapons roll their perks from the Breaches' own; its Legendary armour climbs further,
+        // and its weapons won at Hard (`Item::attack`).
         item.breach = source == Source::Breach && (item.kind.armour() || item.kind.weapon());
         if item.breach {
             item.layout = rolled_layout(&item, None, dice);
@@ -198,7 +199,7 @@ pub fn rolled(id: u32, kind: Kind, rarity: Rarity, bucket: Slot, level: u8, dice
 
 /// A house's own piece made for a player at a lesser rarity (Magic or Rare): its entry's kind, look and name (`named`),
 /// its content the factions', its traits rolled as any piece of that rarity's, and a weapon's element as any weapon
-/// made. The catalogue's entry stays the Legendary the house sells. The leader's gift and the world's house drops.
+/// made. The catalogue's entry stays the Legendary the house sells. The leader's gift and the house drops.
 #[must_use]
 pub fn house_piece(id: u32, named: &NamedDef, rarity: Rarity, level: u8, dice: &Dice) -> Item {
     let mut item = rolled(id, named.kind, rarity, named.kind.slot(), level, dice);
@@ -208,14 +209,16 @@ pub fn house_piece(id: u32, named: &NamedDef, rarity: Rarity, level: u8, dice: &
     item
 }
 
-/// One in ten of the Magic and Rare pieces a world Vestige opens to is a piece of the house pledged to, drawn evenly
-/// among its armour and weapons (never its cape); none for a player not pledged, or from any other content.
+/// One in ten of the Magic and Rare pieces a Vestige of the world or a dungeon (a patrol's, an Elite or Abyss
+/// Dungeon's, the sea's, a Breach's) opens to is a piece of the house pledged to, drawn evenly among its armour and
+/// weapons (never its cape); none for a player not pledged, or from a house's own wares.
 pub const HOUSE_DROP_SHARE: f64 = 0.1;
 
-/// The house piece a world Vestige opens to at `rarity` for a player pledged to `pledge`, if the dice say one.
+/// The house piece a Vestige of the world or a dungeon opens to at `rarity` for a player pledged to `pledge`, if the
+/// dice say one.
 #[must_use]
 pub fn house_drop(pledge: u8, source: Source, rarity: Rarity, dice: &Dice) -> Option<&'static NamedDef> {
-    if pledge == 0 || source != Source::World || !matches!(rarity, Rarity::Magic | Rarity::Rare) {
+    if pledge == 0 || source == Source::Faction || !matches!(rarity, Rarity::Magic | Rarity::Rare) {
         return None;
     }
     if dice.roll(Purpose::HouseDrop, 0) >= HOUSE_DROP_SHARE {

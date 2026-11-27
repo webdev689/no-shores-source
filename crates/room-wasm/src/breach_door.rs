@@ -1,13 +1,16 @@
 //! A Breach for its host and its page: a run's room opened from its ask (the Breach, its tier and the minute it
-//! opens), its plan as the page draws it, how far its company has come, and the host's words to a patrol's room that
-//! stands a Breach's gate: a player launched for a run, a run's company inside, and whether a run's gate has opened.
+//! opens), its plan as the page draws it, how far its company has come, the host's words to a patrol's room that
+//! stands a Breach's gate (a player launched for a run, a run's company inside, and whether a run's gate has opened),
+//! and what either room's Breach keeps past its life, for its host's storage.
 
 use crate::{Opened, hand_over, keep, on_land};
 use gear::breach::{BREACHES, Tier};
+use room::breach::kept::Kept;
 use room::breach::plan::{SLAB_CYCLE, SLAB_STANDS, drowned_vale};
 use room::{PlayerId, Room};
 use serde::Deserialize;
 use serde_json::{Value, json};
+use std::collections::{BTreeMap, BTreeSet};
 
 /// A run's ask: the Breach by the patrol zone its gate stands in, its tier (0 Normal, 1 Hard) and the Unix minute it
 /// opens.
@@ -28,6 +31,21 @@ struct RunWord {
     name: String,
     #[serde(default)]
     encounter: u8,
+}
+
+/// What a Breach keeps as its host stores it: a run's checkpoint, or a gate's runs.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum KeptWord {
+    Run {
+        stage: usize,
+        #[serde(default)]
+        chests: BTreeSet<usize>,
+    },
+    Gate {
+        opened: BTreeMap<String, u64>,
+        spent: BTreeMap<String, u64>,
+    },
 }
 
 /// A patrol's Breach's gate stood in its node's room where the bake says the layout stood its module.
@@ -135,6 +153,28 @@ pub fn breach_opened(run: &[u8]) -> bool {
     on_land(|room| room.breach_opened(&run)).unwrap_or(false)
 }
 
+/// What the open room's Breach keeps past its life, as JSON for its host's storage: a run's checkpoint (`stage`, the
+/// furthest reached, and the hidden `chests` its attempt earned), or a gate's runs `opened` and `spent` (shut again),
+/// each by the Unix minute it opened; null in any other room.
+#[must_use]
+pub fn kept_json() -> String {
+    let kept = on_land(|room| room.breach_kept()).flatten().map(|kept| match kept {
+        Kept::Run { stage, chests } => json!({ "stage": stage, "chests": chests }),
+        Kept::Gate { opened, spent } => json!({ "opened": opened, "spent": spent }),
+    });
+    kept.unwrap_or(Value::Null).to_string()
+}
+
+/// Gives the open room back what its Breach kept (`kept_json`); whether it read and was that room's kind.
+pub fn breach_restore(text: &[u8]) -> bool {
+    let Ok(word) = serde_json::from_slice::<KeptWord>(text) else { return false };
+    let kept = match word {
+        KeptWord::Run { stage, chests } => Kept::Run { stage, chests },
+        KeptWord::Gate { opened, spent } => Kept::Gate { opened, spent },
+    };
+    on_land(|room| room.restore_breach(kept)).unwrap_or(false)
+}
+
 /// The text written at `address`, `length` bytes long.
 ///
 /// # Safety
@@ -194,6 +234,23 @@ pub unsafe extern "C" fn room_breach_inside(address: *const u8, length: usize) -
 pub unsafe extern "C" fn room_breach_opened(address: *const u8, length: usize) -> u32 {
     // SAFETY: as this function's own.
     u32::from(breach_opened(unsafe { text_at(address, length) }))
+}
+
+/// What the open room's Breach keeps (`kept_json`).
+#[unsafe(no_mangle)]
+pub extern "C" fn room_breach_kept() -> u64 {
+    hand_over(kept_json().into_bytes())
+}
+
+/// Gives the open room back what its Breach kept, written at `address`, `length` bytes long (`breach_restore`); 1 if
+/// taken.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_breach_restore(address: *const u8, length: usize) -> u32 {
+    // SAFETY: as this function's own.
+    u32::from(breach_restore(unsafe { text_at(address, length) }))
 }
 
 #[cfg(test)]

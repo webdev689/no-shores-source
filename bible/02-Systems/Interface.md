@@ -1299,9 +1299,12 @@ it over the crests. The footer bar holds the search's word at the left ("Finding
 with four, or with fewer after a minute." beside it on a wide screen; "Launching…" while Launch asks the server; or why
 the last ended, "The accounts did not answer. Try again." where they did not), why a shut entry is shut beside its
 resting Launch, and the presses: Find a Company (F) first and primary where the entry is matched, open and the page
-signed in, Stop finding (F) while it finds; Launch (E), "Go alone", or "Go with your company" once the Roster shows the
-player in one, primary where nothing is matched, drawn dim and resting while the entry is shut, and not offered while
-a search or a launch runs;
+signed in, Stop finding (F) while it finds; on a Breach's tier open to the player, Reset checkpoints (R), not offered
+while a search or a launch runs: its first press asks "Reset your company's checkpoints? Press Reset again: its next
+Launch starts from the Waking.", the second asks the accounts (`company/reset`) and says "Your company's checkpoints
+are reset: its next Launch starts the Breach fresh." or why not, in their words; Launch (E), "Go alone", or "Go with
+your company" once the Roster shows the player in one, primary where nothing is matched, drawn dim and resting while
+the entry is shut, and not offered while a search or a launch runs;
 and Close (Esc, the pad's B). Under 1100 pixels the word stands over the presses, which wrap. As a search starts or ends
 the focus goes to the press that takes the other's place, Close where none does. Launch and a run found close the screen
 and go into the run from the sea; so does leaving the sea, the screen closing and its search stopped once the player

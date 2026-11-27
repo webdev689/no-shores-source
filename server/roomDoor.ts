@@ -61,6 +61,10 @@ export interface RoomDoor {
   breachOpened(run: string): boolean;
   /** In a Breach's run: how far its company has come, as JSON (`{"tier","encounter"}`), or `null`. */
   breachProgress(): string;
+  /** What a run's or a gate's Breach keeps past the room's life, as JSON (`kept_json`), or `null`. */
+  breachKept(): string;
+  /** Gives the room back what its Breach kept (`breachKept`); whether it was taken. */
+  breachRestore(kept: string): boolean;
   /** What is on at a Unix minute, as JSON: the day's and the week's numbers, the minutes to the next of each, each
    *  island's dungeon of the day, the day's modifier, the week's two with their modifiers and levels, each island's
    *  band at each tier, the revives, and each modifier's name and words. */
@@ -300,6 +304,8 @@ interface RoomExports {
   room_breach_inside(address: number, length: number): number;
   room_breach_opened(address: number, length: number): number;
   room_breach_progress(): bigint;
+  room_breach_kept(): bigint;
+  room_breach_restore(address: number, length: number): number;
   room_activities(minute: number): bigint;
   room_gates(level: number, prologue: number): bigint;
   room_open_deck(hull: number, faction: number, rank: number, level: number): number;
@@ -445,6 +451,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     breachInside: (word) => openWith(exports.room_breach_inside, word),
     breachOpened: (run) => openWith(exports.room_breach_opened, run),
     breachProgress: () => new TextDecoder().decode(take(exports.room_breach_progress())),
+    breachKept: () => new TextDecoder().decode(take(exports.room_breach_kept())),
+    breachRestore: (kept) => openWith(exports.room_breach_restore, kept),
     activities: (minute) => new TextDecoder().decode(take(exports.room_activities(minute >>> 0))),
     gates: (level, prologue) => new TextDecoder().decode(take(exports.room_gates(level >>> 0, prologue ? 1 : 0))),
     openDeck: (hull, faction, rank, level) => exports.room_open_deck(hull, faction, rank, level) === 1,

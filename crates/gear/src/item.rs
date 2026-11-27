@@ -36,7 +36,8 @@ pub struct Item {
     /// A Breach's armour piece or weapon: its perk columns roll from the Breaches' own perks, and a Legendary armour
     /// piece's upgrades climb further in Prestige.
     pub breach: bool,
-    /// A Breach's piece won at Hard: its armour climbs to the most Prestige, a Normal one's short of it.
+    /// A Breach's piece won at Hard: its armour climbs to the most Prestige, a Normal one's short of it, and its weapon
+    /// to more Attack than a Normal one's.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub hard: bool,
     pub xp: u32,
@@ -233,14 +234,17 @@ impl Item {
         (0..layout.len()).map(|column| u32::from(self.cost_of(column).essence) * bought(column) as u32).sum()
     }
 
-    /// Its Attack, if it is a weapon or a ship's guns: a Legendary 248 to 300, an Atheric 260 to 300, a lesser one 15
-    /// times its level times its rarity's share at its most and 0.85 of that before its upgrades.
+    /// Its Attack, if it is a weapon or a ship's guns: a Legendary 248 to 300 (a Breach's won at Hard, Forged, 263 to
+    /// 315), an Atheric 260 to 300, a lesser one 15 times its level times its rarity's share at its most and 0.85 of
+    /// that before its upgrades.
     #[must_use]
     pub fn attack(&self) -> Option<u32> {
         if !self.kind.weapon_grid() {
             return None;
         }
         let (start, most) = match self.rarity {
+            // Forged climbs a level's Attack further, as Hard's armour climbs to the level past Normal's.
+            Rarity::Legendary if self.breach && self.hard => (263, 315),
             Rarity::Legendary => (248, 300),
             Rarity::Atheric => (260, 300),
             lesser => lesser_range(15.0 * f64::from(self.level) * lesser.share()),

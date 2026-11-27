@@ -162,7 +162,10 @@ number is one of [[Gear as Claude Shapes It]].
   level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 28 from Normal, to 30
   from Hard, [[Breaches]]), an Atheric 21 to 30, each climbing by equal steps over its upgrades, however many its
   grid holds (a ship's guns five, armour three).
-- **Attack and Defense.** A weapon's blow is times 1.07 for each of the foe's levels up to its Attack ÷ 15, and
+- **Attack and Defense.** A Legendary weapon's Attack climbs from 248 to 300 over its upgrades, an Atheric's from
+  260, and a Breach's won at Hard (Forged) from 263 to 315, a level's Attack further, as Hard's armour reaches the
+  level past Normal's ([[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]).
+  A weapon's blow is times 1.07 for each of the foe's levels up to its Attack ÷ 15, and
   falls to 0.67, 0.56, 0.47 and none as the player is one to four levels below the foe. A foe's health is its kind's
   times 1.07 for each of its levels, so a matched player fells it in the blows combat is tuned for. A foe's blow is
   times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each level the player is
@@ -184,14 +187,15 @@ number is one of [[Gear as Claude Shapes It]].
   level 20, its Prestige a Legendary's, its nodes asking for an island's resource rolled among the catalogue's, and a
   Breach's Legendary armour climbs to 28 Prestige from Normal (19, and 3 an upgrade) and to 30 from Hard (21). A Breach's armour or weapon rolls its perk columns from the
   Breaches' own perks ("Verbs", "The Breaches' perks"). A ship's Legendary module is a named one ([[Ship Power]]).
-- **The house's pieces in the world's loot** ([[Magic and Rare House Pieces Drop in the World, for the Pledged House]]).
-  One in ten of the Magic and Rare pieces a Vestige of the world's content opens to (`vestige::house_drop`, on its own
+- **The house's pieces in the loot** ([[Magic and Rare House Pieces Drop in the World, for the Pledged House]],
+  [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]). One in ten of the
+  Magic and Rare pieces a Vestige of the world's content or a dungeon's opens to (`vestige::house_drop`, on its own
   dice, `Purpose::HouseDrop`) is a piece of the house the player is pledged to, drawn evenly among its four armour
   pieces and its two weapons, never its cape: its entry's kind, look and name, at the rarity and level opened, its
   content the factions', its traits rolled as any piece of that rarity's and a weapon's element as any weapon's
-  (`vestige::house_piece`). A player not pledged finds none; a dungeon's, an Elite or Abyss Dungeon's, a sea
-  dungeon's and a Breach's Vestiges open to their own sets alone. The catalogue's entries stay the Legendary pieces
-  the house sells ([[Factions]], "The faction's wares"); the leader's gift is made the same way, at Magic.
+  (`vestige::house_piece`). The dungeons are a patrol's, the Elite and Abyss Dungeons, the sea's and the Breaches,
+  whose Vestiges open to their own sets otherwise. A player not pledged finds none. The catalogue's entries stay the
+  Legendary pieces the house sells ([[Factions]], "The faction's wares"); the leader's gift is made the same way, at Magic.
 - **Commons drop as themselves** ([[Commons Drop as Themselves, Never as Vestiges]]). A Vestige is Magic or finer:
   wherever a Vestige rolls Normal (a kill's, a Boss's or a Miniboss's, at sea too, a chest's, a first clear's, a
   playlist's, the [[Test Ground]]'s), the Normal item comes instead, made as that Vestige would have opened, at

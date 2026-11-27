@@ -1,6 +1,7 @@
-//! A house's pieces in the world's loot: one in ten of the Magic and Rare pieces a world Vestige opens to is a piece of
-//! the player's pledged house, its four armour pieces and its weapons, at the rarity and level opened; none for a player
-//! not pledged, none from a dungeon's, a Breach's or the sea's own content, and never a ware.
+//! A house's pieces in the loot: one in ten of the Magic and Rare pieces a Vestige of the world or a dungeon (a
+//! patrol's, the Elite and Abyss Dungeons', the sea's and the Breaches') opens to is a piece of the player's pledged
+//! house, its four armour pieces and its weapons, at the rarity and level opened, the rest of a dungeon's its own sets;
+//! none for a player not pledged, and never a ware.
 
 use crate::asks::{Ask, Done, Here};
 use crate::character::{Character, Vestige};
@@ -70,10 +71,14 @@ fn one_in_ten_of_the_worlds_magic_and_rare_pieces_is_the_pledged_houses_own_and_
 }
 
 #[test]
-fn a_dungeons_a_breachs_and_the_seas_own_pieces_and_a_legendary_are_never_the_houses() {
+fn the_dungeons_drop_the_houses_pieces_too_and_their_own_sets_otherwise_and_a_legendary_is_never_one() {
     for source in [Source::Dungeon, Source::Elite, Source::Abyss, Source::Sea, Source::Breach] {
         let pieces = opened(&mut pledged(1), Rarity::Rare, source, 600);
-        assert!(pieces.iter().all(|item| item.named.is_none()), "{source:?}");
+        let house = pieces.iter().filter(|item| item.named.is_some()).count();
+        assert!((30..90).contains(&house), "{source:?}: about one in ten its house's, {house} of 600");
+        let lesser = |item: &&crate::item::Item| matches!(item.rarity, Rarity::Magic | Rarity::Rare);
+        let own: Vec<_> = pieces.iter().filter(lesser).filter(|item| item.named.is_none()).collect();
+        assert!(own.len() > 400 && own.iter().all(|item| item.source == source), "{source:?}: the rest its own");
     }
     let legendary = opened(&mut pledged(1), Rarity::Legendary, Source::World, 600);
     let house = |item: &&crate::item::Item| item.named.as_deref().is_some_and(crate::factions::sold_by_faction);

@@ -43,7 +43,7 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   as the pledge is taken, the first time the character pledges to it (`give_house_piece`): the house's torso entry's
   look and name (the Stormcaller Hauberk, the Lamplighter Hauberk, the Veiled Hauberk) made at Magic, the game's
   Uncommon, at the player's level and rolled as any Magic torso is (`vestige::house_piece`, as the house's pieces
-  that drop in the world are: [[Gear]], "The house's pieces in the world's loot"). It is kept given by the entry's name beside the
+  that drop in the world and its dungeons are: [[Gear]], "The house's pieces in the loot"). It is kept given by the entry's name beside the
   keepers' gifts ([[Gear]], "The keepers' gifts"), so a switch to another house gives that house's piece once and a
   switch back gives none; carried, else laid in the vault, else posted as itself. The catalogue's entry stays the
   Legendary the house sells: the gift is no ware and changes nothing a house sells. Its leader says a line of their

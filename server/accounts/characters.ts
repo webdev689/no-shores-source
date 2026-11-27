@@ -6,7 +6,7 @@
  * Each claim says which room held the character before, so the room judges where it came from.
  */
 
-import { companionsOf, launchedFor } from './companies.ts';
+import { companionsOf, forgetRun, launchedFor } from './companies.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { type Developers, isDeveloper } from './developers.ts';
 import { creditGuild, guildTold } from './guildWeeks.ts';
@@ -59,6 +59,8 @@ export interface Characters {
   present(token: string, room: string | null, water?: string | null): Promise<boolean>;
   companions(account: string, room: string): Promise<string[]>;
   launched(account: string, room: string, within?: number): Promise<boolean>;
+  /** Forgets whom a run was found or launched for (`forgetRun`): a Breach's run its gate shut again. */
+  forgetRun(room: string): Promise<boolean>;
   /** What a room is told of a player's guild (`guildWeeks.ts`), null in none. */
   guild(account: string): ReturnType<typeof guildTold>;
   /** What an outpost's room asks for its players (`outpostStores.ts`). */
@@ -118,6 +120,7 @@ export function characters(
     companions: (account, room) => companionsOf(database, account, room, now()),
     /** Whether the server found or launched `room` for the account within FOUND_KEPT_MS, or `within` (`finding.ts`). */
     launched: (account, room, within) => launchedFor(database, account, room, now(), within),
+    forgetRun: (room) => forgetRun(database, room),
     guild: (account) => guildTold(database, account, now()),
     deposit: (account, amount, rid) => deposit(database, account, amount, rid, now()),
     deliver: (account, room, given, rid) => deliver(database, account, room, given, now(), rid),

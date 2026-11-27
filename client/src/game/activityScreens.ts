@@ -88,7 +88,7 @@ export function startActivityScreens(
     fromSea?(node: NodeInfo): void;
     toBreach?(run: string): void;
   },
-  link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster'>>) | null,
+  link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster' | 'social'>>) | null,
   clock: ScreensClock = PAGE_CLOCK,
   atSea: () => GearState | null = () => null,
   onSea: () => boolean = () => true,

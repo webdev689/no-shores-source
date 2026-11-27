@@ -5,14 +5,14 @@
 //! Postmaster a letter holding a sealed Vestige. Each is given once a character, kept by name in the quest log, so a
 //! reload, a rejoin or a later round never gives it twice. One who pledges before the round reaches a keeper is given
 //! that keeper's gift as they pledge, as the Tack gives the Bay; the house pledged to gives its own
-//! (`give_house_piece`).
+//! (`give_house_piece`). A save from before the gifts, asked the Ranged weapon it never chose, is given it free.
 
 use crate::character::{At, CARRIED_MOST, Character, VAULT_MOST, Vestige};
 use crate::dice::Dice;
 use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::{Kind, Slot};
 use crate::mail::{Posted, Source};
-use crate::quests::quests;
+use crate::quests::{Goal, quests};
 use crate::rarity::Rarity;
 use crate::vendor::{self, Vendor};
 use serde::Deserialize;
@@ -118,10 +118,17 @@ impl Character {
     }
 
     /// Gives each gift of a goal met on the task the player is on and not yet given: a save kept partway round the
-    /// counters before the keepers gave gifts is paid for the keepers it has heard. One past the round is owed none.
+    /// counters before the keepers gave gifts is paid for the keepers it has heard. One past the round is owed none,
+    /// but a save on the opening's task asking a Ranged weapon worn, never given the Weaponsmith's choice, is owed that
+    /// weapon free at her counter, as its Melee one was bought before she gave them.
     pub(crate) fn give_gifts_due(&mut self) {
         let Some((quest, task)) = self.quest_now() else { return };
         let Some(def) = quests().quests[quest].tasks.get(task) else { return };
+        let ranged = def.goals.iter().any(|goal| matches!(&goal.goal, Goal::Wear(worn) if worn.slot == Slot::Ranged));
+        if ranged && quests().quests[quest].faction == 0 && !self.given(Gift::Weapons) {
+            self.quests.gifts.push(Gift::Weapons.key().to_owned());
+            self.quests.free.push(Slot::Ranged);
+        }
         let counts = self.quest_counts();
         let met = def.goals.iter().zip(counts).filter(|(goal, count)| *count >= goal.count);
         let due: Vec<Gift> = met.filter_map(|(goal, _)| goal.reward.gift).collect();
