@@ -188,10 +188,11 @@ The Islands mode shows one of the sea's islands at a time, from a seed and a cli
 `room.wasm` exactly as its room builds it and drawn with the sea round it ([[Island Drawing]]). Next seed steps the
 seed; Next isle steps to the next ruin or quarry; Close up looks from about 40 m over its middle and From 3 km from
 afar. The panel counts the triangles and draws. `?mode=islands&isleSeed=<seed>&isleClimate=<climate>&isleView=afar`
-opens on an island, and `?islePacks=<prefix>` reads the build's packs before they are published. Its panel is drawn by
-the game as the other modes' are (`islePanel`), and its island is drawn into the room right of the panel on the same
-device. A captain's fight in Land mode shows the game's own readout over the view ([[Interface]], "The sea fight's
-readout").
+opens on an island, `?islePacks=<prefix>` reads the build's packs before they are published, and `&islePlants=game`
+draws the land's plants as the game does (Flora's, offered by `editorPage.ts`) in place of their modules. Its panel is
+drawn by the game as the other modes' are (`islePanel`), and its island is drawn into the room right of the panel on
+the same device. A captain's fight in Land mode shows the game's own readout over the view ([[Interface]], "The sea
+fight's readout").
 
 ## How it works
 

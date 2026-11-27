@@ -35,11 +35,6 @@ impl Form {
             Form::Grove => "grove",
         }
     }
-
-    #[must_use]
-    pub fn of_key(key: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|form| form.key() == key)
-    }
 }
 
 /// How large a zone is: small, medium or large.

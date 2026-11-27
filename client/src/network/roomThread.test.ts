@@ -219,3 +219,20 @@ test('a rooms worker that failed refuses every later opening at once, saying why
   const hung = new Promise((unused, reject) => setTimeout(() => reject(new Error('still waiting')), 50));
   await assert.rejects(Promise.race([late, hung]), /the worker could not start/);
 });
+
+test('a room asked after its worker failed is answered none at once, never left waiting', async () => {
+  let fail: (reason: string) => void = () => undefined;
+  let toGame: (said: FromRooms) => void = () => undefined;
+  let alive = true;
+  const serve = serveRooms((said) => setTimeout(() => toGame(structuredClone(said))));
+  roomPort({
+    post: (told: ToRooms) => alive && setTimeout(() => serve(told.kind === 'open' ? told : structuredClone(told))),
+    hear: (heard) => (toGame = heard),
+    fail: (failed) => (fail = failed),
+  });
+  const sea = await RoomThread.openSea(compiled, layoutText, () => undefined, 42);
+  alive = false;
+  fail('the worker stopped');
+  const hung = new Promise((unused, reject) => setTimeout(() => reject(new Error('still waiting')), 200));
+  assert.equal(await Promise.race([sea.isleWord(1), hung]), '');
+});

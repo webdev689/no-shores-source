@@ -126,6 +126,10 @@ export const CAMERA_CLEARANCE_M = 0.3;
 /** A QA view's eye, standing anywhere in place of the camera (qaViews.ts `__qaEye`), with its look; null in play. */
 export const QA_EYE: { shot: { eye: [number, number, number]; yaw: number; pitch: number } | null } = { shot: null };
 
+/** `shot` with a QA view's eye and look in its place while one stands, its lens kept: the sea's and the story's own
+ *  cameras take no orbit, so they ask here. */
+export const withQaEye = <Taken extends Shot>(shot: Taken): Taken => (QA_EYE.shot ? { ...shot, ...QA_EYE.shot } : shot);
+
 /** The shot a player's orbit camera takes (its eye back from its target along its look, its lens narrowed by the
  *  orbit's zoom), held `clearance` over the ground under the eye where the ground is known, so a camera pulled back up
  *  a slope never looks out from under it. */

@@ -66,7 +66,7 @@ export function fakeLink(account: Account | null, roster: Roster | string = ROST
     },
     logout: async () => void asked.push('logout'),
     logoutEverywhere: async () => null,
-    discord: async (back: string) => `discord?back=${back}`,
+    discord: async (back: string) => ({ to: `discord?back=${back}` }),
   };
   return { link: link as unknown as AccountLink, asked };
 }

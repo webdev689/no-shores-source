@@ -36,6 +36,7 @@ export function roomOf(gate: (kept: string | null) => string = () => ''): KeptRo
       return body === undefined ? null : { body, vault: '{}' };
     },
     judgedMoved: (player) => moved.delete(player),
+    mailLying: () => undefined,
     restoreJoined: (player, kept) => kept.startsWith('{') && held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
     name: (player, name) => held.has(player) && Boolean(named.set(player, name)),

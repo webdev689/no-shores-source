@@ -7,7 +7,7 @@ import { fetchRoomWasm } from '../rules/combatRules.ts';
 import { ISLE_CLIMATES } from '../islands/isleModules.ts';
 import { islePacksPrefix, ISLE_MANIFEST } from '../islands/isleManifest.ts';
 import { type IsleShown, readIslePlan } from '../islands/islePlan.ts';
-import { IslesView } from '../islands/isleView.ts';
+import { GROWTH_ROLES, IslesView } from '../islands/isleView.ts';
 import { ShadowMap } from '../shadow.ts';
 import { SAMPLES, WaterView } from '../water/waterView.ts';
 import type { EditorDrawn, EditorFrame, EditorFrameView } from './editorFrame.ts';
@@ -36,6 +36,33 @@ const CLOSE: Omit<Orbit, 'targetZ'> = { targetX: 0, targetY: 0, yaw: 0.6, pitch:
 const AFAR: Omit<Orbit, 'targetZ'> = { targetX: 0, targetY: 0, yaw: 0.6, pitch: 0.08, distance: 3000 };
 /** How many seeds the "next isle" press tries before it gives up: one in eight is an isle. */
 const MOST_TRIES = 400;
+
+/** The camera an island's plants are drawn for: where it stands, its look and its lens. */
+interface PlantShot {
+  readonly eye: readonly [number, number, number];
+  readonly yaw: number;
+  readonly pitch: number;
+  readonly fov: number;
+  readonly near: number;
+  readonly far: number;
+}
+
+/** An island's land's plants as the game draws them (Flora's, `IslesNature`), in place of their modules. */
+export interface IslePlants {
+  show(isles: readonly IsleShown[]): void;
+  castInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: PlantShot, time: number, shadow: ShadowMap): void;
+  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: PlantShot, time: number, shadow: ShadowMap): void;
+}
+
+/** The game's plants, which the page offers for `?islePlants=game` (`editorPage.ts`): the editor never reaches the
+ *  game itself. */
+let plantsOffered: ((gpu: Gpu) => IslePlants) | null = null;
+
+/** Draws each island's plants as the game does from now on, so the island as a player sees it is pictured without a
+ *  voyage. */
+export function offerIslePlants(plants: (gpu: Gpu) => IslePlants): void {
+  plantsOffered = plants;
+}
 
 interface Targets {
   readonly colour: GPUTexture;
@@ -82,10 +109,13 @@ export async function startIsleEditor(editor: EditorFrame): Promise<IsleEditor> 
   const redraw = () => {
     if (active) editor.request();
   };
-  const { isles, shadow, water, sea, depthCopy } = watched(() => {
+  const plants = plantsOffered;
+  const { isles, nature, shadow, water, sea, depthCopy } = watched(() => {
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
+    const left = plants ? GROWTH_ROLES : undefined;
     return {
-      isles: new IslesView(gpu, ISLE_MANIFEST, islePacksPrefix(location.search), redraw),
+      isles: new IslesView(gpu, ISLE_MANIFEST, islePacksPrefix(location.search), redraw, left),
+      nature: plants?.(gpu) ?? null,
       shadow: new ShadowMap(gpu),
       water: new WaterView(gpu),
       sea: openSea(gpu),
@@ -120,6 +150,7 @@ export async function startIsleEditor(editor: EditorFrame): Promise<IsleEditor> 
       const plan = readIslePlan(text);
       shown = { id: 1, at: [0, 0], climate, plan, heights: door.isleHeights(asked, climate, [0, 0]) };
       isles.show([shown]);
+      nature?.show([shown]);
     } catch (error) {
       status = `That island does not read: ${String(error)}`;
       return false;
@@ -174,13 +205,17 @@ export async function startIsleEditor(editor: EditorFrame): Promise<IsleEditor> 
     orbit = { ...orbit, targetZ: ground };
     const camera = cameraOf(orbit);
     const fromEye = viewProjection(orbit, width / height, true);
-    const shot = { eye: camera.eye };
+    const { near, far } = camera;
+    const shot = { eye: camera.eye, yaw: orbit.yaw, pitch: orbit.pitch, fov: FIELD_OF_VIEW, near, far };
     const time = performance.now() / 1000;
     const above = camera.eye[2] - Math.max(0, isles.groundAt(camera.eye[0], camera.eye[1]) ?? 0);
     shadow.update(camera.eye, orbit.yaw, above);
     const drawn = targetsFor(width, height);
     const encoder = gpu.device.createCommandEncoder();
-    shadow.cast(encoder, (pass) => isles.castInto(pass, fromEye, shot, time, shadow));
+    shadow.cast(encoder, (pass) => {
+      isles.castInto(pass, fromEye, shot, time, shadow);
+      nature?.castInto(pass, fromEye, shot, time, shadow);
+    });
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -199,6 +234,7 @@ export async function startIsleEditor(editor: EditorFrame): Promise<IsleEditor> 
       },
     });
     isles.drawInto(pass, fromEye, shot, time, shadow);
+    nature?.drawInto(pass, fromEye, shot, time, shadow);
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [

@@ -48,6 +48,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Co-Dev's Toolkit, Whole]]
 - [[Readers of Our Own Formats Only]]
 - [[CLAUDE.md Points Into the Bible]]
+- [[The Kit Runs Only in Cloud Sessions]]
 - [[Which Made-for-DFO Mods Come Over]]
 - [[The World Map]]
 - [[The World Editor Paints in the Browser]]
@@ -408,7 +409,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Overlook's City Below Is Lit at Night, in Detail]]
 - [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
 - [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]
-- [[The Kit Runs Only in Cloud Sessions]]
+- [[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]
 
 ## Claude's calls
 
