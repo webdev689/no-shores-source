@@ -12,12 +12,9 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - **Merging on the owner's yes once CI passes on its head**: #249 ("Use your gifts" counts a step done before it, so
   none is asked again; a lesson's steps tick in the tracker alone, with no notice at the foot; tested offline, the
   notices not yet seen in a running game). A merge deploys the page, the site, the rooms and the bot.
-- **Merging on the owner's yes ("merge and deploy all") as CI passes**:
-  - #244: the review's lessons in CLAUDE.md, Testing, the Toolkit and the procedures (review 11, 12).
-  - #245: new repo checks, each landing with what it refuses fixed (review 8).
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
-- **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
+- **To come**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
