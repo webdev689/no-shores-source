@@ -9,9 +9,11 @@ import type { NodeInfo } from './worldData.ts';
 
 type Point = readonly [number, number];
 
-/** Where the page keeps the place, and how often it keeps it while the player plays, seconds. */
+/** Where the page keeps the place, and how often it looks whether the place has changed while the player plays,
+ *  seconds: in the game's worker a write is a message to the page, which a page already going never reads, so the
+ *  place is kept as it changes, not only as the page goes. */
 export const PLACE_KEY = 'noshores.place';
-const KEEP_EVERY_S = 10;
+const KEEP_EVERY_S = 1;
 
 /** A place to resume at: aboard the ship, where it lay when the page knows it (offline: online the sea room keeps it),
  *  or on foot in a social space, where the player stood when the page knows it (offline: online its room stands them
@@ -59,14 +61,17 @@ export function socialArrival(
   return { node: place.at ? { ...node, spawns: [place.at] } : node, facing: place.facing ?? null };
 }
 
-/** Keeps where the player is, as `now` says it (none: as it was), every KEEP_EVERY_S and as the page is hidden or
- *  goes, so a page that plays alone comes back there. */
+/** Keeps where the player is, as `now` says it (none: as it was), when it has changed, every KEEP_EVERY_S and as the
+ *  page is hidden or goes, so a page that plays alone comes back there. */
 export function keepPlace(now: () => Resumed | null, storage: Pick<Storage, 'setItem'> = localStorage): () => void {
+  let kept = '';
   const keep = () => {
     const place = now();
-    if (!place) return;
+    const words = place && JSON.stringify(place);
+    if (!words || words === kept) return;
     try {
-      storage.setItem(PLACE_KEY, JSON.stringify(place));
+      storage.setItem(PLACE_KEY, words);
+      kept = words;
     } catch {
       // A browser that keeps nothing still plays; the next visit begins at Overlook.
     }

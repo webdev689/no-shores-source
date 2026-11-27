@@ -33,7 +33,7 @@ export class LocalRoom implements RoomLink {
   /** The world's minute the room was last told, which turns the day's wares and brings Shape and takes him away. */
   private minute = -1;
   /** Minutes the room's clock stands ahead of the world's: none but for the dev address that starts a public event at
-   *  once (`&public=`). */
+   *  once (`&public=`) or stands the clock at a minute (`&minute=`). */
   private readonly minuteShift: number;
   readonly player: number;
   readonly dressed = [];
@@ -183,6 +183,20 @@ export class LocalRoom implements RoomLink {
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openPassage(ask)) throw new Error('the passage is not one a room can stand in');
+    door.epoch(Date.now());
+    return new LocalRoom(door, snapshot, gear);
+  }
+
+  /** Opens a Breach's run from its ask (`open_breach`'s JSON: its gate's patrol zone, its tier and the Unix minute it
+   *  opens) from the compiled `room-wasm` module, its player joined at its arrival; a development page's alone. */
+  static openBreach(
+    module: WebAssembly.Module,
+    ask: string,
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void = () => undefined,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.openBreach(ask)) throw new Error('the Breach is not one a room can stand in');
     door.epoch(Date.now());
     return new LocalRoom(door, snapshot, gear);
   }

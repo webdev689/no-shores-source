@@ -98,6 +98,8 @@ export async function start(
         .bind(given, now - STATE_MS)
         .first<{ account_id: string }>()
     : null;
+  // A ticket given is a link: gone, it is no plain sign-in, which would make a new account in the guest's place.
+  if (given && !ticket) return new Response('This sign-in has run out. Start it again from the game.', { status: 400 });
   const state = randomToken();
   await database
     .prepare('INSERT INTO discord_states (state, account_id, back, created_at, nonce) VALUES (?1, ?2, ?3, ?4, ?5)')

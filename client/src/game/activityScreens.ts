@@ -305,8 +305,14 @@ export function startActivities(
   // The keepers' countdowns turn on the same clock, so they read the same rules.
   countBy(game.module);
   if (import.meta.env.DEV) {
-    const inside = () => (game.foot() ? Boolean(game.foot()?.dungeon) : null);
-    enterAskedRun(location.search, nodes, inside, trips.intoRun);
+    // A Breach's run (`&run=node-<zone>--breach-normal--run-<8 letters>`) is gone into as a company member's is.
+    const inside = () => (game.foot() ? Boolean(game.foot()?.dungeon || game.foot()?.run) : null);
+    enterAskedRun(
+      location.search,
+      nodes,
+      inside,
+      (node, run) => void (breaches.joinRun(run) || trips.intoRun(node, run)),
+    );
   }
   // A test room launched from the Test Room: the rooms the player stands in on foot, none at sea, null under way.
   const standing = () => {

@@ -10,6 +10,7 @@ import { boundWord, withKey } from './controls.ts';
 import { DIM } from './hudPieces.ts';
 import { footer, header, hudPress, rail, said } from './hudParts.ts';
 import type { SeaLevel } from './seaView.ts';
+import { percentWords } from '../ui/percent.ts';
 
 /** What the console shows of the ship and its voyage. */
 export interface ConsoleState {
@@ -185,7 +186,7 @@ function shareBar(label: string, share: number): Node {
         width: 'grow',
         children: [
           { width: 'grow', children: [said(label, { colour: DIM })] },
-          said(`${Math.round(whole * 100)}%`, { wrap: false }),
+          said(percentWords(whole), { wrap: false }),
         ],
       },
       {

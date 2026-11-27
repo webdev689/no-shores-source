@@ -81,8 +81,10 @@ export class HeldMapWaters implements AskWaters {
           y: 0,
         },
       );
-      const away = (spot: { x: number; y: number }) => Math.hypot(spot.x - middle.x, spot.y - middle.y);
-      const spots = [...grid].sort((one, other) => away(one) - away(other));
+      const spots = grid
+        .map((spot) => ({ spot, away: Math.hypot(spot.x - middle.x, spot.y - middle.y) }))
+        .sort((one, other) => one.away - other.away)
+        .map(({ spot }) => spot);
       const label = this.points.get(water.continent);
       const [x, y] = label ? toInk(label[0], label[1]) : [-1, -1];
       const point = x >= 0 && y >= 0 && x <= ink.width && y <= ink.height ? { x, y } : null;

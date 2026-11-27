@@ -346,6 +346,23 @@ test('silent sockets never fill a finder: past its most, the oldest silent one i
   assert.equal(finder.waiting, 1, 'a seeker with a token still gets in');
 });
 
+test('signed Launch sockets fill their own room: a full search queue never shuts one out, and they are bounded', async () => {
+  const finder = new Finder('playlist-elite', {
+    // Each token its own account, signed in past the prologue.
+    seeker: (token) => Promise.resolve({ account: token, level: 30, prologue: true, apart: [] }),
+    found: () => Promise.resolve(true),
+    now: () => 0,
+    instance: () => 'k3j4h5g6',
+  });
+  const tokenOf = (number: number) => number.toString(16).padStart(64, '0');
+  for (let number = 0; number < FINDING_MOST; number++)
+    await finder.heard(finder.opened(new FakeSocket()), tokenOf(number));
+  assert.deepEqual([finder.full, finder.launchesFull], [true, false], 'searches fill the search queue alone');
+  for (let number = FINDING_MOST; number < FINDING_MOST * 2; number++)
+    await finder.heard(finder.opened(new FakeSocket(), true), tokenOf(number));
+  assert.equal(finder.launchesFull, true, 'as many signed Launches as a finder takes fill it to more');
+});
+
 test('a second tab that searches while its account’s run is being started joins no second group', async () => {
   const names = ['Ada', 'Ben', 'Cal', 'Dee'];
   const { made, tokens } = await world(names);

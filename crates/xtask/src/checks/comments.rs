@@ -293,10 +293,12 @@ const MONTHS: [&str; 12] = [
     "december",
 ];
 
-/// A year, month and day joined by hyphens or slashes, or a day, a month's name and a year in either order.
+/// A year, month and day joined by hyphens or slashes, a day and month before a year by slashes, or a day, a month's
+/// name and a year in either order.
 fn has_date(words: &str) -> bool {
     let bytes = words.as_bytes();
-    let numbered = [b"20dd-dd-dd", b"20dd/dd/dd"].iter().any(|shape| {
+    let shapes: [&[u8]; 6] = [b"20dd-dd-dd", b"20dd/dd/dd", b"dd/dd/20dd", b"d/dd/20dd", b"dd/d/20dd", b"d/d/20dd"];
+    let numbered = shapes.iter().any(|shape| {
         bytes.windows(shape.len()).enumerate().any(|(start, window)| {
             let fits = window.iter().zip(*shape).all(|(&got, &want)| match want {
                 b'd' => got.is_ascii_digit(),
@@ -321,25 +323,30 @@ fn has_date(words: &str) -> bool {
     numbered || named
 }
 
-/// A number after `#`, or after "PR" as a word: a pull request's or an issue's.
+/// A number after `#` (not a colour's six or eight hex digits, or three or four with a letter), after "PR" as a word
+/// or joined to it, or after "pull request": a pull request's or an issue's.
 fn has_issue_number(words: &str) -> bool {
     let bytes = words.as_bytes();
     let marked = bytes.iter().enumerate().any(|(at, &byte)| {
         let clear_before = at == 0 || !bytes[at - 1].is_ascii_digit();
         let digits = bytes[at + 1..].iter().take_while(|next| next.is_ascii_digit()).count();
-        byte == b'#' && clear_before && digits >= 2
+        let hex = bytes[at + 1..].iter().take_while(|next| next.is_ascii_hexdigit()).count();
+        let colour = matches!(hex, 6 | 8) || (matches!(hex, 3 | 4) && hex > digits);
+        byte == b'#' && clear_before && digits >= 2 && !colour
     });
     let tokens: Vec<&str> =
         words.split(|ch: char| !ch.is_ascii_alphanumeric()).filter(|token| !token.is_empty()).collect();
-    let named = tokens.windows(2).any(|two| {
-        let number = two[1].len() >= 2 && two[1].chars().all(|ch| ch.is_ascii_digit());
-        number && two[0] == "PR"
+    let is_number = |token: &str| token.len() >= 2 && token.chars().all(|ch| ch.is_ascii_digit());
+    let named = tokens.windows(2).any(|two| two[0] == "PR" && is_number(two[1]));
+    let joined = tokens.iter().any(|token| token.strip_prefix("PR").is_some_and(is_number));
+    let spelled = tokens.windows(3).any(|three| {
+        three[0].eq_ignore_ascii_case("pull") && three[1].eq_ignore_ascii_case("request") && is_number(three[2])
     });
-    marked || named
+    marked || named || joined || spelled
 }
 
 /// Standards named the way a ticket is, by capital letters, a hyphen and a number.
-const STANDARDS: [&str; 4] = ["UTF", "SHA", "ISO", "RFC"];
+const STANDARDS: [&str; 8] = ["UTF", "SHA", "ISO", "RFC", "CRC", "AES", "HTTP", "TLS"];
 
 /// Capital words joined by a hyphen, the first possibly numbered, or a capital word and a number joined by one, save
 /// a standard's name.

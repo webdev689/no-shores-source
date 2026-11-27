@@ -245,7 +245,8 @@ export class PageHost {
       case 'signIn': {
         const { id, keep } = message;
         const asked = keep ? BROWSERS_SIGN_INS.keep(keep).then(() => null) : BROWSERS_SIGN_INS.kept();
-        void asked.then((kept) => this.post({ kind: 'signIn', id, kept }));
+        // The game's worker waits on the answer: a store that fails answers none, never nothing.
+        void asked.catch(() => null).then((kept) => this.post({ kind: 'signIn', id, kept }));
         return;
       }
       case 'ticks':

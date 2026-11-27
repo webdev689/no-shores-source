@@ -20,7 +20,8 @@ const headers = { 'user-agent': 'Mozilla/5.0 (compatible; overlook-tools; sound 
 
 const out = process.argv[2] ?? 'freesound-candidates';
 /** Only the cues whose names begin with one of these (comma-separated, as the workflow is asked by hand), to search
- *  a few again without the whole list; every cue where it is empty. The picks are read whole either way. */
+ *  a few again without the whole list, reading only their picks (publish.py keeps the rest as published); every cue
+ *  where it is empty. */
 const only = (process.env.ONLY ?? '')
   .split(',')
   .map((name) => name.trim())
@@ -105,6 +106,7 @@ const save = () => {
   writeFileSync(join(out, 'picks.json'), `${JSON.stringify(picks, null, 2)}\n`);
 };
 for (const cue of wanted.cues) {
+  if (only.length > 0 && !only.some((name) => cue.id.startsWith(name))) continue;
   // A cue with a picked sound is searched no more: its pick is read for its credit and its preview kept.
   if (cue.picked) {
     for (const picked of [cue.picked].flat()) picks.push(await pickOf(cue, picked));
@@ -114,7 +116,6 @@ for (const cue of wanted.cues) {
   // One kept or made by the game, or whose sound comes from DFO's own, is searched no more; what was already
   // heard is passed over.
   if (cue.keep || cue.made || cue.dfo) continue;
-  if (only.length > 0 && !only.some((name) => cue.id.startsWith(name))) continue;
   const heard = new Set((cue.skip ?? []).map(String));
   const [least, most] = cue.seconds;
   const search = (filter) =>

@@ -225,11 +225,21 @@ impl Fights {
         Some((fought, crew))
     }
 
-    /// A fighting player's orders for the ticks to come; false for a player in no fight.
+    /// A fighting player's orders for the ticks to come, keeping the presses (fire, load, climb, boost) of earlier
+    /// orders not yet stepped; false for a player in no fight.
     pub fn orders(&mut self, player: PlayerId, orders: Orders) -> bool {
         let Some((fought, _)) = self.of_mut(player) else { return false };
         if let Some(crew) = fought.crews.get_mut(&player) {
-            crew.orders = orders;
+            // Presses wait for the step that uses them: a second message in the tick must not undo a broadside.
+            let pending = crew.orders;
+            let climb = if orders.helm.climb == 0 { pending.helm.climb } else { orders.helm.climb };
+            crew.orders = Orders {
+                helm: Helm { climb, ..orders.helm },
+                fire: orders.fire || pending.fire,
+                load: orders.load.or(pending.load),
+                boost: orders.boost || pending.boost,
+                ..orders
+            };
         }
         true
     }

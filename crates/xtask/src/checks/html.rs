@@ -15,7 +15,7 @@ const BRIDGE: [&str; 3] = ["client/src/ui/canvasEvents.ts", "client/src/ui/page.
 /// What builds, styles or writes into a page's elements, and what each is called in a problem. A line is read
 /// `normalized`, so `document['createElement'] ('div')` is read as `document.createElement('div')`, and a word that
 /// ends in a letter is read whole, so `new Image` is refused but `new ImageData` is not.
-const REFUSED: [(&str, &str); 52] = [
+const REFUSED: [(&str, &str); 58] = [
     ("createElement", "makes an element"),
     ("createElementNS", "makes an element"),
     ("createTextNode", "makes an element"),
@@ -49,11 +49,17 @@ const REFUSED: [(&str, &str); 52] = [
     ("'textContent'", "writes words into the page"),
     ("\"textContent\"", "writes words into the page"),
     ("textContent:", "writes words into the page"),
+    ("{ textContent", "writes words into the page"),
+    ("textContent }", "writes words into the page"),
     ("innerText", "writes words into the page"),
     ("outerText", "writes words into the page"),
     ("nodeValue", "writes words into the page"),
     ("setAttribute", "styles an element"),
     ("setAttributeNS", "styles an element"),
+    ("setAttributeNode", "styles an element"),
+    ("setAttributeNodeNS", "styles an element"),
+    ("createAttribute", "styles an element"),
+    ("createAttributeNS", "styles an element"),
     (".classList", "styles an element"),
     (".className", "styles an element"),
     ("'className'", "styles an element"),
@@ -76,6 +82,13 @@ const STYLESHEETS: [&str; 5] = [".css", ".scss", ".sass", ".less", ".styl"];
 /// The tags a page may hold: its head's, the canvas and the script.
 const PAGE_TAGS: [&str; 10] =
     ["!doctype", "html", "head", "meta", "title", "link", "style", "body", "canvas", "script"];
+
+/// Whether a script's `src` is a module's file in the client, read by the html check: a path, never another site's
+/// address or a script written into a `data:` one.
+fn from_its_file(source: &str) -> bool {
+    let path = source.split(['?', '#']).next().unwrap_or("").to_ascii_lowercase();
+    !path.contains(':') && !path.starts_with("//") && [".ts", ".js", ".mjs"].iter().any(|ending| path.ends_with(ending))
+}
 
 fn in_client(path: &str) -> bool {
     path.starts_with("client/")
@@ -352,7 +365,12 @@ fn page_problems(html: &str) -> Vec<String> {
         }
         rest = &rest[open..];
         if let Some(comment) = rest.strip_prefix("<!--") {
-            rest = comment.split_once("-->").map_or("", |(_, after)| after);
+            // A browser also ends a comment at once on `<!-->` or `<!--->`, and on `--!>`.
+            let ends = [comment.strip_prefix('>'), comment.strip_prefix("->")].into_iter().flatten().next();
+            rest = ends.unwrap_or_else(|| {
+                let closes = [comment.find("-->").map(|at| at + 3), comment.find("--!>").map(|at| at + 4)];
+                closes.into_iter().flatten().min().map_or("", |at| &comment[at..])
+            });
             continue;
         }
         let Some((tag, after)) = rest.get(1..).and_then(|tag| tag.split_once('>')) else { break };
@@ -385,7 +403,7 @@ fn page_problems(html: &str) -> Vec<String> {
             "canvas" => canvases.push(value("id").unwrap_or_default().to_owned()),
             "script"
                 if value("type").map(str::to_ascii_lowercase).as_deref() != Some("module")
-                    || value("src").is_none() =>
+                    || !value("src").is_some_and(from_its_file) =>
             {
                 problems
                     .push("a script that is not a module from its file: <script type=\"module\" src=...>".to_owned());

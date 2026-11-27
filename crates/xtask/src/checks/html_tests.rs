@@ -61,6 +61,9 @@ fn a_script_that_puts_an_element_or_words_into_the_page_is_refused() {
         "const doc = new DOMParser().parseFromString('<div>x</div>', 'text/html');",
         "document.write('<b>x</b>');",
         "label.textContent = 'Name';",
+        "Object.assign(document.body, { textContent });",
+        "label.setAttributeNode(made);",
+        "const made = document.createAttribute('style');",
         "Object.assign(label, { textContent: 'Name' });",
         "Reflect.set(label, 'className', 'menu');",
         "label[\"className\"] = 'menu';",
@@ -204,6 +207,17 @@ fn a_page_is_one_canvas_and_its_module() {
         ("a classic script", page("", &format!("{CANVAS}<script src=\"/src/main.ts\"></script>"))),
         ("a second module", page("", &format!("{body}<script type=\"module\" src=\"/src/b.ts\"></script>"))),
         ("no script", page("", CANVAS)),
+        ("an abrupt comment", page("", &format!("{body}<!--><div>menu</div><!-- -->"))),
+        ("an abrupt comment, a dash", page("", &format!("{body}<!---><div>menu</div><!-- -->"))),
+        ("a comment closed by --!>", page("", &format!("{body}<!-- x --!><div>menu</div><!-- -->"))),
+        (
+            "a script in an address",
+            page("", &format!("{CANVAS}<script type=\"module\" src=\"data:text/javascript,go()\"></script>")),
+        ),
+        (
+            "another site's script",
+            page("", &format!("{CANVAS}<script type=\"module\" src=\"https://x.org/a.js\"></script>")),
+        ),
     ] {
         assert!(page_refused(&html), "{way}");
     }

@@ -2,7 +2,17 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
-import { askedPublic, bannerOf, chestQuestOf, clockOf, compassOf, minuteShift, questOf, ringOf } from './publicLaw.ts';
+import {
+  askedMinute,
+  askedPublic,
+  bannerOf,
+  chestQuestOf,
+  clockOf,
+  compassOf,
+  minuteShift,
+  questOf,
+  ringOf,
+} from './publicLaw.ts';
 
 const fissure = (more: Partial<PublicEvent> = {}): PublicEvent => ({
   kind: PUBLIC_KIND.fissure,
@@ -124,6 +134,9 @@ test('the compass marks the ground (the next one between events) and the heroic 
 test('the dev address asks for an event, and the minute that starts it at once in its zone', () => {
   assert.equal(askedPublic('?at=gullwing-vale&public=raid'), 'raid');
   assert.equal(askedPublic('?public=other'), null);
+  assert.equal(askedMinute('?at=saltgrass-downs&minute=29891550'), 29_891_550);
+  for (const search of ['?at=x', '?minute=', '?minute=1.5', '?minute=-3', '?minute=noon'])
+    assert.equal(askedMinute(search), null, search);
   // The Downs (place 0) run the Fissure in even slots: minute 0, 30, 60...; the Vale (place 1) the raid in slots
   // 0, 2, 4 from minute 5 (crates/room/src/public/mod.rs schedule).
   assert.equal(minuteShift('saltgrass-downs', 'fissure', 31), 29);

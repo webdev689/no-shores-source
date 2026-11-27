@@ -134,25 +134,43 @@ const WEBGL_MARKERS: [&str; 3] = ["webgl", "WebGLRenderingContext", "WebGL2Rende
 /// `new URL('…', import.meta.url)` and Vite's `import.meta.glob('…')`, in any quote.
 const IMPORT_MARKERS: [&str; 5] = ["from ", "import ", "import(", "new URL(", "import.meta.glob("];
 
-/// Every module a script file imports, with its line. A glob's list of patterns yields each pattern.
+/// Every module a script file imports, with its line. A glob's list of patterns yields each pattern, and a call
+/// whose argument starts on the lines below (as Prettier wraps a long list) is read on them to its close.
 pub fn imports_of(text: &str) -> Vec<(String, usize)> {
+    let lines: Vec<&str> = text.lines().collect();
     let mut found = Vec::new();
-    for (offset, line) in text.lines().enumerate() {
+    for (offset, line) in lines.iter().enumerate() {
         for marker in IMPORT_MARKERS {
-            let mut rest = line;
+            let mut rest = *line;
             while let Some(at) = rest.find(marker) {
-                let mut after = rest[at + marker.len()..].trim_start().trim_start_matches('[').trim_start();
-                while let Some(quote) = after.chars().next().filter(|ch| matches!(ch, '\'' | '"' | '`'))
-                    && let Some(close) = after[1..].find(quote)
-                {
-                    found.push((after[1..=close].to_owned(), offset + 1));
-                    after = after[close + 2..].trim_start().trim_start_matches(',').trim_start();
+                let after = rest[at + marker.len()..].trim_start().trim_start_matches('[').trim_start();
+                if after.is_empty() && marker.ends_with('(') {
+                    for (below, next) in lines.iter().enumerate().skip(offset + 1) {
+                        let quoted = quoted_of(next.trim_start().trim_start_matches('[').trim_start());
+                        found.extend(quoted.into_iter().map(|name| (name, below + 1)));
+                        if next.contains(')') || next.contains(']') {
+                            break;
+                        }
+                    }
                 }
+                found.extend(quoted_of(after).into_iter().map(|name| (name, offset + 1)));
                 rest = &rest[at + marker.len()..];
             }
         }
     }
     found
+}
+
+/// The quoted names a line starts with, one after another, apart by commas.
+fn quoted_of(mut after: &str) -> Vec<String> {
+    let mut names = Vec::new();
+    while let Some(quote) = after.chars().next().filter(|ch| matches!(ch, '\'' | '"' | '`'))
+        && let Some(close) = after[1..].find(quote)
+    {
+        names.push(after[1..=close].to_owned());
+        after = after[close + 2..].trim_start().trim_start_matches(',').trim_start();
+    }
+    names
 }
 
 /// The layer folder a client path sits in, if it is below `client/src/<folder>/`.
@@ -248,6 +266,15 @@ mod tests {
         let text = "const worker = new Worker(new URL('./landWorker.ts', import.meta.url));\nconst sea = await import(`../sea/waves.ts`);\nconst pages = import.meta.glob(['./a/*.ts', \"../b/*.ts\"]);\n";
         let found: Vec<String> = imports_of(text).into_iter().map(|(specifier, _)| specifier).collect();
         assert_eq!(found, ["./landWorker.ts", "../sea/waves.ts", "./a/*.ts", "../b/*.ts"]);
+    }
+
+    #[test]
+    fn a_list_wrapped_onto_the_lines_below_is_read_to_its_close() {
+        let text = "const pages = import.meta.glob([\n  '../game/a/*.ts',\n  \"../game/b/*.ts\",\n]);\nconst url = new URL(\n  './w.ts',\n  import.meta.url,\n);\nconst after = 'not an import';\n";
+        assert_eq!(
+            imports_of(text),
+            [("../game/a/*.ts".to_owned(), 2), ("../game/b/*.ts".to_owned(), 3), ("./w.ts".to_owned(), 6),]
+        );
     }
 
     #[test]

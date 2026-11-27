@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { mock, test } from 'node:test';
 import type { Flow } from './flow.ts';
 import { type FootContext, joinAsk, nodeAddress } from './footPlace.ts';
 import {
+  keepPlace,
   PLACE_KEY,
-  type Resumed,
-  type Resuming,
   placeHeard,
   placeNow,
   placeOf,
   resume,
   socialArrival,
+  type Resumed,
+  type Resuming,
 } from './relog.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -165,4 +166,25 @@ test('back from the title online, a player whose dive’s zone held them last go
   const gone = game(true, { kind: 'passage', room: 'passage-continent-1-w2900-z11' });
   await resume(gone.resuming);
   assert.deepEqual(gone.went, ['overlook'], 'a zone the page cannot lay or join: Overlook');
+});
+
+test('the place is kept within a second of changing, and not again while it holds, as a closing page may not keep it', () => {
+  mock.timers.enable({ apis: ['setInterval'] });
+  const scope = { addEventListener: globalThis.addEventListener, document: globalThis.document };
+  Object.assign(globalThis, { addEventListener: () => undefined, document: { addEventListener: () => undefined } });
+  try {
+    const written: string[] = [];
+    let place: Resumed = { kind: 'social', node: 'overlook-social', at: [10, 20] };
+    keepPlace(() => place, { setItem: (unused, value) => void written.push(value) });
+    mock.timers.tick(1_000);
+    assert.equal(written.length, 1, 'kept within a second');
+    mock.timers.tick(5_000);
+    assert.equal(written.length, 1, 'not again while it holds');
+    place = { kind: 'social', node: 'overlook-social', at: [11, 20] };
+    mock.timers.tick(1_000);
+    assert.deepEqual(JSON.parse(written.at(-1) ?? 'null'), place, 'kept again a second after it moved');
+  } finally {
+    Object.assign(globalThis, scope);
+    mock.timers.reset();
+  }
 });

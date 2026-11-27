@@ -728,7 +728,8 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   (`SeaFight::friends`), and one sunk lays nothing that floats. Afloat as the fight ends, it sails on for its port.
 - **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets
   them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's ship hove to
-  (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships, so the Sloop's stem
+  (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships (a press, the fire,
+  a load, a climb or a burst, is kept until a step uses it, however many orders come in the tick), so the Sloop's stem
   may ram the captain's, on waters made from the coasts (open sea, the swell on it, dry land on them), until every
   captain has sunk or gone; its last view is shown once, in the next snapshot however many ticks the room caught up before it (`Fights::sent`),
   and the players sail on from where it left them, keeping their

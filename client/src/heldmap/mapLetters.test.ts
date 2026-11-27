@@ -72,6 +72,7 @@ const LETTERING: Lettering = {
   ship: { x: 150, y: 150, heading: 0 },
   key: { corner: 'lower-left', box: { x: 14, y: 300, width: 190, height: 92 } },
   scale: 1.5,
+  named: [],
 };
 
 /** The letters of a sea's name as painted, one call each, in order. */
@@ -122,6 +123,7 @@ test('a sea’s name is arched: each letter turned along a circle whose middle s
     ship: null,
     key: null,
     scale: 1,
+    named: [],
   });
   const turns = calls.filter((call) => call.name === 'rotate').map((call) => call.args[0] as number);
   assert.equal(turns.length, 'The Mistwrack'.length);
@@ -141,6 +143,7 @@ test('a locked sea’s padlock stands out: a disc of the parchment ringed in the
     ship: null,
     key: null,
     scale: 1,
+    named: [],
   });
   const disc = calls.findIndex((call) => call.name === 'fill' && call.fillStyle === PARCHMENT);
   const body = calls.findIndex((call) => call.name === 'fillRect' && call.fillStyle === INK);
@@ -213,6 +216,7 @@ test('a place the quest names is ringed round its mark, and a node the quest nam
       ship: null,
       key: null,
       scale: 1,
+      named: [],
     });
     return calls.filter((call) => call.name === 'arc').map((call) => call.args[2] as number);
   };

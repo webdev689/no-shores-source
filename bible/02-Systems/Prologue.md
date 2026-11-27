@@ -127,7 +127,7 @@ the director holds the black at least 1 s more and until the next beat is `ready
 once the wreck is drawn, the shore once its beach is found); past that second the owner's logo stands over the black
 with a breathing LOADING under it. The beat's first three frames are drawn under the black, so their first making is
 unseen, and it fades in over 2.5 s; the wake and the shore take no fade (`fadeInS`), as their own darkening blinks
-them awake. Each beat's moments keep the time they were seen in before the fades grew: the throw overboard comes 1.3 s
+them awake. Each beat's moments: the throw overboard comes 1.3 s
 later and its scene runs 8.5 s, the deep runs 21.5 s, and the walk up the shore 6.9 s. A beat that does not begin from
 black, begun while the black still held (the one before skipped under it), fades in at once. The wake's heart, and
 the deep's, begin to beat with their first frame, so the darkening pulses in time with the beat heard; the deep's

@@ -123,7 +123,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     rooms,
     roomModule,
     groundAt: (x, y) => groundAt(x, y),
-    // Under `npm run dev` only, `?spawn=` asks a room playing alone for foes to fight.
+    // Under `npm run dev` only, `?foes=` asks a room playing alone for foes to fight.
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
     trips: onFoot,
@@ -358,7 +358,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     node: () => playing.foot?.node ?? null,
     arrive: goFoot,
     sea: () => travel({ kind: 'return-to-ship' }, goSea),
-    ...{ walker, dead, game: playing },
+    ...{ walker, dead, game: playing, sky: scene.sky },
   });
   const landAt = (id: string) => {
     const landing = playing.sea?.view.landingOf(id);

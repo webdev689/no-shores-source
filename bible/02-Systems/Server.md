@@ -621,7 +621,9 @@ so every decision is Rust and the shell only carries bytes and time.
   room opens a Test Ground. A node with no baked file answers 404, as does a dungeon
   whose node is no patrol. Any other spelling of a node's room is no room, but for the tiers' old names: `--rough`
   and `--storm` are read as `--elite` and `--abyss` (`canonicalRoom`), so a page that still builds them joins its
-  room and loads again. A name is 64 characters at most.
+  room and loads again. A name is 64 characters at most. The Worker answers 404 itself to a name no room is spelled as,
+  and 426 to a room asked for without a WebSocket (`joinedRoom`), before an object is made; an object makes its room's
+  WebAssembly only when first used.
 - **Runs** (`roomNames.ts`): a name ending `--run-<instance>`, eight lowercase letters or digits, is a private room,
   a run ([[Activities]]): `node-<patrol>--elite--dungeon-<n>--run-<i>` or `--abyss--` a patrol's dungeon at Elite or
   Abyss, `node-<Elite Dungeon>--run-<i>` an Elite Dungeon, `node-<Elite Dungeon>--elite--run-<i>` or `--abyss--`
@@ -695,8 +697,9 @@ so every decision is Rust and the shell only carries bytes and time.
   player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. As a
   player leaves, the host first has the room send every Vestige still lying for them to their mail (`mailLying`, at sea
   from the captain's deck they stand on; [[Gear]], "The mail"), then reads their character for its last save, then lets
-  the room take them out, so the save keeps what they left lying. Not yet so: a player whose socket a second sign-in
-  replaces, and every player of a room a deploy restarts or a fault stops, leave without that last save. A socket there
+  the room take them out, so the save keeps what they left lying. A player whose socket a second sign-in replaces has
+  their chests opened and what lies for them mailed too, into the body the second takes on (`keptRoomOn`). Not yet so:
+  every player of a room a deploy restarts or a fault stops leaves without that last save. A socket there
   that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no
   session, is closed with 4003 and "Sign in to play online." (in a run, "Sign in to enter this run."), so sockets that
   never sign in cannot hold a room's places; every page of the game sends one, a guest's included. Nor can one address

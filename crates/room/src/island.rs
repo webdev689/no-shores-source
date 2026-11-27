@@ -7,7 +7,7 @@ use crate::garrison::{Group, draws_of, gird_of, index};
 use crate::{Floor, PlayerId, Room, SEED, Section, Standing};
 use ::foes::Rank::{Elite, Major, Minor};
 use ::foes::roster::{COLLECTOR, CROSSBOWMAN, ENFORCER, REEVE, RUNNER};
-use gear::ship::found::{Source, Taken, salvage};
+use gear::ship::found::{Source, salvage};
 use isle::{Kind, Plan};
 use std::collections::BTreeMap;
 
@@ -17,8 +17,7 @@ pub const WRECK_REACH: f64 = 4.0;
 const POSTS_AROUND: f64 = 16.0;
 
 /// The island's own: its seed (which each character's scavenged wrecks are kept by), its kind, its water's levels,
-/// its wrecks' heaps and its door, the accounts the sea says have landed on it where the server checks (`land`), and
-/// what each scavenge paid in, not yet told.
+/// its wrecks' heaps and its door, and the accounts the sea says have landed on it where the server checks (`land`).
 #[derive(Debug, Default)]
 pub struct Isle {
     pub seed: u64,
@@ -29,7 +28,6 @@ pub struct Isle {
     /// None where nobody checks (the page's own room); else the accounts whose ships the sea holds at its anchorage,
     /// each with its landing's number.
     pub(crate) landed: Option<BTreeMap<String, u32>>,
-    pub hauls: Vec<(PlayerId, u8, Taken)>,
 }
 
 /// The groups an isle's guards stand in, the Grey Tithe's: one led at the landmark, one at the door and one at the
@@ -214,12 +212,9 @@ impl Room {
         let Some(scavenger) = self.players.get_mut(&player) else { return crate::asks::OUT_OF_REACH };
         // Spent for them on this island for good: their page offers it no more, nor any room of this island again.
         scavenger.character.scavenge(seed, wreck);
-        let taken = scavenger.character.take_salvage(found);
+        scavenger.character.take_salvage(found);
         scavenger.character.tell(&gear::quests::Event::Scavenge);
         scavenger.gear_changed = true;
-        if let Some(isle) = self.isle.as_mut() {
-            isle.hauls.push((player, wreck, taken));
-        }
         0
     }
 
@@ -228,11 +223,6 @@ impl Room {
     pub fn scavenged(&self, player: PlayerId) -> Vec<u8> {
         let (Some(found), Some(isle)) = (self.players.get(&player), self.isle.as_ref()) else { return Vec::new() };
         found.character.scavenged_on(isle.seed).to_vec()
-    }
-
-    /// What each scavenge paid in since last asked, each with its player and wreck.
-    pub fn take_hauls(&mut self) -> Vec<(PlayerId, u8, Taken)> {
-        self.isle.as_mut().map(|isle| std::mem::take(&mut isle.hauls)).unwrap_or_default()
     }
 }
 

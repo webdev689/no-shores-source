@@ -41,7 +41,7 @@ export interface KeptRoom {
   /** Whether what a player's arrival in the next room is judged by moved since this was last asked; asking clears it. */
   judgedMoved(player: number): boolean;
   /** Opens a leaving player's chests and posts what lies for them to their mail (`partFrom`). */
-  mailLying?(player: number): void;
+  mailLying(player: number): void;
   /** Gives a player their character with the account's vault and Aurem joined in (`RoomDoor.restoreJoined`), and
    *  the room it came from. */
   restoreJoined(player: number, body: string, vault: string | null, from?: string | null): boolean;
@@ -290,7 +290,7 @@ export class Keeper {
       if (kept.account === claimed.account) {
         const lastSaved = claimed.body === null ? null : savedKey(claimed.body, claimed.vault);
         const takeOn = kept.saved === lastSaved && body === claimed.body;
-        if (takeOn) this.room.mailLying?.(other);
+        if (takeOn) this.room.mailLying(other);
         const newest = takeOn ? this.room.keptApart(other) : null;
         this.held.delete(other);
         this.lost(other);

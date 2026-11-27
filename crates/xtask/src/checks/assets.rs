@@ -5,9 +5,10 @@ pub const MAX_BYTES: u64 = 1024 * 1024;
 
 /// Media, and builds that are not text (WebAssembly, the ship exporter's meshes, the module packs and any other
 /// binary bake), which the UTF-8 check skips.
-const MEDIA_EXTENSIONS: [&str; 30] = [
+const MEDIA_EXTENSIONS: [&str; 40] = [
     "png", "jpg", "jpeg", "webp", "gif", "bmp", "tga", "dds", "ktx", "ktx2", "glb", "gltf", "fbx", "obj", "blend",
     "wav", "ogg", "mp3", "flac", "mp4", "webm", "ttf", "otf", "woff", "woff2", "exr", "wasm", "mesh", "modules", "bin",
+    "opus", "m4a", "aac", "avif", "ico", "tif", "tiff", "psd", "mov", "mkv",
 ];
 
 /// Pictures for the bible's own pages are the one place media may sit in git.
@@ -62,6 +63,9 @@ mod tests {
     fn media_outside_the_attachments_is_a_problem() {
         let problems = check(&[("crates/client/assets/hull.PNG".to_owned(), 10)]);
         assert_eq!(problems.len(), 1);
+        for path in ["client/public/hit.opus", "client/public/icon.ico", "tools/art/sheet.psd", "site/clip.mov"] {
+            assert_eq!(check(&[(path.to_owned(), 10)]).len(), 1, "{path}");
+        }
     }
 
     #[test]

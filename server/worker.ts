@@ -9,8 +9,9 @@ import { addressKey } from './address.ts';
 import { Breach, breachAsked, breachRoom, restoring, toldBreach } from './breach.ts';
 import { type Count, MESSAGE_MOST, admitsFrom, counted, tellsTaken } from './budget.ts';
 import { delveAsk } from './delveHost.ts';
-import { entranceOf, roomName, sessionHash } from './joinRequest.ts';
+import { entranceOf, joinedRoom, roomName, sessionHash } from './joinRequest.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
+import { keptRoomOn } from './keptRoom.ts';
 import { OutpostHost, outpostGround } from './outpostHost.ts';
 import { openPassageRoom, passagesOf } from './passageHost.ts';
 import {
@@ -32,7 +33,6 @@ import { present } from './presence.ts';
 import { SEA_REQUEST } from './seaPorts.ts';
 import { Aboard } from './aboard.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
-import { healthAnswer } from './health.ts';
 
 interface Env {
   readonly ROOMS: DurableObjectNamespace<RoomHost>;
@@ -77,7 +77,11 @@ const AGAIN = 1013;
  * Breach keeps, stored), so a socket never outlasts it. A browser's one text message, its token, keeps its character.
  */
 export class RoomHost extends DurableObject<Env> {
-  private readonly room: RoomDoor = startRoomDoor(roomModule);
+  /** The room's WebAssembly, made when it is first used: an object asked for without a WebSocket holds none. */
+  private door: RoomDoor | null = null;
+  private get room(): RoomDoor {
+    return (this.door ??= startRoomDoor(roomModule));
+  }
   private opened: Promise<boolean> | null = null;
   /** Why the room did not open, told to whoever came: a passage zone of a week gone, or none its web holds. */
   private why = '';
@@ -260,10 +264,7 @@ export class RoomHost extends DurableObject<Env> {
     this.name = name;
     const accounts = this.env.ACCOUNTS;
     const room = toldBreach(() => this.breach, {
-      keptApart: (player: number) => this.guarded(() => this.room.keptApart(player), null),
-      judgedMoved: (player: number) => this.guarded(() => this.room.judgedMoved(player), false),
-      restoreJoined: (player: number, body: string, vault: string | null, from?: string | null) =>
-        this.guarded(() => this.room.restoreJoined(player, body, vault, from), false),
+      ...keptRoomOn(this.room, this.guarded.bind(this)),
       own: (player: number, account: string) => {
         const owned = this.guarded(() => this.room.own(player, account), false);
         // Kept, a run's player plays; a sea island's dungeon's waits on the sea's word that they are landed.
@@ -273,10 +274,6 @@ export class RoomHost extends DurableObject<Env> {
         if (owned) void this.aboard?.owned(player, account);
         return owned;
       },
-      shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),
-      name: (player: number, name: string) => this.guarded(() => this.room.name(player, name), false),
-      tag: (player: number, tag: string) => this.guarded(() => this.room.tag(player, tag), false),
-      guild: (player: number, told: string) => this.guarded(() => this.room.guild(player, told), false),
     });
     // A test room asks the accounts nothing but who is a developer: its zone copy holds one launched at once.
     const tested = testRoom(name);
@@ -589,11 +586,10 @@ export class RoomHost extends DurableObject<Env> {
   }
 }
 
-/** Sends `/room/<name>` to that room's object, a name lowercase letters, digits and hyphens; answers `/health`. */
+/** Sends a WebSocket's join of `/room/<name>` to that room's object (`joinedRoom`); answers `/health`. */
 export default {
   fetch(request: Request, env: Env): Response | Promise<Response> {
-    const name = roomName(request);
-    if (!name) return healthAnswer(request) ?? new Response('Not found', { status: 404 });
-    return env.ROOMS.getByName(name).fetch(request);
+    const joined = joinedRoom(request);
+    return typeof joined === 'string' ? env.ROOMS.getByName(joined).fetch(request) : joined;
   },
 } satisfies ExportedHandler<Env>;
