@@ -61,6 +61,7 @@ code:
   - crates/naval/src/ranks.rs#Commission
   - crates/room/src/sighting.rs#rank_for
   - crates/room/src/sighting.rs#sight_for
+  - crates/room/src/sighting.rs#come_out_for
   - crates/room/src/chart.rs#Charted
   - crates/room/src/clash.rs#Clash
   - crates/naval/src/fight.rs#among
@@ -620,7 +621,9 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100 and 86.4 km at ×200, so one
   met head-on stays in sight half a minute and more. Each keeps the largest sight it has been given, from the pace of
   the player nearest it, and goes once no player is within 1.1 times it.
-- **Where.** Between 0.9 and 1 of its sight out from the player, within 60 degrees of their heading while under way and
+- **Where.** Between 0.9 and 1 of `max(1 000 m, 30 s × (12 + 2.4) m/s × pace)` out from the player (`come_out_for`):
+  1 km at the helm and at rest, 2.2 km at ×5 and its sight from ×12 on
+  ([[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]); within 60 degrees of their heading while under way and
   anywhere at rest; a bold ship, under way above ×10, within its meeting cone off their course shrunk to 0.8 of it
   (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
   ten tries that fit, it takes the one nearest a friendly lane (a leg of a route between the port cities,

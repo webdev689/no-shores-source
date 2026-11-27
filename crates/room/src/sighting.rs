@@ -1,7 +1,7 @@
 //! Who a roll at sea sends, and where it is seen. The water at the player's ship names its faction, none in home
 //! waters; its island's level band sets its rank and its level. It is sighted farther the faster the player sails,
-//! so one met head-on stays in sight half a minute, and it comes out near that distance ahead of them, on a lane where
-//! one runs near, else by a coast. The sea's map is a `Chart`, so the law can be tried on any sea.
+//! so one met head-on stays in sight half a minute, and it comes out about half a minute's closing ahead of them, never
+//! under 1 km, on a lane where one runs near, else by a coast. The sea's map is a `Chart`, so the law can be tried on any sea.
 
 use crate::hostiles::HOSTILE_WAY_M_S;
 use crate::sea::SHIP_SPEED_M_S;
@@ -14,8 +14,10 @@ pub const SIGHT_LEAST_M: f64 = 5_000.0;
 pub const SIGHT_HOLD_S: f64 = 30.0;
 /// A ship goes once no player is within this many times its sight.
 pub const KEEP_SHARE: f64 = 1.1;
-/// It comes out between these shares of its sight from the player, within this of their heading under way.
+/// It comes out between these shares of half a minute of closing head-on, never under `COME_OUT_LEAST_M`, from the
+/// player, within this of their heading under way: nearer than it is sighted from at the helm's slow paces.
 pub const COME_OUT: [f64; 2] = [0.9, 1.0];
+pub const COME_OUT_LEAST_M: f64 = 1_000.0;
 pub const AHEAD_ARC_RAD: f64 = PI / 3.0;
 /// A Tithe ship keeps to a lane within this of where it comes (metres).
 pub const LANE_REACH_M: f64 = 50_000.0;
@@ -65,7 +67,14 @@ pub trait Chart {
 /// way (its hull's class, `naval::class`): half a minute of the two closing head-on, and never under `SIGHT_LEAST_M`.
 #[must_use]
 pub fn sight_for(pace: f64, way: f64) -> f64 {
-    (SIGHT_HOLD_S * (SHIP_SPEED_M_S * way + HOSTILE_WAY_M_S) * pace.max(1.0)).max(SIGHT_LEAST_M)
+    come_out_for(pace, way).max(SIGHT_LEAST_M)
+}
+
+/// How far out a ship comes to a player sailing at `pace` at `way`: half a minute of the two closing head-on, and
+/// never under `COME_OUT_LEAST_M`.
+#[must_use]
+pub fn come_out_for(pace: f64, way: f64) -> f64 {
+    (SIGHT_HOLD_S * (SHIP_SPEED_M_S * way + HOSTILE_WAY_M_S) * pace.max(1.0)).max(COME_OUT_LEAST_M)
 }
 
 /// The faction a roll in this water sends: the Grey Tithe's in every water but home, which sends none. The Lattice's

@@ -392,6 +392,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]
 - [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]
 - [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]
+- [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]
 
 ## Claude's calls
 

@@ -1,5 +1,5 @@
 use super::*;
-use crate::sighting::{RANKS_AT_SEA, SIGHT_HOLD_S};
+use crate::sighting::{COME_OUT_LEAST_M, RANKS_AT_SEA, SIGHT_HOLD_S};
 use naval::ranks::{GREY_TITHE, Rank};
 use std::collections::BTreeMap as Map;
 use world::waters::Holder;
@@ -68,7 +68,7 @@ fn brought(chart: &OneWater, seeds: u32, hours: u32, at: [f64; 2], pace: u16) ->
 }
 
 #[test]
-fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_near_its_sight_out() {
+fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_about_a_kilometre_out() {
     let mut hostiles = Hostiles::default();
     let ship = [500_000.0, 500_000.0];
     for _ in 0..4 * 3600 {
@@ -88,7 +88,7 @@ fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_ne
     assert!((15..70).contains(&launched.len()), "{} ships in four hours", launched.len());
     for &out in launched.values() {
         let way = way_of(Rank::Miniboss);
-        assert!((0.9 * SIGHT_LEAST_M - way..=SIGHT_LEAST_M + way).contains(&out), "launched {out} m out");
+        assert!((0.9 * COME_OUT_LEAST_M - way..=COME_OUT_LEAST_M + way).contains(&out), "launched {out} m out");
     }
 }
 
@@ -260,20 +260,20 @@ fn under_way_a_ship_comes_ahead_within_60_degrees_and_a_bold_one_within_its_meet
 
 #[test]
 fn a_hostile_ship_comes_nearest_a_lane_and_heads_along_it_else_nearest_a_coast() {
-    // The player 20 km off the coast at x = 0 and 20 km off the lane at y = 0, at rest.
-    let at = [20_000.0, 20_000.0];
+    // The player at rest four times its distance out off the coast at x = 0 and off the lane at y = 0.
+    let at = [4.0 * COME_OUT_LEAST_M; 2];
     let mean =
         |ships: &[Hostile], off: &dyn Fn(&Hostile) -> f64| ships.iter().map(off).sum::<f64>() / ships.len() as f64;
     let on_lane = brought(&OneWater { lane: true, ..HOSTILE_WATER }, 20, 4, at, 0);
     let coast = |hostile: &Hostile| hostile.x.abs();
     let lane = |hostile: &Hostile| hostile.y.abs();
-    assert!(mean(&on_lane, &lane) < 17_000.0, "{} m off the lane", mean(&on_lane, &lane));
+    assert!(mean(&on_lane, &lane) < 3.4 * COME_OUT_LEAST_M, "{} m off the lane", mean(&on_lane, &lane));
     let along =
         |hostile: &Hostile| (hostile.heading - TAU / 4.0).abs() < 1e-9 || (hostile.heading - 0.75 * TAU).abs() < 1e-9;
     assert!(on_lane.iter().all(along), "each heads along its lane");
     let no_lane = brought(&HOSTILE_WATER, 20, 4, at, 0);
-    assert!(mean(&no_lane, &coast) < 17_000.0, "with no lane near, it comes by the coast");
-    assert!(mean(&on_lane, &lane) < mean(&no_lane, &lane) - 2_000.0, "a lane draws it");
+    assert!(mean(&no_lane, &coast) < 3.4 * COME_OUT_LEAST_M, "with no lane near, it comes by the coast");
+    assert!(mean(&on_lane, &lane) < mean(&no_lane, &lane) - 0.4 * COME_OUT_LEAST_M, "a lane draws it");
 }
 
 #[test]

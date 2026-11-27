@@ -14,8 +14,14 @@ fn sea_round(id: &str, climate: &str) -> Sea {
 
 fn ticks(sea: &mut Sea, count: u64) {
     for _ in 0..count {
-        sea.tick();
+        calm_tick(sea);
     }
+}
+
+/// One tick, every ship the sea's rolls send let go at once, so none takes on a player waiting near an island.
+fn calm_tick(sea: &mut Sea) {
+    sea.hostiles.sailing.clear();
+    sea.tick();
 }
 
 /// A way in to an anchorage the room must take: round the island 1.5 km out, to a point 1.5 km out on its landing's
@@ -82,7 +88,7 @@ fn a_ship_finds_an_island_it_sails_near_and_is_told_of_those_in_sight() {
     let mut sea = sea_round("continent-4", "desert");
     let player = at_rest(&mut sea);
     while sea.islands().standing.is_empty() {
-        sea.tick();
+        calm_tick(&mut sea);
     }
     let (id, anchorage, at) = {
         let island = &sea.islands().standing[0];
@@ -94,7 +100,7 @@ fn a_ship_finds_an_island_it_sails_near_and_is_told_of_those_in_sight() {
     ticks(&mut sea, 30);
     sea.course(player, &round_to(at, anchorage, [50_000.0, 50_000.0]), 100).expect("the way in is open sea");
     for _ in 0..60 * 60 {
-        sea.tick();
+        calm_tick(&mut sea);
         if sea.ships().all(|(_, ship)| ship.pace == 0) {
             break;
         }
@@ -221,7 +227,7 @@ fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
     let mut sea = sea_round("continent-4", "desert");
     let player = at_rest(&mut sea);
     while sea.islands().standing.len() < 2 {
-        sea.tick();
+        calm_tick(&mut sea);
     }
     let (kept, left) = (sea.islands().standing[0].id, sea.islands().standing[1].id);
     let seed = |id| sea.islands().by_id(id).map(|island| island.seed).expect("it stands");
@@ -234,7 +240,7 @@ fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
             assert!(sea.hold_ashore(kept, kept_seed), "the island players stand on fell");
             assert!(!sea.hold_ashore(left, kept_seed), "an island is held by its own seed alone");
         }
-        sea.tick();
+        calm_tick(&mut sea);
     }
     assert!(sea.islands().by_id(kept).is_some(), "players ashore hold it");
     assert!(sea.islands().by_id(left).is_none(), "nothing held it");
