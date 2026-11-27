@@ -96,7 +96,7 @@ impl Room {
         let mut room = Room::on(floor, blocks, spawns, Some(section), nav);
         room.world_seed = SEED ^ isle::draws::mix(plan.seed, 7);
         room.foes_most = crate::NODE_FOES_MOST;
-        // An island is gated by the seas its sea room sails, as the sea is.
+        // An island is gated by the tier it is landed at, as a node with no patrol is.
         room.place = Some(gear::gate::Place::Node);
         room.isle = Some(Isle {
             seed: plan.seed,

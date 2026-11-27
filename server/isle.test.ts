@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { runAsk } from './roomNames.ts';
 import { startRoomDoor } from './roomDoor.ts';
 
 const compiled = new WebAssembly.Module(
@@ -55,6 +56,30 @@ test("an island's room opens only on a word that makes an island", () => {
   );
   assert.ok(door.join() > 0);
   assert.equal(startRoomDoor(compiled).openIsland('{"seed":"41"}'), false);
+});
+
+/** XP reaching levels 9, 10, 19 and 20 (`gear::power::xp_for_level`). */
+const [LEVEL_9, LEVEL_10, LEVEL_19, LEVEL_20] = [36_000, 45_000, 171_000, 190_000];
+
+/** Why a room's gate shuts to its new player's character raised to `earned` XP, '' where it opens. */
+function shutAt(door: ReturnType<typeof startRoomDoor>, earned: number): string {
+  const player = door.join();
+  const kept = JSON.parse(door.character(player) ?? '{}') as { xp: number };
+  return door.shut(player, JSON.stringify({ ...kept, xp: earned }));
+}
+
+test("an island's room and its dungeon's run at a tier shut by level, as the voyage's card shuts that tier", () => {
+  const island = startRoomDoor(compiled);
+  const word = '{"seed":"41","climate":"desert","at":[700000,300000],"guards":0,"levels":null}';
+  assert.equal(island.openIsland(word), true);
+  assert.equal(island.difficulty(1), true, 'landed at Elite');
+  assert.equal(shutAt(island, LEVEL_9), 'Elite seas open at level 10.');
+  assert.equal(shutAt(island, LEVEL_10), '');
+  const run = startRoomDoor(compiled);
+  const name = 'sea-dungeon-continent-1-crypt-0000002a--abyss--run-k3j4h5g6';
+  assert.equal(run.openRun(runAsk(name, 29_919_420) ?? ''), true);
+  assert.equal(shutAt(run, LEVEL_19), 'Abyss seas open at level 20.');
+  assert.equal(shutAt(run, LEVEL_20), '');
 });
 
 test("an island's room checks landings, which only a sea answers", () => {

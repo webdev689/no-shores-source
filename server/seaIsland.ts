@@ -1,5 +1,6 @@
-// The rooms that stand on a sea's island, its own and its dungeon's: each opens only on the word of the sea that holds
-// the island, with the seed that sea gives it; while players stand ashore it keeps the island held (`ashore.ts`).
+// The rooms that stand on a sea island, its own and its dungeon's: each opens only on the word of the one sea, which
+// holds every island, with the seed it gives the island; while players stand ashore it keeps the island held
+// (`ashore.ts`). Each stands at the tier its name carries, the voyage's, as a node landed at does.
 import type { RoomDoor } from './roomDoor.ts';
 import { isleRoom, seaDungeonRoom, seaRoomName } from './roomNames.ts';
 
@@ -16,9 +17,9 @@ type Seas = (sea: string) => {
   dungeonWord(room: string): Promise<string>;
 };
 
-/** Opens the island room `name` (after `isle-`) on the word of the sea its tier says: only an island that sea holds,
- *  with the seed its name gives, its guards raised to that sea's difficulty. The island and whether its room opened;
- *  null for an island that sea does not hold. */
+/** Opens the island room `name` (after `isle-`) on the one sea's word: only an island the sea holds, with the seed its
+ *  name gives, its guards raised to the tier its name gives. The island and whether its room opened; null for an
+ *  island the sea does not hold. */
 export async function openIsland(
   room: RoomDoor,
   name: string,
@@ -26,7 +27,8 @@ export async function openIsland(
 ): Promise<{ readonly island: HeldIsland; readonly opened: boolean } | null> {
   const named = isleRoom(name);
   if (!named) return null;
-  const sea = seaRoomName(named.seas);
+  // The sea sails at Normal alone, whatever tier the island is landed at: no other sea's room ever opens.
+  const sea = seaRoomName(0);
   const word = await seas(sea).islandWord(named.id);
   if (!word || (JSON.parse(word) as { seed?: string }).seed !== named.seed) return null;
   const island = { id: named.id, seed: named.seed, sea };
@@ -36,14 +38,14 @@ export async function openIsland(
   return { island, opened: opened && room.reseed([lootLow, lootHigh, worldLow, worldHigh]) };
 }
 
-/** The island a sea island's dungeon `name` stands behind the door of, on the word of the sea its tier says, as an
- *  island's room opens: only an island that sea holds, so with the seed and style the sea gives that island's dungeon.
- *  Only accounts the sea says are landed on the island play in it, and while they do the island is held. Null for an
- *  island that sea does not hold. */
+/** The island a sea island's dungeon `name` stands behind the door of, on the one sea's word, as an island's room
+ *  opens: only an island the sea holds, so with the seed and style the sea gives that island's dungeon, at the tier
+ *  its name gives. Only accounts the sea says are landed on the island play in it, and while they do the island is
+ *  held. Null for an island the sea does not hold. */
 export async function behindDoor(name: string, seas: Seas): Promise<HeldIsland | null> {
   const named = seaDungeonRoom(name);
   if (!named) return null;
-  const sea = seaRoomName(named.seas);
+  const sea = seaRoomName(0);
   const word = await seas(sea).dungeonWord(name.split('--')[0] ?? '');
   if (!word) return null;
   const { id, seed } = JSON.parse(word) as { id: number; seed: string };

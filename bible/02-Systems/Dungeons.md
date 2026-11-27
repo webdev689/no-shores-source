@@ -238,9 +238,10 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   no patrol, and its garrison stands at the patrol's island band. Its first clear pays the day's while it is its
   island's dungeon of the day; set to a harder tier it would pay none, since it carries no day's modifier. At Elite
   or Abyss a patrol's dungeon is only a run, `node-<patrol id>--elite--dungeon-<number>--run-<instance>` or
-  `--abyss--`, as every Elite Dungeon is; a sea island's dungeon is shared at Normal, as every sea sails. A run opens
-  from its name alone (`runAsk`, `open_run`) and lets in one company; a patrol's dungeon's run reads its patrol's node
-  file too. While its patrol is locked ([[World Map]], "Seen whole, reached by nodes"), neither its shared room nor
+  `--abyss--`, as every Elite Dungeon is; a sea island's dungeon is shared at Normal and a run at Elite or Abyss
+  (`sea-dungeon-...--elite--run-<instance>`), at the tier its island was landed at ([[Islands]], "The door"). A run
+  opens from its name alone (`runAsk`, `open_run`) and lets in one company; a patrol's dungeon's run reads its
+  patrol's node file too. While its patrol is locked ([[World Map]], "Seen whole, reached by nodes"), neither its shared room nor
   any run of it takes a player, as the patrol's own room takes none, by an entrance or otherwise.
 - **A run's room** (`Room::dungeon_run`) stands any dungeon for a run at a tier, opened at a minute. The run is fixed
   as it opens; at Abyss it carries five revives the company shares, and a wipe starts it over ([[Activities]]).
@@ -452,8 +453,8 @@ as standing none (`readDungeon`).
 - **The ways in** (`dungeonTrips`): a patrol's dungeon from its entrance, its shared room at Normal and a run above it,
   the company's where a member is in one; an Elite Dungeon from its node's entrance, as the week's run where it is the
   week's at the node's tier (the week by the rooms' clock, `roomNow`), else its run at Normal; and a sea island's from
-  its door in the sea's room, by its name, laid by its seed and style and named "The <Style> of the Sea", left back to
-  the sea.
+  its door on the island, by its name at the island's tier, laid by its seed and style and named "The <Style> of the
+  Sea", left back to the sea.
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the

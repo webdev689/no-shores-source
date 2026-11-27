@@ -51,6 +51,10 @@ test('Overlook’s social space takes anyone, a room takes back whoever it held 
   assert.equal(arrives('node-tidewall', null, OFF_COAST, reach()), false, 'held nowhere before');
   for (const room of ['sea', 'sea--abyss', 'isle-7-00000000000000ff', 'fleet-a', 'course'])
     assert.equal(arrives(room, 'node-tidewall', null, null), true, room);
+  // A sea island's room and its dungeon's, at any tier, take whom the sea says is landed on the island, and their own
+  // gate turns away a level the tier's seas shut, as the voyage's card does (server/isle.test.ts).
+  for (const room of ['isle-7-00000000000000ff--elite', 'sea-dungeon-continent-1-crypt-0000002a--abyss--run-k3j4h5g6'])
+    assert.equal(arrives(room, 'sea', null, null), true, room);
 });
 
 test('a node is landed at from the sea at any tier the voyage set out at, its ship lying off the node’s island', () => {

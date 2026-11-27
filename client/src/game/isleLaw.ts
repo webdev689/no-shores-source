@@ -135,8 +135,8 @@ export function approach(isle: IsleAt): { readonly offing: Point2; readonly anch
   return { offing: onBearing(isle.seen.at, landing, reach + KEEP_CLEAR_M * 2), anchorage };
 }
 
-/** An island's room's name: its number and its seed as 16 hex digits, and the tier of the sea room it was rolled in
- *  (server/roomNames.ts `isleRoom`). */
+/** An island's room's name: its number and its seed as 16 hex digits, and the tier the voyage landed at, as a node's
+ *  room has (server/roomNames.ts `isleRoom`). */
 export function isleRoomName(seen: SeenIsle, seas: Difficulty = 'normal'): string {
   const tier = seas === 'normal' ? '' : `--${seas}`;
   return `isle-${seen.id}-${BigInt(seen.seed).toString(16).padStart(16, '0')}${tier}`;
@@ -183,8 +183,9 @@ export interface DungeonDoor {
 }
 
 /** The room of the dungeon behind an island's door: its water's continent, its style, the island's seed folded to 32
- *  bits in 8 hex digits, and the tier of the sea it was rolled in. The sea names it so from the same seed and water
- *  (crates/room/src/sea_islands.rs `dungeon_room`), and the room opens only for an island the sea holds. */
+ *  bits in 8 hex digits, and the tier the island was landed at. The sea names it so, but for its tier, from the same
+ *  seed and water (crates/room/src/sea_islands.rs `dungeon_room`), and the room opens only for an island the sea
+ *  holds. */
 export function dungeonRoomName(seed: string, style: string, continent: string, seas: Difficulty = 'normal'): string {
   const whole = BigInt.asUintN(64, BigInt(seed));
   const folded = BigInt.asUintN(32, whole ^ (whole >> 32n));
