@@ -51,8 +51,11 @@ export const BREACH_HARD_SHUT = 'A Breach at Hard opens once you have won it at 
 /** The Breach a base launches, by its zone; null for a base that is no Breach's. */
 const breachOf = (base: string) => BREACH_ZONES[/^node-(.+)--breach-/.exec(base)?.[1] ?? ''] ?? null;
 export const BREACH_LAUNCHED = 'A Breach is launched by its company from the Playlist.';
-/** A Breach launched again by its company within this is the run it launched, so two members' Launches start one. */
-export const BREACH_RELAUNCH_MS = 30 * 60_000;
+/** A Breach launched again by its company within its gate's day is the run it launched, so two members' Launches
+ *  start one, and the company, a member who joined it since too, comes back to the checkpoint it reached; a run whose
+ *  gate shut again is forgotten (`forgetRun`), and its company's checkpoints reset (`company/reset`), each to start
+ *  anew. */
+export const BREACH_RELAUNCH_MS = FOUND_KEPT_MS;
 const breachShut = (tier: (typeof BREACH_TIERS)[number]) =>
   `A Breach at ${tier === 'normal' ? 'Normal' : 'Hard'} opens at level ${BREACH_OPENS[tier]}.`;
 

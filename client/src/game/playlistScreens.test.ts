@@ -10,6 +10,7 @@ import type { ActivityRecord, GearState } from '../network/gearMessages.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import { launchRoom, playlistScreenOf } from './playlistWords.ts';
+import { RESET_ASKED, RESET_DONE } from './playlistScreens.ts';
 import { startedAtSea } from './rooms.ts';
 import { breachPlanOf } from './breachPlan.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -144,7 +145,14 @@ const places = [...activitiesAt(await module, FRIDAY_NINE).elites, 'overlook-soc
   (id) =>
     ({ id, name: id === 'overlook-social' ? 'Overlook' : id, kind: 'dungeon', continent: 'continent-1' }) as NodeInfo,
 );
-const link = { token: 'a'.repeat(64), finderAt: (base: string) => `ws://finder.test/v1/find/${base}` };
+/** The accounts' social asks the Playlist made, and what they answer. */
+const asked: [string, unknown][] = [];
+let answer: string | null = null;
+const link = {
+  token: 'a'.repeat(64),
+  finderAt: (base: string) => `ws://finder.test/v1/find/${base}`,
+  social: (path: string, body: unknown) => (asked.push([path, body]), Promise.resolve(answer)),
+};
 
 /** The screens at sea for a character of `level`, the Playlist's layer drawn on a page, every run gone into kept. */
 async function atSea(
@@ -365,4 +373,24 @@ test('playing alone, the Breach launches nothing and says it is played online; s
     assert.ok(root.find(words), words);
     assert.equal(into.length, 0);
   }
+});
+
+test('Reset checkpoints on the Breach asks once more, then the accounts, and says what they answered', async () => {
+  const { screens, window, root } = await atSea(26);
+  screens.playlist('overlook');
+  for (let step = 0; step < 4; step += 1) window.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowRight' }));
+  asked.length = 0;
+  assert.ok(root.click('playlist-reset'));
+  assert.ok(root.find(RESET_ASKED), 'asked to be sure first');
+  assert.deepEqual(asked, []);
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'r' }));
+  await new Promise((done) => setTimeout(done, 0));
+  assert.deepEqual(asked, [['company/reset', { base: 'node-gullwing-vale--breach-normal' }]]);
+  assert.ok(root.find(RESET_DONE));
+  answer = "Only your company's leader can reset its checkpoints.";
+  root.click('playlist-reset');
+  root.click('playlist-reset');
+  await new Promise((done) => setTimeout(done, 0));
+  assert.ok(root.find(answer), 'a member is told why not, in the accounts’ words');
+  answer = null;
 });

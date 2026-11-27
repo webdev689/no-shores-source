@@ -1,7 +1,8 @@
 // The Playlist as the game wires it: its tile over a living port's island opens its screen, built from the rules
 // (`playlistWords.ts`) and the last word of the character a room sent; Launch starts a fresh run, alone or for the
-// company to join, and Find a Company searches the playlist's one queue, each run then gone into from the sea. The
-// screen closes, its search stopped, once the player is no longer at sea or over an island's side.
+// company to join, and Find a Company searches the playlist's one queue, each run then gone into from the sea. A
+// Breach's company resets its checkpoints there too. The screen closes, its search stopped, once the player is no
+// longer at sea or over an island's side.
 import type { Layer } from '../ui/stack.ts';
 import { activitiesAt, gatesAt } from './activities.ts';
 import { type FinderSocket, type Finding, SEARCH_LOST, findCompany, findingWords } from './companyFinder.ts';
@@ -23,7 +24,7 @@ export interface PlaylistDeps {
   readonly intoRun: (node: NodeInfo, run: string) => void;
   /** Into a Breach's run launched or found: to its gate's patrol zone, standing at the gate in the run's company. */
   readonly toBreach?: (run: string) => void;
-  readonly link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster'>>) | null;
+  readonly link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster' | 'social'>>) | null;
   readonly atSea?: () => boolean;
   readonly now: () => number;
   readonly open?: (address: string) => FinderSocket;
@@ -46,6 +47,10 @@ export interface Playlists {
 export const LAUNCH_LOST = 'The accounts did not answer. Try again.';
 export const BREACH_ONLINE = 'A Breach is played online.';
 export const BREACH_SIGN_IN = 'Sign in to launch a Breach.';
+/** What the footer says as a Breach's checkpoints are asked to be reset, once more to be sure, and once they are. */
+export const RESET_ASKED =
+  "Reset your company's checkpoints? Press Reset again: its next Launch starts from the Waking.";
+export const RESET_DONE = "Your company's checkpoints are reset: its next Launch starts the Breach fresh.";
 
 export function startPlaylists(deps: PlaylistDeps): Playlists {
   const instance = deps.instance ?? (() => runInstance());
@@ -57,6 +62,8 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
   let search: Finding | null = null;
   let launching = false;
   let said: string | null = null;
+  /** The Breach's base whose checkpoints the player asked to reset, until they press Reset again. */
+  let resetting: string | null = null;
   /** Whether the player is in a company, as the Roster last said, and how many times the screen has opened, so an
    *  answer to an earlier opening is not taken for this one's. */
   let company = false;
@@ -67,7 +74,7 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
   };
   const close = () => {
     stopSearch();
-    [opened, said, company] = [null, null, false];
+    [opened, said, company, resetting] = [null, null, false, null];
     view.hide();
   };
   const render = () => {
@@ -145,6 +152,22 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
       // Playing alone keeps nothing, so the page draws it: no account's record is paid there.
       const place = entry.launch.place ?? elites[pick(elites.length)];
       if (place !== undefined) into(launchRoom(entry.launch, place, instance()));
+    },
+    reset: (entry: PlaylistEntry) => {
+      const [base, link] = [entry.launch.finds, deps.link];
+      if (entry.launch.seas !== 'breach' || base === null || search) return;
+      // The accounts judge who may: the company's leader, or a player alone.
+      if (!link?.token || !link.social) said = !link ? BREACH_ONLINE : BREACH_SIGN_IN;
+      else if (resetting !== base) [said, resetting] = [RESET_ASKED, base];
+      else {
+        resetting = null;
+        void link
+          .social('company/reset', { base })
+          .then((why) => (said = why ?? RESET_DONE))
+          .catch(() => (said = LAUNCH_LOST))
+          .then(render);
+      }
+      render();
     },
     find: (entry: PlaylistEntry) => {
       // A Breach is launched by its company, never matched.

@@ -59,6 +59,10 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
     return this.kept.launched(account, room, within);
   }
 
+  forgetRun(room: string): Promise<boolean> {
+    return this.kept.forgetRun(room);
+  }
+
   guild(account: string): ReturnType<Characters['guild']> {
     return this.kept.guild(account);
   }

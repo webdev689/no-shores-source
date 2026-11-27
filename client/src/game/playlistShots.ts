@@ -135,7 +135,7 @@ function screenShot(search: Partial<PlaylistSearch>, right = 0, screen = SAMPLE_
       // The last shot's screen shut, so its keys' listener hears none of this one's.
       showing?.hide();
       const none = () => undefined;
-      view = new PlaylistView({ launch: none, find: none, stop: none, close: none });
+      view = new PlaylistView({ launch: none, find: none, reset: none, stop: none, close: none });
       view.show(screen, {
         canFind: true,
         finding: null,

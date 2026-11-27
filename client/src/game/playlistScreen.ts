@@ -1,6 +1,7 @@
 // The Playlist screen its tile over a living port's island opens, after the owner's reference, Destiny's Vanguard screen:
 // its entries as crests on a dark chart (`playlistMap.ts`), the chosen one's card beside them or under them
-// (`playlistParts.ts`), and a footer bar with Find a Company or Stop finding, Launch and Close.
+// (`playlistParts.ts`), and a footer bar with Find a Company or Stop finding (a Breach's Reset checkpoints), Launch
+// and Close.
 import { motionReduced } from '../plus/kit.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
@@ -28,6 +29,8 @@ import { play } from './uiSounds.ts';
 export interface PlaylistPresses {
   launch(entry: PlaylistEntry): void;
   find(entry: PlaylistEntry): void;
+  /** Asks to reset a Breach's checkpoints for the player's company. */
+  reset(entry: PlaylistEntry): void;
   stop(): void;
   close(): void;
 }
@@ -46,6 +49,7 @@ export const LAUNCHING = 'Launching…';
 const LAUNCH = 'playlist-launch';
 const FIND = 'playlist-find';
 const STOP = 'playlist-stop';
+const RESET = 'playlist-reset';
 const CLOSE = 'playlist-close';
 /** The narrowest screen the chart and the card stand side by side on, and the narrowest the footer stands on one line
  *  on; the card's widest; and a crest's side at a screen 900 pixels tall (a week's dungeon's a fifth smaller). */
@@ -78,7 +82,7 @@ const PAIRS: Readonly<Record<PlaylistKind, PlaylistKind>> = {
 
 /** The Playlist screen over the world: "Playlist" and the port it was opened beside at its head, its entries as
  *  crests on the chart and the chosen one's card, the wait while Find a Company finds, and Find a Company or Stop
- *  finding (F), Launch (E) and Close (Esc, the pad's B) on its footer. The pointer over a crest only lights it; a click,
+ *  finding (F), a Breach's Reset checkpoints (R), Launch (E) and Close (Esc, the pad's B) on its footer. The pointer over a crest only lights it; a click,
  *  Enter, Space or the pad's A on it chooses it, the arrows choose the next (up and down between a playlist and its
  *  week's dungeon), and the card follows the pad's focus over the crests. While it stands the pointer is free and the
  *  game's keys rest, as under the entrance's card. */
@@ -102,7 +106,7 @@ export class PlaylistView {
         if (!this.screen) return;
         event.stopImmediatePropagation();
         const key = event.key.toLowerCase();
-        const keys = ['e', 'f', 'escape', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'pageup', 'pagedown'];
+        const keys = ['e', 'f', 'r', 'escape', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'pageup', 'pagedown'];
         if (event.repeat || !keys.includes(key)) return;
         event.preventDefault();
         const entry = this.entry;
@@ -115,6 +119,7 @@ export class PlaylistView {
           if (!launching) presses.stop();
         } else if (key === 'f' && entry && this.findable(entry)) presses.find(entry);
         else if (key === 'e' && entry && entry.shut === null && finding === null) presses.launch(entry);
+        else if (key === 'r' && entry && this.resettable(entry)) presses.reset(entry);
       },
       { capture: true },
     );
@@ -177,6 +182,11 @@ export class PlaylistView {
     return entry.launch.finds !== null && entry.launch.seas !== 'breach' && this.search.canFind;
   }
 
+  /** Whether Reset checkpoints is offered for an entry: a Breach's tier open to the player, while nothing is sought. */
+  private resettable(entry: PlaylistEntry): boolean {
+    return entry.launch.seas === 'breach' && entry.shut === null && this.search.finding === null;
+  }
+
   /** The screen this frame over the world, its presses heard; nothing while it is shut. */
   readonly layer: Layer = (ui: Interface) => {
     const heard = this.screen;
@@ -194,6 +204,7 @@ export class PlaylistView {
     if (ui.clicked(CLOSE)) this.presses.close();
     else if (entry && ui.clicked(LAUNCH) && entry.shut === null && idle) this.presses.launch(entry);
     else if (entry && ui.clicked(FIND)) this.presses.find(entry);
+    else if (entry && ui.clicked(RESET) && this.resettable(entry)) this.presses.reset(entry);
     else if (ui.clicked(STOP)) this.presses.stop();
     const { screen } = this;
     if (!screen || !entry) return null;
@@ -405,6 +416,7 @@ export class PlaylistView {
       finding
         ? !search.launching && pressNode(STOP, 'Stop finding', 'button', 'F', size)
         : findable && pressNode(FIND, 'Find a Company', 'primary', 'F', size),
+      this.resettable(entry) && pressNode(RESET, 'Reset checkpoints', 'button', 'R', size),
       // While a search or a launch runs, Launch is not offered: Stop finding or the wait stands in its place. A
       // Breach is a company's, so it is never offered alone.
       !finding &&
