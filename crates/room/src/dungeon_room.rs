@@ -333,10 +333,12 @@ impl Room {
         // Run again, the week's dungeon pays its share once its first clear is taken this week.
         let share = weekly.map_or(1.0, |weekly| character.week_share(week, weekly));
         let clear = gear::rewards::Clear::Dungeon;
-        let vestiges = character.reward_clear_share(clear, level, (difficulty, share), source, &dice);
+        let spoils = crate::drops::laid(character, |character| {
+            character.reward_clear_share(clear, level, (difficulty, share), source, &dice)
+        });
         found.gear_changed = true;
         // Poured out of the cache onto the floor before it, which `cache_by` keeps clear.
-        self.pour(player, vestiges, cache.at, Some(cache.vestige));
+        self.pour(player, spoils, cache.at, Some(cache.vestige));
     }
 
     /// The cache of a dungeon's room, as the snapshot carries it: x, y, z, the way it faces, and 1 open or 0 shut.

@@ -290,16 +290,25 @@ fn the_cache_opens_with_a_dungeons_clear_for_each_player_in_when_the_reeve_falls
     let reeve = room.garrison[0].standing[0];
     let level = room.foes[&reeve].level;
     let items = |room: &Room, player: PlayerId| room.players[&player].character.items.len();
+    let lying = |room: &Room, player: PlayerId| {
+        room.drops_for(player).filter(|drop| matches!(drop.what, crate::Dropped::Item(..))).count()
+    };
     let held: Vec<usize> = players.iter().map(|player| items(&room, *player)).collect();
     clear(&mut room, 0);
     run(&mut room, 1);
     assert_eq!(room.cache().map(|cache| cache[4]), Some(1.0), "open");
     let from = room.cache().map(|cache| [cache[0], cache[1], cache[2]]).unwrap();
     for (player, held) in players.iter().zip(held) {
-        assert_eq!(items(&room, *player), held + 1, "an item for each player in the room, as a dungeon's clear pays");
-        // Beside the item, now and then a Vestige at the Reeve's level, poured out of the cache.
+        assert_eq!(items(&room, *player), held, "nothing straight into the gear");
+        assert_eq!(lying(&room, *player), 1, "an item for each player in the room, as a dungeon's clear pays");
+        // Beside the item, now and then a Vestige at the Reeve's level, all poured out of the cache.
         for drop in room.drops_for(*player) {
-            assert!(matches!(&drop.what, crate::Dropped::Vestige(vestige) if vestige.level == level), "{drop:?}");
+            let at_level = match &drop.what {
+                crate::Dropped::Vestige(vestige) => vestige.level == level,
+                crate::Dropped::Item(item, _) => item.level == level,
+                _ => false,
+            };
+            assert!(at_level, "{drop:?}");
             assert!(apart([drop.at[0], drop.at[1]], [x, y]) < 1.0 && drop.from == from && drop.poured, "poured");
         }
     }
@@ -308,6 +317,7 @@ fn the_cache_opens_with_a_dungeons_clear_for_each_player_in_when_the_reeve_falls
     run(&mut room, 1);
     assert_eq!(room.drops_for(later).count(), 0, "none for a player who came after");
     assert_eq!(items(&room, later), later_held, "nor an item");
+    assert_eq!(lying(&room, later), 0);
     for player in players.into_iter().chain([later]) {
         room.leave(player);
     }

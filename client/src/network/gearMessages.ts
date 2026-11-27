@@ -214,11 +214,12 @@ export interface GearVestige {
 export const AMMO_FULL = 720;
 
 /** What lies on the ground, by the gear message's numbers. */
-export const DROPPED = { vestige: 0, ammoBox: 1, crate: 2, chest: 3 } as const;
+export const DROPPED = { vestige: 0, ammoBox: 1, crate: 2, chest: 3, item: 4 } as const;
 
-/** A drop lying for the player: their number for it, a Vestige's rarity and slot, where it rests, what it is, where it
- *  was thrown from, the room's ticks it has still to fly, a chest's tier (1 won, 2 won with the bonus, 3 heroic,
- *  4 heroic with the bonus; 0 for anything else), and whether it was poured out of a chest. */
+/** A drop lying for the player: their number for it, a Vestige's or an item's rarity and slot, where it rests, what it
+ *  is, where it was thrown from, the room's ticks it has still to fly, a chest's tier (1 won, 2 won with the bonus,
+ *  3 heroic, 4 heroic with the bonus; 0 for anything else), whether it was poured out of a chest, and an item found as
+ *  itself, the item. */
 export interface GearDrop {
   readonly id: number;
   readonly rarity: number;
@@ -229,6 +230,7 @@ export interface GearDrop {
   readonly flying: number;
   readonly tier: number;
   readonly poured: boolean;
+  readonly item?: GearItem;
 }
 
 /** A resource node standing that the player may still gather: its number in the room, where, and its resource. */
@@ -445,6 +447,7 @@ export function gearOf(gear: Gear): GearState {
     if (!drop) throw new Error(`gear drop ${index} is missing`);
     const [x = 0, y = 0, z = 0] = Array.from(drop.atArray() ?? []);
     const [fromX = x, fromY = y, fromZ = z] = Array.from(drop.fromArray() ?? []);
+    const item = drop.item();
     return {
       id: drop.id(),
       rarity: drop.rarity(),
@@ -455,6 +458,7 @@ export function gearOf(gear: Gear): GearState {
       flying: drop.flying(),
       tier: drop.tier(),
       poured: drop.poured(),
+      ...(item ? { item: itemOf(item) } : {}),
     };
   });
   return {

@@ -4,9 +4,10 @@
 // crystal and an Ammo box or crate its Blender model, each turn baked into frames and turned to the eye. Over each
 // at rest a thin line of its rarity's colour rises, taller the rarer it is, a glint climbing it, a Legendary's and an
 // Atheric's pulsing. Each is drawn as the marks are, the halo and the line as light added to what stands behind them.
-// An Ammo box stepped onto with the ammunition full, which the room leaves lying, is told of.
+// An Ammo box stepped onto with the ammunition full, which the room leaves lying, is told of. An item found as itself
+// flies and hovers as a Vestige does, its own picture turning as a flat thing turns (`itemDrops.ts`).
 
-import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
+import { DROPPED, type GearDrop, type GearItem } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
 import { AMMO_BOX_TURN } from './ammoBoxPictures.ts';
 import { AMMO_CRATE_TURN } from './ammoCratePictures.ts';
@@ -177,9 +178,12 @@ const topOf = (frames: readonly PixelPicture[]): number =>
 const BOX_TOP_M = topOf(AMMO_BOX_TURN);
 const CRATE_TOP_M = topOf(AMMO_CRATE_TURN);
 
-/** How a drop moves: a Vestige as a crystal, poured out of a chest or thrown, ammunition as ammunition. */
+/** Whether a drop is ammunition, which stands under a white line, rather than a Vestige or an item. */
+const isAmmo = (kind: number): boolean => kind !== DROPPED.vestige && kind !== DROPPED.item;
+
+/** How a drop moves: a Vestige or an item as a crystal, poured out of a chest or thrown, ammunition as ammunition. */
 const feelOf = (drop: Pick<GearDrop, 'kind' | 'poured'>): Feel =>
-  drop.kind !== DROPPED.vestige ? AMMO_FEEL : drop.poured ? POURED_FEEL : CRYSTAL_FEEL;
+  isAmmo(drop.kind) ? AMMO_FEEL : drop.poured ? POURED_FEEL : CRYSTAL_FEEL;
 
 /** What a drop is drawn as turned `turn` radians: its frame of a Vestige's crystal or of ammunition's turn, and the
  *  halo a crystal glows in. */
@@ -317,7 +321,8 @@ function acrossFrom(eye: Point, base: Point): [number, number] {
 }
 
 /** A picture standing on `base`, turned to the eye, each rectangle of one colour two triangles, as marks' vertices
- *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat). */
+ *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat), `across` of its
+ *  width showing (a flat thing turning: none edge on, below none its other face, mirrored). */
 export function markPicture(
   out: number[],
   picture: PixelPicture,
@@ -325,6 +330,7 @@ export function markPicture(
   eye: Point,
   scale = 1,
   opacity = 1,
+  across = 1,
 ): void {
   const [right, ahead] = acrossFrom(eye, base);
   const runs = runsOf(picture, opacity >= 1);
@@ -337,8 +343,8 @@ export function markPicture(
     const x = base[0] + (nearX ?? 0) * layer;
     const y = base[1] + (nearY ?? 0) * layer;
     const z = base[2] + (nearZ ?? 0) * layer;
-    const left = (runs[start] ?? 0) * scale;
-    const end = (runs[start + 1] ?? 0) * scale;
+    const left = (runs[start] ?? 0) * scale * across;
+    const end = (runs[start + 1] ?? 0) * scale * across;
     const foot = z + (runs[start + 2] ?? 0) * scale;
     const top = z + (runs[start + 3] ?? 0) * scale;
     const red = runs[start + 4] ?? 0;
@@ -439,15 +445,21 @@ const keyOf = (drop: GearDrop) => `${drop.kind}-${drop.id}`;
 /**
  * The drops lying for the player as they are drawn: each flying from where the room threw it the moment it is first
  * told of (or resting already, told of late), standing and lit once it rests. Each frame answers the marks (laid into
- * `out` when given), the rarities of the Vestiges that came to rest since the last, for a Rare's or finer's chime, and
- * where every drop that came to rest since the last lies.
+ * `out` when given), the rarities of the Vestiges and items that came to rest since the last, for a Rare's or finer's
+ * chime, and where every drop that came to rest since the last lies.
  */
 export class DropsShown {
+  /** An item's own picture, null until it is drawn (`itemDropPictures`); none, and an item shows its line alone. */
+  private readonly itemPicture: (item: GearItem) => PixelPicture | null;
   /** When each drop's flight began, on the page's clock. */
   private readonly began = new Map<string, number>();
   private readonly rested = new Set<string>();
   /** The Ammo boxes at rest the player stood on at the last `ammoFull`, their ammunition full. */
   private refused = new Set<string>();
+
+  constructor(itemPicture: (item: GearItem) => PixelPicture | null = () => null) {
+    this.itemPicture = itemPicture;
+  }
 
   frame(
     drops: readonly GearDrop[],
@@ -474,23 +486,33 @@ export class DropsShown {
       // Still in the chest as its lid opens.
       if (since < feel.waitS) continue;
       const motion = motionAt(feel, drop.from, drop.at, drop.id * 7 + drop.kind, since - feel.waitS);
-      const { body, halo } = pictureOf(drop, motion.turn);
+      const item = drop.kind === DROPPED.item;
+      const { body, halo } = item
+        ? { body: (drop.item && this.itemPicture(drop.item)) ?? { rows: [], colours: [] }, halo: null }
+        : pictureOf(drop, motion.turn);
       const tallM = body.rows.length * (body.pixelM ?? PIXEL_M);
       const base: Point = [motion.middle[0], motion.middle[1], motion.middle[2] - tallM / 2];
-      markPicture(marks, body, base, eye);
+      markPicture(marks, body, base, eye, 1, 1, item ? Math.cos(motion.turn) : 1);
       if (halo) markPicture(marks, halo, base, eye, 1, ADDED);
       if (!motion.settled) continue;
       if (!this.rested.has(key)) {
         this.rested.add(key);
         landed.push(drop.at);
-        if (drop.kind === DROPPED.vestige) rested.push(drop.rarity);
+        if (!isAmmo(drop.kind)) rested.push(drop.rarity);
       }
       const rise = Math.min(1, motion.since / RISE_S);
-      const ammo = drop.kind !== DROPPED.vestige;
+      const ammo = isAmmo(drop.kind);
       const colour = ammo ? WHITE : (LINE_COLOURS[drop.rarity] ?? WHITE);
       const tall = (ammo ? AMMO_LINE_M : (LINE_M[drop.rarity] ?? AMMO_LINE_M)) * rise;
       const pulse = !ammo && drop.rarity >= 3 ? 1 + 0.35 * Math.sin(seconds * 2 * Math.PI * PULSE_HZ) : 1;
-      const top = drop.kind === DROPPED.crate ? CRATE_TOP_M : drop.kind === DROPPED.ammoBox ? BOX_TOP_M : CROWN_M;
+      const top =
+        drop.kind === DROPPED.crate
+          ? CRATE_TOP_M
+          : drop.kind === DROPPED.ammoBox
+            ? BOX_TOP_M
+            : item
+              ? tallM / 2
+              : CROWN_M;
       const crown: Point = [motion.middle[0], motion.middle[1], motion.middle[2] + top + LIFT_M];
       markLine(marks, crown, tall, colour, rise * pulse, seconds, eye);
     }

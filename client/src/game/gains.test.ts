@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ARTS } from './artsCards.ts';
-import type { GearItem, GearShip, GearState } from '../network/gearMessages.ts';
+import { DROPPED, type GearItem, type GearShip, type GearState } from '../network/gearMessages.ts';
 import { gainsOf, lootNotices } from './gains.ts';
 
 const item = (id: number, rarity: number, place = 0): GearItem => ({
@@ -318,4 +318,19 @@ test('only the finest pieces and Vestiges found are noticed at the foot too, eac
   );
   assert.equal(notices[0]?.key, 'inventory');
   assert.ok(notices[0]?.icon?.svg.includes('<svg'), "the rarity's crystal for a piece with no glyph");
+});
+
+test('an item found as itself is told as it is taken off the ground, never as it drops', () => {
+  const lying = {
+    ...{ id: 7, rarity: 0, slot: 0, at: [0, 0, 0] as const, kind: DROPPED.item, from: [0, 0, 0] as const },
+    ...{ flying: 0, tier: 0, poured: false, item: item(0, 0) },
+  };
+  const dropped = state({ drops: [lying] });
+  assert.deepEqual(gainsOf(state({}), dropped), [], 'lying, it is no gain');
+  const taken = gainsOf(dropped, state({ items: [item(12, 0)] }));
+  assert.deepEqual(
+    taken.map((each) => [each.key, each.rarity]),
+    [['item-12', 0]],
+    'taken, it comes in as every new item does',
+  );
 });

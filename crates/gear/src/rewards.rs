@@ -132,8 +132,8 @@ impl Character {
 
     /// What a kill of a foe of this rank and level leaves this player: Vestiges by its rank's chance, and from a
     /// Miniboss or a Boss items as themselves, each chance raised by a harder voyage, all from `source`, the content
-    /// the kill was in. The items are kept (`keep_found`); the Vestiges, with any item there was no room for, are
-    /// numbered here and returned to be laid.
+    /// the kill was in. The items are kept (`keep_found`), or set aside to be laid while `laying`; the Vestiges, with
+    /// any item there was no room for, are numbered here and returned to be laid.
     pub fn loot_kill(
         &mut self,
         rank: u8,
@@ -245,7 +245,7 @@ impl Character {
         let mut laid: Vec<Vestige> = rolled.into_iter().filter_map(|drop| self.unsealed(drop, source, dice)).collect();
         // An item there is no room for is laid as a Vestige of the content it dropped in, as a kill's own are.
         for item in vestige::found_items(items, rank, level, source, dice) {
-            laid.extend(self.keep_found(item, level.clamp(1, NAMED_LEVEL)).map(|vestige| vestige.from(source)));
+            laid.extend(self.found(item, level.clamp(1, NAMED_LEVEL)).map(|vestige| vestige.from(source)));
         }
         laid
     }
@@ -259,15 +259,50 @@ impl Character {
         if self.haul_item(&item) {
             return None;
         }
+        match self.stow(item) {
+            None => None,
+            Some(item) if item.rarity == Rarity::Normal => {
+                self.post(crate::mail::Source::Found, crate::mail::Posted::Item(item));
+                None
+            }
+            Some(item) => Some(Vestige::new(self.take_id(), item.rarity, item.bucket, level).from(item.source)),
+        }
+    }
+
+    /// An item a kill, a clear or a find gives: set aside with `level`, its foe's, while `laying`, numbered as it goes
+    /// so the next common's dice are its own (`unsealed`); else kept (`keep_found`). The haul takes it first.
+    fn found(&mut self, item: Item, level: u8) -> Option<Vestige> {
+        if self.laid.is_none() || self.passage.as_ref().is_some_and(|dive| dive.here) {
+            return self.keep_found(item, level);
+        }
+        let id = self.take_id();
+        self.laid.get_or_insert_default().push((Item { id, ..item }, level));
+        None
+    }
+
+    /// Runs `find` with every item a kill, a clear or a find gives as itself set aside rather than kept, and answers
+    /// them, each with its foe's level, beside what it answers: the room lays them on the ground for their player, as
+    /// it lays a Vestige. A gift paid on the way is kept as ever.
+    pub fn laying<T>(&mut self, find: impl FnOnce(&mut Self) -> T) -> (T, Vec<(Item, u8)>) {
+        self.laid = Some(Vec::new());
+        let found = find(self);
+        (found, self.laid.take().unwrap_or_default())
+    }
+
+    /// Takes an item lying for this player off the ground into its slot's nine, else the vault; refused, leaving it
+    /// lying, when both are full.
+    pub fn pick_up_item(&mut self, item: Item) -> bool {
+        self.stow(item).is_none()
+    }
+
+    /// Puts an item in its slot's nine, else the vault, numbered as it goes in; handed back when both are full.
+    fn stow(&mut self, item: Item) -> Option<Item> {
         let at = if self.carried_in(item.bucket) < CARRIED_MOST {
             At::Carried
         } else if self.vaulted(item.kind.stock()) < VAULT_MOST {
             At::Vault
-        } else if item.rarity == Rarity::Normal {
-            self.post(crate::mail::Source::Found, crate::mail::Posted::Item(item));
-            return None;
         } else {
-            return Some(Vestige::new(self.take_id(), item.rarity, item.bucket, level).from(item.source));
+            return Some(item);
         };
         let id = self.take_id();
         self.items.insert(id, (Item { id, ..item }, at));
@@ -290,7 +325,7 @@ impl Character {
         // apart from the kill's found items' stream.
         let seed = dice.seed ^ COMMON_STREAM ^ u64::from(self.id_to_take()).wrapping_mul(0x9E37_79B9_7F4A_7C15);
         let item = vestige::make(0, Rarity::Normal, slot, level, source, &Dice { seed, ..*dice })?;
-        self.keep_found(item, level)
+        self.found(item, level)
     }
 
     /// Takes a Vestige off the ground into the carried ten; refused, leaving it lying, when they are full.

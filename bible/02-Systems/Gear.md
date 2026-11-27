@@ -195,9 +195,11 @@ number is one of [[Gear as Claude Shapes It]].
 - **Commons drop as themselves** ([[Commons Drop as Themselves, Never as Vestiges]]). A Vestige is Magic or finer:
   wherever a Vestige rolls Normal (a kill's, a Boss's or a Miniboss's, at sea too, a chest's, a first clear's, a
   playlist's, the [[Test Ground]]'s), the Normal item comes instead, made as that Vestige would have opened, at
-  Normal, of its slot, level and content (`unsealed`), at the same chance, the colours' weights as they stand. It is
-  kept as an item found as itself is: in its slot's nine, else the vault, else the mail ("Items as themselves", "The
-  mail"); the page shows it in the loot feed as every new item, never as a crystal on the ground. A Vestige still
+  Normal, of its slot, level and content (`unsealed`), at the same chance, the colours' weights as they stand. Where
+  the room lays its pieces on the ground (a kill's, a clear's, a cache's, a chest's or a container's), it lies there
+  as itself for its player, as its Vestige would have ("Drops"); elsewhere (at sea, a first clear, a playlist, the
+  Test Ground) it is kept as an item found as itself is: in its slot's nine, else the vault, else the mail ("Items as
+  themselves", "The mail"). The loot feed tells it as every new item, once it is the player's. A Vestige still
   opens below its colour as above, so a Magic one may open Normal. A Normal Vestige a save already holds is kept and
   opens as before. A package is Rare or Legendary and a week's clear Legendary or Atheric, so neither ever rolls one.
 - **Names** ([[Everything Carries a Set Name, and Perks Roll by Pool]]). Every rolled armour piece and weapon is named
@@ -237,9 +239,10 @@ number is one of [[Gear as Claude Shapes It]].
 - **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
-  slot, at the foe's level, and goes into its slot's nine, else the vault; with both full it is laid as a Vestige of
-  its colour and slot at the foe's level, whatever a named item's own, but a Normal one is posted as itself
-  (`keep_found`).
+  slot, at the foe's level, and lies on the ground for its player beside its Vestige, as a Vestige lies ("Drops").
+  Kept, as it is taken or as it is let go, it goes into its slot's nine, else the vault; with both full a finer one
+  comes as a Vestige of its colour and slot at the foe's level, whatever a named item's own, and a Normal one is posted
+  as itself (`keep_found`). At sea it is kept so as it is gathered.
 - **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
   once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
   player still in the room who shared a kill of a foe of its own groups, not a wave's or a quest's, since its last
@@ -478,8 +481,8 @@ shape.
 [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]], in [[Arts and Loadouts as Claude Shapes Them]]'s shape, after
 DFO's spoils ([[Pick - Loot Drops]]).
 
-- **What drops.** For each player who earned a kill: their Vestiges, if any dropped (by its rank, "Vestiges" above);
-  an Ammo box by the foe's rank (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always);
+- **What drops.** For each player who earned a kill: their Vestiges, if any dropped (by its rank, "Vestiges" above),
+  and their items as themselves ("Commons drop as themselves", "Items as themselves"); an Ammo box by the foe's rank (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always);
   and from a Miniboss or a Boss an Ammo crate, straight into their crates while they carry fewer than five, else
   lying with the rest (`room::drops`).
 - **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: a
@@ -500,10 +503,12 @@ DFO's spoils ([[Pick - Loot Drops]]).
   taken 122 ticks after (about 2 s: the lid's 0.22 s to open its mouth, and the longest the pour's higher pop
   bounces), and is otherwise as any drop. An event's chest that lapses unopened, or is opened as its player leaves,
   puts its Vestige in the ten, else the vault, else on the ground.
-- **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
-  the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
-  the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes
-  to the mail. A Vestige still lying as its player leaves the room goes there too ("The mail").
+- **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, an item
+  while its slot's nine or the vault has room, a box while the ammunition is not full, a crate while fewer than five
+  are carried. A piece not taken stays two minutes; then the room sends the player's gear again without it, so their
+  page stops showing it, a Vestige among them goes to the mail, and an item is kept as an item found as itself is
+  ("Items as themselves"), never lost. A Vestige or an item still lying as its player leaves the room goes the same
+  way ("The mail"). An item flies and settles as a Vestige does, thrown or poured (`Dropped::Item`).
 - **Ammo full.** A box walked onto at full ammunition stays where it lies. The share kept is the character's own, worn
   Ranged weapon or not: one with only Melee worn and a full share leaves the box, and one whose share is short takes it.
   The page works this out from what it holds (where the player stands, their drops and the share of ammunition kept) and
@@ -531,7 +536,10 @@ DFO's spoils ([[Pick - Loot Drops]]).
   The heights keep every frame's lowest pixel over the ground. A Vestige's crystal is a faceted gem crusted with
   shards, in its rarity's white, green, yellow, red or cyan blue, each frame baked as its turn first reaches it,
   cel-shaded in five bands, its outline darkened and a halo of its glow round it, added light. An Ammo box or crate is
-  its model ([[Item Pictures]]). A thin line rises from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m,
+  its model ([[Item Pictures]]). An item found as itself is its own picture as the gear screens draw it, a weapon the
+  forge's large picture dyed as they dye it, an armour piece as it is worn, its longer side a Vestige's frame; it
+  flies, hovers and bobs as a Vestige does, turning as a flat thing turns, its other face mirrored (`itemDrops.ts`). A
+  thin line rises from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m,
   Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs it, a Legendary's and an Atheric's
   pulse, and a Rare or finer chimes as it settles ([[Interface]]).
 

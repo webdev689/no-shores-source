@@ -165,7 +165,13 @@ fn a_reeve_felled_beside_a_wall_leaves_his_drops_on_the_floor_where_his_slayer_t
     room.foes.remove(&reeve);
     // A Miniboss leaves a Vestige one time in three: one thrown from the same spot stands for it.
     let dice = room.dice(player);
-    room.drop_spoils(player, vec![gear::Vestige::new(0, gear::Rarity::Rare, Slot::Head, 10)], 0, fallen, &dice);
+    room.drop_spoils(
+        player,
+        vec![Dropped::Vestige(gear::Vestige::new(0, gear::Rarity::Rare, Slot::Head, 10))],
+        0,
+        fallen,
+        &dice,
+    );
     let drops: Vec<Drop> = room.drops_for(player).filter(|drop| drop.from == fallen).cloned().collect();
     assert!(drops.iter().any(|drop| matches!(drop.what, Dropped::Vestige(_))), "a Vestige: {drops:?}");
     assert!(drops.len() > 1, "and his Ammo box");
@@ -191,13 +197,13 @@ fn a_kills_drops_are_thrown_out_in_a_fan_toward_the_player_and_taken_at_rest() {
     }
     kill(&mut room, player, ::foes::Rank::Boss, -10.0);
     let drops: Vec<Drop> = room.drops_for(player).cloned().collect();
-    assert_eq!(drops.len(), 3, "a Vestige, a box and a crate: {drops:?}");
+    assert_eq!(drops.len(), 4, "a Vestige, a Boss's item as itself, a box and a crate: {drops:?}");
     for drop in &drops {
         assert_eq!(drop.from, [0.0, -10.0, 0.0], "thrown from the body");
         let out = libm::hypot(drop.at[0], drop.at[1] + 10.0);
         assert!((out - THROW_M).abs() < 1e-9 && drop.at[1] > -10.0, "out toward the player: {drop:?}");
     }
-    assert!(drops[0].at != drops[1].at && drops[1].at != drops[2].at, "each its own place in the fan");
+    assert!(drops.windows(2).all(|pair| pair[0].at != pair[1].at), "each its own place in the fan");
     let ammo_box = drops.iter().find(|drop| drop.what == Dropped::AmmoBox).expect("a box");
     let mut fighter = *room.fighter(player).expect("in");
     (fighter.body.x, fighter.body.y) = (ammo_box.at[0], ammo_box.at[1]);
@@ -339,4 +345,108 @@ fn a_leaving_players_vestiges_lying_go_to_their_mail_and_their_drops_off_the_gro
     assert_eq!(mail[0].vestige.as_ref().map(|kept| kept.rarity), Some(gear::Rarity::Legendary));
     assert_eq!(room.drops_for(other).count(), 1, "another's still lies");
     assert!(room.player(other).expect("in").character.mail.is_empty());
+}
+
+/// A Normal sword as a kill finds it, as itself.
+fn sword() -> gear::Item {
+    gear::Item::new(0, Kind::Sword, gear::Rarity::Normal, 9, Slot::Melee)
+}
+
+/// A room with a player whose feet the drops are laid at.
+fn standing() -> (Room, PlayerId, [f64; 3]) {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let feet = room.player(player).expect("in").fighter.body;
+    (room, player, [feet.x, feet.y, feet.z])
+}
+
+/// Fills the player's carried nine and their vault, so no item found has room.
+fn full(room: &mut Room, player: PlayerId) {
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    while character.mail.is_empty() {
+        assert_eq!(character.keep_found(sword(), 9), None);
+    }
+    character.mail.clear();
+}
+
+fn items_lying(room: &Room, player: PlayerId) -> usize {
+    room.drops_for(player).filter(|drop| matches!(drop.what, Dropped::Item(..))).count()
+}
+
+fn carried_swords(room: &Room, player: PlayerId) -> usize {
+    let items = room.player(player).expect("in").character.items.values();
+    items.filter(|(item, at)| item.kind == Kind::Sword && *at == gear::At::Carried).count()
+}
+
+#[test]
+fn an_item_lying_as_itself_is_taken_at_rest_into_its_slots_nine() {
+    let (mut room, player, feet) = standing();
+    let before = carried_swords(&room, player);
+    room.lay_drop(player, Dropped::Item(sword(), 9), feet);
+    for _ in 0..VESTIGE_REST_TICKS - 5 {
+        room.tick();
+    }
+    assert_eq!(items_lying(&room, player), 1, "still bouncing as a Vestige does");
+    for _ in 0..10 {
+        room.tick();
+    }
+    assert_eq!(items_lying(&room, player), 0, "at rest, walked over, taken");
+    assert_eq!(carried_swords(&room, player), before + 1, "into the Melee nine");
+}
+
+#[test]
+fn an_item_with_no_room_stays_lying_then_goes_to_the_mail_after_two_minutes() {
+    let (mut room, player, feet) = standing();
+    full(&mut room, player);
+    room.lay_drop(player, Dropped::Item(sword(), 9), feet);
+    for _ in 0..=VESTIGE_REST_TICKS {
+        room.tick();
+    }
+    assert_eq!(items_lying(&room, player), 1, "nine and vault full: it stays where it lies");
+    for _ in 0..crate::DROP_TICKS {
+        room.tick();
+    }
+    assert_eq!(items_lying(&room, player), 0);
+    let mail = &room.player(player).expect("in").character.mail;
+    assert_eq!(
+        mail.iter().filter(|letter| letter.item.as_ref().is_some_and(|item| item.kind == Kind::Sword)).count(),
+        1,
+        "never lost"
+    );
+}
+
+#[test]
+fn an_item_still_lying_as_its_player_leaves_is_kept_as_a_found_item_is() {
+    let (mut room, player, _) = standing();
+    let before = carried_swords(&room, player);
+    room.lay_drop(player, Dropped::Item(sword(), 9), [0.0, -30.0, 0.0]);
+    room.mail_lying(player);
+    assert_eq!(room.drops_for(player).count(), 0);
+    assert_eq!(carried_swords(&room, player), before + 1, "in its nine, as it would have been kept");
+}
+
+#[test]
+fn a_bosss_items_as_themselves_lie_on_the_ground_for_their_player() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let before = room.player(player).expect("in").character.items.len();
+    kill(&mut room, player, ::foes::Rank::Boss, -10.0);
+    assert!(
+        items_lying(&room, player) >= 1,
+        "a Boss always leaves an item: {:?}",
+        room.drops.iter().collect::<Vec<_>>()
+    );
+    assert_eq!(room.player(player).expect("in").character.items.len(), before, "none straight into the gear");
+}
+
+#[test]
+fn a_finer_item_let_go_with_no_room_is_mailed_as_a_vestige_at_its_foes_level() {
+    let (mut room, player, feet) = standing();
+    full(&mut room, player);
+    let named = gear::Item::new(0, Kind::Sword, gear::Rarity::Atheric, 20, Slot::Melee);
+    room.lay_drop(player, Dropped::Item(named, 5), feet);
+    room.mail_lying(player);
+    let mail = &room.player(player).expect("in").character.mail;
+    let sealed = mail.iter().find_map(|letter| letter.vestige.as_ref()).expect("a Vestige in the mail");
+    assert_eq!((sealed.rarity, sealed.level), (gear::Rarity::Atheric, 5), "never above what its foe could drop");
 }
