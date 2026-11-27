@@ -106,20 +106,21 @@ const STEPS: [Step; 17] = [
 
 /// Runs each step and stops at the first that fails.
 pub fn run_all() -> bool {
-    run_steps(|_| true)
+    run_steps(|_| true, None)
 }
 
-/// Runs each step of one part of the check, and stops at the first that fails.
-pub fn run_part(part: Part) -> bool {
-    run_steps(|step| step.parts.contains(&part))
+/// Runs each step of one part of the check, and stops at the first that fails. `slice` (`1/2`) runs that share of the
+/// Rust tests alone, with nextest, so CI spreads them over runners.
+pub fn run_part(part: Part, slice: Option<&str>) -> bool {
+    run_steps(|step| step.parts.contains(&part), slice)
 }
 
 /// Runs each step whose name starts with `prefix`, and stops at the first that fails.
 pub fn run_matching(prefix: &str) -> bool {
-    run_steps(|step| step.name.starts_with(prefix))
+    run_steps(|step| step.name.starts_with(prefix), None)
 }
 
-fn run_steps(chosen: impl Fn(&Step) -> bool) -> bool {
+fn run_steps(chosen: impl Fn(&Step) -> bool, slice: Option<&str>) -> bool {
     let root = repo_root();
     if !root.join("node_modules").is_dir() {
         println!("== the TypeScript tools are not installed: run `npm ci` first");
@@ -127,12 +128,17 @@ fn run_steps(chosen: impl Fn(&Step) -> bool) -> bool {
     }
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let nextest = Command::new(&cargo).args(["nextest", "--version"]).output().is_ok_and(|out| out.status.success());
+    if slice.is_some() && !nextest {
+        println!("== a share of the Rust tests needs cargo-nextest: `cargo install cargo-nextest --locked`");
+        return false;
+    }
     for step in STEPS.iter().filter(|step| chosen(step)) {
-        let (program, args) = match step.program {
-            Program::Cargo => (cargo.as_str(), step.args),
-            Program::Npm => ("npm", step.args),
-            Program::RustTests if nextest => (cargo.as_str(), &["nextest", "run", "--workspace", "--locked"][..]),
-            Program::RustTests => (cargo.as_str(), &["test", "--workspace", "--locked"][..]),
+        let owned = |args: &[&str]| args.iter().map(|&arg| arg.to_owned()).collect::<Vec<_>>();
+        let (program, mut args) = match step.program {
+            Program::Cargo => (cargo.as_str(), owned(step.args)),
+            Program::Npm => ("npm", owned(step.args)),
+            Program::RustTests if nextest => (cargo.as_str(), owned(&["nextest", "run", "--workspace", "--locked"])),
+            Program::RustTests => (cargo.as_str(), owned(&["test", "--workspace", "--locked"])),
             Program::Shaders => {
                 println!("== {}: naga over {}", step.name, shaders::WRITTEN);
                 let problems = shaders::problems_written(&root);
@@ -146,8 +152,11 @@ fn run_steps(chosen: impl Fn(&Step) -> bool) -> bool {
                 continue;
             }
         };
+        if let (Program::RustTests, Some(slice)) = (step.program, slice) {
+            args.extend(["--partition".to_owned(), format!("slice:{slice}")]);
+        }
         println!("== {}: {program} {}", step.name, args.join(" "));
-        let passed = Command::new(program).args(args).current_dir(&root).status().is_ok_and(|status| status.success());
+        let passed = Command::new(program).args(&args).current_dir(&root).status().is_ok_and(|status| status.success());
         if !passed {
             println!("== {} failed", step.name);
             return false;

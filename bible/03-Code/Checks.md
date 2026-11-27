@@ -10,9 +10,9 @@ code:
 # Checks
 
 `cargo xtask check` is the one command that says a change is done. CI runs it on every pull request and every push to
-`main`, in three parts at once, each on a runner of its own (`cargo xtask check rest`, `rust` and `page`): the rest
-(steps 1 to 5, 7 and 8), the Rust tests, and the page's tests with the WebAssembly and the files the Rust tests write
-for them. A push to `main` whose merge is code its pull request's check passed is not checked again ([[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]). On
+`main`, in three parts at once on runners of their own (`cargo xtask check rest`, `rust` and `page`): the rest
+(steps 1 to 5, 7 and 8), the Rust tests, shared over two runners with nextest (`rust 1/2` and `rust 2/2`), and the
+page's tests with the WebAssembly and the files the Rust tests write for them. A push to `main` whose merge is code its pull request's check passed is not checked again ([[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]). On
 `main` CI publishes the client to GitHub Pages and the site once the check passes and the rooms have deployed or had
 nothing to deploy, and deploys the Discord bot. Each part, like the whole check, stops at its first failing step, in
 the order a failure is cheapest to read:

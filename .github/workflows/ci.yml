@@ -50,8 +50,8 @@ jobs:
           echo "the merge of $head into $main: passed $passed"
           echo "passed=$passed" >> "$GITHUB_OUTPUT"
 
-  # The check in its three parts, side by side, each on a runner of its own (`cargo xtask check <part>`): every part
-  # runs to its end, so one run shows each part's failures.
+  # The check in its three parts, side by side, each on a runner of its own (`cargo xtask check <part>`), the Rust
+  # tests shared over two: every part runs to its end, so one run shows each part's failures.
   part:
     needs: earlier
     if: ${{ !cancelled() && needs.earlier.outputs.passed != 'yes' }}
@@ -59,9 +59,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        part: [rest, rust, page]
+        part: [rest, rust 1/2, rust 2/2, page]
     runs-on: ubuntu-latest
-    # The longest part runs about 25 minutes on a hosted runner; the limit stops only a hung one.
+    # The longest part runs about 20 minutes on a hosted runner; the limit stops only a hung one.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -69,7 +69,7 @@ jobs:
         run: rustup toolchain install
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
-          key: ${{ matrix.part }}
+          key: ${{ startsWith(matrix.part, 'rust') && 'rust' || matrix.part }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
@@ -78,7 +78,7 @@ jobs:
         run: npm ci
       # cargo-nextest, which runs every crate's tests at once, as its release built it, checked against its hash.
       - name: Install cargo-nextest
-        if: matrix.part == 'rust'
+        if: startsWith(matrix.part, 'rust')
         run: |
           set -euo pipefail
           release="cargo-nextest-0.9.152"

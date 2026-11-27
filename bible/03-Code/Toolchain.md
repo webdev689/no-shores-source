@@ -117,7 +117,7 @@ it). Cycles renders on the CPU, so it bakes anywhere: `python -I tools/flora/bak
 | Command | What it does |
 |---|---|
 | `npm ci` | Install the TypeScript tools (once, and when `package-lock.json` changes) |
-| `cargo xtask check` | Everything CI runs, both languages; `cargo xtask check rest`, `rust` or `page`, one of the three parts CI runs at once ([[Checks]]) |
+| `cargo xtask check` | Everything CI runs, both languages; `cargo xtask check rest`, `rust` or `page`, one of the three parts CI runs at once, and `rust 1/2` half the Rust tests, with nextest ([[Checks]]) |
 | `cargo xtask repo` | Only the repo checks, in about a second |
 | `npm run dev` | The client in a browser, reloading as you edit; the [[World Editor]] at `/editor/` |
 | `npm run schema` | Makes the messages' Rust and TypeScript into `generated/messages/` (not in git), installing the pinned `flatc` first if it is not there |
