@@ -1,7 +1,7 @@
 // The website's pages and the addresses it sends people to, each named once. The build, the shell and the tests all
 // read this list, so adding a page is one entry here, its folder's `index.html` and its words.
 
-/** The site's own address, where it is served once the owner says so. */
+/** The site's own address, where it is served once it goes live. */
 export const SITE_ORIGIN = 'https://noshores.online';
 
 export interface SitePage {
