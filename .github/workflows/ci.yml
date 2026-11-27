@@ -224,7 +224,9 @@ jobs:
   check:
     needs: [earlier, part, archive, rust]
     # A run whose parts a newer merge cancelled checks nothing, so nothing after it deploys.
-    if: ${{ !cancelled() && needs.part.result != 'cancelled' }}
+    if: >-
+      ${{ !cancelled() && needs.part.result != 'cancelled' && needs.archive.result != 'cancelled' &&
+      needs.rust.result != 'cancelled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
