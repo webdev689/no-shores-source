@@ -2,6 +2,7 @@
 // game shut there gives it back at once, as a player asked, with no click to take it again.
 import { BINDS, type Input } from '../player/input.ts';
 import type { Playing } from './gameFrame.ts';
+import { clickedOnLine } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import type { StoryHost } from './prologue/host.ts';
 
@@ -24,7 +25,7 @@ export function listenForLook(
   canvas.addEventListener('click', () => {
     // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open
     // the pointer stays free, though the click comes before the interface has heard where it is.
-    if (ui.takesPointer || gearScreenOpen()) return;
+    if (ui.takesPointer || gearScreenOpen() || clickedOnLine(input.locked)) return;
     if (!input.locked && looksRound()) input.lock();
   });
   // A pad's player, whose stick looks round, is left the pointer free.

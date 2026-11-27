@@ -48,12 +48,13 @@ fn a_dungeon_lays_a_checkpoint_in_the_doorway_each_band_s_room_is_entered_by_fac
     assert!(bands > 0, "bands stand");
     assert_eq!(room.respawning.checkpoints.len(), bands, "one for each band's room");
     for checkpoint in &room.respawning.checkpoints {
-        let cell = |[x, y]: [f64; 2]| (y / dungeon::CELL_M) as usize * laid.columns + (x / dungeon::CELL_M) as usize;
+        let cell = |at: [f64; 3]| laid.cell_at(at);
         let inside = laid.room_at(cell(checkpoint.at)).expect("on a room's cell");
         assert!(laid.frames.iter().any(|frame| frame.cell == cell(checkpoint.at)), "a doorway's cell");
         let ahead = [
             checkpoint.at[0] + libm::sin(checkpoint.facing) * dungeon::CELL_M,
             checkpoint.at[1] - libm::cos(checkpoint.facing) * dungeon::CELL_M,
+            checkpoint.at[2],
         ];
         assert_eq!(laid.room_at(cell(ahead)), Some(inside), "facing into its room: {checkpoint:?}");
     }
@@ -83,12 +84,12 @@ fn the_fallen_stand_at_the_band_fallen_farthest_along_and_every_player_is_told_a
     assert_eq!(told(&mut room), [0.0], "told as it is won");
     assert_eq!(room.checkpoint(), Some(number(&room, farthest)), "the one won");
     let at = room.respawning.checkpoints[number(&room, farthest)].at;
-    assert_eq!(respawned(&mut room, player), at, "stood at its doorway");
+    assert_eq!(respawned(&mut room, player), [at[0], at[1]], "stood at its doorway");
     if nearest != farthest {
         clear(&mut room, nearest);
         room.tick();
         assert!(told(&mut room).is_empty(), "a room nearer the way in moves nothing on");
-        assert_eq!(respawned(&mut room, player), at);
+        assert_eq!(respawned(&mut room, player), [at[0], at[1]]);
     }
     let mut fresh = Room::dungeon(PATROL, 0, LEVELS).expect("a patrol's dungeon");
     let alone = fresh.join().expect("in");
@@ -129,7 +130,11 @@ fn an_elite_dungeon_lays_its_seals_and_its_court_and_the_court_s_is_won_as_its_b
         room.send_away(&[boss]);
     }
     let at = room.respawning.checkpoints[court.expect("laid")].at;
-    assert_eq!(respawned(&mut room, player), at, "the Boss gone, the dark lifts: stood at the Court's door");
+    assert_eq!(
+        respawned(&mut room, player),
+        [at[0], at[1]],
+        "the Boss gone, the dark lifts: stood at the Court's door"
+    );
 }
 
 #[test]
@@ -144,7 +149,7 @@ fn with_no_seal_to_break_the_court_s_is_won_only_once_a_living_player_has_stood_
     assert_ne!(room.checkpoint(), court, "its Boss awake from the first, but no one has come near it");
     let door = room.respawning.checkpoints[court.expect("laid")].at;
     let body = &mut room.players.get_mut(&player).expect("in").fighter.body;
-    (body.x, body.y) = (door[0], door[1]);
+    (body.x, body.y, body.z) = (door[0], door[1], door[2]);
     room.tick();
     assert_eq!(room.checkpoint(), court, "reached");
 }
@@ -161,7 +166,8 @@ fn a_mission_lays_a_checkpoint_at_each_post_and_its_fallen_stand_at_the_cleared_
     room.facing = 1.0;
     room.lay_post_checkpoints();
     for laid in &room.respawning.checkpoints {
-        let facing = if apart(laid.at, last) > 0.5 { bearing(laid.at, last) } else { room.facing };
+        let at = [laid.at[0], laid.at[1]];
+        let facing = if apart(at, last) > 0.5 { bearing(at, last) } else { room.facing };
         assert!(
             (laid.facing - facing).abs() < 1e-9,
             "toward the last stand, or the room's way at the last stand itself"
@@ -173,7 +179,7 @@ fn a_mission_lays_a_checkpoint_at_each_post_and_its_fallen_stand_at_the_cleared_
     let Won::Post(post) = farthest.won else { panic!("a post's") };
     room.send_foes_away();
     room.garrison[post].cleared_at = Some(room.clock);
-    assert_eq!(respawned(&mut room, player), farthest.at, "at the cleared post farthest along");
+    assert_eq!(respawned(&mut room, player), [farthest.at[0], farthest.at[1]], "at the cleared post farthest along");
     let patrol = Room::garrisoned(Floor::Flat, Vec::new(), section, NodeKind::Patrol, ("downs", None));
     assert!(patrol.respawning.checkpoints.is_empty(), "a patrol zone keeps none");
 }
@@ -196,12 +202,19 @@ fn an_abyss_wipe_stands_every_band_again_so_its_fallen_begin_again_at_the_way_in
 
 #[test]
 fn in_a_shared_dungeon_a_band_stands_again_as_any_group_does_and_its_checkpoint_falls_back() {
-    let mut room = Room::dungeon(PATROL, 0, LEVELS).expect("a patrol's shared dungeon");
+    // A band beyond the 40 m a group waits for no one to be within, in the first of the patrol's dungeons with one.
+    let far = |room: &Room, post: usize| {
+        let feet = room.spawn_points[0];
+        apart([room.garrison[post].at[0], room.garrison[post].at[1]], [feet.0, feet.1]) > 45.0
+    };
+    let (mut room, post) = (0..dungeon::PER_PATROL)
+        .find_map(|number| {
+            let room = Room::dungeon(PATROL, number, LEVELS).expect("a patrol's shared dungeon");
+            let post = (1..room.garrison.len()).find(|&post| far(&room, post))?;
+            Some((room, post))
+        })
+        .expect("a band far off");
     let player = room.join().expect("in");
-    let feet = room.players[&player].fighter.body;
-    // A band beyond the 40 m a group waits for no one to be within.
-    let far = |post: &usize| apart([room.garrison[*post].at[0], room.garrison[*post].at[1]], [feet.x, feet.y]) > 45.0;
-    let post = (1..room.garrison.len()).find(far).expect("a band far off");
     clear(&mut room, post);
     room.tick();
     assert!(room.checkpoint().is_some(), "won");

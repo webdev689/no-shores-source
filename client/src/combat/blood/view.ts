@@ -55,9 +55,10 @@ struct MarkOut {
   let crossed = cross(dpdx(in.world), dpdy(in.world));
   var normal = select(vec3f(0.0, 0.0, 1.0), normalize(crossed), dot(crossed, crossed) > 1e-12);
   if (dot(normal, scene.eye.xyz - in.world) < 0.0) { normal = -normal; }
-  // Lit as what it lies on: the ground is drawn unlit, the blocks by one light.
+  // Lit as what it lies on: the ground, or any floor facing straight up, a dungeon's lower storeys' too, is drawn
+  // unlit; the blocks' sides by one light.
   let light = normalize(vec3f(0.4, -0.3, 0.85));
-  let shade = select(0.55 + 0.45 * max(dot(normal, light), 0.0), 1.0, in.world.z < 0.05);
+  let shade = select(0.55 + 0.45 * max(dot(normal, light), 0.0), 1.0, normal.z > 0.99);
   // A film: the ink is the thickness inverted, and a thinning rim glows toward orange (Beer-Lambert); a picture's
   // colour is its texel.
   let thick = texel.a * clamp((1.0 - texel.r) / ${float(INK_DEPTH)}, 0.0, 1.0);

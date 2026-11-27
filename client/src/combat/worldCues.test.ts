@@ -181,6 +181,8 @@ test('a footstep on wood, stone, in water or on the ground', () => {
   assert.equal(stepCue([11, 1, 0], ground), 'step.ground', 'beside a block, not on it');
   assert.equal(stepCue([-8, 0, -0.3], ground), 'step.water');
   assert.equal(stepCue([-8, 0, 0], { blocks: [] }), 'step.ground', 'no land is open ground at 0 m');
+  const storeyUnder = { blocks: [], groundAt: () => -8, sea: false };
+  assert.equal(stepCue([0, 0, -8], storeyUnder), 'step.ground', "a dungeon's lower storey is no sea");
 });
 
 test('a status as it is given, not while it lasts, and Exposed, Charged and Haste with no sound', () => {

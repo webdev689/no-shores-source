@@ -119,6 +119,7 @@ fn a_friendly_ship_sails_on_for_its_far_port_at_the_traffics_speed_kept_while_a_
         heading: 0.0,
         to: [10_000.0, 0.0],
         lane: None,
+        dark: false,
     };
     friendlies.back_from_clash(&[], vec![friend]);
     friendlies.sail(2.0, &[[0.0, 1_000.0]], (None, &Open), TIME);

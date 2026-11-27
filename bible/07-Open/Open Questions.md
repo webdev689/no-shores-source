@@ -5,6 +5,16 @@ type: index
 
 Decisions waiting on the owner. None is in force until the owner decides it and it moves to [[Decisions]].
 
+- **Night sight's last places.** By night hostile ships on the sea map show at any range (the sea map's decision)
+  while other players' ships keep to night sight; a bold hostile still meets a player, and a player joins other
+  players' fight, from 750 m. Whether night sight reaches these
+  ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]).
+- **The lights' look.** The lanterns' glass and the stern windows burn a flat orange, by day too as #233's lanterns
+  do, and a dark ship's panes read pale; far facades from the sea read as a warm wash; a burning ship's flames read
+  weakly by day; a broadside's flashes read as a row of dots. Each is the owner's to judge ([[Sky]], [[Hulls]]).
+- **Where dialogue's pace is kept.** In the browser, as the volumes are, not with the account as the binds are
+  ([[Dialogue Waits for a Click by Default, With Auto as a Setting]]).
+
 - **A camp's gap.** The brief set it a cell and a metre (9 m) either side of the way out along its chord; it is built
   9 m along the path grid's rows or columns, whichever lie more across it, since along the chord a few turns still
   sealed it from every way (18 m wide square to the grid, up to 25.5 m at 45 degrees). The owner's to confirm

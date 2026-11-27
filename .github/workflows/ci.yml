@@ -165,7 +165,11 @@ jobs:
   # commit run by hand passed.
   rooms:
     needs: check
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    # The parts are skipped where main's merge is code its pull request's check passed: without a status function
+    # here, a skipped job before it would skip this one too.
+    if: >-
+      !cancelled() && needs.check.result == 'success' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
       deployments: read
@@ -177,7 +181,11 @@ jobs:
   # from changed: the owner's yes to a merge covers it. Reading the deployments tells it what was released last.
   desktop:
     needs: check
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    # The parts are skipped where main's merge is code its pull request's check passed: without a status function
+    # here, a skipped job before it would skip this one too.
+    if: >-
+      !cancelled() && needs.check.result == 'success' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
       deployments: read

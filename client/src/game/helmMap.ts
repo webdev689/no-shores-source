@@ -179,7 +179,13 @@ export class HelmMap {
           knownIslands: shown.knownIslands,
           course: here.course,
           quest: this.context.quest?.() ?? [],
-          moving: chartMarksOf(here.sighted?.charted ?? [], here.sighted?.own ?? -1, here.sighted?.chartMarks),
+          moving: chartMarksOf(
+            here.sighted?.charted ?? [],
+            here.sighted?.own ?? -1,
+            here.sighted?.chartMarks,
+            undefined,
+            here.position,
+          ),
         })
       : null;
     return map && drawn ? (encoder, view) => map.draw(encoder, view, drawn) : undefined;

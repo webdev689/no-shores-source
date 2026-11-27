@@ -6,8 +6,9 @@
 // stick's ways ('LS up') are fixed, never bound; a button held is `B hold`, and two pressed together `LB+RB`. What the
 // player changed is kept with their account (`readOverrides`), and the accounts check it against this table.
 
-/** Where a control acts: on foot (on land or a deck), dead, in a window, at the helm, or in a fight at sea. */
-export type Context = 'foot' | 'dead' | 'menu' | 'helm' | 'fight';
+/** Where a control acts: on foot (on land or a deck), dead, in a window, at the helm, in a fight at sea, or while a
+ *  line of the dialogue box waits for a press, which takes that press from every other control. */
+export type Context = 'foot' | 'dead' | 'menu' | 'helm' | 'fight' | 'talk';
 const EVERYWHERE: readonly Context[] = ['foot', 'dead', 'menu', 'helm', 'fight'];
 const FOOT: readonly Context[] = ['foot'];
 const HELM: readonly Context[] = ['helm'];
@@ -120,6 +121,9 @@ export const CONTROLS = {
   shotBack: control([], ['Left'], FIGHT),
   shotNext: control([], ['Right'], FIGHT),
   brace: control(['c'], ['B'], FIGHT),
+  // A line of the dialogue box typed whole, or the next begun: the left click, Space or E, and the pad's A, as the
+  // owner chose; while a line waits the press is the line's alone (`dialogue.ts`).
+  continue: control(['mouse0', ' ', 'e'], ['A'], ['talk']),
 } as const satisfies Record<string, Control>;
 export type BindId = keyof typeof CONTROLS;
 export const BIND_IDS = Object.keys(CONTROLS) as BindId[];

@@ -3,7 +3,8 @@
     <python with bpy> tools/ships/export_ship.py /path/to/Ship.blend <name> --waterline <metres> [--dry-run]
 
 bpy is Blender as a Python module: make a Python 3.13 venv and `pip install bpy==5.3.0`. The model's faces are in the
-part materials tools/ships/paint_ship.py sorts them into, with UVs in metres. With --dry-run it writes `<name>.mesh`
+part materials tools/ships/paint_ship.py sorts them into, with UVs in metres; a window's pane is in
+`glass`. With --dry-run it writes `<name>.mesh`
 into the working folder (so run it from one outside the repo) and uploads nothing; without, it uploads the .blend and
 the mesh under their hashes and names both, with her waterline, guns, boxes, sails, deck and lanterns, in
 content/ships/ships.json.
@@ -27,6 +28,10 @@ from r2 import PUBLIC, published, put  # noqa: E402
 
 # The parts the game paints, numbered as her mesh numbers them (client/src/textures/shipPictures.ts).
 PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
+# A window's pane: written as iron with its vertices' second part byte GLASS_SHELL, which the game draws as glass that
+# burns while her lanterns do (client/src/ships/lanternMesh.ts GLASS_SHELL). Every other face's byte is 0.
+GLASS = 'glass'
+GLASS_SHELL = 2
 # The parts a ball strikes as her hull; her spars and guns take none.
 HULL_PARTS = ('hull', 'deck')
 # A sail's outline turns at a corner by more than this, degrees: her model's canvas edges bend a little between them.
@@ -63,10 +68,10 @@ def rendered(instance, hidden):
 
 
 def part_names(item):
-    """Each material slot's part, refusing a slot that is not one of the parts."""
+    """Each material slot's part, refusing a slot that is not one of the parts or the glass."""
     names = [slot.material.name if slot.material else None for slot in item.material_slots]
     for name in names:
-        if name not in PARTS:
+        if name not in PARTS and name != GLASS:
             sys.exit(f'{item.name} has a face in {name!r}, no part: run tools/ships/paint_ship.py on the model first')
     if not names:
         sys.exit(f'{item.name} has no material: run tools/ships/paint_ship.py on the model first')
@@ -75,7 +80,8 @@ def part_names(item):
 
 def triangles(depsgraph):
     """Every rendered mesh's triangles but her canvas's (the game sets her sails), collection instances among them, in
-    the ship's frame: three (position, normal, uv, part) corners each."""
+    the ship's frame: three (position, normal, uv, part, shell) corners each, `shell` GLASS_SHELL for a window's
+    pane."""
     hidden = render_hidden(bpy.context.scene)
     for instance in depsgraph.object_instances:
         item = instance.object
@@ -93,9 +99,10 @@ def triangles(depsgraph):
         if uvs is None:
             sys.exit(f'{item.name} has no UVs: run tools/ships/paint_ship.py on the model first')
         for triangle in mesh.loop_triangles:
-            part = PARTS.index(names[min(triangle.material_index, len(names) - 1)])
-            if PARTS[part] == 'sail':
+            name = names[min(triangle.material_index, len(names) - 1)]
+            if name == 'sail':
                 continue
+            part, shell = (PARTS.index('iron'), GLASS_SHELL) if name == GLASS else (PARTS.index(name), 0)
             corners = []
             for loop_index in triangle.loops:
                 position = mesh.vertices[mesh.loops[loop_index].vertex_index].co
@@ -103,7 +110,8 @@ def triangles(depsgraph):
                 uv = tuple(uvs.data[loop_index].uv)
                 # Blender's y is to port when x is forward; the ship's is to starboard. The world the game draws in
                 # (east, south, up) is mirrored the same way, so each face keeps its corners' order.
-                corners.append(((position.x, -position.y, position.z), (normal.x, -normal.y, normal.z), uv, part))
+                corners.append(((position.x, -position.y, position.z), (normal.x, -normal.y, normal.z), uv, part,
+                                shell))
             yield corners[::-1] if mirrored else corners
         item.to_mesh_clear()
 
@@ -361,8 +369,9 @@ def mesh_bytes(name, faces, size):
     index_of, vertices, indices = {}, bytearray(), []
     low, high = [float('inf')] * 3, [float('-inf')] * 3
     for corners in faces:
-        for position, normal, uv, part in corners:
-            packed = struct.pack('<3f4b2f4B', *position, *(snorm8(value) for value in normal), 0, *uv, part, 0, 0, 0)
+        for position, normal, uv, part, shell in corners:
+            packed = struct.pack('<3f4b2f4B', *position, *(snorm8(value) for value in normal), 0, *uv, part, shell, 0,
+                                 0)
             if packed not in index_of:
                 index_of[packed] = len(index_of)
                 vertices += packed

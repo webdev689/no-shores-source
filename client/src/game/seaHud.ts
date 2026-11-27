@@ -4,7 +4,9 @@
 import { forwardOf, poseOf } from '../overworld/overworldCamera.ts';
 import { headingOf, type ShipMark } from '../plus/compass.ts';
 import type { FightCaptain } from '../rules/fightRules.ts';
+import { factionSide } from '../ships/dress.ts';
 import { runOutAt } from '../ships/fightDisplay.ts';
+import { lanternsLit } from '../ships/lanterns.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import { seaStrip } from './hints.ts';
 import { sightOf, sightedHostiles } from './seaHostiles.ts';
@@ -56,7 +58,8 @@ export function seaShipMarks(
       if (captain.state === 'sinking' || captain.state === 'sunk') return [];
       const firing = own !== null && runOutAt(captain, own).length > 0;
       const kind = captain.state !== 'afloat' ? 'struck' : firing ? 'firing' : captain.hostile ? 'hostile' : 'ship';
-      return [{ x: captain.ship[0] ?? 0, y: captain.ship[1] ?? 0, kind }];
+      const dark = !lanternsLit({ side: factionSide(captain.faction), dark: captain.mode === 'flee' });
+      return [{ x: captain.ship[0] ?? 0, y: captain.ship[1] ?? 0, kind, dark }];
     });
   return [
     ...(sighted?.others ?? []).map((ship): ShipMark => ({ x: ship.x, y: ship.y, kind: 'ship' })),
@@ -65,8 +68,14 @@ export function seaShipMarks(
       y: hostile.y,
       kind: 'hostile',
       rangeM: sightOf(hostile),
+      dark: !lanternsLit({ side: factionSide(hostile.faction) }),
     })),
-    ...(sighted?.friendlies ?? []).map((friend): ShipMark => ({ x: friend.x, y: friend.y, kind: 'friendly' })),
+    ...(sighted?.friendlies ?? []).map((friend): ShipMark => ({
+      x: friend.x,
+      y: friend.y,
+      kind: 'friendly',
+      dark: friend.dark ?? false,
+    })),
   ];
 }
 

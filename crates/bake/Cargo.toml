@@ -4,6 +4,8 @@ version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
+# `cargo run -p bake` (npm run bake, the rooms' deploy) runs the bake, not the outpost slots' tool
+default-run = "bake"
 description = "What the rooms read, made at build time: each node's section and spawns, the window of the ground round it, and the boxes a body runs into there."
 
 [dependencies]

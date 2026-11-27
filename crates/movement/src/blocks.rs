@@ -37,7 +37,7 @@ pub fn ground_at<B: Near + ?Sized>(blocks: &B, terrain: &dyn Terrain, x: f64, y:
     blocks
         .near(x, y)
         .filter(|block| block.under(x, y) && block.top <= z + TUNING.step)
-        .fold(terrain.height_at(x, y), |ground, block| if block.top > ground { block.top } else { ground })
+        .fold(terrain.height_under(x, y, z), |ground, block| if block.top > ground { block.top } else { ground })
 }
 
 /// The first block standing in the way at a point of a body `height` tall with its feet at `z`.

@@ -33,6 +33,7 @@ const law: SkyLaw = {
   at: (x, y, altitudeM, worldS, climate) => readingIn(climate, altitudeM),
   strikes: () => [],
   seaWind: () => [4, 0],
+  nightSight: (rangeM) => rangeM,
 };
 
 async function driverAt(clock: { now: number }): Promise<SkyDriver> {

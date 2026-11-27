@@ -13,7 +13,7 @@ import { type Press, pressAt, pressMove } from '../overworld/overworldInput.ts';
 import type { Mark, PlacedMark } from '../overworld/overworldMarks.ts';
 import { pickAt } from '../overworld/overworldPick.ts';
 import { CLICK_PACE, type Pace, PLANNED_PACE } from '../overworld/voyage.ts';
-import { lookOf, panShot, type Shot } from './camera.ts';
+import { lookOf, panShot, QA_EYE, type Shot } from './camera.ts';
 import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import type { Swell } from '../rules/landRules.ts';
@@ -194,7 +194,7 @@ export class Sea {
     if (isle) return { kind: 'isle', id: isle.seen.id, words: isleWords(isle.seen) };
     const offCoast = nearestIsland(this.position, [this.landmass.outline]) !== null;
     const { plan } = this.landmass;
-    return landfallOf(this.position, offCoast, portOf(plan));
+    return landfallOf(this.position, offCoast, portOf(plan), this.landmass.regions);
   }
 
   /** Where the ship lies and heads, as the held map shows it. */
@@ -318,20 +318,20 @@ export class Sea {
   }
 
   /** Docks or goes ashore as the landfall offers: flies the view up over the island the ship lies off, framed on the
-   *  nodes of its side (the city's social space among them when docking), every node of it to be chosen from its
-   *  tiles; false with nothing offered. The ship heaves to while its captain looks, and its voyage can be resumed. */
+   *  nodes of its region (its side's, with no regions), the city's social space among them when docking, each chosen
+   *  from its tiles; false with nothing offered. The ship heaves to while its captain looks; its voyage can resume. */
   goAshore(): boolean {
     const landfall = this.landfall;
     if (!landfall) return false;
     this.chase.stop();
-    const centre = ringCentre(this.landmass.outline);
-    const framed = landfallMarks(this.islandMarks, this.position, centre, landfall.kind === 'dock');
+    const [centre, docking] = [ringCentre(this.landmass.outline), landfall.kind === 'dock'];
+    const framed = landfallMarks(this.islandMarks, this.position, centre, docking, this.landmass.regions);
     const rig = frameSide(this.position, framed, this.viewport.width / this.viewport.height, this.landmass.heightAt);
     this.passage.stop();
     this.view.flyToSide(
       this.islandMarks.filter((mark) => mark.kind !== 'port'),
       rig,
-      landfall.kind === 'dock',
+      docking,
     );
     return true;
   }
@@ -445,7 +445,7 @@ export class Sea {
           : view.kind === 'helm'
             ? { near: helmShot, share: view.helmShare }
             : aboardShot && { near: aboardShot, share: this.aboard.share };
-    const shown = down ? panShot(seaShot, down.near, down.share) : seaShot;
+    const shown = { ...(down ? panShot(seaShot, down.near, down.share) : seaShot), ...QA_EYE.shot };
     const { near, share } = down ?? { near: view.closest(overworld, trueLying), share: view.closeShare };
     const posed = combat ? combat.lying : ship;
     const atShip = (view: Shot) => pictureAt(view, [posed.x, posed.y, 0]);

@@ -186,8 +186,8 @@ edit('crates/room/src/encounters.rs',
      '        }\n'
      '        for seal in 0..encounters.seals.len() {')
 if os.environ.get('QA_NOFOES') == '1':
-    edit('crates/room/src/dungeon_room.rs', '        room.stand_dungeon_garrison(dungeon, levels, end);',
-         '        room.stand_dungeon_garrison(dungeon, levels, end);\n'
+    edit('crates/room/src/dungeon_room.rs', '        let bands = room.stand_dungeon_garrison(dungeon, levels, end);',
+         '        let bands = room.stand_dungeon_garrison(dungeon, levels, end);\n'
          '        let gone: Vec<_> = room.garrison.iter().skip(1).flat_map(|post| post.standing.clone()).collect();\n'
          '        room.send_away(&gone);\n'
          '        room.garrison.truncate(1);')

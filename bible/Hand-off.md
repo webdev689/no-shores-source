@@ -9,12 +9,16 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes once CI passes on its head**: #236 (a player's feedback: M the map and N the leave, Tab and
-  the side buttons bound anywhere, the controls sheet's words first, a master volume and an interface size, the held
-  map's legend hidden on L, a landing icon's card on hover, the mouse back as a window shuts, and the sea map's names
-  laid out far less often and faster; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]).
-- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`).
+- **Merging on the owner's yes once CI passes on its head**: #236 (a player's feedback: M the map and N the leave,
+  Tab and the side buttons bound anywhere, the controls sheet's words first, a master volume and an interface size, the
+  held map's legend hidden on L, a landing icon's card on hover, the mouse back as a window shuts, and the sea map's
+  names laid out far less often and faster; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]];
+  `main` taken in). A merge deploys the page, the site, the rooms and the bot, and releases the
+  desktop app.
+- **For the owner's yes**: #229 (the deeper dungeons: storeys and stairs, more ways, great rooms and galleries,
+  vaults, richer chests and DFO's 3D map; [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]],
+  its pieces published by the dungeon-modules workflow's run 53) and #159 (the rooms' worker tests wait for what they
+  check; it conflicts with `main` in `roomThread.test.ts`).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -117,7 +121,17 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   button until one is bound. Its audit's leftovers: the sea's summed tables (`CellSums`) take some 2.6 MB each, the
   land and each continent asked, kept for the page's life; Firefox's keeping of a side button from going back is
   unchecked.
-
+- **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
+  third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
+  a walk through a three-storey dungeon and its vault. Headless pictures of three (`dungeon-plan.ts`) were taken before
+  the audit's fixes and show every room, flight, gallery and map drawn; seen from its head in a dim flight the treads'
+  edges merge. The audit's 31 findings, a navmesh bridged-hole bug, a lamp guard that never stood under ground and a
+  vault left no chest place are fixed on the branch (tested offline). Its notes' Limits name what is left (sight under
+  a flight's slope, a landmark's storey by its first solid). Whether passages go deeper than one storey is the
+  owner's call.
+- **The toolkit's barriers** (observations 0040, 0116, 0117, each seen a third time): a worker's run ending before the
+  2-hour kill with its edits committed, its target/ deleted once merged, and no picture run driving another
+  checkout's server.
 - **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
   deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
 - **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
@@ -131,6 +145,11 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   shared; the port's tile paints Overlook wherever it is docked. Not yet seen in a running game, on a real GPU or in
   a deployed room: docking and undocking, parked ships ashore and at sea, the tiles and their icons, the console, the
   Playlist's crests.
+
+- **The lights at sea and in the city** (#228 on #233's lights): not pictured on a real GPU or played by hand; the
+  hub's city does not draw in the headless QA page, so Overlook's lights after the fold are unpictured; each lit ship
+  lights up to four lamps, which may crowd the nearest sixteen in a big night fight; the pad's Continue is untested;
+  a keeper's screen says its lines on its own 1.6 s.
 
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
