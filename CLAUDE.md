@@ -12,7 +12,8 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
   effect the owner names, first ask what it should look like, or which game's version they picture.
 - **More organisation, less bloat.** Whatever comes from DFO Online comes over better organised and smaller.
 - **Done means `cargo xtask check` passes in CI on the pull request's head.** Before a push, run `cargo xtask repo`
-  and the tests of what changed (after `npm ci` once); CI runs the whole check, and a merge waits for it to be green.
+  and the tests of what changed (after `npm ci` once); the kit's pre-push hook refuses a push whose quick checks fail.
+  CI runs the whole check, and a merge waits for it to be green.
 - **Ask before merging or deploying.** A pull request for each change; merge into `main`, deploy or release only
   after the owner says yes, every time. A merge deploys the page, the site, the rooms and the bot, and releases the
   desktop app when its code changed, so its yes covers them.
