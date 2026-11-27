@@ -1,6 +1,7 @@
 """Weapons worn on the body: a dagger or a sword at the waist in its sheath, a great sword, a battle axe or a staff on
 the back, a bow across the back with its quiver across the waist; a Pistolet in a holster at the waist and the
-Thunderlock slung across the back (guns3p.py). Each starts where the Morrowind body's Weapon
+Thunderlock slung across the back (guns3p.py); a mace hung from the belt as a sword is, and a warhammer or a flail on
+the back as the battle axe is, the flail's ball hanging down beside its handle (blunts3p.py). Each starts where the Morrowind body's Weapon
 Sheathing lays it (src/systems/weaponSheathing.js; the addon's bones, vendor/weapon-sheathing xbase_anim_sh.nif): the
 one-handers at the front of the left hip, run back and down past it; the two-handers on the upper back, the grip over
 the right shoulder. Morrowind's units are 0.014 m on the forge's body (its pelvis and head joints at 76 and 119 units,
@@ -31,6 +32,7 @@ from mathutils import Matrix, Quaternion, Vector
 
 import armour
 import blows
+import blunts3p
 import bowhold
 import bows
 import clothes
@@ -77,6 +79,8 @@ HOLDS = {
     # it lies nearest the back so, clear of every set's pauldrons
     'crossbow': ('chest', (0.0, 0.16, 1.25), (0.0, 0.0, 1.0), (-1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
 }
+HANGING = (180.0, 0.0, 0.0)   # a flail's chain worn on the back (flails.py `chain_curve`): over the ferrule's rim and
+                              # straight down beside the handle, its ball hanging, never standing out as a head
 CLEAR = 0.01    # how far past the last crossing a worn weapon is pushed
 UNDER = 0.2     # past the body's outline, how far behind a skirt or a cloak a worn weapon may lie and still be drawn
                 # over it (forgeLayers.js `under`): a skirt's flare, a cloak's edge over the quiver's arrows
@@ -259,6 +263,20 @@ def build(M, A, want=()):
                        {f'sheath_dagger_{m}_l': sheath + hilt, f'scabbard_dagger_{m}_l': empty}, False)])
     axe = lay('back_up', gear.build_axe(M))
     kinds.append([('back_up', [(axe, SHEATHED)], {'sheath_axe': axe}, False)])
+    # each metal's mace at the hip as a sword is, the left hand's (a pair's) at the right hip; its warhammer and its
+    # flail on the back as the battle axe is, the flail's ball hanging (`HANGING`). Each as its held one is made
+    for metal in blunts3p.METALS:
+        m = metal.lower()
+        for hand, hold in (('', 'hip'), ('_l', 'hip_r')):
+            name = f'sheath_mace_{m}{hand}'
+            if not want or name in want:
+                mace = lay(hold, blunts3p.build('mace', metal, name))
+                kinds.append([(hold, [(mace, LEFT if hand else SHEATHED)], {name: mace}, False)])
+        for kind, chain in (('warhammer', blunts3p.CHAIN), ('flail', HANGING)):
+            name = f'sheath_{kind}_{m}'
+            if not want or name in want:
+                obs = lay('back_up', blunts3p.build(kind, metal, name, chain))
+                kinds.append([('back_up', [(obs, SHEATHED)], {name: obs}, False)])
     for metal in bows.METALS:
         staff = lay('staff', gear.build_staff(M, metal))
         kinds.append([('staff', [(staff, SHEATHED)], {f'sheath_staff_{metal.lower()}': staff}, False)])
@@ -307,9 +325,11 @@ LEFT_LAYERS = (*(f'{s}_sword_l' for s in ('sheath', 'scabbard')),
                *(f'{s}_dagger_{m.lower()}_l' for m in daggers3p.METALS for s in ('sheath', 'scabbard')))
 GUN_LAYERS = (*(f'sheath_pistolet{_finish(f)}{h}' for h in ('', '_l') for f in guns3p.FINISHES),
               'scabbard_pistolet', 'scabbard_pistolet_l', *(f'sheath_thunderlock{_finish(f)}' for f in guns3p.FINISHES))
+BLUNT_LAYERS = (*(f'sheath_mace_{m.lower()}{h}' for m in blunts3p.METALS for h in ('', '_l')),
+                *(f'sheath_{k}_{m.lower()}' for m in blunts3p.METALS for k in ('warhammer', 'flail')))
 LAYERS = (*(f'{s}_{k}' for k in SWORDS for s in ('sheath', 'scabbard')),
           *(f'{s}_dagger_{m.lower()}' for m in daggers3p.METALS for s in ('sheath', 'scabbard')),
-          'sheath_axe', *(f'sheath_staff_{m.lower()}' for m in bows.METALS),
+          'sheath_axe', *(f'sheath_staff_{m.lower()}' for m in bows.METALS), *BLUNT_LAYERS,
           *(f'sheath_bow_{k}_{m.lower()}' for k in gear.BOW_KINDS for m in bows.METALS), 'quiver', *LEFT_LAYERS,
           *GUN_LAYERS, *(f'slung_shield_{k}_{(m or "plain").lower()}' for k in shields3p.KINDS
                          for m in shields3p.METALS),
@@ -391,7 +411,7 @@ def hip_hold(layer):
     """The hip hold a worn layer rides (a blade's sheath or a Pistolet's holster), or None."""
     if layer.startswith(('sheath_pistolet', 'scabbard_pistolet')):
         return 'holster_r' if layer.endswith('_l') else 'holster'
-    if layer.startswith(('sheath_sword', 'scabbard_sword', 'sheath_dagger_', 'scabbard_dagger_')):
+    if layer.startswith(('sheath_sword', 'scabbard_sword', 'sheath_dagger_', 'scabbard_dagger_', 'sheath_mace_')):
         return 'hip_r' if layer.endswith('_l') else 'hip'
     return None
 
