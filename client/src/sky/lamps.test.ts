@@ -157,3 +157,18 @@ test('a lamp too faint to show takes no place among the lit: a bright one furthe
   assert.equal(lamps.length, 1);
   assert.deepEqual(lamps[0]?.fromEye, [30, 0, 2]);
 });
+
+test("a lamp that shows by day (a gun's flash) keeps its day share of its light at noon and all of it at night", () => {
+  const flash: LampPlace = { ...place(5), day: 0.25 };
+  const [noon] = lampsRound([0, 0, 0], [place(4), flash], null, 1, 0);
+  const [night] = lampsRound([0, 0, 0], [flash], null, 0, 0);
+  assert.equal(lampsRound([0, 0, 0], [place(4)], null, 1, 0).length, 0, 'a lantern stays out by day');
+  assert.ok(noon && night, 'the flash lights by day and by night');
+  assert.ok(Math.abs(noon.light[0] / night.light[0] - 0.25) < 1e-9, 'a quarter of its light by day');
+});
+
+test("a steady lamp (a gun's flash, keeping its own fade) takes no flame's flicker", () => {
+  const steady: LampPlace = { ...place(5), steady: true };
+  const shown = [0.1, 0.37, 1.9].map((seconds) => lampsRound([0, 0, 0], [steady], null, 0, seconds)[0]?.light[0]);
+  assert.deepEqual(shown, [1, 1, 1]);
+});

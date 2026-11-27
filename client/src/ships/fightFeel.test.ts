@@ -333,6 +333,13 @@ test('a burning ship lights the hulls round it, three at most', () => {
   frame(feel, ships, [], 0);
   const lights = feel.marks(0).filter((mark) => mark.blend === 'light' && mark.radius === 16);
   assert.equal(lights.length, 3);
+  // DFO's flicker: its reach 0.85 to 1 of 16 m, nine radians a second.
+  const shown = Array.from(
+    { length: 70 },
+    (_unused, step) => feel.marks(step / 100).find((mark) => mark.radius === 16)?.alpha ?? 0,
+  );
+  assert.ok(Math.min(...shown) >= 0.7 - 1e-9 && Math.min(...shown) < 0.71, 'down to 0.7 of its reach');
+  assert.ok(Math.max(...shown) > 0.99 && Math.max(...shown) <= 1, 'up to its whole reach');
 });
 
 test("its own next gun's ball, fired beside one already out, never whistles", () => {

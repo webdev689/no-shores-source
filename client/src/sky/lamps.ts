@@ -3,13 +3,16 @@
 import { Nearest } from '../nearest.ts';
 import { LAMPS_MOST, type Lamp } from './skyUniform.ts';
 
-/** A place that gives light: world metres (east, south, up), how far its light reaches, its colour at full, and a
- *  seed its flicker keeps to. */
+/** A place that gives light: world metres (east, south, up), how far its light reaches, its colour at full, a seed
+ *  its flicker keeps to, the share of its light it keeps by day (a gun's flash shows faintly in the sun; a lamp,
+ *  none), and whether it keeps its own time and takes no flame's flicker (a flash fading, a fire's own beat). */
 export interface LampPlace {
   readonly at: readonly [number, number, number];
   readonly reachM: number;
   readonly light: readonly [number, number, number];
   readonly seed: number;
+  readonly day?: number;
+  readonly steady?: boolean;
 }
 
 /** What the cities drawn now light, each view's lamps kept apart (a landmass draws its city and its layouts in two
@@ -39,6 +42,10 @@ export const EVENT_LAMPS: { current: readonly LampPlace[] } = { current: [] };
 /** What the ships' lanterns near the eye light now, set each frame the ships are drawn and let go once the sky has
  *  taken them (`shipLights.ts`). */
 export const SHIP_LAMPS: { current: readonly LampPlace[] } = { current: [] };
+
+/** What a sea fight's flashes, fires and blasts light now, set each frame the fight is drawn and let go once the sky
+ *  has taken them (`fightLamps.ts`). */
+export const FIGHT_LAMPS: { current: readonly LampPlace[] } = { current: [] };
 
 /** A fire's light, linear red, green and blue. */
 export const FIRELIGHT = [1.0, 0.62, 0.3] as const;
@@ -85,7 +92,7 @@ export function flicker(seed: number, seconds: number, depth = 1): number {
 /**
  * The lamps lit round the eye (world metres) now: the carried light first, at the carrier's hand, then the places
  * nearest the eye counting their reach, at most LAMPS_MOST in all, each flickering and dimmed as the daylight shows.
- * None by day.
+ * By day only those that show by day, at their day share.
  */
 export function lampsRound(
   eye: readonly [number, number, number],
@@ -95,14 +102,13 @@ export function lampsRound(
   seconds: number,
 ): Lamp[] {
   const lit = lampsLit(daylight);
-  if (lit <= 0) return [];
   const lamps: Lamp[] = [];
   const fromEye = (point: readonly [number, number, number]): Rgb => [
     point[0] - eye[0],
     point[1] - eye[1],
     point[2] - eye[2],
   ];
-  if (carried) {
+  if (carried && lit > 0) {
     const held = CARRIED[carried.light];
     const shown = lit * flicker(0, seconds, held.flicker);
     const hand = fromEye([carried.feet[0], carried.feet[1], carried.feet[2] + HAND_M]);
@@ -112,15 +118,18 @@ export function lampsRound(
   // Every city lamp weighed each frame, only the few nearest kept: one past the room, the first left out.
   ranked.clear();
   for (let index = 0; index < places.length; index++) {
-    const { at, reachM, light } = places[index] as LampPlace;
-    if (Math.max(...light) < FAINTEST) continue;
+    const { at, reachM, light, day = 0 } = places[index] as LampPlace;
+    if (lit + (1 - lit) * day <= 0 || Math.max(...light) < FAINTEST) continue;
     ranked.offer(index, Math.hypot(at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]) - reachM);
   }
   // A lamp near the cut fades by how far it leads the first left out, so none switches on or off as the eye moves.
   const cut = ranked.count > room ? (ranked.away[room] ?? Infinity) : Infinity;
   for (let nth = 0; nth < Math.min(room, ranked.count); nth++) {
     const place = places[ranked.order[nth] ?? 0] as LampPlace;
-    const shown = lit * flicker(place.seed, seconds) * Math.min(1, (cut - (ranked.away[nth] ?? 0)) / CUT_FADE_M);
+    const shown =
+      (lit + (1 - lit) * (place.day ?? 0)) *
+      (place.steady ? 1 : flicker(place.seed, seconds)) *
+      Math.min(1, (cut - (ranked.away[nth] ?? 0)) / CUT_FADE_M);
     lamps.push({
       fromEye: fromEye(place.at),
       reachM: place.reachM,

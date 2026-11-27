@@ -122,6 +122,8 @@ struct Surface {
   @location(3) fresh: f32,
 };
 
+// How much of a lamp's light the open water scatters back toward the eye.
+const WATER_LAMP = 0.1;
 const CORNERS = array<vec2u, 6>(vec2u(0u, 0u), vec2u(1u, 0u), vec2u(0u, 1u), vec2u(0u, 1u), vec2u(1u, 0u), vec2u(1u, 1u));
 
 fn ring_growth() -> f32 {
@@ -324,7 +326,11 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let glint = pow(max(dot(normal, half_way), 0.0), sharpness) * sharpness / 90.0 + pow(max(dot(normal, half_way), 0.0), 60.0) * 0.3;
   colour += sky_state.key_light.rgb * glint * sun * (1.0 - foam) * smoothstep(0.0, 0.2, through);
 
-  let foam_light = FOAM * (0.62 * sky_level() + 0.38 * max(dot(normal, key_toward()), 0.0) * sky_state.key.w * sun) + sky_state.zenith.rgb * 0.06;
+  // The lamps near (a ship's lanterns, a gun's flash, a fire) light the water round them: its foam fully, the water
+  // itself as the little it scatters back.
+  let lamps = sky_lamps(surface.drawn, normal);
+  colour += lamps * WATER_LAMP;
+  let foam_light = FOAM * (0.62 * sky_level() + 0.38 * max(dot(normal, key_toward()), 0.0) * sky_state.key.w * sun + lamps) + sky_state.zenith.rgb * 0.06;
   colour = mix(colour, foam_light, foam);
   // Past its edge the water gives way to what the backdrop drew there; open water hides it wholly.
   let water = aerial(colour, -to_eye, distance_to);

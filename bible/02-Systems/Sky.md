@@ -100,6 +100,9 @@ what show the ground there.
 - **Ships' lanterns.** A lit ship's lanterns near the eye are lamps among the sixteen, and far off warm points over the
   water, laid again each frame where the ships are ([[Sailing]], "Lanterns at night";
   [[Ships' Lanterns Come Over From DFO]]).
+- **A sea fight's light.** A gun's flash, a burning ship and a magazine's blast are lamps among the sixteen while
+  they last, and they alone are lit by day as well, at a quarter of their light ([[Naval Combat]], "How it looks";
+  [[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]).
 - **A carried light.** A torch or a lantern in the player's left hand lights round them at night, on foot and walking
   the Sloop's deck, a lamp at their hand, in first person and third alike: a torch's reaches some eleven metres and
   flickers, a lantern's thirteen and is steadier.
@@ -108,8 +111,9 @@ what show the ground there.
   kept so far (`Nearest`), the city's lamps never all sorted, and nothing is made for them but the sixteen handed on:
   1,500 lamps take about 0.1 ms a frame (tested offline, in Node). The last of them fade as the next lamp nears, so none
   switches on or off as the eye moves. Every lit surface (the land, the plants, the city, the ships, the marks and the
-  figures) adds their light: each falls smoothly to nothing at its reach, brightest on a face turned to it, with no
-  shadows. A figure by a lantern is lit warm.
+  figures, the sea and a sea fight's smoke) adds their light: each falls smoothly to nothing at its reach, brightest
+  on a face turned to it, with no shadows; the open water gives back a tenth of it, its foam all. A figure by a
+  lantern is lit warm.
 - **Clouds' shadows.** Under a broken sky the key light is dappled on the ground in soft patches as wide as the cover,
   drifting as the clouds overhead do. A clear sky has none, and under a whole deck they fade out: the key light is
   dimmed already.
