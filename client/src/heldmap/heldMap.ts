@@ -41,6 +41,7 @@ import { insideCells, MapRegions } from './mapRegions.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale, shipRoomLost } from './mapLayout.ts';
 import { dotInks, fontOf, HOSTILE_HALF, isleInks } from './mapLetters.ts';
+import { MapLegend } from './mapLegend.ts';
 import { type MapWater, type MapWaters, shutCells } from './watersWash.ts';
 import type { MapRegion } from '../overworld/regions.ts';
 import { motionReduced } from '../plus/kit.ts';
@@ -91,6 +92,8 @@ export class HeldMap {
   private readonly painter: OffscreenCanvasRenderingContext2D;
   private readonly field: CoastField;
   private key: KeyPlace | null = null;
+  /** Whether the map's legend shows, its table on land and its key at sea. */
+  readonly legend = new MapLegend();
   /** The land's sheet, painted onto a picture of its own and copied onto the parchment's with what moves on it. */
   private readonly landLettering = new LandLettering(new OffscreenCanvas(1, 1));
   /** The sea's, painted onto the parchment's picture whole, or round the ship's arrow alone as it sails. */
@@ -392,7 +395,7 @@ export class HeldMap {
       [this.measuredFonts, this.keySize] = [fonts, null];
       this.widths.clear();
     }
-    const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
+    const reads = `${layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null)}|${this.legend.shown}`;
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const size = { width, height, inkAt, dpr };
     const said = (waters && this.portUnder()) ?? this.regions.said() ?? hovered?.said ?? null;
@@ -457,7 +460,8 @@ export class HeldMap {
       };
       const [scale, covers, moving] = [letterScale(this.ink), handsCover(sprite, this.ink), scene.moving];
       const painting = { sheet: land, view: this.mapView, ink: this.ink, scale, covers, table: null, player, moving };
-      return this.landLettering.paint(this.painter, this.lettering, { inkAt, dpr, reads }, painting) ? 'all' : null;
+      const sheet = { ...painting, legend: this.legend.shown };
+      return this.landLettering.paint(this.painter, this.lettering, { inkAt, dpr, reads }, sheet) ? 'all' : null;
     }
     // The layout stands while the ship's arrow, where it is now, keeps clear of every name and the key.
     const ship = shipOnSheet(this.mapView, this.ink, scene.ship, scene.heading);
@@ -468,8 +472,8 @@ export class HeldMap {
       laid = this.laidOut.made(laidFor(), () => this.layout(scene, sprite, ship));
     }
     const lettering = { ...laid, ship };
-    const isles = isleInks(this.isles, (x, y) => toInk(this.mapView, x, y), this.ink, lettering.scale);
     const inkOf = (x: number, y: number) => toInk(this.mapView, x, y);
+    const isles = isleInks(this.isles, inkOf, this.ink, lettering.scale);
     const others = dotInks(scene.moving?.others ?? [], inkOf, this.ink);
     const hostiles = dotInks(scene.moving?.hostiles ?? [], inkOf, this.ink, HOSTILE_HALF * lettering.scale);
     const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey(), this.noKey());
@@ -545,7 +549,7 @@ export class HeldMap {
       land: (box) => landUnder(this.field, scene.knownIslands, this.mapView, box),
       sea: (box, continent) =>
         this.waters ? onOwnSea(this.waters.waters, this.field, this.mapView, box, continent) : 2,
-      key: this.waters ? (this.keySize ??= keySize(this.painter)) : null,
+      key: this.waters && this.legend.shown ? (this.keySize ??= keySize(this.painter)) : null,
       current: this.key,
     });
     this.key = lettering.key;

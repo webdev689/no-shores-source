@@ -10,7 +10,8 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
   owner's words (`bible/04-Procedures/Recording a Decision.md`). When a choice is the owner's, ask.
 - **More organisation, less bloat.** Whatever comes from DFO Online comes over better organised and smaller.
 - **Done means `cargo xtask check` passes in CI on the pull request's head.** Before a push, run `cargo xtask repo`
-  and the tests of what changed (after `npm ci` once); CI runs the whole check, and a merge waits for it to be green.
+  and the tests of what changed (after `npm ci` once); the kit's pre-push hook refuses a push whose quick checks fail.
+  CI runs the whole check, and a merge waits for it to be green.
 - **Ask before merging or deploying.** A pull request for each change; merge into `main`, deploy or release only
   after the owner says yes, every time. A merge deploys the page, the site, the rooms and the bot, and releases the
   desktop app when its code changed, so its yes covers them.
@@ -28,7 +29,7 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
    `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh ${SHARED_DIR:-$HOME/toolkit-data}/task-observer`.
 4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `headroom learn --project . --apply` (say so if
    Gemini is unreachable, or if it finds no data because the session started in another folder; never apply it to
-   that folder's repository), then rewrite `bible/Hand-off.md`, and last
+   that folder's repository), then `bash tools/claude-toolkit/pr-state.sh`, rewrite `bible/Hand-off.md`, and last
    `bash tools/claude-toolkit/toolkit-data.sh save` (the observation log, to the branch `toolkit-data`), so nothing
    logged after it is lost.
 

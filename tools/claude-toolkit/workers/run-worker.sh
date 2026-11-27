@@ -25,13 +25,15 @@ INBOX="$OUT/inbox-$NAME.md"
 [ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
 echo $$ > "$OUT/$NAME.pid"; trap 'rm -f "$OUT/$NAME.pid"' EXIT
 pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped worker can leave a stale lock
+# Two checkouts sharing one build folder overwrite each other's binaries mid-run; cargo xtask check refuses one outside.
+unset CARGO_TARGET_DIR CARGO_BUILD_TARGET_DIR
 # A worktree holds only what git tracks. Link the main checkout's packages, and build here, once, what the client's
 # tests read and git ignores (the generated messages, the WebAssembly, and the message fixtures the protocol's Rust tests
 # write), so the worker's tests run as the main checkout's do, on its own Rust.
 MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 [ -e node_modules ] || [ ! -d "$MAIN/node_modules" ] || ln -s "$MAIN/node_modules" node_modules
 if [ -f package.json ] && { [ ! -d generated ] || ! ls client/public/*.wasm >/dev/null 2>&1 || [ ! -d target/protocol ]; }; then
-  { npm run -s schema && npm run -s wasm && cargo test -q -p protocol; } >> "$OUT/$NAME.log" 2>&1 ||
+  npm run -s fixtures >> "$OUT/$NAME.log" 2>&1 ||
     echo "run-worker.sh: the worktree's generated messages, WebAssembly or message fixtures did not build; see $OUT/$NAME.log" >&2
 fi
 [ -f .serena/project.yml ] || yes n | serena project create --name "$NAME" $(bash "$KIT_DIR/serena-languages.sh" "$WT") "$WT" >/dev/null 2>&1   # "n": extra-server prompts abort without a terminal

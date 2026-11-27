@@ -31,7 +31,7 @@ renumber() {
     sed "s/^id: 0*$((10#$number))\$/id: $top/" "$wt/$name" > "$wt/$name.new" && mv "$wt/$name.new" "$wt/$name"
     git -C "$wt" add -A; moved=yes
   done < <(git -C "$wt" diff --name-only --diff-filter=A "$tip" HEAD -- "$OBS")
-  [ "$moved" = no ] || git -C "$wt" commit -q -m "The kit's observation log: numbers another session took, moved on"
+  [ "$moved" = no ] || NO_SESSION_TRAILER=1 git -C "$wt" commit -q -m "The kit's observation log: numbers another session took, moved on"
 }
 
 case "${1:-}" in
@@ -70,7 +70,7 @@ save)
   fi
   mkdir -p "$WT/task-observer"; rm -rf "$WT/task-observer/skill-observations"; cp -a "$LOG" "$WT/task-observer/"
   git -C "$WT" add -A
-  if ! git -C "$WT" diff --cached --quiet; then git -C "$WT" commit -q -m "The kit's observation log, $(date -u +%F)"
+  if ! git -C "$WT" diff --cached --quiet; then NO_SESSION_TRAILER=1 git -C "$WT" commit -q -m "The kit's observation log, $(date -u +%F)"
   elif [ -z "$BASE" ]; then echo "toolkit-data: nothing to save"; exit 0; fi
   for wait in 2 4 8 16; do
     if git -C "$WT" fetch -q origin toolkit-data 2>/dev/null; then

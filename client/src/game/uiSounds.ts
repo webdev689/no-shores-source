@@ -4,7 +4,7 @@
 // for the refusal, the chimes and the hold, one the browser's own synthesiser makes here. One listener hears every
 // press, as DFO's click does, and plays the press only where no sound of its own already played. The volume is the
 // player's, kept in this browser, as are the world's, the music's and the ambience's, each playing through a bus of
-// this engine's.
+// this engine's, and the four through the master volume over them all.
 
 import { loadSamples, playSample } from '../soundSamples.ts';
 
@@ -20,6 +20,8 @@ const MUSIC_KEY = 'noshores.musicVolume';
 const MUSIC_FIRST = 0.7;
 const AMBIENCE_KEY = 'noshores.ambienceVolume';
 const AMBIENCE_FIRST = 0.8;
+const ALL_KEY = 'noshores.masterVolume';
+const ALL_FIRST = 1;
 /** How loud the whole interface stands at full volume, under the game's own sounds. */
 const LEVEL = 0.35;
 /** The least time between two ticks, so a sweep across a grid is a patter, not a buzz. */
@@ -43,6 +45,8 @@ let master: GainNode | null = null;
 let world: GainNode | null = null;
 let music: GainNode | null = null;
 let ambience: GainNode | null = null;
+/** The master volume, which every bus plays through. */
+let all: GainNode | null = null;
 /** The ambience's duck, under its volume: the music lowers it as a fight swells, and lets it back after. */
 let duck: GainNode | null = null;
 /** Two seconds of pink noise, softer at the top than white, the stuff of a hold's air. */
@@ -96,9 +100,17 @@ export function setWorldVolume(volume: number): void {
 /** Where the world's sounds play: this engine's context, through the world's volume; null before the first press or
  *  key wakes it, or with the world silenced. */
 export function worldOutput(): { readonly audio: AudioContext; readonly out: AudioNode } | null {
-  if (!context || !world || worldVolume() === 0) return null;
+  if (!context || !world || worldVolume() === 0 || masterVolume() === 0) return null;
   if (context.state === 'suspended') void context.resume();
   return { audio: context, out: world };
+}
+
+/** The master volume over every sound, 0 to 1. */
+export const masterVolume = (): number => volumeOf(ALL_KEY, ALL_FIRST);
+
+export function setMasterVolume(volume: number): void {
+  const kept = keepVolume(ALL_KEY, volume);
+  if (all) all.gain.value = kept;
 }
 
 /** The music's volume, 0 to 1. */
@@ -119,7 +131,7 @@ export function setAmbienceVolume(volume: number): void {
 
 /** A bus of this engine's, through its volume; null before the first press or key wakes it, or with it silenced. */
 function bus(node: GainNode | null, volume: number): { readonly audio: AudioContext; readonly out: AudioNode } | null {
-  if (!context || !node || volume === 0) return null;
+  if (!context || !node || volume === 0 || masterVolume() === 0) return null;
   if (context.state === 'suspended') void context.resume();
   return { audio: context, out: node };
 }
@@ -147,18 +159,21 @@ function wake(): void {
   }
   if (typeof AudioContext === 'undefined') return;
   context = new AudioContext();
+  all = context.createGain();
+  all.gain.value = masterVolume();
+  all.connect(context.destination);
   master = context.createGain();
   master.gain.value = interfaceVolume() * LEVEL;
-  master.connect(context.destination);
+  master.connect(all);
   world = context.createGain();
   world.gain.value = worldVolume();
-  world.connect(context.destination);
+  world.connect(all);
   music = context.createGain();
   music.gain.value = musicVolume();
-  music.connect(context.destination);
+  music.connect(all);
   ambience = context.createGain();
   ambience.gain.value = ambienceVolume();
-  ambience.connect(context.destination);
+  ambience.connect(all);
   duck = context.createGain();
   duck.connect(ambience);
   loadSamples(context);
@@ -177,7 +192,7 @@ function wake(): void {
 
 /** The synthesiser, if it is awake and may sound now. */
 function live(): { readonly audio: AudioContext; readonly out: GainNode; readonly when: number } | null {
-  if (!context || !master || interfaceVolume() === 0) return null;
+  if (!context || !master || interfaceVolume() === 0 || masterVolume() === 0) return null;
   if (context.state === 'suspended') void context.resume();
   return { audio: context, out: master, when: context.currentTime + 0.005 };
 }

@@ -8,6 +8,7 @@ import type { LayoutArea } from '../../layout/layouts.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { type Goal, SMITH_OF, openGoals } from './questBook.ts';
 import { doneAnywhere } from './lessons.ts';
+import { askedKey } from '../controls.ts';
 
 type Point = readonly [number, number];
 
@@ -72,7 +73,10 @@ const ISLANDS: Readonly<Record<string, readonly string[]>> = { cove: ['cove'], i
 
 /** The words for each leg. */
 export const LEGS = {
-  ship: 'Hold M to return to your ship',
+  /** Named by the leave's key as bound now, or the pad's button, in words: the note is drawn as words, not keycaps. */
+  get ship(): string {
+    return `Hold ${askedKey('leave').replace(/ hold$/, '')} to return to your ship`;
+  },
   sail: (name: string) => `Sail to ${name}`,
   gate: (name: string) => `Through the gate to ${name}`,
   anywhere: 'Anywhere',

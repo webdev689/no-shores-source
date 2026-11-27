@@ -6,7 +6,6 @@ import type { CoastField } from './coastField.ts';
 import type { MapPlace } from './heldMapScene.ts';
 import type { AskWaters, WaterJudge } from './heldMapAsk.ts';
 import type { Rect } from './heldMapLaw.ts';
-import { anyCellUnder, cellsUnder } from './mapKey.ts';
 import { type HomeReach, labelPoints, type MapWaters, washOf, type WatersWash } from './watersWash.ts';
 
 /** The places the map names, a city that is no port named and marked as the ruins it is; before the waters are open,
@@ -98,7 +97,8 @@ export class HeldMapWaters implements AskWaters {
 /** How a water's name in `box` (ink pixels), the map showing `view`, stands on the sea of the water whose continent's
  *  index is `continent`: 2 wholly on it; 1 on no land of any island (`field`), known or not, with its middle on it,
  *  as across a sea too narrow for its name seen whole, where it runs over a neighbour's wash; 0 over land or off its
- *  sea. */
+ *  sea. Each cell under the box is asked, as `anyCellUnder` asks them where its steps are finer than a cell, in four
+ *  reads of a table summed once a grid (`CellSums`): a layout asks this some 18,000 times. */
 export function onOwnSea(
   waters: MapWaters,
   field: CoastField,
@@ -106,77 +106,76 @@ export function onOwnSea(
   box: Rect,
   continent: number,
 ): 0 | 1 | 2 {
-  const land = landCells(waters, field);
-  const other = (cell: number) => waters.water[cell] !== continent;
+  const sums = sumsOf(waters, field);
+  if (sums.land.anyUnder(view, box)) return 0;
+  const offSea = sums.offSea(continent);
+  if (!offSea.anyUnder(view, box)) return 2;
   const middle = { x: box.x + box.width / 2, y: box.y + box.height / 2, width: 0, height: 0 };
-  const sameGrid = field.columns === waters.columns && field.rows === waters.rows && field.cellM === waters.cellM;
-  if (!sameGrid) {
-    if (anyCellUnder(field, view, box, (cell) => land[cell] === 1)) return 0;
-    if (!anyCellUnder(waters, view, box, other)) return 2;
-    return anyCellUnder(waters, view, middle, other) ? 0 : 1;
-  }
-  // One grid: a row of the cells asked is passed whole where it holds no land and is all this sea, as most are; else
-  // each of its cells is asked, land ending the asking.
-  const { landBefore, runs } = rowsOf(waters, field);
-  const { columns, rows } = cellsUnder(field, view, box);
-  const [first, last] = [columns.cells[0] ?? 0, columns.cells[columns.count - 1] ?? 0];
-  const width = field.columns;
-  let elsewhere = false;
-  for (let index = 0; index < rows.count && columns.count > 0; index++) {
-    const row = rows.cells[index] ?? 0;
-    const start = row * width + first;
-    const landed = (landBefore[row * (width + 1) + last + 1] ?? 0) - (landBefore[row * (width + 1) + first] ?? 0);
-    const ownRow = waters.water[start] === continent && (runs[start] ?? 0) > last - first;
-    if (landed === 0 && (ownRow || elsewhere)) continue;
-    for (let column = 0; column < columns.count; column++) {
-      const cell = row * width + (columns.cells[column] ?? 0);
-      if (land[cell] === 1) return 0;
-      elsewhere ||= other(cell);
-    }
-  }
-  if (!elsewhere) return 2;
-  return anyCellUnder(waters, view, middle, other) ? 0 : 1;
+  return offSea.anyUnder(view, middle) ? 0 : 1;
 }
 
-/** For each row of the grid, how many cells of land (`landCells`) lie before each column, and how many cells from each
- *  on share its water: so a row's run of cells is known free of land, and all one sea, at once. Worked out once for
- *  each pair. */
-const ROWS = new WeakMap<
-  MapWaters,
-  { readonly field: CoastField; readonly landBefore: Int32Array; readonly runs: Int32Array }
->();
-function rowsOf(waters: MapWaters, field: CoastField): { readonly landBefore: Int32Array; readonly runs: Int32Array } {
-  const kept = ROWS.get(waters);
+/** How many cells of a grid pass a test, summed from its top-left, so whether any cell in a rectangle passes is four
+ *  reads. */
+export class CellSums {
+  private readonly grid: { readonly columns: number; readonly rows: number; readonly cellM: number };
+  private readonly sums: Int32Array;
+
+  constructor(
+    grid: { readonly columns: number; readonly rows: number; readonly cellM: number },
+    test: (cell: number) => boolean,
+  ) {
+    this.grid = grid;
+    const { columns, rows } = grid;
+    const across = columns + 1;
+    this.sums = new Int32Array(across * (rows + 1));
+    for (let row = 0; row < rows; row++) {
+      let line = 0;
+      for (let column = 0; column < columns; column++) {
+        line += test(row * columns + column) ? 1 : 0;
+        this.sums[(row + 1) * across + column + 1] = (this.sums[row * across + column + 1] ?? 0) + line;
+      }
+    }
+  }
+
+  /** Whether any cell under `box` (ink pixels), the map showing `view`, passes; cells off the grid are not asked. */
+  anyUnder(view: { readonly left: number; readonly top: number; readonly scale: number }, box: Rect): boolean {
+    const { columns, rows, cellM } = this.grid;
+    const cell = (ink: number, from: number) => Math.floor((from + ink / view.scale) / cellM);
+    const [left, right] = [cell(box.x, view.left), cell(box.x + box.width, view.left)];
+    const [top, bottom] = [cell(box.y, view.top), cell(box.y + box.height, view.top)];
+    const [first, last] = [Math.max(0, left), Math.min(columns - 1, right)];
+    const [high, low] = [Math.max(0, top), Math.min(rows - 1, bottom)];
+    if (first > last || high > low) return false;
+    const across = columns + 1;
+    const sum = (row: number, column: number) => this.sums[row * across + column] ?? 0;
+    return sum(low + 1, last + 1) - sum(high, last + 1) - sum(low + 1, first) + sum(high, first) > 0;
+  }
+}
+
+/** A grid's sums for the names' test: its land, an island's (`field`) or no water's, and each continent's off-sea
+ *  cells, made as first asked. */
+interface SeaSums {
+  readonly field: CoastField;
+  readonly land: CellSums;
+  offSea(continent: number): CellSums;
+}
+
+const SEA_SUMS = new WeakMap<MapWaters, SeaSums>();
+
+function sumsOf(waters: MapWaters, field: CoastField): SeaSums {
+  const kept = SEA_SUMS.get(waters);
   if (kept?.field === field) return kept;
-  const land = landCells(waters, field);
-  const { columns, rows } = field;
-  const landBefore = new Int32Array(rows * (columns + 1));
-  const runs = new Int32Array(columns * rows);
-  for (let row = 0; row < rows; row++) {
-    for (let column = 0; column < columns; column++) {
-      const before = row * (columns + 1) + column;
-      landBefore[before + 1] = (landBefore[before] ?? 0) + (land[row * columns + column] ?? 0);
-    }
-    for (let column = columns - 1; column >= 0; column--) {
-      const cell = row * columns + column;
-      const same = column + 1 < columns && waters.water[cell + 1] === waters.water[cell];
-      runs[cell] = same ? (runs[cell + 1] ?? 0) + 1 : 1;
-    }
-  }
-  const made = { field, landBefore, runs };
-  ROWS.set(waters, made);
+  const land = new CellSums(field, (cell) => (waters.water[cell] ?? -1) < 0 || (field.distance[cell] ?? 1) < 0);
+  const seas = new Map<number, CellSums>();
+  const made: SeaSums = {
+    field,
+    land,
+    offSea(continent) {
+      let sums = seas.get(continent);
+      if (!sums) seas.set(continent, (sums = new CellSums(waters, (cell) => waters.water[cell] !== continent)));
+      return sums;
+    },
+  };
+  SEA_SUMS.set(waters, made);
   return made;
-}
-
-/** Each cell a sea's name may not stand on, 1 a cell: land on the waters' grid or in the coast field, as the room's
- *  grid and the coasts each have it; worked out once for each pair. */
-const LANDS = new WeakMap<MapWaters, { readonly field: CoastField; readonly cells: Uint8Array }>();
-function landCells(waters: MapWaters, field: CoastField): Uint8Array {
-  const kept = LANDS.get(waters);
-  if (kept?.field === field) return kept.cells;
-  const cells = new Uint8Array(field.columns * field.rows);
-  for (let cell = 0; cell < cells.length; cell++)
-    cells[cell] = (waters.water[cell] ?? -1) < 0 || (field.distance[cell] ?? 1) < 0 ? 1 : 0;
-  LANDS.set(waters, { field, cells });
-  return cells;
 }

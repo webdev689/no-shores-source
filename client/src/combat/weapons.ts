@@ -22,6 +22,7 @@ import { baselineOf, lineHeight } from '../ui/text.ts';
 import { keycapNode, mix, paintBox, type Pen, ring } from './barDraw.ts';
 import { type CapFace, capWords } from './shipAbilityBar.ts';
 import { weaponFit } from './weaponPicture.ts';
+import { interfaceScale } from '../ui/interfaceSize.ts';
 
 /** How long a swap between loadouts takes, in seconds (crates/combat/src/tuning.rs SWAP_TICKS, at 60 a second). */
 export const SWAP_SECONDS = 24 / 60;
@@ -208,7 +209,7 @@ export class WeaponRows {
     const drawnPicture = arms?.dress
       ? (this.pictures?.pictureOf(shown.item, arms.dress, () => undefined) ?? null)
       : null;
-    const ratio = Math.max(1, Math.round(globalThis.devicePixelRatio || 1)) * zoom;
+    const ratio = interfaceScale(globalThis.devicePixelRatio || 1) * zoom;
     const [boxWidth, boxHeight] = (wide ? PICTURE_BOXES.wide : PICTURE_BOXES.base)[inHand ? 'hand' : 'next'];
     const fit = drawnPicture && this.fitOf(drawnPicture, boxWidth, boxHeight, ratio);
     // With no picture (still drawing, or none to be had) the row says the weapon's name instead.
