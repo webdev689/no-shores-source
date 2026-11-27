@@ -281,8 +281,9 @@ A foe never drinks.
   charge held and health short of its most; it is kept 8 ticks as any press, so one made in a swing's or a dodge's
   last 8 ticks begins as it ends. It lasts a second (60 ticks), in which the player walks, never running, jumping or
   crouching (Haste still quickens the walk), facing the look, the weapon put away, and casts no Art ([[Arts]]). As it
-  ends it spends its charge and gives back 40% of the player's most health, never past the most, and the room tells
-  the heal. A blow that lands cuts it short with its charge kept, as it flinches the drinker; a stagger, a fall and a
+  ends it spends its charge and gives back 40% of the player's most health, never past the most (half that under a
+  run's Exposure, as every heal on a player, carried in the trim the page predicts by: [[Activities]]), and the room
+  tells the heal. A blow that lands cuts it short with its charge kept, as it flinches the drinker; a stagger, a fall and a
   Charge's hold cut it too. Leaving the ground (a climb begun, a fall) or taking the saddle puts it down, and one
   ending at full health (a spell topped the player up) or with no charge left heals nothing: each keeps what it
   holds. A dodge does not leave a drink: one pressed in its last 8 ticks hops as it ends, and a drink pressed in a

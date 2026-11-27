@@ -126,3 +126,26 @@ fn juggler_drops_no_ammunition_and_trickle_and_exposure_slow_what_returns() {
     assert!(anima > 0.0 && (anima / slow - 1.5).abs() < 1e-9, "two thirds as fast");
     assert_eq!((health, exposed), (60.0, 55.0));
 }
+
+#[test]
+fn exposure_halves_the_healing_drink_and_the_trim_its_page_predicts_it_by() {
+    let drunk = |modifiers: Vec<Modifier>| {
+        let mut room = Room::new(Vec::new(), (0.0, 0.0));
+        room.run = Some(run_of(modifiers));
+        let player = room.join().expect("in");
+        let found = room.players.get_mut(&player).expect("in");
+        (found.fighter.health, found.fighter.charges) = (50.0, combat::tuning::CHARGES);
+        for sequence in 1..=combat::tuning::DRINK_TICKS + 2 {
+            let combat = combat::CombatInput { heal: sequence == 1, ..combat::CombatInput::default() };
+            let intent = combat::Intent { combat, ..combat::Intent::default() };
+            let input = crate::Input { sequence, intent, seen: room.clock(), ..crate::Input::default() };
+            room.input(player, input).expect("taken");
+            room.tick();
+        }
+        let healed = room.take_events().into_iter().find(|event| event.kind == crate::EventKind::Healed);
+        let found = &room.players[&player];
+        (found.fighter.health, healed.expect("told").amount, found.trim.drink_heal)
+    };
+    assert_eq!(drunk(vec![]), (90.0, 40.0, 1.0));
+    assert_eq!(drunk(vec![Modifier::Exposure]), (70.0, 20.0, 0.5), "half, as every heal on a player");
+}
