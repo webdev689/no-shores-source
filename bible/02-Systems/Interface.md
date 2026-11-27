@@ -1331,7 +1331,10 @@ primary, with Enter's key) on its footer; Cancel names the pad's B while the pad
 
 Over an island docked at or gone ashore on, no node is marked on the map; the island's tiles hold them
 (`islandPanel.ts`, `islandWords.ts`, `islandArt.ts`, `islandScenes.ts`;
-[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]). They
+[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]],
+[[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). On an island cut into regions ([[World Map]], "Regions") they are the places of
+the region the ship lies off, the one whose centre is nearest it: those its nodes list, and any place no region lists;
+the port and the Playlist only where that region holds the living port. They
 are rectangles of one size in a grid with 16 px between them, across the view under the place's name (104 px down, 24
 in from each side), centred: each 280 to 340 px wide (narrower only on a view too narrow for one of 280), as many a row
 as fit up to five, as tall as three rows fit (176 to 220 px), their sides in 4-pixel steps so each is even and a
@@ -1341,12 +1344,13 @@ Playlist's card does (`scrolledNode`), with no fade over the island at their foo
 
 Each is a pixel scene painted as the website's pictures are (`client/src/art/`, [[Website]]), on a sheet half the
 tile's size, each texel two pixels across, dithered in one of the sheet's lights and seeded by its place, so no two
-are alike, drawn a little transparent (74%) so the island shows through; its foot darkens, dithered, where its words
+are alike, drawn 90% opaque so the island shows through a little; its foot darkens, dithered, where its words
 stand:
 
 - **The island's own**: the island charted on the night sea, its land rising inland in bands with contours, its rock
   at the coast and shoals dithered round it, the harbour's lantern and the ship; its name in brass at the larger size,
-  where the ship lies ("Docked at Overlook"), and Back (Esc, or the pad's B while the pad is in use).
+  where the ship lies, naming its region ("Docked at Overlook, on the Beacon Shore", "Ashore on the Weirlands"), and
+  Back (Esc, or the pad's B while the pad is in use).
 - **The port**, docked at a living port: Overlook by night, its town stepping up the rock to its beacon, the quay's
   lanterns streaking the water, a ship at anchor, the moon. A click lands in its plaza.
 - **The Playlist**, docked at a living port: a crystal night thick with stars and a pale nebula, its four crests

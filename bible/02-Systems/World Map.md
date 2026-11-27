@@ -114,7 +114,10 @@ from a patrol zone of its own region ([[Layouts]], "How a layout is planned"); o
 landed at from the sea.
 Each patrol zone of an island holds a gate toward each other one: Saltmere's three link each to both others
 ([[Layouts]], "Gates"). At sea the held map lights the regions of the island whose waters the ship is in and sails
-for their anchorages ([[Held Map]], "Choosing").
+for their anchorages ([[Held Map]], "Choosing"). Each region has its own view over the island: docked or ashore, the
+island's tiles and the view's framing are the places of the region the ship lies off, whose centre is nearest it, and
+a click on a region's land asks to dock only in the port's region, elsewhere to go ashore on that region ([[Interface]],
+"The island's tiles"; [[Game]], "Landings"; [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]).
 
 ## Waters
 

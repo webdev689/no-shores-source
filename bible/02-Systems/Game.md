@@ -673,9 +673,13 @@ sails out from its berth ("Landings").
 Landing asks first ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]];
 `landingAsk.ts`, `seaLandings.ts`). A click on a port's icon, or anywhere on its island's land, asks "Dock at
 Overlook?"; on a coast with no living port (a ruined city's harbour is no port, `portOf`), "Go ashore on Cairnwatch?";
+on an island cut into regions ([[World Map]], "Regions"), its land asks to dock only within the region that holds the
+living port, and within any other region to go ashore on it ("Go ashore on the Weirlands?"), the coast nearest the
+point clicked, so each region's view is reached from the sea;
 on one of the sea's islands, its own ground (which a click meets as it meets the land's, `Isles.groundAt`) or the
 water within 400 m of its reach, "Go ashore on the cove?", before the open landmass's. L, Enter or the pad's A asks
-after what the sea offers where the ship lies. The confirmation stands a little above the middle of the view, clear of
+after what the sea offers where the ship lies, by the same rule off an island cut into regions: off the port's region,
+to dock there; off another, to go ashore on it. The confirmation stands a little above the middle of the view, clear of
 the console, its question in brass and what yes does under it; Enter, the pad's A or its press says yes, Escape, the
 pad's B or Cancel no, and a click elsewhere puts it by, as does a fight, the helm, going aboard, a travel or leaving the
 sea.
@@ -717,10 +721,12 @@ and is the player's to sail from there. A course the player sets first, or the r
 berth, leaves it as it is; either way it is docked no more.
 
 Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
-framed on the nodes of its side, the city's social space among them when docking. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
+framed on the nodes of the region it lies off, the one whose centre is nearest it (on an island with no regions, the
+nodes of its side), the city's social space among them when docking, so each region has its own view ([[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
 `islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid with space between them. First the
-island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner; then every
-patrol zone, Elite Dungeon, mission, world boss and outpost of the island; gone ashore, the places alone. A click on a
+island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner (only where the region holds
+the port); then every patrol zone, Elite Dungeon, mission, world boss and outpost of that region, with any place no
+region lists; gone ashore, the places alone. A click on a
 tile does what it does: a place lands there (the player stands at its first spawn, facing inland from the ship, or at a
 social space out from its landmark over the city, as on arriving), choosing its node first; an Elite Dungeon opens its
 card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist. Tab, the arrows

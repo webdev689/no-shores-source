@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Point2 } from '../overworld/ground.ts';
+import { regionsOf } from '../overworld/regions.ts';
 import { BINDS } from '../player/input.ts';
 import { byId, fakeInterface } from '../ui/uiForTests.ts';
 import type { IsleAt } from './isleLaw.ts';
@@ -168,6 +169,36 @@ test('the island a click is judged against: its living port, its name, and a sea
   assert.equal(here.isleAt([10_900, 0])?.id, 3, 'within its reach and a little more');
   assert.equal(here.isleAt([12_000, 0]), null);
   assert.equal(aimOf({ kind: 'isle', id: 3, words: 'the cove' }, here, [0, 0])?.kind, 'isle');
+});
+
+test('regions: the port’s region docks, another’s goes ashore on it, and L asks after the region the ship lies off', () => {
+  const regions = regionsOf(
+    JSON.stringify([
+      {
+        island: 'continent-1',
+        regions: [
+          { name: 'The Beacon Shore', centre: [1_000, 3_000], anchorage: [1_000, -3_000], nodes: [] },
+          { name: 'The Weirlands', centre: [60_000, 3_000], anchorage: [60_000, -3_000], nodes: [] },
+        ],
+      },
+    ]),
+    [],
+  );
+  const here = clickContext({ id: 'continent-1', plan: PLAN, regions } as never, NO_ISLES);
+  assert.deepEqual(here.regionOf([2_000, 5_000]), { coast: 'the Beacon Shore', port: true });
+  assert.deepEqual(here.regionOf([58_000, 5_000]), { coast: 'the Weirlands', port: false });
+  assert.equal(clickContext({ id: 'continent-1', plan: PLAN } as never, NO_ISLES).regionOf([0, 0]), null);
+  const ashore = { kind: 'ashore' } as const;
+  assert.deepEqual(aimOf(ashore, here, [58_000, -2_000]), {
+    kind: 'ashore',
+    coast: 'the Weirlands',
+    toward: [58_000, -2_000],
+  });
+  assert.deepEqual(
+    aimOf(ashore, here, [30_000, -2_000]),
+    { kind: 'dock', port: 'Overlook', harbour: HARBOUR },
+    'beyond the harbour’s reach, the port’s region still docks there',
+  );
 });
 
 test('the confirmation asks in brass; its yes’s press answers yes, and Cancel’s no', () => {

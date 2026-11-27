@@ -6,7 +6,8 @@ import { sidesOf } from '../ui/layout.ts';
 import type { Activities, Gates } from './activities.ts';
 import { TEXEL } from './islandArt.ts';
 import { gridOf, islandPanelNode, islandScreen } from './islandPanel.ts';
-import { entriesOf, type IslandEntry, islandPanelOf } from './islandWords.ts';
+import { regionsOf } from '../overworld/regions.ts';
+import { entriesOf, type IslandEntry, type IslandPanel, islandPanelOf } from './islandWords.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const WHERE = { continent: 'continent-1', ring: [], spawns: [], centre: [0, 0] as const };
@@ -94,6 +95,47 @@ test('docked, the tiles hold the port and the Playlist first, then the island’
   );
   const ashore = islandPanelOf(ISLAND, false, FACTS);
   assert.deepEqual([ashore.port, ashore.playlist, ashore.where], [null, null, 'Ashore on the coast of Saltmere']);
+});
+
+/** Saltmere cut into two regions for the tests: the port's, west, and the Weirlands, east. */
+const REGIONED = {
+  ...ISLAND,
+  regions: regionsOf(
+    JSON.stringify([
+      {
+        island: 'continent-1',
+        regions: [
+          {
+            name: 'The Beacon Shore',
+            centre: [0, 0],
+            anchorage: [0, -600],
+            nodes: ['saltgrass-downs', 'burned-mill', 'tern-strand'],
+          },
+          { name: 'The Weirlands', centre: [5_000, 0], anchorage: [5_000, -600], nodes: ['krakens-grotto', 'maw'] },
+        ],
+      },
+    ]),
+    [],
+  ),
+};
+
+test('each region shows its own places: the port and the Playlist only in the port’s, a place no region lists in each', () => {
+  const ids = (panel: IslandPanel) => entriesOf(panel).map((entry) => entry.id);
+  const shore = islandPanelOf(REGIONED, true, FACTS, [100, -700]);
+  assert.deepEqual([shore.title, shore.where], ['Saltmere', 'Docked at Overlook, on the Beacon Shore']);
+  assert.deepEqual(ids(shore), [
+    'overlook-social',
+    'overlook-playlist',
+    'saltgrass-downs',
+    'burned-mill',
+    'tern-strand',
+  ]);
+  const weirlands = islandPanelOf(REGIONED, false, FACTS, [4_800, -700]);
+  assert.deepEqual([weirlands.title, weirlands.where], ['Saltmere', 'Ashore on the Weirlands']);
+  assert.deepEqual(ids(weirlands), ['krakens-grotto', 'maw']);
+  const unlisted = { ...REGIONED, nodes: [...NODES, node('vale', 'patrol', 'The Vale')] };
+  assert.ok(ids(islandPanelOf(unlisted, false, FACTS, [4_800, -700])).includes('vale'), 'listed by no region');
+  assert.deepEqual(ids(islandPanelOf(REGIONED, true, FACTS)), ids(islandPanelOf(ISLAND, true, FACTS)), 'no ship, all');
 });
 
 test('the port’s snapshot names its counters and moorings; the Playlist’s banner what is on today and this week', () => {
@@ -347,6 +389,27 @@ test('Enter does the lit tile’s press, the first’s with none lit: a landing 
   ]);
 });
 
+test('the screen shows the region the ship lies off: off the Weirlands, Enter goes into its Elite Dungeon first', () => {
+  const done: string[] = [];
+  const screen = islandScreen({
+    landmass: () => REGIONED as never,
+    sea: () => ({ position: [4_800, -700], view: { docked: false } }) as never,
+    chosen: () => null,
+    facts: () => ({ activities: DRAWN, gates: null }),
+    named: (id) => id,
+    choose: () => undefined,
+    back: () => undefined,
+    does: {
+      land: (id) => void done.push(`land ${id}`),
+      dungeon: (found) => void done.push(`dungeon ${found.id}`),
+      playlist: (city) => void done.push(`playlist ${city}`),
+    },
+  });
+  screen.act(null);
+  screen.act('saltgrass-downs');
+  assert.deepEqual(done, ['dungeon krakens-grotto'], 'another region’s place is not among its tiles');
+});
+
 test('the keys and the pad walk the tiles and press the one they reach, which they light over the pointer’s', () => {
   const panel = islandPanelOf(ISLAND, true, FACTS);
   const { ui, step } = fakeInterface(1280, 720);
@@ -400,11 +463,11 @@ test('tiles step their size four pixels at a time: each texel of a scene two pix
   assert.ok(keys.size <= 10, `${keys.size} paintings over 64 pixels of a resize`);
 });
 
-test('each tile’s scene is drawn a little transparent, as its ground was, so the island shows through', () => {
+test('each tile’s scene, the island’s own among them, is drawn 90% opaque, so the island shows through a little', () => {
   const { ui } = clicked('island:island');
   const scenes = ui.laid.filter((each) => each.node.picture?.key.startsWith('island scene') === true);
   assert.ok(scenes.length > 0);
-  for (const { node } of scenes) assert.equal(node.picture?.tint, 'rgba(255,255,255,0.74)', node.picture?.key);
+  for (const { node } of scenes) assert.equal(node.picture?.tint, 'rgba(255,255,255,0.9)', node.picture?.key);
 });
 
 test('the tiles scroll with no fade painted over the island, and Back names the pad’s B while it is in use', () => {

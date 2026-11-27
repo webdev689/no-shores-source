@@ -29,8 +29,8 @@ import type { Sea } from './sea.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const BRASS = '#f3cf86';
-/** A tile's scene drawn a little transparent (74%), so the island shows through it; and its edge at rest. */
-const SEEN = 'rgba(255,255,255,0.74)';
+/** A tile's scene drawn 90% opaque, so the island shows through it a little; and its edge at rest. */
+const SEEN = 'rgba(255,255,255,0.9)';
 const EDGE = 'rgba(192,138,62,0.45)';
 /** Where the grid stands (in from each side, under the place's name, over the view's foot) and how it is laid: tiles
  *  `least` to `most` wide, up to `columns` a row with `gap` between, as tall as three rows fit (`short` to `tall`),
@@ -314,7 +314,7 @@ export function islandPanelNode(
 
 /** What the island's panel reads off the game, and what its entries do. */
 export interface IslandGame {
-  readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'nodes' | 'outline'>;
+  readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'nodes' | 'outline' | 'regions'>;
   readonly sea: () => Pick<Sea, 'position' | 'view'> | null;
   readonly chosen: () => string | null;
   readonly facts: () => Omit<IslandFacts, 'named'> | null;
@@ -339,7 +339,7 @@ export function islandScreen(game: IslandGame): {
     if (!sea) return null;
     const facts = game.facts();
     const read = { activities: facts?.activities ?? null, gates: facts?.gates ?? null, named: game.named };
-    return islandPanelOf(game.landmass(), sea.view.docked, read);
+    return islandPanelOf(game.landmass(), sea.view.docked, read, sea.position);
   };
   const act = (entry: IslandEntry) => {
     if (entry.shut !== null) return;
