@@ -5,6 +5,7 @@ import { labelPoints } from '../heldmap/watersWash.ts';
 import { SHIP_MARK_COLOURS } from '../plus/compass.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { startWatersRules, type TrafficShip } from '../rules/watersRules.ts';
+import { friendlyLook, paintedOf, SHIP_DRESSES } from '../ships/fleetDress.ts';
 import { hullWaterline } from '../ships/hulls.ts';
 import { poseOnSwell } from '../ships/swellPose.ts';
 import { plainCrew } from '../ships/shipCrew.ts';
@@ -227,6 +228,27 @@ test('a ship at anchor at its roadstead lies with its sails furled; one under wa
   assert.ok(lying && under, 'both drawn');
   assert.equal(furled(lying), true, 'at anchor: furled');
   assert.equal(furled(under), false, 'under way: set');
+});
+
+test("each friendly ship flies the colours of one of the three houses, by its id, as a player's ship flies them", () => {
+  const fleet = new FriendlyShips(() => [3, 4, 5].map((id) => shipAt(id, [100 * id, 0], [1, 0])), 5);
+  const view = { centre: [0, 0] as const, radiusM: 60_000, scale: 1 };
+  const frame = friendlyFrame(fleet, view, still, [], { seconds: 0.1, time: 3, slots: anyNumber });
+  const flags = frame.ships.map((ship) => ship.look.painted?.flagLayer);
+  // The flags the houses' second ranks give a player's ship: Stormcaller, Lamplighter and Veiled Colours.
+  const houses = ['storm_flag', 'lamp_flag', 'veiled_flag'].map(
+    (id) => paintedOf([0, 0, 0, SHIP_DRESSES.findIndex((entry) => entry.id === id)], 0).flagLayer,
+  );
+  assert.deepEqual([...flags].sort(), [...houses].sort(), 'three ships, three houses');
+  assert.ok(
+    frame.ships.every((ship) => ship.look.side === 'friendly'),
+    'their hulls, stripes and canvas friendly',
+  );
+  assert.deepEqual(
+    [3, 4, 5].map((id) => friendlyLook(id).painted?.flagLayer),
+    flags,
+    'the same for its id wherever it is drawn',
+  );
 });
 
 test('a ship the room has taken off its route is drawn on it no more', () => {

@@ -31,8 +31,9 @@ export const OVERTAKEN = { untouched: 0.12, heavy: 0.33 } as const;
 export const GREAT_CHANCE = { edge: 0.03, heart: 0.45 } as const;
 /** A heap this large across (square metres) is large enough to bear a great formation. */
 const LARGE_HEAP_M2 = 150;
-/** The window round the plaza no crystal of the page's lies in (crates/city/src/ruins.rs PLAZA_CLEAR_M). */
-const PLAZA_CLEAR_M = 110;
+/** The window round the plaza no crystal of the works lies in, as no rubble does (crates/city/src/ruins.rs
+ *  PLAZA_CLEAR_M); a building's is kept off the plaza alone, where a body walks. */
+export const PLAZA_CLEAR_M = 110;
 /** Mixed into a place's seed, so its crystal draws apart from how it broke. */
 const GROWTH_SALT = 0x4c415454;
 /** How far apart along the quay a great formation may stand, and the share of those places that bear one. */
@@ -303,18 +304,18 @@ export function greatLamp(place: CrystalPlace, index: number): LampPlace {
   };
 }
 
-/** Whether a point (east, south), `reach` metres round it, reaches into the window round the plaza, where no crystal
- *  of the page's lies. */
-export function inPlazaWindow(point: readonly number[], reach: number, plan: CityPlan): boolean {
+/** Whether a point (east, south), `reach` metres round it, reaches into the plaza or the window `marginM` round it. */
+export function inPlazaWindow(point: readonly number[], reach: number, plan: CityPlan, marginM: number): boolean {
   const [west, north, east, south] = plan.social.bounds;
   return (
-    point[0] + reach > west - PLAZA_CLEAR_M &&
-    point[0] - reach < east + PLAZA_CLEAR_M &&
-    point[1] + reach > north - PLAZA_CLEAR_M &&
-    point[1] - reach < south + PLAZA_CLEAR_M
+    point[0] + reach > west - marginM &&
+    point[0] - reach < east + marginM &&
+    point[1] + reach > north - marginM &&
+    point[1] - reach < south + marginM
   );
 }
 
-/** Whether a placed formation stands clear of the plaza's window, as far as it reaches at its size. */
-export const clearOfPlaza = (place: CrystalPlace, plan: CityPlan): boolean =>
-  !inPlazaWindow(place.at, FORMATION_REACH[place.formation] * place.scale, plan);
+/** Whether a placed formation stands clear of the plaza and the window `marginM` round it, as far as it reaches at its
+ *  size. */
+export const clearOfPlaza = (place: CrystalPlace, plan: CityPlan, marginM: number): boolean =>
+  !inPlazaWindow(place.at, FORMATION_REACH[place.formation] * place.scale, plan, marginM);

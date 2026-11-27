@@ -1,12 +1,13 @@
 // The friendly ships the waters' traffic sails between the port cities, as the page draws them at sea and from land:
 // asked of the waters' rules a few times a second round the eye at world time, moved smoothly between answers along
-// their way, each drawn as its hull in friendly colours, its sails set and filled (furled at anchor), posed on the
-// swell, with its plain crew aboard.
+// their way, each drawn as its hull in friendly colours flying its house's, its sails set and filled (furled at
+// anchor), posed on the swell, with its plain crew aboard.
 import type { ShipMark } from '../plus/compass.ts';
 import type { Swell } from '../rules/landRules.ts';
 import type { TrafficShip } from '../rules/watersRules.ts';
 import type { OpenWaters } from './pageWaters.ts';
 import type { SeaFrame } from './seaFrame.ts';
+import { friendlyLook } from '../ships/fleetDress.ts';
 import { HULL_LINES, type HullLines } from '../ships/hullLines.ts';
 import { hullSails, hullWaterline } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
@@ -171,7 +172,7 @@ export class FriendlyShips {
         hull: ship.hull,
         place,
         rig,
-        look: { side: 'friendly' as const },
+        look: friendlyLook(ship.id),
         crew: plainCrew(`friendly-${ship.id}`),
       };
     });
@@ -293,10 +294,17 @@ export class FriendlyTraffic {
     return friendlyFrame(this.fleet, view, water, shown.hulls, { seconds, time, slots, taken });
   }
 
-  /** On foot: the ships within `SEEN_FROM_LAND_M` of the eye, at their true size. */
-  onFoot(eye: readonly number[], water: FriendlyWater, seconds: number, time: number): FriendlyFrame {
+  /** On foot: the ships within `SEEN_FROM_LAND_M` of the eye, at their true size; none the seas have `taken`, as the
+   *  island's room says. */
+  onFoot(
+    eye: readonly number[],
+    water: FriendlyWater,
+    seconds: number,
+    time: number,
+    taken: ReadonlySet<number>,
+  ): FriendlyFrame {
     if (!this.fleet) return { ships: [], hulls: [], marks: [] };
     const view = { centre: [eye[0] ?? 0, eye[1] ?? 0] as const, radiusM: SEEN_FROM_LAND_M, scale: 1 };
-    return friendlyFrame(this.fleet, view, water, [], { seconds, time, slots: () => this.perHull });
+    return friendlyFrame(this.fleet, view, water, [], { seconds, time, slots: () => this.perHull, taken });
   }
 }

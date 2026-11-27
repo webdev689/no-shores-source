@@ -11,7 +11,7 @@ import {
   outpostGround,
 } from './outpostHost.ts';
 import { bannerOfName } from '../client/src/game/guild/bannerLaw.ts';
-import type { Errand } from './roomDoor.ts';
+import type { Errand } from './errand.ts';
 
 const STAFF = bannerOfName('Salt').staff;
 const ROOM = 'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';

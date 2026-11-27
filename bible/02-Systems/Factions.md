@@ -11,6 +11,7 @@ code:
   - crates/gear/src/factions.rs#wares
   - client/src/game/npc/factionRows.ts#gearRows
   - client/src/player/gearLooks.ts#gearOutfit
+  - client/src/ships/fleetDress.ts#friendlyLook
   - client/src/player/dressing.ts#layerRamps
   - crates/gear/src/art_levels.rs#rise_art
   - crates/gear/src/art_levels.rs#buy_fragment
@@ -66,6 +67,9 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   [[The Bounty Board as Claude Shapes It]]). A rank is every 100,000 reputation, without end, so a player nears
   rank 2 as they reach level 20 (190,000 XP), as Destiny 1's ranks fell
   ([[The Balance and Economy Pass as Claude Shapes It]]).
+- **The houses at sea.** Each friendly ship of the traffic sails for one of the three, by its id, and flies that
+  house's flag, the one its rank 2 gives a player's ship (`friendlyLook`, `fleetDress.ts`;
+  [[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]], [[Game]], "At sea").
 - **What a rank earns.** Rank 1 keeps the faction's emblem and rank 2 its dye and its ship's canvas and flag
   ([[Shipyard]]), as a level keeps its emblem
   (`earn_due`). From rank 3, every rank leaves a package: collected at the counter, it gives a Vestige at the player's
@@ -122,3 +126,5 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   then a faction's blade draws as any other of its metal. The first person's sword and dagger frames are drawn by
   `fplayers.py`, which no workflow runs. The Lamplighters sell no blade.
 - Destiny 1's rank 25 quest and its exotic class item have no like here.
+- A friendly ship in a fight flies Overlook's blue, not its house's flag: the fight's view does not carry which
+  traffic ship it is.

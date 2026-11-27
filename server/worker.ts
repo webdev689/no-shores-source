@@ -124,10 +124,11 @@ export class RoomHost extends DurableObject<Env> {
   private island: HeldIsland | null = null;
   /** In a sea island's dungeon, the players the sea says are landed on its island: no one else's inputs are played. */
   private readonly ashore = new Set<number>();
-  /** On an island, its players named to the seas, which answer with the ships parked there (`ashore.ts`). */
+  /** On an island, its players named to the seas, which answer with the ships parked there and the traffic ships taken
+   *  off their routes (`ashore.ts`). */
   private readonly shore = new Ashore(
     (sea) => this.env.ROOMS.getByName(sea),
-    (ships) => this.guarded(() => this.room.parked(ships), false),
+    (answer) => this.guarded(() => this.room.parked(answer), false),
     (player) => this.guarded(() => this.room.named(player), ''),
   );
   /** At sea, its players travelling aboard a company member's ship (`aboard.ts`). */
@@ -157,7 +158,8 @@ export class RoomHost extends DurableObject<Env> {
     return this.guarded(() => this.room.seaLanded(id, seed, account), 0);
   }
 
-  /** A place's room names its players ashore (`ashore.ts`): the answer is the ships parked at its island, as JSON. */
+  /** A place's room names its players ashore (`ashore.ts`): the answer is the ships parked at its island and the
+   *  traffic ships taken off their routes, as JSON. */
   async ashoreWord(word: string): Promise<string> {
     if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return '';
     return this.guarded(() => this.room.seaAshore(word), '');

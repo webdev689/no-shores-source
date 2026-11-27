@@ -216,8 +216,7 @@ test("the wake takes the run's shot as it leaves the eyes, and draws the player 
   assert.ok(drawn, 'the player drawn once the camera stands a metre out of the eyes');
 });
 
-test('a run that opens once the camera has left the eyes does not swap the shot it eases to part way', async () => {
-  const { story } = recorded();
+test('a run that opens once the camera has left the eyes, even in its last instant, is eased to, never jumped to', async () => {
   const [x, y] = layout.wake.at;
   const { facing } = layout.wake;
   const eye: Shot['eye'] = [
@@ -226,20 +225,24 @@ test('a run that opens once the camera has left the eyes does not swap the shot 
     topAt(courseOf(layout), x, y) + 2.2,
   ];
   const rest: Shot = { eye, yaw: facing, pitch: 0.2, fov: 0.8, near: 0.1, far: 1000 };
-  let open: (run: WreckRun) => void = () => undefined;
-  const run = new Promise<WreckRun>((done) => (open = done));
-  const beat = new Wake(story, layout, scenery, run);
-  beat.frame(tick(14));
-  let was = beat.frame(tick(1 / 60)).shot.eye;
-  open({ restingShot: () => rest } as unknown as WreckRun);
-  await run;
-  while (!beat.done) {
-    const eye = beat.frame(tick(1 / 60)).shot.eye;
-    const speed = Math.hypot(...eye.map((value, axis) => value - (was[axis] ?? 0))) * 60;
-    assert.ok(speed < 6, `${speed.toFixed(1)} m/s`);
-    was = eye;
+  // Control comes 15.5 s in: the run opens 1.5 s before it, then in its last few hundredths.
+  for (const opensAt of [14, 15.45]) {
+    const { story } = recorded();
+    let open: (run: WreckRun) => void = () => undefined;
+    const run = new Promise<WreckRun>((done) => (open = done));
+    const beat = new Wake(story, layout, scenery, run);
+    beat.frame(tick(opensAt));
+    let was = beat.frame(tick(1 / 60)).shot.eye;
+    open({ restingShot: () => rest } as unknown as WreckRun);
+    await run;
+    while (!beat.done) {
+      const eye = beat.frame(tick(1 / 60)).shot.eye;
+      const speed = Math.hypot(...eye.map((value, axis) => value - (was[axis] ?? 0))) * 60;
+      assert.ok(speed < 6, `${speed.toFixed(1)} m/s, opened ${opensAt} s in`);
+      was = eye;
+    }
+    rest.eye.forEach((value, axis) => assert.ok(Math.abs((was[axis] ?? 0) - value) < 1e-6, "ends on the run's shot"));
   }
-  rest.eye.forEach((value, axis) => assert.ok(Math.abs((was[axis] ?? 0) - value) < 1e-6, "ends on the run's shot"));
 });
 
 test("until the wreck is drawn the fight holds the picture; drawn, the wake works out the run's camera at once", async () => {

@@ -228,8 +228,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 
 - **Friendly ships from land.** At any node every friendly ship within 15 km of the eye is drawn on the sea at its
   true size, sails set and filled, posed on the swell, its footprint on the water, as at sea (below); so ships coming
-  and going are seen from each port's plaza and harbour. They are lit as the ships layer lights every ship, by its
-  own sun, and cast no shadow.
+  and going are seen from each port's plaza and harbour. One the seas have taken off its route, as the island's room
+  last said (the snapshot's `taken`, [[Server]]), is drawn on it no more. They are lit as the ships layer lights
+  every ship, by its own sun, and cast no shadow.
 - **Ships lying by the island** (`moorings.ts`; [[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]).
   On every node of the island the player's ship is docked at (for a sea island, its beach alone; never its passage
   zones, which stand apart from its coast) the ship is drawn
@@ -676,8 +677,8 @@ sails out from its berth ("Landings").
   destination's roadstead ([[World Map]], "Berths"), no way on it, until it is gone. A ship the room has taken off its route (the snapshot's `taken`) is
   left out: the sea draws it where the room has it. Of each hull only as many as the ships layer has slots for are drawn,
   16 less the room's own of that hull, the nearest first; only those are rigged, posed and footprinted. Each is drawn
-  by the ships layer as its hull in friendly colours, its sails set and filled by the steady wind (furled while it
-  lies at anchor), posed on the swell,
+  by the ships layer as its hull in friendly colours, flying the colours of the house it sails for, its sails set and
+  filled by the steady wind (furled while it lies at anchor), posed on the swell,
   at the size every ship is drawn: the Overworld's from the raised view and its true size on every view near the player's ship
   (`shownScale`). Its footprint joins the water's with the nearest. The compass marks every one within 900 m in
   Overlook's blue (`#2f5d9a`).

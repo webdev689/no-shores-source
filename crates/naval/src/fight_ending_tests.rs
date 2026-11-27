@@ -202,3 +202,24 @@ fn a_wary_captain_who_will_not_engage_breaks_off_once_out_of_reach_for_its_give_
     assert!(late.contains(&Event::Gone { ship: CAPTAIN, end: End::Gone }), "it has broken off: {:?}", fight.over());
     assert_eq!(fight.over(), Some(End::Gone), "and the fight is over for both");
 }
+
+#[test]
+fn a_sloop_that_sails_away_from_a_boss_gets_clear_as_the_boss_gives_up_its_chase_and_the_fight_ends() {
+    use crate::captain::course::{heading_to, wrap};
+    let boss = Commission { faction: GREY_TITHE, rank: Rank::Boss };
+    let mut fight = Fight::meet(at(0.0, 0.0), at(0.0, -700.0), boss, 11, &Open, 0.0);
+    // The Boss sails a third faster and runs the Sloop down, but the Sloop keeps it astern, sails set, and never fires:
+    // the Boss gives up its chase once 150 s pass with no volley at it, and leaves the fight as the two part.
+    for tick in 0..20 * 60 * 60 {
+        let (me, them) = (fight.vessel(PLAYER).unwrap(), fight.vessel(CAPTAIN).unwrap());
+        let away = heading_to([them.ship.x, them.ship.y], [me.ship.x, me.ship.y]);
+        let steer = (wrap(away - me.ship.heading) / 30_f64.to_radians()).clamp(-1.0, 1.0);
+        let climb = i8::from(me.ship.rung < sailing::ship::SAILS_SET && tick % 20 == 0);
+        fight.step(&[(PLAYER, Orders { helm: sailing::ship::Helm { steer, climb }, ..IDLE })], &Open, &|_| WIND, 0.0);
+        if fight.over().is_some() {
+            break;
+        }
+    }
+    assert_eq!(fight.over(), Some(End::Gone), "the Boss has left the fight within twenty minutes");
+    assert_eq!(fight.vessel(PLAYER).unwrap().damage.state, State::Afloat);
+}
