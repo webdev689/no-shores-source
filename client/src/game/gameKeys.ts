@@ -6,6 +6,7 @@
 import { type BindId, CONTROLS, type Context } from '../player/binds.ts';
 import { type Action, BINDS, type Input, type InputFrame, keyNameOf } from '../player/input.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
+import { DUNGEON_MAP } from './dungeonMap/dungeonMap.ts';
 import type { Flow, Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
 import { openGearWindow } from './gearScreen.ts';
@@ -143,7 +144,11 @@ export function listenForControls(game: Controlled): void {
   };
   addEventListener('keydown', (event) => {
     const key = keyNameOf(event);
-    if (event.repeat || ui.typing) return;
+    if (ui.typing) return;
+    // The dungeon's map, while it is up, takes every key: its own, and the land map's or Escape to shut it. A key held
+    // goes on turning or panning it, but never shuts it again.
+    if (DUNGEON_MAP.key(key, event.repeat ? [] : BINDS.now.landMap.keys)) return;
+    if (event.repeat) return;
     const continues = BINDS.now.continue.keys.includes(key);
     if (continues && dialogueWaits()) return;
     if (playing.flow.mode === 'story') return void story?.key(key, true);

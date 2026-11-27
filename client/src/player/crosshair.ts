@@ -28,10 +28,12 @@ export function bodyHit(from: Point, along: Point, feet: Point): number | null {
 const GROUND_STEP = 0.5;
 
 /** How far along a ray (`from` plus shares of `along`, within `most`) it first goes under the ground `groundAt` gives
- *  (0 where it gives none); `most` when it never does, or starts under it. */
+ *  at the ray's height (0 where it gives none); `most` when it never does, or starts under it. */
 function groundHit(from: Point, along: Point, most: number, groundAt: GroundAt): number {
-  const under = (share: number) =>
-    from[2] + along[2] * share <= (groundAt(from[0] + along[0] * share, from[1] + along[1] * share) ?? 0);
+  const under = (share: number) => {
+    const z = from[2] + along[2] * share;
+    return z <= (groundAt(from[0] + along[0] * share, from[1] + along[1] * share, z) ?? 0);
+  };
   if (under(0)) return most;
   const steps = Math.max(1, Math.ceil((most * Math.hypot(...along)) / GROUND_STEP));
   for (let step = 1; step <= steps; step++) {
@@ -47,8 +49,9 @@ function groundHit(from: Point, along: Point, most: number, groundAt: GroundAt):
   return most;
 }
 
-/** The ground's height at a place, or null where none is known. */
-type GroundAt = (x: number, y: number) => number | null;
+/** The ground's height at a place, felt from a height `z` there where the ground has storeys (a dungeon's), or null
+ *  where none is known. */
+export type GroundAt = (x: number, y: number, z?: number) => number | null;
 
 /** Where the middle of the view first meets something an aimed shot would: a block, the ground (`groundAt`'s, else
  *  level at 0), or one of `bodies` (each by its feet), out to CROSSHAIR_REACH; the point at the reach when it meets

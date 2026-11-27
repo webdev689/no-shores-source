@@ -253,7 +253,7 @@ test('a ship handed over or bought and a ship’s dress bought are gains; a ship
 });
 
 test('a chest opened or a container searched is named, with no count, over the Aurem it gave', () => {
-  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0 };
+  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0, vault: false };
   const wardrobe = { number: 9, box: [0, 0, 1, 1] as const, foot: 0, top: 1.8, model: 41003 };
   const before = state({ aurem: 100, chests: [chest], searchables: [wardrobe] });
   const opened = gainsOf(before, state({ aurem: 130, chests: [], searchables: [wardrobe], opened: 7 }));
@@ -269,10 +269,13 @@ test('a chest opened or a container searched is named, with no count, over the A
   assert.equal(searched[0]?.name, 'Searched the wardrobe');
   const moved = gainsOf(before, state({ aurem: 100, chests: [{ ...chest, number: 8 }], searchables: [wardrobe] }));
   assert.deepEqual(moved, [], 'a chest that moved on gave nothing');
+  const vaulted = state({ aurem: 100, chests: [{ ...chest, vault: true }], searchables: [] });
+  const vault = gainsOf(vaulted, state({ aurem: 250, chests: [], searchables: [], opened: 7 }));
+  assert.equal(vault[0]?.name, 'Vault chest', "a dungeon's vault's chest named as the finer one");
 });
 
 test('a chest that moved on while a kill paid Aurem is no gain: only the room naming it opened makes one', () => {
-  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0 };
+  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0, vault: false };
   const before = state({ aurem: 100, chests: [chest], searchables: [] });
   const moved = state({ aurem: 110, chests: [{ ...chest, number: 8 }], searchables: [] });
   assert.deepEqual(

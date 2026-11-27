@@ -129,6 +129,16 @@ test("a company member in a patrol's dungeon is joined in that dungeon, at their
   assert.deepEqual(ways, [['into', '', 'node-saltgrass-downs--elite--dungeon-2--run-m9n8b7v6', name, 'elite']]);
 });
 
+test("a patrol's dungeon's run asked by its name is gone into with its patrol's file, as the room alone reads it", async () => {
+  const { trips, happenings, ways, settled } = recorded({ foot: null });
+  trips.intoRun(patrol, 'node-saltgrass-downs--elite--dungeon-2--run-qaqa0001');
+  await settled();
+  const name = 'The Caverns of the Saltgrass Downs';
+  const file = JSON.stringify({ id: 'saltgrass-downs', kind: 'patrol', name: 'The Saltgrass Downs' });
+  assert.deepEqual(happenings, [{ kind: 'enter', node: 'saltgrass-downs--dungeon-2', name }]);
+  assert.deepEqual(ways, [['into', file, 'node-saltgrass-downs--elite--dungeon-2--run-qaqa0001', name, 'elite']]);
+});
+
 test('a patrol’s dungeon at Abyss is a run of its own, or the company’s where it is in one', async () => {
   const alone = recorded({ foot: standing(patrol, 'abyss') });
   alone.trips.enter(1, 'The Halls of the Saltgrass Downs');

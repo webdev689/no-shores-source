@@ -168,9 +168,10 @@ on Cloudflare.
   ([[Dungeons]], "In the rooms"). Every draw is made on the room's loot seed, on a stream and a count of its own, at
   its first tick, after its host seeds it. A player opens each find once: it stays for the rest, and the room keeps it
   opened for their account however often they rejoin. Opened, it pays them ([[Gear]], "A find"): a chest's Vestige
-  poured out of it toward them (`pour`; [[Gear]], "Drops"), a container's thrown to their feet. A player's gear carries the chests standing they have not opened, five numbers each
-  (number, x, y, z, facing), the containers, eight each (number, box, foot, top, model), and the number of the last
-  find the room paid them for (`opened`).
+  poured out of it toward them (`pour`; [[Gear]], "Drops"), a container's thrown to their feet. A player's gear carries the chests standing they have not opened, six numbers each
+  (number, x, y, z, facing, 1 for a vault's chest), the containers, eight each (number, box, foot, top, model), the
+  number of the last find the room paid them for (`opened`), and in a dungeon how many of its chests they have opened
+  of all it stands (`chests_opened`, `chests_total`; `Room::chests_counted`).
 - **A patrol's dungeon** has a room of its own ([[Dungeons]], "In the rooms"), opened from its patrol's node file:
   its floor, its one spawn at the way in, a body standing there facing into the room, and the patrol's island band
   for its garrison's levels. The Grey Tithe's dungeon garrison stands where the Forge puts foes ([[Enemies]]). Beside

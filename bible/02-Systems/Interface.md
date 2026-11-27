@@ -372,6 +372,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   page's pointer and keys.
 - **The held map's** names, the ship's arrow and the card to set sail are a layer over the parchment the GPU draws,
   rising and falling with it; the card's presses take the pointer, so a click on them never picks a place.
+- **The dungeon's map** ([[Dungeon Map]]): its words (the dungeon's name, the storey looked at, the chests counted) and
+  its marks are nodes over the paper the GPU inks, laid where the map's view puts them, each letting the pointer
+  through to the map's own drag and wheel; while it is up they and the controls' sheet are all the display shows.
 - **The Test Ground's panels** are drawn too: the page is one canvas, its two panels laid either side of the view as
   its grid laid them, each a scrolled column of the Test Ground's own dark surfaces, flat presses and dim hints, with
   the shared toggle, slider and choice (`panels`, `Panel`, `GearPanel`). The view between them is drawn into a
@@ -1002,8 +1005,8 @@ never while a press is held. Each press is an ask the room answers.
   used is spent, not gained. Letters newly in the mail show as one row, "Sent to the mail" and how many, under the
   Postmaster's mark; a letter taken is not a gain, though what it held is. A Normal piece a kill, a chest or a clear
   gives in a Vestige's place shows as its item's row, as any item new to them does
-  ([[Gear]], "Commons drop as themselves"). A chest opened in a patrol or a dungeon shows as "Chest", and a container
-  searched as "Searched the" and its kind, under its mark and with no count, over the Aurem and the resource it gave
+  ([[Gear]], "Commons drop as themselves"). A chest opened in a patrol or a dungeon shows as "Chest", a dungeon's
+  vault's as "Vault chest", and a container searched as "Searched the" and its kind, under its mark and with no count, over the Aurem and the resource it gave
   (`gainsOf`; [[Chests and Searchable Containers as Claude Builds Them]]): told once the room names it as the last
   find it paid the player for (the gear's `opened`), so a chest that moved on is no gain.
   Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
@@ -1186,7 +1189,7 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
   no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
 - **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
-  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
+  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea; a dungeon has none) or on the ground. A jump as a body
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
 - **Foes' voices** ([[The Grey Tithe and the Lattice Each Have Their Own Voice]]). A foe of the Grey Tithe or the
   Lattice, by its faction, is heard in its faction's voice as it spots the player (the shared `foe.alert` until its

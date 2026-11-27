@@ -27,9 +27,14 @@ PORTAL_CLEAR_M = 0.05
 KIT_TRIANGLES = {
     'door': 1500, 'pillar.base': 500, 'pillar.shaft': 350, 'pillar.capital': 750, 'wall.base': 250,
     'wall.shaft': 150, 'wall.cap': 350, 'feature': 1500, 'ceiling': 600, 'floor': 300, 'sconce': 150,
-    'portal': 2500, 'exit': 2500,
+    'portal': 2500, 'exit': 2500, 'stair.head': 1500, 'stair.side': 150, 'balustrade': 600,
 }
 LANDMARK_TRIANGLES = 12000
+# The way up a flight under a stair head's arch, metres: a body's width either side of its middle and its height.
+STAIR_WAY_HALF_M = 1.25
+STAIR_WAY_HIGH_M = 2.9
+# The pieces laid end to end along an edge, each spanning it whole so its neighbours meet it in one run.
+SPANNING = ('stair.side', 'balustrade')
 # The walk zone: a body stands from just over the floor to over a head, metres. A solid stops a body whatever its
 # height, so anything seen here must lie over one, grown by WALK_GROW_M.
 WALK_LOW_M = 0.05
@@ -157,6 +162,17 @@ def kit_rules(piece, least, height, apex=False):
                         y=(None, 0.3), z=(None, 3.1))
                 + [("stand before the code's face (1.4 × 2.4 at y 0.04)", _box(x=(-0.7, 0.7), y=(0.02, FAR),
                                                                                 z=(0, 2.4)))])
+    if piece == 'stair.head':
+        return (_within('a stair head keeps |x| ≤ 1.6, y 0..0.3 (nothing over the flight), z 0..3.2',
+                        x=(-1.6, 1.6), y=(0, 0.3), z=(0, 3.2))
+                + [(f'stand in the way up the flight (|x| < {STAIR_WAY_HALF_M:g} below z {STAIR_WAY_HIGH_M:g})',
+                    _box(x=(-STAIR_WAY_HALF_M, STAIR_WAY_HALF_M), z=(-FAR, STAIR_WAY_HIGH_M)))])
+    if piece == 'stair.side':
+        return _within('a stair side keeps |x| ≤ 1.6, y 0..0.15, z -0.3..0.45', x=(-1.6, 1.6), y=(0, 0.15),
+                       z=(-0.3, 0.45))
+    if piece == 'balustrade':
+        return _within("a balustrade keeps the rules' solid: |x| ≤ 1.6, y 0..0.25, z 0..1", x=(-1.6, 1.6),
+                       y=(0, 0.25), z=(0, 1.0))
     raise KeyError(f'{piece!r} is no kit piece')
 
 
@@ -424,6 +440,11 @@ def kit_problems(module, piece, triangles):
         if above:
             found.append(f"{module}: {len(above)} corner(s) rise into the smallest dome's curve (radius "
                          f'{DOME_RADIUS_M:g}, rise {DOME_RISE_M:g}) over its top, e.g. {_quote(above[:EXAMPLES])}')
+    if piece in SPANNING:
+        xs = [corner[0] for corners in triangles for corner in corners]
+        if min(xs) > TOUCH_M - 1.6 or max(xs) < 1.6 - TOUCH_M:
+            found.append(f'{module}: spans x {min(xs):.3f}..{max(xs):.3f}, not the whole edge ±1.6: its neighbours '
+                         'would not meet it')
     if piece == 'sconce' and not any(reaches(corners, _box(*CUP)) for corners in triangles):
         found.append(f"{module}: nothing holds the code's flame: the cup stands at (0, 0.35, -0.15..-0.07)")
     return found

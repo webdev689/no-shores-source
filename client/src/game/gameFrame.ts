@@ -5,6 +5,7 @@ import { placingStrip } from './guild/decorPlacing.ts';
 import type { CardAt } from '../player/cards.ts';
 import { IDLE, type InputFrame, axis, handsFree, pressTakenBy } from '../player/input.ts';
 import { continueDialogue, dialogueWaits } from '../speech/dialogue.ts';
+import { DUNGEON_MAP } from './dungeonMap/dungeonMap.ts';
 import type { HelmMap } from './helmMap.ts';
 import { musiciansOf } from './audio/music/band.ts';
 import { type Flow, next, READY_WAIT_S } from './flow.ts';
@@ -18,6 +19,7 @@ import { contextOf, interfaceKeys, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { stripOf, withFollow, withMapKey } from './hints.ts';
 import { runPlaceWords } from './breachWords.ts';
+import { chestsCounted } from './finds.ts';
 import { ofRun, releaseRunModules } from '../city/modules.ts';
 import { FALLEN, refusedWords } from './toShip.ts';
 import { binding } from './rebinding.ts';
@@ -144,11 +146,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // Others see three dots over a player in a menu.
     here.fight.menuOpen = gearScreenOpen() || socialUp();
     const aspect = size.width / Math.max(1, size.height);
-    // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
-    const looking = helmMap.looking;
-    if (looking !== (eyesBeforeMap !== null)) {
+    // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered; a
+    // dungeon's map covers the view and leaves the eyes as they are.
+    const looking = helmMap.looking || DUNGEON_MAP.open;
+    if (helmMap.looking !== (eyesBeforeMap !== null)) {
       const firstPerson = eyesBeforeMap ?? true;
-      eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
+      eyesBeforeMap = helmMap.looking ? walker.player.view.firstPerson : null;
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
     // While the stranger speaks her welcome no key moves or acts (Space moves her words on, `gameKeys`), and the view
@@ -298,21 +301,26 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // While she speaks, none but her and the player stands within reach of the tour's eye.
     const near = [...shown.figures, ...nodes, ...walking, ...crews];
     const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
+    const you = { feet: [body.x, body.y, body.z] as const, facing: walker.player.facing, name: '', seconds };
     // Under ground a node (a vein's) stands among the figures, lit by the torches as they are.
     const below = nodes.length > 0 ? { ...shown, figures: [...shown.figures, ...nodes] } : shown;
-    if (here.dungeon) parts.dungeons.draw(here, below, size, clock, fight, hands, more.drain, carried);
+    if (here.dungeon) parts.dungeons.draw(here, below, size, clock, fight, hands, more.drain, carried, you);
     else if (here.run) parts.dungeons.drawRun(shown, size, clock, fight, parts.eventProps, hands, more.drain, carried);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing, here.fell);
     const run = here.run && runPlaceWords(here.run.plan, here.held.breach, here.run.tier);
-    hud.place(here.node.name, run || placeWords(here.node, here.roomName, here.held.revives, here.held.darkness));
+    const chests = chestsCounted(here.gear?.gear);
+    hud.place(
+      here.node.name,
+      run || placeWords(here.node, here.roomName, here.held.revives, here.held.darkness, chests),
+    );
     // As E's other use, a gate takes no one while a menu or the held map is up, the player is down or in a dungeon.
     const gated = paused || looking || here.fallen || here.mapless;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon or a Breach's run but a
-    // passage zone's, whose map is the web's, as `openMap` has it.
-    const mapless = paused || here.fallen || (here.mapless && !parts.passages.standsIn());
+    // N raises a map on foot unless a menu is up, the player has fallen or is in a Breach's run, as `openMap` has it:
+    // in a dungeon, the dungeon's; in a passage zone, the web's.
+    const mapless = paused || here.fallen || (here.mapless && !here.dungeon && !parts.passages.standsIn());
     const placing = placingStrip();
     // Fallen in a Breach, the camera follows the company: its key, naming whom, is shown while anyone may be followed.
     const strip = here.followable !== null ? withFollow(shown.hints, here.followable) : shown.hints;

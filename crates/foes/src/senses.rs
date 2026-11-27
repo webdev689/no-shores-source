@@ -12,7 +12,9 @@ use crate::leash::{reachable, within};
 use crate::noises::stir_of;
 use crate::roles::Numbers;
 use crate::share::sooner;
-use crate::tuning::{ENGAGE_RANGE, FOE_PACE, HUNT, OFF_FLOOR_NEAR, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
+use crate::tuning::{
+    ENGAGE_RANGE, FOE_PACE, HUNT, OFF_FLOOR_NEAR, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN, STOREYS_APART_M,
+};
 use combat::lock::sees;
 use combat::sight::{apart, bearing, off};
 use combat::tuning::STRIKE_HEIGHT;
@@ -162,18 +164,37 @@ fn stirring<'here>(here: &'here Here<'_, '_>) -> impl Iterator<Item = (f64, [f64
     here.world.fighters.iter().filter(|(_, other)| here.hostile(other)).filter_map(move |(_, other)| heard(other))
 }
 
+/// Whether two points stand on different storeys of a dungeon, half a storey or more apart in height: rock stands
+/// between them, so neither is near the other however close across.
+#[must_use]
+pub fn storeys_apart(a: [f64; 3], b: [f64; 3]) -> bool {
+    (a[2] - b[2]).abs() >= STOREYS_APART_M
+}
+
+/// Whether a fighter stands on another storey of a dungeon than this foe: half a storey or more apart in height, with
+/// another floor under one of them at the other's height. Open ground has one floor at every point, so no one stands
+/// on another storey there, however high a ledge.
+pub(crate) fn on_another_storey(here: &Here<'_, '_>, other: &Fighter) -> bool {
+    let (terrain, [x, y, z], [other_x, other_y, other_z]) = (here.world.terrain, here.feet(), feet(other));
+    let floors = |x: f64, y: f64| terrain.height_under(x, y, z) != terrain.height_under(x, y, other_z);
+    storeys_apart([x, y, z], [other_x, other_y, other_z]) && (floors(x, y) || floors(other_x, other_y))
+}
+
 pub(crate) fn feet(fighter: &Fighter) -> [f64; 3] {
     [fighter.body.x, fighter.body.y, fighter.body.z]
 }
 
 /// Its target kept: seen, its place noted; or hunted where it was last seen for a while (a blow from out of sight shows
-/// where it came from), and by a posted foe for as long as it stands within ENGAGE_RANGE, so it never searches, walks
-/// home and heals with the player it fights close by. Past that, or once it falls, let go, its last place kept to search.
+/// where it came from), and by a posted foe for as long as it stands within ENGAGE_RANGE on its storey, so it never
+/// searches, walks home and heals with the player it fights close by. Past that, or once it falls, let go, its last
+/// place kept to search.
 fn kept(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
     let tick = here.tick();
     let target = brain.target?;
-    let close =
-        |other: &Fighter| brain.home.is_some() && apart(here.at(), [other.body.x, other.body.y]) <= ENGAGE_RANGE;
+    let close = |other: &Fighter| {
+        let near = apart(here.at(), [other.body.x, other.body.y]) <= ENGAGE_RANGE;
+        brain.home.is_some() && near && !on_another_storey(here, other)
+    };
     match here.enemy(target) {
         Some(other) if sees(here.world.blocks, here.world.terrain, &here.fighter, other) => {
             brain.last_seen = Some(feet(other));

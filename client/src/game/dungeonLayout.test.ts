@@ -22,7 +22,7 @@ const small = {
   columns: 3,
   rows: 1,
   cells: [0, -1, -2],
-  boxes: [[3.2, 0, 3.5, 0.7, 3.2]],
+  boxes: [[3.2, 0, 3.5, 0.7, 0, 3.2]],
 } as unknown as DungeonLayout;
 
 test('the camera and the shots stop on the rock beside the open cells too', () => {
@@ -56,7 +56,7 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   const module = await WebAssembly.compile(new Uint8Array(bytes));
   const laid = askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0);
   assert.match(laid.name, / of the Saltgrass Downs$/);
-  assert.equal(laid.cells.length, laid.columns * laid.rows);
+  assert.equal(laid.cells.length, (laid.storeys ?? 1) * laid.columns * laid.rows, 'storey by storey');
   assert.deepEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0), laid);
   const furnished = laid.frames.length * 2 + laid.pillars.length;
   assert.ok(laid.boxes.length >= furnished, 'two jambs a frame, then the pillars, then the props’ solids');

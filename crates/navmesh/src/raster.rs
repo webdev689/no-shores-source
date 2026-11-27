@@ -124,16 +124,22 @@ pub(crate) fn sampled(bounds: Bounds, agent: &Agent, heights: Vec<Option<f64>>) 
 }
 
 /// Whether the ground is gentle enough to walk at a column: its slope, from the heights of the columns either side
-/// each way (or the column itself at the grid's edge), within the agent's.
-fn gentle(heights: &[f64], grid: &Grid, ix: usize, iy: usize, max_slope: f64) -> bool {
+/// each way (or the column itself at the grid's edge), within the agent's; or, where the agent walks to drops, the
+/// rise to the higher ground beside it each way.
+fn gentle(heights: &[f64], grid: &Grid, (ix, iy): (usize, usize), agent: &Agent) -> bool {
     let at = |ix: usize, iy: usize| heights[ix + iy * grid.cells_x];
     let (west, east) = (ix.saturating_sub(1), (ix + 1).min(grid.cells_x - 1));
     let (north, south) = (iy.saturating_sub(1), (iy + 1).min(grid.cells_y - 1));
     let rise =
         |low: f64, high: f64, cells: usize| if cells == 0 { 0.0 } else { (high - low) / (cells as f64 * grid.cell) };
-    let along_x = rise(at(west, iy), at(east, iy), east - west);
-    let along_y = rise(at(ix, north), at(ix, south), south - north);
-    along_x * along_x + along_y * along_y <= max_slope * max_slope
+    let (along_x, along_y) = if agent.walks_to_drops {
+        let here = at(ix, iy);
+        let up = |first: f64, second: f64| rise(here, first.max(second).max(here), 1);
+        (up(at(west, iy), at(east, iy)), up(at(ix, north), at(ix, south)))
+    } else {
+        (rise(at(west, iy), at(east, iy), east - west), rise(at(ix, north), at(ix, south), south - north))
+    };
+    along_x * along_x + along_y * along_y <= agent.max_slope * agent.max_slope
 }
 
 /// Voxelises the ground under every cell of `bounds` and the colliders standing on it. Each column's ground is solid
@@ -166,7 +172,7 @@ pub(crate) fn voxelise(
     grid.voxels = ((max_z - min_z) / voxel).ceil().max(1.0) as i64;
     let mut field = Heightfield { grid, columns: vec![Vec::new(); cells_x * cells_y] };
     for column in 0..cells_x * cells_y {
-        let walkable = ground_walks && gentle(&heights, &grid, column % cells_x, column / cells_x, agent.max_slope);
+        let walkable = ground_walks && gentle(&heights, &grid, (column % cells_x, column / cells_x), agent);
         field.add_span(column, min_z, heights[column], walkable);
     }
     for collider in colliders {

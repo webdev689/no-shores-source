@@ -70,6 +70,16 @@ test('under a ceiling the third-person camera stays below it, pulled in along it
   );
 });
 
+test('on a flight the camera stands under its sloped ceiling as far out as it fits, not at the head', () => {
+  // Walking up a flight looking north: the ceiling 3.2 m over the slope falls 0.625 m for each metre behind.
+  const view = { firstPerson: false, distance: 2, shown: 2 };
+  const orbit = cameraOrbit([0, 0, 1.7], 0, 0, view, [], 0, AIM, null, (_east, south) => 3.2 - 0.625 * south);
+  const [eyeY, eyeZ] = [orbit.targetY + 1, orbit.targetZ];
+  // The boom (y 2t, z 1.7 + 0.5t) meets the ceiling less the clearance where 1.75t = 1.25.
+  const share = 1.25 / 1.75;
+  assert.ok(Math.abs(eyeY - 2 * share) < 1e-9 && Math.abs(eyeZ - (1.7 + 0.5 * share)) < 1e-9, `${eyeY}, ${eyeZ}`);
+});
+
 test('aiming in third person stands the camera over the right shoulder and zooms in; in first person it zooms more', () => {
   const head = [0, 0, 1.7] as const;
   const third = { firstPerson: false, distance: 2, shown: 2 };
