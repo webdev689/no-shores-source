@@ -178,6 +178,8 @@ pub struct Harbour {
     /// tick too: the sea's last word on it, where it comes back however far the page puts it, as a ship sails nowhere
     /// while its player is away. The LEFT_MOST latest at most.
     pub left: BTreeMap<String, [f64; 4]>,
+    /// The room each kept player came to the sea from, as the keeper knew it, until their character is restored.
+    pub came_from: BTreeMap<PlayerId, String>,
 }
 
 /// How many owners' ships the sea remembers where they were left.
@@ -191,6 +193,7 @@ impl Harbour {
         self.tags.remove(&player);
         self.changed.remove(&player);
         self.gear_sent.remove(&player);
+        self.came_from.remove(&player);
         if let Some(awaiting) = self.awaiting.as_mut() {
             awaiting.remove(&player);
         }

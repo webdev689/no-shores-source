@@ -51,12 +51,16 @@ pub(crate) fn intersect(a: Point, b: Point, from: Point, to: Point) -> bool {
         || between(from, to, b)
 }
 
-/// Whether the diagonal from `i` to `j` crosses no edge of the polygon it does not share an end with.
+/// Whether the diagonal from `i` to `j` crosses no edge of the polygon it does not share an end with. An end is
+/// shared by place, as Recast's is: a bridged hole visits its bridge's corners twice, and a diagonal from one would
+/// otherwise meet the edges at its twin and leave the loop no ear.
 fn crosses_no_edge(poly: &[Point], i: usize, j: usize) -> bool {
     let n = poly.len();
+    let at = |one: Point, other: Point| one.x == other.x && one.y == other.y;
     (0..n).all(|k| {
         let next = (k + 1) % n;
-        k == i || next == i || k == j || next == j || !intersect(poly[i], poly[j], poly[k], poly[next])
+        let shares = |end: usize| at(poly[end], poly[i]) || at(poly[end], poly[j]);
+        shares(k) || shares(next) || !intersect(poly[i], poly[j], poly[k], poly[next])
     })
 }
 
@@ -202,3 +206,7 @@ pub(crate) fn merge_holes(outer: &[Point], holes: &[&[Point]]) -> Vec<Point> {
     }
     poly.into_iter().map(|corner| corner.point).collect()
 }
+
+#[cfg(test)]
+#[path = "geometry_tests.rs"]
+mod geometry_tests;

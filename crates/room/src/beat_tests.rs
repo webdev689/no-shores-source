@@ -232,3 +232,16 @@ fn a_group_brought_by_airship_walks_no_beat_until_it_has_landed() {
         "its leader's place kept until it lands: {home:?} {now:?}"
     );
 }
+
+#[test]
+fn a_foe_keeps_its_place_on_its_leaders_storey_where_storeys_stand_over_one_another() {
+    let laid = dungeon::hand_made::two_storeys();
+    let room = Room::laid_dungeon("two-storeys", &laid, None, (::foes::roster::REEVE, Rank::Miniboss), None).unwrap();
+    // Room 2's north row lies under room 0's floor: a foe beside a leader there stays down with it.
+    let [x, y] = laid.centre(laid.plane() + 4 * laid.columns + 4);
+    let leader = [x, y + dungeon::CELL_M, -8.0];
+    let kept = beat::near_on((&room.nav, &room.floor), leader, (x, y));
+    assert!((kept[2] + 8.0).abs() < 0.3, "{kept:?}");
+    let above = beat::near_on((&room.nav, &room.floor), [x, y - dungeon::CELL_M, 0.0], (x, y));
+    assert!(above[2].abs() < 0.3, "{above:?}");
+}

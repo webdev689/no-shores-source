@@ -245,7 +245,7 @@ impl Room {
             .filter(|(_, found)| found.living())
             .filter_map(|(id, found)| {
                 let body = found.fighter.body;
-                let cell = plan.cell_at([body.x, body.y])?;
+                let cell = plan.cell_at([body.x, body.y, body.z])?;
                 cells.contains(&cell).then_some((*id, [body.x, body.y, body.z], body.mode == movement::Mode::Ground))
             })
             .collect()
@@ -257,7 +257,7 @@ impl Room {
         &mut self,
         encounters: &mut Encounters,
         seal: Option<usize>,
-        spots: &[[f64; 2]],
+        spots: &[[f64; 3]],
         living: usize,
     ) -> usize {
         let count = living.clamp(WAVE_FOES.0, WAVE_FOES.1);
@@ -271,7 +271,7 @@ impl Room {
         &mut self,
         encounters: &mut Encounters,
         seal: Option<usize>,
-        spots: &[[f64; 2]],
+        spots: &[[f64; 3]],
         count: usize,
     ) -> usize {
         let living = |room: &Self, ids: &[FighterId]| {
@@ -286,8 +286,8 @@ impl Room {
         let seed =
             self.world_seed ^ WAVE_STREAM ^ (stood << 8) ^ seal.map_or(0xff, |seal| seal as u64) ^ self.clock << 20;
         let mut draws = draws_of(seed);
-        let on_mesh = |room: &Self, [x, y]: [f64; 2]| {
-            let place = [x, y, movement::Terrain::height_at(&room.floor, x, y)];
+        let on_mesh = |room: &Self, [x, y, z]: [f64; 3]| {
+            let place = [x, y, movement::Terrain::height_under(&room.floor, x, y, z)];
             room.nav.nearest_point(place).unwrap_or(place)
         };
         let at = on_mesh(self, first);
@@ -338,7 +338,7 @@ impl Room {
         for id in ids {
             let Some(foe) = self.foes.get_mut(id) else { continue };
             let body = foe.fighter.body;
-            let near = |at: &[f64; 3]| libm::hypot(at[0] - body.x, at[1] - body.y);
+            let near = |at: &[f64; 3]| seals::near(*at, [body.x, body.y, body.z]);
             let nearest = players.iter().min_by(|a, b| near(&a.1).total_cmp(&near(&b.1)));
             if let Some(&(player, at)) = nearest {
                 foe.brain.hunt(player, at, clock);

@@ -155,6 +155,24 @@ export const ISLAND_ICONS = {
     ],
     tones: { a: OUTLINE, b: WAX.b, c: WAX.c, d: WAX.d },
   },
+  /** An outpost slot: a stake flying a grey pennant over a plot roped between two pegs. */
+  'slots': {
+    rows: [
+      '...aa.......',
+      '...acaaaaa..',
+      '...acbeeeba.',
+      '...acbbbba..',
+      '...acaaaa...',
+      '...ad.......',
+      '...ad.......',
+      'aa.ad....aa.',
+      'ad.ad....ad.',
+      'adaadaaaaad.',
+      'aaaaaaaaaaa.',
+      '............',
+    ],
+    tones: { a: OUTLINE, b: IRON.b, c: WOOD.c, d: WOOD.d, e: IRON.c },
+  },
   /** An outpost: its palisade of pointed stakes, bound by a beam. */
   'outpost': {
     rows: [

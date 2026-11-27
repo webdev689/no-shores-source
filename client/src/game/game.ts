@@ -19,6 +19,7 @@ import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
 import { arriving, type Flow, type Happening, next, onTheSea } from './flow.ts';
 import { keepPlace, placeKept, placeNow, resume } from './relog.ts';
+import { lieOffRegionLeft, zoneLeft } from './regionLeft.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { enterBreachRun, enterDungeon } from './footEntries.ts';
 import type { TripGame } from './dungeonTrips.ts';
@@ -35,6 +36,7 @@ import { islesDrawing } from './islesDrawing.ts';
 import { SeaLandings } from './seaLandings.ts';
 import { seaLayer } from './seaScreen.ts';
 import { islandScreen } from './islandPanel.ts';
+import { guildLanded } from './guild/guildHeld.ts';
 import { ashoreOn, ashoreWords } from './isleVisit.ts';
 import { isleMarksOf } from './mapMarks.ts';
 import { FootView } from './footView.ts';
@@ -84,7 +86,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const { hud, stack, ui, story, rooms, link, session, world, landTexts, start, shown, roomModule, land } = boot;
   const { scene, shipModels, figureView, forge, firstPerson, store, sloop, movement, drawersOn, terrainFor } = boot;
   const { builtHulls: hulls } = boot;
-  const dungeons = new DungeonDrawers(gpu, figureView, boot.cityAssets, boot.biomeOf);
+  const dungeons = new DungeonDrawers(gpu, figureView, boot.cityAssets, boot.biomeOf, canvas);
   const { continents } = world;
   const input = new Input(canvas, () => ui.typing);
   const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);
@@ -212,10 +214,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   );
 
   /** Leaves wherever the player was: death's grey and the story's last moment go with them. */
-  const leaveHere = () => {
-    drain.toward(false);
-    playing.after.leave();
-  };
+  const leaveHere = () => (drain.toward(false), playing.after.leave());
   /** Leaves wherever the player was for the place `entering` stands them in. */
   const goInto = async (entering: () => Promise<Foot>) => {
     leaveHere();
@@ -234,6 +233,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
 
   const goSea = async (start?: { readonly anchorage: Point2; readonly heading: number }) => {
     leaveHere();
+    const left = zoneLeft(playing.foot);
     playing.foot?.leave();
     playing.foot = null;
     scene.sky.shelterUnder([]);
@@ -260,6 +260,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       playing.sea.facts = facts;
       playing.seaWord = new SeaWord(ports, facts);
     }
+    lieOffRegionLeft(playing.sea, left);
     playing.sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
     void playing.helmMap.made;
@@ -533,6 +534,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const island = islandScreen({
     ...{ landmass: () => playing.landmass, sea: () => playing.sea, facts: screens.facts },
     named: (id) => world.nodes.find((node) => node.id === id)?.name ?? id,
+    ours: () => guildLanded()?.sites ?? [],
     chosen: () => (playing.flow.mode === 'landing' ? playing.flow.chosen : null),
     choose: (node) => change({ kind: 'choose', node }),
     back: () => (playing.sea?.view.backToSea(), change({ kind: 'back' })),
@@ -552,7 +554,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
     ...{ playing, input, ui, hud, story, retry, change, respawn, landings, stopOrResume, openMap },
-    ...{ manage, leaveHelm, takeHelm, goThrough, landAt: island.act },
+    ...{ manage, leaveHelm, takeHelm, goThrough, landAt: island.act, islandBack: island.back },
   });
   canvas.addEventListener('click', () => {
     // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open

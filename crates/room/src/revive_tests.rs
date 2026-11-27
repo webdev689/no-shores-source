@@ -41,8 +41,12 @@ fn tick(room: &mut Room, pages: &mut [&mut Page], holding: usize) {
 }
 
 fn put(room: &mut Room, player: PlayerId, [x, y]: [f64; 2]) {
+    put_at(room, player, [x, y, 0.0]);
+}
+
+fn put_at(room: &mut Room, player: PlayerId, [x, y, z]: [f64; 3]) {
     let body = &mut room.players.get_mut(&player).expect("in").fighter.body;
-    (body.x, body.y, body.z) = (x, y, 0.0);
+    (body.x, body.y, body.z) = (x, y, z);
 }
 
 fn fell(room: &mut Room, player: PlayerId, elapsed: u32) {
@@ -193,11 +197,18 @@ fn in_the_court_while_its_boss_stands_no_one_respawns_by_their_ask_but_an_ally_r
     let mut fallen = Page::join(&mut room);
     unseal(&mut room);
     assert!(room.boss().is_some(), "the Boss awake");
-    // Both in the Court, where it holds.
-    let cell = room.encounters.as_ref().expect("encounters").court_cells[0];
-    let [x, y] = crate::encounters::encounters_tests::middle_of(&room, cell);
-    put(&mut room, ally.player, [x, y]);
-    put(&mut room, fallen.player, [x + 1.0, y]);
+    // Both in the Court, where it holds, as far from the Boss as it lies, on a cell where nothing stands.
+    let post = room.garrison[0].at;
+    let (seed, style) = crate::elite_laid("krakens-grotto").expect("its seed and style");
+    let laid = dungeon::Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
+    let mut cells = room.encounters.as_ref().expect("encounters").court_cells.clone();
+    cells.retain(|&cell| !laid.holds_solid(cell));
+    let middle = |cell: usize| crate::encounters::encounters_tests::middle_of(&room, cell);
+    let far = |cell: &usize| libm::hypot(middle(*cell)[0] - post[0], middle(*cell)[1] - post[1]);
+    let cell = cells.iter().copied().max_by(|one, two| far(one).total_cmp(&far(two))).expect("the Court's cells");
+    let [x, y, z] = middle(cell);
+    put_at(&mut room, ally.player, [x, y, z]);
+    put_at(&mut room, fallen.player, [x + 1.0, y, z]);
     assert!(room.darkness_for(fallen.player), "darkness in the Court");
     fell(&mut room, fallen.player, RESPAWN);
     fallen.send(&mut room, false, true);
@@ -244,7 +255,10 @@ fn a_company_all_down_in_the_court_falls_back_to_its_checkpoint_as_the_court_sta
     assert_eq!(told(&events, EventKind::Wiped).len(), 0, "below Abyss no wipe ends the run");
     for player in players {
         let fighter = room.players[&player].fighter;
-        assert!(!fighter.dead() && [fighter.body.x, fighter.body.y] == door, "whole at the Court's door");
+        assert!(
+            !fighter.dead() && [fighter.body.x, fighter.body.y, fighter.body.z] == door,
+            "whole at the Court's door"
+        );
     }
     let boss = room.boss().expect("awake again");
     let fighter = room.foes[&boss].fighter;
@@ -310,7 +324,7 @@ fn the_courts_darkness_holds_those_lying_in_it_and_one_down_at_the_way_in_may_re
     unseal(&mut room);
     let cell = room.encounters.as_ref().expect("encounters").court_cells[0];
     let court = crate::encounters::encounters_tests::middle_of(&room, cell);
-    put(&mut room, inside.player, court);
+    put_at(&mut room, inside.player, court);
     let door = room.respawning.checkpoints[room.checkpoint().expect("the Court's")].at;
     assert!(room.darkness_for(inside.player) && !room.darkness_for(outside.player), "dark in the Court alone");
     for page in [&outside, &inside] {
@@ -320,7 +334,10 @@ fn the_courts_darkness_holds_those_lying_in_it_and_one_down_at_the_way_in_may_re
     inside.send(&mut room, false, true);
     room.tick();
     let stood = room.players[&outside.player].fighter;
-    assert!(!stood.dead() && [stood.body.x, stood.body.y] == door, "come back down at the way in: to the Court's door");
+    assert!(
+        !stood.dead() && [stood.body.x, stood.body.y, stood.body.z] == door,
+        "come back down at the way in: to the Court's door"
+    );
     assert!(room.players[&inside.player].fighter.dead(), "fallen in the Court: only an ally raises them");
 }
 

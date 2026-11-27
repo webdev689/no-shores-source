@@ -25,7 +25,7 @@ import {
   wallPoint,
   wayTurns,
 } from './dungeonCells.ts';
-import { CORRIDOR, type DungeonLayout, styleAt, type StyleKey } from './dungeonLayout.ts';
+import { CORRIDOR, type DungeonLayout, ROCK, styleAt, type StyleKey } from './dungeonLayout.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import { type ModuleMesh, type ModulePack, type Place, type Turns, wallTurns } from './dungeonModules.ts';
 
@@ -82,6 +82,7 @@ type Site = {
   readonly covered: ReadonlySet<number>;
   readonly height: (cell: number) => (x: number, y: number) => number;
   readonly placed: KitPlacement[];
+  readonly ends: Ends;
   /** Each wall a set stands on, as `cell * 4 + side`. */
   readonly walled: Set<number>;
   readonly fitted: {
@@ -414,7 +415,7 @@ function ceilings(site: Site): void {
 /** Whether a cell may hold a floor piece: open, never the arrival's, never in the end room (where the cache stands),
  *  never an alcove or a landmark's. */
 const floorFree = (site: Site, cell: number) =>
-  isOpen(site.layout, cell) &&
+  (site.layout.cells[cell] ?? ROCK) >= CORRIDOR &&
   !site.covered.has(cell) &&
   !alcove(site.layout, cell) &&
   cell !== cellAt(site.layout, site.layout.arrival.x, site.layout.arrival.y) &&
@@ -512,9 +513,13 @@ function fittings(site: Site): void {
     const cell = cellAt(layout, wallX - (east * size) / 2, wallY - (south * size) / 2);
     return put(site, cell, [[piece, { origin: [wallX, wallY, 0], turns: wallTurns(side) }]]);
   };
-  site.fitted.portal = arch('portal', layout.portal.x, layout.portal.y, layout.portal.side);
-  arch('exit', layout.exitDoor.x, layout.exitDoor.y, layout.wayIn.side);
+  if (site.ends.portal) site.fitted.portal = arch('portal', layout.portal.x, layout.portal.y, layout.portal.side);
+  if (site.ends.exit) arch('exit', layout.exitDoor.x, layout.exitDoor.y, layout.wayIn.side);
 }
+
+/** Whether a storey holds the portal and the exit door, and its cells that hold no piece: a flight's, open air's and
+ *  a hall's under open air, whose ceiling is far over it. */
+type Ends = { readonly exit?: boolean; readonly portal?: boolean; readonly busy?: Iterable<number> };
 
 /** Every kit piece of a dungeon, each from the pack of the style its cell wears (a style with no pack lays none),
  *  clear of its props' plans (`propPlans`), and the mesh's own pieces they stand in place of. */
@@ -522,8 +527,9 @@ export function kitsOf(
   layout: DungeonLayout,
   packs: ReadonlyMap<StyleKey, ModulePack>,
   props: readonly Rect[],
+  ends: Ends = {},
 ): { readonly placed: readonly KitPlacement[]; readonly fitted: Fitted } {
-  const busy = new Set<number>([layout.wayIn.cell]);
+  const busy = new Set<number>([layout.wayIn.cell, ...(ends.busy ?? [])]);
   for (const [cell, side] of layout.frames) {
     busy.add(cell);
     busy.add(besideCell(layout, cell, side) ?? cell);
@@ -539,6 +545,7 @@ export function kitsOf(
     covered: new Set(placedLandmarks(layout).flatMap((landmark) => landmark.cells)),
     height: ceilingHeights(layout),
     placed: [],
+    ends: { exit: ends.exit ?? true, portal: ends.portal ?? true },
     walled: new Set(),
     fitted: { pillars: new Set(), torches: new Set(), portal: false, flats: new Map() },
   };

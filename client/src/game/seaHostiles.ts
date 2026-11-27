@@ -81,6 +81,8 @@ export function hostileMarks(hostiles: readonly SeenHostile[], ship: Point2): Ma
 
 /** The water the ship is in, as the page names it: its name, its holder and its band. */
 export interface WaterNamed {
+  /** The id of the continent whose water it is, as the sea room names the water a ship lies in. */
+  readonly island: string;
   readonly name: string | null;
   readonly holder: WaterHolder;
   readonly levels: readonly [number, number] | null;
@@ -94,6 +96,7 @@ export function waterNamer(rules: WatersRules, table: WatersTable): (point: Poin
     const water = here && table.waters[here.continent];
     if (!here || !water) return null;
     return {
+      island: water.id,
       name: water.name,
       levels: water.levels,
       get holder(): WaterHolder {

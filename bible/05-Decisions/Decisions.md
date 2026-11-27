@@ -164,6 +164,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]]
 - [[The Dungeons Are Perfect and Insanely Varied]]
 - [[Each Dungeon Style Has Its Own Pieces, Built in Blender]]
+- [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]]
 - [[Foes Show Their Level, Patrol in Groups and Climb]]
 - [[Melee Swings a Quarter Faster, Strikes All in Reach, and the Lock Lets Go Past 70°]]
 - [[The Slot Grid Closes Off Hover, and the Inventory Shows Only Held Stacks]]
@@ -453,6 +454,8 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]
 - [[Lights as Claude Builds Them]]
 - [[Island Textures as Claude Builds Them]]
+- [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
+- [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
 
 ## Replaced
 
