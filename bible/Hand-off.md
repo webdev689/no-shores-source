@@ -17,7 +17,9 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   arriving in a passage zone be for 10 s and every band stands as far from the arrival as the floor allows, 25 m
   where it can ([[Foes Leave a Player Arriving Through a Passage Gate Be, and No Band Stands Near the Arrival]]); the
   ways across stand at the runs' ends ([[The Ways Across Stand at the Runs' Ends, Not on the Landing]]); a way between
-  places whose join never settles fails back. Tested offline.
+  places whose join never settles fails back. Audited on the owner's "Audit": a repair's price adds the hull's,
+  canvas's and crew's percent missing (the owner's answer), and a lamp's guard and an under-ground Vault's garrison
+  stand off the arrival too. Tested offline.
 - **For the owner's yes**: #229 (the deeper dungeons: storeys and stairs, more ways, great rooms and galleries,
   vaults, richer chests and DFO's 3D map; [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]],
   its pieces published by the dungeon-modules workflow's run 53) and #159 (the rooms' worker tests wait for what they
@@ -121,10 +123,15 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 - **The way that hung on its screen**: its live cause is unchecked (a passage zone opens in 23 to 314 ms in the
   WebAssembly, so not the room's CPU). A join now fails back after 40 s, and a room's welcome after 15 s, for every
   `RoomConnection.open` (a cold room's time to welcome is unmeasured); the reason the page then shows names the cause.
-- **Arrivals' gaps**: an under-ground Vault stands its dungeon's own garrison, one of whose members stood 17.1 m from
-  the arrival; an under-ground medium zone keeps one post at 14.1 m (no farther clear cell); an under-ground Hunt's
-  band near the arrival may hold its post rather than walk its round; a crossing's arrival at a run's end has no
-  grace, and a garrison group's beat may pass through it.
+- **Arrivals' gaps**: where no choice stands far enough a lamp's guard stands the farthest it can (23.8 m in week
+  2903 zone 31, 24.4 m in 2905 zone 65); an under-ground medium zone keeps one post at 14.1 m (no farther clear cell);
+  an under-ground Hunt's band near the arrival may hold its post rather than walk its round; week 2903 zone 23 (an
+  under-ground Hunt) stands 3 bands for 4 posts, as on `main` (the arrival test keeps weeks 2900 to 2902).
+- **The ways across go with two patrol zones**: the owner removes two of Saltmere's patrol zones in another pull
+  request, so the ways across leave with them, and with them the audit's findings on them: a crossing's arrival at a
+  run's end has no grace and may stand within reach of the run's last band; the Downs' arch may stand through the
+  Chalk Adit's mine roof; on the Vale and the Moors a sealed door's mark lies under each way across's; an instance
+  gate's 40 m area would take E from a way across inside it (`passage.ts` `areas.find`).
 - **A body running into a tree trunk climbs it**, and on the wall it cannot strike: found by the Ambush's scripted
   run (`passage_room_door_tests.rs` now lets go), a player meets it too.
 - **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
