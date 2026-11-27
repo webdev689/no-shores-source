@@ -86,6 +86,11 @@ fn a_comment_that_links_or_names_a_note_is_a_problem() {
         "/// The waves rise (`Water.md` \"Swell\")\n",
         "// see Comments Say Why.md\n",
         "# the forge's rule, Sprite Forge.md\n",
+        "// The hull rolls at 0.5 rad; see the Sailing note.\n",
+        "/// as its entry in the Code Map note.\n",
+        "// what is fitted to her is in the bible's Modules note\n",
+        "// as Hand-off.md says\n",
+        "// Lessons from DFO.md\n",
     ];
     for case in cases {
         let path = if case.starts_with('#') { "tools/forge.py" } else { "crates/core/src/lib.rs" };
@@ -98,6 +103,9 @@ fn a_wiki_link_in_inline_code_or_a_shouting_file_is_no_note() {
     let cases = [
         "/// Links read as `[[Note]]` and `[[Note|shown]]`\n",
         "// as README.md and CLAUDE.md say\n",
+        "/// One note: when, on which channel, its key\n",
+        "// Each note is built from the FM bank, and the note wraps where the room is narrow\n",
+        "/** Whether `note` was merged since the player last pressed Play. */\n",
         "/// \"borders\": [[a, b]], \"path\": [[x, y]]\n",
     ];
     for case in cases {
@@ -131,7 +139,7 @@ fn history_in_a_comment_is_a_problem() {
 fn ordinary_words_are_not_history() {
     let cases = [
         "// UTF-8 text, SHA-256 prints, a 2D grid, item #1 of a list\n",
-        "// The hull rolls at 0.5 rad and 20 Hz; see the Sailing note.\n",
+        "// The hull rolls at 0.5 rad and 20 Hz, at sea.\n",
         "// x-axis and y-axis meet at the keel.\n",
         "// ISO-8601 times, RFC-3339 stamps, May 2026's swell, 3 maybe 2026 ships\n",
         "// the GPU may issue 64 draws a frame\n",

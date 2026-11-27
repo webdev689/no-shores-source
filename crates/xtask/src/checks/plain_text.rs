@@ -3,8 +3,15 @@ use serde_json::Value;
 
 /// Where the player's words live: the game's content, read as one table of strings.
 pub const CONTENT_ROOT: &str = "content/";
-/// Read as pages, not strings: the lore's books, and the world's briefs (never shown), town blocks and land.
-const PAGES: [&str; 4] = ["content/lore/", "content/world/briefs.json", "content/world/rmb/", "content/world/land/"];
+/// Read as pages or others' words, not the game's strings: the lore's books, the world's briefs (never shown), town
+/// blocks and land, and the recordings' names, credited as their authors gave them.
+const PAGES: [&str; 5] = [
+    "content/lore/",
+    "content/world/briefs.json",
+    "content/world/rmb/",
+    "content/world/land/",
+    "content/audio/sounds.json",
+];
 /// A string's most words, and its longest sentence's: longer help is a page or a fold.
 const STRING_WORDS: usize = 40;
 const SENTENCE_WORDS: usize = 25;
@@ -54,7 +61,7 @@ fn longest_sentence(text: &str) -> usize {
     let mut current = 0;
     for word in text.split_whitespace() {
         current += 1;
-        if word.ends_with(['.', '!', '?']) {
+        if word.trim_end_matches(['"', '\'', '\u{201d}', '\u{2019}', ')']).ends_with(['.', '!', '?']) {
             longest = longest.max(current);
             current = 0;
         }
@@ -76,10 +83,13 @@ fn padding(text: &str) -> Vec<&'static str> {
 
 /// What breaks the rule in one string, each as a message.
 pub fn breaches(text: &str, is_name: bool) -> Vec<String> {
-    if !text.contains(' ') {
-        return Vec::new();
-    }
     let mut found = Vec::new();
+    if text.contains(EM_DASH) {
+        found.push("an em dash: a pause is a full stop".to_owned());
+    }
+    if !text.contains(' ') {
+        return found;
+    }
     let count = words(text);
     if count > STRING_WORDS {
         found.push(format!("{count} words, past {STRING_WORDS}: a longer help is a page or a fold"));
@@ -90,9 +100,6 @@ pub fn breaches(text: &str, is_name: bool) -> Vec<String> {
     }
     if !is_name {
         found.extend(padding(text).into_iter().map(|phrase| format!("\"{phrase}\" pads: say it plainly")));
-    }
-    if text.contains(EM_DASH) {
-        found.push("an em dash: a pause is a full stop".to_owned());
     }
     found
 }
@@ -152,6 +159,13 @@ mod tests {
         assert!(breaches("Delve Gate", true).is_empty());
         assert_eq!(breaches("Delve into the deep.", false).len(), 1);
         assert!(breaches("A simplyshaped hull at the onlyport.", false).is_empty(), "whole words only");
+        assert_eq!(breaches("Overlook\u{2014}Saltmere", false).len(), 1, "a dash with no space round it");
+    }
+
+    #[test]
+    fn a_sentence_ends_inside_its_closing_quote() {
+        let quoted = format!("\"{}.\" {}.", ["word"; 20].join(" "), ["word"; 20].join(" "));
+        assert!(breaches(&quoted, false).is_empty(), "two sentences of 20, the first quoted");
     }
 
     #[test]
@@ -163,5 +177,6 @@ mod tests {
         assert!(is_read("content/gear/traits.json"));
         assert!(!is_read("content/lore/lore.json"));
         assert!(!is_read("content/world/briefs.json"));
+        assert!(!is_read("content/audio/sounds.json"), "its names are the recordings' own, credited as given");
     }
 }

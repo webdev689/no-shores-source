@@ -246,22 +246,36 @@ fn history_marker(words: &str) -> Option<&'static str> {
     }
 }
 
+/// Markdown files named in capitals by custom, which are no notes of the bible.
+const SHOUTED: [&str; 4] = ["README", "CLAUDE", "AGENTS", "LICENSE"];
+/// Words that begin a sentence about a note of music or a written one, never a note of the bible's name.
+const NOT_NAMES: [&str; 8] = ["A", "An", "The", "One", "Each", "Every", "This", "Its"];
+
 /// A wiki link to a note outside inline code (a note's name starts with a capital, unlike a nested list's numbers),
-/// or a note's file by its name: a markdown file whose name starts with a capital but is not all capitals, as the
-/// readme's is.
+/// a note's file by its name (a markdown file whose name starts with a capital, but the readme's kin), or a note
+/// named in words outside inline code (`the Sailing note`, `the Code Map note`).
 fn names_a_note(words: &str) -> bool {
     let linked = words.split('`').step_by(2).any(|outside| {
         outside
             .match_indices("[[")
             .any(|(at, _)| outside[at + 2..].chars().next().is_some_and(|ch| ch.is_ascii_uppercase()))
     });
-    let named = words.match_indices(".md").any(|(at, _)| {
+    let filed = words.match_indices(".md").any(|(at, _)| {
         let after_clear = words[at + 3..].chars().next().is_none_or(|next| !next.is_ascii_alphanumeric());
-        let stem: String = words[..at].chars().rev().take_while(|ch| ch.is_ascii_alphanumeric()).collect();
-        let first = stem.chars().last();
-        after_clear && first.is_some_and(|ch| ch.is_ascii_uppercase()) && stem.chars().any(|ch| ch.is_ascii_lowercase())
+        let stem: String =
+            words[..at].chars().rev().take_while(|ch| ch.is_ascii_alphanumeric() || *ch == '-').collect();
+        let stem: String = stem.chars().rev().collect();
+        after_clear && stem.starts_with(|ch: char| ch.is_ascii_uppercase()) && !SHOUTED.contains(&stem.as_str())
     });
-    linked || named
+    let prose: String = words.split('`').step_by(2).collect::<Vec<_>>().join(" ");
+    let tokens: Vec<&str> =
+        prose.split_whitespace().map(|token| token.trim_matches(|ch: char| !ch.is_alphanumeric())).collect();
+    let said = tokens.iter().enumerate().any(|(at, token)| {
+        let capital = |word: &&&str| word.starts_with(|ch: char| ch.is_ascii_uppercase());
+        let first = tokens[..at].iter().rev().take_while(capital).last();
+        *token == "note" && first.is_some_and(|first| !NOT_NAMES.contains(first))
+    });
+    linked || filed || said
 }
 
 const MONTHS: [&str; 12] = [
