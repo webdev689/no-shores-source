@@ -9,6 +9,11 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
+- **For the owner's yes once CI passes on its head**: #256 (the elemental weapon's box round the figure gone,
+  other players' weapons glowing, the Holdfast only in a great room round a 5 m ring, encounter waves of Majors kept
+  to two a living player, the Court's capped, a Litany in rooms three cells each way, no passage Hold in the cells,
+  and a dungeon's navmesh keeping off free-standing rocks as far as a body does). Tested offline; its check passed
+  here but for `shipTags.test.ts`'s R2 fetches.
 - **Merging on the owner's yes once CI passes on its head**: #236 (a player's feedback: M the map and N the leave,
   Tab and the side buttons bound anywhere, the controls sheet's words first, a master volume and an interface size, the
   held map's legend hidden on L, a landing icon's card on hover, the mouse back as a window shuts, and the sea map's
@@ -144,6 +149,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **#256's leftovers**: the outline's fix and other players' glow unseen on a real GPU and in a deployed room; the
+  Holdfast, the waves' caps and the trimmed navmesh unplayed. `brine-catacombs`' rooms 14 to 17 have mesh but no way
+  from the way in: at the foot of the flight up from its third storey two polys on one flat floor never link (the
+  ignored `brine_catacombs_flight_foot_is_one_floor_on_the_navmesh`; the cause is in the outlines or the polys, not
+  the corners' weld). A barrow forged three storeys deep, which no content lays, cuts its third storey the same way.
+  The audit's low findings left: a Court in a 2 by 2 end room stands its anchors inside the slam (an anchor keeps
+  what it holds, so stepping out costs nothing); a passage Hold's ring can stand a mouth 5.5 m off under ground; a
+  lamp's zone whose 64 seeds all miss lays its lamp unchecked; a vein's gathers each call a wave, never waiting.
 - **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
   browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
   2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
