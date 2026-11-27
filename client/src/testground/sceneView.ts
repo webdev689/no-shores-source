@@ -477,15 +477,16 @@ export class SceneView implements CardMaker {
     // along the stroke and standing behind it.
     const smeared = drawn.flatMap((shown) => (shown.smear ? [shown] : []));
     [...drawn, ...smeared].forEach((shown, index) => {
-      const { card, x, y, z, flip } = shown;
+      const { card, x, y, z, flip, scale = 1 } = shown;
+      const metres = scale / PX_PER_M;
       const smear = index >= drawn.length ? shown.smear : null;
-      const [across, up] = smear ? [smear.across / PX_PER_M, smear.up / PX_PER_M] : [0, 0];
+      const [across, up] = smear ? [smear.across * metres, smear.up * metres] : [0, 0];
       const { buffer, group } = this.slot(index, card.texture);
-      const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
+      const rootX = (flip ? card.width - card.root[0] : card.root[0]) * metres;
       const cardValues = new Float32Array([
         ...[x + right[0] * across, y + right[1] * across, z + up, flip ? 1 : 0],
-        ...[...right, card.width / PX_PER_M, card.height / PX_PER_M],
-        ...[rootX, card.root[1] / PX_PER_M, 0, 0],
+        ...[...right, card.width * metres, card.height * metres],
+        ...[rootX, card.root[1] * metres, 0, 0],
         ...cardLookValues(shown, time, !!smear),
       ]);
       device.queue.writeBuffer(buffer, 0, cardValues);
@@ -496,8 +497,9 @@ export class SceneView implements CardMaker {
     this.marks.drawSolid(pass, seen);
     // A Veiled figure's weapon shows no outline: it is all but unseen.
     const glowing = drawn.filter(({ card, veiled }) => card.glow && !veiled);
-    const metres = 1 / PX_PER_M;
-    const glows = glowing.map(({ card, x, y, z, flip, surge }) => ({ card, x, y, z, flip, metres, surge }));
+    const glows = glowing.map(({ card, x, y, z, flip, scale = 1, surge }) => {
+      return { card, x, y, z, flip, metres: scale / PX_PER_M, surge };
+    });
     this.glows.draw(pass, seen, right, performance.now() / 1000, glows);
     this.marks.drawClear(pass, seen);
     if (this.swingBuffer && this.swingCount > 0) {

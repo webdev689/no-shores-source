@@ -1,6 +1,7 @@
 // Where the fight's display stands things on the view: a point projected through the camera, a spot kept clear of a
 // box, the veil over the display, the span a Boss's figure fills, and whether a line of sight is blocked.
 import type { FighterView } from '../rules/fighters.ts';
+import { BOSS_RANK, rankSize } from '../rules/roster.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { rayHit } from '../player/playerCamera.ts';
 import { CALL_REACH } from './callout.ts';
@@ -10,8 +11,9 @@ import { SIGHT_SKIN_M } from './plateSight.ts';
 
 /** How long the dead lie before standing again or asking to, in ticks (crates/combat/src/tuning.rs RESPAWN). */
 export const RESPAWN_TICKS = 240;
-/** How tall a Boss's figure stands, metres, for the span of the view the call keeps clear of. */
-const BOSS_TALL_M = 2.6;
+/** How tall a Boss's figure stands, metres, a man-sized one's grown by its rank, for the span of the view the call keeps
+ *  clear of. */
+const BOSS_TALL_M = 2.6 * rankSize(BOSS_RANK);
 
 /** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */
 export function clipOf(matrix: ArrayLike<number>, point: readonly [number, number, number]): [number, number, number] {
