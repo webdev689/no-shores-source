@@ -48,12 +48,12 @@ request's head, in three parts at once; before a push, the tests of what changed
 ## What a good test looks like
 
 - Named for the behaviour: `a_ship_in_irons_loses_way`, not `test_3`.
+- Made-up inputs a reader can follow, built in the test.
+- One behaviour per test; the assertion says what was expected.
 - Wire inputs built from their layout: an intent by `intentOf` (`server/intentForTests.ts`) or `INTENT_FLOATS`,
   never as a list of numbers, so a number added to the layout reaches every test at once.
 - A property run that checks something is conserved (totals, rows) also asserts that the run did something: a run
   that did nothing conserves everything.
-- Made-up inputs a reader can follow, built in the test.
-- One behaviour per test; the assertion says what was expected.
 - Checks results through public functions, not private state.
 - Covers every place the behaviour runs: when a feature is switched on in more places, its tests widen to all of them
   in the same change.
