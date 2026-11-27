@@ -5,6 +5,9 @@ status: in force
 ---
 # The Drowned Vale as Claude Builds It
 
+Replaced in part by [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]: the Sunken Gate stands in
+the Saltgrass Downs, and the Gullwing Vale lives on in the Breach's lore.
+
 Asking for the first Breach ([[The First Breach Follows the Vault of Glass, at Normal and Hard]]), the owner wrote:
 
 > "I want you to really utilize vault of glass as reference on building the traversal, encounters, bosses with our

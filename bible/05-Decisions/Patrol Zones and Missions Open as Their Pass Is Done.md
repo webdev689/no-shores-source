@@ -26,4 +26,6 @@ The owner's answers to the questions that followed:
 - **A locked node still shows** where the player picks a node, greyed with a lock; choosing it says it is locked and
   does not take the player there.
 
+Replaced in part by [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]: of Saltmere's zones the Saltgrass Downs alone stands, and stays open.
+
 It builds on [[Patrol Zones Stay as Built and Gain Linear Combat Areas]] and [[Saltmere's Detail Pass Goes Deep]].
