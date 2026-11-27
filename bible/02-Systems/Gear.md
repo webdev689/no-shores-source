@@ -542,7 +542,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
   its model ([[Item Pictures]]). An item found as itself is its own picture as the gear screens draw it, a weapon the
   forge's large picture dyed as they dye it, as long as a Vestige is tall, and an armour piece or a cloak as it is
   worn, at twice its worn size; it flies, hovers and
-  bobs as a Vestige does, turning as a flat thing turns, its other face mirrored (`itemDrops.ts`). Each lies in its
+  bobs as a Vestige does, its picture level and facing the eye, never narrowed by a turn, so it keeps its own
+  proportions (`itemDrops.ts`). Each lies in its
   rarity's light, ammunition in a pale one, drawn in cells as the
   spells are and as light added (`dropLight.ts`):
 
