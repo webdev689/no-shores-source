@@ -1,12 +1,13 @@
 // The friendly ships the waters' traffic sails between the port cities, as the page draws them at sea and from land:
 // asked of the waters' rules a few times a second round the eye at world time, moved smoothly between answers along
-// their way, each drawn as its hull in friendly colours, its sails set and filled (furled at anchor), posed on the
-// swell, with its plain crew aboard.
+// their way, each drawn as its hull in friendly colours flying its house's, its sails set and filled (furled at
+// anchor), posed on the swell, with its plain crew aboard.
 import type { ShipMark } from '../plus/compass.ts';
 import type { Swell } from '../rules/landRules.ts';
 import type { TrafficShip } from '../rules/watersRules.ts';
 import type { OpenWaters } from './pageWaters.ts';
 import type { SeaFrame } from './seaFrame.ts';
+import { friendlyLook } from '../ships/fleetDress.ts';
 import { HULL_LINES, type HullLines } from '../ships/hullLines.ts';
 import { hullSails, hullWaterline } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
@@ -171,7 +172,7 @@ export class FriendlyShips {
         hull: ship.hull,
         place,
         rig,
-        look: { side: 'friendly' as const },
+        look: friendlyLook(ship.id),
         crew: plainCrew(`friendly-${ship.id}`),
       };
     });

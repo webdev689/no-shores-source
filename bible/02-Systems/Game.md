@@ -660,8 +660,8 @@ sails out from its berth ("Landings").
   destination's roadstead ([[World Map]], "Berths"), no way on it, until it is gone. A ship the room has taken off its route (the snapshot's `taken`) is
   left out: the sea draws it where the room has it. Of each hull only as many as the ships layer has slots for are drawn,
   16 less the room's own of that hull, the nearest first; only those are rigged, posed and footprinted. Each is drawn
-  by the ships layer as its hull in friendly colours, its sails set and filled by the steady wind (furled while it
-  lies at anchor), posed on the swell,
+  by the ships layer as its hull in friendly colours, flying the colours of the house it sails for, its sails set and
+  filled by the steady wind (furled while it lies at anchor), posed on the swell,
   at the size every ship is drawn: the Overworld's from the raised view and its true size on every view near the player's ship
   (`shownScale`). Its footprint joins the water's with the nearest. The compass marks every one within 900 m in
   Overlook's blue (`#2f5d9a`).

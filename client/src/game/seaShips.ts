@@ -8,8 +8,8 @@ import type { SeenFriendly } from '../network/seaHarbour.ts';
 import { SHIP_SPEED } from '../overworld/voyage.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { type Deck, HULL_DECKS, SLOOP_DECK } from '../ships/deck.ts';
-import { factionSide, type ShipLook, type ShipSide } from '../ships/dress.ts';
-import { paintedOf } from '../ships/fleetDress.ts';
+import { factionSide, type ShipLook } from '../ships/dress.ts';
+import { friendlyLook, paintedOf } from '../ships/fleetDress.ts';
 import { hullOfCaptain, hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { captainAtSea, plainCrew, type ShipCrew } from '../ships/shipCrew.ts';
@@ -111,7 +111,7 @@ function round(
       who: `friendly-${friend.traffic}`,
       lies: { ...friend, underWay: true },
       hull: shown(friend.hull),
-      look: { side: 'friendly' as ShipSide },
+      look: friendlyLook(friend.traffic),
       crew: plainCrew(`friendly-${friend.traffic}`),
     })),
   ];

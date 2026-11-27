@@ -5,7 +5,7 @@
 import catalogue from '../../../content/gear/ship_dress.json' with { type: 'json' };
 import { EMBLEMS } from '../plus/emblemArt.ts';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
-import { type Colour, colourOf, DRESSES, SHIP_SIDES, type ShipSide } from './dress.ts';
+import { type Colour, colourOf, DRESSES, SHIP_SIDES, type ShipLook, type ShipSide } from './dress.ts';
 
 /** The parts a dress is laid on, in the order the wire carries each ship's four. */
 export const DRESS_PARTS = ['paint', 'stripe', 'canvas', 'flag'] as const;
@@ -66,6 +66,16 @@ export function sidePainted(side: ShipSide): Painted {
   const dress = DRESSES[side];
   const flagLayer = SIDES_FLAGS_AT + SHIP_SIDES.indexOf(side);
   return { hull: dress.hull, stripe: dress.stripe, canvas: dress.canvas, ink: null, flagLayer };
+}
+
+/** How a friendly ship of the traffic is drawn, by its id: in the friendly side's colours, flying the colours of the
+ *  house it sails for (content/gear/factions.json, 1 to 3, the same on every machine), the flag that house's second
+ *  rank gives a player's ship. */
+export function friendlyLook(traffic: number): ShipLook {
+  const house = 1 + (traffic % 3);
+  const flown = FLAG_DESIGNS.findIndex((design) => design.source.faction === house);
+  const side = sidePainted('friendly');
+  return { side: 'friendly', painted: flown >= 0 ? { ...side, flagLayer: DESIGNS_AT + flown } : side };
 }
 
 const asColour = (hex: string | null | undefined): Colour | null => (hex ? colourOf(hex) : null);
