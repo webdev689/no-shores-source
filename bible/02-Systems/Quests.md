@@ -177,10 +177,11 @@ never on the page's word, met in any order:
 | Wear a dye | `dye` | Any dye worn (a cosmetic of the dye kind) | Anywhere; the tracker names the Character key (I) |
 | Take your letter from the mail | `letter` | Any letter taken, one or all | The Postmaster's counter (`mail`) |
 
-A `use` goal names the counter its act is done at, and a dye none; the file is refused otherwise. Done before the task
-begins, a step counts only once it is done again, but a Vestige opened while none is held, sealed, carried or vaulted,
-and a letter taken while the mail is empty, are met as the task begins and after every ask (`tell_held`), so a save
-that used them before (or one kept before the gifts, with nothing to open or take) is never stuck. The page announces
+A `use` goal names the counter its act is done at, and a dye none; the file is refused otherwise. A step done before
+the task begins is met as it begins and after every ask (`tell_held`): a Vestige opened while none is held, sealed,
+carried or vaulted; a letter taken while the mail is empty; a cloak held out of the vault, carried or worn; a dye worn
+other than the one every player starts in. So no step is done twice, and a save kept before the gifts, with nothing to
+open or take, is never stuck. The page announces
 each step as the room ticks it, under its keeper's mark ("Your gifts", "Wear a dye"), as the lessons' are. The task
 pays no clear: it is done at the keepers'. A save on the round or on **Put them on** walks on into it; one on the houses
 or later is not sent back.
