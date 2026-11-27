@@ -20,8 +20,13 @@ export const LIGHT_FLOATS = 12;
 
 /** A light as the shader's `Light` holds it, written into `into` from `start`: where it burns and its number, its
  *  colour and reach, and how deep it flickers, how deep it breathes, how much of a gleam still water shows of it and
- *  the spaces it reaches (0: everywhere). */
-export function lightFloats({ at, number, burning, space }: Light, into: Float32Array, start = 0): Float32Array {
+ *  the spaces it reaches (0: everywhere), the last through `bits`, a view of the same buffer a frame makes once. */
+export function lightFloats(
+  { at, number, burning, space }: Light,
+  into: Float32Array,
+  start = 0,
+  bits = new Uint32Array(into.buffer, into.byteOffset, into.length),
+): Float32Array {
   const { colour } = burning;
   into[start] = at[0];
   into[start + 1] = at[1];
@@ -35,7 +40,7 @@ export function lightFloats({ at, number, burning, space }: Light, into: Float32
   into[start + 9] = burning.breath ?? 0;
   into[start + 10] = burning.gleams === false ? 0 : 1;
   // The spaces' bits as they are: past 2^24 a float would round them.
-  new Uint32Array(into.buffer, into.byteOffset + (start + 11) * 4, 1)[0] = space ?? 0;
+  bits[start + 11] = space ?? 0;
   return into;
 }
 
@@ -167,7 +172,7 @@ fn space_at(point: vec3f, normal: vec3f) -> u32 {
 
 // Whether a light lights a space: a light that names none lights every one.
 fn reaches(lamp: Light, space: u32) -> bool {
-  let reach = bitcast<u32>(lamp.shape.w);
+  let reach = lamp.space;
   return reach == 0u || (reach & space) != 0u;
 }
 

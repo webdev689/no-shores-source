@@ -506,3 +506,34 @@ test('a beam beside the eye fades away, so it never stands across the view, whil
   assert.ok(beam(eyeAt(2.75)) > 0 && beam(eyeAt(2.75)) < beam(null), 'fading between');
   assert.ok(anchorMarks(eyeAt(0.5)).length > 0, 'its ring on the floor still shown');
 });
+
+test("an Ascent's pads on a lower storey glow down their own faces, from their own floor", () => {
+  const pads = [[0.4, 0.4, 2, 2, -7.6, -8]] as const;
+  const plan = {
+    ...layout.encounters!,
+    seals: [{ kind: SEAL_KIND.ascent, room: 0, pieces: [[7.2, 1.2, -6]], pads, drowned: [], doors: [] }],
+    anchors: [],
+  };
+  const ascent = seen({
+    seals: [{ kind: SEAL_KIND.ascent, state: SEAL_STATE.running, progress: 0, marks: [0, 1], relic: 1 }],
+  });
+  // The pad's marks alone, the stone's ring standing apart from it.
+  const heights = marksOf(encounterMarks(plan as never, ascent, 0, () => null))
+    .filter((mark) => mark.at[0]! < 2.2)
+    .map((mark) => mark.at[2]!);
+  assert.ok(
+    Math.max(...heights) < -7.5 && Math.min(...heights) >= -8,
+    `${Math.min(...heights)}..${Math.max(...heights)}`,
+  );
+});
+
+test("the Reckoning's light rises no higher than its anchor's ceiling, not into the storey over it", () => {
+  const lower = { ...layout.encounters!, anchors: layout.encounters!.anchors.map(([x, y]) => [x, y, -8] as const) };
+  const broken = seen({ seals: seen().seals.map((each) => ({ ...each, state: SEAL_STATE.broken })) });
+  const reckoning = { ...broken, woken: true, boss: 7, ward: 1, reckoningTicks: 30, reckoningAt: 1 };
+  const roof = () => -4;
+  const lit = encounterMarks(lower, reckoning, 0, () => null, { at: 1, share: 0.5 }, null, roof);
+  const light = marksOf(lit).filter((mark) => mark.colour === '1,0.95,0.75');
+  const top = Math.max(...light.map((mark) => mark.at[2]!));
+  assert.ok(top <= -4 + 1e-9 && top > -5, `the beam's top: ${top}`);
+});

@@ -314,8 +314,8 @@ function quad(out: number[], corners: readonly (readonly number[])[], colour: Co
  *  reads in its order; the last pad, the stone's, in gold. */
 function padMarks(out: number[], pads: SealLayout['pads'], seconds: number): void {
   const { band, face, off, speed, step } = PAD_EDGE;
-  pads.forEach(([minX, minY, maxX, maxY, top], index) => {
-    const down = Math.min(face, top);
+  pads.forEach(([minX, minY, maxX, maxY, top, bottom = 0], index) => {
+    const down = Math.min(face, top - bottom);
     const colour = index === pads.length - 1 ? LIT : AT_REST;
     const alpha = 0.45 + 0.45 * (0.5 + 0.5 * Math.cos(seconds * speed - index * step));
     const z = top + off;
@@ -416,8 +416,8 @@ function sealMarks(
 
 /** Every mark of the encounters this frame at `seconds` of the page's clock: each seal's pieces, then while a ward
  *  stands each anchor ringed and filling, a Reckoning's light while one is shown and its flash as it lands (`flash`:
- *  its anchor and the share of its flash left), and round the Boss where `where` finds it its ward and dome, its slam
- *  filling as it comes and its Fury. */
+ *  its anchor and the share of its flash left), no higher than the ceiling `roof` finds over its anchor, and round the
+ *  Boss where `where` finds it its ward and dome, its slam filling as it comes and its Fury. */
 export function encounterMarks(
   plan: EncounterLayout,
   seen: EncounterSeen,
@@ -425,8 +425,13 @@ export function encounterMarks(
   where: (id: number) => Point | null,
   flash: { readonly at: number; readonly share: number } | null = null,
   eye: Point | null = null,
+  roof: (at: Point) => number | null = () => null,
 ): number[] {
   const out: number[] = [];
+  const beamOver = (anchor: Point, half: number) => ({
+    height: Math.min(LIGHT_BEAM.height, (roof(anchor) ?? Infinity) - anchor[2]),
+    half,
+  });
   const beat = 0.5 + 0.5 * Math.sin(seconds * 4);
   plan.seals.forEach((seal, index) => {
     const state = seen.seals[index];
@@ -450,13 +455,12 @@ export function encounterMarks(
   const light = seen.reckoningTicks > 0 ? plan.anchors[seen.reckoningAt] : undefined;
   if (light) {
     markRing(out, light, plan.reach.light - BAND_M * 2, plan.reach.light, [...LIGHT, 0.7 + 0.3 * beat]);
-    beamNear(out, light, LIGHT_BEAM, [...LIGHT, 0.55 + 0.35 * beat], eye);
+    beamNear(out, light, beamOver(light, LIGHT_BEAM.half), [...LIGHT, 0.55 + 0.35 * beat], eye);
   }
   const landed = flash && flash.share > 0 ? plan.anchors[flash.at] : undefined;
   if (landed && flash) {
     const { share } = flash;
-    const size = { height: LIGHT_BEAM.height, half: LIGHT_BEAM.half * (1 + share * 2) };
-    beamNear(out, landed, size, [...LIGHT, share], eye);
+    beamNear(out, landed, beamOver(landed, LIGHT_BEAM.half * (1 + share * 2)), [...LIGHT, share], eye);
     markRing(out, landed, 0, plan.reach.light * (1 + (1 - share) * 4), [...LIGHT, share * 0.8]);
   }
   const boss = seen.boss ? where(seen.boss) : null;

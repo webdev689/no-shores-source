@@ -305,7 +305,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   -4 a Void, or a room's number), ceilings and cell looks, storey by storey; rooms (each its rectangle, height, walk,
   role, name, ceiling form, look and storey), end, way in, arrival, exit door and portal (each with its absolute z),
   torches, fixtures (each where its light burns and its kind: 0 brazier, 1 candles, 2 crystals, 3
-  lantern, 4 hearth), frames, pillars, boxes, props (each its model, its origin and its yaw), landmarks (each its
+  lantern, 4 hearth), frames, pillars, boxes, balustrades (each gallery rail's box, as a box is: the page's course
+  takes them, so its aim, shots and marks stop on a rail as the rules' do), props (each its model, its origin and its
+  yaw), landmarks (each its
   module, its turned footprint's north-west corner and its quarter turns clockwise) and glows (each x, y, z and its
   kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number past the patrol's three or a
   place that is no Elite Dungeon. An Elite Dungeon's answers its encounters too (above, "Encounters"): each seal's
@@ -583,7 +585,9 @@ as standing none (`readDungeon`).
   `balustrade` where the pack has it. Where the gallery's ceiling is lower than the open air's, a wall closes the step.
 - **Kits on a storey.** A storey's kits are laid as a one-storey dungeon's, its props' plans its own; none stands in
   a flight, in open air, or on the walls or under the ceiling of a hall under open air, whose ceiling is far over it
-  (its floor pieces stay); a storey without the exit door or the portal lays neither arch.
+  (its floor pieces stay); a storey without the exit door or the portal lays neither arch. Its kits read a flight's
+  cells as rock but the one each landing opens onto (`kitPlane`), so a wall facing a flight from past its foot or
+  before its head is dressed as a wall.
   Where a pillar's, a torch's or the portal's kit pieces are laid (`kitsOf`), the mesh leaves out its own pillar,
   bracket or arch, and draws its own wherever they are not; the jambs, the portal's face and the exit door stay the
   mesh's.
@@ -643,7 +647,7 @@ as standing none (`readDungeon`).
   past the 23rd). A space is a mask: its storey's bit and its joins' bits. A surface's space is its storey's (the one
   its height lies on, as `storeyUnder` gives it) and the joins its cell lies in (`space_at` in the shader, from each
   cell's word: its look, `CELL_ROCK`, and its joins' bits from `JOINS_SHIFT`); a figure's the same (`lightAt`). A
-  light (`Light.space`, its bits passed as they are) reaches its storey and each join of its storey with a cell
+  light (`Light.space`, a u32 lane of its own, its bits as they are) reaches its storey and each join of its storey with a cell
   within its reach. The shader skips a light whose mask shares no bit with the surface's, still water's gleams too.
   The 32 lights are picked by distance among those that reach a space the eye may see (`seenFrom`): its storey's, and
   within 16 m of a join the join's and the storey beside it. The clusters are unchanged, so the cost is too: a mask
@@ -710,13 +714,14 @@ as standing none (`readDungeon`).
   each with a glyph of its own (one, two or three strokes round a dot, then round a small ring, so no two of six read
   alike however turned); plates in play under a beam, dim at rest and gold and filled while held; the seal stone's ring,
   lighting as its players stand on it; the relic's ring coloured by its strength, held or not, and its strength as an
-  arc inside it; while an Ascent holds, each pad's top edge banded in the seal's blue with a glow fading down its faces,
+  arc inside it; while an Ascent holds, each pad's top edge banded in the seal's blue with a glow fading down its faces
+  (0.6 m, or to its own floor where that is nearer),
   brightening pad by pad from the first to the last in a slow wave, the last pad's in the stone's gold; each anchor
   ringed dim under a short beam while the Boss stands (before it wakes too, so the company learns where they are) and,
   while a ward stands, brighter under a beam and filling as it is stood on, a ring round the Boss and a dome of light
   over it; the slam's ring 4 m round the Boss, filling as it comes; a red ring round the Boss through Fury; a
   Reckoning's ring of light under a
-  tall beam while it is shown, and a flash from the light as it lands. Each beam fades as the camera's eye comes near
+  tall beam (12 m, or up to its anchor's ceiling where that is lower) while it is shown, and a flash from the light as it lands. Each beam fades as the camera's eye comes near
   it along the ground, gone within 1.5 m and whole from 4 m, so one beside the camera never stands across the view;
   the rings on the floor stay (`encounterMarks`' `eye`). Under the compass the public event's banner
   shows the seals broken of how many and, away from every seal, the nearest unbroken one by its room's middle in the
@@ -771,7 +776,11 @@ as standing none (`readDungeon`).
   may pass up to 2 m under the slope within it; a shot stops at the slope itself.
 - The encounter plan keeps a seal's pieces, pads and leaps clear of every storey's solids and props over a cell, so a
   room under a well-furnished one fits fewer seals than it could.
-- The page's ground and ceiling for marks and shots are those of the player's own storey.
+- The page's ground and ceiling for marks and shots are those of the player's own storey, asked from the height a
+  ray or a shot passes at (never under the feet), so an aim up a flight meets its slope. A dungeon has no sea: its
+  ground under 0 m is stone and floor, never water, for footsteps, splashes and shots. Its course stands a slab between
+  two storeys' spans, and over a column whose top span is below the top storey, rock up to the floor of the next
+  storey over its ceiling, where the rules stop a line too.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
 - The clusters take the eye's matrix to be a centred perspective, as `fromEyeMatrix` makes it; a lens shifted off
   centre would leave their bounds short on one side.

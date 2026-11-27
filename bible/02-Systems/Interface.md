@@ -1185,7 +1185,7 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
   no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
 - **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
-  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
+  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea; a dungeon has none) or on the ground. A jump as a body
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
 - **Foes' voices** ([[The Grey Tithe and the Lattice Each Have Their Own Voice]]). A foe of the Grey Tithe or the
   Lattice, by its faction, is heard in its faction's voice as it spots the player (the shared `foe.alert` until its

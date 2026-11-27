@@ -14,7 +14,7 @@ import type { Difficulty } from '../heldmap/heldMap.ts';
 import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
-import { crosshairPoint, shotBodies } from '../player/crosshair.ts';
+import { crosshairPoint, type GroundAt, shotBodies } from '../player/crosshair.ts';
 import type { Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
@@ -82,8 +82,8 @@ export class Foot {
   readonly text: string;
   /** The seas of the room the player joined, which a trip into or out of its dungeons keeps. */
   readonly seas: Difficulty;
-  /** The ground's height under a world point as drawn: the land's, or a dungeon's floor. */
-  readonly groundAt: (x: number, y: number) => number | null;
+  /** The ground's height under a world point as drawn: the land's, or a dungeon's floor felt from a height there. */
+  readonly groundAt: GroundAt;
   /** The floor a placed figure stands on: in a social space on a podium or a landing (`floorOver`). */
   readonly floor: (x: number, y: number) => number;
   /** The ceiling over a world point in a dungeon, which the camera stays under; none on a node's land. */
@@ -154,9 +154,8 @@ export class Foot {
     [this.run, this.launchedFor] = [opened.run ?? null, opened.launchedFor ?? null];
     this.module = people.module;
     people.held.entrances.namesFrom(people.module, node);
-    const layout = opened.dungeon?.layout;
     // In a dungeon, on the player's own storey.
-    const felt = layout && feltAt(layout, () => context.walker.player.body.z);
+    const felt = opened.dungeon?.layout && feltAt(opened.dungeon.layout, () => context.walker.player.body.z);
     [this.groundAt, this.roof] = felt ? [felt.ground, felt.roof] : [opened.groundAt ?? context.groundAt, null];
     this.link = parts.link;
     this.fight = parts.fight;
@@ -339,7 +338,7 @@ export class Foot {
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
-    const { groundAt } = this;
+    const [groundAt, sea] = [this.groundAt, !this.dungeon];
     const { fight, foes, effects } = this;
     const bearer = bearing(this.held.breach, fight.player);
     dressInGear(walker, forge, this.held.gear, this.dressed, bearer !== null);
@@ -445,6 +444,7 @@ export class Foot {
       muzzleOf: () => (muzzle ? screenMuzzle(kicked, aspect, muzzle) : figureMuzzle(feet, walker.you.facing)),
       origin: shot.eye,
       groundAt,
+      sea,
       drawn: { foes: foes.placed, others: this.otherPlayers.placed },
       more: dropped.marks,
       riders: [{ id: fight.player, feet, facing, mounted, boosting }, ...ridersOf(others, fight.others)],
@@ -469,7 +469,7 @@ export class Foot {
       },
       others: this.otherPlayers.placed,
       foes: foes.placed,
-      ground: { blocks: this.boxes, groundAt },
+      ground: { blocks: this.boxes, groundAt, sea },
       landed: dropped.landed,
       crates: this.held.gear?.crates ?? null,
       heard: [...shownPublic.sounds, ...found.sounds],

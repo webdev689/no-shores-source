@@ -17,7 +17,7 @@ import { Sparks } from './sparks.ts';
 import type { AnimaScreen } from './animaMoment.ts';
 import { type Drawn, SpellLooks, castLookOf } from './spellLooks.ts';
 import { IMPACT_SPARKS, type Struck, Tracers, othersArrows } from './tracers.ts';
-import { shotBodies } from '../player/crosshair.ts';
+import { type GroundAt, shotBodies } from '../player/crosshair.ts';
 
 type Point = readonly [number, number, number];
 
@@ -92,8 +92,8 @@ export class FightEffects {
   /**
    * The marks to draw from an eye at `eye`, as `marksMesh` lays them from `origin`: every telegraphed blow, everyone
    * else's arrows, the sparks and the tracers. The player's own shots leave the weapon at `muzzleOf`'s point; the
-   * tracers run on by `seconds` (none while the fight waits), a shot stopped by `blocks`, the ground or one of
-   * `bodies` (their feet) throwing sparks where it comes to rest; Dusk Daggers' ring while it is aimed; and every
+   * tracers run on by `seconds` (none while the fight waits), a shot stopped by `blocks`, the ground, the sea (unless
+   * `sea` says the place has none) or one of `bodies` (their feet) throwing sparks where it comes to rest; Dusk Daggers' ring while it is aimed; and every
    * spell in the room, with the statuses that show on the world, laid at the figures where `drawn` has them; and
    * where blows land and kills fall; and the dust each of the `riders`' horses throws as it boosts. The marks are
    * handed back in the effects' own array, good until the next frame's.
@@ -107,7 +107,8 @@ export class FightEffects {
       readonly bodies: readonly Point[];
       readonly muzzleOf: (shot: Fired) => Point;
       readonly origin?: Point;
-      readonly groundAt?: (x: number, y: number) => number | null;
+      readonly groundAt?: GroundAt;
+      readonly sea?: boolean;
       readonly more?: readonly number[];
       readonly drawn?: Drawn;
       readonly riders?: readonly Boosting[];
@@ -117,14 +118,14 @@ export class FightEffects {
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' && kept.view.side === 'foes' ? [kept.view.action] : [],
     );
-    const { eye, blocks, bodies, muzzleOf, origin, groundAt, more = [], drawn = null, riders } = where;
+    const { eye, blocks, bodies, muzzleOf, origin, groundAt, sea, more = [], drawn = null, riders } = where;
     if (riders) this.hooves.frame(riders, where, seconds);
     const fired = fight.fired.splice(0);
     this.tracers.fired(fired, muzzleOf);
     this.tracers.seen(fight.takeShots(), fight.player);
     // The player's own arrows fly as the room flies them: past the dead and their own side.
     const targets = drawn ? shotBodies(drawn.foes, fight.foes) : bodies;
-    for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt, targets))
+    for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt, targets, sea))
       this.sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
     this.shotsHeard = { fired, struck: this.tracers.struck };
     const look = this.ownLook;

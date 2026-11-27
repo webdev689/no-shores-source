@@ -4,11 +4,11 @@
 // from the passages' pack, laid as the deal stands for the player into a mesh of their own.
 import type { MeshBuilder } from '../models/model.ts';
 import type { Climate } from '../textures/climate.ts';
-import type { Rect } from './dungeonCells.ts';
+import { besideCell, type Rect } from './dungeonCells.ts';
 import { joinedOn } from './dungeonJoins.ts';
 import { type KitPlacement, kitsOf } from './dungeonKits.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
-import { type DungeonLayout, STAIR, styleAt, type StyleKey, VOID } from './dungeonLayout.ts';
+import { type DungeonLayout, ROCK, STAIR, styleAt, type StyleKey, VOID } from './dungeonLayout.ts';
 import { LIGHT_KINDS, type Light } from './dungeonLight.ts';
 import { box, COLOUR, type Kitted, lookAt } from './dungeonMesh.ts';
 import { layModule, loadStylePack, type ModuleMesh, type ModulePack, PARTS, partPicture } from './dungeonModules.ts';
@@ -35,18 +35,27 @@ export type Dressing = Kitted & { readonly lay: (mesh: MeshBuilder, plane?: Stor
 /** The props' plans a storey's kits keep clear of: one list for every storey, or each storey's own. */
 export type PropPlans = readonly Rect[] | ((plane: StoreyPlane) => readonly Rect[]);
 
-/** Each storey's kit pieces, as the dressing lays them: on its plane, clear of its props' plans, none on a flight's
- *  cell, open air's or a cell opened to them; and the mesh's own pieces they stand in place of. */
+/** Each storey's kit pieces, as the dressing lays them: on its plane as the kits read it (`kitPlane`, its `read`),
+ *  clear of its props' plans, none on a flight's cell, open air's or a cell opened to them; and the mesh's own pieces
+ *  they stand in place of. */
 export function planeKits(layout: DungeonLayout, packs: ReadonlyMap<StyleKey, ModulePack>, props: PropPlans) {
   const joined = joinedOn(layout);
   return storeyPlanes(layout).map((plane) => {
-    const { opened } = joined(plane.storey);
+    const { opened, landings } = joined(plane.storey);
     const busy = plane.layout.cells.flatMap((kind, cell) =>
       kind === STAIR || kind === VOID || opened.has(cell) ? [cell] : [],
     );
     const plans = typeof props === 'function' ? props(plane) : props;
-    return { plane, ...kitsOf(plane.layout, packs, plans, { exit: plane.exit, portal: plane.portal, busy }) };
+    const read = kitPlane(plane.layout, landings);
+    return { plane, read, ...kitsOf(read, packs, plans, { exit: plane.exit, portal: plane.portal, busy }) };
   });
+}
+
+/** A storey's plane as its kits read it: a flight's cells as rock, but the one each landing (`cell * 4 + side`,
+ *  `Joined.landings`) opens onto, so a wall facing a flight from past its foot or before its head is dressed. */
+export function kitPlane(layout: DungeonLayout, landings: ReadonlySet<number>): DungeonLayout {
+  const ends = new Set([...landings].map((code) => besideCell(layout, Math.floor(code / 4), code % 4)));
+  return { ...layout, cells: layout.cells.map((kind, cell) => (kind === STAIR && !ends.has(cell) ? ROCK : kind)) };
 }
 
 /** A dungeon's dressing from its styles' packs, on an island of `climate`, its kits clear of its props' plans. */

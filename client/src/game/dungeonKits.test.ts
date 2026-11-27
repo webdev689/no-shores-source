@@ -35,8 +35,9 @@ const PLANES = Array.from({ length: 40 }, (_unused, patrol) =>
   .flat()
   .flatMap((layout) => planeKits(layout, FULL_PACKS, (plane) => propPlansOf(plane.layout)));
 const LAYOUTS: readonly DungeonLayout[] = PLANES.map(({ plane }) => plane.layout);
-const PLACED = new Map(PLANES.map(({ plane, placed }) => [plane.layout, placed] as const));
-const PLANE_OF = new Map(PLANES.map(({ plane }) => [plane.layout, plane] as const));
+// Each storey's pieces by its plane as its kits read it, a flight's cells rock but across its landings.
+const PLACED = new Map(PLANES.map(({ read, placed }) => [read, placed] as const));
+const PLANE_OF = new Map(PLANES.map(({ plane, read }) => [read, plane] as const));
 const EPS = 1e-6;
 
 type Rect = readonly [number, number, number, number];
