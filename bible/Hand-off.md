@@ -25,7 +25,9 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   has the 18 numbers the rules read, every intent it predicts by built by `intentOf`; players saw no difference, as
   the rules' buffer read the missing drink as none).
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`).
+  `roomThread.test.ts`); #253 (the owner's No Shores (Mobile) decision, kept in `bible/08-Mobile` apart from the main
+  work; its repository, `Lattymoy/no-shores-mobile`, holds a copy, and its scaffold is that repository's #1, whose
+  CI waits on the owner's deploy key; still open for the owner: what is sold).
 - **To come, after those merge**: the owner's 120-character line check for the bible and code comments, with every
   longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
 - **Merge order**: #235 and #245 both move the sea clash pin: whichever merges second moves its line in

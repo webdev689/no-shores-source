@@ -26,5 +26,6 @@ This vault is the bible: how No Shores works now, the rules we hold the code to,
 | `05-Decisions` | The owner's decisions, one note each, in the owner's words. Listed in [[Decisions]] |
 | `06-Port` | What we take from DFO Online and what we leave: [[Port]], [[Pick List]] |
 | `07-Open` | [[Open Questions]]: decisions waiting on the owner |
+| `08-Mobile` | [[No Shores (Mobile) Is Rebuilt in Rust, Beside the Browser Game]]: the mobile game, kept apart from the main work until its own repository holds it |
 | `Templates` | Note templates: System, Decision, Pick |
 | `Attachments` | Pictures for notes, once a note needs one: the only media in git but the forge's, kept as shipped |
