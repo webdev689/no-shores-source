@@ -4,7 +4,9 @@ import { DROPPED, type GearDrop, type GearItem } from '../network/gearMessages.t
 import type { PixelPicture } from './dropPictures.ts';
 import { PILLAR_M } from './dropLight.ts';
 import { DropsShown, PIXEL_M, markPicture } from './drops.ts';
-import { VESTIGE_M, lyingPicture } from './itemDrops.ts';
+import { KINDS } from '../player/gear.ts';
+import { PX_PER_M } from '../player/figures.ts';
+import { VESTIGE_M, lyingPicture, lyingPixelM } from './itemDrops.ts';
 import { MARK_FLOATS } from './marks.ts';
 
 const EYE = [0, 0, 1.6] as const;
@@ -49,6 +51,18 @@ test("an item's picture lies as a drop's: cropped to what it draws, its longest 
   assert.equal(clear.rows.length, 0, 'nothing drawn, nothing laid');
 });
 
+test("an armour piece lies at its worn size, not stretched to a weapon's length", () => {
+  const helm = picture(24, 20, 2);
+  const laid = lyingPicture(helm, lyingPixelM(KINDS.indexOf('head')));
+  assert.equal(laid.pixelM, 1 / PX_PER_M, "its pixel the figure's, so it is drawn twice as large as worn");
+  assert.deepEqual([laid.rows.length, laid.rows[0]?.length], [16, 20], 'still cropped');
+  for (const kind of ['head', 'torso', 'arms', 'legs', 'cloak'] as const)
+    assert.equal(lyingPixelM(KINDS.indexOf(kind)), 1 / PX_PER_M, kind);
+  for (const kind of ['sword', 'bow', 'pistolet', 'greatsword'] as const)
+    assert.equal(lyingPixelM(KINDS.indexOf(kind)), undefined, `${kind} keeps a Vestige's length`);
+  assert.equal(lyingPixelM(0), undefined, 'no kind, no worn size');
+});
+
 test("an item at rest is its own picture in its rarity's light, and lands in its rarity for its sound", () => {
   const laid: PixelPicture = lyingPicture(picture(20, 6, 0));
   const asked: GearItem[] = [];
@@ -76,6 +90,28 @@ test("an item at rest is its own picture in its rarity's light, and lands in its
   assert.ok(unseen.marks.length > 0, 'its picture not drawn yet: its light alone');
   assert.ok(rested.marks.length > unseen.marks.length, 'drawn, its picture in its light');
   assert.ok(PILLAR_M[3] > PILLAR_M[0], 'a rarer pillar taller');
+});
+
+test("an item's glow leads the eye to it far off, and is no larger than its picture up close", () => {
+  // A long thin piece, as a sword or a bow lies, told of at rest and drawn face on.
+  const laid = lyingPicture(picture(40, 4, 0));
+  const spans = (eye: readonly [number, number, number]) => {
+    const out = new DropsShown(
+      () => laid,
+      () => true,
+    ).frame([lying({ id: 9, rarity: 1 })], 10, eye).marks;
+    const added = (opacity: number) => opacity === -1;
+    const across = (light: boolean) =>
+      Array.from({ length: out.length / MARK_FLOATS }, (unused, vertex) => vertex * MARK_FLOATS)
+        .filter((start) => added(out[start + 6] ?? 0) === light && (out[start + 2] ?? 0) < REST[2] + 1.5)
+        .map((start) => out[start] ?? 0);
+    const width = (eastings: number[]) => Math.max(...eastings) - Math.min(...eastings);
+    return { picture: width(across(false)), glow: width(across(true)) };
+  };
+  const near = spans([0, -4, 1.6]);
+  assert.ok(near.glow <= near.picture + 1e-6, `up close: glow ${near.glow} m, picture ${near.picture} m`);
+  const far = spans([0, -60, 1.6]);
+  assert.ok(far.glow > far.picture + 0.1, `far off: glow ${far.glow} m past its picture ${far.picture} m`);
 });
 
 test('an item turns as it hovers: its picture narrows edge on, and shows its other face mirrored', () => {
