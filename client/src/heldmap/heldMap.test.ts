@@ -4,6 +4,7 @@ import { Stack } from '../ui/stack.ts';
 import { fakeInterface, wordsIn } from '../ui/uiForTests.ts';
 import { HeldMap } from './heldMap.ts';
 import { Kept, layoutKey } from './heldMapKept.ts';
+import type { HeldMapScene } from './heldMapScene.ts';
 import { MapAsk } from './heldMapAsk.ts';
 import { GLYPH_HALF } from './landGlyphs.ts';
 import { letterScale } from './mapLayout.ts';
@@ -17,7 +18,7 @@ const scene = {
   knownIslands: 3,
   course: [],
 };
-const keyOf = (changed: Partial<Parameters<typeof layoutKey>[4]> = {}, others: Partial<{ fonts: string }> = {}) =>
+const keyOf = (changed: Partial<HeldMapScene> = {}, others: Partial<{ fonts: string }> = {}) =>
   layoutKey(
     { ...view },
     structuredClone(stage),

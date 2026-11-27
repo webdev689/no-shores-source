@@ -174,13 +174,13 @@ test('the place is kept within a second of changing, and not again while it hold
   Object.assign(globalThis, { addEventListener: () => undefined, document: { addEventListener: () => undefined } });
   try {
     const written: string[] = [];
-    let place = { node: 'overlook-social', at: [10, 20] as const };
+    let place: Resumed = { kind: 'social', node: 'overlook-social', at: [10, 20] };
     keepPlace(() => place, { setItem: (unused, value) => void written.push(value) });
     mock.timers.tick(1_000);
     assert.equal(written.length, 1, 'kept within a second');
     mock.timers.tick(5_000);
     assert.equal(written.length, 1, 'not again while it holds');
-    place = { node: 'overlook-social', at: [11, 20] as const };
+    place = { kind: 'social', node: 'overlook-social', at: [11, 20] };
     mock.timers.tick(1_000);
     assert.deepEqual(JSON.parse(written.at(-1) ?? 'null'), place, 'kept again a second after it moved');
   } finally {
