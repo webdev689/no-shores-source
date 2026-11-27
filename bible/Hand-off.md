@@ -9,9 +9,8 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: #229 (the deeper dungeons: storeys and stairs, more ways, great rooms and galleries,
-  vaults, richer chests and DFO's 3D map; [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]],
-  its pieces published by the dungeon-modules workflow's run 53) and #159 (the rooms' worker tests wait for what they
+- **For the owner's yes**: #249 ("Use your gifts" counts a cloak taken out and a dye worn before the task begins, so
+  neither is asked again; tested offline), #159 (the rooms' worker tests wait for what they
   check; it conflicts with `main` in `roomThread.test.ts`).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
