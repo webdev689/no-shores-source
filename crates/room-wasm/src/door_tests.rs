@@ -237,7 +237,7 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "37b8fca918a836c5";
+pub const SEA_CLASH_HASH: &str = "6758ee910bd8e6a0";
 
 /// A new player handed the Sloop, as the Harbourmaster hands it over in the welcome: one the sea lets in.
 fn sailor() -> gear::Character {

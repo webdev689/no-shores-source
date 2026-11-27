@@ -137,7 +137,7 @@ test('a lantern burns where its ship carries it: turned with its heading and hee
   assert.ok(Math.abs(east + 20) < 1e-9 && Math.abs(south + 50) < 1e-9 && Math.abs(up - 8) < 1e-9);
 });
 
-test("each ship's lanterns light the sky's lamps, in view or not, with the fight's lights, told only when they change", async () => {
+test("each ship's lanterns light the sky's lamps where it lies as hung, in view or not, with the fight's lights, told only when they change", async () => {
   // A device that answers every call with itself, enough for the halos' puffs to be laid.
   const device: unknown = new Proxy(() => device, { get: () => device, apply: () => device });
   const lit = {
@@ -149,9 +149,8 @@ test("each ship's lanterns light the sky's lamps, in view or not, with the fight
   const models = new ShipModels(async () => lit);
   await models.load(0);
   const ship = (y: number) => ({ hull: 0, place: { ...PLACE, y }, rig: null, look: { side: 'friendly' as const } });
-  models.draw({} as GPURenderPassEncoder, [ship(-50), ship(50)], CAMERA, undefined, 3);
   const flash = { at: [1, 2, 3] as const, reachM: 26, light: [1, 1, 1] as const, seed: 9 };
-  models.shine([flash]);
+  models.hang([ship(-50), ship(50)], CAMERA.eye, [flash]);
   const shown = () => CITY_LAMPS.current.filter((lamp) => lamp.reachM === 13 || lamp === flash);
   assert.deepEqual(
     shown().map((lamp) => lamp.at),
@@ -163,15 +162,14 @@ test("each ship's lanterns light the sky's lamps, in view or not, with the fight
     'both ships (heading north, so ten metres aft is ten south), the one behind the eye too, then the flash',
   );
   const first = CITY_LAMPS.current;
-  models.draw({} as GPURenderPassEncoder, [ship(-40), ship(50)], CAMERA, undefined, 4);
-  models.shine([flash]);
+  models.hang([ship(-40), ship(50)], CAMERA.eye, [flash]);
   assert.equal(CITY_LAMPS.current, first, 'the same lamps, moved in place');
-  assert.deepEqual(shown()[0]?.at, [0, -30, 4]);
-  models.draw({} as GPURenderPassEncoder, [{ ...ship(-40), place: { ...PLACE, z: -4 } }], CAMERA, undefined, 5);
-  models.shine();
+  assert.deepEqual(shown()[0]?.at, [0, -30, 4], 'where the ship lies as hung, no frame drawn between');
+  models.draw({} as GPURenderPassEncoder, [ship(-20)], CAMERA, undefined, 4);
+  assert.deepEqual(shown()[0]?.at, [0, -30, 4], 'drawing moves no lamp: only hanging does');
+  models.hang([{ ...ship(-40), place: { ...PLACE, z: -4 } }], CAMERA.eye);
   assert.equal(shown().length, 0, 'out on a ship sinking');
-  models.draw({} as GPURenderPassEncoder, [], CAMERA, undefined, 5);
-  models.shine();
+  models.hang([], CAMERA.eye);
   assert.equal(shown().length, 0, 'gone with the ships');
 });
 
@@ -186,8 +184,7 @@ test("a ship's lantern flickers as a lantern, by a seed of its own ship: no two 
   const models = new ShipModels(async () => lit);
   await Promise.all([models.load(0), models.load(1)]);
   const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'friendly' as const } });
-  models.draw({} as GPURenderPassEncoder, [ship(0), ship(0), ship(1)], CAMERA, undefined, 3);
-  models.shine();
+  models.hang([ship(0), ship(0), ship(1)], CAMERA.eye);
   const lanterns = CITY_LAMPS.current.filter((lamp) => lamp.reachM === 13);
   assert.deepEqual(
     lanterns.map((lamp) => lamp.motion),
@@ -198,8 +195,7 @@ test("a ship's lantern flickers as a lantern, by a seed of its own ship: no two 
     [shipSeed(0, 0), shipSeed(0, 1), shipSeed(1, 0)],
   );
   assert.equal(new Set(lanterns.map((lamp) => lamp.seed)).size, 3);
-  models.draw({} as GPURenderPassEncoder, [], CAMERA, undefined, 3);
-  models.shine();
+  models.hang([], CAMERA.eye);
 });
 
 test("the Grey Tithe's ships and a ship running dark light no lamp and burn no glass, a lit one beside them does", async () => {
@@ -219,10 +215,9 @@ test("the Grey Tithe's ships and a ship running dark light no lamp and burn no g
   await models.load(0);
   const ship = (look: { side: 'friendly' | 'tithe'; dark?: boolean }) => ({ hull: 0, place: PLACE, rig: null, look });
   const ships = [ship({ side: 'tithe' }), ship({ side: 'friendly', dark: true }), ship({ side: 'friendly' })];
+  models.hang(ships, CAMERA.eye);
   models.draw({} as GPURenderPassEncoder, ships, CAMERA, undefined, 3);
-  models.shine();
   assert.equal(CITY_LAMPS.current.filter((lamp) => lamp.reachM === 13).length, 2, "only the lit ship's two lanterns");
   assert.deepEqual(burning, [null, null, 3], 'the dark ships draw their glass unlit');
-  models.draw({} as GPURenderPassEncoder, [], CAMERA, undefined, 3);
-  models.shine();
+  models.hang([], CAMERA.eye);
 });

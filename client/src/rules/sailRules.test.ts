@@ -64,7 +64,7 @@ test('a voyage through WebAssembly sails to the same fingerprint as the door nat
     time += ticks / 60;
   }
   assert.equal(ship[7], 1, 'it ends on its oars');
-  assert.equal(fingerprint(sailed), 'abf7572961569df1');
+  assert.equal(fingerprint(sailed), 'd601ea9a3a491186');
 });
 
 test('the sail door refuses a ship that is not a ship, and answers aground on land', async () => {
@@ -97,5 +97,5 @@ test('a voyage onto the shore and off it sails to the same fingerprint as the do
     time += 1;
   }
   assert.ok(touched, 'it took the ground');
-  assert.equal(fingerprint(sailed), 'dbcd586188982208');
+  assert.equal(fingerprint(sailed), '3128c283b0a2a3ea');
 });

@@ -89,7 +89,7 @@ test("each ship's footprint is its own hull at its drawn size, and its bow slams
   assert.deepEqual([own?.scale, theirs?.scale], [4, 4]);
   assert.equal(own?.line, lines[SLOOP_HULL], 'its own hull line');
   assert.equal(theirs?.line, lines[hullOfCaptain(hostile)], "a captain's ship theirs");
-  // A steep, quick sea running at its bow: as its bow drops into the next crest it slams.
+  // A steep, quick sea running at its bow: as the next crest rises past its bow faster than the bow lifts, it slams.
   const wave = {
     direction: [0, 1] as const,
     number: (2 * Math.PI) / 30,

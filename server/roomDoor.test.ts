@@ -411,7 +411,7 @@ test('a sea where a Tithe ship attacks a friendly ship and a player joins them s
     friendly ||= others.some((other) => other.faction === 0);
   }
   assert.ok(friendly, 'the player fights beside the friendly ship');
-  assert.equal(hash.toString(16).padStart(16, '0'), '37b8fca918a836c5');
+  assert.equal(hash.toString(16).padStart(16, '0'), '6758ee910bd8e6a0');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {

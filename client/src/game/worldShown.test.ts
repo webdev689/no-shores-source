@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { WorldData } from './worldData.ts';
-import { worldShown } from './worldShown.ts';
+import { OFF_COAST, offCoast, worldShown } from './worldShown.ts';
 
 // Two square islands 200 km a side, the first's port's city on its west coast and a node 50 km inland, the second
 // with a node of its own.
@@ -40,9 +40,22 @@ test('the sea map shows every island, port and node from the first, wherever the
   assert.equal(shown.knownIslands, 0b11, 'both islands');
 });
 
-test('a node is sailed for at its island’s coast nearest it; a port at its city', () => {
+test('a node and a port are sailed for just off their island’s coast nearest them, never on it', () => {
   const { places } = worldShown(world);
-  assert.deepEqual(places.find((place) => place.id === 'deep')?.sail, [1_000_000, 1_100_000]);
-  assert.deepEqual(places.find((place) => place.id === 'away')?.sail, [3_100_000, 1_200_000]);
-  assert.deepEqual(places.find((place) => place.id === 'port-port')?.sail, [1_000_700, 1_100_000]);
+  // The sea room judges a course by the outline, and refuses one that ends on it.
+  assert.deepEqual(places.find((place) => place.id === 'deep')?.sail, [1_000_000 - OFF_COAST.clearM, 1_100_000]);
+  assert.deepEqual(places.find((place) => place.id === 'away')?.sail, [3_100_000, 1_200_000 + OFF_COAST.clearM]);
+  assert.deepEqual(places.find((place) => place.id === 'port-port')?.sail, [1_000_000 - OFF_COAST.clearM, 1_100_000]);
+});
+
+test('a place standing off its island is sailed for out from the island past it, as clear of its coast', () => {
+  const ring = square(1_000_000);
+  assert.deepEqual(offCoast([990_000, 1_100_000], ring), [1_000_000 - OFF_COAST.clearM, 1_100_000], 'off the west');
+  const islet: [number, number][] = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  assert.deepEqual(offCoast([50, 40], islet), [50, -OFF_COAST.clearM], 'an islet a hundred metres across');
 });

@@ -26,6 +26,28 @@ test('a ship rides the mean of the water under it, through its inertia, and tips
   assert.ok(Math.abs(abeam.pitch) < 1e-12 && Math.abs(abeam.roll) > 0, 'across it, it rolls the ship instead');
 });
 
+test('a ship rides each crest as it comes, never after it: a big hull on a long swell peaks with the water', () => {
+  // A long swell three metres high under a frigate, its time constant 0.76 s: a crest come late would leave the hull
+  // low as the water rose round it, half a metre and more.
+  const long: Swell = {
+    waves: [{ direction: [0, -1], number: (2 * Math.PI) / 140, frequency: 0.66, amplitude: 3, shift: 0, phase: 0 }],
+    fullDepthM: 20,
+    goneDepthM: 2,
+    bearing: 0,
+  };
+  const lies = { x: 0, y: 0, heading: Math.PI / 2 };
+  const times = Array.from({ length: 1000 }, (_unused, step) => step * 0.01);
+  const heaves = times.map((time) => poseOnSwell(long, deep, lies, 19, 3.1, time).heave);
+  const waters = times.map((time) => swellHeight(long, 0, 0, time, Infinity));
+  const peak = (values: number[]) => values.indexOf(Math.max(...values));
+  assert.ok(
+    Math.abs(peak(heaves) - peak(waters)) <= 1,
+    `the hull peaks at ${peak(heaves)}, the water at ${peak(waters)}`,
+  );
+  const under = Math.max(...times.map((_time, step) => (waters[step] ?? 0) - (heaves[step] ?? 0)));
+  assert.ok(under < 0.4, `the water stands ${under} m over its middle at worst`);
+});
+
 test('a ship in still water, or in water too shallow for the swell, lies level', () => {
   assert.deepEqual(poseOnSwell(undefined, deep, { x: 5, y: 5, heading: 1 }, 9, 2.8, 3), {
     heave: 0,
@@ -71,11 +93,11 @@ test('a bigger hull answers the swell slower, as the rules have it', () => {
   assert.ok(most(heaves(19)) < most(heaves(5)) * 0.8, `${most(heaves(19))} ${most(heaves(5))}`);
 });
 
-test('its bow slams pitching down into a crest, throwing spray by its way and the sea state', () => {
-  assert.ok(slams(-0.02, 0.2, RIDE.slamClosingMS * 2));
-  assert.ok(!slams(-0.02, -0.1, RIDE.slamClosingMS * 2), 'its stem clear of the water');
-  assert.ok(!slams(-0.02, 0.2, RIDE.slamClosingMS * 0.5), 'meeting it gently');
-  assert.ok(!slams(0.1, 0.2, RIDE.slamClosingMS * 2), 'rising');
+test('its bow slams as a crest rises past it quickly, throwing spray by its way and the sea state', () => {
+  assert.ok(slams(0.2, RIDE.slamClosingMS * 2));
+  assert.ok(!slams(-0.1, RIDE.slamClosingMS * 2), 'its stem clear of the water');
+  assert.ok(!slams(0.2, RIDE.slamClosingMS * 0.5), 'meeting it gently');
+  assert.ok(!slams(0.2, -1), 'the crest falling away');
   assert.equal(sprayOf(0, 1, 0), 0, 'no way, no spray');
   assert.ok(sprayOf(1, 0.9, 0) > sprayOf(1, 0.1, 0), 'a rough sea throws more');
   assert.ok(sprayOf(1, 0.5, 0) > sprayOf(1, 0.5, 3 * RIDE.slamSprayS) * 1.5, 'a slam bursts, then fades');

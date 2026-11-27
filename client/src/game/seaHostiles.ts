@@ -2,9 +2,11 @@
 // sight of the player's ship, by its faction's emblem, its rank's colour, its name as its plate gives it, its level and
 // its distance; the words on the voyage's line when one is first sighted or the ship sails into another's hold of the
 // sea; and the water's name, band and holder for the sea's status line.
+import { sweptBoxes } from '../editor/shipClear.ts';
 import type { SeenHostile } from '../network/messages.ts';
-import type { Point2 } from '../overworld/ground.ts';
+import type { Point2, Vec3 } from '../overworld/ground.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
+import type { Pick as Picked } from '../overworld/overworldPick.ts';
 import { HOLDER_WORDS as MAP_HOLDER_WORDS } from '../heldmap/watersWash.ts';
 import { emblemSvg, markPicture } from '../plus/emblems.ts';
 import { rankMark } from '../rules/roster.ts';
@@ -14,6 +16,7 @@ import { distanceText } from '../plus/compass.ts';
 import { SKY_NOW } from '../sky/skyDriver.ts';
 import { factionSide } from '../ships/dress.ts';
 import { lanternsLit } from '../ships/lanterns.ts';
+import { hullOfCaptain } from '../ships/hulls.ts';
 
 /** The least distance a hostile ship is sighted from, metres (crates/room/src/sighting.rs), read for a room that sends
  *  none. */
@@ -38,6 +41,69 @@ const apart = (hostile: SeenHostile, ship: Point2) => Math.hypot(hostile.x - shi
 /** The hostile ships within their own sight of the player's ship at `ship`. */
 export function sightedHostiles(hostiles: readonly SeenHostile[], ship: Point2): SeenHostile[] {
   return hostiles.filter((hostile) => apart(hostile, ship) <= sightOf(hostile));
+}
+
+/** The sighted hostile ship whose hull or rig, drawn `scale` times its size as hull `shown` draws it, a ray from `eye`
+ *  along the unit `direction` meets first, and how far along it: a click on the ship itself is a click on its mark.
+ *  Its box is its hull's and its sails' as far as they swing (`sweptBoxes`), turned to its heading; none met, null. */
+export function hostileUnder(
+  eye: Vec3,
+  direction: Vec3,
+  hostiles: readonly SeenHostile[],
+  ship: Point2,
+  scale: number,
+  shown: (hull: number) => number = (hull) => hull,
+): { readonly id: string; readonly distance: number } | null {
+  let met: { readonly id: string; readonly distance: number } | null = null;
+  for (const hostile of sightedHostiles(hostiles, ship)) {
+    const boxes = sweptBoxes(shown(hullOfCaptain(hostile)));
+    const low = [0, 1, 2].map((axis) => Math.min(...boxes.map((box) => box[0][axis] ?? 0)) * scale);
+    const high = [0, 1, 2].map((axis) => Math.max(...boxes.map((box) => box[1][axis] ?? 0)) * scale);
+    const [forward, starboard] = [
+      [Math.sin(hostile.heading), -Math.cos(hostile.heading)],
+      [Math.cos(hostile.heading), Math.sin(hostile.heading)],
+    ] as const;
+    const [east, south] = [eye[0] - hostile.x, eye[1] - hostile.y];
+    const from = [east * forward[0] + south * forward[1], east * starboard[0] + south * starboard[1], eye[2]];
+    const way = [
+      direction[0] * forward[0] + direction[1] * forward[1],
+      direction[0] * starboard[0] + direction[1] * starboard[1],
+      direction[2],
+    ];
+    // The ray's stretch inside each pair of the box's faces, and inside all three at once.
+    let [enter, leave] = [0, Infinity];
+    for (let axis = 0; axis < 3; axis++) {
+      const [start, step] = [from[axis] ?? 0, way[axis] ?? 0];
+      const [lowest, highest] = [low[axis] ?? 0, high[axis] ?? 0];
+      if (Math.abs(step) < 1e-12) {
+        if (start < lowest || start > highest) leave = -1;
+        continue;
+      }
+      const [one, other] = [(lowest - start) / step, (highest - start) / step];
+      [enter, leave] = [Math.max(enter, Math.min(one, other)), Math.min(leave, Math.max(one, other))];
+    }
+    if (enter <= leave && (!met || enter < met.distance))
+      met = { id: `${HOSTILE_PREFIX}${hostile.id}`, distance: enter };
+  }
+  return met;
+}
+
+/** What a click at sea met: `picked` (a mark, else the land or the sea under it), or a sighted hostile ship standing
+ *  nearer along its `ray` than what it met, as that ship's mark; the ships drawn `scale` times their size in the
+ *  hulls `shown` draws them as. */
+export function orHostile(
+  picked: Picked,
+  ray: { readonly eye: Vec3; readonly direction: Vec3 },
+  hostiles: readonly SeenHostile[],
+  ship: Point2,
+  scale: number,
+  shown: (hull: number) => number,
+): Picked {
+  if (picked.kind === 'mark') return picked;
+  const hostile = hostileUnder(ray.eye, ray.direction, hostiles, ship, scale, shown);
+  const met = (point: readonly number[]) => Math.hypot(...point.map((value, axis) => value - (ray.eye[axis] ?? 0)));
+  const behind = picked.kind === 'none' ? Infinity : met(picked.point);
+  return hostile && hostile.distance < behind ? { kind: 'mark', id: hostile.id } : picked;
 }
 
 /** Its name as its plate gives it: its faction's, on its hull. */

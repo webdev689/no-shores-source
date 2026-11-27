@@ -4,7 +4,14 @@
 import { CHART_CELL_M, WORLD_FRAME } from '../overworld/worldFrame.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { SeaLock } from './pageWaters.ts';
-import { lockedOut, maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
+import {
+  COURSE_POINTS,
+  lockedOut,
+  maskFromOutlines,
+  planSeaRoute,
+  type RouteRefusal,
+  type SeaMask,
+} from '../overworld/seaRoute.ts';
 import { CLICK_PACE, type Pace, SHIP_SPEED, secondsLeft, shipAt, type Voyage, voyageOf } from '../overworld/voyage.ts';
 import type { Lies } from '../ships/swellPose.ts';
 import { distanceText } from '../plus/compass.ts';
@@ -182,7 +189,7 @@ export class Passage {
     point: Point2,
   ): { readonly ok: true; readonly points: Point2[] } | { readonly ok: false; readonly why: string } {
     if (this.locked.at(point)) return { ok: false, why: LOCKED };
-    const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
+    const route = this.plan(point);
     if (!route.ok) return { ok: false, why: REFUSED[route.reason] };
     return { ok: true, points: detour(route.points, this.keepClear()) };
   }
@@ -190,7 +197,7 @@ export class Passage {
   /** Plans a voyage from the ship to a point and sets sail at `pace`, a click's unless said; a voyage that cannot be
    *  planned says why. */
   sailTo(point: Point2, pace: Pace = CLICK_PACE): void {
-    const route = this.locked.at(point) ? null : planSeaRoute(this.maskFor(this.position, point), this.position, point);
+    const route = this.locked.at(point) ? null : this.plan(point);
     if (!route?.ok) {
       this.said = route ? REFUSED[route.reason] : LOCKED;
       return;
@@ -211,7 +218,7 @@ export class Passage {
       return false;
     }
     const ahead = aheadOnWayIn(this.position, [point, ...after]);
-    const route = ahead ? null : planSeaRoute(this.maskFor(this.position, point), this.position, point);
+    const route = ahead ? null : this.plan(point);
     if (route && !route.ok) {
       this.said = REFUSED[route.reason];
       return false;
@@ -387,6 +394,12 @@ export class Passage {
   /** Says why something asked of it could not be done, on the voyage's line. */
   say(words: string): void {
     this.said = words;
+  }
+
+  /** A route from the ship to `point`, no longer than the sea room takes, room left for its bends round islands. */
+  private plan(point: Point2): ReturnType<typeof planSeaRoute> {
+    const mostPoints = COURSE_POINTS.most - COURSE_POINTS.bends;
+    return planSeaRoute(this.maskFor(this.position, point), this.position, point, { mostPoints });
   }
 
   /** A voyage within the open landmass's window is planned on its fine mask; any other over the whole frame's; the

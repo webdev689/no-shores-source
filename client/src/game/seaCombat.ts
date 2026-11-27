@@ -275,10 +275,12 @@ export class SeaCombat {
   }
 
   /** A drag of the view, in pixels: it turns the camera round the ship; while aiming, the look stays square off
-   *  the side taken and a drag up or down lays the guns farther or nearer. */
+   *  the side taken, a drag up or down lays the guns farther or nearer, and one across swings the aim round to the
+   *  other side (`AimCamera.drag`). */
   drag(right: number, down: number): void {
     const yaw = this.aiming ? this.orbit.yaw : this.orbit.yaw + right * DRAG_TURN;
     this.orbit = { yaw, pitch: this.pitched(this.orbit.pitch + down * DRAG_TURN) };
+    if (this.aiming) this.aimCamera.drag(right);
   }
 
   /** A pitch within the aim's clamp while aiming, else the orbit's. */

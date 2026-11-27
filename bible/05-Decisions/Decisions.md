@@ -408,6 +408,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Overlook's City Below Is Lit at Night, in Detail]]
 - [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
 - [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]
+- [[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]
 
 ## Claude's calls
 
@@ -458,6 +459,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Island Textures as Claude Builds Them]]
 - [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
 - [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
+- [[The Sea's Polish as Claude Builds It]]
 
 ## Replaced
 

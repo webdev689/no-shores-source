@@ -124,9 +124,10 @@ of foam the fight throws up there ([[Naval Combat]],
 ## A ship on it
 
 A ship drawn with the land hides the water behind it and is seen through it below its waterline. It rides the swell
-through its inertia: each wave answered as a first-order lag answers it, its time constant 0.02 s a metre of its
-waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sailing]]). Its bow slams when, pitching
-down, the crest at its stem rises over it faster than 1 m/s, and throws spray.
+through its inertia: each wave shrunk as a first-order lag shrinks it, its crest on time, its time constant 0.02 s a metre of its
+waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sailing]]). Its bow slams when the crest
+at its stem rises past it faster than 0.8 m/s, outrunning the lift it gives, and throws spray: some one a ship's two
+minutes in the highest sea, none in a lesser one.
 
 Its footprint is its own hull line at its waterline, read from its mesh where its faces cross it (16 stations, stern
 to bow, closer together at its ends, where the line turns fastest; a fair hull until its mesh comes, read once as its

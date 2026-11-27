@@ -10,7 +10,9 @@ status: in force
 ## What it settles
 
 - While the aim is held in a sea fight, the camera cannot be turned out of it: the look stays where the side's guns
-  bear.
+  bear. Replaced in part by
+  [[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]: turned,
+  the aim swings round to the other side's guns, still aiming.
 
 ## Claude's calls
 
