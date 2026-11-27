@@ -39,6 +39,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Third-Person Strikes Run Faster Than DFO's]]
 - [[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]
 - [[Come Sail Away's Sailing Comes Over]]
+- [[Ships' Lanterns Come Over From DFO]]
+- [[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]
 - [[Ship Models Live on R2]]
 - [[The Sloop's Trim]]
 - [[The Server Gets Its Own Rules]]
@@ -401,6 +403,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]
 - [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]
 - [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]
+- [[Dialogue Waits for a Click by Default, With Auto as a Setting]]
+- [[Overlook's City Below Is Lit at Night, in Detail]]
 - [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
 
 ## Claude's calls

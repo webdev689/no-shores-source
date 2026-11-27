@@ -8,10 +8,11 @@ use crate::arms::{Arms, arms_of, posed};
 use crate::ballistics::Ball;
 use crate::boost::Boost;
 use crate::captain::odds::Power;
-use crate::captain::{Captain, Own, Sighting};
+use crate::captain::{Captain, ENGAGE_RANGE, Mode, Own, Sighting};
 use crate::damage::{Damage, SINK_CLEAR_M, SINK_LIST_DEG, SINK_PITCH_DEG, State};
 use crate::gunnery::Guns;
 use crate::guns::Shot;
+use crate::night::{night_sight, runs_dark};
 use crate::random::Mulberry32;
 use crate::ranks::Commission;
 use crate::rigging::Rigging;
@@ -144,6 +145,9 @@ pub struct Fight {
     /// Each player's lay as long as it has been held (`fight_focus.rs`).
     held: BTreeMap<ShipId, focus::Held>,
     ambush: bool,
+    /// The daylight over the fight (0 night to 1 day), as its room reads the sky there: by night its captains' lookouts
+    /// see a ship as her lanterns show her (`night::night_sight`). Day until the room says.
+    pub daylight: f64,
 }
 
 /// Whether water at a point is deep enough to float `hull`.
@@ -180,11 +184,15 @@ pub(crate) fn carry_of(ship: &Ship) -> [f64; 3] {
     [way[0], way[1], 0.0]
 }
 
-fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
+/// A ship as a captain's lookout sees it under `daylight`: a player's always shows her lanterns, a captain's as
+/// `night::runs_dark` says.
+fn sighting_of(id: ShipId, vessel: &Vessel, daylight: f64) -> Sighting {
     let damage = &vessel.damage;
-    let power = match vessel.command() {
-        None => Power::player_in(vessel.hull, damage.hull_share()),
-        Some(command) => command.mind.power(damage),
+    let (power, lit) = match vessel.command() {
+        None => (Power::player_in(vessel.hull, damage.hull_share()), true),
+        Some(Command { mind, .. }) => {
+            (mind.power(damage), !runs_dark(mind.commission.faction, mind.mode == Mode::Flee))
+        }
     };
     Sighting {
         id,
@@ -193,6 +201,7 @@ fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
         level: vessel.pose.heave,
         hull_share: damage.hull_share(),
         power,
+        seen_to: night_sight(ENGAGE_RANGE, daylight, lit),
     }
 }
 
@@ -213,7 +222,18 @@ impl Fight {
         let ships = BTreeMap::new();
         let (balls, stems, fittings) = (Vec::new(), BTreeMap::new(), BTreeMap::new());
         let (webbed, held) = (BTreeMap::new(), BTreeMap::new());
-        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls, stems, fittings, webbed, held, ambush: false }
+        Self {
+            clock: 0.0,
+            draws: Mulberry32::new(seed),
+            ships,
+            balls,
+            stems,
+            fittings,
+            webbed,
+            held,
+            ambush: false,
+            daylight: 1.0,
+        }
     }
 
     /// A player's Sloop and one captain of `commission` in its rank's hull, put to sea on the ring round the Sloop,
@@ -529,7 +549,7 @@ impl Fight {
         let Some(own) = self.ships.get(&of).map(Vessel::flag) else { return Vec::new() };
         let foe = |vessel: &Vessel| vessel.flag() != own && vessel.in_fight() && vessel.damage.fighting();
         let foes = self.ships.iter().filter(|(_, vessel)| foe(vessel));
-        foes.map(|(id, vessel)| sighting_of(*id, vessel)).collect()
+        foes.map(|(id, vessel)| sighting_of(*id, vessel, self.daylight)).collect()
     }
 }
 
@@ -565,6 +585,9 @@ mod ram_tests;
 #[cfg(test)]
 #[path = "fight_factions_tests.rs"]
 mod faction_tests;
+#[cfg(test)]
+#[path = "fight_night_tests.rs"]
+mod night_tests;
 
 #[cfg(test)]
 #[path = "fight_ambush_tests.rs"]

@@ -341,7 +341,9 @@ impl Fight {
     fn mend(&mut self, wind_at: &impl Fn([f64; 2]) -> [f64; 2]) {
         let captains = self.ids(true);
         for id in self.ids(false) {
-            let Some(sighting) = self.ships.get(&id).map(|player| sighting_of(id, player)) else { continue };
+            let Some(sighting) = self.ships.get(&id).map(|player| sighting_of(id, player, self.daylight)) else {
+                continue;
+            };
             let hostile_near = captains.iter().any(|captain| {
                 // A friendly captain, under the players' flag, takes no player's ship.
                 let Some(vessel) = self.ships.get(captain).filter(|vessel| vessel.flag() != Flag::Player) else {

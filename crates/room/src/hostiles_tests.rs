@@ -401,3 +401,15 @@ fn a_player_under_way_meets_nearly_twice_the_ships_rolls_every_60_to_140_s_broug
     let ships = brought(&HOSTILE_WATER, 5, 4, [500_000.0, 500_000.0], 20);
     assert!(ships.len() > 300, "{} ships", ships.len());
 }
+
+#[test]
+fn by_night_a_ship_comes_for_a_player_only_within_650_m_and_by_day_within_its_sight() {
+    // Its choice alone: in a tick a ship within 750 m would meet the player, and one by home waters would leave.
+    let quarry = |east: f64, daylight: f64| {
+        let ship = standing(1, [0.0, 0.0], 0.0, true);
+        come_for(&ship, &[voyager(5, [east, 0.0], 0, false)], (1.0, 1.0), daylight).1
+    };
+    assert_eq!((quarry(649.0, 0.0), quarry(651.0, 0.0)), (Some(5), None), "her lanterns: 650 m");
+    assert_eq!(quarry(4_000.0, 1.0), Some(5), "by day its whole sight");
+    assert_eq!(quarry(SIGHT_LEAST_M + 1.0, 1.0), None, "and no farther");
+}

@@ -9,6 +9,7 @@ import { startMovementRules } from '../rules/movementRules.ts';
 import { mainPortsOf } from '../rules/roster.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
 import { openHull, ShipModels } from '../ships/shipModels.ts';
+import { ShipLights } from '../ships/shipLights.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
 import { loadLandTexts } from '../terrain/landTexts.ts';
 import { seaWeatherOn } from '../water/seaWeather.ts';
@@ -69,6 +70,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   /** The public events' props, drawn from the list the event's view sets each frame. */
   const eventProps = new EventPropsDraw(gpu);
   const shipModels = new ShipModels(openHull(gpu, SEA_SHIPS));
+  const shipLights = new ShipLights(gpu);
   const [world, landTexts, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
     loadLandTexts(base),
@@ -109,7 +111,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
     return terrainOf(opened.view, biome ? woodsOf(castOf(biome)) : undefined);
   };
   scene.setLand(landmass.view, terrainFor(landmass), biomeOf(landmass.id));
-  const views = { scene, figureView, eventProps, shipModels, forge, firstPerson, store, sloop };
+  const views = { scene, figureView, eventProps, shipModels, shipLights, forge, firstPerson, store, sloop };
   const modules = {
     roomModule,
     builtHulls,

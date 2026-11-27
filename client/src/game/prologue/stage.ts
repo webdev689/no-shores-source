@@ -35,6 +35,7 @@ import type { Stack } from '../../ui/stack.ts';
 import { type Actor, actorCards } from './actors.ts';
 import type { Hull, ShipDraw } from './sailing.ts';
 import { STORY_DAY_S, overTheSky, toldSky } from './storySky.ts';
+import { movesOnByItself } from '../../speech/pace.ts';
 
 /** What a beat shows in a frame. */
 export interface StoryFrame {
@@ -341,13 +342,14 @@ export class Stage {
     if (node) worldSound.onFoot(node, landmass, shot);
   }
 
-  /** Plays a scene in order: each bark over its speaker's head, each run of lines together in the dialogue box (by
-   *  itself in a cutscene, `auto`, else as the player presses on), its words alone, with no glyph over a head.
+  /** Plays a scene in order: each bark over its speaker's head, each run of lines together in the dialogue box (as
+   *  the player presses on, or by itself under Auto or where the scene is said in a `fight`), its words alone, with
+   *  no glyph over a head.
    *  `heads` maps a speaker to the head that says it, where the head's name is not the speaker's own; `saying` hears
    *  each line as it begins, for a beat whose camera answers what is said. */
   async play(
     scene: string,
-    auto = true,
+    fight = false,
     heads: Readonly<Record<string, string>> = {},
     saying: (line: Line) => void = () => undefined,
   ): Promise<void> {
@@ -369,7 +371,7 @@ export class Stage {
       const run: Line[] = [];
       while (lines[index] && lines[index]?.kind !== 'bark') run.push(lines[index++] as Line);
       await dialogue.play(run, cast, {
-        auto,
+        auto: movesOnByItself(fight),
         onLine: saying,
       });
     }

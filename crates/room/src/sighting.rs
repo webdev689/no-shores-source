@@ -69,6 +69,12 @@ pub fn sight_for(pace: f64, way: f64) -> f64 {
     (SIGHT_HOLD_S * (SHIP_SPEED_M_S * way + HOSTILE_WAY_M_S) * pace.max(1.0)).max(SIGHT_LEAST_M)
 }
 
+/// The daylight (0 night to 1 day) at `y` metres down the map at `unix_s` (seconds since the Unix epoch), which sets
+/// how far a ship is sighted by night (`naval::night`).
+pub(crate) fn daylight_at(y: f64, unix_s: f64) -> f64 {
+    sky::heavens::heavens_at(y, sky::clock::world_seconds(unix_s * 1000.0)).daylight()
+}
+
 /// The faction a roll in this water sends: the Grey Tithe's in every water but home, which sends none. The Lattice's
 /// waters send the Tithe's ships too: the Lattice is met on land.
 #[must_use]

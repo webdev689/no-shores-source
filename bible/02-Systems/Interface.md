@@ -740,7 +740,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   shows, except over the menu's gear screen, and its key, Escape, the pad's B or its Close press shuts it. It is a
   window of the kit over a dimmed view, over every layer the game draws but the screen's keyboard: ALL CONTROLS on its
   header band, then its groups, Move, Fight, Arts, Camera, Menus, Sea and Sea fight (`CONTROL_GROUPS`), each its name
-  in faint capitals over a rule and its rows under it: the keys, then the pad's buttons, drawn as the strip draws them,
+  in faint capitals over a rule and its rows under it (Menus holds Continue dialogue, the press that moves a line of
+  the dialogue box on; [[Speech]], "Moving on"): the keys, then the pad's buttons, drawn as the strip draws them,
   beside a few words on what the row does; a footer band holds a line of a few words and Reset to defaults. Every key
   and button shown is as bound now, so the sheet always says what the game hears; the side the player used last stands
   bright and the other faint, and the words are that side's ("Swing; fire" on the pad). The groups stand in as many
@@ -761,7 +762,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   mouse button binds only a control that hears one: the menus, the sheet, Use, Respawn and the helm's controls act on
   a key going down or at the helm, where the pointer is free, so for them the footer says it "takes keys only"; a
   button past the fifth is no key, and the slot waits on. Every other control acting with the key in the same place
-  (on foot, dead, in a window, at the helm or in a sea fight; `binds.ts`) gives it up, taking the slot's old key
+  (on foot, dead, in a window, at the helm, in a sea fight, or while a line of the dialogue box waits; `binds.ts`)
+  gives it up, taking the slot's old key
   where that clashes with nothing it acts with there, and the footer says "Swapped with" them; where one would be
   left with nothing, the binding is refused and the footer says that control "needs it". No two controls that act
   in one place ever share a key. Reset to defaults binds every control as it came. A mouse's gesture (the click to
@@ -1153,9 +1155,11 @@ never while a press is held. Each press is an ask the room answers.
     [[Ambience]] ("Ambience"), each kept in this browser; under Credits, "Sound credits" and its View press, which
     shows the recorded sounds' credits in the volumes' place: each one's name, author, licence and source, and what was
     changed, with ‹ Audio, or Escape, back.
-  - **Controls**: every control as the sheet of every control lists it, each key and button bound anew there the same
-    way ("Binding a control"), and Reset to defaults; its line says what a waiting key wants or what the last binding
-    came to.
+  - **Controls**: under Dialogue, how a line of the dialogue box moves on ("Dialogue": Click to continue, the first
+    and the default, or Auto, kept in this browser; [[Speech]], [[Dialogue Waits for a Click by Default, With Auto as a Setting]]), a line under it
+    saying that Auto moves each line on by itself and that lines said in a fight always do; then every control as the
+    sheet of every control lists it, each key and button bound anew there the same way ("Binding a control"), and
+    Reset to defaults; its line says what a waiting key wants or what the last binding came to.
   - **Account** ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a username and
     password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held. Under it,
     the players blocked, each with a press to unblock them, and the muted.
