@@ -213,7 +213,7 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   110 m/s, so it can be dodged; a foe's ball strikes two thirds of its gun's damage (`FOE_GUN`), so an Elite
   Marksman's aimed shot fells a player of its level in three, not two. A foe's arrow and bolt strike whole. A body is an upright cylinder
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
-  one coming down over a head meets its top.
+  one coming down over a head meets its top. One loosed inside the ground (a cliff's face) stops where it is loosed.
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a
   pistolet's 1.9, a thunderlock's 2.2. A double pistolet fires its right, then its left once the right's firing frames
   have played (0.5 s, the pistolet's in first person), and only then reloads both, for 2.85 s, half again a
