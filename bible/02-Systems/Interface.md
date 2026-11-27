@@ -1234,7 +1234,8 @@ The Test Ground makes its own sound at full volume on the first click into its v
 
 E at a dungeon's entrance ([[Game]], "A dungeon") opens a card drawn in a window of the menu's kit, in the middle of
 the view (`EntranceCardView`, a layer of its own over the menu's), its words as large as the menu's on the same
-screen: the dungeon's name in its header; under it the run's tier and level ("Elite seas · Levels 3 to 6", "Elite
+screen: the dungeon's name in its header, beside it the tier's skulls as the island's tiles draw them (one Normal,
+two Elite, three Abyss; `EntranceCard.rank`); under it the run's tier and level ("Elite seas · Levels 3 to 6", "Elite
 Dungeon · Levels 1 to 4", "Elite Dungeon of the week · Level 26"), its rules (an Abyss run's revives, and the Abyss
 Dungeon of the week's "Never matched. Bring your company."), its modifiers each led by its icon as the timers draw it,
 with what each does, and what it pays, "Taken today" or "Taken this week" once this character's record holds it; why
@@ -1352,11 +1353,13 @@ primary, with Enter's key) on its footer; Cancel names the pad's B while the pad
 ## The island's tiles
 
 Over an island docked at or gone ashore on, no node is marked on the map; the island's tiles hold them
-(`islandPanel.ts`, `islandWords.ts`, `islandArt.ts`, `islandScenes.ts`;
+(`islandPanel.ts`, `islandWords.ts`, `islandArt.ts`, `islandScenes.ts`, `islandDepths.ts`, `islandFrame.ts`;
 [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]],
-[[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). On an island cut into regions ([[World Map]], "Regions") they are the places of
-the region the ship lies off, the one whose centre is nearest it: those its nodes list, and any place no region lists;
-the port and the Playlist only where that region holds the living port. They
+[[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]],
+[[Each Region Has Its Own Dungeons, and the Dungeons Go Deeper and Darker]]). On an island cut into regions ([[World Map]], "Regions") they are the places of
+the region the ship lies off, the one whose centre is nearest it: those its nodes list, any place no region lists, and
+the region's three dungeons of the day; the port and the Playlist only where that region holds the living port. The
+missions, the world boss and the outposts have no tile until they are integrated. They
 are rectangles of one size in a grid with 16 px between them, across the view under the place's name (104 px down, 24
 in from each side), centred: each 280 to 340 px wide (narrower only on a view too narrow for one of 280), as many a row
 as fit up to five, as tall as three rows fit (176 to 220 px), their sides in 4-pixel steps so each is even and a
@@ -1385,44 +1388,38 @@ stand:
 - **An Elite Dungeon**: a stone gate in a hillside, braziers either side, steps down into the dark and its light within
   (blue, green or amber; violet for the week's Abyss), trees on its hill. A click opens its card to go in from the sea
   ([[Activities]], "The Elite Dungeons").
-- **A mission**: broken walls with their windows lit under a red banner, a shrine with its lantern between two pines,
-  or a windmill with its sails broken, in mist, at first light or at a fiery dusk; a lantern on a post. A click lands
-  there.
-- **The world boss**: a horned shadow rising from an ember sea, its edges facing the fire lit, its eyes and its maw
-  burning, tentacles breaking the water and a ship burning beside it.
-- **The Outposts tile**, one in a region's view for all the region's outpost sites, named for its region ("Outposts of
-  the Beacon Shore"), its levels the island's: an outpost's palisade and watchtower on a strand at dawn, a ship off
-  it. A click opens its sites (below).
+- **A region's dungeon of the day** ([[Activities]], "A region's dungeons"): the way down its style builds above ground,
+  set in a hillside under the sky its tier brings (dawn, night or mist at Normal; ember red at Elite; the Abyss's
+  violet), its light within: a crypt's mausoleum among leaning graves, the halls' gatehouse between two towers, the
+  cells' barred grate under a gibbet, the sanctum's broken portico, the caverns' jagged mouth hung with roots, the
+  mines' timbered adit under its headframe; at Elite and Abyss something looks back out of the dark. Its name is the
+  dungeon's own, and its kind its tier ("Elite dungeon"). A click opens its card to go in from the sea at that tier
+  ([[Activities]], "A region's dungeons").
 
 A tile's words are its name in brass at the larger size and under it its levels in short and its kind ("Lv 1–5 ·
-Patrol zone"; the island's own "Island", then Port, Playlist, Patrol zone, Elite Dungeon, Mission, World boss and
-Outposts), the kind left out where the name says it already, as the Playlist's does; every other detail is a
-glyph at its head, each saying its words in the tile's label and, with the pointer on it, in a small dark card over
-it (a padlock "Shut:" and why; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]), in the Journal's icons (`journalIcons.ts`) and the
+Patrol zone"; the island's own "Island", then Port, Playlist, Patrol zone, Elite Dungeon and a region's dungeon's
+tier), the kind left out where the name says it already, as the Playlist's does. Beside a region's dungeon's name
+stand its tier's skulls (`skullsNode`): one at Normal, two at Elite, three at Abyss, the Journal's skull in bone. Every
+other detail is a glyph at its head, each saying its words in the tile's label; with the pointer or the focus on a tile
+one card stands beside it (to its right, or its left where the right has no room), never clipped by the list: its name
+and skulls, its levels and kind, each glyph beside what it means (a padlock "Shut:" and why;
+[[M Is the Map, N the Leave, and the Players' First Asks Are Built]]), and what a click does. The glyphs are the Journal's icons (`journalIcons.ts`) and the
 tiles' own in their style (`islandIconMaps.ts`): the port's counters (a stall under its awning) and its moorings (an
 anchor); a patrol zone's dungeons (its door), its resources (a rock veined with ore), its foes (two blades crossed),
 its Elite and Abyss seas (dim while shut) and today's modifier; an Elite Dungeon's blocks (courses of stone), seals (a
 wax seal), company (two of it), pay (the cache's chest), its week, the Elite's or the Abyss's, and its modifiers; the
-Playlist's today, its week's two and its rewards; a mission's and a world boss's foes and named places (a pin); the
-Outposts tile's sites (a stake flying a grey pennant over a roped plot, one a site) and how many hold the player's
-guild's outposts (a palisade each, one dim at none); a padlock on a place that is shut. Nine fit a tile at its narrowest;
+Playlist's today, its week's two and its rewards; a region's dungeon's tier, kind, company, pay and day, and at Abyss
+its revives; a padlock on a place that is shut. Nine fit a tile at its narrowest;
 more wrap onto a second row. Its label reads all of it out: its name, its line, every glyph's meaning and its
-details. The tile the keys or the pad have focused is lit, else the one under the pointer, else the first place's: a
-brass edge two pixels wide, raised 2 px, its chevron bright. Over the tiles the interface takes the keys and the pad:
+details. Each tile stands in a carved frame (`islandFrame.ts`): a dark outer line, a bevel lit from the top left, a
+hairline inset, brass brackets with a rivet at each corner and a jewel at the head of its top edge; a tile met at a
+tier wears that tier's tone (steel for Normal, brass for Elite, violet for Abyss), any other the brass. The tile the
+keys or the pad have focused is lit, else the one under the pointer, else the first place's: its frame's brass and
+jewel burn brighter, its hairline glows, it rises 2 px and its chevron is bright. Over the tiles the interface takes the keys and the pad:
 Tab, the arrows and the pad's cross walk them, and Enter or A presses the one focused, the game's own Enter then
 yielding to it; with none focused, Enter does what the lit tile does. A tile still rising takes no click. A shut
 tile's name is dim and a click on it does nothing. A landing chooses its node before it lands, as the flow lands
 only at the node chosen. A desolate city's social space is listed nowhere.
-
-The Outposts tile's sites stand in the tiles' place as the Playlist's screen opens from its tile (`outpostsNode` in
-`islandPanel.ts`): a panel 104 px down, dark and nearly opaque, its region's name in brass, its levels and kind with
-"Choose a slot to land at", and a card for each site in a row that wraps, each 260 px wide: its name in brass, a small
-chart of the region (the coast round its sites, four times as wide as they lie apart, every site a dot, its own brass in a ring, one
-holding the player's guild's outpost green), and a palisade with "Your guild's outpost" or a stake with "No outpost of
-your guild's" (the guild read as the map's marks read it, [[Guilds]]); a shut one says why. The card the keys or the
-pad have focused is lit, else the one under the pointer, else the first open one, a brass edge raised 2 px. A click on
-a card, or Enter or A, lands at its site as a place's tile does; the arrows, Tab and the pad's cross walk the cards,
-the keys and the pad held to the panel while it stands. Back, Escape or the pad's B close it, back to the tiles.
 
 ## The character screen
 

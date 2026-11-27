@@ -10,6 +10,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
+- [[Each Region Has Its Own Dungeons, and the Dungeons Go Deeper and Darker]]
 - [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]
 - [[The Music Repeats Less, Patrol Zones First]]
 - [[TypeScript and Rust]]
@@ -465,6 +466,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Island Textures as Claude Builds Them]]
 - [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
 - [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
+- [[The Dungeon Overhaul as Claude Builds It]]
 
 ## Replaced
 

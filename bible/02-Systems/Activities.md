@@ -125,6 +125,23 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
   comes from"). The card closes once the player leaves the sea.
 - **For four players**, matched together ([[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]).
 
+## A region's dungeons
+
+- **Three a region, each day** ([[Each Region Has Its Own Dungeons, and the Dungeons Go Deeper and Darker]];
+  `server/regionDungeons.ts`): each region of an island ([[World Map]], "Regions") offers three dungeons from the sea,
+  drawn afresh each day, each in a different one of the six styles and laid by its own seed in its island's band, as a
+  sea island's dungeon is ([[Dungeons]], "How it works"), named by its seed and style (`dungeon::named`).
+- **Its tier**: drawn each day for each character, each tier as likely, among those the character's level opens
+  (`drawnTier`); a character whose level opens only Normal meets every one at Normal. A patrol's dungeon at its
+  entrance is met the same way, never under the patrol's own seas, and leaving it returns to the patrol's.
+- **Gone into from the sea** while the ship lies off its region: its tile ([[Interface]], "The island's tiles") opens
+  its card (`regionCardOf`): its name and its tier's skulls, its tier and levels in its island's band, that it is drawn
+  for today, at Abyss its revives and that it is never matched, and what it pays. Enter starts or joins the company's
+  run, named `region-dungeon-<island>-r<region>-d<day>-n<slot>`, then `--elite` or `--abyss`, then `--run-<id>`
+  (`roomNames.ts`); the server lets it be entered only from the sea, the ship off that region (`arrival.ts`), and the
+  room keeps the characters as any run does (`worker.ts`). A company member joins it from the Roster. Leaving it
+  returns to the sea.
+
 ## Runs and companies
 
 - **A company** holds up to eight, as a Breach's run does
