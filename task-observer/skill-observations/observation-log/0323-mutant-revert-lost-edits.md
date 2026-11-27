@@ -1,5 +1,5 @@
 ---
-id: 311
+id: 323
 title: "Reverting a mutation check with `git checkout -- file` also threw away the uncommitted fix in that file"
 status: open
 type: internal
