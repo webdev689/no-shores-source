@@ -540,7 +540,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
   shards, in its rarity's white, green, yellow, red or cyan blue, each frame baked as its turn first reaches it,
   cel-shaded in five bands, its outline darkened and a halo of its glow round it, added light. An Ammo box or crate is
   its model ([[Item Pictures]]). An item found as itself is its own picture as the gear screens draw it, a weapon the
-  forge's large picture dyed as they dye it, an armour piece as it is worn, at a Vestige's size; it flies, hovers and
+  forge's large picture dyed as they dye it, as long as a Vestige is tall, and an armour piece or a cloak as it is
+  worn, at twice its worn size; it flies, hovers and
   bobs as a Vestige does, turning as a flat thing turns, its other face mirrored (`itemDrops.ts`). Each lies in its
   rarity's light, ammunition in a pale one, drawn in cells as the
   spells are and as light added (`dropLight.ts`):

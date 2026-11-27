@@ -4,7 +4,9 @@ import { DROPPED, type GearDrop, type GearItem } from '../network/gearMessages.t
 import type { PixelPicture } from './dropPictures.ts';
 import { PILLAR_M } from './dropLight.ts';
 import { DropsShown, PIXEL_M, markPicture } from './drops.ts';
-import { VESTIGE_M, lyingPicture } from './itemDrops.ts';
+import { KINDS } from '../player/gear.ts';
+import { PX_PER_M } from '../player/figures.ts';
+import { VESTIGE_M, lyingPicture, lyingPixelM } from './itemDrops.ts';
 import { MARK_FLOATS } from './marks.ts';
 
 const EYE = [0, 0, 1.6] as const;
@@ -47,6 +49,17 @@ test("an item's picture lies as a drop's: cropped to what it draws, its longest 
   assert.ok(Math.abs(30 * (upright.pixelM ?? PIXEL_M) - VESTIGE_M) < 1e-9, 'a tall piece as tall as a Vestige');
   const clear = lyingPicture({ width: 3, height: 3, pixels: new Uint8ClampedArray(36) });
   assert.equal(clear.rows.length, 0, 'nothing drawn, nothing laid');
+});
+
+test("an armour piece lies at its worn size, not stretched to a weapon's length", () => {
+  const helm = picture(24, 20, 2);
+  const laid = lyingPicture(helm, lyingPixelM(KINDS.indexOf('head')));
+  assert.equal(laid.pixelM, 1 / PX_PER_M, "its pixel the figure's, so it is drawn twice as large as worn");
+  assert.deepEqual([laid.rows.length, laid.rows[0]?.length], [16, 20], 'still cropped');
+  for (const kind of ['head', 'torso', 'arms', 'legs', 'cloak'] as const)
+    assert.equal(lyingPixelM(KINDS.indexOf(kind)), 1 / PX_PER_M, kind);
+  for (const kind of ['sword', 'bow', 'pistolet', 'greatsword'] as const)
+    assert.equal(lyingPixelM(KINDS.indexOf(kind)), undefined, `${kind} keeps a Vestige's length`);
 });
 
 test("an item at rest is its own picture in its rarity's light, and lands in its rarity for its sound", () => {

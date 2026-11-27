@@ -1,10 +1,13 @@
 // An item found as itself lying on the ground for the player: its own picture as the gear screens draw it (a weapon
-// the forge's large picture, dyed as its screens dye it; an armour piece as it is worn), laid as a drop's picture is,
-// its longest side a Vestige's crystal frame, so it grows and shrinks with the Vestige.
+// the forge's large picture, dyed as its screens dye it; an armour piece as it is worn), laid as a drop's picture is.
+// A weapon's longest side is a Vestige's crystal frame, so it grows and shrinks with the Vestige; an armour piece is
+// its worn size, so a helm lies twice a head's size as a drop is drawn, not a sword's length.
 
 import type { GearItem } from '../network/gearMessages.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
+import { PX_PER_M } from '../player/figures.ts';
+import { SLOTS, isWeapon, slotOf } from '../player/gear.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 import type { Picture } from '../player/picture.ts';
 import type { PixelPicture } from './dropPictures.ts';
@@ -17,9 +20,14 @@ export const VESTIGE_M = crystal.rows.length * (crystal.pixelM ?? 0);
 /** A picture's pixels drawn half covered or more. */
 const COVERED = 128;
 
+/** An item's pixel as it lies, metres: an armour piece's or a cloak's the figure's, as it is worn; none for a weapon,
+ *  which is laid a Vestige's frame long. */
+export const lyingPixelM = (kind: number): number | undefined =>
+  !isWeapon(kind) && slotOf(kind) < SLOTS.length ? 1 / PX_PER_M : undefined;
+
 /** A picture as a drop's, cropped to what it draws: each colour a letter (`a` the first), a clear pixel a dot, its
- *  pixel such that its longer side is a Vestige's frame. */
-export function lyingPicture({ width, height, pixels }: Picture): PixelPicture {
+ *  pixel `pixelM`, else such that its longer side is a Vestige's frame. */
+export function lyingPicture({ width, height, pixels }: Picture, pixelM?: number): PixelPicture {
   const drawn = (across: number, row: number) => (pixels[(row * width + across) * 4 + 3] ?? 0) >= COVERED;
   let [left, top, right, bottom] = [width, height, -1, -1];
   for (let row = 0; row < height; row++)
@@ -54,7 +62,7 @@ export function lyingPicture({ width, height, pixels }: Picture): PixelPicture {
     }
     rows.push(line);
   }
-  return { rows, colours, pixelM: VESTIGE_M / Math.max(right - left + 1, bottom - top + 1) };
+  return { rows, colours, pixelM: pixelM ?? VESTIGE_M / Math.max(right - left + 1, bottom - top + 1) };
 }
 
 /** Each lying item's picture, asked of the forge for the player's own body (`ItemPictures`, as the gear screens draw
@@ -71,7 +79,7 @@ export function itemDropPictures(
     pictures ??= new ItemPictures(cards);
     const picture = pictures.pictureOf(item, dress, () => undefined);
     if (!picture) return null;
-    const kept = laid.get(picture) ?? lyingPicture(picture);
+    const kept = laid.get(picture) ?? lyingPicture(picture, lyingPixelM(item.kind));
     laid.set(picture, kept);
     return kept;
   };
