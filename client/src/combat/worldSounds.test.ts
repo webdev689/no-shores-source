@@ -8,7 +8,14 @@ import { voiceCue } from './worldCues.ts';
 import { recorded } from '../soundSamples.ts';
 import type { KeptFoe } from './fighting.ts';
 import { SpellEffects } from './spellEffects.ts';
-import { HEARD_MOST_S, type HeardFight, type WorldFrame, WorldSounds, voiceToDrop } from './worldSounds.ts';
+import {
+  HEARD_MOST_S,
+  type HeardFight,
+  type WorldFrame,
+  WorldSounds,
+  landingCues,
+  voiceToDrop,
+} from './worldSounds.ts';
 import { listen } from '../listener.ts';
 
 const SWORD = 2;
@@ -234,11 +241,11 @@ test('an unpicked cue plays nothing and takes no voice', () => {
 test('at most sixteen sounds at once: the farthest gives way to a nearer one, a farther one is not heard', () => {
   const { output, play, played, stopped } = fakeSound();
   const sounds = new WorldSounds(() => output, play);
-  const landed = Array.from({ length: 20 }, (unused, index) => [20 - index, 3, 2] as const);
+  const landed = Array.from({ length: 20 }, (unused, index) => ({ at: [20 - index, 3, 2] as const, rarity: null }));
   sounds.frame({ ...frameOf(), landed });
   assert.equal(played.length, 20);
   assert.equal(stopped.length, 4, 'the four farthest stopped for nearer ones');
-  sounds.frame({ ...frameOf(), landed: [[30, 3, 2]] });
+  sounds.frame({ ...frameOf(), landed: [{ at: [30, 3, 2], rarity: null }] });
   assert.equal(played.length, 20, 'a farther one waits for none');
   assert.equal(voiceToDrop([1, 9, 4], 5, 3), 1);
   assert.equal(voiceToDrop([1, 9, 4], 10, 3), 'new');
@@ -293,10 +300,29 @@ test("a cue heard whole (a Breach's toll, its far bells) plays out and carries f
   );
 });
 
+test("a drop lands in its rarity's weight: a light chime for a Normal or a Magic, a heavy one for the finest", () => {
+  const weights = [null, 0, 1, 2, 3, 4].map(landingCues);
+  for (const cues of weights) {
+    assert.equal(cues[0], 'drop.land', 'each thuds down');
+    for (const cue of cues) assert.ok(recorded(cue), `${cue} is one of the game's own recordings`);
+  }
+  assert.deepEqual(landingCues(null), ['drop.land'], 'ammunition only thuds');
+  assert.deepEqual(landingCues(0), landingCues(1), 'a Normal and a Magic chime alike');
+  assert.deepEqual(landingCues(3), landingCues(4), 'a Legendary and an Atheric alike');
+  const chimes = new Set([0, 2, 3].map((rarity) => landingCues(rarity)[1]));
+  assert.equal(chimes.size, 3, 'light, middling and heavy, each its own');
+  const { output, play, played } = fakeSound();
+  new WorldSounds(() => output, play).frame({ ...frameOf(), landed: [{ at: [1, 3, 2], rarity: 3 }] });
+  assert.deepEqual(
+    played.map((one) => one.id),
+    landingCues(3),
+  );
+});
+
 test('a cue heard whole ranks as near among sixteen voices: a far bell is heard over nearer swings, and stays', () => {
   const { output, play, played, stopped } = fakeSound();
   const sounds = new WorldSounds(() => output, play);
-  const near = Array.from({ length: 16 }, (unused, index) => [index + 1, 3, 2] as const);
+  const near = Array.from({ length: 16 }, (unused, index) => ({ at: [index + 1, 3, 2] as const, rarity: null }));
   sounds.frame({ ...frameOf(), landed: near });
   sounds.frame({ ...frameOf(), heard: [{ cue: 'breach.bell.wake', at: [60, 3, 2], whole: true }] });
   assert.ok(
@@ -304,7 +330,7 @@ test('a cue heard whole ranks as near among sixteen voices: a far bell is heard 
     'the far bell is heard',
   );
   assert.deepEqual(stopped, ['drop.land'], 'the farthest landing gave way');
-  sounds.frame({ ...frameOf(), landed: [[0.5, 3, 2]] });
+  sounds.frame({ ...frameOf(), landed: [{ at: [0.5, 3, 2], rarity: null }] });
   assert.deepEqual(stopped, ['drop.land', 'drop.land'], "a nearer one takes a landing's place, not the bell's");
 });
 

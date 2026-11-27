@@ -8,21 +8,22 @@ import { AMMO_CRATE_TURN } from './ammoCratePictures.ts';
 import { AMMO_BOX, AMMO_CRATE, type PixelPicture, resourcePicture } from './dropPictures.ts';
 import {
   AMMO_FEEL,
+  AMMO_SCALE,
   CRYSTAL_FEEL,
   DropsShown,
   type Feel,
-  LINE_M,
   PIXEL_M,
   POURED_FEEL,
-  RISE_S,
   arcsOf,
   lineLight,
   markPicture,
   motionAt,
   pictureOf,
+  VESTIGE_SCALE,
 } from './drops.ts';
+import { AMMO_PILLAR_M, BURST_S, PILLAR_M } from './dropLight.ts';
 import { MARK_FLOATS } from './marks.ts';
-import { CROWN_M, SPIN_FRAMES, crystalStill } from './vestigeCrystal.ts';
+import { SPIN_FRAMES, crystalStill } from './vestigeCrystal.ts';
 
 type Point = readonly [number, number, number];
 
@@ -81,7 +82,8 @@ test('a drop pops out of the body, bounces until it settles where the room threw
     { length: 100 },
     (unused, step) => thrown(CRYSTAL_FEEL.restS + 1 + step / 20).middle[2] - REST[2],
   );
-  assert.ok(Math.min(...hovering) >= 0.42 - 0.05 - 1e-9 && Math.max(...hovering) <= 0.42 + 0.05 + 1e-9, 'hovering');
+  const { hover, bob } = CRYSTAL_FEEL;
+  assert.ok(Math.min(...hovering) >= hover - bob - 1e-9 && Math.max(...hovering) <= hover + bob + 1e-9, 'hovering');
   assert.ok(Math.max(...hovering) - Math.min(...hovering) > 0.08, 'and bobbing');
   const turned = (from: number) => thrown(from + 0.1).turn - thrown(from).turn;
   assert.ok(turned(0.1) > turned(CRYSTAL_FEEL.restS + 1) * 2, 'it turns fast in the air and slowly at rest');
@@ -110,15 +112,15 @@ test('at the foot of every bounce, no frame of any drop dips into the ground', (
   const crystals = Array.from({ length: 5 * SPIN_FRAMES }, (unused, frame) =>
     pictureOf(drop({ rarity: Math.floor(frame / SPIN_FRAMES) }), (frame % SPIN_FRAMES) * ((2 * Math.PI) / SPIN_FRAMES)),
   );
-  const sets: [Feel, readonly PixelPicture[]][] = [
-    [CRYSTAL_FEEL, crystals.map((frame) => frame.body)],
-    [AMMO_FEEL, AMMO_BOX_TURN],
-    [AMMO_FEEL, AMMO_CRATE_TURN],
+  const sets: [Feel, readonly PixelPicture[], number][] = [
+    [CRYSTAL_FEEL, crystals.map((frame) => frame.body), VESTIGE_SCALE],
+    [AMMO_FEEL, AMMO_BOX_TURN, AMMO_SCALE],
+    [AMMO_FEEL, AMMO_CRATE_TURN, AMMO_SCALE],
   ];
-  for (const [feel, frames] of sets)
+  for (const [feel, frames, scale] of sets)
     for (const frame of frames) {
       const lowest = frame.rows.reduce((found, row, line) => (/[^.]/.test(row) ? line : found), 0);
-      const foot = feel.low - (lowest + 1 - frame.rows.length / 2) * (frame.pixelM ?? PIXEL_M);
+      const foot = feel.low - (lowest + 1 - frame.rows.length / 2) * (frame.pixelM ?? PIXEL_M) * scale;
       assert.ok(foot >= 0, `its lowest pixel ${foot.toFixed(3)} m over the ground`);
     }
 });
@@ -174,53 +176,120 @@ test('a Vestige is its crystal, turning through its frames, in its rarity; ammun
   assert.equal(turned.size, SPIN_FRAMES, 'ammunition turns through frames of its own too');
 });
 
-test('in flight a drop is its picture alone; at rest its line rises, a rarer one taller, ammo white', () => {
-  const boxFlying = new DropsShown().frame([drop({ kind: DROPPED.ammoBox })], 10, EYE).marks;
-  const mostFilled = Math.max(...AMMO_BOX_TURN.map((frame) => filled(frame.rows)));
-  assert.ok(boxFlying.length < mostFilled * 6 * MARK_FLOATS, 'its rectangles of one colour, fewer quads than pixels');
-  assert.ok(
-    boxFlying.every((value, index) => index % MARK_FLOATS !== 6 || value === 1),
-    'solid, and no line',
-  );
-  const shown = new DropsShown();
-  const flying = shown.frame([drop({ rarity: 4 })], 10, EYE).marks;
-  const opacities = new Set(
-    Array.from({ length: flying.length / MARK_FLOATS }, (unused, vertex) => flying[vertex * MARK_FLOATS + 6]),
-  );
-  assert.deepEqual([...opacities].sort(), [-1, 1], 'the gem solid, its halo light added');
-  const rested = shown.frame([drop({ rarity: 4 })], 10 + CRYSTAL_FEEL.restS + RISE_S, EYE).marks;
-  const line = rested.slice(rested.length - 12 * 2 * 6 * MARK_FLOATS);
-  const heights = Array.from(
-    { length: line.length / MARK_FLOATS },
-    (unused, vertex) => line[vertex * MARK_FLOATS + 2] ?? 0,
-  );
-  const [root, top] = [Math.min(...heights), Math.max(...heights)];
-  assert.ok(Math.abs(top - root - LINE_M[4]) < 1e-9, "an Atheric's 2.5 m");
-  const crown = REST[2] + 0.42 + CROWN_M + 0.01;
-  assert.ok(Math.abs(root - crown) <= 0.05 + 1e-9, "rising from the hovering crystal's crown");
-  assert.equal(line[6], -1, 'its light is added to what stands behind');
-  const ammo = new DropsShown().frame([drop({ kind: DROPPED.ammoBox, flying: 0 })], 0, EYE).marks;
-  const box = new DropsShown().frame([drop({ kind: DROPPED.ammoBox })], 0, EYE).marks.length;
-  const light = ammo.slice(box);
-  const lit = Array.from({ length: light.length / MARK_FLOATS }, (unused, vertex) =>
-    light.slice(vertex * MARK_FLOATS + 3, vertex * MARK_FLOATS + 6),
-  ).filter(([red = 0]) => red > 0);
-  assert.ok(lit.length > 0 && lit.every(([red, green, blue]) => red === green && green === blue), 'white');
+/** The heights of the vertices of `marks` drawn solid, and of those whose light is added. */
+const heightsOf = (marks: readonly number[], added: boolean) =>
+  Array.from({ length: marks.length / MARK_FLOATS }, (unused, vertex) => vertex * MARK_FLOATS)
+    .filter((start) => (marks[start + 6] === -1) === added)
+    .map((start) => marks[start + 2] ?? 0);
+
+test('a Vestige lies twice its size and ammunition 0.6 of its own, raised to hover clear of the ground', () => {
+  assert.equal(VESTIGE_SCALE, 2);
+  assert.equal(AMMO_SCALE, 0.6);
+  for (const [kind, scale, feel] of [
+    [DROPPED.vestige, VESTIGE_SCALE, CRYSTAL_FEEL],
+    [DROPPED.ammoBox, AMMO_SCALE, AMMO_FEEL],
+    [DROPPED.crate, AMMO_SCALE, AMMO_FEEL],
+  ] as const) {
+    const lying = drop({ kind, rarity: 2 });
+    const { turn } = motionAt(feel, FROM, REST, lying.id * 7 + kind, 0);
+    const own: number[] = [];
+    markPicture(own, pictureOf(lying, turn).body, [0, 0, 0], EYE);
+    const tall = (heights: readonly number[]) => Math.max(...heights) - Math.min(...heights);
+    const drawn = heightsOf(new DropsShown().frame([lying], 0, EYE).marks, false);
+    assert.ok(Math.abs(tall(drawn) / tall(heightsOf(own, false)) - scale) < 1e-6, `${kind}: ${scale} of its size`);
+  }
+  assert.ok(CRYSTAL_FEEL.hover > 0.8, "a Vestige's middle hovers higher as it grows");
+  assert.ok(AMMO_FEEL.hover < 0.4, "ammunition's lower");
 });
 
-test('a Vestige chimes by its rarity as it comes to rest, once; one told of at rest flies and chimes no more', () => {
-  const shown = new DropsShown();
-  assert.deepEqual(shown.frame([drop({ rarity: 2 })], 0, EYE).rested, []);
-  assert.deepEqual(shown.frame([drop({ rarity: 2 })], CRYSTAL_FEEL.restS, EYE).rested, [2]);
-  assert.deepEqual(shown.frame([drop({ rarity: 2 })], CRYSTAL_FEEL.restS + 1, EYE).rested, []);
-  const late = new DropsShown();
-  assert.deepEqual(late.frame([drop({ id: 9, rarity: 4, flying: 0 })], 0, EYE).rested, []);
-  const ammo = new DropsShown();
+test('in flight a drop is its picture and glow; at rest a pillar of its colour rises, a rarer one taller', () => {
+  const boxFlying = new DropsShown(() => false).frame([drop({ kind: DROPPED.ammoBox })], 10, EYE).marks;
+  const solid = heightsOf(boxFlying, false).length;
+  const mostFilled = Math.max(...AMMO_BOX_TURN.map((frame) => filled(frame.rows)));
+  assert.ok(solid < mostFilled * 6, 'its rectangles of one colour, fewer quads than pixels');
+  const shown = new DropsShown(() => false);
+  const flying = shown.frame([drop({ rarity: 4 })], 10, EYE).marks;
+  const flyingTop = Math.max(...heightsOf(flying, false));
+  assert.ok(Math.max(...heightsOf(flying, true)) < flyingTop + 1, 'no pillar in flight');
+  const pillarTop = (rarity: number) => {
+    const rested = new DropsShown(() => false).frame([drop({ rarity, flying: 0 })], 0, EYE).marks;
+    return Math.max(...heightsOf(rested, true)) - Math.max(...heightsOf(rested, false));
+  };
+  for (let rarity = 0; rarity < PILLAR_M.length; rarity += 1)
+    assert.ok(
+      Math.abs(pillarTop(rarity) - (PILLAR_M[rarity] ?? 0)) < 0.2,
+      `${rarity}: ${pillarTop(rarity)} m over its picture`,
+    );
+  const ammo = new DropsShown(() => false).frame([drop({ kind: DROPPED.ammoBox, flying: 0 })], 0, EYE).marks;
+  const ammoTop = Math.max(...heightsOf(ammo, true)) - Math.max(...heightsOf(ammo, false));
+  assert.ok(ammoTop > AMMO_PILLAR_M - 0.2 && ammoTop < PILLAR_M[0], `a short pillar: ${ammoTop} m`);
+  const lit = Array.from({ length: ammo.length / MARK_FLOATS }, (unused, vertex) =>
+    ammo.slice(vertex * MARK_FLOATS + 3, vertex * MARK_FLOATS + 7),
+  ).filter(([red = 0, , , opacity]) => opacity === -1 && red > 0);
+  assert.ok(
+    lit.length > 0 &&
+      lit.every(([red = 0, green = 0, blue = 0]) => Math.min(red, green, blue) > 0.7 * Math.max(red, green, blue)),
+    'pale',
+  );
+});
+
+test('each drop is told of where it lands and in its rarity, once; one told of at rest is not', () => {
+  const shown = new DropsShown(() => false);
+  assert.deepEqual(shown.frame([drop({ rarity: 2 })], 0, EYE).landed, []);
+  assert.deepEqual(shown.frame([drop({ rarity: 2 })], CRYSTAL_FEEL.restS, EYE).landed, [{ at: REST, rarity: 2 }]);
+  assert.deepEqual(shown.frame([drop({ rarity: 2 })], CRYSTAL_FEEL.restS + 1, EYE).landed, [], 'once');
+  const late = new DropsShown(() => false);
+  assert.deepEqual(late.frame([drop({ id: 9, rarity: 4, flying: 0 })], 0, EYE).landed, []);
+  const ammo = new DropsShown(() => false);
   ammo.frame([drop({ kind: DROPPED.ammoBox })], 0, EYE);
   const box = ammo.frame([drop({ kind: DROPPED.ammoBox })], AMMO_FEEL.restS, EYE);
-  assert.deepEqual(box.rested, [], 'ammo never chimes');
-  assert.deepEqual(box.landed, [drop({ kind: DROPPED.ammoBox }).at], 'but every drop is told of where it lands');
-  assert.deepEqual(ammo.frame([drop({ kind: DROPPED.ammoBox })], AMMO_FEEL.restS + 1, EYE).landed, [], 'once');
+  assert.deepEqual(box.landed, [{ at: REST, rarity: null }], 'ammunition in none');
+});
+
+test('a drop bursts as it lands, a ring on the ground; reduced motion keeps no ring and no motes', () => {
+  const onGround = (marks: readonly number[]) =>
+    heightsOf(marks, true).filter((height) => Math.abs(height - REST[2]) < 0.06).length;
+  const landing = (still: boolean, seconds: number) => {
+    const shown = new DropsShown(() => still);
+    shown.frame([drop({ rarity: 3 })], 0, EYE);
+    shown.frame([drop({ rarity: 3 })], CRYSTAL_FEEL.restS, EYE);
+    return shown.frame([drop({ rarity: 3 })], CRYSTAL_FEEL.restS + seconds, EYE).marks;
+  };
+  assert.ok(onGround(landing(false, 0.1)) > 0, 'a ring as it lands');
+  assert.equal(onGround(landing(false, BURST_S + 0.5)), 0, 'gone after');
+  assert.equal(onGround(landing(true, 0.1)), 0, 'none with motion reduced');
+  assert.ok(landing(true, 2).length < landing(false, 2).length, 'nor motes');
+  const pillar = (seconds: number) => {
+    const marks = new DropsShown(() => true).frame([drop({ rarity: 3, flying: 0 })], seconds, EYE).marks;
+    const top = Math.max(...heightsOf(marks, false));
+    // Its colours a metre and more over the picture: the pillar's alone.
+    return Array.from({ length: marks.length / MARK_FLOATS }, (unused, vertex) => vertex * MARK_FLOATS)
+      .filter((start) => marks[start + 6] === -1 && (marks[start + 2] ?? 0) > top + 1)
+      .map((start) => marks.slice(start + 3, start + 6).join());
+  };
+  assert.deepEqual(pillar(0.3), pillar(0.9), 'and its pillar holds still');
+  const late = new DropsShown(() => false).frame([drop({ rarity: 3, flying: 0 })], 0, EYE).marks;
+  assert.equal(onGround(late), 0, 'one told of at rest never bursts');
+  const ringOf = (kind: number) => {
+    const shown = new DropsShown(() => false);
+    const lying = drop({ kind, rarity: 0 });
+    const feel = kind === DROPPED.vestige ? CRYSTAL_FEEL : AMMO_FEEL;
+    shown.frame([lying], 0, EYE);
+    shown.frame([lying], feel.restS, EYE);
+    const marks = shown.frame([lying], feel.restS + 0.5, EYE).marks;
+    const ground = Array.from({ length: marks.length / MARK_FLOATS }, (unused, vertex) => vertex * MARK_FLOATS).filter(
+      (start) => marks[start + 6] === -1 && Math.abs((marks[start + 2] ?? 0) - REST[2]) < 0.06,
+    );
+    const reach = Math.max(
+      ...ground.map((start) => Math.hypot((marks[start] ?? 0) - REST[0], (marks[start + 1] ?? 0) - REST[1])),
+    );
+    return { reach, light: Math.max(...ground.map((start) => marks[start + 3] ?? 0)) };
+  };
+  const [vestige, box] = [ringOf(DROPPED.vestige), ringOf(DROPPED.ammoBox)];
+  assert.ok(
+    box.reach < vestige.reach * 0.7 && box.light < vestige.light * 0.7,
+    "ammunition's burst smaller and dimmer",
+  );
 });
 
 test('an Ammo box at rest stepped onto at full ammunition is told once each time, never while standing on it', () => {

@@ -1,30 +1,49 @@
 // The drops lying for the player, seen in the world as project-final throws its loot: each popped up out of the fallen
 // foe, or poured higher out of a chest as its lid opens as project-final's cache pours, bouncing until it settles where
-// the room put it, then rising to hover, bobbing and turning. A Vestige is its
-// crystal and an Ammo box or crate its Blender model, each turn baked into frames and turned to the eye. Over each
-// at rest a thin line of its rarity's colour rises, taller the rarer it is, a glint climbing it, a Legendary's and an
-// Atheric's pulsing. Each is drawn as the marks are, the halo and the line as light added to what stands behind them.
-// An Ammo box stepped onto with the ammunition full, which the room leaves lying, is told of.
+// the room put it, then rising to hover, bobbing and turning. A Vestige is its crystal, at twice its frame's size,
+// and an Ammo box or crate its Blender model, at 0.6 of its own, each turn baked into frames and turned to the eye.
+// Each lies in its rarity's light (dropLight.ts): a glow about it, a burst as it lands, then a pillar over it and motes
+// rising. Each is drawn as the marks are, the light added to what stands behind it. An Ammo box stepped onto with the
+// ammunition full, which the room leaves lying, is told of.
 
 import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
+import { motionReduced } from '../plus/kit.ts';
+import {
+  AMMO_PILLAR_M,
+  PALE,
+  PILLAR_M,
+  acrossFrom,
+  glowPulse,
+  markBurst,
+  markGlow,
+  markMotes,
+  markPillar,
+  pillarPulse,
+} from './dropLight.ts';
 import { AMMO_BOX_TURN } from './ammoBoxPictures.ts';
 import { AMMO_CRATE_TURN } from './ammoCratePictures.ts';
 import { AMMO_BOX, type PixelPicture } from './dropPictures.ts';
 import { CROWN_M, SPIN_FRAMES, crystalFrame, hashOf } from './vestigeCrystal.ts';
+import type { Landing } from './worldSounds.ts';
 
 type Point = readonly [number, number, number];
 
 const TICK_S = 1 / 60;
-/** How long its line takes to rise once it settles, seconds. */
+/** How much larger than its frame a Vestige is drawn on the ground, and ammunition: the knob each piece lying as an
+ *  item follows. */
+export const VESTIGE_SCALE = 2;
+export const AMMO_SCALE = 0.6;
+/** How long its pillar takes to rise once it settles, seconds. */
 export const RISE_S = 0.4;
 
 /** How a drop moves: its middle's height over the body as it leaves, its pop upward and the most more it may have,
  *  the pull, the share of a bounce's speed it keeps and of its way along the ground, the speed under which it settles,
  *  its middle's height over the ground as it bounces and as it hovers, how long it takes to rise there, its bob's
  *  height and rate (radians a second), and its turn in the air and at rest (radians a second): project-final's, but
- *  for the heights, raised so no frame dips into the ground. How long it waits unseen before it leaves (a chest's lid
- *  opening its mouth), and how long the room waits before it may be taken, that and the longest it can bounce
+ *  for the heights, raised so no frame dips into the ground, and raised or lowered with its size, where it leaves the
+ *  body by as much as where it lies, so its flight lasts as long. How long it waits unseen before it leaves (a chest's
+ *  lid opening its mouth), and how long the room waits before it may be taken, that and the longest it can bounce
  *  (crates/room/src/drops.rs, VESTIGE_REST_TICKS, AMMO_REST_TICKS and POURED_REST_TICKS). */
 export interface Feel {
   readonly leaves: number;
@@ -46,15 +65,15 @@ export interface Feel {
 }
 
 export const CRYSTAL_FEEL: Feel = {
-  leaves: 1.15,
+  leaves: 1.38,
   pop: 4.4,
   popMore: 1,
   pull: 16,
   keeps: 0.4,
   grip: 0.55,
   settles: 1.1,
-  low: 0.23,
-  hover: 0.42,
+  low: 0.46,
+  hover: 0.84,
   riseS: 0.35,
   bob: 0.05,
   bobRate: 1.9,
@@ -66,19 +85,26 @@ export const CRYSTAL_FEEL: Feel = {
 
 /** A Vestige poured out of a chest leaves from its mouth, popped higher and wider than a body's, once the lid has
  *  opened its mouth: project-final's cache's pour. */
-export const POURED_FEEL: Feel = { ...CRYSTAL_FEEL, leaves: 0.7, pop: 6.2, popMore: 1.4, waitS: 0.22, restS: 122 / 60 };
+export const POURED_FEEL: Feel = {
+  ...CRYSTAL_FEEL,
+  leaves: 0.93,
+  pop: 6.2,
+  popMore: 1.4,
+  waitS: 0.22,
+  restS: 122 / 60,
+};
 
 /** Ammunition pops lower and settles sooner. */
 export const AMMO_FEEL: Feel = {
-  leaves: 1.01,
+  leaves: 0.886,
   pop: 2.8,
   popMore: 0.6,
   pull: 16,
   keeps: 0.3,
   grip: 0.55,
   settles: 1.6,
-  low: 0.31,
-  hover: 0.5,
+  low: 0.186,
+  hover: 0.3,
   riseS: 0.28,
   bob: 0.06,
   bobRate: 2,
@@ -145,25 +171,33 @@ export function motionAt(feel: Feel, from: Point, rest: Point, seed: number, sec
   return { middle: [across(0), across(1), height], settled: false, since: 0, turn: firstTurn + feel.airTurn * seconds };
 }
 
-/** How tall a line stands by rarity, metres, and an Ammo box's or crate's, in white. */
-export const LINE_M = [0.7, 1, 1.4, 1.9, 2.5] as const;
-const AMMO_LINE_M = LINE_M[0];
 const WHITE = [1, 1, 1] as const;
-/** A picture's pixel in the world when it has none of its own, metres, and how far over the ground a line stands. */
+/** A picture's pixel in the world when it has none of its own, metres, and how far over a crown a pillar stands. */
 export const PIXEL_M = 0.035;
 const LIFT_M = 0.01;
 /** A line's width, and the least it keeps of the eye's view, radians, so one across the ground still shows; how many
- *  steps it is drawn in; its glint's and its pulse's rates, cycles a second. */
+ *  steps it is drawn in; its glint's rate, cycles a second. */
 const LINE_WIDE_M = 0.07;
 const LINE_LEAST = 0.0022;
 const LINE_STEPS = 12;
 const CLIMB_HZ = 1;
-const PULSE_HZ = 1;
 /** A mark's opacity below none: the marks' sign for light added to what stands behind it. */
 const ADDED = -1;
+/** A drop's glow reaches this share of its picture's height from its middle, and no lower than this over the ground;
+ *  its motes rise within this share of it, a Normal's fewest and ammunition's; its pillar's light and its burst's,
+ *  ammunition's share. */
+const GLOW_SHARE = 0.45;
+const GLOW_FLOOR_M = 0.1;
+const MOTE_SPREAD = 0.35;
+const FEWEST_MOTES = 4;
+const AMMO_MOTES = 3;
+const AMMO_LIGHT = 0.5;
+/** How far a landing's ring spreads on the ground, metres: a Vestige's, ammunition's. */
+const RING_M = 1.5;
+const AMMO_RING_M = 0.8;
 
-/** How far ammunition's drawn top stands over its middle at the most through its turn, metres, so its line rises from
- *  one height as it turns. */
+/** How far ammunition's drawn top stands over its middle at the most through its turn, metres at its frame's size, so
+ *  its pillar rises from one height as it turns. */
 const topOf = (frames: readonly PixelPicture[]): number =>
   Math.max(
     ...frames.map((frame) => {
@@ -203,8 +237,8 @@ function rgbOf(hex: string): [number, number, number] {
   return [(value >> 16) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255];
 }
 
-/** Each rarity's line colour, read once. */
-const LINE_COLOURS = RARITIES.map((rarity) => rgbOf(rarity.colour));
+/** Each rarity's colour, read once. */
+const RARITY_COLOURS = RARITIES.map((rarity) => rgbOf(rarity.colour));
 
 /** The numbers of a rectangle of one colour: its left and right (metres off the picture's middle), its foot and its
  *  top (metres over the ground), its red, green and blue, and its layer. */
@@ -309,13 +343,6 @@ function put(
   return index + 7;
 }
 
-/** The way across the eye's view at `base`, along the ground. */
-function acrossFrom(eye: Point, base: Point): [number, number] {
-  const [east, south] = [base[0] - eye[0], base[1] - eye[1]];
-  const length = Math.hypot(east, south) || 1;
-  return [-south / length, east / length];
-}
-
 /** A picture standing on `base`, turned to the eye, each rectangle of one colour two triangles, as marks' vertices
  *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat). */
 export function markPicture(
@@ -405,10 +432,10 @@ export function markLine(
   }
 }
 
-/** The line of light a drop at rest stands under, in its rarity's colour and height, rising from `over` metres above
- *  `place`: for a piece of gear the world lays down itself, drawn as it is; `share` of it risen, as a drop's line rises
- *  once it settles. */
-export function markDropLine(
+/** The pillar of light a drop at rest stands under, in its rarity's colour and height, rising from `over` metres
+ *  above `place`: for a piece of gear the world lays down itself, drawn as it is; `share` of it risen, as a drop's
+ *  pillar rises once it settles. */
+export function markDropPillar(
   out: number[],
   {
     place,
@@ -420,8 +447,10 @@ export function markDropLine(
   eye: Point,
 ): void {
   const crown: Point = [place[0], place[1], place[2] + over + LIFT_M];
-  const tall = (LINE_M[rarity] ?? AMMO_LINE_M) * share;
-  markLine(out, crown, tall, LINE_COLOURS[rarity] ?? WHITE, share, seconds, eye);
+  const tall = (PILLAR_M[rarity] ?? AMMO_PILLAR_M) * share;
+  const still = motionReduced();
+  const strength = share * pillarPulse(rarity, seconds, still);
+  markPillar(out, crown, tall, RARITY_COLOURS[rarity] ?? WHITE, strength, still ? 0 : seconds, eye);
 }
 
 /** How near the player's feet come to a drop to take it, across and up, metres (crates/room/src/drops.rs
@@ -438,32 +467,40 @@ const keyOf = (drop: GearDrop) => `${drop.kind}-${drop.id}`;
 
 /**
  * The drops lying for the player as they are drawn: each flying from where the room threw it the moment it is first
- * told of (or resting already, told of late), standing and lit once it rests. Each frame answers the marks (laid into
- * `out` when given), the rarities of the Vestiges that came to rest since the last, for a Rare's or finer's chime, and
- * where every drop that came to rest since the last lies.
+ * told of (or resting already, told of late), glowing, then bursting as it lands, standing and lit once it rests.
+ * Each frame answers the marks (laid into `out` when given), and where every drop that came to rest since the last
+ * lies and in what rarity, for its sound.
  */
 export class DropsShown {
   /** When each drop's flight began, on the page's clock. */
   private readonly began = new Map<string, number>();
   private readonly rested = new Set<string>();
+  /** When each drop seen landing landed, on the page's clock, for its burst. */
+  private readonly landedAt = new Map<string, number>();
   /** The Ammo boxes at rest the player stood on at the last `ammoFull`, their ammunition full. */
   private refused = new Set<string>();
+  /** Whether the player asked for reduced motion: no ring, no motes, no pulse. */
+  private readonly still: () => boolean;
+
+  constructor(still: () => boolean = motionReduced) {
+    this.still = still;
+  }
 
   frame(
     drops: readonly GearDrop[],
     seconds: number,
     eye: Point,
     out: number[] = [],
-  ): { marks: number[]; rested: number[]; landed: Point[] } {
+  ): { marks: number[]; landed: Landing[] } {
     const marks = out;
-    const rested: number[] = [];
-    const landed: Point[] = [];
+    const landed: Landing[] = [];
     const lying = new Set<string>();
+    const still = this.still();
     for (const drop of drops) {
       const key = keyOf(drop);
       lying.add(key);
       if (!this.began.has(key)) {
-        // Told of at rest, it is as though it rested long ago, and chimes no more.
+        // Told of at rest, it is as though it rested long ago, and bursts no more.
         const { restS } = feelOf(drop);
         const flown = drop.flying > 0 ? restS - drop.flying * TICK_S : restS + RISE_S;
         this.began.set(key, seconds - Math.max(0, flown));
@@ -475,31 +512,51 @@ export class DropsShown {
       if (since < feel.waitS) continue;
       const motion = motionAt(feel, drop.from, drop.at, drop.id * 7 + drop.kind, since - feel.waitS);
       const { body, halo } = pictureOf(drop, motion.turn);
-      const tallM = body.rows.length * (body.pixelM ?? PIXEL_M);
-      const base: Point = [motion.middle[0], motion.middle[1], motion.middle[2] - tallM / 2];
-      markPicture(marks, body, base, eye);
-      if (halo) markPicture(marks, halo, base, eye, 1, ADDED);
+      const ammo = drop.kind !== DROPPED.vestige;
+      const scale = ammo ? AMMO_SCALE : VESTIGE_SCALE;
+      const tallM = body.rows.length * (body.pixelM ?? PIXEL_M) * scale;
+      const { middle } = motion;
+      const base: Point = [middle[0], middle[1], middle[2] - tallM / 2];
+      markPicture(marks, body, base, eye, scale);
+      if (halo) markPicture(marks, halo, base, eye, scale, ADDED);
+      const colour = ammo ? PALE : (RARITY_COLOURS[drop.rarity] ?? WHITE);
+      const floor = drop.at[2] + GLOW_FLOOR_M;
+      markGlow(marks, middle, tallM * GLOW_SHARE, colour, glowPulse(seconds, still), eye, floor);
       if (!motion.settled) continue;
       if (!this.rested.has(key)) {
         this.rested.add(key);
-        landed.push(drop.at);
-        if (drop.kind === DROPPED.vestige) rested.push(drop.rarity);
+        this.landedAt.set(key, seconds);
+        landed.push({ at: drop.at, rarity: ammo ? null : drop.rarity });
+      }
+      const landedAt = this.landedAt.get(key);
+      if (landedAt !== undefined) {
+        // Ammunition's burst is smaller and dimmer than a Vestige's, as its pillar is.
+        const [burstColour, ring] = ammo ? [PALE.map((each) => each * AMMO_LIGHT), AMMO_RING_M] : [colour, RING_M];
+        const burst = { ground: drop.at, middle, colour: burstColour, ring, since: seconds - landedAt, still };
+        markBurst(marks, burst, eye);
+      }
+      if (!still) {
+        const count = ammo ? AMMO_MOTES : FEWEST_MOTES + 2 * drop.rarity;
+        const from: Point = [middle[0], middle[1], middle[2] - tallM / 4];
+        const seed = drop.id * 7 + drop.kind;
+        markMotes(marks, { middle: from, spread: tallM * MOTE_SPREAD, colour, count, seed }, seconds, eye);
       }
       const rise = Math.min(1, motion.since / RISE_S);
-      const ammo = drop.kind !== DROPPED.vestige;
-      const colour = ammo ? WHITE : (LINE_COLOURS[drop.rarity] ?? WHITE);
-      const tall = (ammo ? AMMO_LINE_M : (LINE_M[drop.rarity] ?? AMMO_LINE_M)) * rise;
-      const pulse = !ammo && drop.rarity >= 3 ? 1 + 0.35 * Math.sin(seconds * 2 * Math.PI * PULSE_HZ) : 1;
-      const top = drop.kind === DROPPED.crate ? CRATE_TOP_M : drop.kind === DROPPED.ammoBox ? BOX_TOP_M : CROWN_M;
-      const crown: Point = [motion.middle[0], motion.middle[1], motion.middle[2] + top + LIFT_M];
-      markLine(marks, crown, tall, colour, rise * pulse, seconds, eye);
+      const tall = (ammo ? AMMO_PILLAR_M : (PILLAR_M[drop.rarity] ?? AMMO_PILLAR_M)) * rise;
+      const strength = rise * pillarPulse(ammo ? null : drop.rarity, seconds, still) * (ammo ? AMMO_LIGHT : 1);
+      const top =
+        (drop.kind === DROPPED.crate ? CRATE_TOP_M : drop.kind === DROPPED.ammoBox ? BOX_TOP_M : CROWN_M) * scale;
+      const crown: Point = [middle[0], middle[1], middle[2] + top + LIFT_M];
+      // With motion reduced its glint holds where it is.
+      markPillar(marks, crown, tall, colour, strength, still ? 0 : seconds, eye);
     }
     for (const key of this.began.keys())
       if (!lying.has(key)) {
         this.began.delete(key);
         this.rested.delete(key);
+        this.landedAt.delete(key);
       }
-    return { marks, rested, landed };
+    return { marks, landed };
   }
 
   /** Whether the player, their feet at `feet` and their ammunition `full`, has just stepped onto an Ammo box at rest,

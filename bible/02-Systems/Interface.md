@@ -1209,8 +1209,9 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
   Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
   they are given (Exposed, Charged and Haste make no sound: [[Exposed, Charged and Haste Make No Sound]]).
-- **The rest.** A drop coming to rest, an Ammo crate used, a foe turning alert, and the player standing again. A
-  drink's heal plays the same sound as standing again, as the health comes: there is no drinking sound.
+- **The rest.** A drop coming to rest, with a chime in its rarity's weight ([[Gear]], "Drops"), an Ammo crate used, a
+  foe turning alert, and the player standing again. A drink's heal plays the same sound as standing again, as the
+  health comes: there is no drinking sound.
 
 Each is heard through a panner (equal power, fading with distance past 2 m, none past 40 m), the listener at the eye
 facing its yaw. At most 16 play at once: the farthest gives way to a nearer one. One fighter's cue plays once in
