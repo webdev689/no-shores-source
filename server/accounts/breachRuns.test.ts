@@ -90,3 +90,17 @@ test('a run its gate opened is kept a day from then, so its company launches bac
   made.clock.now += 20 * 60 * 60_000;
   assert.equal(await runOf('Ada'), RUN, 'a day and more from its Launch, within its gate’s day');
 });
+
+test('a Launch back into a run takes it only while it is still kept, so a reset meanwhile is never undone', async () => {
+  const { made, found } = await world(['Ada']);
+  await found(RUN, 'Ada');
+  const account = (
+    await made.deps.database.prepare('SELECT account_id FROM found_runs').first<{ account_id: string }>()
+  )?.account_id;
+  assert.ok(account);
+  assert.equal(await foundRun(made.deps.database, RUN, [account], made.clock.now, true), true, 'still kept: taken');
+  await made.deps.database.prepare('DELETE FROM found_runs').run();
+  assert.equal(await foundRun(made.deps.database, RUN, [account], made.clock.now, true), false, 'reset meanwhile');
+  const left = await made.deps.database.prepare('SELECT COUNT(*) AS rows FROM found_runs').first<{ rows: number }>();
+  assert.equal(left?.rows, 0, 'nothing brought back');
+});

@@ -189,7 +189,8 @@ export interface FinderSocket {
  *  for a playlist a draw of one of a count (the server's randomness when none is given). */
 export interface FinderDeps {
   seeker(token: string): Promise<Seeking | null>;
-  found(run: string, accounts: readonly string[]): Promise<boolean>;
+  /** Keeps a run found for `accounts`; one launched `again`, only while it is still kept. */
+  found(run: string, accounts: readonly string[], again?: boolean): Promise<boolean>;
   /** The run of a base launched for the account's company within BREACH_RELAUNCH_MS, if any (`companyRunOf`). */
   relaunched?(account: string, base: string): Promise<string | null>;
   readonly now: () => number;
@@ -288,9 +289,12 @@ export class Finder {
             ? `${this.base}--run-${this.deps.instance()}`
             : playlistRun(playlist, band, this.deps.pick ?? drawnOf, this.deps.instance()));
         const accounts = group.map((one) => one.account);
-        const kept = await this.deps.found(run, accounts).catch(() => false);
+        // A run reset as its Launch was answered is not taken back: a new one starts instead.
+        const back = again ? await this.deps.found(run, accounts, true).catch(() => false) : false;
+        const fresh = again && !back ? `${this.base}--run-${this.deps.instance()}` : run;
+        const kept = back || (await this.deps.found(fresh, accounts).catch(() => false));
         for (const { socket } of group)
-          if (kept) this.letGo(socket, 1000, 'found', JSON.stringify({ run }));
+          if (kept) this.letGo(socket, 1000, 'found', JSON.stringify({ run: fresh }));
           else this.letGo(socket, 1011, 'the run could not be kept');
       } catch {
         // A run that could not be named is one that could not be kept.
@@ -328,14 +332,31 @@ export class Finder {
 }
 
 /** Keeps that `run` was found for `accounts`, so its room lets them in together, forgetting runs found more than
- *  FOUND_KEPT_MS ago; false if it could not be kept. */
-export async function foundRun(database: Db, run: string, accounts: readonly string[], now: number): Promise<boolean> {
+ *  FOUND_KEPT_MS ago; false if it could not be kept. A run launched `again` is kept only while it still is, so a reset
+ *  of its checkpoints as the Launch was answered stands. */
+export async function foundRun(
+  database: Db,
+  run: string,
+  accounts: readonly string[],
+  now: number,
+  again = false,
+): Promise<boolean> {
   try {
     await database
       .prepare('DELETE FROM found_runs WHERE found_at < ?1')
       .bind(now - FOUND_KEPT_MS)
       .run();
     if (accounts.length === 0) return true;
+    if (again) {
+      const taken = await database
+        .prepare(
+          `INSERT OR REPLACE INTO found_runs (room, found_at, account_id) SELECT ?1, ?2, value FROM json_each(?3)
+           WHERE EXISTS (SELECT 1 FROM found_runs WHERE room = ?1)`,
+        )
+        .bind(run, now, JSON.stringify(accounts))
+        .run();
+      return taken.meta.changes > 0;
+    }
     const rows = accounts.map((_account, index) => `(?1, ?2, ?${index + 3})`).join(', ');
     await database
       .prepare(`INSERT OR REPLACE INTO found_runs (room, found_at, account_id) VALUES ${rows}`)
