@@ -8,6 +8,7 @@ import type { Dress } from '../../player/dressing.ts';
 import type { GearHere } from '../gearScreen.ts';
 import { rosterOf } from '../../rules/roster.ts';
 import { characterGate } from '../characters/characterGate.ts';
+import { qaEye } from '../qaViews.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { backAtHelm } from './accountAsk.ts';
 import { beatNamed, prologuePlayed } from './beat.ts';
@@ -61,8 +62,8 @@ export class StoryHost {
       .then((module) => startStory({ ...game, roster: rosterOf(module), gate }, from))
       .then(
         (started) => {
-          // A headless check reads the story's state from the page.
-          if (import.meta.env.DEV) Object.assign(window, { __prologue: started.prologue });
+          // A headless check reads the story's state from the page, plays it ahead and stands its camera.
+          if (import.meta.env.DEV) Object.assign(window, { __prologue: started.prologue, __qaEye: qaEye });
           if (arrival) started.prologue.end = 'played';
           this.started(started);
         },
