@@ -400,6 +400,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]
 - [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]
 - [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]
+- [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
 
 ## Claude's calls
 

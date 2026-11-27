@@ -9,9 +9,6 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **Merging on the owner's yes once CI passes on its head**: #221 (hostile ships and islands on the sea map, travel
-  anywhere at sea as a fade, home waters sheltered, unnamed islands' seas locked; `main` with #216, #227 and #231
-  taken in). A merge deploys the page, the site, the rooms and the bot, and releases the desktop app.
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
@@ -60,7 +57,7 @@ yet played by hand or with other players in a deployed room.
 - **Heard**: the music, the ambience, the world's, sea's and menu's sounds and their levels; the prologue's music and
   voices; the seams between a long recording's chunks; whether a browser drops an MP3's 25 to 40 ms of padding, as
   ffmpeg does, so each hoofbeat plays to its cut.
-- **Played by hand**: the prologue in one run; an hour's day; a ranged weapon's fight on foot; the travel's cinematic
+- **Played by hand**: the prologue in one run; an hour's day; a ranged weapon's fight on foot; the travel's fade
   from the helm; a clash of a Tithe ship and a merchant, joined; the welcome's tour with its 400 Aurem and a starter
   piece bought; the key strip, the leave held and a real pad's View held; the hit fixes; the Passages (every deal, a dive's way across zones, a public round, the held
   map's public way, the sea's new ranks and salvage, the week's Abyss Dungeon run again); the escort on its horse and
@@ -96,7 +93,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   redirects (unchecked whether done); press Build in the panel's Server layout and follow its checklist in #staff,
   first a fuller invite (the bot's first lacks Manage Threads, Mute Members and the two thread permissions). The
   Developer role appears once the layout is built again.
-- **Branches**: delete `ccr-9e470c58-pm6nyz` (#211, merged); a session cannot.
+- **Branches**: delete `ccr-9e470c58-pm6nyz` (#211, merged) and `ccr-c7c30290-wwnvc5` (#221, merged); a session
+  cannot.
 - **Reports**: a screenshot of the thin black vertical line across the world (the canvas fills the page); the
   browser's console (F12) the next time a frame throws (`FrameGuard` logs each error once) or a public event is not
   drawn (it names the meshes that failed); when walking or sprinting fails to happen on demand.
