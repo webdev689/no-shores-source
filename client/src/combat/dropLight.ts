@@ -25,15 +25,16 @@ const EDGE_CELLS = 4;
 const PILLAR_STEPS = 24;
 const CLIMB_HZ = 0.6;
 const PULSE_HZ = 1;
+/** A pillar's light at its brightest, its root's. */
+const PILLAR_LIGHT = 0.6;
 /** How many stops light steps through, as a spell's cells do: no light blended between them. */
 const STOPS = 6;
 /** The least of the eye's view a cell keeps, radians, so a pillar far off still shows. */
 const CELL_LEAST = 0.0012;
 
-/** How long a landing's burst lasts, its flash, and how far its ring spreads, seconds and metres. */
+/** How long a landing's burst lasts, and its flash, seconds. */
 export const BURST_S = 0.7;
 const FLASH_S = 0.3;
-const RING_M = 1.5;
 /** A glow's cells are this many of an effect's; its pulse's rate, cycles a second. */
 const GLOW_CELLS = 3;
 const GLOW_HZ = 0.5;
@@ -114,28 +115,30 @@ export function markPillar(
       root[2] + (step / PILLAR_STEPS) * height,
       root[2] + ((step + 1) / PILLAR_STEPS) * height,
     ];
-    const light = stepped(pillarLight((step + 0.5) / PILLAR_STEPS, seconds)) * strength;
-    upright(out, root, across, [-core, core], rows, lit(colour, light, 0.6));
+    // Kept under white at its brightest, so over a pale sky it still shows its colour.
+    const light = stepped(PILLAR_LIGHT * pillarLight((step + 0.5) / PILLAR_STEPS, seconds)) * strength;
+    upright(out, root, across, [-core, core], rows, lit(colour, light, 0.25));
     for (const side of [-1, 1]) {
-      upright(out, root, across, [side * core, side * body], rows, lit(colour, light * 0.8));
-      upright(out, root, across, [side * body, side * edge], rows, lit(colour, light * 0.3));
+      upright(out, root, across, [side * core, side * body], rows, lit(colour, light * 0.65));
+      upright(out, root, across, [side * body, side * edge], rows, lit(colour, light * 0.25));
     }
   }
 }
 
-/** A drop landing: on `ground`, its picture's middle at `middle`, in `colour`, `since` seconds ago, motion reduced
- *  or not. */
+/** A drop landing: on `ground`, its picture's middle at `middle`, in `colour`, its ring spreading `ring` metres,
+ *  `since` seconds ago, motion reduced or not. */
 export interface Burst {
   readonly ground: Point;
   readonly middle: Point;
   readonly colour: Rgb;
+  readonly ring: number;
   readonly since: number;
   readonly still: boolean;
 }
 
 /** A drop's burst as it lands: a flash at it, a star of cells, and a ring spreading on the ground about it, both
  *  fading; with motion reduced, the flash alone. */
-export function markBurst(out: number[], { ground, middle, colour, since, still }: Burst, eye: Point): void {
+export function markBurst(out: number[], { ground, middle, colour, ring, since, still }: Burst, eye: Point): void {
   if (since < 0 || since >= BURST_S) return;
   if (since < FLASH_S) {
     const share = since / FLASH_S;
@@ -152,7 +155,7 @@ export function markBurst(out: number[], { ground, middle, colour, since, still 
   if (still) return;
   const share = since / BURST_S;
   const cell = cellAt(eye, ground);
-  const outer = Math.max(2, Math.ceil((RING_M * (1 - (1 - share) ** 2)) / cell)) * cell;
+  const outer = Math.max(2, Math.ceil((ring * (1 - (1 - share) ** 2)) / cell)) * cell;
   const [red, green, blue] = lit(colour, stepped(1 - share) * 1.2);
   markRing(out, ground, outer - 2 * cell, outer, [red, green, blue, ADDED]);
 }
@@ -182,11 +185,11 @@ export function markGlow(
     if (low < floor) continue;
     const up = (row + 0.5) * cell;
     const [rim, mid, heart] = [halfAt(1, up), halfAt(0.66, up), halfAt(0.33, up)];
-    if (heart > 0) upright(out, middle, across, [-heart, heart], [low, high], lit(colour, 0.32 * strength));
+    if (heart > 0) upright(out, middle, across, [-heart, heart], [low, high], lit(colour, 0.24 * strength));
     for (const side of [-1, 1]) {
       if (mid > heart)
-        upright(out, middle, across, [side * heart, side * mid], [low, high], lit(colour, 0.2 * strength));
-      if (rim > mid) upright(out, middle, across, [side * mid, side * rim], [low, high], lit(colour, 0.1 * strength));
+        upright(out, middle, across, [side * heart, side * mid], [low, high], lit(colour, 0.14 * strength));
+      if (rim > mid) upright(out, middle, across, [side * mid, side * rim], [low, high], lit(colour, 0.06 * strength));
     }
   }
 }

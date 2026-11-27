@@ -540,7 +540,7 @@ DFO's spoils ([[Pick - Loot Drops]]).
   - **Glow.** A soft halo about its picture, its middle the brightest, reaching 0.45 of its height and never below
     0.1 m over the ground, pulsing slowly (every 2 s), in flight and at rest.
   - **Landing burst.** As it settles, a flash at it, a star of cells, and a ring spreading 1.5 m on the ground about
-    it, both gone in 0.7 s; a drop told of already at rest does not burst. It lands with a sound in its rarity's
+    it (ammunition's 0.8 m, pale and half as bright), both gone in 0.7 s; a drop told of already at rest does not burst. It lands with a sound in its rarity's
     weight, from the game's own recordings: ammunition's thud alone (`drop.land`), and with it a glass bell's tap for
     a Normal or a Magic (`amb.breach.crystal`), a tubular bell for a Rare (`music.bell`), a deep bell for a Legendary
     or an Atheric (`breach.toll`) ([[Interface]], "The rest").

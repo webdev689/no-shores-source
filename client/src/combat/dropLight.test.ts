@@ -83,7 +83,7 @@ test('a drop lands in a flash and a ring on the ground in its colour; reduced mo
   const middle: Point = [2, 3, 1.3];
   const burst = (since: number, still: boolean) => {
     const out: number[] = [];
-    markBurst(out, { ground, middle, colour: RED, since, still }, EYE);
+    markBurst(out, { ground, middle, colour: RED, ring: 1.5, since, still }, EYE);
     return vertices(out);
   };
   const early = burst(0.15, false);

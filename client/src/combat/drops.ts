@@ -183,14 +183,17 @@ const CLIMB_HZ = 1;
 /** A mark's opacity below none: the marks' sign for light added to what stands behind it. */
 const ADDED = -1;
 /** A drop's glow reaches this share of its picture's height from its middle, and no lower than this over the ground;
- *  its motes rise within this share of it, a Normal's fewest and ammunition's; its pillar's light, ammunition's
- *  share. */
+ *  its motes rise within this share of it, a Normal's fewest and ammunition's; its pillar's light and its burst's,
+ *  ammunition's share. */
 const GLOW_SHARE = 0.45;
 const GLOW_FLOOR_M = 0.1;
 const MOTE_SPREAD = 0.35;
 const FEWEST_MOTES = 4;
 const AMMO_MOTES = 3;
 const AMMO_LIGHT = 0.5;
+/** How far a landing's ring spreads on the ground, metres: a Vestige's, ammunition's. */
+const RING_M = 1.5;
+const AMMO_RING_M = 0.8;
 
 /** How far ammunition's drawn top stands over its middle at the most through its turn, metres at its frame's size, so
  *  its pillar rises from one height as it turns. */
@@ -531,8 +534,12 @@ export class DropsShown {
         landed.push({ at: drop.at, rarity: ammo ? null : drop.rarity });
       }
       const landedAt = this.landedAt.get(key);
-      if (landedAt !== undefined)
-        markBurst(marks, { ground: drop.at, middle, colour, since: seconds - landedAt, still }, eye);
+      if (landedAt !== undefined) {
+        // Ammunition's burst is smaller and dimmer than a Vestige's, as its pillar is.
+        const [burstColour, ring] = ammo ? [PALE.map((each) => each * AMMO_LIGHT), AMMO_RING_M] : [colour, RING_M];
+        const burst = { ground: drop.at, middle, colour: burstColour, ring, since: seconds - landedAt, still };
+        markBurst(marks, burst, eye);
+      }
       if (!still) {
         const count = ammo ? AMMO_MOTES : FEWEST_MOTES + 2 * drop.rarity;
         const from: Point = [middle[0], middle[1], middle[2] - tallM / 4];

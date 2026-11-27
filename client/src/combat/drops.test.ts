@@ -261,6 +261,26 @@ test('a drop bursts as it lands, a ring on the ground; reduced motion keeps no r
   assert.ok(landing(true, 2).length < landing(false, 2).length, 'nor motes');
   const late = new DropsShown(() => false).frame([drop({ rarity: 3, flying: 0 })], 0, EYE).marks;
   assert.equal(onGround(late), 0, 'one told of at rest never bursts');
+  const ringOf = (kind: number) => {
+    const shown = new DropsShown(() => false);
+    const lying = drop({ kind, rarity: 0 });
+    const feel = kind === DROPPED.vestige ? CRYSTAL_FEEL : AMMO_FEEL;
+    shown.frame([lying], 0, EYE);
+    shown.frame([lying], feel.restS, EYE);
+    const marks = shown.frame([lying], feel.restS + 0.5, EYE).marks;
+    const ground = Array.from({ length: marks.length / MARK_FLOATS }, (unused, vertex) => vertex * MARK_FLOATS).filter(
+      (start) => marks[start + 6] === -1 && Math.abs((marks[start + 2] ?? 0) - REST[2]) < 0.06,
+    );
+    const reach = Math.max(
+      ...ground.map((start) => Math.hypot((marks[start] ?? 0) - REST[0], (marks[start + 1] ?? 0) - REST[1])),
+    );
+    return { reach, light: Math.max(...ground.map((start) => marks[start + 3] ?? 0)) };
+  };
+  const [vestige, box] = [ringOf(DROPPED.vestige), ringOf(DROPPED.ammoBox)];
+  assert.ok(
+    box.reach < vestige.reach * 0.7 && box.light < vestige.light * 0.7,
+    "ammunition's burst smaller and dimmer",
+  );
 });
 
 test('an Ammo box at rest stepped onto at full ammunition is told once each time, never while standing on it', () => {
