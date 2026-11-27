@@ -39,7 +39,8 @@ test('every word a page names exists, and every word is said by some page', () =
 
 test("the premise's passages are the owner's words, as written", () => {
   const note = readFileSync(new URL('../../bible/01-Game/No Shores.md', import.meta.url), 'utf8');
-  const premise = note.split('## The premise')[1] ?? '';
+  // Its lines joined and the quote's markers dropped, so a passage is matched by its words wherever the note wraps.
+  const premise = (note.split('## The premise')[1] ?? '').replace(/\s*\n>?\s*/g, ' ');
   for (const [key, text] of Object.entries(WORDS).filter(([key]) => key.startsWith('premise.')))
     for (const passage of text.split(/(?<=\.) (?=[A-Z])/))
       assert.ok(premise.includes(passage), `${key}: "${passage}" is not in the premise`);
