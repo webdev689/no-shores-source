@@ -1225,7 +1225,8 @@ Each is heard through a panner (equal power, fading with distance past 2 m, none
 facing its yaw. At most 16 play at once: the farthest gives way to a nearer one. One fighter's cue plays once in
 0.1 s, and a step, a swing, a blow and a horse's stray up to 4% in pitch. A figure first seen makes no sound for what it was
 already doing. In the game they play through the interface's engine at the World volume, beside the interface's in
-Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
+Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea
+but on a boarded deck.
 The Test Ground makes its own sound at full volume on the first click into its view.
 
 ## At a dungeon's entrance
@@ -1877,8 +1878,7 @@ button's corner and screen, and the Tailor's wares.
   read again when they take a username or their guild changes on the page they play from; a guild changed elsewhere
   shows from their next room.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
-- The world's sounds play on foot and on the Test Ground; a deck at sea has none, and the music has
-  none yet.
+- The world's sounds play on foot, on the Test Ground and on a boarded deck at sea; nowhere else at sea.
 - The Acquired feed shows no level of the player's own gained, only an Art's.
 - The Art's, Appearance and keepers' screens draw no soft glow: the Art's emblem opens without the glow that swelled
   round it, the Anima breathes as a ring, a fragment just set flares as a white ring and wash, and the worn Art's and

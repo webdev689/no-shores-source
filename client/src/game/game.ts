@@ -125,7 +125,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     rooms,
     roomModule,
     groundAt: (x, y) => groundAt(x, y),
-    // Under `npm run dev` only, `?spawn=` asks a room playing alone for foes to fight.
+    // Under `npm run dev` only, `?foes=` asks a room playing alone for foes to fight.
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
     trips: onFoot,
@@ -358,7 +358,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     node: () => playing.foot?.node ?? null,
     arrive: goFoot,
     sea: () => travel({ kind: 'return-to-ship' }, goSea),
-    ...{ walker, dead, game: playing },
+    ...{ walker, dead, game: playing, sky: scene.sky },
   });
   const landAt = (id: string) => {
     const landing = playing.sea?.view.landingOf(id);
@@ -480,12 +480,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (sea) sailOrTravel(sea, sail, travel, () => !charting.waiting(sea.position, playing.landmass.id));
     if (!sea || sea.fight || seas === seaSeas) return;
     seaSeas = seas;
+    // A switch queued behind another runs only while this ship is still the one at sea (not after a Roster join).
+    const here = () => onTheSea(playing.flow) && playing.sea === sea;
     switching = switching
-      .then(() => {
-        sea.leaveRoom();
-        return enterSea(seas);
-      })
-      .then(() => void (onTheSea(playing.flow) && (sea.travelling ?? sea.sailTo(sail, PLANNED_PACE))))
+      .then(() => (here() ? (sea.leaveRoom(), enterSea(seas)) : undefined))
+      .then(() => void (here() && (sea.travelling ?? sea.sailTo(sail, PLANNED_PACE))))
       // A room that will not open leaves the ship sailing alone, and says so; ashore by then, nothing sails.
       .catch(() => void (onTheSea(playing.flow) && sea.sailAlone(sail, PLANNED_PACE)));
   };

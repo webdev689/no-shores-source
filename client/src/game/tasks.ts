@@ -9,6 +9,7 @@ import type { Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import { objectiveBox } from './quests/questCard.ts';
 import { header, keycap } from './hudParts.ts';
+import { percentWords } from '../ui/percent.ts';
 
 /** One step of a task: its words, the keys that do it (each on a keycap), what is left of it (a count, or in words:
  *  points lit of all), the seconds left on its clock, the share of something it keeps whole (a ward's health, 0 to
@@ -35,7 +36,7 @@ const leftOf = (step: Step): string | undefined =>
   step.clock !== undefined
     ? clockWords(step.clock)
     : step.share !== undefined
-      ? `${Math.round(Math.min(1, Math.max(0, step.share)) * 100)}%`
+      ? percentWords(step.share)
       : step.count === undefined
         ? undefined
         : String(step.count);

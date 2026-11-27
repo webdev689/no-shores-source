@@ -6,6 +6,7 @@
 //! now; joining any other room ends their dive; a respawn empties the haul; a kill counts toward the passages'
 //! bounties and the Atheric bounties.
 
+use super::passage_holds::HOLD_REACH_M;
 use super::{Held, Passage};
 use crate::asks::answer_code;
 use crate::{PlayerId, Room, Standing};
@@ -98,7 +99,13 @@ impl Room {
             }
             (PassageAsk::GoHome, Some(Passage::Zone(zone))) => {
                 let (number, lamp) = (zone.zone.number, passage::lamp_number(zone.zone.depth));
+                let far = self.held_at(Held::Lamp).is_some_and(|at| apart(body, at) > HOLD_REACH_M);
                 let Some(found) = self.players.get_mut(&player) else { return refused(Refusal::NoDive) };
+                // Home is from the lamp; asked again once homeward, it goes home wherever the player stands.
+                let homeward = found.character.passage.as_ref().is_some_and(|dive| dive.homeward);
+                if far && !homeward {
+                    return refused(Refusal::NotAtMouth);
+                }
                 found.gear_changed = true;
                 answer_code(found.character.go_home(number, lamp))
             }

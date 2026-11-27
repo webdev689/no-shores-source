@@ -76,6 +76,6 @@ DFO's sailing (its port of Come Sail Away, [[Come Sail Away's Sailing Comes Over
 2. The naval combat core: broadsides between the player's hull and one captain. Built: [[Naval Combat]], a pirate
    captain on a second Sloop.
 3. Boarding, ramming, crew, quays and ports. Built so far: ramming and hulls kept apart, by DFO's `navalRam.js` and
-   `navalRams.js` ([[Naval Combat]]); and the fight of many ships in a fleet room on the [[Server]], which boarding
-   and crew stand on. Waiting: boarding, crew, quays and ports.
+   `navalRams.js` ([[Naval Combat]]); the fight of many ships in a fleet room on the [[Server]]; boarding a struck
+   ship ([[Naval Combat]], "Striking, and boarding"); and [[Crew]]. Waiting: quays and ports.
 4. Pirates on the Overworld, and the pan to combat when one comes for the player.

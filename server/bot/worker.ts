@@ -119,7 +119,8 @@ export async function handle(request: Request, env: Env, execution: Execution, o
     ip: request.headers.get('cf-connecting-ip') ?? 'unknown',
   };
   if (url.pathname === '/v1/auth/discord' && request.method === 'GET') return startLogin(auth, url);
-  if (url.pathname === CALLBACK_PATH && request.method === 'GET') return finishLogin(auth, url);
+  if (url.pathname === CALLBACK_PATH && request.method === 'GET')
+    return finishLogin(auth, url, request.headers.get('Cookie'));
   if (url.pathname === '/v1/auth/exchange' && request.method === 'POST') return exchange(auth, request);
   const panel = await panelRoute(
     {

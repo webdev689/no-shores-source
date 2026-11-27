@@ -27,9 +27,10 @@ export class CompanyFinder extends DurableObject<{ readonly DB: D1Database }> {
       instance: () => runInstance(),
     });
     const finder = this.finder;
-    // A Launch is started at the next look and gone, so a queue full of searches never shuts it out.
+    // A Launch is started at the next look and gone, so a queue full of searches never shuts it out; Launches fill
+    // their own.
     const launch = new URL(request.url).searchParams.has('launch');
-    if (finder.full && !launch) return new Response('Find a Company is full', { status: 503 });
+    if (launch ? finder.launchesFull : finder.full) return new Response('Find a Company is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     server.accept();
     // `?launch` asks for a playlist's run or a Breach's at once, alone or for the seeker's company, as a found one is.

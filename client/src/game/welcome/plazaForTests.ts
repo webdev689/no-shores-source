@@ -195,12 +195,3 @@ export function solidAt(toward: number, across: number, radius: number): string 
   }
   return null;
 }
-
-/** The Hall of the Arts as the city lays it (crates/city/src/hub/hall.rs), its door at y 1900 facing the plaza (+y):
- *  68 m wide, 60 deep, 14 high; two rows of columns 16 m either side of its middle; the Stormcallers' chapel on its
- *  west wall and the Veiled's on its east, facing across its middle, the Lamplighters' at its back. */
-export const HALL_STATIONS: StationInfo[] = [
-  { kind: 'stormcallers', keeper: [966.5, 1870], counter: [968.3, 1870] },
-  { kind: 'veiled', keeper: [1033.5, 1870], counter: [1031.7, 1870] },
-  { kind: 'lamplighters', keeper: [1000, 1840.5], counter: [1000, 1842.3] },
-];

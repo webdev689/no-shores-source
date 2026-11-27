@@ -46,14 +46,17 @@ impl Room {
         })
     }
 
-    /// Keeps a patrol going for a tick: each node a player gathered `RETURN_MINUTES` ago returns for them, and they
-    /// are sent the nodes they may gather now.
+    /// Keeps a patrol or an island going for a tick: each node a player gathered returns for them, in a patrol
+    /// `RETURN_MINUTES` after, on an island once the day turns at 09:00 UTC; and they are sent the nodes they may
+    /// gather now.
     pub(crate) fn keep_patrol(&mut self) {
-        if !self.patrol {
+        if !self.patrol && self.isle.is_none() {
             return;
         }
-        let minute = self.minute;
-        let returned = |&(_, at): &(u8, u64)| minute.saturating_sub(at) >= RETURN_MINUTES;
+        let (minute, today, patrol) = (self.minute, self.day(), self.patrol);
+        let returned = |&(_, at): &(u8, u64)| {
+            if patrol { minute.saturating_sub(at) >= RETURN_MINUTES } else { gear::clock::day_of(at) < today }
+        };
         for found in self.players.values_mut() {
             if found.spent.iter().any(returned) {
                 found.spent.retain(|spent| !returned(spent));

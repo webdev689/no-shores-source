@@ -478,7 +478,7 @@ impl Room {
     }
 
     /// Notes the account that keeps a player's character: the nodes that account gathered in this room (in a patrol,
-    /// until each returns; on a sea island, this landing) are spent for them again, however often they rejoin, and
+    /// until each returns; on a sea island, this landing until the day turns) are spent for them again, however often they rejoin, and
     /// they are told they landed if the sea said that account did; the Arts' charge the room kept for it is theirs
     /// again; and in a run that counts revives, the body it left with; at an outpost, what its errands' answers gave
     /// after it left. A sea island's wrecks are kept on the character itself. False, noting nothing, for an account

@@ -197,6 +197,7 @@ function roomOf(): KeptRoom & { readonly held: Map<number, string> } {
       return body === undefined ? null : { body, vault: '{}' };
     },
     judgedMoved: () => false,
+    mailLying: () => undefined,
     restoreJoined: (player, kept) => held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
     name: (player) => held.has(player),

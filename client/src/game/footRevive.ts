@@ -9,6 +9,7 @@ import { EVENT } from '../combat/cues.ts';
 import { RESPAWN_TICKS } from '../combat/hudPlace.ts';
 import type { Marked } from '../combat/marksOver.ts';
 import type { Use } from './footGear.ts';
+import { percentWords } from '../ui/percent.ts';
 
 /** How near a fallen ally's body the player stands to revive them, metres across and up or down
  *  (crates/room/src/revive.rs REVIVE_REACH_M, REVIVE_RISE_M). */
@@ -108,7 +109,7 @@ export function fallenOf(
   const waits = { offered: false, canRespawn: false };
   if (reviving) {
     const name = nameOf(reviving.reviver) || 'An ally';
-    return { ...waits, line: `${name} is reviving you  ${Math.round(reviving.progress * 100)}%` };
+    return { ...waits, line: `${name} is reviving you  ${percentWords(reviving.progress)}` };
   }
   if (stands) return { ...waits, line: standsWords(stands, own.action.elapsed) };
   if (word.revives === 0) return { ...waits, line: 'No revives left. You stay down for the rest of the run.' };

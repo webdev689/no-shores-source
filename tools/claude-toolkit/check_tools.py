@@ -7,7 +7,7 @@ usage: bash check-tools.sh [--worker] [--quiet]
   --worker  : also one combined headless worker (run-worker.sh) that calls every tool in one session, then audit.py
               and transcript checks. About 5-8 minutes and some tokens; run after any kit change.
 Prints one line per check: PASS / WARN / FAIL <tool>: detail. Exit 1 if any FAIL.
-Drop-in checks: tools/checks.d/*.sh print lines in the same format (for tools other threads add)."""
+Drop-in checks: tools/claude-toolkit/checks.d/*.sh print lines in the same format (for tools other threads add)."""
 import glob, json, os, re, select, shutil, ssl, subprocess, sys, tempfile, time, urllib.request
 
 HOME = os.path.expanduser('~')
@@ -463,7 +463,7 @@ def _():
 def _():
     hk = REPO + '/.git/hooks/pre-commit'
     if not os.path.exists(hk) or 'commit-guard' not in open(hk).read():
-        return out('FAIL', 'pre-commit guard', f'{hk} not installed (install-all.sh copies tools/git-hooks/pre-commit)')
+        return out('FAIL', 'pre-commit guard', f'{hk} not installed (install-all.sh copies tools/claude-toolkit/git-hooks/pre-commit)')
     tmp = tempfile.mkdtemp()
     try:
         sh('git init -q . && git config user.email t@t && git config user.name t', cwd=tmp)

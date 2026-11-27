@@ -95,7 +95,7 @@ patrol and mission nodes of the edits files, each once. The rooms read the list 
 reaches them at the next bake: a merge redeploys them, and locally `npm run bake` or `npm run server` bakes first.
 
 A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
-`&view=` picture it ([[Toolkit]], "Browser QA").
+`&view=` picture it ([[Browser QA]]).
 
 ## Regions
 
@@ -184,8 +184,7 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
   to their own sides. A berth that would come within 200 m of one another course laid there first moves out 200 m at a
   time, at most 900 m out, within the roadstead's 1 km of open water (`BERTH_M`). Each of a course's two ways then runs
   from its departure berth along the course to its arrival berth. Over a day no lying ship comes within 150 m of
-  another ship at any of the three ports, and none within 225 m of a roadstead (`traffic_tests.rs`); before the
-  berths two or more hulls lay on Overlook's roadstead at once a third of the time.
+  another ship at any of the three ports, and none within 225 m of a roadstead (`traffic_tests.rs`).
 - **Routes.** Between every pair of the port cities, first with second, first with third, second with third, so
   each port trades with both others and the lanes cross the most waters; each pair sails up to three courses ([[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]).
   The shortest is planned round land: A* over a mask of 5 km cells whose middles are at least 3 km clear of every
