@@ -10,6 +10,7 @@ import {
   Breach,
   type BreachDeps,
   CHECKPOINT_KEPT_MS,
+  FORGET_AGAIN_MS,
   GATE_SHUT,
   LAUNCH_ARRIVES_MS,
   breachAsked,
@@ -240,9 +241,9 @@ test('a zone’s room is given the minute before it says whether a run’s gate 
 });
 
 /** A room's Breach keeping `kept` as it changes, and a storage that writes down what it is given. */
-function keeping(first: string | undefined) {
+function keeping(first: string | undefined, unreadable = false) {
   const stored = new Map<string, string>(first === undefined ? [] : [['breach', first]]);
-  const [alarms, forgotten, restored] = [[] as number[], [] as string[], [] as string[]];
+  const [alarms, forgotten, restored, keptRuns] = [[] as number[], [] as string[], [] as string[], [] as string[]];
   let kept = 'null';
   const { deps } = host();
   const room = {
@@ -251,13 +252,20 @@ function keeping(first: string | undefined) {
     breachRestore: (text: string) => (restored.push(text), (kept = text), true),
   } as unknown as RoomDoor;
   const storage = {
-    get: <T>(key: string) => Promise.resolve(stored.get(key) as T | undefined),
+    get: <T>(key: string) =>
+      unreadable ? Promise.reject(new Error('unread')) : Promise.resolve(stored.get(key) as T | undefined),
     put: (key: string, value: string) => Promise.resolve(void stored.set(key, value)),
     setAlarm: (when: number) => Promise.resolve(void alarms.push(when)),
   };
-  const forget = (run: string) => Promise.resolve(forgotten.push(run));
+  // The accounts fail to forget while `failing` holds, as a blip would.
+  const accounts = { failing: false };
+  const runs = {
+    forgetRun: (run: string) =>
+      accounts.failing ? Promise.reject(new Error('blip')) : Promise.resolve(forgotten.push(run)),
+    keepRun: (run: string) => Promise.resolve(keptRuns.push(run)),
+  };
   const set = (text: string) => void (kept = text);
-  return { deps: { ...deps, room, storage, forget }, stored, alarms, forgotten, restored, set };
+  return { deps: { ...deps, room, storage, runs }, stored, alarms, forgotten, restored, keptRuns, accounts, set };
 }
 
 test('a run given back its checkpoint as it opens stores it again as it moves, let go a day after it last moved', async () => {
@@ -335,4 +343,49 @@ test('the room module keeps a run’s checkpoint and gives it back to a run open
   assert.equal(room.breachRestore('{"stage":2,"chests":[1]}'), true);
   assert.deepEqual(JSON.parse(room.breachKept()), { stage: 2, chests: [1] });
   assert.equal(room.breachRestore('{"opened":{},"spent":{}}'), false, 'a run takes no gate’s runs');
+});
+
+test("a gate has the accounts keep a run it opens, so its company launches back into it all its gate's day", async () => {
+  const { deps, keptRuns, set } = keeping(JSON.stringify({ opened: {}, spent: {} }));
+  const zone = new Breach('node-gullwing-vale', deps);
+  await zone.restore();
+  set(JSON.stringify({ opened: { [RUN]: 200 }, spent: {} }));
+  zone.tick(12_000_000);
+  assert.deepEqual(keptRuns, [RUN], 'kept from the minute its gate opened');
+  zone.tick(12_001_000);
+  assert.deepEqual(keptRuns, [RUN], 'once');
+});
+
+test('a run the accounts could not forget is asked of them again until they do', async () => {
+  const shut = JSON.stringify({ opened: {}, spent: { [RUN]: 100 } });
+  const { deps, forgotten, accounts, set } = keeping(JSON.stringify({ opened: { [RUN]: 100 }, spent: {} }));
+  const zone = new Breach('node-gullwing-vale', deps);
+  await zone.restore();
+  accounts.failing = true;
+  set(shut);
+  zone.tick(6_000_000);
+  await Promise.resolve();
+  assert.deepEqual(forgotten, []);
+  accounts.failing = false;
+  zone.tick(6_000_000 + FORGET_AGAIN_MS);
+  await Promise.resolve();
+  assert.deepEqual(forgotten, [RUN], 'asked again once the accounts are back');
+});
+
+test('a storage that could not be read as the room opened is never written over', async () => {
+  const { deps, stored, set } = keeping('{"stage":4,"chests":[]}', true);
+  const run = new Breach(RUN, deps);
+  await run.restore();
+  set('{"stage":1,"chests":[]}');
+  run.tick(1_000);
+  assert.equal(stored.get('breach'), '{"stage":4,"chests":[]}', 'what it kept before stands for the next opening');
+});
+
+test('a Breach stores what it keeps as a player leaves, not only on the next second', async () => {
+  const { deps, stored, set } = keeping(undefined);
+  const run = new Breach(RUN, deps);
+  await run.restore();
+  set('{"stage":2,"chests":[1]}');
+  run.left(7);
+  assert.equal(stored.get('breach'), '{"stage":2,"chests":[1]}');
 });

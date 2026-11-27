@@ -28,6 +28,9 @@ const NAMELESS = 'A company';
 const KEPT = 'breach';
 export const CHECKPOINT_KEPT_MS = 24 * 60 * 60_000;
 
+/** How often a gate asks the accounts again to forget a shut run they did not answer for. */
+export const FORGET_AGAIN_MS = 60_000;
+
 /** Why a run turns away a character whose company's gate has not opened. */
 export const GATE_SHUT = 'The Sunken Gate has not opened to your company.';
 
@@ -53,8 +56,9 @@ export interface BreachDeps {
   readonly launched: (account: string, run: string, within?: number) => Promise<boolean>;
   /** Where what the room's Breach keeps outlives an eviction, a restart or a deploy (none keeps nothing). */
   readonly storage?: BreachStorage;
-  /** Has the accounts forget a run whose gate shut again, so its company's next Launch starts a new one. */
-  readonly forget?: (run: string) => Promise<unknown>;
+  /** The accounts' word on a gate's runs: forget one whose gate shut again, so its company's next Launch starts a new
+   *  one; keep one whose gate opened, so its company launches back into it all its gate's day. */
+  readonly runs?: { forgetRun(run: string): Promise<unknown>; keepRun(run: string): Promise<unknown> };
   /** Waits `span` ms, as the accounts are given time to come back after a blip (a timer unless a test says). */
   readonly wait?: (span: number) => Promise<void>;
 }
@@ -96,6 +100,11 @@ export class Breach {
   private readonly launched = new Set<number>();
   /** What the room's Breach keeps, as its storage last took it (`breachKept`). */
   private kept = 'null';
+  /** Whether its storage could not be read as the room opened: then it is never written, so what it holds stands. */
+  private unread = false;
+  /** A gate's shut runs the accounts have not yet forgotten, asked again every FORGET_AGAIN_MS. */
+  private readonly toForget = new Set<string>();
+  private forgetAsked = -Infinity;
 
   constructor(name: string, deps: BreachDeps) {
     this.name = name;
@@ -116,7 +125,7 @@ export class Breach {
   /** Gives the room, as it opens, what its Breach kept before an eviction, a restart or a deploy: a run's checkpoint,
    *  a gate's runs. A storage that does not answer leaves it as it opened. */
   async restore(): Promise<void> {
-    const kept = await this.deps.storage?.get<string>(KEPT).catch(() => undefined);
+    const kept = await this.deps.storage?.get<string>(KEPT).catch(() => ((this.unread = true), undefined));
     if (kept !== undefined) this.deps.room.breachRestore(kept);
     this.kept = this.deps.room.breachKept();
   }
@@ -125,14 +134,32 @@ export class Breach {
    *  host's alarm), and a gate's runs, each it has shut again since told to the accounts to forget. Never `null`,
    *  which a room that trapped answers. */
   store(now: number): void {
+    this.forgetShut(now);
     const kept = this.deps.room.breachKept();
     if (kept === this.kept || kept === 'null') return;
-    const spent = (text: string) => Object.keys((JSON.parse(text) as { spent?: object } | null)?.spent ?? {});
-    const shut = spent(kept).filter((run) => !spent(this.kept).includes(run));
+    type Runs = { opened?: object; spent?: object } | null;
+    const runs = (text: string, which: 'opened' | 'spent') => Object.keys((JSON.parse(text) as Runs)?.[which] ?? {});
+    const fresh = (which: 'opened' | 'spent') =>
+      runs(kept, which).filter((run) => !runs(this.kept, which).includes(run));
+    for (const run of fresh('opened')) void this.deps.runs?.keepRun(run).catch(() => false);
+    for (const run of fresh('spent')) this.toForget.add(run);
     this.kept = kept;
+    this.forgetShut(now, true);
+    if (this.unread) return;
     void this.deps.storage?.put(KEPT, kept).catch(() => undefined);
     if (this.run) void this.deps.storage?.setAlarm(now + CHECKPOINT_KEPT_MS).catch(() => undefined);
-    for (const run of shut) void this.deps.forget?.(run).catch(() => false);
+  }
+
+  /** Asks the accounts to forget each shut run they have not yet, at once when `atOnce` says so, else every
+   *  FORGET_AGAIN_MS while they do not answer. */
+  private forgetShut(now: number, atOnce = false): void {
+    if (this.toForget.size === 0 || (!atOnce && now - this.forgetAsked < FORGET_AGAIN_MS)) return;
+    this.forgetAsked = now;
+    for (const run of this.toForget)
+      void this.deps.runs
+        ?.forgetRun(run)
+        .then(() => this.toForget.delete(run))
+        .catch(() => false);
   }
 
   /** The other room's word heard at the Unix ms `now` (`breachHeard`), and what it changed stored. */
@@ -191,6 +218,8 @@ export class Breach {
     this.asked.delete(player);
     this.names.delete(player);
     this.launched.delete(player);
+    // The last to leave stops the room's ticks: what they reached is stored now, not a second on.
+    this.store(Date.now());
   }
 
   /** Each second's look: what its Breach keeps stored as it changes; and in a run whose gate opened, its progress

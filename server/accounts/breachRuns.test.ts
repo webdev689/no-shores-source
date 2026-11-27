@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { accounts } from './accountsForTests.ts';
-import { companyRunOf, launchedFor } from './companies.ts';
+import { companyRunOf, keepRun, launchedFor } from './companies.ts';
 import { BREACH_RELAUNCH_MS, foundRun } from './finding.ts';
 
 const BASE = 'node-gullwing-vale--breach-normal';
@@ -80,4 +80,13 @@ test("one who joins a company brings no run of their own over the company's", as
   await found(`${BASE}--run-solosolo`, 'Sol');
   assert.equal(await join('Ada', 'Sol'), 200);
   assert.equal(await runOf('Ada'), RUN);
+});
+
+test('a run its gate opened is kept a day from then, so its company launches back into it all its gate’s day', async () => {
+  const { made, runOf, found } = await world(['Ada']);
+  await found(RUN, 'Ada');
+  made.clock.now += 20 * 60 * 60_000;
+  assert.equal(await keepRun(made.deps.database, RUN, made.clock.now), true);
+  made.clock.now += 20 * 60 * 60_000;
+  assert.equal(await runOf('Ada'), RUN, 'a day and more from its Launch, within its gate’s day');
 });

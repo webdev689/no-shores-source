@@ -104,6 +104,13 @@ export async function forgetRun(database: Db, room: string): Promise<boolean> {
   return true;
 }
 
+/** Keeps whom `room` was launched for from `now`, as its gate opens (`breach.ts`): a Breach's gate stands a day from
+ *  its opening, so a Launch within that day still returns its company to it. */
+export async function keepRun(database: Db, room: string, now: number): Promise<boolean> {
+  await database.prepare('UPDATE found_runs SET found_at = ?2 WHERE room = ?1').bind(room, now).run();
+  return true;
+}
+
 /** A Breach's base, as its Launch asks the finder for it (`finding.ts`). */
 const BREACH_BASE = /^node-[a-z0-9]+(?:-[a-z0-9]+)*--breach-(?:normal|hard)$/;
 

@@ -287,7 +287,7 @@ export class RoomHost extends DurableObject<Env> {
       room: breachRoom(this.room, this.guarded.bind(this)),
       zone: (zone) => this.env.ROOMS.getByName(zone),
       launched: (account, run, within) => (tested ? Promise.resolve(true) : accounts.launched(account, run, within)),
-      ...{ storage: this.ctx.storage, forget: (run: string) => accounts.forgetRun(run) },
+      ...{ storage: this.ctx.storage, runs: accounts },
     });
     // The game's nodes, dungeons, islands and the sea keep characters (at sea, with their ship's hurts): the Test
     // Ground grants gear to try it, a test room gives its test character, and a fleet room is the World Editor's.
