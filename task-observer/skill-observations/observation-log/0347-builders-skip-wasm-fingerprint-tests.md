@@ -1,5 +1,5 @@
 ---
-id: 337
+id: 347
 title: "Builders who changed room rules ran their crate's tests but not room-wasm's, so pinned fingerprints broke only in the lead's full check"
 status: open
 type: internal
