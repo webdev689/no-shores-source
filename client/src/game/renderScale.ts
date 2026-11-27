@@ -3,6 +3,7 @@
 // scene draws into targets that size and stretches the picture over the canvas, and the hands and the interface then
 // draw at the canvas's own size, sharp.
 import { AutoScale, SCALES } from './autoScale.ts';
+import { keptChoice } from './graphicsChoices.ts';
 
 const RESOLUTION_KEY = 'noshores.resolution';
 const AUTO_CHOSEN = 'auto';
@@ -17,31 +18,14 @@ export const RESOLUTIONS: readonly { readonly value: string; readonly words: str
   ...SCALES.map((scale) => ({ value: String(scale), words: `${Math.round(scale * 100)}%` })),
 ];
 
-/** The choice once read or set in this page, so a browser that keeps nothing still draws at what it shows. */
-let chosen: string | null = null;
+/** The resolution chosen, kept in this browser: Auto unless another is kept. */
+export const RESOLUTION = keptChoice(RESOLUTION_KEY, RESOLUTIONS);
 const auto = new AutoScale();
 
-/** The resolution chosen, by its value: Auto unless another is kept. */
-export function resolution(): string {
-  if (chosen !== null) return chosen;
-  let kept: string | null = null;
-  try {
-    kept = localStorage.getItem(RESOLUTION_KEY);
-  } catch {
-    // A browser that keeps nothing draws at Auto.
-  }
-  chosen = RESOLUTIONS.some((choice) => choice.value === kept) && kept !== null ? kept : AUTO_CHOSEN;
-  return chosen;
-}
+/** The resolution chosen, by its value. */
+export const resolution = (): string => RESOLUTION.get();
 
-export function setResolution(value: string): void {
-  chosen = value;
-  try {
-    localStorage.setItem(RESOLUTION_KEY, value);
-  } catch {
-    // A browser that keeps nothing still hears the change until the page closes.
-  }
-}
+export const setResolution = (value: string): void => RESOLUTION.set(value);
 
 /** Whether the resolution is Auto's, which times the GPU each frame where it can. */
 export const autoChosen = (): boolean => resolution() === AUTO_CHOSEN;

@@ -4,6 +4,7 @@ import { BINDS } from '../player/input.ts';
 import { AccountPanel } from './accountTab.ts';
 import { drawn, fakeLink, fakePage, heard, settle } from './menuPagesForTests.ts';
 import { Rebinding } from './rebinding.ts';
+import { GRASS, SHADOWS, grassShare, shadowsOn } from './graphicsChoices.ts';
 import { resolution, setResolution } from './renderScale.ts';
 import { SETTINGS_TABS, SWITCH, Settings, type SettingsTab, titleAddress } from './settingsPage.ts';
 
@@ -59,6 +60,28 @@ test('the resolution chosen from its list is the one drawn at, and shown', () =>
     assert.equal(resolution(), 'auto');
   } finally {
     setResolution('auto');
+  }
+});
+
+test('Graphics sets how much grass is drawn and whether the sun casts shadows, as each is chosen', () => {
+  const page = settingsAt('graphics');
+  page.frame();
+  assert.match(page.shows(), /Grass \| Full .* Shadows \| On/);
+  assert.deepEqual([grassShare(), shadowsOn()], [1, true], 'all the grass and the shadows, unless chosen otherwise');
+  try {
+    page.click('grass');
+    page.click('grass:half');
+    assert.equal(grassShare(), 0.5);
+    page.click('grass');
+    page.click('grass:off');
+    assert.equal(grassShare(), 0);
+    page.click('shadows');
+    page.click('shadows:off');
+    assert.equal(shadowsOn(), false);
+    assert.match(page.shows(), /Grass \| Off .* Shadows \| Off/);
+  } finally {
+    GRASS.set('full');
+    SHADOWS.set('on');
   }
 });
 
