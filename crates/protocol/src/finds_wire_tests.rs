@@ -24,7 +24,7 @@ fn floats(numbers: Option<flatbuffers::Vector<'_, f64>>) -> Vec<f64> {
 }
 
 #[test]
-fn the_gear_message_carries_each_chest_in_five_numbers_and_each_container_in_eight() {
+fn the_gear_message_carries_each_chest_in_six_numbers_and_each_container_in_eight() {
     let (room, player) = room_with_finds();
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
@@ -32,8 +32,9 @@ fn the_gear_message_carries_each_chest_in_five_numbers_and_each_container_in_eig
     let standing = room.chests_for(player);
     assert_eq!(standing.len(), 2, "three places stand two chests");
     let written: Vec<f64> =
-        standing.iter().flat_map(|&(number, [x, y, z, facing])| [f64::from(number), x, y, z, facing]).collect();
-    assert_eq!(chests, written);
+        standing.iter().flat_map(|&(number, [x, y, z, facing])| [f64::from(number), x, y, z, facing, 0.0]).collect();
+    assert_eq!(chests, written, "a patrol's chests are none of them a vault's");
+    assert_eq!((gear.chests_opened(), gear.chests_total()), (0, 0), "a patrol counts none");
     let searchables = floats(gear.searchables());
     let held = room.searchables_for(player);
     assert_eq!(held.len(), 1, "one of two in six, at least one");
@@ -59,7 +60,24 @@ fn a_chest_opened_is_left_out_of_its_players_gear() {
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
     let chests = floats(gear.chests());
-    assert_eq!(chests.len(), 5, "one chest left of two");
+    assert_eq!(chests.len(), 6, "one chest left of two");
     assert!((chests[0] - f64::from(number)).abs() > 0.5, "the one opened is gone");
     assert_eq!(gear.opened(), number, "and named as the last it paid");
+}
+
+#[test]
+fn a_dungeons_gear_carries_its_vaults_chest_and_how_many_of_its_chests_the_player_has_opened() {
+    let mut room = room::Room::dungeon("saltgrass-downs", 0, Some((5, 9))).expect("a dungeon");
+    let player = room.join().expect("space");
+    room.tick();
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+    let chests = floats(gear.chests());
+    assert_eq!(usize::from(gear.chests_total()), chests.len() / 6, "every chest standing, none opened");
+    assert_eq!(gear.chests_opened(), 0);
+    let vaults = chests.chunks(6).filter(|chest| chest[5] == 1.0).count();
+    assert!(
+        vaults >= 1 && chests.chunks(6).all(|chest| chest[5] == 0.0 || chest[5] == 1.0),
+        "its vaults' chests named"
+    );
 }

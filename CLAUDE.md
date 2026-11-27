@@ -34,7 +34,7 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
    `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh ${SHARED_DIR:-$HOME/toolkit-data}/task-observer`.
 4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `headroom learn --project . --apply` (say so if
    Gemini is unreachable, or if it finds no data because the session started in another folder; never apply it to
-   that folder's repository), then rewrite `bible/Hand-off.md`, and last
+   that folder's repository), then `bash tools/claude-toolkit/pr-state.sh`, rewrite `bible/Hand-off.md`, and last
    `bash tools/claude-toolkit/toolkit-data.sh save` (the observation log, to the branch `toolkit-data`), so nothing
    logged after it is lost. In the hand-off, each open pull request is one line under "Open pull requests" (its
    number and title), appended to that list; its detail stays in the pull request.

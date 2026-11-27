@@ -1,8 +1,10 @@
 // The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at,
 // and in the desktop app its graphics API and version), Audio (the volumes, and the recorded sounds' credits behind a
-// press of their own), Controls (every control, bound anew there as in the sheet K opens) and Account (the account and
+// press of their own), Controls (how dialogue moves on, and every control, bound anew there as in the sheet K opens)
+// and Account (the account and
 // the players blocked or muted), down a rail with Switch character (online), Exit to Menu and Exit to Desktop at its
-// foot, each held. The resolution and the volumes are kept in this browser, the binds with the account.
+// foot, each held. The resolution, the volumes and the dialogue's pace are kept in this browser, the binds with the
+// account.
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -20,6 +22,7 @@ import { PRESS_PADDING, answerNode, headingNode, hintNode } from './menuPages.ts
 import { REBINDING, type Rebinding } from './rebinding.ts';
 import { RESOLUTIONS, resolution, setResolution } from './renderScale.ts';
 import { soundCredits } from '../soundSamples.ts';
+import { PACES, dialoguePace, setDialoguePace } from '../speech/pace.ts';
 import {
   ambienceVolume,
   interfaceVolume,
@@ -63,7 +66,8 @@ const PANEL_LEAST = 200;
 const LIST = 'settings-list';
 /** The page's drop-down lists, each shut as the page is shown again. */
 const RESOLUTION_LIST = 'resolution';
-const LISTS = [RESOLUTION_LIST, API_LIST];
+const DIALOGUE_LIST = 'dialogue-pace';
+const LISTS = [RESOLUTION_LIST, API_LIST, DIALOGUE_LIST];
 /** Switch character's held press. */
 export const SWITCH = 'settings-switch-character';
 /** The credits' press in Audio and their way back. */
@@ -381,16 +385,24 @@ function volumeRow(
   );
 }
 
-/** Controls: every control as the sheet K opens lists it, each key or button chosen bound anew, and Reset to
- *  defaults; its words at the face's 11 px, as the other tabs' are. */
+/** Controls: whether a line of dialogue waits for a press or moves on by itself (`pace.ts`); every control as the
+ *  sheet K opens lists it, each key or button chosen bound anew, and Reset to defaults; its words at the face's 11 px,
+ *  as the other tabs' are. */
 function controlsNode({ ui, room, sizes }: PlainContext, rebinding: Rebinding): Node {
   const reset = button(ui, 'settings-reset', 'Reset to defaults', () => rebinding.reset(), { padding: PRESS_PADDING });
   const said = bindingWords(rebinding);
   // The room the rail and its gap leave, less the panel's own padding and frame.
   const rail = sizes.name > 1 ? RAIL_WIDE + 20 : RAIL + 14;
   const inside = Math.max(0, room.width - rail - 2 * 24 - 4);
+  const { node: pace, chosen } = choice(ui, DIALOGUE_LIST, dialoguePace(), PACES);
+  if (chosen !== dialoguePace()) setDialoguePace(chosen === 'auto' ? 'auto' : 'click');
+  const paceSaid = PACES.find((option) => option.value === chosen)?.words ?? chosen;
   return column(
     [
+      headingNode('Dialogue'),
+      settingRow('Dialogue', { ...pace, label: `Dialogue, ${paceSaid}` }),
+      hintNode('Auto moves each line on by itself. Lines said in a fight always do.'),
+      { height: 14 },
       headingNode('Controls', reset),
       said === '' ? hintNode('Choose a key or button, then press its new one.') : answerNode(said),
       { gap: 24, wrap: true, children: bindingColumns(ui, rebinding, 1, inside) },

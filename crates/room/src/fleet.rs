@@ -243,6 +243,7 @@ impl Fleet {
         let swell = self.swell.clone();
         let waters = OpenSea { swell: &swell };
         let wind = self.wind;
+        crate::clash::light_fight(&mut self.fight, self.world_start_s + time);
         let events = self.fight.step(&orders, &waters, &|_| wind, time);
         let gone: Vec<ShipId> = events
             .iter()

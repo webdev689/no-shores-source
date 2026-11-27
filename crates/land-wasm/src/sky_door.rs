@@ -57,6 +57,18 @@ pub fn sea_wind_numbers(request: &[f64]) -> Vec<f64> {
     sailing::waters::sea_wind_at([x, y], world).to_vec()
 }
 
+/// How far a ship is seen by night (`naval::night::night_sight`): a request is the lookout's range by day, the
+/// daylight, and 1 for a lit ship or 0 for a dark one; its answer the one distance, or nothing for numbers that are not
+/// one. A lookout who sees without end by day asks with an infinite range.
+#[must_use]
+pub fn night_sight_numbers(request: &[f64]) -> Vec<f64> {
+    let &[range, daylight, lit] = request else { return Vec::new() };
+    if range.is_nan() || range < 0.0 || !daylight.is_finite() || !lit.is_finite() {
+        return Vec::new();
+    }
+    vec![naval::night::night_sight(range, daylight, lit != 0.0)]
+}
+
 /// The lightning a request asks of, earliest first, or nothing for numbers that are not one. A strikes request is x,
 /// y, the reach, from and to (world time) and the climate's number; each strike's five numbers: x, y, its moment,
 /// whether it reaches the ground, its power.

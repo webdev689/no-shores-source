@@ -1,17 +1,19 @@
 // A sea fight's see-through puffs on the GPU, after DFO's sprites (navalRender.js): each a soft round picture facing
 // the eye, or lying flat on the water as a ring of foam, in premultiplied alpha, so one blend draws both kinds: smoke,
-// spray and foam cover what is behind them by their alpha, and flash, flame, embers and glints add their light unlit
-// (alpha none). They are drawn after the water, far to near, over the finished picture, hidden by hand where the
-// scene's depth stands nearer, so the water's sky and surface never cover them. Each glow also gives its stepped halo
-// through the light layer, as the land's bright things do.
+// spray and foam cover what is behind them by their alpha, lit by the sky and the lamps near, and flash, flame, embers
+// and glints add their light unlit (alpha none). They are drawn after the water, far to near, over the finished
+// picture, hidden by hand where the scene's depth stands nearer, so the water's sky and surface never cover them. Each
+// glow also gives its stepped halo through the light layer, as the land's bright things do.
 import { NEAR_FADE_WGSL } from '../nearFade.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import type { Mark } from './effects.ts';
 import type { ShipCamera } from './shipView.ts';
+import { SKY_WGSL, skyUniformFor } from '../sky/skyUniform.ts';
 
 /** The most puffs drawn in a frame: past it the nearest wait. */
 export const MOST_PUFFS = 2048;
-/** A puff's floats: its place and radius, its colour and alpha, then whether it glows and whether it lies flat. */
+/** A puff's floats: its place and radius, its colour and alpha, then whether it glows, whether it lies flat and its
+ *  turn. */
 const PUFF_FLOATS = 12;
 
 /** What `puffFloats` writes into, kept from frame to frame by whoever draws the puffs: the floats of the most drawn,
@@ -36,7 +38,7 @@ function putPuff(values: Float32Array, start: number, mark: Mark): void {
   values[start + 7] = mark.alpha ?? 1;
   values[start + 8] = mark.blend === 'smoke' ? 0 : 1;
   values[start + 9] = mark.flat ? 1 : 0;
-  values[start + 10] = 0;
+  values[start + 10] = mark.yaw ?? 0;
   values[start + 11] = 0;
 }
 
@@ -88,19 +90,15 @@ struct Out {
   @builtin(position) position: vec4f,
   @location(0) colour: vec4f,
   @location(1) corner: vec2f,
-  @location(2) @interpolate(flat) kind: vec2f,
+  @location(2) @interpolate(flat) kind: vec3f,
   // How much shows as the eye comes to it: in or against a puff it would be a sheet over the whole view.
   @location(3) @interpolate(flat) near: f32,
 }
 ${NEAR_FADE_WGSL}
+${SKY_WGSL}
 const CORNERS = array<vec2f, 6>(vec2f(-1, -1), vec2f(1, -1), vec2f(1, 1), vec2f(-1, -1), vec2f(1, 1), vec2f(-1, 1));
 
-@vertex fn puff_vertex(
-  @builtin(vertex_index) index: u32,
-  @location(0) place: vec4f,
-  @location(1) colour: vec4f,
-  @location(2) kind: vec4f,
-) -> Out {
+fn laid(index: u32, place: vec4f, colour: vec4f, kind: vec4f) -> Out {
   let corner = CORNERS[index];
   let from_eye = place.xyz - camera.eye.xyz;
   // Facing the eye, upright as the eye stands; a flat one lies on the water.
@@ -113,15 +111,49 @@ const CORNERS = array<vec2f, 6>(vec2f(-1, -1), vec2f(1, -1), vec2f(1, 1), vec2f(
   out.position = camera.from_eye * vec4f(from_eye + (right * corner.x + up * corner.y) * place.w, 1.0);
   out.colour = colour;
   out.corner = corner;
-  out.kind = kind.xy;
+  out.kind = kind.xyz;
   out.near = near_fade(length(from_eye) - place.w);
   return out;
 }
 
-// How much a puff covers at a share of its radius out: a soft round body, or a ring of foam.
-fn cover(corner: vec2f, flat: f32) -> f32 {
-  let out = length(corner);
-  if (flat > 0.5) { return smoothstep(0.3, 0.72, out) * (1.0 - smoothstep(0.78, 1.0, out)); }
+// For the light pass: a glow's light, as it is.
+@vertex fn puff_vertex(
+  @builtin(vertex_index) index: u32,
+  @location(0) place: vec4f,
+  @location(1) colour: vec4f,
+  @location(2) kind: vec4f,
+) -> Out {
+  return laid(index, place, colour, kind);
+}
+
+// Over the picture: a blended puff takes the sky's light as DFO's did (a night fight's smoke is dark) and the lamps'
+// near it, so a gun's flash lights its own smoke; a glow is light already. Lit once a puff, at its middle, never past
+// its own colour: by day it shows as it was made.
+@vertex fn over_vertex(
+  @builtin(vertex_index) index: u32,
+  @location(0) place: vec4f,
+  @location(1) colour: vec4f,
+  @location(2) kind: vec4f,
+) -> Out {
+  var out = laid(index, place, colour, kind);
+  if (kind.x < 0.5) {
+    let from_eye = place.xyz - camera.eye.xyz;
+    let toward_eye = -normalize(from_eye);
+    let sky = sky_ambient(vec3f(0.0, 0.0, 1.0)) + sky_state.key_light.rgb * (0.35 + 0.65 * max(sky_state.key.z, 0.0));
+    out.colour = vec4f(colour.rgb * min(sky + sky_lamps(from_eye, toward_eye), vec3f(1.0)), colour.a);
+  }
+  return out;
+}
+
+// How much a puff covers at a share of its radius out: a ring of foam, a glow's soft round body, or a puff's body
+// broken into lumps about its edge, turned by its own 'turn', as DFO's smoke picture was, so a bank never tiles.
+fn cover(corner: vec2f, kind: vec3f) -> f32 {
+  var out = length(corner);
+  if (kind.y > 0.5) { return smoothstep(0.3, 0.72, out) * (1.0 - smoothstep(0.78, 1.0, out)); }
+  if (kind.x < 0.5) {
+    let around = atan2(corner.y, corner.x) + kind.z;
+    out /= 1.0 - 0.22 * (0.5 + 0.5 * sin(3.0 * around)) - 0.16 * (0.5 + 0.5 * sin(5.0 * around + 2.0 * kind.z));
+  }
   let body = 1.0 - smoothstep(0.15, 1.0, out);
   return body * body;
 }
@@ -130,7 +162,7 @@ fn cover(corner: vec2f, flat: f32) -> f32 {
 
 @fragment fn puff_fragment(in: Out) -> @location(0) vec4f {
   if (in.position.z < textureLoad(depths, vec2i(in.position.xy), 0).r) { discard; }
-  let alpha = cover(in.corner, in.kind.y) * in.colour.a * in.near;
+  let alpha = cover(in.corner, in.kind) * in.colour.a * in.near;
   if (alpha <= 0.002) { discard; }
   // Premultiplied: a glow adds its light and covers nothing.
   return vec4f(in.colour.rgb * alpha, select(alpha, 0.0, in.kind.x > 0.5));
@@ -192,9 +224,10 @@ export class PuffView {
       entries: [{ binding: 0, visibility: SHADER_STAGE.vertex, buffer: {} }],
     });
     const vertex = { module, entryPoint: 'puff_vertex', buffers: [INSTANCES] };
+    const sky = skyUniformFor(device);
     this.over = device.createRenderPipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout] }),
-      vertex,
+      layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout, sky.empty, sky.empty, sky.layout] }),
+      vertex: { ...vertex, entryPoint: 'over_vertex' },
       fragment: {
         module,
         entryPoint: 'puff_fragment',
@@ -250,6 +283,7 @@ export class PuffView {
     const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
     pass.setPipeline(this.over);
     pass.setBindGroup(0, this.group.group);
+    skyUniformFor(this.gpu.device).bindShared(pass, [1, 2]);
     pass.setVertexBuffer(0, this.picture);
     pass.draw(6, this.counts.picture);
     pass.end();

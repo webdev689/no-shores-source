@@ -5,11 +5,11 @@ import { arrivalAt, ringMiddle, sitesOf, type WorldData } from './worldData.ts';
 
 const saltmere = readFileSync(new URL('../../../content/world/land/continent-1.json', import.meta.url), 'utf8');
 
-test("Saltmere's edits file holds Overlook and its eleven nodes", () => {
+test("Saltmere's edits file holds Overlook, its eleven places and its nine outpost slots", () => {
   const { city, nodes } = sitesOf('continent-1', saltmere, []);
   assert.equal(city?.name, 'Overlook');
   assert.equal(city?.motif, 'beacon');
-  assert.equal(nodes.length, 11);
+  assert.equal(nodes.length, 19);
   const kinds = nodes.map((node) => node.kind).sort();
   assert.deepEqual(kinds, [
     'boss',
@@ -19,7 +19,7 @@ test("Saltmere's edits file holds Overlook and its eleven nodes", () => {
     'mission',
     'mission',
     'mission',
-    'outpost',
+    ...Array<string>(9).fill('outpost'),
     'patrol',
     'patrol',
     'patrol',

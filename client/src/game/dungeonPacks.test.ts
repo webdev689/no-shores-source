@@ -167,6 +167,9 @@ function kitBounds(style: StyleKey, hang?: number): Readonly<Record<string, Boun
     sconce: [-0.2, 0, -0.3, 0.2, 0.42, 0.1],
     portal: [-1.3, 0, 0, 1.3, 0.3, 3.1],
     exit: [-1.3, 0, 0, 1.3, 0.3, 3.1],
+    'stair.head': [-1.6, 0, 0, 1.6, 0.3, 3.2],
+    'stair.side': [-1.6, 0, -0.3, 1.6, 0.15, 0.45],
+    balustrade: [-1.6, 0, 0, 1.6, 0.25, 1],
   };
 }
 

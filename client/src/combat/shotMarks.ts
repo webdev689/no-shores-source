@@ -1,6 +1,7 @@
 // What a shot leaves where it stops, by what it struck: a body takes a star of light (and keeps an arrow until it
 // falls), the ground throws dust and keeps a ball's hole or an arrow for 8 s, stone throws chips (its sparks are
 // the fight's own), and water throws a splash and rings. A ball also flashes where it stops.
+import type { GroundAt } from '../player/crosshair.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { markRing, markStuckArrow } from './marks.ts';
 import { POWDER, STEEL, WATER, type Ramp, layPicture, rampOf, crossStar } from './markSprites.ts';
@@ -39,12 +40,13 @@ const TOWARD_EYE_M = 0.4;
 const FOLLOW_M = 0.8;
 
 /** What a point a shot stopped at struck: a body (`bodies`' feet), a block, the ground (`groundAt`'s, else level at
- *  0, water below the sea's level), or nothing. */
+ *  0, water below the sea's level where the place has a sea: a dungeon has none), or nothing. */
 export function surfaceAt(
   point: Point,
   blocks: readonly Block[],
   bodies: readonly Point[],
-  groundAt?: (x: number, y: number) => number | null,
+  groundAt?: GroundAt,
+  sea = true,
 ): { surface: Surface; feet?: Point } | null {
   const [x, y, z] = point;
   for (const feet of bodies) {
@@ -52,8 +54,8 @@ export function surfaceAt(
     if (Math.hypot(x - feet[0], y - feet[1]) <= BODY_REACH.radius && high >= -0.1 && high <= BODY_REACH.height)
       return { surface: 'body', feet };
   }
-  const ground = groundAt?.(x, y) ?? 0;
-  if (z <= SEA_LEVEL + TOUCH_M && ground < SEA_LEVEL - 0.02) return { surface: 'water' };
+  const ground = groundAt?.(x, y, z) ?? 0;
+  if (sea && z <= SEA_LEVEL + TOUCH_M && ground < SEA_LEVEL - 0.02) return { surface: 'water' };
   if (z <= ground + TOUCH_M) return { surface: 'ground' };
   const touches = (block: Block) =>
     x >= block.minX - TOUCH_M &&
@@ -65,9 +67,10 @@ export function surfaceAt(
   return blocks.some(touches) ? { surface: 'stone' } : null;
 }
 
-/** Where a line from `from` to `to` crosses the sea's level, if it goes under it there (over water); else `to`. */
-export function overSea(from: Point, to: Point, groundAt?: (x: number, y: number) => number | null): Point {
-  if (to[2] >= SEA_LEVEL || from[2] <= SEA_LEVEL || (groundAt?.(to[0], to[1]) ?? 0) >= SEA_LEVEL) return to;
+/** Where a line from `from` to `to` crosses the sea's level, if it goes under it there (over water) where the place
+ *  has a sea; else `to`. */
+export function overSea(from: Point, to: Point, groundAt?: (x: number, y: number) => number | null, sea = true): Point {
+  if (!sea || to[2] >= SEA_LEVEL || from[2] <= SEA_LEVEL || (groundAt?.(to[0], to[1]) ?? 0) >= SEA_LEVEL) return to;
   const share = (from[2] - SEA_LEVEL) / (from[2] - to[2]);
   return [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share, SEA_LEVEL];
 }

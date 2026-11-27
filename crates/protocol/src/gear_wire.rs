@@ -480,6 +480,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level(), 1);
     let (dive, island_lamps, atheric_bounties) =
         crate::passage_wire::passages_of(&mut builder, character, (room.day(), gear::clock::week_of(room.minute)));
+    let (chests_opened, chests_total) = room.chests_counted(player);
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -575,6 +576,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         dive,
         island_lamps,
         atheric_bounties,
+        chests_opened: u16::try_from(chests_opened).unwrap_or(u16::MAX),
+        chests_total: u16::try_from(chests_total).unwrap_or(u16::MAX),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

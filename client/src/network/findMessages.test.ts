@@ -4,22 +4,25 @@ import * as flatbuffers from 'flatbuffers';
 import { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts';
 import { findsOf } from './findMessages.ts';
 
-test('the gear message reads back each chest from five numbers and each container from eight', () => {
+test('the gear message reads back each chest from six numbers and each container from eight', () => {
   const builder = new flatbuffers.Builder(128);
-  const chests = Gear.createChestsVector(builder, [7, 10, 20, 1.5, Math.PI, 8, 30, 40, 0, 0]);
+  const chests = Gear.createChestsVector(builder, [7, 10, 20, 1.5, Math.PI, 0, 8, 30, 40, 0, 0, 1]);
   const searchables = Gear.createSearchablesVector(builder, [9, 0, 20, 1, 21, 0, 1.8, 41003]);
   Gear.startGear(builder);
   Gear.addChests(builder, chests);
   Gear.addSearchables(builder, searchables);
   Gear.addOpened(builder, 7);
+  Gear.addChestsOpened(builder, 2);
+  Gear.addChestsTotal(builder, 5);
   builder.finish(Gear.endGear(builder));
   const read = findsOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
   assert.deepEqual(read.chests, [
-    { number: 7, at: [10, 20, 1.5], facing: Math.PI },
-    { number: 8, at: [30, 40, 0], facing: 0 },
+    { number: 7, at: [10, 20, 1.5], facing: Math.PI, vault: false },
+    { number: 8, at: [30, 40, 0], facing: 0, vault: true },
   ]);
   assert.deepEqual(read.searchables, [{ number: 9, box: [0, 20, 1, 21], foot: 0, top: 1.8, model: 41003 }]);
   assert.equal(read.opened, 7, 'the last paid for');
+  assert.deepEqual([read.chestsOpened, read.chestsTotal], [2, 5], "the dungeon's chests opened of all it stands");
 });
 
 test('a gear message with no finds reads as none', () => {
@@ -27,5 +30,5 @@ test('a gear message with no finds reads as none', () => {
   Gear.startGear(builder);
   builder.finish(Gear.endGear(builder));
   const read = findsOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
-  assert.deepEqual(read, { chests: [], searchables: [], opened: 0 });
+  assert.deepEqual(read, { chests: [], searchables: [], opened: 0, chestsOpened: 0, chestsTotal: 0 });
 });
