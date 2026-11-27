@@ -92,7 +92,7 @@ fn a_voyage_steps_to_its_pinned_fingerprint() {
     }
     assert_eq!(ship[7], 1.0, "it ends on its oars");
     assert!(ship[1] < 360_000.0 - 10.0, "it sailed north: {ship:?}");
-    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "abf7572961569df1");
+    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), pinned("land.sail_square"));
 }
 
 #[test]
@@ -227,7 +227,7 @@ fn a_voyage_onto_the_shore_and_off_it_steps_to_its_pinned_fingerprint() {
     }
     assert!(touched, "it took the ground: furthest east {furthest}");
     assert!(ship[0] < furthest - 5.0, "its oars took it off: {} from {furthest}", ship[0]);
-    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "dbcd586188982208");
+    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), pinned("land.shore_voyage"));
 }
 
 #[test]
@@ -252,3 +252,7 @@ fn a_request_naming_its_hull_sails_that_hull_and_one_naming_none_the_sloop() {
         |hull: f64| sail_bytes(&request(hull).iter().flat_map(|number| number.to_le_bytes()).collect::<Vec<u8>>());
     assert!(header(&asked(0.0)).get("error").is_some() && header(&asked(3.0)).get("error").is_some());
 }
+
+#[path = "../../land/tests/support/pinned.rs"]
+mod pinned;
+pub(crate) use pinned::pinned;

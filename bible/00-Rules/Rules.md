@@ -15,7 +15,7 @@ something DFO Online taught us ([[Lessons from DFO]]). A new rule needs the owne
 | [[Names Say What They Are]] | Names are spelled out | clippy, ESLint |
 | [[Comments Say Why]] | Eight lines at most, and no history | comments check |
 | [[Notes Say How It Works Now]] | Each system has a note, updated in the same change | vault check, review |
-| [[Tests Check Behaviour]] | Tests pin what the code does, never where its lines sit | review |
+| [[Tests Check Behaviour]] | Tests pin what the code does, never where its lines sit | client tests and pins checks, review |
 | [[Short Branches, Green Main]] | Small changes, merged within days; main always passes | CI, review |
 | [[Generated Files Stay Out of Git]] | Renders, bakes and builds live outside git | assets check |
 | [[Versions Are Not Counters]] | Migrations by timestamp, protocol versions by hash | versions check, review |

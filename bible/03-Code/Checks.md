@@ -44,14 +44,16 @@ repo checks and the tests of what it changed, and leaves the whole check to CI (
    shader that fails to compile only as a warning, so this is where a broken one is caught. A shader's code is the
    constant `createShaderModule({ code: … })` names, wherever its key stands, exported where it is made: a string, or
    a record of strings picked by a key; a call naming anything else, or no `code:` this can read, fails
-   (`tools/shaderCalls.mjs`). `cargo xtask shaders` runs this step alone.
+   (`tools/shaderCalls.mjs`). `cargo xtask shaders` runs this step alone. naga is not Chrome's compiler (Tint), and
+   accepts a bitwise operator (`&`, `|`, `^`, `<<`, `>>`) sharing an expression unparenthesised with another, which
+   Tint refuses: the step refuses it too, as WGSL's grammar does (a shift beside a comparison is let be).
 6. **tests**: the Rust tests, with cargo-nextest, which runs every crate's at once, where it is installed (CI installs
    its pinned release) and with `cargo test` elsewhere; the workspace has no doctests, which nextest would not run. The
    tests that sweep the world check a sample here (see "The nightly run"). Then
    the Rust tests that write the files the page's tests read (the messages', the schedule's, the arts' first levels and
-   the Elite Dungeons' answers, into `target/`), so the page's part has them without the rest; the world rules, the
-   land, movement and the rooms built as WebAssembly (`npm run wasm`); then `node --test`, whose bridge tests load
-   them, and the build tools' own (`tools/*.test.mjs`).
+   the Elite Dungeons' answers and the rooms' and asks' numbers, into `target/`), so the page's part has them without
+   the rest; the world rules, the land, movement and the rooms built as WebAssembly (`npm run wasm`); then
+   `node --test`, whose bridge tests load them, and the build tools' own (`tools/*.test.mjs`).
 7. **build**: the client, with Vite; the site (`npm run site:build`); then the bake cuts every node's window of the
    land (`npm run bake`), and the rooms' and the accounts' Cloudflare Workers are bundled with them as a deploy would,
    without deploying.
@@ -67,6 +69,10 @@ repo checks and the tests of what it changed, and leaves the whole check to CI (
 | crates | every crate is declared, takes the workspace's lints, and depends only on the crates its rule allows, read by real package name through renames and per-platform tables; any attribute naming `unsafe_code` outside a door crate is refused | [[Code Map]] |
 | assets | no file over 1 MB; media only in `bible/Attachments/`, and no WebAssembly, ship mesh, module pack (`.modules`) or binary bake (`.bin`) anywhere, the attachments too | [[Generated Files Stay Out of Git]] |
 | vault | every wikilink resolves; every `code:` path exists and, in Rust, a script or Python, defines its symbol (after `fn`, `const`, `class` and the like, or as a field, variant, property or method), never only names it in an import, a `use`, a comment or a call; in any other file, names it | [[Notes Say How It Works Now]] |
+| client tests | no client test names, in a string, a path into `crates/` or a Rust file: it compares with a fixture a Rust test writes under `target/`, or a content file both sides read | [[Tests Check Behaviour]] |
+| pins | no fingerprint (8 or 16 hex digits) written both in Rust and in a script: each is pinned once, in `content/fingerprints.txt`, which both sides' tests read | [[Testing]] |
+| schema | every FlatBuffers table holds `origin/main`'s fields, in their order and of their types, new ones after them (a clone without `origin/main` has nothing to hold them to; CI fetches it) | [[Messages Are FlatBuffers]] |
+| python | every `.py` under `tools/` (but the two kept folders) compiles, and reads no name it never defines, by Python's own symbol tables, so a rename that misses a use fails here, not in a content workflow's bake | [[Short Branches, Green Main]] |
 | versions | every `.sql` file in a `migrations/` folder, its ending in any case, is named by its UTC timestamp to the second, a day its month has, and what it does | [[Versions Are Not Counters]] |
 | dialogue | every scene in `content/story/`: 14 words a line, 4 a bark, 2 lines a speaker in a row, 8 lines a scene, no dash (em, en, figure, the horizontal bar, the two- and three-em, the small em, a double hyphen, a hyphen spaced as one) or ellipsis, every speaker in the cast with a voice the speech system can read; and `content/quests/quests.json`, whose every named scene is the story's, every speaker the cast's and every word on the screen free of a dash or an ellipsis ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and whose seams (a `begin` into the first task's `start`, a task's `end` into the next's `start`) hold 2 lines a speaker in a row ([[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]) | [[Dialogue]] |
 
@@ -100,4 +106,6 @@ in each zone, which a shorter wait would not check.
 
 A check earns its place by catching something review keeps missing. It needs the owner's agreement, a test on
 made-up input, and must hold everywhere the day it lands: if the code does not pass it yet, fix the code in the same
-change. No baselines.
+change. No baselines. Before it is added or tightened, prototype it over the whole repo: count its false alarms on
+real cases and its misses on a generated bad set, then prove the xtask version by planting one bad case for each new
+rule.

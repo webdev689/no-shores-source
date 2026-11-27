@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startRoomDoor } from '../../../server/roomDoor.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 /** The room-wasm crate's dungeon door holds the same asks and hash (crates/room-wasm/src/dungeon_door.rs): four
  *  patrols' dungeons, the last of five blocks with its last a style deeper, then one laid by a seed and a style. */
-const AGREED_HASH = '28aeb7f85045e220';
+const AGREED_HASH = pinned('dungeon.agreed');
 const AGREED_ASKS: readonly (readonly [string, string, number])[] = [
   ['saltgrass-downs', 'The Saltgrass Downs', 0],
   ['highwater-fells', 'The Highwater Fells', 1],

@@ -7,9 +7,6 @@ use combat::fighter::{Side, Weight, fighter};
 use combat::{CombatInput, Fighter, Intent, Stroke, player_tick};
 use movement::{Block, Controls, standing};
 
-/// Both tests hold this value; a change to the fight changes it in both, on purpose.
-pub const FIGHT_HASH: &str = "ea928425bcd3ab23";
-
 const COURSE: [Block; 1] = [Block { min_x: -3.0, min_y: -8.0, max_x: 3.0, max_y: -7.0, top: 1.2, bottom: 0.0 }];
 
 /// Ticks, then forward, sideways, yaw, the stroke held (0 none), guard, dodge, shoot, aim, arms (0 a sword and
@@ -106,7 +103,8 @@ fn the_scripted_fight_swings_guards_dodges_shoots_and_drinks() {
 
 #[test]
 fn the_scripted_fight_moves_to_the_fingerprint_both_tests_hold() {
-    assert_eq!(fingerprint(&run_script()), FIGHT_HASH);
+    // Both tests hold this value; a change to the fight changes it in both, on purpose.
+    assert_eq!(fingerprint(&run_script()), pinned("combat.fight"));
 }
 
 /// A look turned past half a turn steps the body as the room's player tick steps it, to the bit: the browser predicts a
@@ -126,3 +124,7 @@ fn a_walker_turned_past_half_a_turn_steps_as_the_room_steps_them() {
         }
     }
 }
+
+#[path = "../../land/tests/support/pinned.rs"]
+mod pinned;
+use pinned::pinned;

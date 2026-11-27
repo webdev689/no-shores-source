@@ -96,7 +96,7 @@ test('a point is found along the voyage where the nearest leg passes it, looking
 });
 
 test("the page's paces are the sea room's ladder, step for step, so no eased step is refused", () => {
-  const rules = readFileSync(new URL('../../../crates/room/src/sea.rs', import.meta.url), 'utf8');
-  const listed = /pub const PACES: \[u16; \d+\] = \[([^\]]*)\];/.exec(rules)?.[1] ?? '';
-  assert.deepEqual([...PACE_STEPS], listed.split(',').map(Number));
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs).
+  const written = readFileSync(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  assert.deepEqual([...PACE_STEPS], (JSON.parse(written) as { paces: number[] }).paces);
 });

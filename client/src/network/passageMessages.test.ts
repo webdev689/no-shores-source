@@ -16,6 +16,7 @@ import {
 import { ASKS, gearOf } from './gearMessages.ts';
 import { inputBytes } from './messages.ts';
 import { passageSeenOf } from './passageMessages.ts';
+import { INTENT_FLOATS } from '../rules/fighters.ts';
 
 test('a dive, its haul, the lamps lit on each island and the Atheric bounties read back from the gear', () => {
   const builder = new flatbuffers.Builder(256);
@@ -126,14 +127,16 @@ test('a passage zone’s deal reads back from the snapshot, a hold under way by 
 });
 
 test('the passages’ asks cross as the rules number them: begin by mouth, route and lamp', async () => {
-  const wire = await readFile(new URL('../../../crates/protocol/src/passage_wire.rs', import.meta.url), 'utf8');
-  const number = (name: string) => Number(new RegExp(`pub const PASSAGE_${name}: u8 = (\\d+);`).exec(wire)?.[1]);
+  // Written by `cargo test -p protocol` (asks_written_tests.rs), each ask's number by its name there.
+  const written = await readFile(new URL('../../../target/protocol/asks.json', import.meta.url), 'utf8');
+  const asks = JSON.parse(written) as Record<string, number>;
+  const number = (name: string) => asks[`PASSAGE_${name}`];
   assert.deepEqual(
     [ASKS.goOn, ASKS.kindle, ASKS.lightLamp, ASKS.goHome, ASKS.beginDive, ASKS.open],
     ['GO_ON', 'KINDLE', 'LIGHT', 'HOME', 'BEGIN', 'OPEN'].map(number),
   );
   const bytes = inputBytes(1, {
-    intent: new Float64Array(18),
+    intent: new Float64Array(INTENT_FLOATS),
     look: { anim: 'idle', frame: 0, facing: 0 },
     arms: 0,
     seen: 0n,
