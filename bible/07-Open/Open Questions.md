@@ -105,4 +105,7 @@ owner has said "later" or "not now", the owner's words follow the question.
   - The owner's premise ([[No Shores]]) and the website's copy of it still say "Its unmarked vessels", while the
     Grey Tithe now fly their colours.
   - The arrivals' own sounds: the owner's picks from the sound sheet (`arrival.*` in `content/audio/freesound.json`).
+  - At Normal an Elite Dungeon's Court is no darkness zone, so a company down there stands again by its own asks and
+    the Court runs on as it stood, its Boss's health with it; at Elite and Abyss a company wiped falls back and the
+    Court starts over. Whether a wipe at Normal should start the Court over too.
 - **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): more emblems and where they come from.

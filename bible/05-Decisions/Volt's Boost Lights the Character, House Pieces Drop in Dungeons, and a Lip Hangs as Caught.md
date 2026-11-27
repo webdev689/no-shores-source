@@ -16,6 +16,11 @@ Asked whether the healing drink is a heal that Exposure halves, the owner chose:
 
 > "Yes, halve it"
 
+Asked, as the work was audited, whether the passages' Frail, which also cuts heals, should cut the drink too, or only
+Exposure, the owner chose:
+
+> "Keep, all heals"
+
 Asked whether a lip caught off square should be hung square, or as caught, the owner chose:
 
 > "Hang as caught"
@@ -37,7 +42,8 @@ Asked which, the owner chose:
 
 - **Conduit stands** ([[The Balance and Economy Pass as Claude Shapes It]]).
 - **Volt's boost charge is redesigned to light the character**, not a trail ([[Combat]]).
-- **Exposure halves the healing drink** as it halves every heal ([[Activities]]).
+- **Exposure halves the healing drink** as it halves every heal, and whatever else cuts heals cuts it too, the
+  passages' Frail among them ([[Activities]]).
 - **A lip is hung as it was caught**, not turned square ([[Movement]]).
 - **An old save is given the Ranged weapon** at "Put them on" or "Arm yourself"
   ([[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]).

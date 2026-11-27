@@ -39,6 +39,11 @@ to Prestige 30), the owner chose:
 
 > "Weapons climb too"
 
+Asked, as the work was audited, whether a Forged weapon should out-hit a Normal one at level 30 too, where a weapon's
+reach is held to the foe's level and the extra Attack did nothing, the owner chose:
+
+> "Yes, make it count"
+
 ## What it settles
 
 - **A run follows the company** as it changes, not the company it was launched for ([[Breaches]]).
@@ -48,7 +53,8 @@ to Prestige 30), the owner chose:
 - **The Unlit Ways wait on every living player of the company**; the fallen are not counted
   ([[The Drowned Vale as Claude Builds It]]).
 - **Forged weapons climb further**, as Hard's armour does: weapons carry no Prestige, so theirs is Attack, 263 to 315
-  against Normal's 248 to 300 ([[Breach Weapons Come Normal and Forged]]).
+  against Normal's 248 to 300, and it counts at level 30 against Hard's foes too
+  ([[Breach Weapons Come Normal and Forged]]).
 
 Built ([[Breaches]], [[Gear]]; Claude's calls in [[The Open Questions' Answers as Claude Builds Them]]). Already so: the
 Unlit Ways waited on every living player, and a run let in its company's members as the company stood; only its relaunch

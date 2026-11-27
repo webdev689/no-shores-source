@@ -28,6 +28,11 @@ chose "Captain Tamsin Rook" and "The Quiet One (Ysolde)". Then, as the answers w
 > "Let's tackle all of this, and ensure some of these haven't already been changed (Like faction members do get their
 > own names)"
 
+Asked, as the work was audited, whether the names already in the game (Arlo Kestrel and Sable) or those picked in
+the walk-through stand, the owner chose:
+
+> "Keep Arlo & Sable"
+
 Asked whether a faction's high ranks give anything beyond packages, as Destiny 1's rank 25 opened a quest, the owner
 answered:
 
