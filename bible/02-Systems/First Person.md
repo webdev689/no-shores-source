@@ -10,6 +10,7 @@ code:
   - client/src/firstperson/shotMachine.ts#ShotMachine
   - client/src/firstperson/fpFrames.ts#weaponPicture
   - client/src/firstperson/heldPictures.ts#gunPicture
+  - client/src/firstperson/heldPictures.ts#flaskPicture
   - client/src/firstperson/riding.ts#RideMotion
   - client/src/firstperson/fpMotion.ts#Sway
   - client/src/firstperson/fpPlaces.ts#swayedQuad
@@ -141,7 +142,8 @@ it. Fists wear the gauntlets for a punch and the boots for a kick.
 A gun is its own layer, plain or gilded, under the hands in the gauntlets worn. A crossbow is a cell of its metal's
 strip: iron, steel, silver, elven, dwarven or mithril, each its own model and colours, undyed; any other metal draws
 steel's. One of a pair draws from its metal's pair strip, smaller and farther across. A shield is its metal's make,
-or the plain wooden shield, under the hand on its grip. The torch and the lantern are their own layers under a hand.
+or the plain wooden shield, under the hand on its grip. The torch and the lantern are their own layers under a hand. The
+healing flask is its own layer, its draught's red undyed, under the right hand round its neck.
 
 The forge draws every metal grey. A grey texel goes to the nearest step of Daggerfall's metal band and takes that
 step of the metal's ramp; every other colour snaps to the nearest palette colour. Steel, leather, chain and the guilds'
@@ -170,6 +172,11 @@ it, their feet on the screen's. The torch stands 4 pixels in, its arm leaving th
 dagger's does. A shield is held a frame below raised, and raised whole for a block when the state asks for one. While
 the weapon strikes, a shield or a torch ducks below the screen, as fast as a climb lowers a weapon, and comes back up
 once the strike ends. A lantern stays up. A light's flame steps every 0.1 s.
+
+While the player drinks, the weapon is put away and the healing flask shows in the right hand, flush in the bottom
+right corner, a frame for each quarter of the drink: brought up from below the screen's right foot, raised before the
+face, tipped up at the lips with its glow filling the middle of the view, and lowered away. The weapon comes back as
+the drink ends. Where the flask's frames are not published, nothing shows in the weapon's place while it lasts.
 
 While walking, the picture dips a few design pixels each step, more at a run. The weapon sways as it is held (`Sway`):
 it lags behind the look as it turns or tilts, 4 design pixels a radian a second and at most 12, catching up over about
@@ -231,6 +238,9 @@ Each free hand holds its rein, its fist over it in the gauntlets worn, the left 
 the middle. The hands give on the stride's beat, the left a beat behind; in a turn the inside hand draws in and the
 other gives. A drawn weapon takes the right hand, and a weapon, a shield or a light the left; an empty hand holds its
 rein, not its fist up.
+
+As a drink's heal comes, the first person shows no light on the body: a faint red light comes in at the screen's edge
+and motes drift up its sides, drawn with the fight's display ([[Combat]], "Healing charges").
 
 ## Limits
 

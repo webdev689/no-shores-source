@@ -345,6 +345,7 @@ dependencies = [
  "movement",
  "serde",
  "serde_json",
+ "sweep",
 ]
 
 [[package]]
@@ -408,6 +409,7 @@ dependencies = [
  "sailing",
  "serde_json",
  "sky",
+ "sweep",
  "world",
 ]
 
@@ -515,6 +517,10 @@ dependencies = [
  "land",
  "world",
 ]
+
+[[package]]
+name = "sweep"
+version = "0.0.0"
 
 [[package]]
 name = "syn"

@@ -98,6 +98,19 @@ export async function gunPicture(
   return { ...laid, at: [DESIGN_WIDTH - laid.width, DESIGN_HEIGHT - laid.height + sunk] };
 }
 
+/** The healing flask's frames over a drink: brought up, raised before the face, tipped up at the lips, lowered. */
+export const FLASK_FRAMES = 4;
+/** The flask's frame `share` of the way through a drink (0 to 1): a quarter of the drink each. */
+export const flaskFrame = (share: number) => Math.min(FLASK_FRAMES - 1, Math.floor(share * FLASK_FRAMES));
+
+/** The healing flask in the right hand at the drink's frame `frame`, the hand round its neck in the gauntlets worn. Its
+ *  colours are its own, its draught's red undyed. It sits flush in the screen's bottom right corner. */
+export async function flaskPicture(source: FrameSource, hands: string | null, frame: number): Promise<Picture | null> {
+  const handsAt = (look: string) => heldPath('FLASK', 0, frame, look);
+  const laid = await withHands(source, handsAt('Flask'), handsAt, hands, hardened);
+  return laid && { ...laid, at: [DESIGN_WIDTH - laid.width, DESIGN_HEIGHT - laid.height] };
+}
+
 /** A crossbow's strip: seven cells side by side, each the owner's frame at its top left with the stock carried on past
  *  its right and bottom edges. */
 const CROSSBOW = { cells: 7, cellWidth: 282, cellHeight: 204, frameWidth: 218, frameHeight: 156 } as const;

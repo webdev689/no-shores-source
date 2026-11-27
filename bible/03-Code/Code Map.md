@@ -128,6 +128,7 @@ decision, made in the same change as its entry here.
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
 | `crates/dungeon` | [[Dungeons]]: the patrol areas' dungeons, laid by DFO's Forge from a seed, rooms and corridors on a grid of 3.2 m cells |
 | `crates/passage` | [[Passages]]: an island's week's web of passage zones, each zone laid whole (under ground by the Forge, or a hollow above it), its sites and pieces, and the depth's levels and currents' strength; the cache's pay is the gear's (`crates/gear/src/lamps.rs`) |
+| `crates/sweep` | How many cases a test sweeping the world checks: a fixed sample, or every case where `NO_SHORES_FULL_SWEEP` is set, as the nightly run does ([[Checks]]); only tests depend on it |
 | `crates/isle` | [[Islands]]: a sea island from its seed and climate, the same on the server and in every browser: its shape, its fine ground, its places and its dressing of the Blender modules content/islands/kits.json names |
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the links where the movement rules climb a block's side or drop off its edge, the paths across both, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows, shots in flight, and the statuses a fighter is given |
@@ -247,6 +248,8 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `sky`, `world`, `serde` and `serde_json`.
 - **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `dungeon`, `land`, `layout`,
   `world`, `serde` and `serde_json`.
+- **Test helpers** are depended on by tests alone. `sweep`, which uses no other crate, says how many cases a sweep of
+  the world checks ([[Checks]]).
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
   `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land with its city (`city`) and a
   ship sailing and fighting over it, and movement on a window of the land behind WebAssembly doors for the browser;

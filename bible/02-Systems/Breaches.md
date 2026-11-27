@@ -230,9 +230,10 @@ slowly and glints with the lamps over it ([[Modules]], "In the game").
 ## Limits
 
 - **The Drowned horse is not rendered yet.** Its ridden strips come only from a forge run started by hand
-  (`forge.yml`, `figures` = `horseidle,horsewalk,horsegallop|horse_drowned`), which writes to R2 and so waits for the
-  owner's named yes; its first-person frames (`fpride.py --looks`) are in no workflow. Until then the page draws the
-  bare horse under it. The swatches' count sets every look's stripes, so that run redraws the other four looks too.
+  (`figures.yml`, `anims` = `horseidle,horsewalk,horsegallop`, `layers` = `horse_drowned`), which writes to R2 and so
+  waits for the owner's named yes; its first-person frames (`fpride.py --looks`) are in no workflow. Until then the page
+  draws the bare horse under it. The swatches' count sets every look's stripes, so that run redraws the other four looks
+  too.
 - **The Scrivener and the Steward** wear the Idol's and the Heart's bodies until their own are drawn.
 - **The page copies some of the rules' numbers** (the standing-again times, the hollow's reach, the Choir's rounds and
   the font's rest, a Watcher's hearing, a shore's strand, the Scrivener's fury, a Bulwark's claim, the court's

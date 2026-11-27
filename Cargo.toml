@@ -34,6 +34,8 @@ min_ident_chars = "warn"
 # The game's own crates build fast and debuggable; dependencies are optimised once and cached,
 # so a debug build still runs at a usable frame rate.
 opt-level = 1
+# Line tables only: a backtrace still names files and lines, and a build without full debug info is far quicker.
+debug = "line-tables-only"
 
 [profile.dev.package."*"]
 opt-level = 3

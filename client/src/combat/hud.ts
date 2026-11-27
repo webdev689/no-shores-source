@@ -9,6 +9,7 @@ import type { Interface } from '../ui/ui.ts';
 import { ABILITY_KEYS, AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts';
 import { ammoNode } from './ammoCounter.ts';
 import { animaEdgeNode } from './animaMoment.ts';
+import { healEdgeNode } from './healLight.ts';
 import { EVENT, edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
@@ -509,6 +510,7 @@ export class Hud {
           ),
         this.veil && veilNode(this.veil),
         animaEdgeNode(),
+        healEdgeNode(),
       ],
     };
   }

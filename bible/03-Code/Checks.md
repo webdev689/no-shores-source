@@ -6,6 +6,7 @@ code:
   - crates/xtask/src/checks/html.rs#check_scripts
   - crates/xtask/src/checks/html.rs#check_pages
   - crates/xtask/src/shaders.rs#problem_in
+  - crates/sweep/src/lib.rs#full
 ---
 # Checks
 
@@ -26,6 +27,14 @@ line gives the verdict, the commit and whether the tree held uncommitted changes
 `passed: checked <commit>, nothing uncommitted`, or `FAILED (<steps>): checked <commit> ...`, with
 `; the tree changed during the check` when files changed while it ran.
 
+Most of a part's time before its tests is the game's own crates compiling: CI keeps the dependencies built, per part,
+with the Rust parts sharing theirs, and a fresh checkout rebuilds every crate of the workspace. Debug and test builds
+keep line tables only, not full debug info, which makes a clean build nearly twice as fast and leaves the tests as
+fast; a backtrace still names its files and lines. Builds on x86_64 Linux link with LLD, the faster linker Rust uses
+there by default; linking is a small share of the time
+([[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]). A session runs the
+repo checks and the tests of what it changed, and leaves the whole check to CI ([[Toolkit]]).
+
 1. **messages**: the Rust and the TypeScript for every network message, made from the schema with `flatc`
    (`npm run schema`), into `generated/`. Its first run on a machine installs the pinned `flatc`.
 2. **format**: rustfmt, then Prettier.
@@ -41,7 +50,8 @@ line gives the verdict, the commit and whether the tree held uncommitted changes
    accepts a bitwise operator (`&`, `|`, `^`, `<<`, `>>`) sharing an expression unparenthesised with another, which
    Tint refuses: the step refuses it too, as WGSL's grammar does (a shift beside a comparison is let be).
 6. **tests**: the Rust tests, with cargo-nextest, which runs every crate's at once, where it is installed (CI installs
-   its pinned release) and with `cargo test` elsewhere; the workspace has no doctests, which nextest would not run. Then
+   its pinned release) and with `cargo test` elsewhere; the workspace has no doctests, which nextest would not run. The
+   tests that sweep the world check a sample here (see "The nightly run"). Then
    the Rust tests that write the files the page's tests read (the messages', the schedule's, the arts' first levels and
    the Elite Dungeons' answers and the rooms' and asks' numbers, into `target/`), so the page's part has them without
    the rest; the world rules, the land, movement and the rooms built as WebAssembly (`npm run wasm`); then
@@ -72,6 +82,27 @@ The checks read scripts of every extension: `.ts`, `.mts`, `.cts`, `.tsx`, `.js`
 not UTF-8 is reported, not skipped. Two folders are kept as their authors ship them, so the size, comment and assets
 checks skip them: the co-dev's toolkit in `tools/claude-toolkit/` ([[The Co-Dev's Toolkit, Whole]]) and DFO's sprite
 forge in `tools/forge/` ([[DFO's Sprite Forge Comes Over Exactly]]).
+
+## The nightly run
+
+The tests that sweep the world's weeks of passage zones (the passages' own and the rooms' walks through them) check a
+sample wherever the check runs, and every case once a night on `main`
+([[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]).
+The sample is the same on every run, so a failure reproduces: the first zone of each kind, by its ground with its
+size and by its ground with its deal, so it holds every kind the whole sweep does; where what a sweep looks for is
+rare rather than a kind, a tenth of its weeks spread evenly over them. The `sweep` crate reads
+`NO_SHORES_FULL_SWEEP`: set to anything but `0`, every sweep checks every case, as
+`NO_SHORES_FULL_SWEEP=1 cargo test -p passage` does by hand.
+
+The workflow `nightly.yml` runs the check's Rust part (`cargo xtask check rust`) with it set, at 10:00 UTC and by
+hand, on `main` only. It reads the repository and nothing else: no secret, no deploy. A failure there is a sweep's
+rare case the sample missed; its message names the week and zone, which a test can then take as a case of its own.
+
+The sweeps over Saltmere's three patrol zones as the bake lays them (`sites_held`, `runs_walked`, `runs_planned`,
+`layouts_laid`, `landings_safe`, `rooms_walked`) are not sampled. Each of their tests first settles or bakes the
+continent, a quarter to all of its time, and its cases are the few territories, runs, buildings and bridges the
+briefs name, each a place of its own that a sample would leave unchecked; `landings_safe` stands a player a minute
+in each zone, which a shorter wait would not check.
 
 ## Adding a check
 

@@ -1,7 +1,7 @@
 // The spells' pictures, made cell by cell as the forge's figures are drawn pixel by pixel: each cell one stop of its
 // element's glow, dark to white-hot, with nothing blended between, stood upright and turned to the eye as a figure's
 // card is. A shape lights its own outline, its inside and its heart, so every picture reads as pixel art.
-import { GLOW_RAMPS, type GlowElement } from '../elementGlow.ts';
+import { GLOW_RAMPS, type GlowElement, type Rgb } from '../elementGlow.ts';
 import { PX_PER_M } from '../player/figures.ts';
 
 type Point = readonly [number, number, number];
@@ -188,7 +188,7 @@ export class Laid {
 export function billboard(
   out: Laid,
   picture: Sprite,
-  look: GlowElement,
+  look: GlowElement | readonly [Rgb, Rgb, Rgb, Rgb],
   middle: Point,
   eye: Point,
   { flip = false, opacity = 1, cell = CELL_M }: { flip?: boolean; opacity?: number; cell?: number } = {},
@@ -201,7 +201,7 @@ export function billboard(
   const side = flip ? -cell : cell;
   const rightX = apart > 1e-6 ? (-toY / apart) * side : side;
   const rightY = apart > 1e-6 ? (toX / apart) * side : 0;
-  const ramp = GLOW_RAMPS[look];
+  const ramp = typeof look === 'number' ? GLOW_RAMPS[look] : look;
   const runs = runsOf(picture);
   const halfWidth = picture.width / 2;
   const halfHeight = picture.height / 2;
