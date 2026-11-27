@@ -718,7 +718,11 @@ the ship (its settled word on the ship lying within 2 m of where the page has it
 taken) and the player has the helm with nothing else holding them, a ship lying within 30 m of its berth sails out at
 ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen pulling away,
 and is the player's to sail from there. A course the player sets first, or the room placing the ship away from its
-berth, leaves it as it is; either way it is docked no more.
+berth, leaves it as it is; either way it is docked no more. Back at sea from a node of a region the ship does not lie
+off (the region whose centre is nearest the ship; [[World Map]], "Regions"), walked to through the crossing gates or
+landed on, the ship lies at that region's anchorage, 3 km off its coast, facing as it did, and the view stands over it
+there (`regionLeft.ts`); the room places it there too ([[Server]], "The sea"), and the player sails from there, in
+reach to land on that region again. From a node of the region it lies off, it lies where it was left.
 
 Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
 framed on the places of the region it lies off, the one whose centre is nearest it (on an island with no regions, the
