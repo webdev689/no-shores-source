@@ -1,0 +1,2 @@
+https://github.com/Lattymoy/no-shores-forge/releases/download/forge-stage-cc0841d83a08/forge-stage-cc0841d83a08.tar
+cc0841d83a086a359cd9c29b29c3822236b06ce45e4cec5f6257f14616c36396
