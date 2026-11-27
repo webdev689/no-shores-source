@@ -97,7 +97,8 @@ test('the load shows the shot the guns take, by its own picture', () => {
 });
 
 test("the burst's seconds are the rules' own", async () => {
-  const rules = await readFile(new URL('../../../crates/naval/src/boost.rs', import.meta.url), 'utf8');
-  assert.match(rules, new RegExp(`pub const BURST_S: f64 = ${BURST_S}\\.0;`));
-  assert.match(rules, new RegExp(`pub const RECHARGE_S: f64 = ${RECHARGE_S}\\.0;`));
+  // Written by `cargo test -p room` (public/page_numbers_tests.rs).
+  const written = await readFile(new URL('../../../target/protocol/room-numbers.json', import.meta.url), 'utf8');
+  const rules = JSON.parse(written) as { burstS: number; rechargeS: number };
+  assert.deepEqual([rules.burstS, rules.rechargeS], [BURST_S, RECHARGE_S]);
 });

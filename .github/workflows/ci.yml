@@ -130,6 +130,10 @@ jobs:
             kept="/tmp/overlook-ships/${key//\//-}"
             [ -s "$kept" ] || curl -sSf --retry 5 -o "$kept" "$base$key"
           done
+      # The schema check holds every FlatBuffers table's fields to main's tip.
+      - name: Fetch main for the schema check
+        if: matrix.part == 'rest'
+        run: git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
       - name: cargo xtask check ${{ matrix.part }}
         run: cargo xtask check ${{ matrix.part }}
       # How the Lattice's renders lay into the forge's tables, on the runner's own Python: the wave's frame-cutting

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { type LandRules, startLand } from './landRules.ts';
 import { type Body, type Controls, floatsOf, type MovementRules, startMovementRules } from './movementRules.ts';
+import { pinned } from '../../../server/pinnedForTests.ts';
 
 /** A rect of the world: west, north, east and south, metres. */
 type Rect = readonly [number, number, number, number];
@@ -22,7 +23,7 @@ const content = (path: string) => readFile(new URL(`../../../content/world/${pat
 
 /** The room crate's agreement test holds the same fingerprint, nodes, rects, starts and scripts
  *  (crates/room/tests/agree_node.rs). */
-const NODE_RUN_HASH = 'b39c55dc0f1f3fe8';
+const NODE_RUN_HASH = pinned('node.run');
 
 /** Ticks, then forward, sideways, yaw, run, and jump on the first tick only. */
 type Phase = readonly [number, number, number, number, boolean, boolean];

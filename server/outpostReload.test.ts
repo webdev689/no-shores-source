@@ -4,9 +4,10 @@ import { kindOf, TREASURY_MOST } from '../client/src/game/guild/outpostLaw.ts';
 import { ASKS } from '../client/src/network/gearMessages.ts';
 import { inputBytes } from '../client/src/network/messages.ts';
 import { flush, outpostWorld } from './outpostReloadForTests.ts';
+import { intentOf } from './intentForTests.ts';
 
 const SITE = 'gull-cove-outpost';
-const still = new Float64Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
+const still = intentOf();
 const look = { anim: 'walk', frame: 2, facing: 0 };
 const sequences = new Map<number, number>();
 /** An input carrying an ask, in the player's own sequence. */
