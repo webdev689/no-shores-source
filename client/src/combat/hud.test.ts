@@ -595,6 +595,26 @@ test('a blow neither by nor on the player says its number only where a plate wou
   assert.equal(said(80, 1), true, 'the player’s own blow, however far');
 });
 
+test('a blow on a Miniboss is told while its head, drawn larger, shows over land a man’s would be hidden by', () => {
+  const { matrix, eye, forward, placeAt, foeAt } = levelView();
+  // A low rise halfway, between a man's head's line of sight and a Miniboss's.
+  const rise = (x: number, y: number) => {
+    const ahead = (x - eye[0]) * forward[0] + (y - eye[1]) * forward[1];
+    return Math.abs(ahead - 10) < 1.5 ? 1.9 : 0;
+  };
+  const said = (rank: number) => {
+    const foe = { ...foeAt(2, 'Runner', 20, 0), rank };
+    const where = (id: number) => (id === 2 ? ([foe.view.x, foe.view.y, 0] as const) : null);
+    const hit = { tick: 0n, kind: EVENT.hit, how: 0, striker: 7, defender: 2, amount: 37, stroke: 0 };
+    const hud = new Hud();
+    const own = { ...standing, ...placeAt(0, 0) };
+    hud.update(bare({ matrix, own, foes: [foe], where, events: [hit], groundAt: rise }), 1 / 60);
+    return wordsIn(drawn(hud)).includes('37');
+  };
+  assert.equal(said(2), false, 'a man-sized foe’s head is behind the rise');
+  assert.equal(said(4), true, 'a Miniboss’s is over it, as its plate is');
+});
+
 test('a parry ring for a head off the screen stands at the edge the way it lies, behind the eye too, never in a corner', () => {
   const { matrix, foeAt, downAt, placeAt } = levelView();
   const swing = {

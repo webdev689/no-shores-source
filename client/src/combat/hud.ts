@@ -386,7 +386,9 @@ export class Hud {
     const inSight = (id: number) => {
       const place = frame.where(id);
       if (!place || !camera) return !!place;
-      const head = [place[0], place[1], place[2] + HEAD_M] as const;
+      // A foe drawn larger by its rank is seen by its own head, as its plate is.
+      const rank = frame.foes.find((foe) => foe.id === id)?.rank;
+      const head = [place[0], place[1], place[2] + HEAD_M * (rank === undefined ? 1 : rankSize(rank))] as const;
       const far = Math.hypot(head[0] - camera.eye[0], head[1] - camera.eye[1]) > PLATE_RANGE_M;
       return !far && !viewing.blocked(camera.eye, head);
     };
@@ -398,10 +400,10 @@ export class Hud {
       const own = frame.firstPerson && said.defender === frame.player;
       // What a shield took is said in its element's colour.
       const shield = said.tone === 'shield' ? frame.foes.find((foe) => foe.id === said.defender)?.shield : null;
-      const told = shield ? { ...said, shield: shield.element } : said;
+      const spoken = shield ? { ...said, shield: shield.element } : said;
       const from = said.striker === undefined ? null : frame.where(said.striker);
       const contact = from ? contactOf(place, from) : ([place[0], place[1], place[2] + WORD_HIGH_M] as const);
-      this.words.say(told, own ? null : contact, this.sideOf(said, place, from, contact, projectWord));
+      this.words.say(spoken, own ? null : contact, this.sideOf(said, place, from, contact, projectWord));
     }
     for (const { id, view, rank } of frame.foes) {
       const iron = view.action.kind === 'telegraph' && view.action.iron;
