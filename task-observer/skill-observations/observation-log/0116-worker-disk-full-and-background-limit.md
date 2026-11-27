@@ -37,3 +37,7 @@ commands_verified: none
   symbols) until `cargo clean -p room -p room-wasm -p protocol -p dungeon`.
 - Proposed barrier: the controller's merge step (or a `merged-worker.sh <name>`) deletes the worktree's target/ as soon
   as its branch is merged, and run-worker.sh warns at start when free space is under ~15 GB.
+- Fourth instance (2026-11-27, PR #229 audit fixes): five fix workers' target/ folders (3.0 to 8.7 GB, 28 GB together)
+  took free space to 4.2 GB while two still ran; the controller's `npm run wasm` and `cargo test -p room-wasm` both
+  failed (exit 101, then undefined hidden symbols at link) until the three merged workers' target/ were deleted and
+  `cargo clean -p room-wasm -p room -p protocol -p dungeon -p passage` ran. The barrier above is still unbuilt.
