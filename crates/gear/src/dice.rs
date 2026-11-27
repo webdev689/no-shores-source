@@ -54,7 +54,8 @@ pub enum Purpose {
     /// added); and, apart, which places a patrol's chests and which containers are searchable stand at
     /// (`room::finds`).
     Find = 2_100,
-    /// Whether a world Vestige opens to a piece of the house pledged to, and which (`vestige::house_drop`).
+    /// Whether a world's or a dungeon's Vestige opens to a piece of the house pledged to, and which
+    /// (`vestige::house_drop`).
     HouseDrop = 3_000,
 }
 
