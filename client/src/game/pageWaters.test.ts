@@ -50,6 +50,21 @@ test('at sea the water is named and the fights are told of by the three port cit
   assert.equal(sea.waterAt(roadstead)?.name, open.table.waters[0]?.name);
 });
 
+test('every sea but a named island’s is locked: by the exact rule for a course’s end, by the grid for a route', async () => {
+  const { module, world: data } = await world();
+  const open = openWaters(module, data);
+  const { locked } = seaWatersOf(open, data).facts;
+  const roadstead = (id: string) => open.table.ports.find((port) => port.id === id)?.roadstead ?? [0, 0];
+  assert.equal(locked.at(roadstead('overlook')), false, 'Saltmere is named');
+  assert.equal(locked.at(roadstead('sunspire')), true, 'the Sunscorch Coves are not');
+  assert.equal(locked.at([2_809_214, 1_201_477]), false, 'land is no sea');
+  assert.deepEqual(
+    [locked.cell(...roadstead('overlook')), locked.cell(...roadstead('sunspire'))],
+    [false, true],
+    'the grid agrees off a roadstead',
+  );
+});
+
 const sloop = (id: number, x: number): TrafficShip => ({
   id,
   route: 0,

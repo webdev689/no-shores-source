@@ -12,8 +12,8 @@ export interface MapPlace {
   readonly sail: Point2;
 }
 
-/** A found island as the map marks it: where it lies in the world, its kind (`cove`, `ruin`, `quarry`), and whether it
- *  is an isle, which is marked with a tower. */
+/** An island as the map marks it (found, or standing in the ship's water): where it lies in the world, its kind
+ *  (`cove`, `ruin`, `quarry`), and whether it is an isle, which is marked with a tower. */
 export interface IsleMark {
   readonly at: Point2;
   readonly kind: string;
@@ -35,6 +35,7 @@ export interface HeldMapScene {
   readonly course: readonly Point2[];
   readonly quest?: readonly string[];
   readonly lit?: (glyph: string) => boolean;
-  /** On land, what moves on it: the other players and the public event running (`MapMarks`), in the world. */
+  /** What moves on it (`MapMarks`), in the world: on land, the other players and the public event running; at sea,
+   *  the other players' ships and the hostile ships in the water the ship lies in. */
   readonly moving?: MapMarks;
 }

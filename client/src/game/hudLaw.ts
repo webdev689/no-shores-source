@@ -1,5 +1,6 @@
 import { ruinedName } from '../ruinedName.ts';
 import type { NodeInfo } from './worldData.ts';
+import islands from '../../../content/world/islands.json' with { type: 'json' };
 
 /** Where a player stands against their section's edge, as the room judges it (the reach rules in Rust). */
 export type Standing =
@@ -91,8 +92,9 @@ export const KIND_WORDS = {
 
 export type MarkKind = keyof typeof KIND_WORDS;
 
-/** The islands' names the owner has given, by continent. */
-export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
+/** The islands' names the owner has given, by continent (the room's own, crates/world/src/islands.rs): an island with
+ *  none has its sea locked. */
+export const ISLANDS: Readonly<Record<string, string>> = islands;
 /** The sea's name where no water of the waters' table holds the ship. */
 export const REGION = 'The Pale Expanse';
 

@@ -6,8 +6,8 @@ import {
   type Burning,
   burningOf,
   falloff,
+  burns,
   FIXTURE_KINDS,
-  flicker,
   GLOW_KINDS,
   LIGHT_KINDS,
   type Light,
@@ -16,7 +16,6 @@ import {
   cellWords,
   CELL_ROCK,
   MOODS,
-  pulse,
   shoulder,
   LIGHT_WGSL,
 } from './dungeonLight.ts';
@@ -32,10 +31,18 @@ test('a light is all there where it burns and gone at its reach', () => {
 
 test('a flame flickers gently and never two in step; a steady light never changes', () => {
   for (let time = 0; time < 10; time += 0.1) {
-    assert.ok(flicker(time, 0) > 0.75 && flicker(time, 0) < 1.01);
-    assert.equal(flicker(time, 3, 0), 1);
+    assert.ok(burns(time, 0, LIGHT_KINDS.torch) > 0.75 && burns(time, 0, LIGHT_KINDS.torch) < 1.01);
+    assert.equal(burns(time, 3, LIGHT_KINDS.daylight), 1);
   }
-  assert.notEqual(flicker(1, 0), flicker(1, 1));
+  assert.notEqual(burns(1, 0, LIGHT_KINDS.torch), burns(1, 1, LIGHT_KINDS.torch));
+});
+
+test('crystal, fungus, runes, spirits, water and the portal breathe and never flicker; every fire flickers', () => {
+  const { crystals, fungus, rune, spirit, water, portal, torch, brazier, candles, lantern, hearth } = LIGHT_KINDS;
+  for (const glow of [crystals, fungus, rune, spirit, water, portal] as Burning[])
+    assert.ok(glow.flicker === 0 && (glow.breath ?? 0) > 0);
+  for (const fire of [torch, brazier, candles, lantern, hearth] as Burning[])
+    assert.ok(fire.flicker > 0 && (fire.breath ?? 0) === 0);
 });
 
 test("past every light only the mood is left; by one, the light's own colour", () => {
@@ -98,19 +105,20 @@ test('a spirit glows pale green, daylight cool and far and steady, water a faint
   }
   assert.equal(daylight.flicker, 0);
   assert.ok(water.colour[1] > water.colour[0] && water.colour[2] > water.colour[0], 'water teal');
-  assert.ok(water.flicker > 0 && water.flicker < LIGHT_KINDS.candles.flicker, 'and gently stirring');
+  assert.ok((water.breath ?? 0) > 0 && (water.breath ?? 0) < (LIGHT_KINDS.rune.breath ?? 0), 'and gently stirring');
   assert.ok(rune.colour[0] > rune.colour[1] && rune.colour[2] > rune.colour[1], 'a rune violet');
 });
 
-test('a rune swells and fades slowly; a light that does not pulse is always full', () => {
+test('a rune swells and fades slowly; a light that does not breathe is always full', () => {
   for (let time = 0; time < 20; time += 0.25) {
-    assert.equal(pulse(time, 2), 1);
-    assert.ok(pulse(time, 2, 0.9) >= 0.6 - 1e-9 && pulse(time, 2, 0.9) <= 1 + 1e-9);
+    assert.equal(burns(time, 2, LIGHT_KINDS.daylight), 1);
+    const rune = burns(time, 2, LIGHT_KINDS.rune);
+    assert.ok(rune >= 0.6 - 1e-9 && rune <= 1 + 1e-9);
   }
   const rune = [{ at: [0, 0, 1] as const, number: 0, burning: LIGHT_KINDS.rune }];
-  const strength = (time: number) => lightAt(rune, [1, 0, 1], time, MOODS.sanctum)[2];
-  assert.ok(Math.abs(strength(0.1) - strength(0)) < 0.01 * strength(0), 'no flicker from moment to moment');
-  assert.ok(Math.abs(strength(Math.PI / 0.9) - strength(0)) > 0.2 * strength(0), 'but dimmer half a pulse on');
+  const red = (time: number) => lightAt(rune, [1, 0, 1], time, MOODS.sanctum)[0];
+  assert.ok(Math.abs(red(0.1) - red(0)) < 0.01 * red(0), 'no flicker from moment to moment');
+  assert.ok(Math.abs(red(Math.PI / 0.9) - red(0)) > 0.2 * red(0), 'but dimmer half a breath on');
   const daylight = [{ at: [0, 0, 3] as const, number: 0, burning: LIGHT_KINDS.daylight }];
   assert.deepEqual(lightAt(daylight, [1, 0, 0], 3.7, MOODS.crypt), lightAt(daylight, [1, 0, 0], 0, MOODS.crypt));
 });

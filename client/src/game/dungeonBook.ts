@@ -15,10 +15,11 @@ export const WATER_FLAG = 512;
 export const FOUL_FLAG = 1024;
 
 /** The dungeon's own plain layers, below the city's: candle wax and a vault chest's gold, lit as a surface; an
- *  ember's, a lantern's glass, a crystal's and a fungus cap's glow, each drawn as its colour. A dungeon's pictures
- *  never reach them. */
+ *  ember's, a lantern's glass, a crystal's and a fungus cap's glow and the daylight down an open mouth, each drawn as
+ *  its colour. A dungeon's pictures never reach them. */
 export const DUNGEON_LAYERS = {
-  gold: 246,
+  gold: 245,
+  daylight: 246,
   fungus: 247,
   wax: 248,
   ember: 249,
@@ -75,6 +76,7 @@ export function smallBook(climate: CityClimate, wanted: Iterable<Wanted>): Small
       if (archive === COLOUR.lanternGlass) return DUNGEON_LAYERS.lanternGlass;
       if (archive === COLOUR.crystal) return DUNGEON_LAYERS.crystal;
       if (archive === COLOUR.fungus) return DUNGEON_LAYERS.fungus;
+      if (archive === COLOUR.daylight) return DUNGEON_LAYERS.daylight;
       // Water's record is the set it lies in: its bed is that set's floor.
       if (archive === COLOUR.water) return WATER_FLAG | (layers.get(`${record}.${ROLE.floor}`) ?? 0);
       if (archive === COLOUR.foulWater) return FOUL_FLAG | WATER_FLAG | (layers.get(`${record}.${ROLE.floor}`) ?? 0);

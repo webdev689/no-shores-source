@@ -237,7 +237,7 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "0462cf65304bcb00";
+pub const SEA_CLASH_HASH: &str = "3453dde756d8659b";
 
 /// A new player handed the Sloop, as the Harbourmaster hands it over in the welcome: one the sea lets in.
 fn sailor() -> gear::Character {
@@ -656,7 +656,7 @@ fn a_leaving_players_vestige_still_lying_is_in_their_character_before_the_room_l
 }
 
 /// Two islands of the traffic, Overlook's and Sunspire's, 100 km squares 200 km apart on the line y = 150 km, their
-/// ports in their middles: the lane between them runs east through the Grey Tithe's waters past x = 300 km.
+/// ports in their middles: the lane between them runs east through the Grey Tithe's waters past x = 210 km.
 pub const TRAFFIC_SEA: &str = r#"{ "layout": { "continents": [
     { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
     { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }
@@ -707,4 +707,23 @@ fn a_browser_foresees_whom_its_swing_hits_as_the_room_judges_them() {
     let facing_back = Fighter { aim: core::f64::consts::PI, ..foe_at(-1.0, guarding) };
     assert!(foreseen(facing_back).is_empty(), "a guard facing the blow blocks it: no hit foreseen");
     assert!(foreseen(foe_at(-6.0, combat::Action::Idle)).is_empty(), "out of reach");
+}
+
+#[test]
+fn a_sea_opened_with_the_islands_names_locks_the_sea_of_every_island_not_named() {
+    let layout = r#"{ "continents": [
+        { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
+        { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }
+    ], "isles": [] }"#;
+    let text = format!(r#"{{ "layout": {layout}, "ports": [], "islands": {{ "continent-1": "Saltmere" }} }}"#);
+    assert!(open_sea(text.as_bytes(), 7));
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[250_000.0, 150_000.0]], 10)), TAKEN);
+    for _ in 0..room::sea::COURSE_EVERY_TICKS {
+        room_tick();
+    }
+    assert_eq!(input(player, &protocol::course_bytes(&[[350_000.0, 150_000.0]], 10)), REFUSED, "the fourth's sea");
+    assert!(open_sea(layout.as_bytes(), 7), "a layout alone locks nothing");
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[350_000.0, 150_000.0]], 10)), TAKEN);
 }

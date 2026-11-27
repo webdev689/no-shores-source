@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { ForgedModel } from '../models/model.ts';
 import { cross, dot, minus } from '../models/vector.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { COLOUR, dungeonMesh, IRON, lookOf, ROLE } from './dungeonMesh.ts';
+import { COLOUR, dungeonMesh, IRON, lookOf, ROLE, torchFlame } from './dungeonMesh.ts';
 
 /** A room's cell (room 0, 4 m high) with a corridor (3.2 m) east of it and rock past that, framed between them; the
  *  exit door on the room's west wall; one torch on the corridor's north wall. */
@@ -185,12 +185,14 @@ test('the exit door wears the door picture once, on its wall facing into the roo
   }
 });
 
-test('a torch is an iron bracket off its wall and a glowing flame over it', () => {
+test('a torch is an iron bracket off its wall, its flame a fire burning out of its cup, not in the mesh', () => {
   const iron = triangles.filter(({ picture }) => picture === `${IRON[0]}.${IRON[1]}`);
   const ironY = iron.flatMap(({ corners }) => corners.map(([, y]) => y));
   assert.ok(near(Math.min(...ironY), 0), 'its plate stands on the wall');
-  const flame = triangles.filter(({ picture }) => picture === `${COLOUR.glow}.0`);
-  assert.equal(flame.length, 8);
+  assert.equal(triangles.filter(({ picture }) => picture === `${COLOUR.glow}.0`).length, 0);
+  const flame = torchFlame([4.8, 0.35, 2.1, 3]);
+  const cupTop = Math.max(...iron.flatMap(({ corners }) => corners.map(([, , z]) => z)).filter((z) => z < 2.1));
+  assert.ok(near(flame.at[2], cupTop) && flame.sizeM > 0.2 && flame.sizeM < 0.4, `${flame.at[2]} ${cupTop}`);
 });
 
 test("the return portal is a face on the end room's wall inside an arch of its trim standing off the wall", () => {
@@ -233,7 +235,6 @@ test("where its kit pieces stand, the mesh leaves out the pillars, the brackets 
   assert.ok(plain.some(pillar) && !dressed.some(pillar), 'no code-built pillar');
   assert.ok(plain.some(arch) && !dressed.some(arch), 'no code-built arch');
   assert.equal(count(dressed, `${IRON[0]}.${IRON[1]}`), 0, 'no bracket');
-  assert.equal(count(dressed, `${COLOUR.glow}.0`), 8, 'the flame burns');
   assert.equal(count(dressed, `${COLOUR.portal}.0`), 2, "the portal's face");
   assert.equal(count(dressed, '56.2'), 2, "the exit door's face");
   const jambs = (list: Triangle[]) =>

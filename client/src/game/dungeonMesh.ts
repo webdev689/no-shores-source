@@ -20,7 +20,7 @@ export const HEAD_M = 0.3;
 export const ROLE = { wall: 0, wallAlt: 1, floor: 2, ceiling: 3, trim: 4 } as const;
 /** Archives that stand for no picture of their own: a flame's glow, drawn as a colour; the portal's face, which wears
  *  the end room's wall; candle wax; an ember's, a lantern's glass a crystal's and a fungus cap's glow; still water,
- *  dark and catching the lights; and a vault chest's gold. */
+ *  dark and catching the lights; the daylight down an open mouth; and a vault chest's gold. */
 export const COLOUR = {
   glow: -2,
   portal: -3,
@@ -31,7 +31,8 @@ export const COLOUR = {
   fungus: -8,
   water: -9,
   foulWater: -10,
-  gold: -11,
+  daylight: -11,
+  gold: -12,
 } as const;
 /** The textures' ironwork (archive 93), for the torches' brackets and the cache's bands. */
 export const IRON: Picture = [93, 0];
@@ -46,7 +47,7 @@ type Picture = readonly [number, number];
 const PLATE = { half: 0.06, low: -0.25, high: 0.05, thick: 0.03 };
 const ARM = { half: 0.02, low: -0.17, high: -0.13 };
 const CUP = { half: 0.06, low: -0.15, high: -0.07 };
-const FLAME = { half: 0.06, low: -0.07, waist: -0.01, high: 0.2 };
+const FLAME = { low: -0.07, high: 0.2 };
 
 /** A quad by its corners round its edge, facing `normal`, its UVs by its plane. */
 export function face(mesh: MeshBuilder, picture: Picture, corners: readonly Point[], normal: Point, top: number): void {
@@ -242,8 +243,8 @@ function doorFrame(
   );
 }
 
-/** A torch's iron bracket on its wall, the edge of its cell on its side, unless its style's sconce holds it; and its
- *  flame. */
+/** A torch's iron bracket on its wall, the edge of its cell on its side, unless its style's sconce holds it. Its flame
+ *  is a fire (`torchFlame`). */
 function torch(
   mesh: MeshBuilder,
   [x, y, z, side]: readonly [number, number, number, number],
@@ -268,39 +269,11 @@ function torch(
     across(ARM.half, x, y, plate[0], plate[1], ARM.low, ARM.high);
     box(mesh, iron, [x - CUP.half, y - CUP.half, z + CUP.low], [x + CUP.half, y + CUP.half, z + CUP.high]);
   }
-  const glow: Picture = [COLOUR.glow, 0];
-  const ring: Point[] = [
-    [x - FLAME.half, y, z + FLAME.waist],
-    [x, y - FLAME.half, z + FLAME.waist],
-    [x + FLAME.half, y, z + FLAME.waist],
-    [x, y + FLAME.half, z + FLAME.waist],
-  ];
-  const tip: Point = [x, y, z + FLAME.high];
-  const foot: Point = [x, y, z + FLAME.low];
-  ring.forEach((corner, index) => {
-    const next = ring[(index + 1) % ring.length] ?? corner;
-    const out: Point = [corner[0] + next[0] - 2 * x, corner[1] + next[1] - 2 * y, 0];
-    mesh.tri(
-      glow,
-      [corner, next, tip],
-      [out[0], out[1], 0.3],
-      [
-        [0, 0],
-        [1, 0],
-        [0.5, 1],
-      ],
-    );
-    mesh.tri(
-      glow,
-      [next, corner, foot],
-      [out[0], out[1], -0.3],
-      [
-        [0, 0],
-        [1, 0],
-        [0.5, 1],
-      ],
-    );
-  });
+}
+
+/** A wall torch's flame, burning out of its cup: drawn as a fire, not in the mesh. */
+export function torchFlame([x, y, z]: readonly number[]): { at: Point; sizeM: number } {
+  return { at: [x ?? 0, y ?? 0, (z ?? 0) + FLAME.low], sizeM: FLAME.high - FLAME.low };
 }
 
 /** A door's opening on its wall: its foot's middle, its width and height, and the side of its cell it stands on. */

@@ -5,7 +5,7 @@
 bpy is Blender as a Python module: make a Python 3.13 venv and `pip install bpy==5.3.0`. The model's faces are in the
 part materials tools/ships/paint_ship.py sorts them into, with UVs in metres. With --dry-run it writes `<name>.mesh`
 into the working folder (so run it from one outside the repo) and uploads nothing; without, it uploads the .blend and
-the mesh under their hashes and names both, with her waterline, guns, boxes, sails and deck, in
+the mesh under their hashes and names both, with her waterline, guns, boxes, sails, deck and lanterns, in
 content/ships/ships.json.
 """
 import argparse
@@ -189,6 +189,18 @@ def guns(objects, offset):
     return found
 
 
+def lanterns(objects, offset):
+    """Where each of her lanterns' flames burns (an empty named Lantern, as tools/ships/ship_details.py places one), in
+    the ship's frame moved by `offset`, aft to fore."""
+    found = []
+    for item in objects:
+        if item.type != 'EMPTY' or not (item.name == 'Lantern' or item.name.startswith('Lantern.')):
+            continue
+        at = item.matrix_world.translation
+        found.append([round(value + shift, 4) for value, shift in zip((at.x, -at.y, at.z), offset)])
+    return sorted(found)
+
+
 def bounds(points):
     """The box round some points: its low and high corners."""
     return [[round(min(point[axis] for point in points), 4) for axis in range(3)],
@@ -369,7 +381,7 @@ def mesh_bytes(name, faces, size):
     return header, struct.pack('<I', len(text)) + text + bytes(vertices) + struct.pack(f'<{len(indices)}I', *indices)
 
 
-def publish(name, blend_path, mesh, size, armed, struck, rigged, walked):
+def publish(name, blend_path, mesh, size, armed, struck, rigged, walked, lit):
     with open(blend_path, 'rb') as file:
         source = put(file.read(), 'sources', 'blend', 'application/octet-stream')
     shape = put(mesh, 'ships', 'mesh', 'application/octet-stream')
@@ -381,6 +393,8 @@ def publish(name, blend_path, mesh, size, armed, struck, rigged, walked):
         'mesh': shape, 'source': source, 'waterline': size, 'guns': armed, 'boxes': struck, 'sails': rigged,
         'deck': walked,
     }
+    if lit:
+        manifest['ships'][name]['lanterns'] = lit
     for key in (shape, source):
         published(manifest, key)
     os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)
@@ -405,10 +419,12 @@ def main():
     armed = guns(bpy.data.objects, offset)
     struck = boxes(bpy.context.evaluated_depsgraph_get(), offset)
     rigged = sails(bpy.context.evaluated_depsgraph_get(), offset)
+    lit = lanterns(bpy.data.objects, offset)
     header, mesh = mesh_bytes(args.name, moved(faces, offset), size)
     print(json.dumps(armed))
     print(json.dumps(struck))
     print(json.dumps(rigged))
+    print(json.dumps(lit))
     print(json.dumps(header), f'{len(mesh) / 2 ** 20:.2f} MiB')
     if args.dry_run:
         with open(f'{args.name}.mesh', 'wb') as file:
@@ -416,7 +432,7 @@ def main():
         return
     # Her deck from the mesh as published, so this and tools/ships/deck.py measure the same numbers.
     publish(args.name, args.blend, mesh, size, armed, struck, rigged,
-            deck_of(mesh_triangles(mesh), helm_aft(bpy.data.objects, offset)))
+            deck_of(mesh_triangles(mesh), helm_aft(bpy.data.objects, offset)), lit)
 
 
 def helm_aft(objects, offset):

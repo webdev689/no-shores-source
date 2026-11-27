@@ -190,7 +190,7 @@ export class MapRegions {
     point: readonly number[],
   ): MapRegion | null {
     if (!waters) return null;
-    const own = waters.judge(ship);
+    const own = waters.judge(ship)?.continent;
     const island = waters.waters.waters.find((water) => water.continent === own)?.id ?? null;
     return regionAt(waters.waters, this.all, island, [point[0] ?? 0, point[1] ?? 0]);
   }

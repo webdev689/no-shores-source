@@ -393,6 +393,15 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]
 - [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]
 - [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]
+- [[Every Light Is Redesigned and Animated, and Each Casts Light]]
+- [[The Cinema May Import the Sky Layer]]
+- [[An Enclosed Light Hides Its Flame]]
+- [[The Passages' New Interface Says Less and Reads Better]]
+- [[The Islands and the Passages' Hollows Wear the Procedural Textures]]
+- [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]
+- [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]
+- [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]
+- [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
 
 ## Claude's calls
 
@@ -439,6 +448,8 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Character Slots and the Test Room as Claude Builds Them]]
 - [[Passages as Claude Builds Them]]
 - [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]
+- [[Lights as Claude Builds Them]]
+- [[Island Textures as Claude Builds Them]]
 
 ## Replaced
 

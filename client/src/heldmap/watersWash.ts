@@ -109,16 +109,24 @@ function rgbOf(hex: string): readonly [number, number, number] {
   ];
 }
 
-/** A cell's holder: its water's; null on land. */
-export function holderOf(waters: MapWaters, index: number): WaterHolder | null {
-  const water = waters.water[index] ?? -1;
-  if (water < 0) return null;
-  return waters.waters[water]?.holder ?? 'home';
+/** How far each cell lies from the nearest coast, metres (the coast field's, on the same cells), and how far from its
+ *  coast a home water stays home (crates/world/src/waters.rs `HOME_REACH_M`). */
+export interface HomeReach {
+  readonly distance: Float32Array;
+  readonly reachM: number;
 }
 
-/** The wash over the waters. Each cell blends the sea cells within one of it, so a border is soft over a cell or two
- *  once the map samples it between cells. */
-export function washOf(waters: MapWaters): WatersWash {
+/** A cell's holder: its water's, but the Grey Tithe's over a home water's open sea past its `reach`; null on land. */
+export function holderOf(waters: MapWaters, index: number, reach?: HomeReach): WaterHolder | null {
+  const water = waters.water[index] ?? -1;
+  if (water < 0) return null;
+  const holder = waters.waters[water]?.holder ?? 'home';
+  return holder === 'home' && reach && (reach.distance[index] ?? 0) > reach.reachM ? 'grey-tithe' : holder;
+}
+
+/** The wash over the waters, home waters' open sea past their `reach` washed as the Grey Tithe's. Each cell blends the
+ *  sea cells within one of it, so a border is soft over a cell or two once the map samples it between cells. */
+export function washOf(waters: MapWaters, reach?: HomeReach): WatersWash {
   const { columns, rows } = waters;
   const cells = waters.water;
   const colours = Object.fromEntries(
@@ -134,7 +142,7 @@ export function washOf(waters: MapWaters): WatersWash {
           const [x, y] = [column + across, row + down];
           if (x < 0 || y < 0 || x >= columns || y >= rows) continue;
           const near = y * columns + x;
-          const holder = holderOf(waters, near);
+          const holder = holderOf(waters, near, reach);
           if (!holder) continue;
           const [cellRed, cellGreen, cellBlue] = colours[holder];
           [red, green, blue, sea] = [red + cellRed, green + cellGreen, blue + cellBlue, sea + 1];

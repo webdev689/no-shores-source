@@ -35,6 +35,7 @@ import type { Sea } from './sea.ts';
 import type { SeaWord } from './seaWord.ts';
 import { hideSeaHud, showSeaHud } from './seaHud.ts';
 import type { SeaShip } from './seaShips.ts';
+import { deckHeard } from './seaTravel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
 import { type AfterStory, clearOfEye, heldHud } from './welcome/afterStory.ts';
@@ -301,7 +302,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const you = { feet: [body.x, body.y, body.z] as const, facing: walker.player.facing, name: '', seconds };
     // Under ground a node (a vein's) stands among the figures, lit by the torches as they are.
     const below = nodes.length > 0 ? { ...shown, figures: [...shown.figures, ...nodes] } : shown;
-    if (here.dungeon) parts.dungeons.draw(here, below, size, clock, fight, hands, more.drain, you);
+    if (here.dungeon) parts.dungeons.draw(here, below, size, clock, fight, hands, more.drain, carried, you);
     else if (here.run) parts.dungeons.drawRun(shown, size, clock, fight, parts.eventProps, hands, more.drain, carried);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing, here.fell);
@@ -384,7 +385,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);
-    const voyage = { ...shown, deck: here.view.helmView || here.aboard.active, feet: walker.player.body };
+    const voyage = { ...shown, deck: deckHeard(here), feet: walker.player.body };
     parts.ambience.atSea(playing.landmass, here.position, shown.shot, voyage, seconds);
     // Back at the helm, or called to it, the pointer is the player's again.
     const afoot = here.aboard.walking || here.boarding.onDeck;
@@ -532,7 +533,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const { flow, foot, sea, ready } = playing;
     const shown = flow.mode === 'loading' ? (ready ? flow.then : null) : flow;
     // A trip's veil, or the black of a travel by the held map, which waits on the new waters too.
-    setBehindVeil(flow.mode === 'loading' || !!sea?.travelling?.away.veil);
+    setBehindVeil(flow.mode === 'loading' || !!sea?.travelling?.fade.veil);
     let settled = true;
     playing.shipScale = 1;
     // A place's frame that throws leaves the rest of this one running, the interface and the veil's lift among it; it

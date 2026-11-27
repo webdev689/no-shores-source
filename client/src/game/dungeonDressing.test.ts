@@ -277,6 +277,17 @@ test("a passage zone's pieces are laid from the passages' pack as the deal stand
   assert.ok(corners.some(([east, south]) => Math.abs((east ?? 0) - x) < EPS && Math.abs((south ?? 0) - y - 1) < EPS));
 });
 
+test("an open mouth's way on glows as daylight, drawn as light, not as the cell's stone", () => {
+  const layout = LAYOUTS[0];
+  if (!layout) throw new Error('no layout');
+  const pack = readModulePack(packOf([upright('passage.mouth.open', 'glow')], { style: 'passage' }));
+  const mouth: PassagePiece = { kind: 'mouth', module: 'passage.mouth', number: 2, at: [5, 5, 0], facing: 0 };
+  const mesh = meshBuilder();
+  const state = { ...UNTOUCHED, openMouths: [2] };
+  passagePiecesLaid(layout, pack, 'temperate', [mouth], state, false)(mesh);
+  assert.equal(counted(mesh.model()).get(`${COLOUR.daylight}.0`), 1);
+});
+
 test('under ground a lit lamp, a lit dead lamp and an open mouth each light the room; cold and shut, none', () => {
   const piece = (kind: PassagePiece['kind'], number = 0): PassagePiece => ({
     kind,
@@ -294,7 +305,11 @@ test('under ground a lit lamp, a lit dead lamp and an open mouth each light the 
   );
   const [lamp, kindle, mouth] = lights;
   assert.ok(lamp && kindle && mouth);
-  assert.deepEqual([lamp.at[2], kindle.at[2]], [1.8, 2.25], 'each from its glass, over the floor');
+  assert.deepEqual([lamp.at[2], kindle.at[2]], [3.2, 2.16], 'each from its glass, over the floor');
+  // Facing south, the dead lamp's cage hangs off its crook south of its post.
+  assert.ok(Math.abs(kindle.at[0] - 10) < 1e-6 && Math.abs(kindle.at[1] - 20.17) < 1e-6);
+  // Caged, each shows no flame: its glass glows with its light; the mouth's daylight burns none either.
+  assert.ok(!lamp.flames && !kindle.flames && !mouth.flames);
   // The open mouth faces east, into the room: its light stands behind its face, west of its foot, the way on.
   assert.ok(mouth.at[0] < 10 && Math.abs(mouth.at[1] - 20) < 1e-6);
 });

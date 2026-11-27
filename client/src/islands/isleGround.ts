@@ -1,6 +1,7 @@
 // An island's ground as a mesh: a vertex on each of its heights (2 m apart), or on every fourth for the coarse mesh
 // seen from afar (8 m), in the island's own frame. Its colour is the shader's (isleShader.ts), from each point's
 // height and slope and its climate's ground, as the land's is.
+import { TILE_LAYERS } from '../groundGrain.ts';
 import type { IsleGrid } from './islePlan.ts';
 
 /** Floats a ground vertex: its position, then its normal. */
@@ -87,7 +88,7 @@ export interface GroundLook {
   readonly inland: readonly [number, number, number];
   readonly high: readonly [number, number, number];
   readonly snowM: number;
-  /** Whether its low ground is paved in flagstones (a passage's court). */
+  /** Whether its ground is paved: it wears the paving tile (a passage's court). */
   readonly paved?: boolean;
   /** The rock of its walls and cliffs in place of its kit's (a passage's chalk hollow). */
   readonly rock?: readonly [number, number, number];
@@ -111,3 +112,31 @@ export const GROUND_LOOKS: Readonly<Record<string, GroundLook>> = {
 /** A climate the contract does not name is drawn as woodland. */
 export const groundLook = (climate: string): GroundLook =>
   GROUND_LOOKS[climate] ?? (GROUND_LOOKS.woodland as GroundLook);
+
+type TileName = (typeof TILE_LAYERS)[number];
+/** The grounds a floor of one colour may be, and the land's tile each wears: grass and turf the grass, earth and leaf
+ *  litter the dirt, sand and a shell bed's dry sea floor the sand, bare rock and chalk the stone. */
+const FLOORS: readonly (readonly [readonly [number, number, number], TileName])[] = [
+  [GRASS, 'grass'],
+  [[0.4, 0.44, 0.28], 'grass'],
+  [EARTH, 'dirt'],
+  [[0.36, 0.28, 0.18], 'dirt'],
+  [[0.8, 0.72, 0.54], 'sand'],
+  [[0.66, 0.64, 0.55], 'sand'],
+  [[0.6, 0.58, 0.53], 'stone'],
+  [[0.82, 0.8, 0.72], 'stone'],
+];
+
+/** The land's ground tiles (`TILE_LAYERS`' numbers) a ground wears on its low and its high ground: a climate's its grass
+ *  turning to its dirt, as the land's; a paved floor the paving; a floor of one ground the tile of the ground its colour
+ *  is nearest. */
+export function groundTilesOf(look: GroundLook): [number, number] {
+  const layer = (name: TileName) => TILE_LAYERS.indexOf(name);
+  if (look.paved) return [layer('paving'), layer('paving')];
+  if (look.inland.some((channel, index) => channel !== look.high[index])) return [layer('grass'), layer('dirt')];
+  const apart = (colour: readonly number[]) =>
+    Math.hypot(...colour.map((channel, index) => channel - (look.inland[index] ?? 0)));
+  let [best, nearest] = [Infinity, layer('grass')];
+  for (const [colour, name] of FLOORS) if (apart(colour) < best) [best, nearest] = [apart(colour), layer(name)];
+  return [nearest, nearest];
+}
