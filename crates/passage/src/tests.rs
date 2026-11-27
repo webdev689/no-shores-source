@@ -354,6 +354,22 @@ fn a_weeks_public_way_is_one_zone_a_depth_each_reached_from_the_last() {
 }
 
 #[test]
+fn a_hold_is_never_laid_under_ground_in_a_style_with_no_room_for_its_ring() {
+    let mut holds = 0;
+    for week in 2_900..3_160 {
+        let web = Web::of(saltmere(), week);
+        for zone in web.zones.iter().filter(|zone| zone.deal == Deal::Mission(Mission::Hold)) {
+            if let Ground::Under { style } = &zone.ground {
+                holds += 1;
+                let laid = dungeon::style_of(style).expect("a style");
+                assert!(laid.lays_great_rooms(), "week {week} zone {}: a Hold in the {}", zone.number, laid.key);
+            }
+        }
+    }
+    assert!(holds > 100, "{holds} Holds under ground");
+}
+
+#[test]
 fn a_holds_ring_lies_whole_on_its_zones_floor_under_ground_and_above() {
     let (mut off, mut buried) = (Vec::new(), Vec::new());
     let mut rings = 0;

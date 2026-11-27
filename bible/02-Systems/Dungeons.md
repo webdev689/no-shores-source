@@ -458,9 +458,13 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   room, never two of a kind. The rooms past the way in's, but the end, every landmark's and every vault's (which stands its gold chest), are taken in walk order
   and split into as many stretches as there are seals. For each, while no Ascent is laid, an Ascent is tried first in
   every room of its stretch (never the first room of the walk where there are four or more), nearest the stretch's
-  middle first; else each kind not yet laid, in an order drawn once, in the room nearest the middle, then outward, and
-  the first that fits is laid there. A room too small, too low or too cluttered for a kind is passed over. Every one
-  of the 18 lays its full count; nine lay an Ascent, and a test holds it to nine or more.
+  middle first; then, while no Holdfast is laid, a Holdfast in the stretch's rooms and, where none is great enough,
+  in any room of the walk but the first; else each kind not yet laid, in an order drawn once, in the stretch's room
+  nearest its middle that fits it, then in any room of the walk but the first, then in the first (never a climb), and
+  the first that fits is laid there. A room too small, too low or too cluttered for a kind is passed over. Sixteen of
+  the 18 lay their full count; `smugglers-labyrinth` and `saltworm-warrens`, of five blocks, lay two, as no room of
+  theirs is great enough for a Holdfast or tall enough for an Ascent, and a test holds that no kind left fits a room
+  of a dungeon a seal short. Eleven lay an Ascent, and a test holds it to nine or more; five a Holdfast.
 - **Where pieces stand.** A piece stands on a spot of its room: a cell's middle or one of its four quarters' (0.8 m
   each way toward a corner), never on the way in's or the portal's cell, nor a doorway's (but an anchor), each 0.9 m from
   every solid and 1.4 m from every prop's and fixture's middle, so no brazier or candle stands on a piece. Only the
@@ -468,7 +472,8 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   leaps alike: another storey's stand over or under its floor. Runes stand 2 m apart at the least, plates 6.4 m (two cells).
 - **Counted by the living in the room.** Every seal counts the living players standing in its room's cells: one down
   or away is not counted, for plates, waves or the stone.
-- **The Litany** (a puzzle): four to six runes, drawn, on its floor. While it runs they show in turn, each a second,
+- **The Litany** (a puzzle): four to six runes, drawn, on the floor of a room three cells or more each way
+  (`LITANY_ROOM_CELLS`), so its foes are fought off the runes. While it runs they show in turn, each a second,
   then a two second pause, and again, the show going on past the runes already lit, which show lit. A step is a living
   player's body on the ground within 0.9 m of a rune (a dodge or a jump across one is none). The next rune in order
   lights; a lit one stepped again is ignored; any rune further on is wrong: it shows red for a second, every rune goes
@@ -500,16 +505,21 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   Every Ascent of the 18 is proven: a body run by the movement crate from the doorway, taking its run at each leap from
   the far side of its pad and jumping at the edge, reaches the stone without touching the foul floor; and from each pad
   the next is reached by a running jump and never by a run with no jump without touching the floor.
-- **The Holdfast** (a defence): a relic over the spot nearest its room's middle whose ring, 3 m round, lies on the
-  room's floor all four ways. It is held each tick a living player stands in the ring, and broken once held 45 s in
-  all. A wave comes at its doorways 2 s after it starts, then every 12 s. Each living foe in the ring drains a twentieth
-  of the relic a second, and while none stands in it the relic regains a fortieth a second, to whole; a drained relic
-  halves what was held and stands whole again (`RelicDrained`).
+- **The Holdfast** (a defence), only in a room five cells or more each way (16 m, `HOLDFAST_ROOM_CELLS`): a relic over
+  the spot nearest its room's middle whose ring, 5 m round, lies whole on the room's floor (no cell it reaches is rock,
+  a corridor or another room: `ring_whole`), every doorway's middle a metre or more past it, so its waves come in
+  outside the ring and a company has floor to fight on round it. It is held each tick a living player stands in the
+  ring, and broken once held 45 s in all. A wave comes at its doorways 2 s after it starts, then every 12 s. Each living
+  foe in the ring drains a twentieth of the relic a second, and while none stands in it the relic regains a fortieth a
+  second, to whole; a drained relic halves what was held and stands whole again (`RelicDrained`).
 - **Seals' rules** (`seals.rs`): a seal waits until a living player stands in its room and no living foe of the
   garrison does (a wave's foes do not hold it), then runs until broken (`SealBroken`, told to every player with how
-  many are broken). A wave is one of the dungeon's own Major or Elite foes for each living player in its room, two to
-  four, drawn from its garrison's table at its foes' levels, standing at the room's doorways and hunting the nearest
-  living player on its storey (one on another is never near, `seals::near`); a seal's waves stand no more while eight of them live, nor past the room's most foes.
+  many are broken). A wave is one of the dungeon's own Majors for each living player in its room, two to four, drawn
+  from its garrison's table at its foes' levels, never its Elites, which stand in its garrison alone; standing at the
+  room's doorways 4 m or more from every piece of its seal (`WAVE_OFF_PIECES_M`; where none is, the farthest) and
+  hunting the nearest living player on its storey (one on another is never near, `seals::near`). A seal's waves, a
+  wrong rune's foes among them, stand no more while two for each living player in its room live, four at the fewest
+  and eight at the most (`wave_living_most`), nor past the room's most foes.
 - **Spoilless.** Every foe an encounter stands (its waves, a wrong rune's, a ward's) drops nothing when killed, as a
   defence tried again stands foes that drop nothing (`quests.spoilless`): kills there pay their experience, and the
   seal's breaking and the cache stay the reward. An unfinished seal's waves keep coming, so they could otherwise be
@@ -518,7 +528,8 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   broken; then it stands (`BossWoke`), and its health is made a match for the living players then, half again for each
   beyond the first, as a public event's great foes are (`toughen`). At two thirds of its health, and again at one
   third, a blow that would take it to that share or past is held there and the Boss is warded (`WardRaised`): a wave of the dungeon's
-  foes for each living player, two to four, stands at its anchors, and another 15 s on while the ward still stands.
+  Majors for each living player, two to four, stands at its anchors, and another 15 s on while the ward still stands,
+  the Court's waves kept as a seal's are, two for each living player, four to eight (`WaveOf::Court`).
   While warded the Boss runs back to its post, by the navmesh from off its floor (a flight or another storey), and stands there (`hold_ward`), striking where it stands, and every 8 s
   from the ward rising it slams: a ring 4 m round it shown 2 s, then 30% of their health from every living player
   inside it (`BossSlammed`). Its three anchors stand in the end room 2.4 m or more from its post, each the spot

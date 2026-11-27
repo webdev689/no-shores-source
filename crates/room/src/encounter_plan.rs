@@ -9,8 +9,10 @@ use dungeon::{CELL_M, Cell, Dungeon, SIDES};
 use encounter_ascent::{ascent, open_air};
 use movement::Block;
 
-/// The runes of a Litany, the fewest and the most.
+/// The runes of a Litany, the fewest and the most, and how many cells each way its room has at the least, so its runes
+/// leave floor to fight its foes on without stepping on one.
 pub const LITANY_RUNES: (usize, usize) = (4, 6);
+pub const LITANY_ROOM_CELLS: usize = 3;
 /// How far apart each two of a Weighing's plates stand at the least (m): two cells, so no body holds two.
 pub const PLATES_APART_M: f64 = 2.0 * CELL_M;
 /// How far round from the way into a Weighing's room its plates stand at the most, as the cosine of the angle between
@@ -40,7 +42,11 @@ pub const ANCHOR_FROM_POST_M: f64 = 2.4;
 pub const SPOT_CLEAR_M: f64 = 0.9;
 pub const PROP_CLEAR_M: f64 = 1.4;
 pub const RUNES_APART_M: f64 = 2.0;
-pub const RELIC_RING_M: f64 = 3.0;
+pub const RELIC_RING_M: f64 = 5.0;
+/// A Holdfast's room: this many cells each way at the least, and its doorways' middles this far past its ring (m), so
+/// a company has room to fight round the ring and its waves come in outside it.
+pub const HOLDFAST_ROOM_CELLS: usize = 5;
+pub const RELIC_DOORS_CLEAR_M: f64 = 1.0;
 /// A quarter of a cell: a spot's offset from its cell's middle toward a corner.
 const QUARTER_M: f64 = CELL_M / 4.0;
 
@@ -259,29 +265,43 @@ pub fn plan_encounters(dungeon: &Dungeon) -> EncounterPlan {
     rooms.sort_by_key(|&room| (dungeon.rooms[room].walk, room));
     let count = seals_for(dungeon.squares.len());
     let mut seals: Vec<SealPlan> = Vec::new();
+    // The first room of the walk where there are four or more, which no climb stands in, so the way in is not
+    // straight into one, and another seal only where no other room of the walk fits it.
+    let first = usize::from(rooms.len() >= 4);
     for nth in 0..count {
         // Nearest the middle of its stretch of the walk first, then outward.
         let target = (2 * nth + 1) * rooms.len() / (2 * count).max(1);
         let mut order: Vec<usize> = (0..rooms.len()).collect();
         order.sort_by_key(|&at| (at.abs_diff(target), at));
-        let taken = |room: usize, seals: &[SealPlan]| seals.iter().any(|seal| seal.room == room);
-        // An Ascent first wherever a room of the stretch fits one, as the climb is the rarest fit, never in the first
-        // room of the walk where there are four or more, so the way in is not straight into a climb; then any kind
-        // left in the nearest room that fits it, any room of the walk.
-        let stretch = (nth * rooms.len() / count).max(usize::from(rooms.len() >= 4))..(nth + 1) * rooms.len() / count;
-        let climbed = seals.iter().any(|seal| seal.kind == SealKind::Ascent);
-        let ascent = order
-            .iter()
-            .filter(|at| !climbed && stretch.contains(*at))
-            .map(|&at| rooms[at])
-            .filter(|&room| !taken(room, &seals))
-            .find_map(|room| laid(&reading, &mut lane, SealKind::Ascent, room));
-        let found = ascent.or_else(|| {
-            order.into_iter().map(|at| rooms[at]).filter(|&room| !taken(room, &seals)).find_map(|room| {
-                let left = kinds.iter().copied().filter(|kind| seals.iter().all(|seal| seal.kind != *kind));
-                left.collect::<Vec<_>>().into_iter().find_map(|kind| laid(&reading, &mut lane, kind, room))
+        order.retain(|&at| seals.iter().all(|seal| seal.room != rooms[at]));
+        let stretch = (nth * rooms.len() / count).max(first)..(nth + 1) * rooms.len() / count;
+        let left: Vec<SealKind> =
+            kinds.iter().copied().filter(|kind| seals.iter().all(|seal| seal.kind != *kind)).collect();
+        // The rarest fits first while none of their kind is laid: an Ascent, which wants a tall room, wherever a room
+        // of the stretch fits one; then a Holdfast, which wants a great room, in the stretch or, where it has none,
+        // any room of the walk but the first; then each kind left, in the order drawn, in the stretch's room nearest
+        // its middle that fits it, then in any room of the walk but the first, then in the first, but never a climb.
+        let tried = |pass: usize| -> Vec<usize> {
+            order.iter().copied().filter(|&at| [stretch.contains(&at), at >= first, true][pass]).collect()
+        };
+        let rare = [(SealKind::Ascent, 1), (SealKind::Holdfast, 2)].into_iter().filter(|(kind, _)| left.contains(kind));
+        let found = rare
+            .collect::<Vec<_>>()
+            .into_iter()
+            .find_map(|(kind, passes)| {
+                (0..passes)
+                    .find_map(|pass| tried(pass).into_iter().find_map(|at| laid(&reading, &mut lane, kind, rooms[at])))
             })
-        });
+            .or_else(|| {
+                (0..3).find_map(|pass| {
+                    let kinds = left.iter().copied().filter(|&kind| pass < 2 || kind != SealKind::Ascent);
+                    let rooms_tried = tried(pass);
+                    kinds
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .find_map(|kind| rooms_tried.iter().find_map(|&at| laid(&reading, &mut lane, kind, rooms[at])))
+                })
+            });
         if let Some(seal) = found {
             seals.push(seal);
         }
@@ -304,7 +324,13 @@ pub fn plan_encounters(dungeon: &Dungeon) -> EncounterPlan {
 fn laid(reading: &Reading, lane: &mut Lane, kind: SealKind, room: usize) -> Option<SealPlan> {
     let spots = reading.spots(room, false);
     let (pieces, pads, drowned) = match kind {
-        SealKind::Litany => (runes(lane, &spots)?, Vec::new(), Vec::new()),
+        SealKind::Litany => {
+            let found = &reading.dungeon.rooms[room];
+            if found.width.min(found.depth) < LITANY_ROOM_CELLS {
+                return None;
+            }
+            (runes(lane, &spots)?, Vec::new(), Vec::new())
+        }
         SealKind::Weighing => {
             // Every plate in plain view from the doorway the room is entered by and ahead of a body coming in by it
             // (within PLATES_AHEAD of the way from the cell before it), so the puzzle is seen on coming in.
@@ -396,23 +422,47 @@ fn plates(spots: &[[f64; 2]]) -> Option<Vec<[f64; 3]>> {
     spread.then(|| vec![on_floor(first), on_floor(second), on_floor(third)])
 }
 
-/// A Holdfast's relic: the spot nearest the room's middle whose ring, RELIC_RING_M round it, reaches the room's floor
-/// east, south, west and north.
+/// A Holdfast's relic, in a room HOLDFAST_ROOM_CELLS or more each way: the spot nearest the room's middle whose ring,
+/// RELIC_RING_M round it, lies whole on the room's floor, with every doorway's middle RELIC_DOORS_CLEAR_M past it.
 fn relic(reading: &Reading, room: usize, spots: &[[f64; 2]]) -> Option<[f64; 3]> {
     let dungeon = reading.dungeon;
     let found = &dungeon.rooms[room];
+    if found.width.min(found.depth) < HOLDFAST_ROOM_CELLS {
+        return None;
+    }
     let middle =
         [(found.x as f64 + found.width as f64 / 2.0) * CELL_M, (found.y as f64 + found.depth as f64 / 2.0) * CELL_M];
     let floor = dungeon::storey_floor(found.storey);
-    let in_room =
-        |[x, y]: [f64; 2]| x >= 0.0 && y >= 0.0 && dungeon.room_at(dungeon.cell_at([x, y, floor])) == Some(room);
-    let ringed = |[x, y]: [f64; 2]| {
-        let ring = RELIC_RING_M;
-        [[x + ring, y], [x, y + ring], [x - ring, y], [x, y - ring]].into_iter().all(in_room)
-    };
+    let doors: Vec<[f64; 2]> =
+        found.cells.iter().filter(|cell| reading.doorways.contains(cell)).map(|&cell| dungeon.centre(cell)).collect();
+    let past = (RELIC_RING_M + RELIC_DOORS_CLEAR_M) * (RELIC_RING_M + RELIC_DOORS_CLEAR_M);
+    let ringed =
+        |spot: [f64; 2]| ring_whole(dungeon, room, spot, floor) && doors.iter().all(|&door| apart(door, spot) >= past);
     let mut nearest = spots.to_vec();
     nearest.sort_by(|a, b| apart(*a, middle).total_cmp(&apart(*b, middle)));
     nearest.into_iter().find(|spot| ringed(*spot)).map(on_floor)
+}
+
+/// Whether a Holdfast's ring, RELIC_RING_M round `[x, y]` on the floor at `floor`, lies whole on `room`'s floor: every
+/// cell any of it reaches is the room's, none rock, a corridor, another room or past the dungeon's edge.
+fn ring_whole(dungeon: &Dungeon, room: usize, [x, y]: [f64; 2], floor: f64) -> bool {
+    let reach = RELIC_RING_M;
+    let (width, depth) = (dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M);
+    if x - reach < 0.0 || y - reach < 0.0 || x + reach > width || y + reach > depth {
+        return false;
+    }
+    let half = CELL_M / 2.0;
+    let first = |at: f64| ((at - reach) / CELL_M) as usize;
+    let last = |at: f64, cells: usize| (((at + reach) / CELL_M) as usize).min(cells - 1);
+    (first(x)..=last(x, dungeon.columns)).all(|column| {
+        (first(y)..=last(y, dungeon.rows)).all(|row| {
+            let middle = [(column as f64 + 0.5) * CELL_M, (row as f64 + 0.5) * CELL_M];
+            // The nearest point of the cell's square, compared squared, so no root is taken.
+            let (east, south) = ((x - middle[0]).abs().max(half) - half, (y - middle[1]).abs().max(half) - half);
+            let reached = east * east + south * south < reach * reach;
+            !reached || dungeon.room_at(dungeon.cell_at([middle[0], middle[1], floor])) == Some(room)
+        })
+    })
 }
 
 /// The Court's anchors: the end room's spots, its doorways' among them, ANCHOR_FROM_POST_M from the end foe's post,

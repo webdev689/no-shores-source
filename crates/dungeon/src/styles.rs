@@ -191,6 +191,13 @@ pub(crate) const EVERY_STYLE: [Style; 8] =
     [STYLES[0], STYLES[1], STYLES[2], STYLES[3], STYLES[4], STYLES[5], PASSAGE_STYLES[0], PASSAGE_STYLES[1]];
 
 impl Style {
+    /// Whether a storey of its blocks is now and then one great room: in every style but the cells, whose rooms are
+    /// all small.
+    #[must_use]
+    pub fn lays_great_rooms(&self) -> bool {
+        self.key != "cells"
+    }
+
     /// The style its last block breaks into on the way down, of the six or the passages' two.
     #[must_use]
     pub fn style_below(&self) -> Style {

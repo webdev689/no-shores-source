@@ -6,7 +6,7 @@
 //! takes RECKONING_SHARE of their health from every living player it reaches outside it. Fury: from FURY_FROM after a
 //! living player first stands in the end room, its company's blows weigh a tenth more every FURY_EVERY, to FURY_MOST.
 
-use crate::encounters::Encounters;
+use crate::encounters::{Encounters, WaveOf};
 use crate::{EventKind, Room};
 use combat::Action;
 use combat::Fighter;
@@ -133,7 +133,7 @@ impl Room {
         };
         if wave {
             encounters.court.ward_waves += 1;
-            self.stand_seal_wave(encounters, None, &anchors, living);
+            self.stand_seal_wave(encounters, WaveOf::Court, &anchors, living);
         }
         self.slam(encounters.court.ward_at, boss);
         let standing: Vec<[f64; 3]> = self

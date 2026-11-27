@@ -10,6 +10,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
+- [[The Holdfast Stands Only in a Larger Room, With a Larger Ring and Fewer Elites]]
+- [[Other Players' Weapons Glow in Their Element]]
 - [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]
 - [[The Music Repeats Less, Patrol Zones First]]
 - [[TypeScript and Rust]]

@@ -4,7 +4,7 @@
 //! shields, deaths and revives treat it as any harm. Everything is counted by the living players in the seal's room.
 
 use crate::encounter_plan::{EncounterPlan, SealKind, SealPlan};
-use crate::encounters::{Encounters, Seal, SealState};
+use crate::encounters::{Encounters, Seal, SealState, WaveOf};
 use crate::{EventKind, PlayerId, Room};
 use combat::judge::{Blow, BlowKind};
 use combat::shapes::Shape;
@@ -42,6 +42,9 @@ pub const HOLDFAST_FIRST_WAVE_TICKS: u64 = 2 * 60;
 pub const HOLDFAST_WAVE_TICKS: u64 = 12 * 60;
 pub const RELIC_DRAIN: f64 = 1.0 / (20.0 * 60.0);
 pub const RELIC_REGAIN: f64 = 1.0 / (40.0 * 60.0);
+/// How far from every piece of its seal a doorway its waves come in at stands at the least (m), so no foe stands
+/// beside a plate, a rune or the relic's ring; where no doorway does, they come in at the farthest.
+pub const WAVE_OFF_PIECES_M: f64 = 4.0;
 
 /// How long a plate stays held after its last player steps off: PLATE_LINGER_TICKS, and for a lone player the walk
 /// between its two plates besides, so one player walking, not only sprinting, can hold both.
@@ -92,7 +95,7 @@ impl Room {
                 // A step is a body on the ground: a dodge or a jump across a rune is none.
                 let grounded: Vec<[f64; 3]> =
                     inside.iter().filter(|&&(_, _, grounded)| grounded).map(|&(_, at, _)| at).collect();
-                self.keep_litany(encounters, seal, &plan, &grounded)
+                self.keep_litany(encounters, seal, &plan, &grounded, inside.len())
             }
             SealKind::Weighing => self.keep_weighing(encounters, seal, &plan, &standing),
             SealKind::Ascent => {
@@ -130,6 +133,7 @@ impl Room {
         seal: usize,
         plan: &SealPlan,
         standing: &[[f64; 3]],
+        living: usize,
     ) -> bool {
         let clock = self.clock;
         let on: Vec<bool> =
@@ -158,7 +162,7 @@ impl Room {
         if wrong {
             self.tell_all(EventKind::RuneWrong, seal as f64);
             let doors = Self::doorways_of(plan);
-            self.stand_foes(encounters, Some(seal), &doors, WRONG_FOES);
+            self.stand_foes(encounters, WaveOf::Seal(seal), &doors, WRONG_FOES, living);
         }
         done
     }
@@ -238,12 +242,19 @@ impl Room {
         }
         encounters.seals[seal].next_wave = self.clock + every;
         let doors = Self::doorways_of(plan);
-        self.stand_seal_wave(encounters, Some(seal), &doors, living);
+        self.stand_seal_wave(encounters, WaveOf::Seal(seal), &doors, living);
     }
 
-    /// Where a seal's foes come in: its room's doorways, or its pieces where it has none.
+    /// Where a seal's foes come in: its room's doorways WAVE_OFF_PIECES_M or more from every piece, else the doorway
+    /// farthest from its nearest piece; its pieces where it has no doorway.
     fn doorways_of(plan: &SealPlan) -> Vec<[f64; 3]> {
-        if plan.doors.is_empty() { plan.pieces.clone() } else { plan.doors.clone() }
+        let off = |door: &[f64; 3]| plan.pieces.iter().map(|piece| near(*door, *piece)).fold(f64::INFINITY, f64::min);
+        let clear: Vec<[f64; 3]> = plan.doors.iter().copied().filter(|door| off(door) >= WAVE_OFF_PIECES_M).collect();
+        if !clear.is_empty() {
+            return clear;
+        }
+        let farthest = plan.doors.iter().copied().max_by(|one, other| off(one).total_cmp(&off(other)));
+        farthest.map_or_else(|| plan.pieces.clone(), |door| vec![door])
     }
 
     /// Once a second, the drowned floor takes DROWNED_SHARE of their health from every living player standing on it,

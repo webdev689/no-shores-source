@@ -258,6 +258,18 @@ fn a_ward_stands_a_wave_for_each_living_player_and_another_fifteen_seconds_on() 
 }
 
 #[test]
+fn the_courts_waves_are_kept_to_two_for_each_living_player_four_at_the_fewest() {
+    let (mut room, _, _) = court();
+    let laid = anchors(&room);
+    let mut encounters = room.encounters.take().expect("encounters");
+    let of = crate::encounters::WaveOf::Court;
+    assert_eq!(room.stand_seal_wave(&mut encounters, of, &laid, 1), 2);
+    assert_eq!(room.stand_seal_wave(&mut encounters, of, &laid, 1), 2, "four for a lone player");
+    assert_eq!(room.stand_seal_wave(&mut encounters, of, &laid, 1), 0, "and no more while they stand");
+    room.encounters = Some(encounters);
+}
+
+#[test]
 fn with_three_living_players_a_filled_anchor_empties_six_seconds_after_it_is_left() {
     let (mut room, player, boss) = court();
     let _others = [hardy(&mut room), hardy(&mut room)];
