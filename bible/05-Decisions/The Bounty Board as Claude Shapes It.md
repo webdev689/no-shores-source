@@ -44,6 +44,10 @@ can change any. These replace the calls on the tiles, their states, the card, th
 
 Links: [[Activities]], [[Interface]], [[Factions]], [[Gear]].
 
+Replaced in part by
+[[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]: each bounty's
+card carries one line of its tale under its task.
+
 The owner's answers on it:
 
 - [[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]

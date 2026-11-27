@@ -1685,7 +1685,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   - **The card** of the tile pointed at or holding the keys floats beside it (`bountyCardNode`): its name in capitals
     and its kind ("Land bounty" by the mark of where it counts, two peaks, a wave, an arched door, or for the
     passages' "Passage bounty" a lamp; or "Lamplighters bounty" by its faction's emblem) on a
-    band in its poster's colour; its words; its count once taken, green once done; "Rewards" with what it pays the player now by its tier (`payOf`: XP by its
+    band in its poster's colour; its words, and under them the line of its tale in faint italics ([[Activities]],
+    "Bounties"); its count once taken, green once done; "Rewards" with what it pays the player now by its tier (`payOf`: XP by its
     letters, and the town's Aurem by its coin or the faction's reputation by its emblem), resting once turned in; for
     a faction's, "Counts while pledged to them and wearing their cape", ticked while it is met (`serves`); and along
     its foot "Click / E" with its press, Take on one not held or Turn in on one done, or "Turned in". A locked well's card says "Pledge

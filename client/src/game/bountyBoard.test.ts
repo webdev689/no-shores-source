@@ -15,7 +15,10 @@ const bounty = (
   [place, pool, target]: readonly [number, number, number],
   held: Partial<Pick<GearBounty, 'count' | 'held' | 'paid'>> = {},
   [tier, faction, name]: readonly [number, number, string] = [1, 0, `Sample ${place}`],
-): GearBounty => ({ words, place, pool, target, tier, faction, name, count: 0, held: false, paid: false, ...held });
+): GearBounty => ({
+  ...{ words, place, pool, target, tier, faction, name, tale: `A line of ${name}'s tale.` },
+  ...{ count: 0, held: false, paid: false, ...held },
+});
 
 /** The town's six, four taken: one counting, one done, one turned in. */
 const TOWN: readonly GearBounty[] = [
@@ -224,6 +227,16 @@ test('a tile’s card floats beside it while pointed at: its name, kind, task, c
     { kind: ASKS.takeBounty, node: 0, item: 20_778 },
     { kind: ASKS.turnInBounty, node: 2, item: 20_778 },
   ]);
+});
+
+test('a card carries one line of its bounty’s tale, leaning, under its task', () => {
+  const { point, tree } = boardOf(PLEDGED);
+  point('bounty-0');
+  const card = wordsIn(byId(tree(), 'bounty-card'));
+  const [task, tale] = ['Defeat 30 Grey Tithe foes.', "A line of Tithe Collector's tale."];
+  assert.equal(card.indexOf(tale), card.indexOf(task) + 1, 'the tale right under the task');
+  const line = nodesOf(byId(tree(), 'bounty-card')).find((node) => typeof node.text?.words !== 'string' && node.text);
+  assert.deepEqual(line?.text?.words, [{ words: tale, style: 'italic' }]);
 });
 
 test('the arrows move between tiles, along the town’s row and down to the faction’s', () => {

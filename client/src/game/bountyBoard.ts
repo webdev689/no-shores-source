@@ -43,6 +43,8 @@ export interface BountyRow {
   readonly tier: number;
   /** The faction that posts it, by its number; 0 the town's. */
   readonly faction: number;
+  /** One line of its tale, as its card shows under its task. */
+  readonly tale: string;
   readonly count: number;
   readonly target: number;
   /** "12/30" while held, "Turned in" once paid, else empty. */
@@ -68,8 +70,8 @@ export function bountyRows(gear: GearState): readonly BountyRow[] {
         : state === 'open'
           ? { label: 'Take' as const, ask: { kind: ASKS.takeBounty, node: place, item: day } }
           : { label: 'Turn in' as const, ask: { kind: ASKS.turnInBounty, node: place, item: day } };
-    const { words, name, pool, tier, faction } = bounty;
-    return { place, words, name, pool, tier, faction, count, target, progress, state, press };
+    const { words, name, pool, tier, faction, tale } = bounty;
+    return { place, words, name, pool, tier, faction, tale, count, target, progress, state, press };
   });
 }
 

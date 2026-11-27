@@ -343,6 +343,8 @@ export interface GearBounty {
   readonly place: number;
   /** The faction that posts it, by its number, paying its reputation for the town's Aurem; 0 the town's. */
   readonly faction: number;
+  /** One line of its tale, as its card shows under its task; empty from a room that sends none. */
+  readonly tale: string;
 }
 
 export type { ActivityRecord } from './activityRecord.ts';
@@ -525,8 +527,8 @@ export function gearOf(gear: Gear): GearState {
       const [held, paid] = [bounty?.held() ?? false, bounty?.paid() ?? false];
       const [pool, name, tier] = [bounty?.pool() ?? 0, bounty?.name() ?? '', bounty?.tier() || 1];
       // A field a room leaves out reads 0, so a place of 0 falls back to its index, where the town's first stands.
-      const [place, faction] = [bounty?.place() || index, bounty?.faction() ?? 0];
-      return { words, target, count, held, paid, pool, name, tier, place, faction };
+      const [place, faction, tale] = [bounty?.place() || index, bounty?.faction() ?? 0, bounty?.tale() ?? ''];
+      return { words, target, count, held, paid, pool, name, tier, place, faction, tale };
     }),
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),

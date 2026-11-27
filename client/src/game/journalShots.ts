@@ -17,9 +17,10 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const BOARD_DAY = 20_778;
 
-/** A bounty of the board as it stands: its name and tier, its words, where it stands, and how it is held. */
+/** A bounty of the board as it stands: its name, tier and line of its tale, its words, where it stands, and how it is
+ *  held. */
 const bounty = (
-  [name, tier]: readonly [string, number],
+  [name, tier, tale]: readonly [string, number, string],
   words: string,
   where: { readonly place: number; readonly pool: number; readonly target: number; readonly faction?: number },
   held: Partial<Pick<GearBounty, 'count' | 'held' | 'paid'>> = {},
@@ -27,6 +28,7 @@ const bounty = (
   ({
     name,
     tier,
+    tale,
     words,
     ...{ place: where.place, pool: where.pool, target: where.target, faction: where.faction ?? 0 },
     ...{ count: 0, held: false, paid: false, ...held },
@@ -35,37 +37,63 @@ const bounty = (
 /** The town's six: two on land, two at sea, two in dungeons; four taken, one of them done and one turned in. */
 const TOWN: readonly GearBounty[] = [
   bounty(
-    ['Tithe Collector', 2],
+    ['Tithe Collector', 2, 'They count every hold in the Expanse. Somebody ought to count them back.'],
     'Defeat 30 Grey Tithe foes.',
     { place: 0, pool: 0, target: 30 },
     { count: 12, held: true },
   ),
-  bounty(['Honest Work', 1], 'Gather 6 resource nodes.', { place: 1, pool: 0, target: 6 }, { count: 6, held: true }),
-  bounty(['Broadside', 1], 'Sink or take 3 ships.', { place: 2, pool: 1, target: 3 }),
   bounty(
-    ['Sea Wolf', 3],
+    ['Honest Work', 1, 'Somebody has to keep the forges fed. Today it pays.'],
+    'Gather 6 resource nodes.',
+    { place: 1, pool: 0, target: 6 },
+    { count: 6, held: true },
+  ),
+  bounty(['Broadside', 1, "Every hull you send down is one that won't come for Overlook."], 'Sink or take 3 ships.', {
+    place: 2,
+    pool: 1,
+    target: 3,
+  }),
+  bounty(
+    ['Sea Wolf', 3, 'Six hulls in a day. The Tithe will start to learn your sails.'],
     'Sink or take 6 ships.',
     { place: 3, pool: 1, target: 6 },
     { count: 6, held: true, paid: true },
   ),
-  bounty(['Into the Dark', 1], 'Clear a dungeon.', { place: 4, pool: 2, target: 1 }, { held: true }),
-  bounty(['Deep Delver', 3], 'Clear 3 dungeons.', { place: 5, pool: 2, target: 3 }),
+  bounty(
+    ['Into the Dark', 1, 'Some doors on these islands were shut for a reason. Open one anyway.'],
+    'Clear a dungeon.',
+    { place: 4, pool: 2, target: 1 },
+    { held: true },
+  ),
+  bounty(['Deep Delver', 3, 'Come back up with the same name you went down with.'], 'Clear 3 dungeons.', {
+    place: 5,
+    pool: 2,
+    target: 3,
+  }),
 ];
 /** The Lamplighters' three, their first taken. */
 const LAMPLIGHTERS: readonly GearBounty[] = [
   bounty(
-    ['Lamp Oil', 1],
+    ['Lamp Oil', 1, "Aud's light burns on nothing. Ours still need oil, and wicks, and hands."],
     'Gather 8 resource nodes.',
     { place: 9, pool: 0, target: 8, faction: 2 },
     { count: 3, held: true },
   ),
-  bounty(['Light the Way', 2], 'Clear 2 dungeons.', { place: 10, pool: 2, target: 2, faction: 2 }),
-  bounty(['Harbour Light', 3], 'Sink or take 2 ships of Elite rank or higher.', {
-    place: 11,
-    pool: 1,
-    target: 2,
-    faction: 2,
-  }),
+  bounty(
+    ['Light the Way', 2, 'Every dark place was lit once, by someone. Take a light back in.'],
+    'Clear 2 dungeons.',
+    { place: 10, pool: 2, target: 2, faction: 2 },
+  ),
+  bounty(
+    ['Harbour Light', 3, 'The Beacon shows the way home. See that the Tithe never follow it in.'],
+    'Sink or take 2 ships of Elite rank or higher.',
+    {
+      place: 11,
+      pool: 1,
+      target: 2,
+      faction: 2,
+    },
+  ),
 ];
 /** The Lamplighters' cape, worn. */
 const CAPE = item({ id: 40, kind: 17, bucket: 6, at: 8, rarity: 3, named: 'lamplighters_cape' });
