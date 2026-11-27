@@ -127,3 +127,26 @@ test('the loading screen stands over the black: the logo and LOADING, told to a 
     Object.assign(globalThis, { document: undefined });
   }
 });
+
+test('an insert eases in over the middle of the view, under the white and the black, and goes as asked or cleared', () => {
+  const { screen, laid, clock } = made();
+  const insert = { key: 'chart', label: 'The captain’s chart', draw: () => undefined };
+  const shown = () => laid().find((each) => each.node.id === 'cinema-insert');
+  assert.equal(shown(), undefined, 'none until asked');
+  screen.showInsert(insert);
+  clock.now = 1;
+  const box = shown()?.box;
+  assert.ok(box, 'held over the view');
+  assert.ok(Math.abs(box.x + box.width / 2 - 640) < 1 && Math.abs(box.y + box.height / 2 - 360) < 1, 'in its middle');
+  assert.equal(shown()?.node.label, 'The captain’s chart', 'a screen reader hears what it is');
+  screen.flash(1);
+  const ids = laid().map((each) => each.node);
+  assert.ok(ids.findIndex((node) => node.id === 'cinema-insert') < ids.findIndex((node) => node.fill === '#f4f1ea'));
+  screen.showInsert(null);
+  clock.now = 2;
+  assert.equal(shown(), undefined, 'gone once taken away');
+  screen.showInsert(insert);
+  screen.clear();
+  clock.now = 3;
+  assert.equal(shown(), undefined, 'gone with the rest when the screen is cleared');
+});

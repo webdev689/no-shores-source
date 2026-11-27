@@ -23,9 +23,24 @@ const tick = (seconds: number): Tick => ({
 /** The Brig in a heavy swell: high on a crest, its bow up and heeled to port. */
 const RIDING = { x: 500, y: -300, z: 1.8, heading: 0.6, pitch: 0.09, roll: -0.12 };
 
-/** The storm's story, writing down every sound, flash and strike it makes and the weather it sets. */
+/** Saltmere as the chart takes it: a square island 100 km a side, its town on its west coast. */
+const ISLAND = {
+  outline: [
+    [0, 0],
+    [100_000, 0],
+    [100_000, 100_000],
+    [0, 100_000],
+  ],
+  plan: { centre: [0, 50_000], harbour: [-1000, 50_000] },
+  nodes: [],
+  heightAt: (x: number) => (x < 0 ? -50 : 20),
+};
+
+/** The storm's story, writing down every sound, flash and strike it makes, the weather it sets and the insert it
+ *  holds over the view. */
 function story() {
   const heard: string[] = [];
+  const insert = { shown: null as string | null };
   const brig = new Brig([RIDING.x, RIDING.y], RIDING.heading);
   const made = {
     stage: {
@@ -35,7 +50,15 @@ function story() {
           thunder: () => heard.push('thunder'),
           whoosh: () => heard.push('whoosh'),
         },
-        screen: { bars: () => undefined, flash: () => heard.push('flash') },
+        screen: {
+          bars: () => undefined,
+          flash: () => heard.push('flash'),
+          showInsert: (shown: { label: string } | null) => {
+            insert.shown = shown?.label ?? null;
+            if (shown) heard.push('chart');
+          },
+        },
+        landmass: () => ISLAND,
       },
       weatherTowards: (weather: unknown) => weather === STORM && heard.push('the storm whole'),
       stepWeather: () => undefined,
@@ -45,10 +68,10 @@ function story() {
     brig,
     lightning: { striking: false, strike: () => heard.push('strike'), step: () => ({ flash: 0, bolt: null }) },
     sailing: { frame: () => [{ place: RIDING }] },
-    places: { home: 0 },
+    places: { home: 0, storm: [-24_000, 50_000] },
     dress: null,
   };
-  return { story: made as unknown as Story, heard, lightning: made.lightning };
+  return { story: made as unknown as Story, heard, lightning: made.lightning, insert };
 }
 
 const FROM: Shot = { eye: [0, 0, 60], yaw: 0, pitch: 0.1, fov: 0.9, near: 0.3, far: 30_000 };
@@ -69,6 +92,24 @@ test('played through, the storm sounds its moments', () => {
   const dive = new StormDive(storm, FROM);
   for (let second = 0; second < 30; second++) dive.frame(tick(1));
   for (const sound of ['thunder', 'whoosh', 'flash', 'strike']) assert.ok(heard.includes(sound), sound);
+});
+
+test('the captain’s chart is held over the run as it leaps out to sea, and gone before the Brig comes close', () => {
+  const { story: storm, insert } = story();
+  const dive = new StormDive(storm, FROM);
+  const held: number[] = [];
+  for (let since = 0; since < 30; since += 0.25) {
+    dive.frame(tick(0.25));
+    if (insert.shown !== null) held.push(since);
+  }
+  assert.ok(held.length > 0, 'the chart is shown');
+  assert.equal(insert.shown, null, 'and taken away');
+  // The leap comes 7 s in; the run comes up on the Brig's quarter 9.5 s after it.
+  assert.ok(
+    Math.min(...held) >= 7 && Math.max(...held) < 7 + 9.5,
+    `held from ${Math.min(...held)} to ${Math.max(...held)}`,
+  );
+  assert.ok(Math.max(...held) - Math.min(...held) >= 4, 'long enough to look at');
 });
 
 test("the storm's run ends in the helm's own shot of it riding the swell, so the cut to the helm never jumps", () => {

@@ -12,6 +12,7 @@ code:
   - client/src/game/prologue/intro.ts#Intro
   - client/src/game/prologue/introShots.ts#islandFrame
   - client/src/game/prologue/storm.ts#StormDive
+  - client/src/game/prologue/chart.ts#chartLines
   - client/src/game/prologue/making.ts#Making
   - client/src/game/prologue/helm.ts#openingTurn
   - client/src/game/prologue/creation.ts#accountStep
@@ -135,7 +136,7 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | Beat | What happens | Played or shown |
 |---|---|---|
 | `intro` | First light over the cloud; then down through it to Saltmere, ships under sail off its harbour and gulls over it, the title, "Press any key to begin" ("Tap to begin" on a touch screen, "Press A to begin" on the pad, A being the jump's button as bound; Space begins too) | shown |
-| `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, then well out along its port side (16 m and more, past its yards and its spanker's swing), its crew at work across its deck, and in under the spanker's boom to the helm's own shot off its port side, outboard of its rail ([[The Prologue's Camera Flights Stand Clear and Go Slower]]), where it ends riding its deck as the helm's camera does (all its rise and fall at the helm, a quarter of its pitch and roll about it), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
+| `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out, and the captain's chart is held over the view as the flash fades (below); low over the swell to the Brig, then well out along its port side (16 m and more, past its yards and its spanker's swing), its crew at work across its deck, and in under the spanker's boom to the helm's own shot off its port side, outboard of its rail ([[The Prologue's Camera Flights Stand Clear and Go Slower]]), where it ends riding its deck as the helm's camera does (all its rise and fall at the helm, a quarter of its pitch and roll about it), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
 | `sighted` | From the shot the creation last drew (framed for the screen it was framed for), the camera turns from the player to look down its deck; the lookout and the bosun cry out and the mate and the gunner speak; the camera pulls out over its stern as three Grey Tithe Sloops come out of the dark, and comes down behind it through the fight's own lens | shown |
 | `battle` | The sea's own fight against the three, every ship taken up under the sail and way it was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as its own, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships fighting the player still afloat and "No need to sink them", until every one is beaten, sunk or struck; the fight's readout, its keys and DFO's messages as toasts | played |
@@ -230,6 +231,18 @@ calm and the ram keeps the hands the fight left it, its captain stood off the wh
 story begun at the calm lays each struck with its crew whole. Thule's Frigate comes with Captain Brannoc Thule at its
 wheel and six of his deck's hands about it. The stage draws them (`Stage.draw`); the Brig's own crew the story places
 itself.
+
+**The captain's chart** ([[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]])
+is held over the storm's run from half a second after the leap's flash until 5.5 s after it, before the Brig comes
+close, as a film cuts to a chart (`chart.ts`; [[Cinema]], "The screen"): parchment, Saltmere washed and its coast
+inked from its outline as the held map draws it, and beside it, faintly, the coast an older chart drew. The old line
+agrees with the coast on the town's side and falls short of it beyond: each point past the town is drawn at 0.84 of
+its way out from the town toward the island's middle, so the land runs longer than the chart
+(`OLD_CHART_SHARE`). The Brig's course is pencilled in, dashed, from a cross where the storm is to the harbour's
+anchorage. It has no words, a screen reader hears "The captain's chart", no one remarks on it, and a skip shows none.
+
+**The sighting's ships are unknown**: the bosun's cry is "Three! No lights!", the mate's "Running dark in a storm like
+this?". The Grey Tithe fly their colours ([[Lore]]); these come running dark, no lantern lit to show their flag.
 
 **The intro** ([[The Intro Goes Straight to Saltmere]]) rises at first light over the cloud above Saltmere, goes
 down into the cloud with a rush of air, the white whole for a second, and lifts on Saltmere's glide in from the sea to
