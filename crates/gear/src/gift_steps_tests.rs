@@ -176,6 +176,23 @@ fn a_cloak_taken_out_and_a_dye_worn_before_the_task_count_as_it_begins() {
 }
 
 #[test]
+fn every_gift_used_on_the_round_meets_its_step_though_the_letter_brings_a_vestige() {
+    let character = dressed_after(|character| {
+        let vestige = *character.vestiges.keys().next().expect("the Mage's Vestige");
+        assert!(character.ask(Ask::Identify { vestige }, SOCIAL, &DICE).is_ok());
+        let cloak = character.items.iter().find(|(_, (item, at))| item.kind == Kind::Cloak && *at == At::Vault);
+        let item = *cloak.expect("the Vault Keeper's cloak").0;
+        assert!(character.ask(Ask::Withdraw { item }, SOCIAL, &DICE).is_ok());
+        let cosmetic = crate::cosmetics::number_of(TAILORS_DYE).expect("a dye");
+        assert!(character.ask(Ask::WearCosmetic { cosmetic }, SOCIAL, &DICE).is_ok());
+        let letter = character.mail[0].id;
+        assert!(character.ask(Ask::TakeLetter { letter }, SOCIAL, &DICE).is_ok());
+        assert_eq!(character.vestiges.len(), 1, "the Postmaster's, sealed");
+    });
+    assert_eq!(task(&character), Some("hear-three-houses"), "no step asked again");
+}
+
+#[test]
 fn a_save_on_put_them_on_with_nothing_left_to_open_or_take_walks_on_with_those_steps_met() {
     let mut character = dressed();
     // As a save before the gifts: nothing sealed, no letter.

@@ -177,10 +177,11 @@ never on the page's word, met in any order:
 | Take your letter from the mail | `letter` | Any letter taken, one or all | The Postmaster's counter (`mail`) |
 
 A `use` goal names the counter its act is done at, and a dye none; the file is refused otherwise. A step done before
-the task begins is met as it begins and after every ask (`tell_held`): a Vestige opened while none is held, sealed,
-carried or vaulted; a letter taken while the mail is empty; a cloak held out of the vault, carried or worn; a dye worn
-other than the one every player starts in. So no step is done twice, and a save kept before the gifts, with nothing to
-open or take, is never stuck. Each step ticks in the tracker alone, as the lessons' do. The task
+the task begins is met as it begins and after every successful ask (`tell_held`): the Mage's Vestige (Magic, for the
+head) no longer held sealed, carried or vaulted; the Postmaster's letter (its Magic Vestige for the legs) no longer in
+the mail; a cloak held out of the vault, carried or worn; a dye worn other than the one every player starts in. A step
+undone since (the cloak put back, the starting dye worn again) is asked again; a save kept before the gifts, with
+nothing to open or take, is never stuck. Each step ticks in the tracker alone, as the lessons' do. The task
 pays no clear: it is done at the keepers'. A save on the round or on **Put them on** walks on into it; one on the houses
 or later is not sent back.
 

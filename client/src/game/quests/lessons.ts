@@ -23,14 +23,8 @@ const LESSON_KEYS: Readonly<Record<string, string>> = {
   'use:dye': 'character',
 };
 
-/** The kinds whose steps are a lesson's: a riding, a sailing or a gift's. */
-const LESSONS: ReadonlySet<string> = new Set(['ride', 'sail', 'use']);
-
-/** Whether a goal is a lesson's step. */
-const isLesson = (goal: Goal): boolean => LESSONS.has(goal.kind);
-
-/** The lesson's act a goal asks, `ride:gallop` and so on; none for any other goal. */
-const actOf = (goal: Goal): string | null => (isLesson(goal) && goal.act ? `${goal.kind}:${goal.act}` : null);
+/** The lesson's act a goal asks, `ride:gallop` and so on; none for a goal with no act. */
+const actOf = (goal: Goal): string | null => (goal.act ? `${goal.kind}:${goal.act}` : null);
 
 /** The keys a lesson's step is done with on `device` under `binds`, every key of each; none for any other goal. */
 export function lessonKeys(goal: Goal, device: Device, binds: Binds): string[] {
