@@ -9,7 +9,7 @@ import {
   smooth01,
   stepCamera,
 } from '../overworld/overworldCamera.ts';
-import { dragCamera, keyTurn, zoomCamera } from '../overworld/overworldInput.ts';
+import { dragCamera, keyTurn } from '../overworld/overworldInput.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
 import { type Deck, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
@@ -45,8 +45,8 @@ type Where =
 export type SeaLevel = 'oversea' | 'sealevel';
 
 /**
- * The view over the player's ship at sea: the Oversea view, DFO's raised camera turned and zoomed, or the Sealevel view
- * close on it, switched between and never by the wheel; the flight up over an island's side to choose a landing and
+ * The view over the player's ship at sea: the Oversea view, DFO's raised camera turned round it at one height, or the
+ * Sealevel view close on it, switched between and never by the wheel, which zooms neither; the flight up over an island's side to choose a landing and
  * back down; and the way down to the helm and up again.
  */
 export class SeaView {
@@ -168,12 +168,6 @@ export class SeaView {
   /** The look keys held, `seconds` on, turn and tilt the camera. */
   turn(turn: number, tilt: number, seconds: number): void {
     this.camera = keyTurn(this.camera, turn, tilt, seconds);
-  }
-
-  /** The wheel's notches, positive in, zoom the Oversea camera under `ceiling`; at sea level they do nothing, as the
-   *  wheel never changes the view. */
-  zoom(notches: number, ceiling: number): void {
-    if (this.level === 'oversea') this.camera = zoomCamera(this.camera, notches, ceiling);
   }
 
   /** `seconds` on: the ease between the two views, and the view coming down to the helm, there, or going back up. */

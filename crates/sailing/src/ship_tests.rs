@@ -405,3 +405,45 @@ fn a_bigger_hull_rides_the_swell_slower_and_still_water_holds_both_alike() {
     assert!(heave(&slow) < heave(&SLOOP), "{} {}", heave(&slow), heave(&SLOOP));
     assert_eq!(Flat.lagged(3.0, 4.0, 5.0, 9.0), Flat.at(3.0, 4.0, 5.0));
 }
+
+/// How far the water stands over a hull's waterline at worst across a storm's sea over five minutes, a ship lying in
+/// it on each heading, posed as its rules pose it: along its sides amidships and its quarters, and at its stem and
+/// stern, metres.
+fn wettest_in_a_storm(hull: &Hull) -> (f64, f64) {
+    use crate::pose::frame;
+    use crate::waters::OpenSea;
+    use land::sea::{SEED, SeaHere, Swell};
+    let swell = Swell::under(SEED, &SeaHere { wind: [14.0, -6.0], state: 1.0, open: 1.0, harbour: 0.0 });
+    let sea = OpenSea { swell: &swell };
+    let sides = [(0.0, 1.0), (0.0, -1.0), (0.5, 1.0), (0.5, -1.0), (-0.5, 1.0), (-0.5, -1.0), (0.0, 0.0)];
+    let mut worst = (f64::NEG_INFINITY, f64::NEG_INFINITY);
+    for heading in [0.0, 0.7, 1.6, 2.5, 3.3, 4.4, 5.5] {
+        let ship = Ship { x: 1_000.0, y: 2_000.0, ..at_rest(heading, 0) };
+        let (forward, starboard) = frame(heading);
+        for step in 0..3000 {
+            let time = f64::from(step) * 0.1;
+            let pose = pose_of(&ship, hull, &sea, time);
+            let wet = |(along, across): (f64, f64)| {
+                let (along, across) = (along * hull.half_length_m, across * hull.half_beam_m);
+                let x = ship.x + forward[0] * along + starboard[0] * across;
+                let y = ship.y + forward[1] * along + starboard[1] * across;
+                let water = sea.at(x, y, time).surface.unwrap_or(0.0);
+                water - (pose.heave + along * libm::sin(pose.pitch) - across * libm::sin(pose.roll))
+            };
+            worst.0 = sides.into_iter().map(wet).fold(worst.0, f64::max);
+            worst.1 = [(1.0, 0.0), (-1.0, 0.0)].into_iter().map(wet).fold(worst.1, f64::max);
+        }
+    }
+    worst
+}
+
+#[test]
+fn a_ship_rides_a_storm_on_its_crests_its_sides_and_ends_never_far_under() {
+    use crate::{BRIG, FRIGATE, SCHOONER};
+    for hull in [&SLOOP, &SCHOONER, &BRIG, &FRIGATE] {
+        // Its deck stands about its draught over its waterline, a frigate's waist a little under it.
+        let (sides, ends) = wettest_in_a_storm(hull);
+        assert!(sides < 0.8 * hull.draught_m, "{}: the sea {sides:.2} m up its sides", hull.name);
+        assert!(ends < hull.draught_m, "{}: the sea {ends:.2} m over its waterline at its stem or stern", hull.name);
+    }
+}

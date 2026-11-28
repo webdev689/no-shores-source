@@ -32,8 +32,7 @@ export const RATE = { height: 6, focus: 10 } as const;
  *  a respawn) and is taken whole; a frame's sail at the top pace, even through a second's hitch, is less. */
 export const FOLLOW = { lagM: 60, jumpM: 2_000 } as const;
 
-/** A wheel notch scales the height by this, and a dragged pixel orbits and tilts by these radians. */
-export const ZOOM_STEP = 1.18;
+/** A dragged pixel orbits and tilts by these radians. */
 export const DRAG = { orbitPerPx: 0.005, tiltPerPx: 0.004 } as const;
 
 /** The suggested vertical field of view, 65 degrees: at the lowest tilt it stands the horizon about a third of the
@@ -52,7 +51,7 @@ export interface Rig {
   readonly height: number;
 }
 
-/** The camera's state between frames: its rig, the height the player zoomed to, and the ship's last place. */
+/** The camera's state between frames: its rig, the height it rests at, and the ship's last place. */
 export interface OverworldCamera extends Rig {
   readonly heightTarget: number;
   readonly feet: Vec3;
@@ -236,12 +235,6 @@ export function initialCamera(feet: Vec3, yaw: number): OverworldCamera {
     heightTarget: HEIGHT.initial,
     feet: [feet[0], feet[1], feet[2]],
   };
-}
-
-/** A wheel's notches (positive in) as a new height target, inside the band under the ceiling. */
-export function zoomTarget(target: number, notches: number, ceiling: number): number {
-  const [lowest, highest] = heightBand(ceiling);
-  return clamp(target * ZOOM_STEP ** -notches, lowest, highest);
 }
 
 /** The camera turned by radians: its bearing by `yawChange`, its tilt by `tiltChange` (positive steeper), held to

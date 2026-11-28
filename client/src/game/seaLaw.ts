@@ -290,3 +290,15 @@ export function roomWords(room: { readonly rejoining: boolean } | null, lost: bo
   if (room) return room.rejoining ? ' · Reconnecting…' : '';
   return lost ? ' · The sea room was lost: sailing on alone' : '';
 }
+
+/** The sea's status line, ending with the room's words (`roomWords`): fighting; the room's alone (its leading dot
+ *  dropped) while the view is not over the ship; else where the voyage stands, and off the helm that its helmsman has
+ *  it while it sails on. */
+export function seaNote(
+  room: string,
+  ship: { readonly fighting: boolean; readonly overShip: boolean; readonly voyage: string; readonly helmsman: boolean },
+): string {
+  if (ship.fighting) return `Fighting${room}`;
+  if (!ship.overShip) return room.slice(3);
+  return ship.voyage + (ship.helmsman ? ' · Your helmsman has the helm' : '') + room;
+}

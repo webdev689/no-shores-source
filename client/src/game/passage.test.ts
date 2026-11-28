@@ -6,7 +6,7 @@ import { courseBytes, faceBytes } from '../network/courseMessages.ts';
 import type { SeenShip } from '../network/messages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import type { Point2 } from '../overworld/ground.ts';
-import { maskFromOutlines, type SeaMask } from '../overworld/seaRoute.ts';
+import { COURSE_POINTS, maskFromGrid, maskFromOutlines, type SeaMask } from '../overworld/seaRoute.ts';
 import { CLICK_PACE, PLANNED_PACE } from '../overworld/voyage.ts';
 import { Passage } from './passage.ts';
 import { AHEAD, HELM_TURN } from './seaHelm.ts';
@@ -279,4 +279,27 @@ test('a course into a locked sea is refused, and one in the open sea keeps out o
   assert.ok(course.ok && course.points.every(([x]) => x < 60_000), 'within the open sea');
   passage.sailTo([70_000, 10_000]);
   assert.equal(passage.sailing, false, 'nor set sail for');
+});
+
+test('a way that winds past what the sea room takes in one course is not set, and the voyage line says why', () => {
+  // A channel snaking down past seventy walls, each open at one end and the next at the other.
+  const rows = Array.from({ length: 141 }, (_unused, row) => {
+    if (row % 2 === 0) return '.'.repeat(12);
+    return (row - 1) % 4 === 0 ? `.${'#'.repeat(11)}` : `${'#'.repeat(11)}.`;
+  });
+  const heights = rows.flatMap((row) => [...row].map((cell) => (cell === '#' ? 50 : -20)));
+  const [leftM, topM] = place(0, 0);
+  const mask = maskFromGrid({ width: 12, height: rows.length, leftM, topM, cellM: 1_000, heights }, 1_000);
+  const [start, end] = [place(5_500, 500), place(5_500, 140_500)];
+  const passage = new Passage([], () => mask, start, 0);
+  const { room, asked } = fakeRoom();
+  passage.room = room;
+  const planned = passage.planTo(end);
+  assert.ok(!planned.ok && /winds too much/.test(planned.why), JSON.stringify(planned).slice(0, 120));
+  passage.sailTo(end);
+  assert.match(passage.note, /winds too much/);
+  assert.deepEqual(asked, [], 'nothing sent for the room to refuse');
+  // Half the channel is within the course, and sailed.
+  const near = passage.planTo(place(5_500, 40_500));
+  assert.ok(near.ok && near.points.length - 1 <= COURSE_POINTS.most, 'a nearer place plans');
 });
