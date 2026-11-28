@@ -31,10 +31,10 @@ export interface Scene {
 /** Screen pixels across each texel of a scene. */
 export const TEXEL = 2;
 /** Where the Playlist's four crests stand over its night, as shares of the tile: the playlists above, the week's two
- *  below them. */
+ *  below them; on the right, under the row of glyphs at the tile's head, never in it. */
 export const CREST_SPOTS: readonly Point2[] = [
   [0.22, 0.3],
-  [0.68, 0.22],
+  [0.62, 0.38],
   [0.4, 0.6],
   [0.84, 0.54],
 ];

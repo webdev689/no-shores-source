@@ -432,6 +432,34 @@ function within(laid: Laid, id: string): boolean {
   return false;
 }
 
+test("the Playlist's crests stand clear of the glyphs at its tile's head, at every size a tile is laid", () => {
+  for (const [width, height] of [
+    [1280, 720],
+    [1600, 900],
+    [1920, 1080],
+    [1024, 640],
+  ] as const) {
+    const panel = panelOf(FACTS);
+    const { ui, step } = fakeInterface(width, height);
+    const acts = { choose: () => undefined, act: () => undefined, back: () => undefined };
+    step(() => islandPanelNode(ui, panel, null, null, acts));
+    const playlist = ui.laid.find((each) => each.node.id?.endsWith('-playlist') && each.node.id.startsWith('island:'));
+    assert.ok(playlist, 'a Playlist tile');
+    const inTile = ui.laid.filter((each) => within(each, playlist.node.id ?? ''));
+    const crests = inTile.filter((each) => each.node.picture?.key.startsWith('island crest'));
+    const glyphs = inTile.filter((each) => each.node.picture?.key.startsWith('journal icon'));
+    assert.equal(crests.length, 4, `${width} by ${height}: four crests`);
+    assert.ok(glyphs.length > 0);
+    const meet = (one: Laid, other: Laid) =>
+      one.box.x < other.box.x + other.box.width &&
+      other.box.x < one.box.x + one.box.width &&
+      one.box.y < other.box.y + other.box.height &&
+      other.box.y < one.box.y + one.box.height;
+    for (const crest of crests)
+      assert.ok(!glyphs.some((glyph) => meet(crest, glyph)), `${width} by ${height}: ${crest.node.picture?.key}`);
+  }
+});
+
 test('each tile stands in a carved frame, in its tier’s tone where it is met at one, lit brighter', () => {
   const { ui } = clicked('island:island', DEPTHS[0] ?? null, { ...FACTS, gates: OPEN });
   const frames = ui.laid.filter((each) => each.node.picture?.key.startsWith('island frame') === true);
