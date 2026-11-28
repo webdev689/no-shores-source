@@ -7,6 +7,7 @@ name: figures
 # begun empty, so its move's cell is reckoned from its own layers; the hair's and the beasts' few layers draw every
 # move in one job. One job lays them all into the tables (forge_publish.py `figures`) and publishes,
 # and its log ends with the forge's manifest on one line, which a commit then takes into content/forge/renders.json.
+# A push whose request file is main's own asks for nothing: a branch that merges main in brings main's request along.
 on:
   push:
     # Never on main, where it runs only by hand: merging a branch that asked for a run must not start one there.
@@ -34,6 +35,7 @@ jobs:
     outputs:
       jobs: ${{ steps.plan.outputs.jobs }}
       layers: ${{ steps.plan.outputs.layers }}
+      skip: ${{ steps.plan.outputs.skip }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -45,8 +47,16 @@ jobs:
         env:
           ANIMS: ${{ inputs.anims }}
           LAYERS: ${{ inputs.layers }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = push ]; then
+            main=$(gh api "repos/$GITHUB_REPOSITORY/contents/tools/forge/figures-request.txt?ref=main" \
+              -H 'Accept: application/vnd.github.raw') || main=''
+            if [ "$main" = "$(cat tools/forge/figures-request.txt)" ]; then
+              echo "::notice::the request file is main's own, brought in by a merge: nothing is drawn"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             ANIMS=$(sed -n 1p tools/forge/figures-request.txt); LAYERS=$(sed -n 2p tools/forge/figures-request.txt)
           fi
           [[ "$LAYERS" =~ ^[a-z0-9_,]*$ ]] || { echo "::error::layers by their names, comma-separated"; exit 1; }
@@ -57,6 +67,7 @@ jobs:
   # and a set's layers in one move both bodies' are a few thousand frames, so a job has the hosted runner's most.
   render:
     needs: plan
+    if: needs.plan.outputs.skip != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 360
     strategy:
