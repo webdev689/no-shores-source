@@ -415,11 +415,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]
 - [[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]
 - [[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]
-- [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
-- [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
-- [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
 - [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]
 - [[The Saltgrass Downs Plays as Destiny 2's EDZ, Its Three Landing Zones Spread Across It]]
+- [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
 
 ## Claude's calls
 
@@ -452,6 +450,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[The Playlist and Its Dungeons as Claude Shapes Them]]
 - [[Set Names and Faction Perks as Claude Drafts Them]]
 - [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]]
+- [[The Saltgrass Fold-In as Claude Builds It]]
 - [[The Downs' Landing Zones as Claude Builds Them]]
 - [[The Saltgrass Downs' Design Pass as Claude Builds It]]
 - [[Guilds and Outposts as Claude Shapes Them]]
@@ -470,7 +469,8 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]
 - [[Lights as Claude Builds Them]]
 - [[Island Textures as Claude Builds Them]]
-- [[The Saltgrass Fold-In as Claude Builds It]]
+- [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
+- [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
 
 ## Replaced
 

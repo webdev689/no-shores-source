@@ -146,6 +146,9 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
+  and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
+  the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
 - **The Saltgrass fold-in** (#265; [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]],
   [[The Saltgrass Fold-In as Claude Builds It]]). Built and tested offline, the Downs never seen in a running game;
   the pull request says what changed. Not yet seen: the great wall's new canyon between the Old Beacon and the
@@ -165,9 +168,6 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   - Unchecked: whether a Sunday Elite clear of the Downs' first dungeon keeps the day's Vestige as its item (a test
     saw none laid or kept there, its record marked; every other day's clear paid one).
   - The garrison pace figures in `gear::band` were measured on the three zones before the cut.
-- **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
-  and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
-  the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
 - **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
   browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
   2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
