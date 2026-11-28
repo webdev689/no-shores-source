@@ -86,10 +86,10 @@ test("a Weighing's plates stand as raised slabs of its room's stone, and a Litan
     'raised to its height',
   );
   const runes = plates(SEAL_KIND.litany);
-  assert.ok(runes.length > 0, "a rune's slab is set in the floor");
+  assert.ok(runes.length > 0, "a rune's iron ring is set in the floor");
   assert.ok(
     runes.every((height) => (height ?? 1) < 0.01),
-    'flush with it: its mark lights it',
+    'flush with it, round its mark',
   );
 });
 
@@ -108,24 +108,33 @@ function cornersOf(seal: object, ceilings?: readonly number[]) {
   );
 }
 
-test("each seal's room is a rite: a circle inlaid round its pieces in its trim, spokes to each, only in its room", () => {
+test('each rune and plate is ringed in iron inlaid just outside its mark, spoked to a hub, only in its room', () => {
   const pieces = [
-    [1.2, 1.6, 0],
-    [5.2, 1.6, 0],
+    [1.4, 1.6, 0],
+    [5, 1.6, 0],
   ] as const;
-  for (const kind of [SEAL_KIND.litany, SEAL_KIND.weighing]) {
+  const { rune } = layout.encounters!.reach;
+  for (const [kind, mark] of [
+    [SEAL_KIND.litany, rune],
+    [SEAL_KIND.weighing, PLATE.half],
+  ] as const) {
     const corners = cornersOf({ kind, room: 0, pieces, pads: [], drowned: [], doors: [] });
-    const flush = corners.filter((corner) => corner.z < 0.01);
+    const iron = corners.filter((corner) => corner.archive === IRON[0]);
+    assert.ok(iron.length > 0 && iron.every((corner) => corner.z < 0.01), 'iron, flush with the floor');
     assert.ok(
-      flush.some((corner) => corner.record === ROLE.trim && corner.archive === 123),
-      'its circle in its trim',
-    );
-    assert.ok(
-      flush.every((corner) => corner.x >= 0 && corner.x <= 6.4 && corner.y >= 0 && corner.y <= 3.2),
+      iron.every((corner) => corner.x >= 0 && corner.x <= 6.4 && corner.y >= 0 && corner.y <= 3.2),
       'inlaid in its room alone, never past its walls',
     );
-    const iron = flush.filter((corner) => corner.archive === IRON[0]);
-    assert.equal(iron.length > 0, kind === SEAL_KIND.weighing, "a Weighing's balance arms alone are iron");
+    // Round each piece, nothing of the rite inside its mark, where the mark is read.
+    for (const [x, y] of pieces)
+      assert.ok(
+        iron.every((corner) => Math.hypot(corner.x - x, corner.y - y) > mark),
+        'clear of the mark',
+      );
+    assert.ok(
+      iron.some((corner) => Math.abs(Math.hypot(corner.x - 1.4, corner.y - 1.6) - (mark + 0.3)) < 0.1),
+      'a ring just outside it',
+    );
   }
 });
 
@@ -136,13 +145,16 @@ test("an Ascent's pads take iron rungs up their sides, and a Holdfast's relic ha
   // Each rung within a hand of its pad's sides, none on the 0.4 m pad, too low for one.
   assert.ok(rungs.every((corner) => corner.x >= 3.96 && corner.x <= 5.64 && corner.z <= 0.8));
   const relic = { kind: SEAL_KIND.holdfast, room: 0, pieces: [[1.6, 1.6, 0]], pads: [], drowned: [], doors: [] };
-  const chains = cornersOf(relic, [4.4, 4.4]).filter((corner) => corner.archive === IRON[0]);
+  // The iron hung over the floor: the ring inlaid round it lies flush.
+  const hung = (ceilings: readonly number[]) =>
+    cornersOf(relic, ceilings).filter((corner) => corner.archive === IRON[0] && corner.z > 0.1);
+  const chains = hung([4.4, 4.4]);
   assert.ok(chains.length > 0, 'chained');
   assert.ok(
     chains.every((corner) => corner.z >= 2.6 - 1e-5 && corner.z <= 4.4 + 1e-5),
     'from the relic up to the ceiling, over every head',
   );
-  assert.equal(cornersOf(relic, [2.4, 2.4]).filter((corner) => corner.archive === IRON[0]).length, 0, 'none under it');
+  assert.equal(hung([2.4, 2.4]).length, 0, 'none under it');
 });
 
 test("a plate is all of its room's trim, never the floor's own picture, so it stands apart from the floor", () => {
@@ -154,10 +166,10 @@ test("a plate is all of its room's trim, never the floor's own picture, so it st
     drowned: [],
     doors: [],
   };
-  const mesh = meshBuilder();
-  layEncounters(mesh, { ...layout, encounters: { ...layout.encounters!, seals: [seal], anchors: [] } });
-  const records = new Set(mesh.model().parts.map((part) => part.record));
-  assert.deepEqual([...records], [ROLE.trim]);
+  // Its raised slab, apart from the iron ring inlaid round it.
+  const raised = cornersOf(seal).filter((corner) => corner.archive !== IRON[0]);
+  assert.ok(raised.length > 0);
+  assert.deepEqual([...new Set(raised.map((corner) => corner.record))], [ROLE.trim]);
 });
 
 test("each of the Court's anchors stands on a stepped slab of the end room's trim, raised to be seen across the room", () => {

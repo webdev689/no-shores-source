@@ -1,15 +1,22 @@
 // An Elite Dungeon's encounters as stone and water: each Ascent's pads in its room's own dressed stone, a band of trim
 // round each top, iron rungs up their sides and the seal stone glowing on the last; each Weighing's plates as raised
-// slabs of its room's trim, iron lines inlaid between them as a balance's arms; each Litany's runes as slabs of trim
-// set in the floor; each Holdfast's relic a crystal hung on chains from the ceiling; and round every seal's pieces a
-// ritual circle inlaid in the floor, spokes running out to each. A slab under each of the Court's anchors; and, while an
+// slabs of its room's trim; each Holdfast's relic a crystal hung on chains from the ceiling; and round each rune, plate
+// and relic a ring of iron inlaid in the floor just outside its mark, a Litany's and a Weighing's joined by iron spokes
+// to a hub amid them. A slab under each of the Court's anchors; and, while an
 // Ascent's seal holds, foul water over its drowned floor, tinted apart from the dungeon's plain still water as the floor
 // that harms. All drawn only: nothing a body meets but the pads, the blocks the room's bodies climb, laid where the room
 // lays them (`room_dungeon`).
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { type EncounterSeen, SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
 import { cellAt } from './dungeonCells.ts';
-import { type DungeonLayout, floorOf, planeOf, type SealLayout, storeyOf } from './dungeonLayout.ts';
+import {
+  type DungeonLayout,
+  type EncounterLayout,
+  floorOf,
+  planeOf,
+  type SealLayout,
+  storeyOf,
+} from './dungeonLayout.ts';
 import { box, COLOUR, face, IRON, lookOf, ROLE } from './dungeonMesh.ts';
 
 /** A pad's trim band under its top, the seal stone's inset and height over the last pad, an anchor's slab, and the
@@ -24,11 +31,11 @@ const RELIC = { half: 0.18, low: 1.9, high: 2.6 } as const;
 /** How far over the floor the drowned floor's water lies (m): over the floor's own face, under a body's step. */
 const WATER_M = 0.04;
 
-/** A seal room's rite: its circle's band inlaid just over the floor, how far past its farthest piece it runs and in
- *  how many pieces, a spoke's width and how far short of a piece it stops, a Litany's rune slab's half; an Ascent's
- *  rungs, one every so high from the first, their thickness and how far proud of the pad; and a Holdfast's chains'
- *  links (m). */
-const RITE = { inlay: 0.008, band: 0.1, beyond: 0.9, segments: 32, spoke: 0.06, short: 0.85, rune: 0.55 } as const;
+/** A seal room's rite, inlaid in iron just over the floor: each ring's band and how far outside its piece's own mark it
+ *  lies, the pieces it is cut into, a spoke's width and how far short of a ring it stops, and the hub's radius; an
+ *  Ascent's rungs, one every so high from the first, their thickness and how far proud of the pad; and a Holdfast's
+ *  chains' links (m). */
+const RITE = { inlay: 0.008, band: 0.16, outside: 0.22, segments: 24, spoke: 0.1, hub: 0.35 } as const;
 const RUNG = { every: 0.35, first: 0.3, thick: 0.035, proud: 0.03 } as const;
 const LINK = { long: 0.09, wide: 0.05, apart: 0.14 } as const;
 
@@ -73,7 +80,7 @@ export function layEncounters(mesh: MeshBuilder, layout: DungeonLayout): void {
       );
     }
   }
-  for (const seal of plan.seals) rite(mesh, layout, seal, plan.reach.relic);
+  for (const seal of plan.seals) rite(mesh, layout, seal, plan.reach);
   const end = setOf(layout, layout.end);
   for (const [x, y] of plan.anchors) {
     const [low, high, height] = [ANCHOR_SLAB.half, ANCHOR_SLAB.half - ANCHOR_SLAB.rim, ANCHOR_SLAB.height];
@@ -104,41 +111,37 @@ function inlaid(
   face(mesh, picture, corners, [0, 0, 1], RITE.inlay);
 }
 
-/** A seal room's rite: a circle inlaid round its pieces (round its relic at the ring the company holds), a spoke out
- *  to each piece, and what its kind wears besides: a Litany's rune slabs, a Weighing's iron balance arms, an Ascent's
- *  rungs and a Holdfast's chains. Only what lies in the seal's room is inlaid. */
-function rite(mesh: MeshBuilder, layout: DungeonLayout, seal: SealLayout, relicReach: number): void {
-  const trim: Picture = [setOf(layout, seal.room), ROLE.trim];
-  const points =
-    seal.kind === SEAL_KIND.ascent
-      ? seal.pads.map(([minX, minY, maxX, maxY]) => [(minX + maxX) / 2, (minY + maxY) / 2] as const)
-      : seal.pieces.map(([x, y]) => [x, y] as const);
-  if (points.length === 0) return;
-  const centreX = points.reduce((sum, [x]) => sum + x, 0) / points.length;
-  const centreY = points.reduce((sum, [, y]) => sum + y, 0) / points.length;
-  const farthest = Math.max(...points.map(([x, y]) => Math.hypot(x - centreX, y - centreY)));
-  const radius = (seal.kind === SEAL_KIND.holdfast ? relicReach : farthest + RITE.beyond) + RITE.band / 2;
-  const round = (nth: number) => {
-    const turn = (nth / RITE.segments) * Math.PI * 2;
-    return [centreX + Math.cos(turn) * radius, centreY + Math.sin(turn) * radius];
+/** A seal room's rite, in iron inlaid in its floor where it lies in the seal's room: a ring round each rune and plate
+ *  just outside its mark (round the relic, outside the ring its company holds), and from a hub amid them a spoke out to
+ *  each; an Ascent's pads take rungs, and a Holdfast's relic hangs on chains. */
+function rite(mesh: MeshBuilder, layout: DungeonLayout, seal: SealLayout, reach: EncounterLayout['reach']): void {
+  const iron: readonly [number, Picture] = [seal.room, IRON];
+  const ring = ([x, y]: readonly number[], radius: number) => {
+    const point = (nth: number) => {
+      const turn = (nth / RITE.segments) * Math.PI * 2;
+      return [(x ?? 0) + Math.cos(turn) * radius, (y ?? 0) + Math.sin(turn) * radius];
+    };
+    for (let piece = 0; piece < RITE.segments; piece++)
+      inlaid(mesh, layout, iron, point(piece), point(piece + 1), RITE.band);
   };
-  for (let piece = 0; piece < RITE.segments; piece++)
-    inlaid(mesh, layout, [seal.room, trim], round(piece), round(piece + 1), RITE.band);
-  // A Weighing's spokes are iron, a balance's arms between its plates; the rest the room's trim.
-  const spoke: Picture = seal.kind === SEAL_KIND.weighing ? IRON : trim;
-  for (const [x, y] of points) {
-    const away = Math.hypot(x - centreX, y - centreY);
-    if (away < RITE.short + 0.2) continue;
-    const along = (out: number) => [centreX + ((x - centreX) / away) * out, centreY + ((y - centreY) / away) * out];
-    inlaid(mesh, layout, [seal.room, spoke], along(0.3), along(away - RITE.short), RITE.spoke);
-  }
-  // A Litany's runes each a slab of trim set in the floor, which its mark lights.
-  if (seal.kind === SEAL_KIND.litany)
-    for (const [x, y] of points)
-      inlaid(mesh, layout, [seal.room, trim], [x - RITE.rune, y], [x + RITE.rune, y], RITE.rune * 2);
-  if (seal.kind === SEAL_KIND.ascent) for (const pad of seal.pads) rungs(mesh, pad);
   const [relic] = seal.pieces;
-  if (seal.kind === SEAL_KIND.holdfast && relic) chains(mesh, layout, relic);
+  if (seal.kind === SEAL_KIND.holdfast && relic) {
+    ring(relic, reach.relic + RITE.outside + RITE.band / 2);
+    chains(mesh, layout, relic);
+  }
+  if (seal.kind === SEAL_KIND.ascent) for (const pad of seal.pads) rungs(mesh, pad);
+  if (seal.kind !== SEAL_KIND.litany && seal.kind !== SEAL_KIND.weighing) return;
+  const own = (seal.kind === SEAL_KIND.litany ? reach.rune : PLATE.half) + RITE.outside + RITE.band / 2;
+  const hubX = seal.pieces.reduce((sum, [x]) => sum + x, 0) / seal.pieces.length;
+  const hubY = seal.pieces.reduce((sum, [, y]) => sum + y, 0) / seal.pieces.length;
+  ring([hubX, hubY], RITE.hub);
+  for (const [x, y] of seal.pieces) {
+    ring([x, y], own);
+    const away = Math.hypot(x - hubX, y - hubY);
+    if (away < own + RITE.hub) continue;
+    const along = (out: number) => [hubX + ((x - hubX) / away) * out, hubY + ((y - hubY) / away) * out];
+    inlaid(mesh, layout, iron, along(RITE.hub), along(away - own), RITE.spoke);
+  }
 }
 
 /** Iron rungs up each side of a pad, one every RUNG.every from RUNG.first to under its top. */
