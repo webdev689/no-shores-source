@@ -10,6 +10,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
+- [[Bosses in the World Fight Inside a Ring Like DFO's Ghostfence]]
 - [[The Holdfast Stands Only in a Larger Room, With a Larger Ring and Fewer Elites]]
 - [[Other Players' Weapons Glow in Their Element]]
 - [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]
@@ -425,6 +426,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 Claude's choices where the owner handed a system over ("take some autonomy"), each the owner's to change. They
 are not decisions: each links the owner's decision it builds on, and is typed `claude-calls`.
 
+- [[Boss Rings as Claude Builds Them]]
 - [[The World as Claude Shapes It]]
 - [[The Enemies as Claude Builds Them]]
 - [[Gear as Claude Shapes It]]
