@@ -170,7 +170,7 @@ function glyphsNode(entry: IslandEntry): Node {
 function nameRow(entry: IslandEntry): Node {
   const name = said(entry.name, { size: 2, colour: entry.shut === null ? BRASS : DIM });
   if (entry.tier === undefined) return name;
-  return { width: 'grow', gap: 8, alignY: 'center', wrap: true, children: [name, skullsNode(entry.tier, 12)] };
+  return { width: 'grow', gap: 8, alignY: 'center', wrap: true, children: [name, skullsNode(entry.tier, 24)] };
 }
 
 /** The tile's card, beside the lit tile: its name, its kind and levels, each glyph with what it means, why it is shut
