@@ -22,11 +22,18 @@ The owner's answers to the questions on the Downs' design pass, its enemies, and
 >
 > Asked how the Downs' enemies should stand: camps at places that stand again a while after they fall, patrols
 > walking the ways between the places, or both: "Both"
+>
+> Asked whether Shingle Landing, where players come ashore, should be the middle one of the three landing zones:
+> "Yes, Shingle Landing (Recommended)"
+>
+> Asked what a player should see standing at one of the Downs' landing zones: a landing lantern, a beacon fire (a
+> stone fire basket burning on a low cairn), or a moored skiff: "A beacon fire"
 
 ## What it settles
 
 - **The Downs' three landing zones stand spread across it**: one in the north, one in the middle, one in the south,
-  so any part of the Downs is a short walk from one.
+  so any part of the Downs is a short walk from one. Shingle Landing, where players come ashore, is the middle one.
+- **Each landing zone is marked by a beacon fire**: a stone fire basket burning on a low cairn.
 - **Fast travel between them is Destiny 2's**: a short fade from the map, then the player stands at the landing zone.
 - **The Downs' design pass plays like Destiny 2's EDZ**: public events, hidden lost sectors, and patrol tasks picked up
   in the field.
