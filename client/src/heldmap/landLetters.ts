@@ -8,7 +8,7 @@ import type { Point2 } from '../overworld/ground.ts';
 import type { Rect, View } from './heldMapLaw.ts';
 import { GLYPH_HALF, paintGlyph } from './landGlyphs.ts';
 import type { GroundKind, LandSheet, MapMarks, Quad } from './landSheet.ts';
-import { barOf, paintTable, tablePlace, tableRows, tableSize } from './landTable.ts';
+import { barOf, CASING, FOOTPATH, paintTable, STANDING, tablePlace, TRACK, tableRows, tableSize } from './landTable.ts';
 import { FACE, INK, type KeyPlace } from './mapKey.ts';
 import { PORT_PX } from './mapLayout.ts';
 import { LIGHT_INK, paintArrow, paintDot, type Painter, ROUTE, word } from './mapLetters.ts';
@@ -30,8 +30,9 @@ export interface LandPainting {
   readonly legend?: boolean;
 }
 
-/** The washes and inks of the land, as a surveyor colours a plan: the sea, each ground, the walks, what stands and
- *  its shadow, the tracks' casing and their way, the footpaths, the relief and its index lines, the trees. */
+/** The washes and inks of the land, as a surveyor colours a plan: the sea, each ground, the walks, the shadow of what
+ *  stands, the relief and its index lines, the trees; what stands, the tracks and footpaths are inked as the table's
+ *  samples of them are (landTable.ts). */
 const SEA = 'rgba(96, 128, 140, 0.24)';
 const GROUNDS: Readonly<Record<GroundKind, string>> = {
   paving: 'rgba(58, 40, 22, 0.07)',
@@ -40,11 +41,7 @@ const GROUNDS: Readonly<Record<GroundKind, string>> = {
   water: 'rgba(80, 122, 142, 0.38)',
 };
 const WALK = 'rgba(92, 70, 49, 0.26)';
-const STANDING = 'rgba(58, 40, 22, 0.78)';
 const SHADOW = 'rgba(58, 40, 22, 0.22)';
-const CASING = 'rgba(58, 40, 22, 0.6)';
-const TRACK = 'rgb(226, 206, 164)';
-const FOOTPATH = 'rgba(92, 70, 49, 0.6)';
 const RELIEF = 'rgba(92, 70, 49, 0.28)';
 const INDEX = 'rgba(92, 70, 49, 0.5)';
 const TREE = 'rgba(84, 112, 56, 0.6)';

@@ -272,8 +272,9 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     never painted again for them, and the gauntlets cover them as they cover the coin.
   - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
     (keeping its corner while it can), the names then laid again clear of it: the land's name at its head; then each
-    glyph the land holds, once, beside what it is ("The Mage", "Public event"), in columns of at most seven, and the
-    player's arrow, "You", then "Your company" and "Other players" while the map shows one; under them a bar
+    glyph the land holds, once, beside what it is ("The Mage", "Public event"), in columns of at most seven; each line
+    the sheet draws, a sample of it beside its word ("Track", cased; "Path", dashed; "Walls and buildings", solid), a
+    faint or inked one (a passage web's) keyed by none; the player's arrow, "You", then "Your company" and "Other players" while the map shows one; under them a bar
     of the ground's length at the map's zoom ("25 m").
   - **Other land** (an island's): its ground, edge and landing.
 

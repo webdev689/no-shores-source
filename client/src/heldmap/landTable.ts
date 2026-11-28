@@ -1,18 +1,26 @@
 // The land map's table: one framed panel, as the sea's key is (mapKey.ts), headed by the land's name, guiding the
-// player through what is what: each glyph on the sheet beside what it is, the player's own arrow, and a bar of the
-// ground's length at the map's zoom.
+// player through what is what: each glyph on the sheet beside what it is, each kind of line it draws, the player's
+// own arrow, and a bar of the ground's length at the map's zoom.
 import type { Rect, View } from './heldMapLaw.ts';
 import { GLYPH_HALF, GLYPHS, type LandGlyph, paintGlyph } from './landGlyphs.ts';
 import type { LandSheet, MapMarks } from './landSheet.ts';
 import { FACE, INK, KEY_FONT, keyCorners, type KeyPlace } from './mapKey.ts';
 import { paintArrow, paintDot, type Painter } from './mapLetters.ts';
 
-/** A row of the table: a glyph, the player's arrow or another player's dot (a company's green, else blue), and what
- *  it is. */
+/** A row of the table: a glyph, a line the sheet draws (a track, a footpath, what stands), the player's arrow or
+ *  another player's dot (a company's green, else blue), and what it is. */
 export interface TableRow {
-  readonly glyph: LandGlyph | 'you' | 'company' | 'player';
+  readonly glyph: LandGlyph | Line | 'you' | 'company' | 'player';
   readonly word: string;
 }
+type Line = 'track' | 'footpath' | 'standing';
+
+/** The inks of the lines the sheet draws (landLetters.ts), and the table's sample of each: a track's casing and its
+ *  way, a footpath, and what stands. */
+export const CASING = 'rgba(58, 40, 22, 0.6)';
+export const TRACK = 'rgb(226, 206, 164)';
+export const FOOTPATH = 'rgba(92, 70, 49, 0.6)';
+export const STANDING = 'rgba(58, 40, 22, 0.78)';
 
 const PANEL = 'rgba(238, 222, 190, 0.94)';
 const HEAD_FONT = `500 15px ${FACE}`;
@@ -23,18 +31,27 @@ const ROWS_A_COLUMN = 7;
 /** The lengths the bar may stand for, metres. */
 const BAR_LENGTHS = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000];
 
-/** The table's rows: each glyph the sheet holds, once, in `GLYPHS`' order, with what its first mark is called; then
- *  the player's arrow. */
-export function tableRows(sheet: Pick<LandSheet, 'marks'>, others: MapMarks['others'] = []): TableRow[] {
+/** The table's rows: each glyph the sheet holds, once, in `GLYPHS`' order, with what its first mark is called; each
+ *  kind of line it draws; then the player's arrow. */
+export function tableRows(
+  sheet: Pick<LandSheet, 'marks'> & Partial<Pick<LandSheet, 'paths' | 'standing'>>,
+  others: MapMarks['others'] = [],
+): TableRow[] {
   const rows = GLYPHS.flatMap((glyph): TableRow[] => {
     const mark = sheet.marks.find((each) => each.glyph === glyph);
     return mark ? [{ glyph, word: mark.word }] : [];
   });
+  const drawn = (sheet.paths ?? []).filter((path) => !path.faint && !path.inked);
+  const lines: TableRow[] = [
+    ...(drawn.some((path) => path.track) ? [{ glyph: 'track' as const, word: 'Track' }] : []),
+    ...(drawn.some((path) => !path.track) ? [{ glyph: 'footpath' as const, word: 'Path' }] : []),
+    ...(sheet.standing?.length ? [{ glyph: 'standing' as const, word: 'Walls and buildings' }] : []),
+  ];
   const dots: TableRow[] = [
     ...(others.some((other) => other.company) ? [{ glyph: 'company' as const, word: 'Your company' }] : []),
     ...(others.some((other) => !other.company) ? [{ glyph: 'player' as const, word: 'Other players' }] : []),
   ];
-  return [...rows, { glyph: 'you', word: 'You' }, ...dots];
+  return [...rows, ...lines, { glyph: 'you', word: 'You' }, ...dots];
 }
 
 /** The rows in each column: `ROWS_A_COLUMN` at most to a column, the columns as even as they can be. */
@@ -138,6 +155,8 @@ export function paintTable(
         painter.scale(0.75, 0.75);
         paintArrow(painter, 0);
       } else if (row.glyph === 'company' || row.glyph === 'player') paintDot(painter, row.glyph === 'company');
+      else if (row.glyph === 'track' || row.glyph === 'footpath' || row.glyph === 'standing')
+        paintLine(painter, row.glyph);
       else paintGlyph(painter, row.glyph);
       painter.restore();
       painter.fillStyle = INK;
@@ -149,6 +168,29 @@ export function paintTable(
   }
   paintBar(painter, TABLE.padding, height - TABLE.padding - TABLE.bar / 2, ask.bar);
   painter.restore();
+}
+
+/** A sample of a line the sheet draws, a glyph's width across its middle, as the sheet draws it. */
+function paintLine(painter: Painter, line: Line): void {
+  const stroke = (ink: string, width: number) => {
+    painter.beginPath();
+    painter.moveTo(-GLYPH_HALF, 0);
+    painter.lineTo(GLYPH_HALF, 0);
+    painter.strokeStyle = ink;
+    painter.lineWidth = width;
+    painter.stroke();
+  };
+  if (line === 'track') {
+    stroke(CASING, 5.4);
+    stroke(TRACK, 4);
+  } else if (line === 'footpath') {
+    painter.setLineDash([3, 2]);
+    stroke(FOOTPATH, 1.6);
+    painter.setLineDash([]);
+  } else {
+    painter.fillStyle = STANDING;
+    painter.fillRect(-GLYPH_HALF, -2, 2 * GLYPH_HALF, 4);
+  }
 }
 
 /** The bar from `x`, its middle at `y`: a rule in two halves, filled and open, its length in metres after it. */
