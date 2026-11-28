@@ -159,8 +159,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
     are not yet seen in a running game, nor a fast travel in a deployed room.
   - The design pass, built on #265 under the owner's grant of autonomy
     ([[The Saltgrass Downs' Design Pass as Claude Builds It]]), tested offline only: camps standing again around
-    players, six dungeons a patrol zone, patrols walking the Downs' ways (left unmarked on the held map). Not yet
-    seen: the patrols on the roads, six entrances' places, a camp standing again round a player.
+    players, six dungeons a patrol zone, patrols walking the Downs' ways (left unmarked on the held map), and the
+    held map's table keying its lines ("Track", "Path", "Walls and buildings"; pictured headless on the Downs). Not
+    yet seen: the patrols on the roads, six entrances' places, a camp standing again round a player.
+  - #265 merges with `main` cleanly but does not take it in: `main` holds #259's wreck tools, so a merge pushed from
+    this branch would start the wreck's publishing run. CI runs on the merge as GitHub makes it; the full check
+    passed locally on that merge. Its two dungeon navmesh fixes (a path riding a slab to its edge, a gap a body fits
+    kept open, `dungeon_gaps.rs`) sit below #256's trim and do nothing without it. Lion-grasslands' dungeon 3 reaches
+    0.981 of the floor beside its solids, just over the 0.98 bar: a prop-to-wall gap of 0.7 to 0.95 m stays shut.
   - `tools/modules/breach_gate.py` and `catalogue.py` still say the gate is the Vale's: their next edit sets off the
     modules workflow's bake, so it waits for a modules change.
   - Gates still stand where no way may reach them (`areas::needs_a_way` leaves them out, as they sit at the claim's
