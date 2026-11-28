@@ -44,10 +44,10 @@ pub(crate) struct Beat {
 /// The navmesh's point nearest (x, y), where a foe of a group keeps its place round `from`, its leader's point or its
 /// gathering's middle: on the ground's level under `from`, else on `from`'s, so beside a leader on a ledge or a ramp
 /// with no ground near it stands on that; `from` itself only where the mesh has neither, so it never shares its
-/// leader's point while the mesh holds one.
+/// leader's point while the mesh holds one. A dungeon's is moved a body's radius clear of its rock and solids.
 pub(crate) fn near_on((nav, floor): (&NavMesh, &Floor), from: [f64; 3], (x, y): (f64, f64)) -> [f64; 3] {
     let on = |z: f64| nav.nearest_point([x, y, z]);
-    on(floor.height_under(x, y, from[2])).or_else(|| on(from[2])).unwrap_or(from)
+    on(floor.height_under(x, y, from[2])).or_else(|| on(from[2])).map_or(from, |near| floor.standing_clear(near))
 }
 
 /// The navmesh's way from one point to another, if every metre of it keeps inside the section, SPREAD inside its edge,

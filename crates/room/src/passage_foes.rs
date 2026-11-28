@@ -455,6 +455,7 @@ impl Room {
             mesh.nearest_point(point)
         });
         let place = if on_floor(&place) { place } else { off_edge.find(on_floor).unwrap_or(place) };
+        let place = self.floor.standing_clear(place);
         let id = self.stand_foe(::foes::foe_type(number)?, rank, place, facing, None);
         let (level, shield) =
             crate::garrison::gird_of(self.world_seed ^ BAND_STREAM ^ 2, nth, Some(levels), self.shield_chance());

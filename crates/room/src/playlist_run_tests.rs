@@ -43,7 +43,7 @@ fn a_playlist_run_opens_at_one_of_its_bands_levels_alone_with_the_days_modifiers
     let mut encounters = elite.encounters.take().expect("encounters");
     let spot = encounters.plan.seals[0].doors.first().copied().expect("a doorway");
     let before: Vec<_> = elite.foes.keys().copied().collect();
-    elite.stand_seal_wave(&mut encounters, Some(0), &[spot], 1);
+    elite.stand_seal_wave(&mut encounters, crate::encounters::WaveOf::Seal(0), &[spot], 1);
     let stood: Vec<_> = elite.foes.iter().filter(|(id, _)| !before.contains(id)).map(|(_, foe)| foe.level).collect();
     assert!(!stood.is_empty() && stood.iter().all(|level| *level == 17), "a wave at the band's level: {stood:?}");
     let abyss = playlist_run("brine-catacombs", Difficulty::Abyss, 32).expect("an Abyss Playlist run");

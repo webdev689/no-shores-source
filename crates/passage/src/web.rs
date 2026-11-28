@@ -72,6 +72,20 @@ fn size_of(depth: u8, least: Size, draws: &mut Draws) -> Size {
     weighted(&weights, draws).max(least)
 }
 
+/// A zone's ground once its deal is drawn: a Hold's ring wants a great room under ground (`under::ring_clear`), which
+/// the cells never lay, so a Hold drawn in them is laid in the next of its depth's styles that does.
+fn held_ground(ground: Ground, deal: Deal, leg: &[&str]) -> Ground {
+    let rings = |key: &str| dungeon::style_of(key).is_some_and(|style| style.lays_great_rooms());
+    match ground {
+        Ground::Under { style } if deal == Deal::Mission(Mission::Hold) && !rings(&style) => {
+            let at = leg.iter().position(|key| *key == style).unwrap_or(0);
+            let next = leg.iter().cycle().skip(at + 1).take(leg.len()).find(|key| rings(key));
+            Ground::Under { style: next.map_or(style, |key| (*key).to_owned()) }
+        }
+        ground => ground,
+    }
+}
+
 /// A deal for a zone that holds no lamp: a vault only under ground, a mission in its place above.
 fn deal_of(under: bool, draws: &mut Draws) -> Deal {
     let mission = |draws: &mut Draws| Deal::Mission(*draws.pick(&Mission::ALL).unwrap_or(&Mission::Hold));
@@ -140,8 +154,8 @@ impl Web {
         let across = (lane as f64 - (width as f64 - 1.0) / 2.0) * LANE_M;
         // Across the spine is the way turned a quarter: x east, y south.
         let at = [spine_at[0] - way[1] * across, spine_at[1] + way[0] * across];
+        let leg = STYLES[usize::from((depth - 1) / 5).min(STYLES.len() - 1)];
         let ground = if draws.unit() < UNDER_SHARE {
-            let leg = STYLES[usize::from((depth - 1) / 5).min(STYLES.len() - 1)];
             // A lamp's zone is laid only in a style with rooms tall enough to stand the lamp in.
             let fits =
                 |key: &&&str| !lamp || dungeon::style_of(key).is_some_and(|style| style.heights.1 >= LAMP_CEILING_M);
@@ -152,6 +166,7 @@ impl Web {
         };
         let under = matches!(ground, Ground::Under { .. });
         let deal = if lamp { Deal::Lamp } else { deal_of(under, &mut draws) };
+        let ground = held_ground(ground, deal, leg);
         let least = if lamp || deal == Deal::Vault { Size::Medium } else { Size::Small };
         let size = size_of(depth, least, &mut draws);
         let currents = Current::draw(depth, deal, modifiers, &mut draws);
