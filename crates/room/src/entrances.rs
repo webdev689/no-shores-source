@@ -24,7 +24,7 @@ const LEVEL_WITHIN_M: f64 = 3.0;
 /// building, a wall or a rock's part, with room before its door to come out on (m).
 const CLEAR_OF_BOXES_M: f64 = 8.0;
 /// How many places are tried for a patrol's entrances.
-const TRIES: u32 = 400;
+const TRIES: u32 = 2000;
 /// How far before its door a player joins at an entrance (m).
 pub const BEFORE_DOOR_M: f64 = 1.5;
 

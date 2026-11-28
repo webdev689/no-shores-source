@@ -147,6 +147,13 @@ impl Room {
             let mesh = self.mesh_index(at);
             let mut lattice = open_points(&section, (at[0], at[1]));
             lattice.retain(|point| self.mesh_index([point.0, point.1]) == mesh);
+            // A site on a way is a patrol of the way: its beat runs along the way, over the lattice's points on it.
+            let on_way = |point: [f64; 2], reach: f64| {
+                self.quests.paths.iter().any(|path| path.windows(2).any(|pair| off_segment(point, pair) <= reach))
+            };
+            if on_way(at, WAY_SITE_M) {
+                lattice.retain(|point| on_way([point.0, point.1], ON_WAY_M));
+            }
             let mut beats = draws_of(seed ^ BEAT_STREAM);
             let mut tries: Vec<(f64, f64)> =
                 lattice.iter().copied().filter(|&(x, y)| apart([x, y], at) <= POSTS_APART).collect();
@@ -290,6 +297,21 @@ impl Room {
 }
 
 /// The open point farthest from the nearest spawn; the first of any as far.
+/// How near a way a foes' site stands to be a patrol of the way, and how near it its beat's points stand, metres: the
+/// lattice's points are 5 m apart, so each stretch of way keeps one within reach.
+const WAY_SITE_M: f64 = 1.0;
+const ON_WAY_M: f64 = 4.0;
+
+/// How far a point lies from the segment between two points, metres.
+fn off_segment(at: [f64; 2], pair: &[[f64; 2]]) -> f64 {
+    let [from, to] = [pair[0], pair[pair.len() - 1]];
+    let (east, south) = (to[0] - from[0], to[1] - from[1]);
+    let length = east * east + south * south;
+    let along = (at[0] - from[0]) * east + (at[1] - from[1]) * south;
+    let share = if length > 0.0 { (along / length).clamp(0.0, 1.0) } else { 0.0 };
+    apart(at, [from[0] + east * share, from[1] + south * share])
+}
+
 pub(super) fn farthest(open: &[(f64, f64)], section: &Section) -> usize {
     let from_spawns = |&(x, y): &(f64, f64)| {
         section.spawns.iter().map(|&[sx, sy]| apart([x, y], [sx, sy])).fold(f64::INFINITY, f64::min)

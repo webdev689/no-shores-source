@@ -453,6 +453,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Set Names and Faction Perks as Claude Drafts Them]]
 - [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]]
 - [[The Downs' Landing Zones as Claude Builds Them]]
+- [[The Saltgrass Downs' Design Pass as Claude Builds It]]
 - [[Guilds and Outposts as Claude Shapes Them]]
 - [[The Drowned Vale as Claude Builds It]]
 - [[The Balance and Economy Pass as Claude Shapes It]]

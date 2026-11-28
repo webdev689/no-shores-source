@@ -5,6 +5,7 @@
   "stone": "chalk",
   "heights": true,
   "landing_zones": true,
+  "way_patrols": true,
   "areas": [
    {
     "kind": "landing",

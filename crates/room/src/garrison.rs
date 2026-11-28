@@ -3,7 +3,7 @@
 //! Miniboss's, which holds its post. The room's world seed, mixed from the node's id, draws who stands where, each
 //! foe's level from its island's band and its shield, and each beat, so every machine stands the same; the seas raise
 //! the levels once the host sets them. A cleared group stands again STAND_AGAIN later (a Miniboss's or a Boss's,
-//! GREAT_STAND_AGAIN), once no player is within CLEAR_AROUND of its post and the living foes leave it room.
+//! GREAT_STAND_AGAIN) once the living foes leave it room; outside a patrol zone's open land, once no player is near.
 //! The baked square reaches inland from the spawn rather than round it, so it holds the garrison past the spawn's
 //! clear ground without growing: a bake's cost grows far faster than its area.
 
@@ -27,8 +27,8 @@ pub(crate) const NODE_AROUND: f64 = 35.0;
 const SPAWN_INSET: f64 = 15.0;
 /// No garrison foe stands nearer a player's spawn than this.
 pub(crate) const SPAWN_CLEAR: f64 = 25.0;
-/// A cleared group stands again this many ticks (120 s) after its last foe fell, once no player stands within
-/// CLEAR_AROUND metres of its post.
+/// A cleared group stands again this many ticks (120 s) after its last foe fell; but outside a patrol zone's open land,
+/// once no player stands within CLEAR_AROUND metres of its post.
 pub(crate) const STAND_AGAIN: u64 = 120 * 60;
 /// A group with a Miniboss or a Boss stands again only 10 minutes after it fell, so neither is farmed: the owner's.
 pub(crate) const GREAT_STAND_AGAIN: u64 = 600 * 60;
@@ -480,8 +480,8 @@ impl Room {
 
     /// Each tick a patrol's foes' sites a player has come near stand their groups, each group walks its beat, and a
     /// half-fallen patrol group left alone is made whole (`stands.rs`); a group whose last foe has fallen is cleared
-    /// from that tick, and stands again once STAND_AGAIN has passed, no player stands within CLEAR_AROUND of its post,
-    /// and the living foes leave room for it.
+    /// from that tick, and stands again once STAND_AGAIN has passed and the living foes leave room for it: in a patrol
+    /// zone's open land around any players there, elsewhere once none stands within CLEAR_AROUND of its post.
     pub(crate) fn keep_garrison(&mut self) {
         self.stand_sites();
         self.lift_sites();
@@ -505,9 +505,11 @@ impl Room {
                 }
                 continue;
             };
-            let near = self.players.values().any(|player| {
-                apart([player.fighter.body.x, player.fighter.body.y], [found.at[0], found.at[1]]) <= CLEAR_AROUND
-            });
+            let open_land = self.place == Some(gear::gate::Place::Patrol);
+            let near = !open_land
+                && self.players.values().any(|player| {
+                    apart([player.fighter.body.x, player.fighter.body.y], [found.at[0], found.at[1]]) <= CLEAR_AROUND
+                });
             let room_for = self.living_foes() + found.members.len() <= self.others_most();
             let great = found.members.iter().any(|(_, rank, _, _)| matches!(rank, Rank::Miniboss | Rank::Boss));
             let again = if great { GREAT_STAND_AGAIN } else { STAND_AGAIN };

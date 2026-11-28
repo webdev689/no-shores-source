@@ -101,7 +101,7 @@ fn a_run_carries_its_days_or_weeks_modifiers_and_at_abyss_its_revives() {
     assert_eq!(rules(RunOf::Elite { place: "forsaken-cistern".into() }, Elite), Some((vec![Modifier::Brawler], None)));
     assert_eq!(rules(RunOf::Elite { place: "krakens-grotto".into() }, Normal), Some((vec![], None)));
     assert_eq!(rules(patrol("glade", 0), Normal), None, "no island's");
-    assert_eq!(rules(patrol("saltgrass-downs", 3), Normal), None);
+    assert_eq!(rules(patrol("saltgrass-downs", dungeon::PER_PATROL), Normal), None, "past its dungeons");
     let sea =
         |style: &str, continent: &str| RunOf::Sea { seed: 4_242, style: style.into(), continent: continent.into() };
     assert_eq!(rules(sea("caverns", "continent-4"), Abyss), Some((vec![], Some(5))));

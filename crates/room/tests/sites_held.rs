@@ -1,7 +1,7 @@
-//! A patrol zone's foes hold its territories and its runs: on Saltmere's zone as the bake makes it, every area but
-//! where players arrive or pass, where folk live, where events are fought, a Breach's hollow and a guild's plot, and
-//! its runs' beats; each foes' site stands its group as a player comes near it, and a player walked into a territory
-//! or along a run meets the group there.
+//! A patrol zone's foes hold its territories and its runs and patrol its ways: on Saltmere's zone as the bake makes
+//! it, every area but where players arrive or pass, where folk live, where events are fought, a Breach's hollow and a
+//! guild's plot, its runs' beats and its ways' patrols; each foes' site stands its group as a player comes near it,
+//! and a player walked into a territory, to a way's patrol or along a run meets the group there.
 
 use combat::Intent;
 use layout::brief::AreaKind;
@@ -42,7 +42,17 @@ fn zones() -> Vec<(bake::NodeFile, Vec<layout::runs::Run>, Vec<[f64; 2]>)> {
                         | AreaKind::Plot
                 )
             });
-            (node, laid.runs.clone(), held.map(|area| area.at).collect())
+            // Its ways' patrols stand at points of its ways (`layout::sites::way_patrols`).
+            let on_a_way = |at: [f64; 2]| {
+                laid.paths
+                    .iter()
+                    .any(|path| path.points.windows(2).any(|pair| layout::paths::off_line(at, pair[0], pair[1]) < 0.5))
+            };
+            let patrols = laid.sites.iter().filter(|site| {
+                let beat = laid.runs.iter().flat_map(|run| &run.beats).any(|beat| beat.at == site.at);
+                site.kind == layout::sites::SiteKind::Foes && site.holds.is_none() && on_a_way(site.at) && !beat
+            });
+            (node, laid.runs.clone(), held.map(|area| area.at).chain(patrols.map(|site| site.at)).collect())
         })
         .collect()
 }

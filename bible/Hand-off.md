@@ -356,7 +356,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 - **The rules on foot**: swimming, which the water has in TypeScript, moves into the `movement` crate; the walker gets
   a body in the water ([[Water]]); running's stamina and casting's harm ([[Combat]]).
 - **The enemies** ([[Enemies]], [[Server]]): a garrison stands within its room's 70 m navmesh, not its whole section;
-  a player waiting near a fallen group keeps it from standing again; a rejoin loses the player's place, any fight and
+  a player waiting near a fallen group in a dungeon, a run or a mission keeps it from standing again; a rejoin loses the player's place, any fight and
   its foes; the boarding fight on a deck that the deck crews are for. None is tested in a deployed room.
 - **The Test Ground**: the shield, torch and lantern in first person, weapon wear, riding speeds of Overlook's own.
 - **The world** ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them (none comes

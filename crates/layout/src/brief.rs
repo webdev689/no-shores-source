@@ -138,6 +138,9 @@ pub struct Brief {
     /// Whether a patrol area has two landing zones past its landing, north and south (`landings`).
     #[serde(default)]
     pub landing_zones: bool,
+    /// Whether a patrol area's foes patrol its ways as well as hold its places (`sites::way_patrols`).
+    #[serde(default)]
+    pub way_patrols: bool,
     /// The region of its island it lies in (`content/world/regions.json`, read by `Briefs::regions`): an instance
     /// links only to a patrol area of its own region.
     #[serde(default)]
@@ -211,6 +214,7 @@ fn plain(kind: land::sites::NodeKind) -> Brief {
         river: false,
         heights: false,
         landing_zones: false,
+        way_patrols: false,
         region: None,
     }
 }

@@ -54,7 +54,7 @@ pub const BLOCK_M: f64 = CELL_M * BLOCK_CELLS as f64;
 /// A corridor's ceiling.
 pub const CORRIDOR_HEIGHT_M: f64 = 3.2;
 /// How many dungeons a patrol area holds.
-pub const PER_PATROL: usize = 3;
+pub const PER_PATROL: usize = 6;
 
 /// What a cell is: rock, a room's (by its number in the dungeon), a corridor, a flight of stairs' (by its number, on
 /// both its storeys), or open air over a room on the storey under it, where nothing stands.

@@ -38,6 +38,14 @@ The owner's answers to the questions on the Downs' design pass, its enemies, and
 >
 > Asked how many of Destiny 2's lost sectors (small caves with a boss and a chest at the end) the Downs should hide:
 > "None. Just multiple procedural dungeons"
+>
+> Asked, a cleared camp standing again 2 minutes after it falls but only once no player is near it, whether it
+> should stand again around players still there when its time is up: "Yes, around them"
+>
+> Asked how many procedural dungeons the Downs should have, with no lost sectors, where it has three: "Six or more"
+>
+> Asked next what is least clear on the held map on land: "Stop asking me questions and dont come back until this is
+> 100%. You have autonomy"
 
 ## What it settles
 
@@ -46,10 +54,12 @@ The owner's answers to the questions on the Downs' design pass, its enemies, and
 - **Each landing zone is marked by a beacon fire**: a stone fire basket burning on a low cairn.
 - **Fast travel between them is Destiny 2's**: a short fade from the map, then the player stands at the landing zone.
 - **The Downs' design pass plays like Destiny 2's EDZ**: public events and patrol tasks picked up in the field. It
-  holds no lost sectors: procedural dungeons in their place.
-- **The Downs' enemies stand both ways**: camps at its places, each standing again a few minutes after it falls, and
-  patrols walking the ways between the places.
+  holds no lost sectors: six or more procedural dungeons in their place.
+- **The Downs' enemies stand both ways**: camps at its places, each standing again a few minutes after it falls,
+  around any players still there, and patrols walking the ways between the places.
 - **The held map on land keeps its parchment**, made cleaner: clearer glyphs, names and legend.
 
 It builds on [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]] (the three landing
 zones, the zone's map to choose one from, and their fast travel).
+- **The rest of the Downs' design pass is Claude's to build**, with no more questions, until it is whole: Claude's
+  calls in [[The Saltgrass Downs' Design Pass as Claude Builds It]].

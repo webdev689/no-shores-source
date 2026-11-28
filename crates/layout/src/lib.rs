@@ -230,6 +230,12 @@ pub fn plan(
     for zone in &zones {
         marks::landing_fire(&mut kit, zone.fire);
     }
+    if patrol && brief.way_patrols {
+        let landings: Vec<[f64; 2]> =
+            areas.first().map(|area| area.at).into_iter().chain(zones.iter().map(|zone| zone.at)).collect();
+        let patrols = sites::way_patrols(&areas, &paths[..ways], &sites, &landings);
+        sites.extend(patrols);
+    }
     let anchor = areas.first().map_or_else(|| middle_of(node), |area| area.at);
     let exits: Vec<([f64; 2], [f64; 2])> = areas
         .iter()
