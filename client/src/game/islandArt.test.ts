@@ -4,16 +4,7 @@ import { rgbaOf } from '../art/sheet.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { offCoast, type Scene, sceneSheet } from './islandArt.ts';
 
-const KINDS: readonly Scene['kind'][] = [
-  'port',
-  'playlist',
-  'patrol',
-  'dungeon',
-  'mission',
-  'boss',
-  'outpost',
-  'island',
-];
+const KINDS: readonly Scene['kind'][] = ['port', 'playlist', 'patrol', 'dungeon', 'depths', 'island'];
 const CHART = {
   outline: [
     [-500, -400],
@@ -40,6 +31,20 @@ test('every kind of tile paints its whole sheet, the same each time, and two pla
     const other = sceneSheet({ kind, id: 'gullwing-vale' }, 147, 93);
     assert.notDeepEqual(other.cells, sheet.cells, `${kind}: another place is painted otherwise`);
   }
+});
+
+test("a region's dungeon is painted by its style and its tier: each its own, its sheet whole", () => {
+  const painted = new Map<string, string>();
+  for (const style of ['crypt', 'halls', 'cells', 'sanctum', 'caverns', 'mines'])
+    for (const tier of [0, 1, 2]) {
+      const sheet = sceneSheet({ kind: 'depths', id: 'depths-continent-1-r0-n0', style, tier }, 147, 93);
+      assert.ok(
+        sheet.cells.every((ink) => /^#[0-9a-f]{6}$/.test(ink)),
+        `${style} at ${tier}`,
+      );
+      painted.set(`${style} ${tier}`, sheet.cells.join(''));
+    }
+  assert.equal(new Set(painted.values()).size, 18, 'no two alike');
 });
 
 test('the coast’s distances, measured by buckets, are those of measuring every leg, to the last bit', () => {

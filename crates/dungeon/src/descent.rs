@@ -1,6 +1,6 @@
 //! How a dungeon goes down, planned before any room is carved, as the Forge plans it: how many storeys each block
 //! holds, the doorways blocks side by side share and on which storey, each block's flights of stairs, its great rooms,
-//! and the one gallery a great room may rise into. Each block storey is then laid to its plan (`block.rs`).
+//! its warrens, and the galleries great rooms may rise into. Each block storey is then laid to its plan (`block.rs`).
 
 use crate::block::{BLOCK_CELLS, OPENING_FIRST, OPENING_LAST, Opening, opening_cell};
 use crate::lane::Lane;
@@ -8,10 +8,15 @@ use crate::styles::Style;
 use crate::{FLIGHT_CELLS, SIDES, Side};
 
 /// The storeys the way in's block holds at most, and how often a block storey is one great room, its sides fewest and
-/// most (cells).
+/// most (cells): in the six styles more often than in the passages' own two.
 const WAY_IN_STOREYS: usize = 2;
-const GREAT_SHARE: f64 = 0.12;
+const GREAT_SHARE: f64 = 0.2;
+const PASSAGE_GREAT_SHARE: f64 = 0.12;
 pub(crate) const GREAT_SIDES: (usize, usize) = (9, 12);
+/// How often a block storey of the six styles, past the way in's first, is a warren (`warren.rs`); and how many great
+/// rooms rise into the storey over them, at most.
+const WARREN_SHARE: f64 = 0.18;
+const GALLERIES_MOST: usize = 2;
 /// How often two blocks side by side that are not next in the chain share a doorway.
 const OTHER_DOORWAY_SHARE: f64 = 0.5;
 
@@ -51,6 +56,11 @@ impl Flight {
     /// The landing before its head on its upper storey, and the one past its foot on the storey under.
     pub(crate) fn landings(&self) -> Option<(At, At)> {
         Some((along(self.head, self.down, -1)?, along(self.head, self.down, FLIGHT_CELLS as isize)?))
+    }
+
+    /// Whether it runs on a storey: its upper one or the one under it.
+    pub(crate) fn spans(&self, storey: usize) -> bool {
+        storey == self.upper || storey == self.upper + 1
     }
 
     /// The rock beside it, both sides of each cell, on both its storeys.
@@ -96,6 +106,8 @@ pub(crate) struct StoreyPlan {
     pub landings: Vec<At>,
     pub great: Option<Great>,
     pub gallery: Option<Gallery>,
+    /// Whether the storey is a warren, a maze round a few chambers.
+    pub maze: bool,
 }
 
 /// A block's plan: a plan for each of its storeys, and its flights.
@@ -105,10 +117,17 @@ pub(crate) struct BlockPlan {
     pub flights: Vec<Flight>,
 }
 
-/// How many storeys each block holds, of at most `most`: the way in's one or two, any other one to `most`.
+/// How many storeys each block holds, of at most `most`: the way in's one or two, any other one to `most`, each count
+/// as likely, and the last as deep as the deepest, so the way down ends at the bottom.
 pub(crate) fn storey_counts(seed: u32, blocks: usize, most: usize) -> Vec<usize> {
     let mut lane = Lane::named(&format!("storeys:{seed}"));
-    (0..blocks).map(|block| lane.int(1, if block == 0 { WAY_IN_STOREYS.min(most) } else { most })).collect()
+    let mut counts: Vec<usize> =
+        (0..blocks).map(|block| lane.int(1, if block == 0 { WAY_IN_STOREYS.min(most) } else { most })).collect();
+    let deepest = counts.iter().copied().max().unwrap_or(1);
+    if let Some(last) = counts.last_mut().filter(|_| blocks > 1) {
+        *last = deepest;
+    }
+    counts
 }
 
 /// The side `after` lies on from `before`, where they are side by side.
@@ -148,9 +167,15 @@ pub(crate) fn doorways(seed: u32, squares: &[(usize, usize)], storeys: &[usize])
 
 /// Whether the cells inside the rim that are not `closed` join every one of `ends`, none of them closed.
 fn joined(ends: &[At], closed: &[At]) -> bool {
-    let Some(&first) = ends.first() else { return true };
+    open_round(ends, closed).is_some()
+}
+
+/// The cells inside the rim that are not `closed` a walk from the first of `ends` reaches, where they join every one
+/// of `ends`, none of them closed: none where there are no ends; None where they do not join.
+fn open_round(ends: &[At], closed: &[At]) -> Option<usize> {
+    let Some(&first) = ends.first() else { return Some(0) };
     if ends.iter().any(|end| closed.contains(end)) {
-        return false;
+        return None;
     }
     let mut reached = vec![first];
     let mut todo = vec![first];
@@ -166,7 +191,17 @@ fn joined(ends: &[At], closed: &[At]) -> bool {
             }
         }
     }
-    ends.iter().all(|end| reached.contains(end))
+    ends.iter().all(|end| reached.contains(end)).then_some(reached.len())
+}
+
+/// Whether the ways round a storey's ends are room enough for its rooms: at least half the cells inside the rim that
+/// are not `closed`, so two flights' landings walled in together are never a pocket no room reaches.
+fn roomy(ends: &[At], closed: &[At]) -> bool {
+    let open = (1..BLOCK_CELLS - 1)
+        .flat_map(|y| (1..BLOCK_CELLS - 1).map(move |x| (x, y)))
+        .filter(|cell| !closed.contains(cell))
+        .count();
+    open_round(ends, closed).is_some_and(|round| ends.is_empty() || 2 * round >= open)
 }
 
 /// Shuffles a list on a lane.
@@ -212,8 +247,8 @@ impl BlockPlan {
             .collect()
     }
 
-    /// Whether a flight's cells and walls are clear of every storey's flights, walls, landings and openings, and its
-    /// cells and landings inside the rim.
+    /// Whether a flight's cells and walls are clear of every storey's flights, walls, landings and openings, its cells
+    /// and landings inside the rim, and every storey's ends joined with room round them (`roomy`).
     fn fits(&self, flight: &Flight) -> bool {
         let (Some(cells), Some((top, bottom))) = (flight.cells(), flight.landings()) else { return false };
         let reserved: Vec<At> = self.storeys.iter().flat_map(|storey| storey.reserved.iter().copied()).collect();
@@ -227,14 +262,15 @@ impl BlockPlan {
         let clear = cells.into_iter().chain([top, bottom]).all(inside)
             && cells.into_iter().chain(flight.walls()).all(|cell| !taken.contains(&cell))
             && [top, bottom].iter().all(|landing| !reserved.contains(landing));
-        let mut kept: Vec<At> = cells.into_iter().chain(flight.walls()).collect();
-        kept.extend(reserved);
         clear
             && (0..self.storeys.len()).all(|storey| {
+                let mut kept: Vec<At> = cells.to_vec();
+                kept.extend(flight.spans(storey).then(|| flight.walls()).into_iter().flatten());
+                kept.extend(self.storeys[storey].reserved.iter().copied());
                 let mut ends = self.ends(storey);
                 ends.extend((storey == flight.upper).then_some(top));
                 ends.extend((storey == flight.upper + 1).then_some(bottom));
-                joined(&ends, &kept)
+                roomy(&ends, &kept)
             })
     }
 
@@ -246,27 +282,33 @@ impl BlockPlan {
         inner.chain(plan.landings.iter().copied()).collect()
     }
 
-    /// Takes a flight: its cells and walls rock on every storey, its landings ways on its two storeys.
+    /// Takes a flight: its cells rock on every storey, so nothing stands over or under it; its walls on its two
+    /// storeys, the rest free for rooms and ways; its landings ways on its two storeys.
     fn add(&mut self, flight: Flight) {
         let (Some(cells), Some((top, bottom))) = (flight.cells(), flight.landings()) else { return };
-        for storey in &mut self.storeys {
-            storey.reserved.extend(cells.into_iter().chain(flight.walls()));
+        for (storey, plan) in self.storeys.iter_mut().enumerate() {
+            plan.reserved.extend(cells);
+            if flight.spans(storey) {
+                plan.reserved.extend(flight.walls());
+            }
         }
         self.storeys[flight.upper].landings.push(top);
         self.storeys[flight.upper + 1].landings.push(bottom);
         self.flights.push(flight);
     }
 
-    /// Now and then a storey of the block is one great room, in every style but the cells: a rectangle of nine to twelve
-    /// cells each way, drawn, inside the rim with rock round it, on the first spot clear of its storey's flights and
-    /// landings; or nine each way where the drawn sides find none.
+    /// Now and then a storey of the block is one great room: a rectangle of nine to twelve cells each way, drawn,
+    /// inside the rim with rock round it, on the first spot clear of its storey's flights and landings; or nine each
+    /// way where the drawn sides find none. One in five of the six styles' storeys, one in eight of the passages', never
+    /// the cells', whose rooms are all small.
     pub(crate) fn plan_great(&mut self, seed: u32, number: usize, style: &Style) {
         if !style.lays_great_rooms() {
             return;
         }
         let mut lane = Lane::named(&format!("great:{seed}:{number}"));
+        let share = if deep(style) { GREAT_SHARE } else { PASSAGE_GREAT_SHARE };
         for storey in 0..self.storeys.len() {
-            if !lane.chance(GREAT_SHARE) {
+            if !lane.chance(share) {
                 continue;
             }
             let drawn = (lane.int(GREAT_SIDES.0, GREAT_SIDES.1), lane.int(GREAT_SIDES.0, GREAT_SIDES.1));
@@ -277,6 +319,22 @@ impl BlockPlan {
                 sides.into_iter().find_map(|(width, depth)| self.great_spot(storey, width, depth, order, under_free))
             });
             self.storeys[storey].great = found;
+        }
+    }
+
+    /// Now and then a storey of the six styles but the cells is a warren: never the way in's, nor a great room, nor the
+    /// last block's deepest, where the end lies in a room of its own. The cells, all small rooms and no great one, lay
+    /// none, so an Elite Dungeon in them keeps rooms its seals fit.
+    pub(crate) fn plan_warrens(&mut self, seed: u32, number: usize, style: &Style, last: bool) {
+        if !deep(style) || !style.lays_great_rooms() {
+            return;
+        }
+        let mut lane = Lane::named(&format!("warren:{seed}:{number}"));
+        let deepest = self.storeys.len() - 1;
+        for (storey, plan) in self.storeys.iter_mut().enumerate() {
+            let warren = lane.chance(WARREN_SHARE);
+            let end = last && storey == deepest;
+            plan.maze = warren && plan.great.is_none() && (number, storey) != (0, 0) && !end;
         }
     }
 
@@ -306,7 +364,9 @@ impl BlockPlan {
         let Some(great) = self.storeys.get(storey).and_then(|plan| plan.great) else { return false };
         let Some(over) = storey.checked_sub(1) else { return false };
         let above = &self.storeys[over];
-        if great.cells().any(|cell| above.reserved.contains(&cell) || above.landings.contains(&cell)) {
+        // Never into a storey that is a great room itself or keeps a gallery already: two galleries may rise.
+        let taken = above.great.is_some() || above.gallery.is_some();
+        if taken || great.cells().any(|cell| above.reserved.contains(&cell) || above.landings.contains(&cell)) {
             return false;
         }
         let (count, first) = (lane.int(2, 4), lane.below(SIDES.len()));
@@ -352,20 +412,31 @@ pub(crate) fn plan_blocks(
         .map(|(number, openings)| {
             let mut plan = BlockPlan::planned(seed, number, openings);
             plan.plan_great(seed, number, &styles[number]);
+            plan.plan_warrens(seed, number, &styles[number], number + 1 == squares.len());
             plan
         })
         .collect();
     let lower = |plan: &BlockPlan| plan.storeys.iter().skip(1).any(|storey| storey.great.is_some());
     let mut lane = Lane::named(&format!("gallery:{seed}"));
+    let most = if styles.first().is_some_and(deep) { GALLERIES_MOST } else { 1 };
+    let mut risen = 0;
     if plans.iter().any(lower) {
         'blocks: for (number, plan) in plans.iter_mut().enumerate() {
             // The way in's storey keeps its rooms, one of which holds the way in.
             for storey in if number == 0 { 2 } else { 1 }..plan.storeys.len() {
                 if plan.plan_gallery(storey, &mut lane) {
-                    break 'blocks;
+                    risen += 1;
+                    if risen == most {
+                        break 'blocks;
+                    }
                 }
             }
         }
     }
     plans
+}
+
+/// Whether a style is one of the six the patrols, the sea and the Elite Dungeons lay, not the passages' own.
+fn deep(style: &Style) -> bool {
+    crate::STYLES.iter().any(|each| each.key == style.key)
 }

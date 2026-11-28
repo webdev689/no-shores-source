@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { activitiesAt, gatesAt } from './activities.ts';
-import { entranceCardOf, levelWords, type Named, thisWeekOf } from './activityWords.ts';
+import { entranceCardOf, levelWords, type Named, regionCardOf, thisWeekOf } from './activityWords.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -132,21 +132,39 @@ test('an entrance’s card says its run’s tier, level, modifiers and pay, and 
   });
   const today = { ...record, elite: false, boon: false };
   const vale = entranceAt('gullwing-vale', 'patrol', 'continent-1', 'elite');
-  assert.deepEqual(entranceCardOf(vale, drawn, gates, today), {
+  // At level 12 Elite is the hardest tier open, so a patrol's dungeon on Elite seas is met at Elite.
+  const twelve = gatesAt(await module, 12, true);
+  assert.deepEqual(entranceCardOf(vale, drawn, twelve, today), {
     name: 'the way into gullwing-vale',
     tier: 'Elite seas · Levels 3 to 6',
+    rank: 1,
     rules: [],
     modifiers: [burn],
     pays: 'Taken today. It pays its kills and its cache.',
     shut: null,
     finds: null,
+    seas: 'elite',
   });
+  // Every tier open, it is drawn among them, never under the patrol's seas.
+  const tiers = new Set<string | undefined>();
+  for (let day = 0; day < 12; day++) {
+    const later = { ...drawn, minute: drawn.minute + day * 1440 };
+    for (const number of [0, 1, 2]) {
+      const metAt = entranceCardOf({ ...vale, seas: 'normal', number }, later, gates, today).seas;
+      tiers.add(metAt);
+      assert.notEqual(entranceCardOf({ ...vale, number }, later, gates, today).seas, 'normal');
+    }
+  }
+  assert.deepEqual([...tiers].sort(), ['abyss', 'elite', 'normal']);
+  const sameDay = entranceCardOf({ ...vale, seas: 'normal' }, drawn, gates, today).seas;
+  assert.equal(entranceCardOf({ ...vale, seas: 'normal' }, drawn, gates, today).seas, sameDay, 'kept all day');
   assert.equal(
-    entranceCardOf(vale, drawn, gates, { ...today, day: 20_777 }).pays,
+    entranceCardOf(vale, drawn, twelve, { ...today, day: 20_777 }).pays,
     'Once a day at each tier, on any island: a Vestige and a richer cache.',
     'yesterday’s clear is not today’s',
   );
   const halls = entranceCardOf(entranceAt('gullwing-vale', 'patrol', 'continent-1', 'abyss', 1), drawn, gates, today);
+  assert.equal(halls.seas, 'abyss', 'on Abyss seas, Abyss');
   assert.deepEqual(
     [halls.tier, halls.rules, halls.modifiers, halls.pays],
     ['Abyss seas · Levels 4 to 7', [revives], [], 'It pays its kills and its cache.'],
@@ -180,8 +198,9 @@ test('an entrance’s card says its run’s tier, level, modifiers and pay, and 
     today,
   );
   assert.deepEqual(
-    [warrens.tier, warrens.rules, warrens.shut, warrens.finds],
+    [warrens.rank, warrens.tier, warrens.rules, warrens.shut, warrens.finds],
     [
+      2,
       'Abyss Dungeon of the week · Level 30',
       [revives, 'Never matched. Bring your company.'],
       'This dungeon opens at level 28.',
@@ -193,4 +212,24 @@ test('an entrance’s card says its run’s tier, level, modifiers and pay, and 
     'Elite Dungeon · Levels 10 to 13',
     'the Elite’s, reached at Abyss seas: its Normal run',
   );
+});
+
+test("a region's dungeon's card says its tier in its island's band, that it is today's, and at Abyss its revives", async () => {
+  const drawn = activitiesAt(await module, FRIDAY_NINE);
+  const band = drawn.bands['continent-1']?.[1];
+  assert.ok(band);
+  const elite = regionCardOf({ name: 'The Weeping Ossuary', island: 'continent-1', tier: 1 }, drawn);
+  assert.deepEqual(elite, {
+    name: 'The Weeping Ossuary',
+    tier: `Elite seas · ${levelWords(band)}`,
+    rank: 1,
+    rules: ['Drawn for today: tomorrow the region offers others.'],
+    modifiers: [],
+    pays: 'It pays its kills and its cache.',
+    shut: null,
+    finds: null,
+  });
+  const abyss = regionCardOf({ name: 'The Weeping Ossuary', island: 'continent-1', tier: 2 }, drawn);
+  assert.deepEqual(abyss.rules.slice(1), [revives, 'Never matched. Bring your company.']);
+  assert.equal(abyss.rank, 2, 'three skulls');
 });

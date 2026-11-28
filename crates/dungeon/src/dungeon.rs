@@ -120,6 +120,8 @@ pub struct Dungeon {
     pub fixtures: Vec<Fixture>,
     /// The set pieces its rooms are remembered by (`landmarks`).
     pub landmarks: Vec<Placed>,
+    /// The block storeys laid as warrens, each its block's number and its storey (`warren.rs`).
+    pub warrens: Vec<(usize, usize)>,
 }
 
 impl Dungeon {

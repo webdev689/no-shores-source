@@ -12,6 +12,7 @@ import {
   cameOutOf,
   crossingAsked,
   crossingsOf,
+  islandReach,
   reachOf,
   shipOf,
   toCoast,
@@ -87,7 +88,10 @@ test('a dungeon or a run is entered from its node’s room, and left back into i
   assert.equal(arrives('node-gullwing-vale--dungeon-1', 'sea', OFF_COAST, reach()), false);
   const run = 'node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6';
   assert.equal(arrives(run, 'node-gullwing-vale--elite', null, null), true);
-  assert.equal(arrives(run, 'node-gullwing-vale', null, null), false);
+  // A patrol's dungeon at a harder tier than its patrol, as its card draws one for the character; never an easier.
+  assert.equal(arrives(run, 'node-gullwing-vale', null, null), true, 'from Normal seas into its Elite run');
+  assert.equal(arrives(run, 'node-gullwing-vale--abyss', null, null), false, 'never under the seas');
+  assert.equal(arrives('node-gullwing-vale--dungeon-1', 'node-gullwing-vale--elite', null, null), false);
   // An Elite Dungeon's run, at Normal or the week's at its own tier, from its node at any seas: its tier is its own.
   assert.equal(arrives('node-krakens-grotto--run-k3j4h5g6', 'node-krakens-grotto--abyss', null, null), true);
   assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-krakens-grotto--abyss', null, null), true);
@@ -96,7 +100,8 @@ test('a dungeon or a run is entered from its node’s room, and left back into i
   // Out again, at the seas the dungeon was gone into at.
   assert.equal(arrives('node-gullwing-vale', 'node-gullwing-vale--dungeon-1', null, reach()), true);
   assert.equal(arrives('node-gullwing-vale--elite', run, null, reach()), true);
-  assert.equal(arrives('node-gullwing-vale', run, null, reach()), false);
+  assert.equal(arrives('node-gullwing-vale', run, null, reach()), true, 'to the easier seas it came from');
+  assert.equal(arrives('node-gullwing-vale--abyss', run, null, reach()), false, 'never to harder seas');
   assert.equal(arrives('node-krakens-grotto', 'node-krakens-grotto--run-k3j4h5g6', null, reach()), true);
   assert.equal(arrives('node-tidewall', 'node-gullwing-vale--dungeon-1', null, reach(['gullwing-vale'])), false);
 });
@@ -146,7 +151,8 @@ test('a player stands out of an entrance only as they come out of its dungeon or
   const patrol = 'node-gullwing-vale--elite';
   assert.equal(cameOutOf(patrol, 'node-gullwing-vale--elite--dungeon-2--run-k3j4h5g6', 2), true);
   assert.equal(cameOutOf(patrol, 'node-gullwing-vale--elite--dungeon-2--run-k3j4h5g6', 1), false, 'another door');
-  assert.equal(cameOutOf(patrol, 'node-gullwing-vale--abyss--dungeon-2--run-k3j4h5g6', 2), false, 'another tier');
+  assert.equal(cameOutOf(patrol, 'node-gullwing-vale--abyss--dungeon-2--run-k3j4h5g6', 2), true, 'a harder tier');
+  assert.equal(cameOutOf(patrol, 'node-gullwing-vale--dungeon-2', 2), false, 'an easier one');
   assert.equal(cameOutOf('node-gullwing-vale', 'node-gullwing-vale--dungeon-0', 0), true);
   assert.equal(cameOutOf('node-gullwing-vale', 'node-gullwing-vale', 0), false, 'a rejoin is an ordinary join');
   assert.equal(cameOutOf('node-gullwing-vale', 'sea', 0), false);
@@ -411,4 +417,23 @@ test("from the sea a node a region lists is landed on only with the ship off tha
   // A city's social space no region lists is landed on from anywhere in reach of its island, as before.
   const social = reachOfNode('overlook-social', 'social');
   assert.equal(arrives('node-overlook-social', 'sea', weirlands, social), true);
+});
+
+test("a region's dungeon's run is entered from the sea alone, its ship off that region of its island", () => {
+  const anchorage = (name: string): [number, number] => {
+    const [x = 0, y = 0] = regions[0]?.regions.find((region) => region.name === name)?.anchorage ?? [];
+    return [x, y];
+  };
+  const [beacon, weirlands] = [anchorage('The Beacon Shore'), anchorage('The Weirlands')];
+  const island = islandReach(layout.continents, 'continent-1');
+  // The Beacon Shore is the island's first region, the Weirlands its second.
+  const run = 'region-dungeon-continent-1-r0-d20420-n1--elite--run-k3j4h5g6';
+  assert.equal(arrives(run, 'sea--elite', beacon, island), true, 'off the Beacon Shore');
+  assert.equal(arrives(run, 'sea', beacon, island), true, "from the sea at any tier: the run's is its own");
+  assert.equal(arrives(run, 'sea', weirlands, island), false, 'off another region');
+  assert.equal(arrives(run, 'sea', [beacon[0], beacon[1] - 200_000], island), false, 'out of reach of the island');
+  assert.equal(arrives(run, 'node-saltgrass-downs', beacon, island), false, 'from a node');
+  assert.equal(arrives(run, null, beacon, island), false, 'from nowhere');
+  assert.equal(arrives(run, run, null, island), true, 'back into it');
+  assert.equal(arrives(run, 'sea', beacon, { ...island, locked: true }), false, 'an island not yet named');
 });

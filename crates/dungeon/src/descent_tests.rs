@@ -2,7 +2,7 @@
 //! rooms, galleries, vaults and the main way. Each share's bounds were set from what 2000 dungeons measured.
 
 use crate::dungeon_tests::square_of;
-use crate::{BALUSTRADE_M, Cell, Dungeon, FLIGHT_CELLS, Kind, SIDES, STYLES, Side, storey_floor};
+use crate::{BALUSTRADE_M, Cell, Dungeon, FLIGHT_CELLS, Kind, SIDES, STOREYS_MOST, STYLES, Side, storey_floor};
 use std::sync::LazyLock;
 
 const COUNT: usize = 2000;
@@ -19,21 +19,23 @@ fn share(count: usize, of: usize) -> f64 {
 }
 
 #[test]
-fn the_way_ins_block_holds_one_or_two_storeys_and_any_other_one_to_three_each_about_as_often() {
-    let (mut first, mut others) = ([0; 4], [0; 4]);
+fn the_way_ins_block_holds_one_or_two_storeys_any_other_one_to_five_each_about_as_often_and_the_last_the_deepest() {
+    let (mut first, mut others) = ([0; STOREYS_MOST + 1], [0; STOREYS_MOST + 1]);
     for dungeon in DUNGEONS.iter() {
-        first[dungeon.block_storeys[0]] += 1;
-        for &count in &dungeon.block_storeys[1..] {
+        let counts = &dungeon.block_storeys;
+        first[counts[0]] += 1;
+        for &count in &counts[1..counts.len() - 1] {
             others[count] += 1;
         }
-        assert_eq!(dungeon.storeys, dungeon.block_storeys.iter().copied().max().unwrap());
+        assert_eq!(counts.last(), counts.iter().max(), "the last block as deep as the deepest");
+        assert_eq!(dungeon.storeys, counts.iter().copied().max().unwrap());
         assert_eq!(dungeon.cells.len(), dungeon.storeys * dungeon.plane());
     }
-    assert_eq!(first[3], 0, "the way in's block is never three deep");
+    assert!(first[3..].iter().all(|&count| count == 0), "the way in's block is never three deep");
     assert!((0.45..0.55).contains(&share(first[1], COUNT)), "{first:?}");
     let total: usize = others.iter().sum();
-    for count in 1..=3 {
-        assert!((0.3..0.37).contains(&share(others[count], total)), "{others:?}");
+    for count in 1..=STOREYS_MOST {
+        assert!((0.17..0.23).contains(&share(others[count], total)), "{others:?}");
     }
 }
 
@@ -147,33 +149,72 @@ fn every_dead_end_holds_a_chest_a_vault_a_landmark_the_way_in_or_the_end_and_a_s
     assert!((0.2..0.32).contains(&share(dead, rooms)), "{dead} of {rooms} rooms are dead ends");
 }
 
-#[test]
-fn loops_come_now_and_then_as_the_forge_joins_a_storey() {
-    // Loops counted over a graph whose nodes are rooms and open cells but theirs, a flight's cell one node on both
-    // its storeys: its edges past a tree's.
-    let (mut loops, mut most) = (0, 0);
-    for dungeon in DUNGEONS.iter() {
-        let node = |cell: usize| match dungeon.cells[cell] {
-            Cell::Rock | Cell::Void => None,
-            Cell::Room(number) => Some(usize::from(number)),
-            Cell::Corridor => Some(dungeon.rooms.len() + cell),
-            Cell::Stair(_) => Some(dungeon.rooms.len() + dungeon.cells.len() + cell % dungeon.plane()),
-        };
-        let mut joined = std::collections::BTreeSet::new();
-        let mut nodes = std::collections::BTreeSet::new();
-        for cell in 0..dungeon.cells.len() {
-            let Some(here) = node(cell) else { continue };
-            nodes.insert(here);
-            for next in dungeon.walk_from(cell).filter_map(node).filter(|&there| there != here) {
-                joined.insert((here.min(next), here.max(next)));
-            }
+/// The loops a dungeon's cells hold, those of its warrens' storeys apart or alone: over a graph whose nodes are rooms
+/// and open cells but theirs, a flight's cell one node on both its storeys, its edges past a forest's, one tree a piece.
+fn loops(dungeon: &Dungeon, warren: bool) -> usize {
+    let in_warren = |cell: usize| {
+        let square = square_of(dungeon, cell);
+        // A square of the grid no block stands on is rock.
+        let block = dungeon.squares.iter().position(|&each| each == square);
+        block.is_some_and(|block| dungeon.warrens.contains(&(block, dungeon.storey_of(cell))))
+    };
+    let node = |cell: usize| match dungeon.cells[cell] {
+        _ if in_warren(cell) != warren => None,
+        Cell::Rock | Cell::Void => None,
+        Cell::Room(number) => Some(usize::from(number)),
+        Cell::Corridor => Some(dungeon.rooms.len() + cell),
+        Cell::Stair(_) => Some(dungeon.rooms.len() + dungeon.cells.len() + cell % dungeon.plane()),
+    };
+    let mut joined = std::collections::BTreeSet::new();
+    let mut nodes = std::collections::BTreeSet::new();
+    for cell in 0..dungeon.cells.len() {
+        let Some(here) = node(cell) else { continue };
+        nodes.insert(here);
+        for next in dungeon.walk_from(cell).filter_map(node).filter(|&there| there != here) {
+            joined.insert((here.min(next), here.max(next)));
         }
-        let found = joined.len() + 1 - nodes.len();
-        loops += found;
-        most = most.max(found);
     }
-    let average = share(loops, COUNT);
+    let mut head: std::collections::BTreeMap<usize, usize> = nodes.iter().map(|&node| (node, node)).collect();
+    fn root(head: &mut std::collections::BTreeMap<usize, usize>, mut node: usize) -> usize {
+        while head[&node] != node {
+            node = head[&node];
+        }
+        node
+    }
+    let mut pieces = nodes.len();
+    for &(one, other) in &joined {
+        let (one, other) = (root(&mut head, one), root(&mut head, other));
+        if one != other {
+            head.insert(one, other);
+            pieces -= 1;
+        }
+    }
+    (joined.len() + pieces).saturating_sub(nodes.len())
+}
+
+#[test]
+fn loops_come_now_and_then_as_the_forge_joins_a_storey_and_often_in_a_warren() {
+    let (mut found, mut most) = (0, 0);
+    let (mut warrens, mut warren_loops) = (0, 0);
+    for dungeon in DUNGEONS.iter() {
+        let outside = loops(dungeon, false);
+        found += outside;
+        most = most.max(outside);
+        if !dungeon.warrens.is_empty() {
+            warrens += dungeon.warrens.len();
+            warren_loops += loops(dungeon, true);
+        }
+    }
+    let average = share(found, COUNT);
     assert!((3.0..6.0).contains(&average) && most < 40, "{average} loops a dungeon on average, at most {most}");
+    assert!(
+        (0.1..0.25).contains(&share(
+            warrens,
+            DUNGEONS.iter().map(|dungeon| dungeon.block_storeys.iter().sum::<usize>()).sum()
+        )),
+        "{warrens} warrens"
+    );
+    assert!((6.0..11.0).contains(&share(warren_loops, warrens)), "{warren_loops} loops in {warrens} warrens");
 }
 
 #[test]
@@ -209,11 +250,12 @@ fn now_and_then_a_block_storey_is_one_great_room_and_one_under_a_storey_rises_in
             .filter(|&next| dungeon.cells[next] == Cell::Corridor)
             .count();
         assert_eq!(dungeon.balustrades.len(), edges, "a balustrade along each edge the gallery meets the air");
-        let floor = storey_floor(dungeon.storey_of(voids[0]));
-        assert!(dungeon.balustrades.iter().all(|rail| rail[4] == floor && rail[5] == floor + BALUSTRADE_M));
+        // Up to two galleries, each rail on the floor of a storey that holds open air.
+        let floors: Vec<f64> = voids.iter().map(|&cell| storey_floor(dungeon.storey_of(cell))).collect();
+        assert!(dungeon.balustrades.iter().all(|rail| floors.contains(&rail[4]) && rail[5] == rail[4] + BALUSTRADE_M));
     }
     assert!((0.03..0.07).contains(&share(great, storeys)), "{great} great rooms in {storeys} block storeys");
-    assert!((0.5..0.75).contains(&share(galleries, under)), "{galleries} galleries of {under}");
+    assert!((0.4..0.75).contains(&share(galleries, under)), "{galleries} galleries of {under}");
 }
 
 #[test]
@@ -298,4 +340,18 @@ fn each_torch_burns_alone_even_on_a_landing_two_flights_share() {
             assert!(!dungeon.torches[..number].contains(torch), "two torches at {:?}", torch.at);
         }
     }
+}
+
+#[test]
+fn a_gallery_never_rises_into_a_storey_that_is_a_great_room_or_keeps_a_gallery_already() {
+    use crate::descent::{BlockPlan, Great, StoreyPlan};
+    let great = Great { x: 3, y: 3, width: 9, depth: 9 };
+    let storey = |great: Option<Great>| StoreyPlan { great, ..StoreyPlan::default() };
+    let mut plan =
+        BlockPlan { storeys: vec![storey(None), storey(Some(great)), storey(Some(great))], flights: Vec::new() };
+    let mut lane = crate::lane::Lane::new(7);
+    assert!(plan.plan_gallery(1, &mut lane), "the first great room rises into the plain storey over it");
+    assert!(!plan.plan_gallery(1, &mut lane), "never a second gallery on that storey");
+    assert!(!plan.plan_gallery(2, &mut lane), "never into the great room over the second");
+    assert!(plan.storeys[1].gallery.is_none(), "the great room keeps its floor");
 }

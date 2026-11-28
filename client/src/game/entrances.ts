@@ -2,6 +2,7 @@
 // turned as Daggerfall's dungeon blocks stand it, and its door, where E offers to enter.
 import type { ForgedModel, MeshBuilder } from '../models/model.ts';
 import type { PropTable } from '../models/tables.ts';
+import type { StyleKey } from './dungeonLayout.ts';
 
 /** The entrance models by their number (0 to 5), and the height each one's Daggerfall block stands it at: DUNGAA00
  *  stands 42000 at 2.5 m, DUNGAA01 42001 at 4.8 m, the dungeon blocks stand 43601 at 0.775 m and 43602 at 0.475 m, and
@@ -23,6 +24,13 @@ export interface Entrance {
   readonly ground: number;
   readonly yaw: number;
   readonly model: number;
+}
+
+/** What the dungeon behind an entrance is built in, which its facade above ground wears: its style and its first
+ *  look's two picture sets. */
+export interface EntranceLook {
+  readonly style: StyleKey;
+  readonly pictures: readonly [number, number];
 }
 
 /** The entrances in a patrol's `Gear.dungeons`, five numbers each, in the dungeons' order. */
@@ -66,12 +74,12 @@ export function standOf(entrance: Entrance): [number, number, number] {
   return [entrance.x, entrance.y, entrance.ground + (ENTRANCE_LIFTS_M[entrance.model] ?? 0)];
 }
 
-/** An entrance's door: its quad's middle in the world, the way its face looks out, across the ground, and the height
- *  of its lintel; null where the props' table gives its model no door. */
+/** An entrance's door: its quad's middle in the world, the way its face looks out, across the ground, and the heights
+ *  of its sill and its lintel; null where the props' table gives its model no door. */
 export function doorOf(
   entrance: Entrance,
   props: PropTable,
-): { middle: Point; out: readonly [number, number]; top: number } | null {
+): { middle: Point; out: readonly [number, number]; bottom: number; top: number } | null {
   const door = props[ENTRANCE_MODELS[entrance.model] ?? -1]?.doors?.[0];
   if (!door) return null;
   const middle = turned(
@@ -84,6 +92,7 @@ export function doorOf(
   return {
     middle: [stand[0] + middle[0], stand[1] + middle[1], stand[2] + middle[2]],
     out: [outX / length, outY / length],
+    bottom: stand[2] + Math.min(door.a[1], door.b[1], door.c[1]),
     top: stand[2] + Math.max(door.a[1], door.b[1], door.c[1]),
   };
 }

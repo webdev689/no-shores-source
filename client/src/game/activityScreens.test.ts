@@ -131,7 +131,7 @@ test('E at an entrance opens its card: tier, level, modifiers and pay; Enter goe
     assert.ok(root.find(words), words);
   assert.equal(gearScreenOpen(), true, 'the game’s keys rest under it');
   root.press('card-enter')?.click();
-  assert.deepEqual(entered, [[0, 'The Caverns of the Gullwing Vale']]);
+  assert.deepEqual(entered, [[0, 'The Caverns of the Gullwing Vale', undefined, 'elite']], 'at the tier its card drew');
   assert.equal(gearScreenOpen(), false);
   screens.card(0, 'The Caverns of the Gullwing Vale');
   assert.equal(gearScreenOpen(), true);
@@ -140,7 +140,7 @@ test('E at an entrance opens its card: tier, level, modifiers and pay; Enter goe
   assert.equal(entered.length, 1, 'closed, not entered');
   screens.card(1, 'The Mines of the Gullwing Vale');
   window.dispatchEvent(new FakeEvent('keydown', { key: 'e' }));
-  assert.deepEqual(entered[1], [1, 'The Mines of the Gullwing Vale'], 'E again goes in');
+  assert.deepEqual(entered[1], [1, 'The Mines of the Gullwing Vale', undefined, 'elite'], 'E again goes in');
 });
 
 test('the card leads each modifier with its icon, its words as large as the menu’s on the same screen', async () => {

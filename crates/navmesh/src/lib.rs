@@ -66,6 +66,21 @@ pub const AGENT: Agent = Agent {
     walks_to_drops: false,
 };
 
+/// The baked ground as the mesh reads it for its corners and its paths: between the cells' centres, but never blended
+/// across an edge higher than a body's step, such as a storey's over the floor of the storey under it, where a blend
+/// is a height of neither floor (`Heights::edged_height_at`).
+struct Edged<'heights>(&'heights Heights);
+
+impl Terrain for Edged<'_> {
+    fn height_at(&self, x: f64, y: f64) -> f64 {
+        self.0.edged_height_at(x, y, TUNING.step)
+    }
+
+    fn climbs(&self) -> bool {
+        self.0.climbs()
+    }
+}
+
 /// The open sea at 0 m under a course laid over it, where no body climbs, as its rim holds them (`Heights::rim`): its
 /// links are only those walked, jumped, vaulted or dropped.
 struct OverSea;
@@ -165,7 +180,7 @@ impl NavMesh {
     }
 
     /// The mesh from its polys over a field's grid, each corner lifted onto the true surface nearest its own level
-    /// rather than its voxel's rounded top, with its firing spots, and its links laid (`Baking`'s last slice).
+    /// rather than its voxel's rounded top (within a step), with its firing spots, and its links laid (`Baking`'s last slice).
     fn assembled(
         colliders: &[Collider],
         ground: Option<Heights>,
@@ -174,14 +189,19 @@ impl NavMesh {
         (spots, links): (Vec<Spot>, Vec<Link>),
         over_sea: bool,
     ) -> Self {
-        let floor: &dyn Terrain = match &ground {
+        let edged = ground.as_ref().map(Edged);
+        let floor: &dyn Terrain = match &edged {
             Some(heights) => heights,
             None if over_sea => &OverSea,
             None => &Flat,
         };
         for corner in &mut corners {
             let (x, y) = (grid.min_x + corner.x * grid.cell, grid.min_y + corner.y * grid.cell);
-            corner.z = collider::surface_near(colliders, floor, x, y, Some(corner.z));
+            // Lifted only within a step: a surface farther off is another floor's, or rock's, met at a cell's edge.
+            let surface = collider::surface_near(colliders, floor, x, y, Some(corner.z));
+            if (surface - corner.z).abs() <= TUNING.step {
+                corner.z = surface;
+            }
         }
         let mesh = Mesh::new(corners, polys);
         let obstacles = Obstacles::new(mesh.polys.len());
@@ -264,14 +284,6 @@ impl NavMesh {
         way.corridor.iter().filter_map(|&node| self.mesh.link_of(node)).map(|laid| laid.link).find(near)
     }
 
-    /// The ground the mesh was baked on.
-    fn floor(&self) -> &dyn Terrain {
-        match &self.ground {
-            Some(heights) => heights,
-            None => &Flat,
-        }
-    }
-
     /// A path from `from` to `to`: the waypoints from the start to the goal, both included, each on the surface
     /// walked there. None when either end is off the mesh or nothing joins them.
     #[must_use]
@@ -346,7 +358,11 @@ impl NavMesh {
 
     /// The height of the surface at (x, y) on a poly's level; the tallest top there with no poly.
     fn height_on(&self, poly: Option<usize>, x: f64, y: f64) -> f64 {
-        collider::surface_near(&self.colliders, self.floor(), x, y, poly.map(|poly| self.mesh.levels[poly]))
+        let level = poly.map(|poly| self.mesh.levels[poly]);
+        match &self.ground {
+            Some(heights) => collider::surface_near(&self.colliders, &Edged(heights), x, y, level),
+            None => collider::surface_near(&self.colliders, &Flat, x, y, level),
+        }
     }
 
     /// Locate, A* and funnel.

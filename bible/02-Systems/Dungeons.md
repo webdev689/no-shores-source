@@ -5,7 +5,7 @@ code:
   - crates/dungeon/src/lib.rs#of_patrol
   - crates/room/src/playlist_run.rs#playlist_run
   - crates/dungeon/src/lib.rs#style_of
-  - crates/dungeon/src/lib.rs#name
+  - crates/dungeon/src/names.rs#named
   - crates/dungeon/src/styles.rs#STYLES
   - crates/dungeon/src/dungeon.rs#Dungeon
   - crates/dungeon/src/block.rs#BlockLayout
@@ -90,12 +90,21 @@ code:
   - client/src/game/encounterMesh.ts#layEncounters
   - client/src/game/encounterMesh.ts#waterMesh
   - client/src/game/encounterMesh.ts#ANCHOR_SLAB
+  - client/src/game/encounterMesh.ts#rite
+  - client/src/game/dungeonDread.ts#layDread
+  - client/src/game/dungeonDread.ts#coldRooms
+  - client/src/game/entranceFacades.ts#layFacade
+  - client/src/game/entranceView.ts#entrancesModel
+  - crates/dungeon/src/warren.rs#carve_warren
+  - crates/dungeon/src/descent.rs#roomy
+  - crates/movement/src/heights.rs#edged_height_at
 ---
 # Dungeons
 
 The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from a seed
-([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]], [[Pick - Dungeons 2.0]]). The choices are Claude's
-([[Dungeons as Claude Builds Them]]).
+([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]], [[Pick - Dungeons 2.0]]), gone deeper and darker
+([[Each Region Has Its Own Dungeons, and the Dungeons Go Deeper and Darker]]). The choices are Claude's
+([[Dungeons as Claude Builds Them]], [[The Dungeon Overhaul as Claude Builds It]]).
 
 ## How it works
 
@@ -104,8 +113,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   draw is made on a lane of its own: Mulberry32 over a seed
   that is the FNV-1a hash of the lane's name, as DFO's lanes draw ([[Agree to the Bit]]).
 - **A patrol's three.** `of_patrol` gives each its seed, from the patrol's id and its number, and its style; the
-  three take three different styles of the six, shuffled by the patrol's id. `name` names one for its first style
-  and its patrol: The Crypt of the Saltgrass Downs.
+  three take three different styles of the six, shuffled by the patrol's id. `named` names every dungeon but an Elite
+  Dungeon by its seed and its first style, on a lane of its own: "The Weeping Ossuary", "Gallowmere Crypt", "The
+  Catacombs of Ysolde" (`names.rs`). The page asks for the name alone with `nameOnly` (`dungeonName`).
 - **Laid where no patrol is.** A place that is no patrol, as a sea island, lays its dungeon by its own seed and a
   style by its key (`style_of`): `Room::dungeon_run` stands its room as a run of its own (`RunOf::Sea`), the room
   module answers its layout to an ask by seed and style, and the page reads it with `askLayout`. A patrol's dungeon is
@@ -116,12 +126,12 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 
 | Style (key) | Rooms a block | Its rooms' forms (sides in cells) | Ceilings (m) | Roof | Pictures | Below | Entrances |
 |---|---|---|---|---|---|---|---|
-| Crypt (`crypt`) | 3 to 5 | rectangles 2 to 6; octagons 4 to 5; alcoves 3 to 5 by 3 to 4 | 3.2 to 4.4 | arched | 123, 124 | Caverns | 43601, 43602 |
-| Halls (`halls`) | 2 to 4 | rectangles 3 to 10; Ls 4 to 10; crosses 6 to 10 by 4 to 10 | 4.0 to 5.6 | arched | 122, 124 | Crypt | 43601, 43602 |
-| Cells (`cells`) | 4 to 6 | rectangles 2 to 3; alcoves 3 to 5 by 3 | 3.2 to 3.6 | flat | 122, 123 | Mines | 43601, 43602 |
-| Sanctum (`sanctum`) | 2 to 4 | rectangles 3 to 10; Ls, octagons 4 to 10; crosses 6 to 10 by 4 to 10 | 4.4 to 5.6 | arched | 124, 122 | Crypt | 43601, 43602 |
-| Caverns (`caverns`) | 2 to 4 | caves 3 to 8, and a few rectangles 3 to 6 | 4.4 to 5.6 | rough | 120, 119 | Crypt | 43603, 43604 |
-| Mines (`mines`) | 2 to 4 | galleries 5 to 12 by 2; stopes (caves) 3 to 8; a few rectangles 2 to 5 | 3.2 to 4.4 | flat | 119, 120 | Caverns | 43603, 43604 |
+| Crypt (`crypt`) | 3 to 5 | rectangles 2 to 6; octagons 4 to 5; alcoves 3 to 5 by 3 to 4; round rooms 5 to 6; rings 5 to 6 | 3.2 to 4.4 | arched | 123, 124 | Caverns | 43601, 43602 |
+| Halls (`halls`) | 2 to 4 | rectangles 3 to 10; Ls 4 to 10; crosses 6 to 10 by 4 to 10; rings 6 to 10; Ts 6 to 10 by 5 to 10 | 4.0 to 5.6 | arched | 122, 124 | Crypt | 43601, 43602 |
+| Cells (`cells`) | 4 to 6 | rectangles 2 to 3; alcoves 3 to 5 by 3; rings 5 to 7; Ts 5 to 6 by 4 to 6 | 3.2 to 3.6 | flat | 122, 123 | Mines | 43601, 43602 |
+| Sanctum (`sanctum`) | 2 to 4 | rectangles 3 to 10; Ls, octagons 4 to 10; crosses 6 to 10 by 4 to 10; round rooms 5 to 10; diamonds and rings 6 to 10 | 4.4 to 5.6 | arched | 124, 122 | Crypt | 43601, 43602 |
+| Caverns (`caverns`) | 2 to 4 | caves 3 to 8, and a few rectangles 3 to 6 and round rooms 4 to 8 | 4.4 to 5.6 | rough | 120, 119 | Crypt | 43603, 43604 |
+| Mines (`mines`) | 2 to 4 | galleries 5 to 12 by 2; stopes (caves) 3 to 8; a few rectangles 2 to 5 and Ts 5 to 9 by 4 to 8 | 3.2 to 4.4 | flat | 119, 120 | Caverns | 43603, 43604 |
 | Chalk (`chalk`, in `PASSAGE_STYLES`: no patrol's or the sea's draw) | 3 to 5 | galleries 4 to 7 by 2; rectangles 3 to 5 by 3 to 4; Ls 4 to 6 | 3.2 to 4.0 | flat | 123, 120 | Barrow | 43603, 43604 |
 | Barrow (`barrow`, in `PASSAGE_STYLES`) | 3 to 5 | rectangles 2 to 4; alcoves 3 to 5 by 3 to 4; octagons 4 to 5 | 3.6 to 4.8 | arched | 124, 122 | Caverns | 43601, 43602 |
 
@@ -138,7 +148,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   (`Dungeon::forge_within`), so a seed's other draws are as a patrol's dungeon's would be. The blocks stand in a
   chain: the way in's first, each next one beside the one before, drawn from the free squares round it.
 - **How deep** (`descent.rs`, on the lane `storeys:<seed>`): the way in's block holds one or two storeys, any other one
-  to three, each count as likely (`block_storeys`); the dungeon holds as many as its deepest block. A caller may ask
+  to five (`STOREYS_MOST`), each count as likely (`block_storeys`), and the last block as many as the deepest, so the
+  way down ends at the bottom; the dungeon holds as many as its deepest block. A caller may ask
   for no more than a number of storeys (`Dungeon::forge_storeys(seed, style, blocks, most)`; `forge_within` is
   `forge_storeys` with `STOREYS_MOST`): at 1, every block is one storey, as a passage under the ground wants.
 - **Doorways between blocks.** A block and the next in the chain share one doorway, the way on, on the deepest storey
@@ -147,9 +158,11 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Flights first** (`BlockPlan::planned`, on the lane `stairs:<seed>:<block>`): before any room, a block lays a flight
   for each two of its storeys one over the other, on the first of every head cell and way down, shuffled, where its
   four cells and the rock beside them are clear of every storey's flights, landings and doorways, its cells and its
-  landings are inside the rim, and every storey's landings and the cells inside its doorways stay joined round it. A
-  flight's cells are rock on every storey of its block, so nothing stands over or under one. Its landings are ways
-  on their storeys.
+  landings are inside the rim, and every storey's landings and the cells inside its doorways stay joined round it with
+  room to spare: at least half the storey's open cells (`roomy`), so two flights' landings are never walled into a
+  pocket no room reaches. A flight's cells are rock on every storey of its block, so nothing stands over or under one;
+  the rock beside them only on its own two storeys, the rest free for rooms and ways. Its landings are ways on their
+  storeys.
 - **The way down.** On a lane of its own (`deeper:<seed>`), one dungeon in two lays its last block in the style below
   its first: the halls and the sanctum break into a crypt, the cells into mines, the crypt and the mines into
   caverns, the caverns into a crypt. The dungeon keeps its first style's name. Each part wears a look, its block's
@@ -163,23 +176,35 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   fit its part; then its sides within the form's and the part's, which way it lies, its outline, the first of eight
   drawn spots in its part whose cells are rock its plan keeps clear, and its ceiling (a whole number of 0.4 m).
 - **Great rooms** (`plan_great`, on the lane `great:<seed>:<block>`): in every style but the cells, a block storey is
-  one great room 12 times in 100: a rectangle (a cave in the caverns) of nine to twelve cells each way, drawn, inside
+  one great room 20 times in 100 in the six styles, 12 in the passages' two: a rectangle (a cave in the caverns) of nine to twelve cells each way, drawn, inside
   the rim with rock round it, on the first spot from a drawn one clear of its storey's flights and landings and, where
   one is, of the landings of the storey over it; nine each way where its drawn sides find none. A hewn one stands its
   pillars as any great room does. Over 2000 dungeons about one block storey in twenty is one.
+- **Warrens** (`warren.rs`, on the lane `warren:<seed>:<block>`): in the six styles but the cells 18 storeys in 100 but
+  the way in's, a great room's and the last block's deepest (the end's) are warrens (the cells, all small rooms and no
+  great one, lay none, so an Elite Dungeon in them keeps rooms its seals fit), a maze to lose one's way in: two or three
+  small chambers (rectangles and round rooms of 2 to 3 cells, caves of 3 to 4 in the caverns), then a maze of
+  one-cell ways through the rock round them, every second cell a crossing, grown by a drawn walk that turns back only
+  where it can go no further, and 65 of each 100 of its dead ends broken through into the way beside, so it loops.
+  Each chamber is reached from two sides, and its pieces of maze are joined to the storey's other nodes as any way is.
+  A warren's ways take a torch every ninth cell. The dungeon keeps which storeys are warrens (`warrens`). Over 2000
+  dungeons a warren holds about eight loops of its own.
 - **Galleries** (`plan_gallery`, on the lane `gallery:<seed>`): in a dungeon that holds a great room under another
-  storey (never under the way in's), the first whose storey over it has no landing over it rises through
+  storey (never under the way in's), the first (in the six styles, the first two) whose storey over it has no landing
+  over it, and is neither a great room nor keeps a gallery already, rises through
   that storey: two to four of its sides one after another round it (drawn) keep a gallery a cell wide, a way of the
   storey over, and the rest of its rectangle there is open air (`Cell::Void`, 3.2 m high) over the room's floor (over
   a cave's bitten edge or a stone the rock stays). The rock round the open air on its other sides is kept, so no room
   or way of that storey opens onto it, and that storey's landings and doorways stay joined round it. A balustrade
   (`balustrades`) stands along every edge where the gallery meets the air, inside the gallery, 0.25 m deep (as the
   pieces drawn there are) and 1 m high: a block a body climbs and drops from, a way down and never up. No pillar
-  stands under the open air. Over 2000 dungeons about six in ten of those with a great room on a lower storey have
-  one, where the gallery fits: one dungeon in 25.
+  stands under the open air. Over 2000 dungeons about half of those with a great room on a lower storey have one,
+  where the gallery fits.
 - **A room's shape** (`outline`) lies inside its rectangle, and is always one walk. A rectangle takes all of it; an L
   leaves a corner quarter rock; a cross leaves each corner block rock, a third of each side; an octagon leaves each
-  corner cell rock. Alcoves line one or both long walls of a hall with single cells cut one deep into the rock, every
+  corner cell rock; a round room keeps the cells inside its rectangle's ellipse, a diamond those inside its rhombus;
+  a ring walks round a core of rock left standing as stones, the walk two cells wide (no purpose that lays rows
+  suits a ring, whose rows would cut its walk into lanes too narrow to pass); a T keeps a bar along one long side and a stem down the middle of the rest. Alcoves line one or both long walls of a hall with single cells cut one deep into the rock, every
   second cell from the second, never at a wall's end: a crypt's burial niches and the cells' cells. A cave is bitten
   from its rectangle as the Forge bites one: each cell kept where it lies inside the rectangle's ellipse, its edge
   pushed in or out by a draw, and only the cells one walk from its middle kept. A great cave, 5 cells or more each
@@ -190,10 +215,12 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   such pair on a tie; then each pair the tree left unjoined is joined one time in min(0.3, 2 / its nodes). Each join
   is the cheapest way: rock costs 3, a room 2, a corridor 1, so ways reuse ways. A way never crosses the rim but at a
   doorway, never cuts a stone, and never takes a cell its plan keeps (a flight, the rock beside it, a gallery's open
-  air and the rock round it). Over 2000 dungeons a dungeon holds 4.4 loops on average and 24 at most, counted over
-  its rooms and open cells, a flight's cell one on both its storeys. A storey that is not one walk, has two dead ends (rooms of one doorway) or more, has no
+  air and the rock round it). Over 2000 dungeons a dungeon holds 4.3 loops on average and 21 at most outside its
+  warrens, counted over its rooms and open cells, a flight's cell one on both its storeys. A storey that is not one walk, has two dead ends (rooms of one doorway) or more, has no
   room and no gallery, or (the way in's) no room against rock for its exit door, tries again on the next of sixteen
-  seeds, and past them takes its simplest form, one room of 3 by 3: about one storey in a hundred. A dungeon is one
+  seeds, and past them takes its simplest form, one room of 3 by 3: about one storey in ten thousand. A deep block's
+  storeys hold fewer rooms, its flights taking their cells: about 2.6 a storey in a block one storey deep, 1.9 in one
+  five deep. A dungeon is one
   walk, since each storey is, each flight joins its two and the doorways join the blocks.
 - **Every side way leads somewhere.** A storey has one dead end at most, and each dead end holds the way in, the end,
   a vault, a landmark, or its storey's chest (`chest_rooms`, the rooms its chests stand in first). A way that ends
@@ -211,13 +238,13 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   in five), else one that runs on or ends in the room's corner each way, else any. It takes a player back out to the
   dungeon's entrance once the Reeve has fallen ("In the Game").
 - **Ceilings** (`ceiling`): a room's form, only a look; it stands at its own height whatever its form. Under an
-  arched roof a square room or an octagon takes a dome, and a hall of alcoves or a rectangle whose longer side is at
-  least half again its shorter a vault along it; a cave and every cavern takes rough rock; any other room is flat.
+  arched roof a square room, an octagon or a round room takes a dome, and a hall of alcoves, a T or a rectangle whose
+  longer side is at least half again its shorter a vault along it; a cave and every cavern takes rough rock; any other room is flat.
 - **Torches**, 2.1 m up a wall over its own floor and 0.35 m off it, each lighting 8 m. Two flank the portal first, so the end of the
   way is lit and marked before it opens: on its wall 1.55 m either side of its middle, past its arch (1.3 m) and a
   sconce's reach (0.2 m), or, where its cell is the room's corner that way, in the middle of that side wall. Then on each room's quiet cells on every third
   diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; at
-  each landing, so a flight is lit from both its ends, a landing two flights share once; and on every fourth corridor cell of a block storey, row by
+  each landing, so a flight is lit from both its ends, a landing two flights share once; and on every fourth corridor cell of a block storey (a warren's every ninth), row by
   row, but one already lit. Each of these stands in the middle of its cell's wall, none
   over the exit door or the portal, and none within 2.4 m of another of its room's, which would read as a pair.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
@@ -229,7 +256,11 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   and every other room, along the walk from the way in, one drawn among those its shape suits that its look's other
   rooms have taken least, so none is taken twice while one is left. A mines' gallery is a rectangle and its stope a
   cave. Each purpose has a short key (`role`: `ossuary`, `war-room`) and a name, "the Ossuary"; a name taken again
-  takes a word before it, "the Old Ossuary", then "the Lower Ossuary", so every name in a dungeon is its own.
+  takes a word before it, "the Old Ossuary", then "the Lower Ossuary", and so on through ten words, then two ("the Old
+  Lower Ossuary"), so every name in a dungeon is its own. Each of the six styles' banks holds two rooms of dread among
+  its eight (open graves, a slaughter hall, a flaying room, a desecrated chapel, a nest, a sealed drift, ...), which
+  the page dresses in blood and bones ("In the Game"); the mines' and the caverns' fall in as rock and timber, never
+  masonry.
 - **Props** (`furnish`). A purpose lays its props from the forged models' families ([[Forged Models]]): some 250
   pieces that fit a cell and belong under the ground, from coffins, tombs and headstones to beds, shelves, racks,
   crates, hearths, posts, rocks and hangings. Each of its lays stands its pieces by a pattern: against the walls, one
@@ -275,7 +306,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **The walk.** Each room's walk is the fewest cells crossed from the way in's cell, down and up the flights; open
   air is no floor, so the walk never crosses it (`walk_from`). The end is the farthest room by walk on the last
   block's deepest storey a walk reaches; every room of the way in's storey lies nearer.
-- **Storeys** (`storeys`): a dungeon holds one to three (`STOREYS_MOST`), stacked downward `STOREY_M` (8 m) apart from
+- **Storeys** (`storeys`): a dungeon holds one to five (`STOREYS_MOST`), stacked downward `STOREY_M` (8 m) apart from
   the way in's: storey k's floor is -8k m. `cells` and `ceilings` hold a plane of `columns` by `rows` for each storey,
   storey by storey, so a one-storey dungeon's cells and their numbers are its whole grid's. A cell's number
   names its storey (`storey_of`, `floor_of`); `centre` stays (x, y), `standing_point` adds its floor. A ceiling is
@@ -709,6 +740,13 @@ as standing none (`readDungeon`).
   on, all of it edge on). A flame mirrored is as bright however far it burns and as small as it looks from there
   (`flame_image`), so a dark lake still shows the far torches, unless rock stands between: the line to each is
   walked cell by cell (`rock_between`). A slow ripple moves it all.
+- **The dread** (`dungeonDread.ts`), drawn by the page alone where no body meets it: blood pooled on floors and smeared
+  down corridors, more the deeper the storey; in the dread rooms bones scattered, marks on the walls (a handprint or
+  four scratches), and from a high ceiling chains and shrouded dead, never lower than 2.3 m; and eyes low against a
+  wall that catch the light far off and are gone within 3.5 m, blinking now and then. A room's torches stand cold one
+  time in 25 at the top, one in three five storeys down, and seven times in ten in a dread room; never the way in's,
+  the end's or a seal's room, which must be lit to be read. A cold torch lights nothing and burns no flame, keeping its
+  number so every other light keeps its own (`coldRooms`).
 - **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
   (`roomNameAt`, `placeWords`), and its chests counted end the line ("Chests 2 of 5", `chestsCounted`).
 - **The cache** (`chestMesh`): the owner's chest from DFO ([[Pick - Chest]]) in wood and iron at the room's
@@ -725,7 +763,13 @@ as standing none (`readDungeon`).
   entrance's door picture (56 or 331, record 2), the climate's timber, the dressing set the pieces wear (1021, turned
   by the climate) and the props' own.
 - **The entrances** (`entrances.ts`, `EntranceView`): the model each entrance names of the six above, lifted as the
-  table says, turned by the room's yaw; E reaches a door within 2.5 m of its quad's middle.
+  table says, turned by the room's yaw; E reaches a door within 2.5 m of its quad's middle. Round each door stands its
+  dungeon's facade (`entranceFacades.ts`), once the page has forged the dungeon for its name (`Entrances.lookOf`), in
+  the dungeon's own stone and the climate's timber and iron: the crypt's mausoleum under a gable among graves, the
+  halls' gatehouse between crenellated towers with its portcullis drawn up, the cells' squat gaol beside a gibbet and
+  its cage, the sanctum's portico of columns on a stepped plinth, one fallen, the caverns' mouth heaped with leaning
+  slabs, and the mines' timbered adit with its rails and headframe; the passages' chalk and barrow wear the cave
+  mouth and the mausoleum. Drawn only: as the mound, a body passes through it, and its doorway stays clear.
 - **The ground inside**: the fight's door predicts on the dungeon's own ground (`fighter_dungeon`), as the room
   judges bodies; the jambs are drawn from the same `boxes`.
 - **The encounters** (`encounterMesh.ts`, `encounterLaw.ts`, `encounterCues.ts`), from the layout's plan and each
@@ -733,7 +777,10 @@ as standing none (`readDungeon`).
   the last with the seal stone glowing; the drowned floor as foul water over its cells while the seal holds, a sickly
   green over its bed whose glow breathes slowly (`FOUL_FLAG`), apart from the dungeon's plain still water, gone as it
   breaks, seething with bubbles of a brighter bile that swell and burst so it reads as the floor that harms; a stepped
-  slab of the end room's trim under each anchor, 8 cm high, and a crystal over each relic. On the floor, rings: runes
+  slab of the end room's trim under each anchor, 8 cm high, and a crystal over each relic. Each seal's room is laid as
+  a rite (`rite`): a ring of gilt inlaid in the floor just outside each rune's, plate's and relic's mark, lit as a
+  vault chest's gold is so it reads on dark stone, a Litany's and a Weighing's joined by gilt spokes to a hub amid them, iron rungs up the Ascent's pads, and the Holdfast's relic
+  hung on two chains from the ceiling; all of it drawn only, flush with the floor, on a pad's side or over every head. On the floor, rings: runes
   dim, lit gold under a beam while showing, green once stepped and red under a beam for a second when stepped wrong,
   each with a glyph of its own (one, two or three strokes round a dot, then round a small ring, so no two of six read
   alike however turned); plates in play under a beam, dim at rest and gold and filled while held; the seal stone's ring,
@@ -783,7 +830,11 @@ as standing none (`readDungeon`).
 - A landmark's storey is its first solid's (the wire gives a landmark no height of its own).
 - What a dungeon costs (natively, in release, `load_of_opening_the_deepest_dungeons`): over the 18 Elite Dungeons,
   the slowest forge 6 ms (three storeys, 4,608 cells) and the slowest opening, ground, navmesh bake, garrison and
-  encounters, 172 ms (three storeys, 6,912 cells).
+  encounters, 172 ms (three storeys, 6,912 cells). Measured before dungeons went five storeys deep: unmeasured since.
+- The navmesh reads its ground between the cells' centres, but never blended across an edge higher than a body's
+  step (`edged_height_at`), so a path over a room standing on a room below keeps to its own floor.
+- The dread is drawn by cell, not round the props: a mark or eyes may stand on a wall behind a prop, and a pool under
+  one.
 - A flight that finds no spot clear of a block's other flights, landings and doorways is left out, and its storeys
   would not be joined; over 2000 dungeons none is (a test holds every dungeon one walk).
 - A dungeon's storeys over the deepest of a block are rock in that block: the grid holds as many storeys as the

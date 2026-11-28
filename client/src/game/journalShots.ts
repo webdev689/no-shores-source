@@ -294,6 +294,7 @@ export const weaponsmithTakenShot = menuShot('weaponsmith', undefined, {
 const ABYSS_CARD: EntranceCard = {
   name: 'Saltworm Warrens',
   tier: 'Abyss Dungeon of the week · Level 30',
+  rank: 2,
   rules: ['5 revives for the company. A wipe starts the run over.', 'Never matched. Bring your company.'],
   modifiers: [LIGHTSWITCH, BURN, JUGGLER],
   pays: 'Once a week: a Legendary or Atheric Vestige, Essence, and the Abyss boon.',
@@ -304,6 +305,7 @@ const ABYSS_CARD: EntranceCard = {
 const ELITE_CARD: EntranceCard = {
   name: 'Forsaken Cistern',
   tier: 'Elite Dungeon of the week · Level 26',
+  rank: 1,
   rules: [],
   modifiers: [BRAWLER],
   pays: 'Once a week: a Legendary Vestige and Essence.',

@@ -7,7 +7,7 @@ use crate::{CELL_M, Cell, Dungeon, FLOOR_M, SIDES};
 
 /// How far each storey stands under the one over it (m), and the most storeys a dungeon holds.
 pub const STOREY_M: f64 = 8.0;
-pub const STOREYS_MOST: usize = 3;
+pub const STOREYS_MOST: usize = 5;
 /// A flight's cells, one after another in a straight line, its length (m), and its ceiling over its slope (m).
 pub const FLIGHT_CELLS: usize = 4;
 pub const FLIGHT_M: f64 = CELL_M * FLIGHT_CELLS as f64;

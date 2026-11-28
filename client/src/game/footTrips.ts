@@ -13,7 +13,7 @@ import type { BreachSeen } from '../network/breachMessages.ts';
 import { TIERS } from './activityWords.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout, STOREY_M, storeyAt } from './dungeonLayout.ts';
 import { cacheOf } from './dungeonChest.ts';
-import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
+import { DOOR_REACH_M, type Entrance, entranceAt, type EntranceLook, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
@@ -86,7 +86,7 @@ export function dungeonPlace(patrol: NodeInfo, layout: DungeonLayout): NodeInfo 
 }
 
 /** The place outside a sea island's dungeon, as a trip reads a patrol's: no place on land, its continent's climate. */
-export function seaPlace(continent: string, layout: DungeonLayout): NodeInfo {
+export function seaPlace(continent: string, layout: Pick<DungeonLayout, 'name'>): NodeInfo {
   return { id: 'sea-dungeon', kind: 'dungeon', name: layout.name, continent, ring: [], spawns: [], centre: [0, 0] };
 }
 
@@ -188,6 +188,7 @@ export function standInPassage(movement: MovementRules, combat: CombatRules, pas
 export class Entrances {
   private numbers: readonly number[] = [];
   private names = new Map<number, string>();
+  private looks = new Map<number, EntranceLook>();
   private namer: ((number: number) => void) | null = null;
   entrances: readonly Entrance[] = [];
 
@@ -210,9 +211,20 @@ export class Entrances {
     if (patrol.kind === 'dungeon') return patrol.name;
     const known = this.names.get(number);
     if (known) return known;
-    const named = askDungeon(module, patrol.id, patrol.name, number).name;
-    this.names.set(number, named);
-    return named;
+    const { name, style, pictures } = askDungeon(module, patrol.id, patrol.name, number);
+    this.names.set(number, name);
+    this.looks.set(number, { style, pictures });
+    return name;
+  }
+
+  /** The style and pictures of the dungeon behind entrance `number`, which its facade wears, once it is named. */
+  lookOf(number: number): EntranceLook | undefined {
+    return this.looks.get(number);
+  }
+
+  /** How many entrances' looks are known, so a drawer lays their facades again as more are. */
+  get looked(): number {
+    return this.looks.size;
   }
 }
 

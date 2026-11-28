@@ -11,15 +11,11 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 - #159 The rooms' worker tests wait for what they check, not for the clock
 - #234 The owner's answers to the Open Questions, recorded and built
-- #250 The kit runs only in cloud sessions
 - #251 Drops are larger and brighter, and weapons and armour lie on the ground as real pickups
 - #253 Record No Shores (Mobile): rebuilt in Rust, beside the browser game
-- #254 Sea polish: the aim swings between sides, lamps hold still, ships ride high waves, the map travels to every place
-- #256 Weapon glow fixes, a great-room Holdfast with lighter waves, and pathing round rocks
 - #257 Lines in the bible and code comments held to 120 characters, every longer one rewrapped (review 8)
 - #258 Armour, cloaks and clothes get large icons in the gear screens, as the weapons do
-- #259 The wreck exports again, its stern windows glowing as a lit ship's
-- #264 The hand-off says the repository is public under webdev689, and what the owner sets for it
+- #266 Region dungeons, entrance facades, skulls by tier, and deeper, darker dungeons
 - Drafts: #93 The toolkit's first review; #114 The gear message carries the pledge once
 
 ## Built
@@ -173,6 +169,19 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   vault left no chest place are fixed on the branch (tested offline). Its notes' Limits name what is left (sight under
   a flight's slope, a landmark's storey by its first solid). Whether passages go deeper than one storey is the
   owner's call.
+- **The dungeon overhaul (#266)**, tested offline and pictured headless in part:
+  - **On a real GPU and by hand**: five-storey dungeons, warrens, ring, T, round and diamond rooms, the dread (blood,
+    bones, chains, eyes, cold torches), the gilt rite in each seal's room, the entrance facades, and the region
+    dungeons' tiles and cards with their skulls. The facades are tested offline only.
+  - **Facade pictures**: a plan standing 11 m before Saltgrass's first entrance showed no mound, on a build with and
+    without the facade wiring (observation 0350). Whether the entrances draw on an offline page is unchecked.
+  - **The server and the drawn tier**: the server accepts any harder tier a page asks for (within the level gates),
+    not the day's draw; a patrol dungeon's room name loses the patrol's own seas, so leaving one can go to any easier
+    patrol tier. Closing both needs the draw's inputs (the character's level, the day) on the server's arrival judge.
+  - **A region dungeon's run** does not stand its players' ship at sea while they are inside (`shore.stand` runs
+    for node and passage rooms alone).
+  - **Load**: a five-storey dungeon's forge and opening time is unmeasured (the [[Dungeons]] Limits' figures are
+    from three storeys).
 - **The toolkit's barriers** (observations 0040, 0116, 0117, each seen a third time): a worker's run ending before the
   2-hour kill with its edits committed, its target/ deleted once merged, and no picture run driving another
   checkout's server.

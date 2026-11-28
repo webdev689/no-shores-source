@@ -25,6 +25,17 @@ fn a_cells_centre_stands_at_its_height_and_between_centres_the_ground_blends() {
 }
 
 #[test]
+fn read_edged_the_ground_blends_up_to_a_rise_and_past_one_keeps_the_height_of_the_cell_a_point_stands_in() {
+    let deck = deck();
+    // The raised cell stands 0.2 m over the deck: within a 0.3 m rise the blend is as `height_at`'s.
+    assert!((deck.edged_height_at(-0.5, 0.0, 0.3) - deck.height_at(-0.5, 0.0)).abs() < 1e-12);
+    // Past a 0.1 m rise each cell keeps its own: 1 m just west of their shared edge, 1.2 m just east.
+    assert!((deck.edged_height_at(-0.51, 0.0, 0.1) - 1.0).abs() < 1e-12, "the deck's own height by the step");
+    assert!((deck.edged_height_at(-0.49, 0.0, 0.1) - 1.2).abs() < 1e-12, "the raised cell's own height");
+    assert!(deck.edged_height_at(0.25, -0.5, 0.1) > 10.0, "a cell that holds none is a wall still");
+}
+
+#[test]
 fn a_cell_with_no_height_and_the_ground_off_the_grid_are_walls() {
     let deck = deck();
     assert!(deck.height_at(0.25, -0.5) > 10.0, "the cell that holds none");

@@ -10,6 +10,7 @@ import { activitiesAt } from './activities.ts';
 import { WORLD_CLOCK, roomNow } from '../sky/worldClock.ts';
 import type { AccountLink } from '../network/accounts.ts';
 import { delveInstance } from '../../../server/roomNames.ts';
+import { regionDungeons } from '../../../server/regionDungeons.ts';
 import { delveLaid } from './guild/delveRoom.ts';
 import { keepGuild } from './guild/guildHeld.ts';
 import { weekOf } from './guild/guildLaw.ts';
@@ -73,18 +74,12 @@ test('a trip into a dungeon and out again keeps the seas of the room the player 
   const { trips, happenings, ways, settled } = recorded({
     foot: { ...onPatrol, held: { entrances: { entrances: [] } } },
   });
-  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  trips.enter(1, 'Gloamford Bastion');
   await settled();
   trips.leave();
   await settled();
   assert.deepEqual(ways, [
-    [
-      'into',
-      'the node file',
-      'node-saltgrass-downs--abyss--dungeon-1--run-k3j4h5g6',
-      'The Halls of the Saltgrass Downs',
-      'abyss',
-    ],
+    ['into', 'the node file', 'node-saltgrass-downs--abyss--dungeon-1--run-k3j4h5g6', 'Gloamford Bastion', 'abyss'],
     ['onto', 'saltgrass-downs', 0, 'abyss', undefined],
   ]);
   assert.deepEqual(
@@ -124,7 +119,7 @@ test("a company member in a patrol's dungeon is joined in that dungeon, at their
   const { trips, happenings, ways, settled } = recorded({ foot: null });
   trips.join(patrol, 'node-saltgrass-downs--elite--dungeon-2--run-m9n8b7v6');
   await settled();
-  const name = 'The Caverns of the Saltgrass Downs';
+  const name = 'The Throat of Morwen';
   assert.deepEqual(happenings, [{ kind: 'join', node: 'saltgrass-downs--dungeon-2', name }]);
   assert.deepEqual(ways, [['into', '', 'node-saltgrass-downs--elite--dungeon-2--run-m9n8b7v6', name, 'elite']]);
 });
@@ -133,7 +128,7 @@ test("a patrol's dungeon's run asked by its name is gone into with its patrol's 
   const { trips, happenings, ways, settled } = recorded({ foot: null });
   trips.intoRun(patrol, 'node-saltgrass-downs--elite--dungeon-2--run-qaqa0001');
   await settled();
-  const name = 'The Caverns of the Saltgrass Downs';
+  const name = 'The Throat of Morwen';
   const file = JSON.stringify({ id: 'saltgrass-downs', kind: 'patrol', name: 'The Saltgrass Downs' });
   assert.deepEqual(happenings, [{ kind: 'enter', node: 'saltgrass-downs--dungeon-2', name }]);
   assert.deepEqual(ways, [['into', file, 'node-saltgrass-downs--elite--dungeon-2--run-qaqa0001', name, 'elite']]);
@@ -141,7 +136,7 @@ test("a patrol's dungeon's run asked by its name is gone into with its patrol's 
 
 test('a patrol’s dungeon at Abyss is a run of its own, or the company’s where it is in one', async () => {
   const alone = recorded({ foot: standing(patrol, 'abyss') });
-  alone.trips.enter(1, 'The Halls of the Saltgrass Downs');
+  alone.trips.enter(1, 'Gloamford Bastion');
   await alone.settled();
   assert.deepEqual(alone.ways[0]?.slice(0, 3), [
     'into',
@@ -151,11 +146,11 @@ test('a patrol’s dungeon at Abyss is a run of its own, or the company’s wher
   const company = recorded({ foot: standing(patrol, 'abyss') }, [
     'node-saltgrass-downs--abyss--dungeon-1--run-m9n8b7v6',
   ]);
-  company.trips.enter(1, 'The Halls of the Saltgrass Downs');
+  company.trips.enter(1, 'Gloamford Bastion');
   await company.settled();
   assert.equal(company.ways[0]?.[2], 'node-saltgrass-downs--abyss--dungeon-1--run-m9n8b7v6');
   const shared = recorded({ foot: standing(patrol, 'normal') });
-  shared.trips.enter(1, 'The Halls of the Saltgrass Downs');
+  shared.trips.enter(1, 'Gloamford Bastion');
   await shared.settled();
   assert.equal(shared.ways[0]?.[2], 'node-saltgrass-downs--dungeon-1', 'Normal stays shared');
 });
@@ -220,7 +215,7 @@ test('a sea island’s dungeon is entered by its name and left back onto the isl
   await settled();
   assert.deepEqual(ways[0]?.slice(2), [
     'sea-dungeon-continent-4-caverns-0a1b2c3d--abyss--run-k3j4h5g6',
-    'The Caverns of the Sea',
+    'Ashmere Sinkholes',
     'abyss',
   ]);
   trips.leave();
@@ -237,11 +232,7 @@ test('a sea island’s dungeon is entered by its name and left back onto the isl
     facing: back.facing,
   });
   await shared.settled();
-  assert.deepEqual(shared.ways[0]?.slice(2), [
-    'sea-dungeon-continent-1-crypt-00000000',
-    'The Crypt of the Sea',
-    'normal',
-  ]);
+  assert.deepEqual(shared.ways[0]?.slice(2), ['sea-dungeon-continent-1-crypt-00000000', 'Ashmoor Ossuary', 'normal']);
   const nowhere = recorded({ foot: null });
   nowhere.trips.enterSeaDungeon({
     room: 'sea-dungeon-continent-4-grotto-0a1b2c3d',
@@ -260,7 +251,7 @@ test('a company member is joined in the very room they are in', async () => {
   assert.deepEqual(
     ways.map((way) => way.slice(2)),
     [
-      ['node-saltgrass-downs--abyss--dungeon-2--run-m9n8b7v6', 'The Caverns of the Saltgrass Downs', 'abyss'],
+      ['node-saltgrass-downs--abyss--dungeon-2--run-m9n8b7v6', 'The Throat of Morwen', 'abyss'],
       ['node-krakens-grotto--run-m9n8b7v6', 'Kraken’s Grotto', 'normal'],
     ],
   );
@@ -269,7 +260,7 @@ test('a company member is joined in the very room they are in', async () => {
 
 test('a company that falls is taken out by the way it came in, the veil saying it fell', async () => {
   const { trips, happenings, ways, settled } = recorded({ foot: standing(patrol, 'abyss') });
-  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  trips.enter(1, 'Gloamford Bastion');
   await settled();
   trips.fell();
   await settled();
@@ -288,14 +279,14 @@ test('a company that falls is taken out by the way it came in, the veil saying i
   await sea.settled();
   sea.trips.fell();
   await sea.settled();
-  assert.deepEqual(sea.happenings[1], { kind: 'surface', name: 'The Caverns of the Sea', fell: true });
+  assert.deepEqual(sea.happenings[1], { kind: 'surface', name: 'Ashmere Sinkholes', fell: true });
   assert.deepEqual(sea.ways[1], ['sea', { x: 1, y: 0.5, facing: 0 }]);
 });
 
 test('a dungeon left leads nowhere from the next place under ground, a passage zone among them', async () => {
   const here = { foot: standing(patrol, 'normal') as object | null };
   const { trips, ways, settled } = recorded(here);
-  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  trips.enter(1, 'Gloamford Bastion');
   await settled();
   trips.leave();
   await settled();
@@ -308,7 +299,7 @@ test('a dungeon left leads nowhere from the next place under ground, a passage z
   assert.equal(ways.length, 2, 'no way out of the dungeon left before');
   // A dungeon left by another road (its room shut, the player sent to their ship) leads nowhere either.
   here.foot = standing(patrol, 'normal');
-  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  trips.enter(1, 'Gloamford Bastion');
   await settled();
   here.foot = { ...standing(patrol, 'normal'), dungeon: { room: 'passage-continent-1-w2921-z3' } };
   trips.fell();
@@ -476,4 +467,58 @@ test("a companion joining a guild dungeon's run lays the run's own week and come
   assert.ok(out);
   assert.deepEqual(ways, [[node.id, 'normal', { number: 0, ...out }, key]], "before the gate, in the guild's room");
   assert.deepEqual(read, [`node-${node.id}--guild-${key}`]);
+});
+
+test("a region's dungeon of the day is gone into from the sea at its tier, the company's run first, and left to the sea", async () => {
+  const dungeon = regionDungeons('continent-1', 2, 20_420)[1];
+  assert.ok(dungeon);
+  const base = 'region-dungeon-continent-1-r2-d20420-n1--elite';
+  const alone = recorded({ foot: null });
+  alone.trips.fromRegion(dungeon, 1);
+  await alone.settled();
+  assert.deepEqual(
+    alone.ways[0]?.slice(2),
+    [`${base}--run-k3j4h5g6`, 'Crowgate Prison', 'elite'],
+    'as the rooms name it',
+  );
+  alone.trips.leave();
+  await alone.settled();
+  assert.deepEqual(alone.ways[1], ['sea', undefined], 'back onto the sea, where the ship lies');
+  assert.deepEqual(
+    alone.happenings.map((happening) => happening.kind),
+    ['enter', 'surface'],
+  );
+  const joined = recorded({ foot: null }, [`${base}--run-zzzzzzzz`]);
+  joined.trips.fromRegion(dungeon, 1);
+  await joined.settled();
+  assert.equal(joined.ways[0]?.[2], `${base}--run-zzzzzzzz`, "the company's own run of it");
+  const normal = recorded({ foot: null });
+  normal.trips.fromRegion(dungeon, 0);
+  await normal.settled();
+  assert.equal(normal.ways[0]?.[2], 'region-dungeon-continent-1-r2-d20420-n1--run-k3j4h5g6', 'a run at Normal too');
+  const member = recorded({ foot: null });
+  member.trips.join(patrol, `${base}--run-zzzzzzzz`);
+  await member.settled();
+  assert.deepEqual(
+    member.ways[0]?.slice(2),
+    [`${base}--run-zzzzzzzz`, 'Crowgate Prison', 'elite'],
+    'joined by the Roster',
+  );
+  assert.equal(member.happenings[0]?.kind, 'join');
+});
+
+test("a patrol's dungeon gone into at the harder tier its card drew is a run at it, left to the patrol's own seas", async () => {
+  const onPatrol = { node: patrol, text: 'the node file', dungeon: null, seas: 'normal' as Difficulty };
+  const { trips, ways, settled } = recorded({ foot: { ...onPatrol, held: { entrances: { entrances: [] } } } });
+  trips.enter(1, 'Gloamford Bastion', undefined, 'abyss');
+  await settled();
+  assert.deepEqual(ways[0]?.slice(2), [
+    'node-saltgrass-downs--abyss--dungeon-1--run-k3j4h5g6',
+    'Gloamford Bastion',
+    'abyss',
+  ]);
+  trips.leave();
+  await settled();
+  assert.deepEqual(ways[1]?.slice(0, 2), ['onto', 'saltgrass-downs']);
+  assert.equal(ways[1]?.[3], 'normal', 'back on the seas the player went in from');
 });

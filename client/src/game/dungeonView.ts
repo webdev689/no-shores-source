@@ -24,6 +24,7 @@ import { dressingOf } from './dungeonDressing.ts';
 import { burningOf, cellWords, LIGHT_KINDS, type Light, lightAt, MOODS, NearestLights } from './dungeonLight.ts';
 import { dungeonMesh } from './dungeonMesh.ts';
 import type { StoreyPlane } from './dungeonStoreyPlanes.ts';
+import { layDread } from './dungeonDread.ts';
 import { drownedNow, layEncounters, waterMesh } from './encounterMesh.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { ModulePack } from './dungeonModules.ts';
@@ -187,6 +188,7 @@ export class DungeonView {
         });
         for (const fixture of plane.layout.fixtures) fixtureMesh(mesh, fixture, bedOf(plane.layout, fixture));
         dressing.lay(mesh, plane);
+        layDread(mesh, plane);
         layEncounters(mesh, plane.layout);
       },
       dressing,

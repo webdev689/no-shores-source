@@ -6,6 +6,7 @@ import type { IslandLamps } from '../network/passageMessages.ts';
 import type { ActivityRecord } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { nodeRoom } from './rooms.ts';
+import { dayOf, drawnTier, openTiers } from '../../../server/regionDungeons.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** The tiers in the rules' order, as the gear's record numbers them. */
@@ -209,12 +210,16 @@ export interface AtEntrance {
 export interface EntranceCard {
   readonly name: string;
   readonly tier: string;
+  /** The tier in a number, 0 Normal, 1 Elite and 2 Abyss, its skulls beside the name. */
+  readonly rank: number;
   readonly rules: readonly string[];
   readonly modifiers: readonly KeyedModifier[];
   readonly pays: string;
   readonly shut: string | null;
   /** The run's base Find a Company matches (`nodeRoom`), or null where it matches none or is shut. */
   readonly finds: string | null;
+  /** The tier Enter goes in at, where it is not the room's own seas: a patrol's dungeon's, drawn for the character. */
+  readonly seas?: Difficulty;
 }
 
 /** An entrance's card: a patrol's dungeon at its seas, or an Elite Dungeon's run as `eliteRun` picks it. */
@@ -230,24 +235,29 @@ export function entranceCardOf(
     return band ? `${words} · ${levelWords(band)}` : words;
   };
   if (node.kind !== 'dungeon') {
-    const tier = Math.max(0, TIERS.indexOf(seas));
+    // Met at a tier drawn among those the character's level opens, each as likely, never under the patrol's seas.
+    const least = Math.max(0, TIERS.indexOf(seas));
+    const tier = drawnTier(`${node.id}--dungeon-${number}`, dayOf(drawn.minute), openTiers(gates?.seas), least);
+    const metAt = TIERS[tier] ?? seas;
     const ofTheDay = drawn.ofTheDay.some((one) => one.patrol === node.id && one.number === number);
     const dayPays = takenToday(drawn, record, tier) ? `Taken today. ${PLAIN_PAYS}` : DAY_PAYS;
     return {
       name,
       tier: tierWords(SEAS[tier] ?? '', tier),
-      rules: seas === 'abyss' ? [revivesWords(drawn)] : [],
+      rank: tier,
+      rules: metAt === 'abyss' ? [revivesWords(drawn)] : [],
       modifiers: ofTheDay && tier > 0 ? shown(drawn, [drawn.dayModifier]) : [],
       pays: ofTheDay ? dayPays : PLAIN_PAYS,
       shut: gates?.day[tier] ?? null,
       finds: null,
+      seas: metAt,
     };
   }
   const run = eliteRun(node.id, seas, drawn);
   if (run.seas === 'normal') {
     const shut = gates?.eliteDungeon ?? null;
     const finds = shut === null ? nodeRoom(node, 'normal') : null;
-    return { name, tier: tierWords(run.words, 0), rules: [], modifiers: [], pays: PLAIN_PAYS, shut, finds };
+    return { name, tier: tierWords(run.words, 0), rank: 0, rules: [], modifiers: [], pays: PLAIN_PAYS, shut, finds };
   }
   const which = run.seas === 'elite' ? 'elite' : 'abyss';
   const weekOn = which === 'elite' ? drawn.weekElite : drawn.weekAbyss;
@@ -256,10 +266,34 @@ export function entranceCardOf(
   return {
     name,
     tier: `${run.words} · Level ${weekOn.level}`,
+    rank: which === 'elite' ? 1 : 2,
     rules: which === 'abyss' ? [revivesWords(drawn), NEVER_MATCHED] : [],
     modifiers: shown(drawn, weekOn.modifiers),
     pays: takenThisWeek(drawn, record, which) ? `Taken this week. ${PLAIN_PAYS}` : pays,
     shut,
     finds: which === 'elite' && shut === null ? nodeRoom(node, 'elite') : null,
+  };
+}
+
+/** A region's dungeon's card, gone into from the sea: its name, its tier and levels in its island's band, its rules at
+ *  Abyss, that it is drawn for today, and what it pays. Never matched: a company goes in together. */
+export function regionCardOf(
+  dungeon: { readonly name: string; readonly island: string; readonly tier: number },
+  drawn: Activities,
+): EntranceCard {
+  const band = bandAt(drawn, dungeon.island, dungeon.tier);
+  const words = SEAS[dungeon.tier] ?? SEAS[0] ?? '';
+  return {
+    name: dungeon.name,
+    tier: band ? `${words} · ${levelWords(band)}` : words,
+    rank: dungeon.tier,
+    rules: [
+      'Drawn for today: tomorrow the region offers others.',
+      ...(dungeon.tier === 2 ? [revivesWords(drawn), NEVER_MATCHED] : []),
+    ],
+    modifiers: [],
+    pays: PLAIN_PAYS,
+    shut: null,
+    finds: null,
   };
 }

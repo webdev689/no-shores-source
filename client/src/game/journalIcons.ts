@@ -64,3 +64,13 @@ export function modifierIcon(key: string): { readonly name: IconName; readonly t
   const name = MODIFIERS.find((modifier) => modifier === key);
   return name ? { name } : null;
 }
+
+/** A dungeon's tier as skulls in a row, `size` pixels each: one Normal, two Elite, three Abyss. */
+export function skullsNode(tier: number, size: number): Node {
+  const count = Math.min(3, Math.max(1, tier + 1));
+  return {
+    gap: 1,
+    label: `${count} of 3 skulls`,
+    children: Array.from({ length: count }, () => iconNode('wipe', size)),
+  };
+}

@@ -3,7 +3,7 @@ use crate::shapes::Ceiling;
 use crate::torches::TORCH_M;
 use crate::{
     BLOCK_CELLS, BLOCKS, CELL_M, Cell, Dungeon, ELITE_BLOCKS, EVERY_STYLE, PER_PATROL, Room, SIDES, STYLES, Shape,
-    Side, WallDoor, name, of_patrol,
+    Side, WallDoor, named, of_patrol,
 };
 
 #[test]
@@ -239,6 +239,7 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         props: Vec::new(),
         fixtures: Vec::new(),
         landmarks: Vec::new(),
+        warrens: Vec::new(),
     };
     let _ = laid.walk();
     assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, u32::MAX]);
@@ -332,7 +333,7 @@ fn the_end_is_the_farthest_room_of_the_last_blocks_deepest_storey_and_never_the_
 }
 
 #[test]
-fn a_patrols_dungeons_take_three_different_styles_of_the_six_and_are_named_for_their_patrol() {
+fn a_patrols_dungeons_take_three_different_styles_of_the_six() {
     let mut taken = Vec::new();
     for patrol in (0..200).map(|nth| format!("patrol-{nth}")) {
         let dungeons: Vec<_> = (0..PER_PATROL).map(|number| of_patrol(&patrol, number)).collect();
@@ -345,10 +346,23 @@ fn a_patrols_dungeons_take_three_different_styles_of_the_six_and_are_named_for_t
         }
     }
     assert_eq!(taken.len(), STYLES.len(), "every style is some patrol's: {taken:?}");
-    assert_eq!(name(&STYLES[0], "The Saltgrass Downs"), "The Crypt of the Saltgrass Downs");
-    assert_eq!(name(&STYLES[3], "The Pale Wastes"), "The Sanctum of the Pale Wastes");
-    assert_eq!(name(&STYLES[4], "The Sunken Fen"), "The Caverns of the Sunken Fen");
-    assert_eq!(name(&STYLES[5], "The Ochre Wastes"), "The Mines of the Ochre Wastes");
+}
+
+#[test]
+fn a_dungeon_is_named_by_its_seed_and_style_alike_every_time_and_seldom_twice() {
+    let mut names = Vec::new();
+    for seed in 0..600_u32 {
+        let style = &STYLES[seed as usize % STYLES.len()];
+        let name = named(seed, style);
+        assert_eq!(name, named(seed, style));
+        assert!(name.starts_with(|first: char| first.is_ascii_uppercase()) && !name.contains("  "), "{name}");
+        assert!(name.split(' ').count() >= 2, "{name}");
+        names.push(name);
+    }
+    names.sort();
+    names.dedup();
+    assert!(names.len() > 500, "{} names of 600", names.len());
+    assert_ne!(named(7, &STYLES[0]), named(7, &STYLES[1]), "the style changes the name");
 }
 
 #[test]

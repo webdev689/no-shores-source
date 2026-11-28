@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { COMPANY_MOST } from './accounts/companies.ts';
 import { ELITE_DUNGEONS } from './accounts/playlists.ts';
 import { roomName } from './joinRequest.ts';
+import { dayOf, regionAsk, regionDungeons } from './regionDungeons.ts';
 import {
   BREACH_MOST,
   RUN_MOST,
@@ -12,6 +13,7 @@ import {
   isleRoom,
   nodeRoom,
   privateRun,
+  regionDungeonRoom,
   runAsk,
   runFull,
   seaDungeonRoom,
@@ -544,4 +546,39 @@ test('a test run opens from its real run’s ask, holds a run’s sockets, and i
     'sea--test-k3j4h5g6',
   ])
     assert.equal(testRoom(name), false, name);
+});
+
+test("a region's dungeon is a run named by its island, region, day and slot, opened only near the day it names", () => {
+  const minute = 29_919_420;
+  const today = dayOf(minute);
+  const name = `region-dungeon-continent-1-r2-d${today}-n1--abyss--run-k3j4h5g6`;
+  assert.deepEqual(regionDungeonRoom(name), {
+    ...{ island: 'continent-1', region: 2, day: today, slot: 1, seas: 2, run: 'k3j4h5g6' },
+  });
+  const drawn = regionDungeons('continent-1', 2, today)[1];
+  const dungeon = { seed: drawn?.seed, style: drawn?.style, continent: 'continent-1' };
+  assert.equal(regionAsk(name, minute), JSON.stringify({ dungeon, tier: 2, minute }));
+  assert.equal(runAsk(name, minute), null, 'not a node run');
+  assert.notEqual(regionAsk(name.replace(`-d${today}-`, `-d${today - 1}-`), minute), null, "yesterday's, opened late");
+  assert.equal(regionAsk(name.replace(`-d${today}-`, `-d${today - 2}-`), minute), null, 'an older day');
+  assert.ok(privateRun(name), 'kept to one company');
+  for (const wrong of [
+    `region-dungeon-continent-1-r2-d${today}-n1--abyss`,
+    `region-dungeon-continent-1-r3-d${today}-n1--run-k3j4h5g6`,
+    `region-dungeon-continent-1-r2-d${today}-n3--run-k3j4h5g6`,
+    `region-dungeon-continent-1-r2-d${today}-n1--normal--run-k3j4h5g6`,
+    `region-dungeon-continent-0-r2-d${today}-n1--run-k3j4h5g6`,
+  ])
+    assert.equal(regionDungeonRoom(wrong), null, wrong);
+  const asked = (room: string) => roomName(new Request(`https://rooms.example/room/${room}`));
+  assert.equal(asked(name), name, 'the host opens it');
+});
+
+test("a region's three dungeons each take a style of their own, and change with the day", () => {
+  const styles = (day: number) => regionDungeons('continent-4', 1, day).map((dungeon) => dungeon.style);
+  for (let day = 20_400; day < 20_430; day++) assert.equal(new Set(styles(day)).size, 3, `day ${day}`);
+  const seeds = new Set(
+    Array.from({ length: 30 }, (_none, day) => regionDungeons('continent-4', 1, 20_400 + day)[0]?.seed),
+  );
+  assert.equal(seeds.size, 30);
 });

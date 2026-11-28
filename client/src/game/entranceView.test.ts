@@ -4,7 +4,11 @@ import { countingGpu } from '../gpuForTests.ts';
 import { ShadowMap } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import type { Shot } from './camera.ts';
-import { EntranceView } from './entranceView.ts';
+import { MATERIALS } from '../city/pictures.ts';
+import type { PropTable } from '../models/tables.ts';
+import type { StyleKey } from './dungeonLayout.ts';
+import { doorOf } from './entrances.ts';
+import { EntranceView, entrancesModel } from './entranceView.ts';
 
 /** A pass that keeps the group last set at each index, and what was set when each draw was asked for. */
 function recordingPass() {
@@ -40,4 +44,59 @@ test('the entrances bind every group their pipeline reads, the sky among them, w
   for (const index of [0, 1]) assert.ok(drawn.get(index), `group ${index}`);
   assert.equal(drawn.get(2), sky.groups.get(2), 'the empty group of the sky’s layout');
   assert.equal(drawn.get(3), sky.groups.get(3), 'the sky’s own group');
+});
+
+/** Entrance model 0 (42000) with its door as the forged props measure it (`entrances.test.ts`). */
+const MOUND = {
+  42000: {
+    min: [-2.2, -2.5, -1.7],
+    max: [2.2, 2.9, 2.3],
+    looks: [],
+    doors: [
+      { type: 2, a: [-0.634, 0.045, -1.692], b: [-0.634, -2.205, -1.692], c: [0.616, -2.205, -1.692], n: [0, 0, -1] },
+    ],
+  },
+} as unknown as PropTable;
+
+test("each style's facade stands round its entrance's door in its own stone, and leaves the doorway clear", () => {
+  const entrance = { x: 100, y: 200, ground: 0, yaw: 0, model: 0 };
+  const door = doorOf(entrance, MOUND);
+  assert.ok(door);
+  const climate = { climate: 'temperate', season: 'summer' } as const;
+  const bare = entrancesModel([entrance], MOUND, [100, 200]);
+  const styles: StyleKey[] = ['crypt', 'halls', 'cells', 'sanctum', 'caverns', 'mines', 'chalk', 'barrow'];
+  for (const style of styles) {
+    const look = { style, pictures: [37, 38] as const };
+    const model = entrancesModel([entrance], MOUND, [100, 200], () => look, climate);
+    assert.ok(model.indices.length > bare.indices.length, `${style}: a facade is laid`);
+    // The mines' adit is all timber and iron; every other in its style's stone.
+    const wears = style === 'mines' ? MATERIALS.temperate.timber[0] : 37;
+    assert.ok(
+      model.parts.some((part) => part.archive === wears),
+      `${style}: in its own stone or timber`,
+    );
+    // Each facade triangle, sampled across its face, stays out of the doorway: within the door's width (less a
+    // hand), from its sill to under its lintel, from the door out a body's stride.
+    const [outX, outY] = door.out;
+    const point = (vertex: number) => [0, 1, 2].map((axis) => model.positions[vertex * 3 + axis] ?? 0);
+    for (let index = bare.indices.length; index < model.indices.length; index += 3) {
+      const [one, two, three] = [0, 1, 2].map((corner) => point(model.indices[index + corner] ?? 0)) as [
+        number[],
+        number[],
+        number[],
+      ];
+      for (let first = 0; first <= 4; first++)
+        for (let second = 0; second <= 4 - first; second++) {
+          const [toTwo, toThree] = [first / 4, second / 4];
+          const blend = (axis: number) =>
+            (one[axis] ?? 0) * (1 - toTwo - toThree) + (two[axis] ?? 0) * toTwo + (three[axis] ?? 0) * toThree;
+          const [x, y, z] = [blend(0) + 100 - door.middle[0], blend(1) + 200 - door.middle[1], blend(2)];
+          const out = x * outX + y * outY;
+          const across = x * -outY + y * outX;
+          const inside =
+            Math.abs(across) < 0.5 && out > 0.05 && out < 1.5 && z > door.bottom + 0.2 && z < door.top - 0.3;
+          assert.ok(!inside, `${style}: the doorway is clear at ${[across, out, z].map((n) => n.toFixed(2))}`);
+        }
+    }
+  }
 });

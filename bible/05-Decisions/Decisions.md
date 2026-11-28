@@ -14,6 +14,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Other Players' Weapons Glow in Their Element]]
 - [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]
 - [[The Music Repeats Less, Patrol Zones First]]
+- [[Each Region Has Its Own Dungeons, and the Dungeons Go Deeper and Darker]]
 - [[TypeScript and Rust]]
 - [[Server-Authoritative Multiplayer]]
 - [[WebGPU Only]]
@@ -471,6 +472,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
 - [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
 - [[The Sea's Polish as Claude Builds It]]
+- [[The Dungeon Overhaul as Claude Builds It]]
 
 ## Replaced
 

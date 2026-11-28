@@ -36,7 +36,6 @@ import { islesDrawing } from './islesDrawing.ts';
 import { SeaLandings } from './seaLandings.ts';
 import { seaLayer } from './seaScreen.ts';
 import { islandScreen } from './islandPanel.ts';
-import { guildLanded } from './guild/guildHeld.ts';
 import { ashoreOn, ashoreWords } from './isleVisit.ts';
 import { isleMarksOf } from './mapMarks.ts';
 import { FootView } from './footView.ts';
@@ -534,11 +533,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const island = islandScreen({
     ...{ landmass: () => playing.landmass, sea: () => playing.sea, facts: screens.facts },
     named: (id) => world.nodes.find((node) => node.id === id)?.name ?? id,
-    ours: () => guildLanded()?.sites ?? [],
+    dungeonName: screens.dungeonName,
     chosen: () => (playing.flow.mode === 'landing' ? playing.flow.chosen : null),
     choose: (node) => change({ kind: 'choose', node }),
     back: () => (playing.sea?.view.backToSea(), change({ kind: 'back' })),
-    does: { land: landAt, dungeon: screens.seaCard, playlist: screens.playlist },
+    does: { land: landAt, dungeon: screens.seaCard, depths: screens.regionCard, playlist: screens.playlist },
   });
   stack.add(
     seaLayer({

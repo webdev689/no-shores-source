@@ -1,4 +1,4 @@
-use crate::{Dungeon, EVERY_STYLE, Shape};
+use crate::{Dungeon, EVERY_STYLE, STYLES, Shape};
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
     (0..count)
@@ -81,7 +81,9 @@ fn each_purpose_has_a_role_of_its_own_in_lower_case() {
     let mut roles = Vec::new();
     for style in EVERY_STYLE {
         let bank = style.purposes;
-        assert_eq!(bank.rooms.len(), 6, "{}: six purposes between its way in and its end", style.key);
+        // The six styles' banks hold two rooms of dread besides; the passages' own two styles keep six.
+        let want = if STYLES.iter().any(|each| each.key == style.key) { 8 } else { 6 };
+        assert_eq!(bank.rooms.len(), want, "{}: {want} purposes between its way in and its end", style.key);
         for purpose in [bank.way_in].iter().chain(bank.rooms).chain([&bank.end]) {
             let plain = purpose.role.chars().all(|letter| letter.is_ascii_lowercase() || letter == '-');
             assert!(plain && !purpose.role.is_empty(), "{}", purpose.role);
@@ -90,7 +92,7 @@ fn each_purpose_has_a_role_of_its_own_in_lower_case() {
             assert!(!purpose.lays.is_empty(), "{} lays props", purpose.name);
         }
     }
-    assert_eq!(roles.len(), 64);
+    assert_eq!(roles.len(), 76);
 }
 
 #[test]
@@ -126,5 +128,20 @@ fn the_mines_and_the_caverns_fall_in_as_rock_and_timber_never_as_masonry() {
                 assert!(!masonry, "{} strews the ruins' masonry", purpose.role);
             }
         }
+    }
+}
+
+#[test]
+fn a_name_used_again_takes_a_word_then_two_never_the_same_word_twice_and_never_a_name_twice() {
+    let names: Vec<String> = (0..80).map(|times| crate::purposes::named("Ossuary", times)).collect();
+    assert_eq!(&names[..3], ["the Ossuary", "the Old Ossuary", "the Lower Ossuary"]);
+    assert_eq!(names[11], "the Old Lower Ossuary");
+    let mut seen = names.clone();
+    seen.sort();
+    seen.dedup();
+    assert_eq!(seen.len(), names.len(), "every name its own");
+    for name in &names {
+        let words: Vec<&str> = name.split(' ').collect();
+        assert!(words.windows(2).all(|pair| pair[0] != pair[1]), "{name}");
     }
 }

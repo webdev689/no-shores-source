@@ -55,7 +55,7 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   }
   const module = await WebAssembly.compile(new Uint8Array(bytes));
   const laid = askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0);
-  assert.match(laid.name, / of the Saltgrass Downs$/);
+  assert.equal(laid.name, 'Coldmouth Cloisters', 'named by its seed and style');
   assert.equal(laid.cells.length, (laid.storeys ?? 1) * laid.columns * laid.rows, 'storey by storey');
   assert.deepEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0), laid);
   const furnished = laid.frames.length * 2 + laid.pillars.length;
@@ -82,7 +82,7 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   // A sea island's: laid by a seed and a style where no patrol lays it, the same as a patrol's laid by them.
   const cove = askLayout(module, { seed: 4242, style: 'caverns', name: 'The Gull Cove' });
   assert.equal(cove.style, 'caverns');
-  assert.match(cove.name, / of the Gull Cove$/);
+  assert.equal(cove.name, "Aldous's Grotto", 'named by its seed and style, not its place');
   assert.equal(askLayout(module, { seed: 4242, style: 'caverns', name: 'The Gull Cove' }), cove, 'laid once, kept');
   assert.throws(
     () => askLayout(module, { seed: 4242, style: 'grotto' as never, name: 'The Gull Cove' }),

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import type { DungeonLayout } from './dungeonLayout.ts';
+import { askDungeon, type DungeonLayout } from './dungeonLayout.ts';
 import type { PropTable } from '../models/tables.ts';
 import { EVENT } from '../combat/cues.ts';
 import type { FightEvent, Reviving } from '../network/messages.ts';
@@ -76,9 +76,9 @@ test("inside, E within 2.5 m of the exit door offers Leave; on a patrol, an entr
   entrances.heard([100, 100, 0, 0, 0]);
   const outside = { dungeon: null, portalOpen: false, patrol, entrances, module: roomModule };
   const offer = tripAt(100, 102 + 2, outside, trips);
-  assert.match(offer?.words ?? '', /^Enter The \w+ of the Saltgrass Downs$/);
+  assert.match(offer?.words ?? '', /^Enter (Coldmouth Cloisters|Gloamford Bastion|The Throat of Morwen)$/);
   offer?.run();
-  assert.match(trips.asked[0] ?? '', /^enter 0 The \w+ of the Saltgrass Downs$/);
+  assert.match(trips.asked[0] ?? '', /^enter 0 (Coldmouth Cloisters|Gloamford Bastion|The Throat of Morwen)$/);
   assert.equal(tripAt(100, 110, outside, trips), null);
   assert.equal(tripAt(100, 104, { ...outside, patrol: { ...patrol, kind: 'mission' } }, trips), null, 'a patrol only');
 });
@@ -90,8 +90,11 @@ test("a patrol's dungeons are named as their entrances are heard, not as a door 
   const entrances = new Entrances();
   entrances.namesFrom(roomModule, patrol);
   entrances.heard([100, 100, 0, 0, 0, 400, 100, 0, 0, 2]);
-  assert.match(entrances.nameOf(empty, patrol, 0), /^The \w+ of the Saltgrass Downs$/, 'named as heard');
-  assert.match(entrances.nameOf(empty, patrol, 1), /^The \w+ of the Saltgrass Downs$/);
+  assert.equal(entrances.nameOf(empty, patrol, 0), 'Coldmouth Cloisters', 'named as heard');
+  assert.equal(entrances.nameOf(empty, patrol, 1), 'Gloamford Bastion');
+  const laid = askDungeon(roomModule, patrol.id, patrol.name, 1);
+  assert.deepEqual(entrances.lookOf(1), { style: laid.style, pictures: laid.pictures }, 'its facade’s look with it');
+  assert.equal(entrances.looked, 2);
   assert.throws(() => new Entrances().nameOf(empty, patrol, 0), 'none is named before it is heard');
 });
 

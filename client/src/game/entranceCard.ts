@@ -7,6 +7,7 @@ import type { Interface } from '../ui/ui.ts';
 import type { EntranceCard } from './activityWords.ts';
 import { INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
+import { skullsNode } from './journalIcons.ts';
 import { modifierNode } from './journalTimers.ts';
 import { play } from './uiSounds.ts';
 
@@ -156,7 +157,11 @@ export class EntranceCardView {
               height: 48,
               alignX: 'center',
               alignY: 'center',
-              children: [words(card.name.toUpperCase(), size + 1, INK.brassLit, { tracking: 3 })],
+              gap: 10,
+              children: [
+                words(card.name.toUpperCase(), size + 1, INK.brassLit, { tracking: 3 }),
+                skullsNode(card.rank, 12 * (size + 1)),
+              ],
             },
             { width: 'grow', direction: 'column', gap: 10, padding: [10, 20, 14, 20], children: body },
             { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },

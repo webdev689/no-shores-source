@@ -118,6 +118,18 @@ pub(crate) const CRYPT: Bank = Bank {
             &[rubble(3, &[ROCKS, RUBBLE, BROKEN_COLUMNS]), walls(10, &[TOMBS, GREAT_TOMBS])],
             &[],
         ),
+        purpose(
+            "open-graves",
+            "Open Graves",
+            &[rubble(4, &[GRAVE_SLABS, HEADSTONES]), walls(5, &[SARCOPHAGI, TOMBS]), rubble(10, &[RUBBLE])],
+            &[],
+        ),
+        purpose(
+            "weeping-chamber",
+            "Weeping Chamber",
+            &[middle(&[GREAT_TOMBS, SARCOPHAGI]), walls(6, &[HEADSTONES, OBELISKS]), hung(8, &[HANGINGS])],
+            &[tops(1)],
+        ),
     ],
     end: purpose(
         "sepulchre",
@@ -169,6 +181,18 @@ pub(crate) const HALLS: Bank = Bank {
             "War Room",
             &[middle(&[TABLES]), walls(4, &[CHAIRS, CABINETS, LONG_TABLES]), hung(6, &[HANGINGS])],
             &[tops(2), BRAZIERS_FLANK],
+        ),
+        purpose(
+            "slaughter-hall",
+            "Slaughter Hall",
+            &[rows(Facing::Across, &[LONG_TABLES]), walls(4, &[RACKS, TROUGHS]), hung(5, &[HANGINGS])],
+            &[BRAZIER_MIDDLE],
+        ),
+        purpose(
+            "hanging-hall",
+            "Hanging Hall",
+            &[hung(3, &[HANGINGS]), walls(8, &[BENCHES, CHAIRS]), rubble(10, &[SMALL_CRATES])],
+            &[],
         ),
     ],
     end: purpose(
@@ -223,6 +247,13 @@ pub(crate) const CELLS: Bank = Bank {
             &[rows(Facing::Across, &[POSTS]), walls(3, &[WALL_RACKS, BENCHES])],
             &[BRAZIERS_FLANK],
         ),
+        purpose(
+            "flaying-room",
+            "Flaying Room",
+            &[middle(&[TABLES]), walls(3, &[RACKS, WALL_RACKS, TROUGHS]), hung(6, &[HANGINGS])],
+            &[BRAZIER_MIDDLE],
+        ),
+        purpose("starving-pit", "Starving Pit", &[alcoves(&[NARROW_BEDS, TROUGHS]), rubble(5, &[RUBBLE, ROCKS])], &[]),
     ],
     end: purpose(
         "wardens-hall",
@@ -276,6 +307,18 @@ pub(crate) const SANCTUM: Bank = Bank {
             &[walls(3, &[WARDROBES, CUPBOARDS, DRESSERS, CABINETS]), middle(&[TABLES]), hung(10, &[HANGINGS])],
             &[tops(2)],
         ),
+        purpose(
+            "desecrated-chapel",
+            "Desecrated Chapel",
+            &[rubble(4, &[BROKEN_COLUMNS, RUBBLE]), flank(&[STATUES, PEDESTALS]), rows(Facing::Along, &[BENCHES])],
+            &[tops(1)],
+        ),
+        purpose(
+            "bleeding-altar",
+            "Bleeding Altar",
+            &[middle(&[PEDESTALS, LECTERNS]), walls(5, &[OBELISKS, ANKHS]), hung(6, &[HANGINGS])],
+            &[BRAZIERS_FLANK, tops(3)],
+        ),
     ],
     end: purpose(
         "high-altar",
@@ -314,6 +357,8 @@ pub(crate) const CAVERNS: Bank = Bank {
             &[middle(&[GREAT_ROCKS, STANDING_STONES]), rubble(4, &[ROCKS, STANDING_STONES])],
             &[crystals(6)],
         ),
+        purpose("nest", "Nest", &[rubble(3, &[ROCKS, LOGS]), walls(8, &[GREAT_ROCKS])], &[fungus(10)]),
+        purpose("gnawed-den", "Gnawed Den", &[rubble(4, &[ROCKS, LOGS]), walls(6, &[GREAT_ROCKS, ROCKS])], &[]),
     ],
     end: purpose(
         "deep-cavern",
@@ -357,6 +402,18 @@ pub(crate) const MINES: Bank = Bank {
             "Winch Room",
             &[middle(&[RACKS, LOGS]), walls(3, &[POSTS, CRATES, LADDERS, TROUGHS])],
             &[POST_LANTERNS, lanterns(10)],
+        ),
+        purpose(
+            "sealed-drift",
+            "Sealed Drift",
+            &[rubble(3, &[ROCKS, BEAMS, LOGS]), walls(6, &[POSTS, CRATES])],
+            &[lanterns(12)],
+        ),
+        purpose(
+            "drowned-shaft",
+            "Drowned Shaft",
+            &[walls(5, &[LADDERS, BEAMS, POSTS]), rubble(6, &[SMALL_CRATES, ROCKS])],
+            &[],
         ),
     ],
     end: purpose(

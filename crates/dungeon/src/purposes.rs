@@ -89,23 +89,33 @@ pub struct Bank {
     pub end: Purpose,
 }
 
-/// The words a name takes before it when it is used again: "the Old Ossuary". A dungeon has twenty rooms at most,
-/// eighteen of them drawn, and a shape suits five of a bank's six purposes at least, so none is used past a fourth time.
-const AGAIN: [&str; 6] = ["Old", "Lower", "Far", "Hidden", "Silent", "Forgotten"];
+/// The words a name takes before it when it is used again: "the Old Ossuary". A dungeon five storeys deep holds some
+/// fifty rooms, a name used again past the words takes two: "the Old Lower Ossuary".
+const AGAIN: [&str; 10] =
+    ["Old", "Lower", "Far", "Hidden", "Silent", "Forgotten", "Sunken", "Nameless", "Drowned", "Deepest"];
 
 /// A purpose's name the `times`-th time it is used in a dungeon, from 0.
-fn named(name: &str, times: usize) -> String {
+pub(crate) fn named(name: &str, times: usize) -> String {
+    let words = AGAIN.len();
     match times.checked_sub(1) {
         None => format!("the {name}"),
-        Some(again) => format!("the {} {name}", AGAIN[again.min(AGAIN.len() - 1)]),
+        Some(again) if again < words => format!("the {} {name}", AGAIN[again]),
+        // Two words, never the same twice: "the Old Lower", "the Old Far", ... then "the Lower Far".
+        Some(again) => {
+            let past = again - words;
+            let first = past / (words - 1) % words;
+            format!("the {} {} {name}", AGAIN[first], AGAIN[(first + 1 + past % (words - 1)) % words])
+        }
     }
 }
 
 impl Purpose {
-    /// Whether a room of `shape` suits it.
+    /// Whether a room of `shape` suits it. A ring suits none that lays rows: rows across its walk would leave only
+    /// lanes too narrow to pass beside its core.
     #[must_use]
     pub fn suits(&self, shape: Shape) -> bool {
-        self.shapes.is_empty() || self.shapes.contains(&shape)
+        let rows = self.lays.iter().any(|lay| matches!(lay.pattern, Pattern::Rows { .. }));
+        (self.shapes.is_empty() || self.shapes.contains(&shape)) && !(shape == Shape::Ring && rows)
     }
 }
 

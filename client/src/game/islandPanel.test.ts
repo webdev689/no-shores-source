@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import type { Laid } from '../ui/node.ts';
 import { BINDS } from '../player/input.ts';
 import { byId, fakeInterface, wordsIn } from '../ui/uiForTests.ts';
 import { sidesOf } from '../ui/layout.ts';
@@ -7,7 +8,14 @@ import type { Activities, Gates } from './activities.ts';
 import { TEXEL } from './islandArt.ts';
 import { gridOf, islandPanelNode, islandScreen } from './islandPanel.ts';
 import { regionsOf } from '../overworld/regions.ts';
-import { entriesOf, type IslandEntry, type IslandPanel, islandPanelOf, type OutpostsEntry } from './islandWords.ts';
+import {
+  type DepthsEntry,
+  entriesOf,
+  type IslandEntry,
+  type IslandPanel,
+  islandPanelOf,
+  kindOf,
+} from './islandWords.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const WHERE = { continent: 'continent-1', ring: [], spawns: [], centre: [0, 0] as const };
@@ -66,6 +74,7 @@ const DRAWN = {
     ],
   },
   modifiers: { 'burn-shadow': { name: 'Burn (Shadow)', words: '' }, brawler: { name: 'Brawler', words: '' } },
+  minute: 29_919_420,
 } as unknown as Activities;
 /** A character's gates with every place open. */
 const OPEN: Gates = {
@@ -76,24 +85,54 @@ const OPEN: Gates = {
   seas: [null, null, null],
   playlists: [null, null],
 };
-/** The Outposts tile of an island no region cuts. */
-const OUTPOSTS = 'outposts-continent-1';
-const FACTS = {
+const FACTS: Parameters<typeof islandPanelOf>[2] = {
   activities: DRAWN,
   gates: null,
   named: (id: string) => (id === 'coral-halls' ? 'The Coral Halls' : id),
+  dungeonName: (seed: number, style: string) => `The ${style} ${seed % 97}`,
 };
+/** Saltmere as one region holding every place, the ship off it: its tiles and its region's three dungeons. */
+const ONE = {
+  ...ISLAND,
+  regions: regionsOf(
+    JSON.stringify([
+      {
+        island: 'continent-1',
+        regions: [
+          { name: 'The Beacon Shore', centre: [0, 0], anchorage: [0, -600], nodes: NODES.map((each) => each.id) },
+        ],
+      },
+    ]),
+    [],
+  ),
+};
+const SHIP = [100, -700] as const;
+const panelOf = (facts: Parameters<typeof islandPanelOf>[2] = FACTS) => islandPanelOf(ONE, true, facts, SHIP);
+const DEPTHS = [0, 1, 2].map((slot) => `depths-continent-1-r0-n${slot}`);
 
 test('docked, the tiles hold the port and the Playlist first, then the island’s places by kind, none of them on the map', () => {
   const panel = islandPanelOf(ISLAND, true, FACTS);
   assert.deepEqual([panel.title, panel.where, panel.levels], ['Saltmere', 'Docked at Overlook', 'Lv 1–5']);
   assert.deepEqual(
     entriesOf(panel).map((entry) => entry.id),
-    ['overlook-social', 'overlook-playlist', 'saltgrass-downs', 'krakens-grotto', 'burned-mill', 'maw', OUTPOSTS],
+    ['overlook-social', 'overlook-playlist', 'saltgrass-downs', 'krakens-grotto'],
+    'no mission, world boss or outpost yet',
   );
   assert.deepEqual(
     panel.groups.map((group) => group.title),
-    ['Patrol zones', 'Elite Dungeons', 'Missions', 'World boss', 'Outposts'],
+    ['Patrol zones', 'Elite Dungeons'],
+  );
+  const regioned = panelOf();
+  assert.deepEqual(
+    entriesOf(regioned)
+      .slice(4)
+      .map((entry) => entry.id),
+    DEPTHS,
+    "the region's three dungeons last",
+  );
+  assert.deepEqual(
+    regioned.groups.map((group) => group.title),
+    ['Patrol zones', 'Elite Dungeons', 'Dungeons'],
   );
   const ashore = islandPanelOf(ISLAND, false, FACTS);
   assert.deepEqual([ashore.port, ashore.playlist, ashore.where], [null, null, 'Ashore on the coast of Saltmere']);
@@ -125,16 +164,10 @@ test('each region shows its own places: the port and the Playlist only in the po
   const ids = (panel: IslandPanel) => entriesOf(panel).map((entry) => entry.id);
   const shore = islandPanelOf(REGIONED, true, FACTS, [100, -700]);
   assert.deepEqual([shore.title, shore.where], ['Saltmere', 'Docked at Overlook, on the Beacon Shore']);
-  assert.deepEqual(ids(shore), [
-    'overlook-social',
-    'overlook-playlist',
-    'saltgrass-downs',
-    'burned-mill',
-    'outposts-the-beacon-shore',
-  ]);
+  assert.deepEqual(ids(shore), ['overlook-social', 'overlook-playlist', 'saltgrass-downs', ...DEPTHS]);
   const weirlands = islandPanelOf(REGIONED, false, FACTS, [4_800, -700]);
   assert.deepEqual([weirlands.title, weirlands.where], ['Saltmere', 'Ashore on the Weirlands']);
-  assert.deepEqual(ids(weirlands), ['krakens-grotto', 'maw']);
+  assert.deepEqual(ids(weirlands), ['krakens-grotto', ...DEPTHS.map((id) => id.replace('-r0-', '-r1-'))]);
   const unlisted = { ...REGIONED, nodes: [...NODES, node('vale', 'patrol', 'The Vale')] };
   assert.ok(ids(islandPanelOf(unlisted, false, FACTS, [4_800, -700])).includes('vale'), 'listed by no region');
   assert.deepEqual(ids(islandPanelOf(REGIONED, true, FACTS)), ids(islandPanelOf(ISLAND, true, FACTS)), 'no ship, all');
@@ -206,14 +239,13 @@ test('an Elite Dungeon leads into its dungeon from the sea, saying whether it is
     }),
   );
   assert.equal(gated.find((entry) => entry.id === 'krakens-grotto')?.shut, 'Opens after the prologue.');
-  const mill = entries.find((entry) => entry.id === 'burned-mill');
-  assert.deepEqual([mill?.shut, mill?.line], ['The Burned Mill is locked', 'The Burned Mill is locked']);
-  const unread = entriesOf(islandPanelOf(ISLAND, true, { ...FACTS, activities: null }));
+  const unread = entriesOf(panelOf({ ...FACTS, activities: null }));
   assert.equal(
-    unread.find((entry) => entry.id === 'maw')?.line,
-    'World boss',
+    unread.find((entry) => entry.id === 'saltgrass-downs')?.line,
+    'Patrol zone',
     'before the draws are read, its kind alone',
   );
+  assert.ok(!unread.some((entry) => entry.kind === 'depths'), 'and no dungeon of the day before the day is known');
 });
 
 test('the grid lays even tiles with room between them, up to five a row, three rows to the view', () => {
@@ -224,8 +256,8 @@ test('the grid lays even tiles with room between them, up to five a row, three r
 });
 
 /** The tiles laid on a 1280 by 720 view: what a click on `id` did, and what it chose on its way. */
-function clicked(id: string, chosen: string | null = null) {
-  const panel = islandPanelOf(ISLAND, true, FACTS);
+function clicked(id: string, chosen: string | null = null, facts: Parameters<typeof islandPanelOf>[2] = FACTS) {
+  const panel = panelOf(facts);
   const { ui, step } = fakeInterface(1280, 720);
   const heard: string[] = [];
   const acts = {
@@ -253,9 +285,9 @@ test('every tile is the same size, and a click on one does what it does, the Pla
   const { node, ui, heard } = clicked('island:overlook-playlist');
   assert.ok(heard.includes('act overlook-playlist'), heard.join());
   const sizes = new Set(
-    ['island:island', 'island:overlook-social', 'island:saltgrass-downs', 'island:maw', `island:${OUTPOSTS}`].map(
-      (id) => `${ui.boxOf(id)?.width}x${ui.boxOf(id)?.height}`,
-    ),
+    ['island:island', 'island:overlook-social', 'island:saltgrass-downs', 'island:krakens-grotto', ...DEPTHS]
+      .map((id) => ui.boxOf(id.startsWith('island:') ? id : `island:${id}`))
+      .map((box) => `${box?.width}x${box?.height}`),
   );
   assert.deepEqual([...sizes], ['292x184']);
   const [port, playlist] = [ui.boxOf('island:overlook-social'), ui.boxOf('island:overlook-playlist')];
@@ -275,7 +307,7 @@ test('every tile is the same size, and a click on one does what it does, the Pla
 test('each scene is painted at the box it is drawn in, a texel two pixels across, its crests over its own lines', () => {
   const { ui } = clicked('island:island');
   const scenes = ui.laid.filter((each) => each.node.picture?.key.startsWith('island scene') === true);
-  assert.equal(scenes.length, 8, 'the island’s own and its seven places');
+  assert.equal(scenes.length, 8, 'the island’s own and its seven places, three of them its dungeons of the day');
   for (const { node, box } of scenes) {
     const [top, right, bottom, left] = sidesOf(node.padding);
     const drawn = [box.width - left - right, box.height - top - bottom];
@@ -285,7 +317,7 @@ test('each scene is painted at the box it is drawn in, a texel two pixels across
 });
 
 test('a press dragged off one tile onto another lights the one under the pointer, and holds it lit', () => {
-  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const panel = panelOf();
   const { ui, step } = fakeInterface(1280, 720);
   let chosen: string | null = null;
   const chose: string[] = [];
@@ -316,7 +348,7 @@ test('a press dragged off one tile onto another lights the one under the pointer
 });
 
 test('a tile takes no click or light until it has risen into place; a lit one’s edge is never cut by the list', () => {
-  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const panel = panelOf();
   const { ui, step } = fakeInterface(1280, 720);
   const heard: string[] = [];
   const acts = {
@@ -326,7 +358,8 @@ test('a tile takes no click or light until it has risen into place; a lit one’
   };
   const root = () => islandPanelNode(ui, panel, 'overlook-social', null, acts);
   step(root);
-  const box = ui.boxOf(`island:${OUTPOSTS}`);
+  const last = DEPTHS[2] ?? '';
+  const box = ui.boxOf(`island:${last}`);
   assert.ok(box);
   const spot = { x: box.x + 8, y: box.y + 8 };
   const click = [
@@ -338,7 +371,7 @@ test('a tile takes no click or light until it has risen into place; a lit one’
   assert.equal(heard.length, 0, 'unseen as it begins to rise');
   step(root, [], 1);
   step(root, [...click]);
-  assert.ok(heard.includes(`act ${OUTPOSTS}`), heard.join());
+  assert.ok(heard.includes(`act ${last}`), heard.join());
   const lit = ui.laid.find((each) => each.node.id === 'island:overlook-social');
   assert.ok(lit && lit.clip.y <= lit.box.y, `its top edge shown: clipped at ${lit?.clip.y}, its box at ${lit?.box.y}`);
 });
@@ -350,44 +383,144 @@ test('the island’s own tile names its levels at Normal; a shut tile’s label 
     ['Saltmere', 'Lv 1–5 · Island'],
     'its levels',
   );
-  const label = byId(node, 'island:burned-mill')?.label ?? '';
-  assert.equal(label.split('The Burned Mill is locked').length - 1, 1, label);
+  const gated = clicked('island:island', null, { ...FACTS, gates: { ...OPEN, eliteDungeon: 'Opens later.' } });
+  const label = byId(gated.node, 'island:krakens-grotto')?.label ?? '';
+  assert.equal(label.split('Opens later.').length - 1, 1, label);
 });
 
-test('the pointer on a glyph says what it means in a card over it, as a player asked, and still lights its tile', () => {
-  const panel = islandPanelOf(ISLAND, true, FACTS);
+test('the lit tile opens a card beside it saying what each of its glyphs means, by the pointer and by the keys', () => {
+  const panel = panelOf();
   const { ui, step } = fakeInterface(1280, 720);
-  const chosen: string[] = [];
-  const acts = { choose: (entry: string) => void chosen.push(entry), act: () => undefined, back: () => undefined };
-  let node = islandPanelNode(ui, panel, null, null, acts);
-  const root = () => (node = islandPanelNode(ui, panel, null, null, acts));
+  let chosen: string | null = null;
+  const acts = { choose: (entry: string) => void (chosen = entry), act: () => undefined, back: () => undefined };
+  let node = islandPanelNode(ui, panel, chosen, null, acts);
+  const root = () => (node = islandPanelNode(ui, panel, chosen, null, acts));
   step(root);
   step(root, [], 1);
   const entry = entriesOf(panel).find((each) => each.id === 'saltgrass-downs');
-  const glyph = 'island:saltgrass-downs:glyph:0';
-  const box = ui.boxOf(glyph);
-  assert.ok(entry && box, glyph);
-  assert.ok(!wordsIn(node).includes(entry.glyphs[0]?.says ?? ''), 'no card before the pointer comes');
-  step(root, [{ kind: 'pointer', x: box.x + box.width / 2, y: box.y + box.height / 2 }]);
+  const tile = ui.boxOf('island:saltgrass-downs');
+  assert.ok(entry && tile);
+  assert.equal(ui.boxOf('island:card:saltgrass-downs'), null, 'no card on a tile not lit');
+  step(root, [{ kind: 'pointer', x: tile.x + 20, y: tile.y + tile.height - 20 }]);
   step(root);
-  assert.ok(wordsIn(byId(node, glyph) ?? node).includes(entry.glyphs[0]?.says ?? ''), 'its words in the card');
-  assert.ok(chosen.includes('saltgrass-downs'), 'the tile under it lit');
-  const shut = entriesOf(panel).find((each) => each.shut !== null);
-  const lock = shut && ui.boxOf(`island:${shut.id}:glyph:locked`);
-  assert.ok(shut && lock, 'a shut tile has its padlock');
-  step(root, [{ kind: 'pointer', x: lock.x + lock.width / 2, y: lock.y + lock.height / 2 }]);
+  assert.equal(chosen, 'saltgrass-downs', 'the pointer lights its tile');
   step(root);
-  assert.ok(wordsIn(node).includes(`Shut: ${shut.shut}`), 'the padlock says why');
+  const card = byId(node, 'island:card:saltgrass-downs');
+  assert.ok(card, 'its card stands');
+  for (const glyph of entry.glyphs) assert.ok(wordsIn(card).includes(glyph.says), glyph.says);
+  const shown = ui.boxOf('island:card:saltgrass-downs');
+  assert.ok(
+    shown && (shown.x >= tile.x + tile.width || shown.x + shown.width <= tile.x),
+    'beside the tile, not over it',
+  );
+  assert.ok(shown.x >= 0 && shown.x + shown.width <= 1280, 'on the screen');
+  for (let press = 0; press < 12 && ui.focusedId !== 'island:krakens-grotto'; press += 1)
+    step(root, [{ kind: 'key', key: 'Tab' }]);
+  step(root);
+  step(root);
+  assert.ok(byId(node, 'island:card:krakens-grotto'), 'the keys light a tile and open its card');
+  assert.equal(byId(node, 'island:card:saltgrass-downs'), undefined, 'one card at a time');
+  const gated = panelOf({ ...FACTS, gates: { ...OPEN, eliteDungeon: 'Opens after the prologue.' } });
+  const shut = islandPanelNode(ui, gated, 'krakens-grotto', null, acts);
+  step(() => shut);
+  assert.ok(wordsIn(byId(shut, 'island:card:krakens-grotto') ?? shut).includes('Opens after the prologue.'));
+});
+
+/** Whether a laid node stands anywhere inside the node of `id`. */
+function within(laid: Laid, id: string): boolean {
+  for (let up = laid.parent; up; up = up.parent) if (up.node.id === id) return true;
+  return false;
+}
+
+test("the Playlist's crests stand clear of the glyphs at its tile's head, at every size a tile is laid", () => {
+  for (const [width, height] of [
+    [1280, 720],
+    [1600, 900],
+    [1920, 1080],
+    [1024, 640],
+  ] as const) {
+    const panel = panelOf(FACTS);
+    const { ui, step } = fakeInterface(width, height);
+    const acts = { choose: () => undefined, act: () => undefined, back: () => undefined };
+    step(() => islandPanelNode(ui, panel, null, null, acts));
+    const playlist = ui.laid.find((each) => each.node.id?.endsWith('-playlist') && each.node.id.startsWith('island:'));
+    assert.ok(playlist, 'a Playlist tile');
+    const inTile = ui.laid.filter((each) => within(each, playlist.node.id ?? ''));
+    const crests = inTile.filter((each) => each.node.picture?.key.startsWith('island crest'));
+    const glyphs = inTile.filter((each) => each.node.picture?.key.startsWith('journal icon'));
+    assert.equal(crests.length, 4, `${width} by ${height}: four crests`);
+    assert.ok(glyphs.length > 0);
+    const meet = (one: Laid, other: Laid) =>
+      one.box.x < other.box.x + other.box.width &&
+      other.box.x < one.box.x + one.box.width &&
+      one.box.y < other.box.y + other.box.height &&
+      other.box.y < one.box.y + one.box.height;
+    for (const crest of crests)
+      assert.ok(!glyphs.some((glyph) => meet(crest, glyph)), `${width} by ${height}: ${crest.node.picture?.key}`);
+  }
+});
+
+test('each tile stands in a carved frame, in its tier’s tone where it is met at one, lit brighter', () => {
+  const { ui } = clicked('island:island', DEPTHS[0] ?? null, { ...FACTS, gates: OPEN });
+  const frames = ui.laid.filter((each) => each.node.picture?.key.startsWith('island frame') === true);
+  assert.equal(frames.length, 8, 'one a tile');
+  for (const { node, parent } of frames) {
+    assert.deepEqual([node.width, node.height], [parent?.box.width, parent?.box.height], 'over the whole tile');
+    assert.equal(node.through, true, 'the pointer passes through it to the tile');
+  }
+  const depths = entriesOf(panelOf({ ...FACTS, gates: OPEN })).filter((entry) => entry.kind === 'depths');
+  const keyOf = (id: string) =>
+    ui.laid.find((each) => each.parent?.node.id === `island:${id}` && each.node.picture?.key.startsWith('island frame'))
+      ?.node.picture?.key;
+  depths.forEach((entry) =>
+    assert.match(keyOf(entry.id) ?? '', new RegExp(` ${entry.id === DEPTHS[0] ? 'true' : 'false'} ${entry.tier}$`)),
+  );
+  assert.match(keyOf('saltgrass-downs') ?? '', / false -$/, 'a place of no tier wears the brass');
+  // Beside each such tile's name, its tier as skulls: one Normal, two Elite, three Abyss; none on a place of no tier.
+  const skullsOf = (id: string) =>
+    ui.laid.find((each) => each.node.label?.endsWith('of 3 skulls') && within(each, `island:${id}`))?.node.label;
+  depths.forEach((entry) => assert.equal(skullsOf(entry.id), `${(entry.tier ?? 0) + 1} of 3 skulls`));
+  assert.equal(skullsOf('saltgrass-downs'), undefined);
+});
+
+test("a region's dungeons of the day are named as the rooms name them, met at a tier the character's level opens", () => {
+  const tiers = (gates: typeof OPEN | null) =>
+    entriesOf(panelOf({ ...FACTS, gates }))
+      .filter((entry): entry is DepthsEntry => entry.kind === 'depths')
+      .map((entry) => entry.tier);
+  assert.deepEqual(tiers(null), [0, 0, 0], 'before the character is read, Normal');
+  assert.deepEqual(
+    tiers({ ...OPEN, seas: [null, 'Elite seas open at level 10.', 'Abyss seas open at level 20.'] }),
+    [0, 0, 0],
+  );
+  const seen = new Set<number>();
+  for (let day = 0; day < 20; day++) {
+    const drawn = { ...DRAWN, minute: DRAWN.minute + day * 1440 } as Activities;
+    for (const entry of entriesOf(panelOf({ ...FACTS, activities: drawn, gates: OPEN })))
+      if (entry.kind === 'depths') seen.add(entry.tier ?? -1);
+  }
+  assert.deepEqual([...seen].sort(), [0, 1, 2], 'every tier, drawn, once all are open');
+  const [first] = entriesOf(panelOf({ ...FACTS, gates: OPEN })).filter(
+    (entry): entry is DepthsEntry => entry.kind === 'depths',
+  );
+  assert.ok(first);
+  assert.equal(first.name, `The ${first.dungeon.style} ${first.dungeon.seed % 97}`, 'named by its seed and style');
+  const band = DRAWN.bands['continent-1']?.[first.tier];
+  assert.equal(first.levels, band && `Lv ${band[0]}–${band[1]}`, "its levels at its tier, in the island's band");
+  assert.deepEqual(first.act, { words: 'Go in from the sea', does: 'depths' });
+  assert.equal(kindOf(first), `${['Normal', 'Elite', 'Abyss'][first.tier]} dungeon`, 'its tile says its tier');
+  assert.ok(first.glyphs.some((glyph) => glyph.icon === ['seas-normal', 'seas-elite', 'seas-abyss'][first.tier]));
 });
 
 test('a shut tile does nothing; the pointer on a tile lights it for Enter', () => {
+  const shut = { ...FACTS, gates: { ...OPEN, eliteDungeon: 'Opens later.' } };
   assert.deepEqual(
-    clicked('island:burned-mill').heard.filter((said) => said.startsWith('act')),
+    clicked('island:krakens-grotto', null, shut).heard.filter((said) => said.startsWith('act')),
     [],
   );
-  assert.deepEqual(clicked('island:maw').heard, ['act maw', 'choose maw'], 'once');
+  assert.deepEqual(clicked('island:krakens-grotto').heard, ['act krakens-grotto', 'choose krakens-grotto'], 'once');
   assert.deepEqual(
-    clicked('island:maw', 'maw').heard.filter((said) => said.startsWith('choose')),
+    clicked('island:krakens-grotto', 'krakens-grotto').heard.filter((said) => said.startsWith('choose')),
     [],
     'lit already',
   );
@@ -402,7 +535,6 @@ test('Enter does the lit tile’s press, the first’s with none lit: a landing 
     chosen: () => chosen,
     facts: () => ({ activities: DRAWN, gates: null }),
     named: (id) => id,
-    ours: () => [],
     choose: (id) => {
       chosen = id;
       done.push(`choose ${id}`);
@@ -411,6 +543,7 @@ test('Enter does the lit tile’s press, the first’s with none lit: a landing 
     does: {
       land: (id) => void done.push(`land ${id}`),
       dungeon: (found) => void done.push(`dungeon ${found.id}`),
+      depths: (entry) => void done.push(`depths ${entry.id} ${entry.tier}`),
       playlist: (city) => void done.push(`playlist ${city}`),
     },
   });
@@ -426,6 +559,23 @@ test('Enter does the lit tile’s press, the first’s with none lit: a landing 
     'dungeon krakens-grotto',
     'playlist overlook',
   ]);
+  const regioned = islandScreen({
+    landmass: () => ONE as never,
+    sea: () => ({ position: SHIP, view: { docked: true } }) as never,
+    chosen: () => null,
+    facts: () => ({ activities: DRAWN, gates: null }),
+    named: (id) => id,
+    choose: () => undefined,
+    back: () => undefined,
+    does: {
+      land: () => undefined,
+      dungeon: () => undefined,
+      depths: (entry) => void done.push(`depths ${entry.id} ${entry.tier}`),
+      playlist: () => undefined,
+    },
+  });
+  regioned.act(DEPTHS[1] ?? '');
+  assert.equal(done.at(-1), `depths ${DEPTHS[1]} 0`, "a region's dungeon opens its card, at its tier");
 });
 
 test('the screen shows the region the ship lies off: off the Weirlands, Enter goes into its Elite Dungeon first', () => {
@@ -436,12 +586,12 @@ test('the screen shows the region the ship lies off: off the Weirlands, Enter go
     chosen: () => null,
     facts: () => ({ activities: DRAWN, gates: null }),
     named: (id) => id,
-    ours: () => [],
     choose: () => undefined,
     back: () => undefined,
     does: {
       land: (id) => void done.push(`land ${id}`),
       dungeon: (found) => void done.push(`dungeon ${found.id}`),
+      depths: (entry) => void done.push(`depths ${entry.id}`),
       playlist: (city) => void done.push(`playlist ${city}`),
     },
   });
@@ -451,7 +601,7 @@ test('the screen shows the region the ship lies off: off the Weirlands, Enter go
 });
 
 test('the keys and the pad walk the tiles and press the one they reach, which they light over the pointer’s', () => {
-  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const panel = panelOf();
   const { ui, step } = fakeInterface(1280, 720);
   let chosen: string | null = null;
   const heard: string[] = [];
@@ -476,13 +626,13 @@ test('the keys and the pad walk the tiles and press the one they reach, which th
   step(root, [{ kind: 'key', key: 'Enter' }]);
   assert.deepEqual(heard, ['act krakens-grotto']);
   // The cross walks the grid: down to the second row, then along it.
-  const second = ['island:krakens-grotto', 'island:burned-mill', 'island:maw', `island:${OUTPOSTS}`];
+  const second = ['island:krakens-grotto', ...DEPTHS.map((id) => `island:${id}`)];
   for (let press = 0; press < 4 && !second.includes(ui.focusedId ?? ''); press += 1)
     step(root, [{ kind: 'pad', button: 'down' }]);
-  for (let press = 0; press < 4 && ui.focusedId !== 'island:maw'; press += 1)
+  for (let press = 0; press < 4 && ui.focusedId !== `island:${DEPTHS[1]}`; press += 1)
     step(root, [{ kind: 'pad', button: 'right' }]);
   step(root, [{ kind: 'pad', button: 'accept' }]);
-  assert.deepEqual(heard, ['act krakens-grotto', 'act maw'], 'the pad’s cross and A alike');
+  assert.deepEqual(heard, ['act krakens-grotto', `act ${DEPTHS[1]}`], 'the pad’s cross and A alike');
 });
 
 test('tiles step their size four pixels at a time: each texel of a scene two pixels, and a resize paints few', () => {
@@ -492,7 +642,7 @@ test('tiles step their size four pixels at a time: each texel of a scene two pix
       assert.ok(tile.width % 2 === 0 && tile.height % 2 === 0, `${tile.width}x${tile.height} at ${width}x${height}`);
     }
   const keys = new Set<string>();
-  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const panel = panelOf();
   const acts = { choose: () => undefined, act: () => undefined, back: () => undefined };
   for (let width = 1280; width < 1344; width += 1) {
     const { ui, step } = fakeInterface(width, 720 + (width - 1280));
@@ -511,7 +661,7 @@ test('each tile’s scene, the island’s own among them, is drawn 90% opaque, s
 });
 
 test('the tiles scroll with no fade painted over the island, and Back names the pad’s B while it is in use', () => {
-  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const panel = panelOf();
   const { ui, step } = fakeInterface(1280, 400);
   const acts = { choose: () => undefined, act: () => undefined, back: () => undefined };
   const root = () => islandPanelNode(ui, panel, null, null, acts);
@@ -526,7 +676,7 @@ test('the tiles scroll with no fade painted over the island, and Back names the 
 });
 
 test('every detail a tile reads out is also a glyph on it, each glyph saying its words', () => {
-  const entries = entriesOf(islandPanelOf(ISLAND, true, FACTS));
+  const entries = entriesOf(panelOf({ ...FACTS, gates: OPEN }));
   for (const entry of entries) {
     const said = entry.glyphs.map((glyph) => glyph.says);
     for (const [label, value] of entry.rows) {
@@ -539,25 +689,13 @@ test('every detail a tile reads out is also a glyph on it, each glyph saying its
   assert.deepEqual(icons('overlook-social'), ['counters', 'moorings']);
   assert.deepEqual(icons('krakens-grotto'), ['blocks', 'seals', 'company', 'cache', 'elite-dungeon', 'brawler']);
   assert.deepEqual(icons('overlook-playlist'), ['burn', 'elite-dungeon', 'abyss-dungeon', 'cache']);
-  const saltgrass = { ...NODES[1], id: 'gull-rock', kind: 'mission', places: [{ name: 'The Gull Rock' }] } as never;
-  const mission = entriesOf(islandPanelOf({ ...ISLAND, nodes: [saltgrass] }, false, FACTS))[0];
-  assert.deepEqual(
-    mission?.glyphs.map((glyph) => [glyph.icon, glyph.says]),
-    [
-      ['foes', 'Foes: 2 sites'],
-      ['places', 'Places: The Gull Rock'],
-    ],
-  );
-  assert.deepEqual(icons(OUTPOSTS), ['slots', 'outpost'], 'the Outposts its slots and its guild’s');
+  assert.deepEqual(icons(DEPTHS[0] ?? '')?.slice(1), ['dungeon', 'company', 'cache', 'dawn']);
 });
 
 test('a tile’s glyphs stand inside it at the narrowest a tile is laid', () => {
   // Four columns of the narrowest tiles, 280 pixels.
   assert.equal(gridOf(1224, 720).tile.width, 280);
-  const panel = islandPanelOf(ISLAND, true, {
-    ...FACTS,
-    gates: { ...OPEN, eliteDungeon: 'Opens after the prologue.' },
-  });
+  const panel = panelOf({ ...FACTS, gates: { ...OPEN, eliteDungeon: 'Opens after the prologue.' } });
   const { ui, step } = fakeInterface(1224, 720);
   const acts = { choose: () => undefined, act: () => undefined, back: () => undefined };
   step(() => islandPanelNode(ui, panel, null, null, acts));
@@ -576,162 +714,4 @@ test('a tile’s glyphs stand inside it at the narrowest a tile is laid', () => 
       inner.y + inner.height <= outer.y + outer.height;
     assert.ok(inside, `${glyph.node.picture?.key} on ${tile.node.id}`);
   }
-});
-
-test('each region’s view holds one Outposts tile in place of its sites: its level, its slots and its guild’s', () => {
-  const ours = { ...FACTS, ours: ['tern-strand'] };
-  const shore = islandPanelOf(REGIONED, true, ours, [100, -700]);
-  const outposts = entriesOf(shore).find((entry): entry is OutpostsEntry => entry.kind === 'outposts');
-  assert.ok(outposts);
-  assert.deepEqual(
-    [outposts.id, outposts.name, outposts.levels, outposts.act.does],
-    ['outposts-the-beacon-shore', 'Outposts of the Beacon Shore', 'Lv 1–5', 'outposts'],
-  );
-  assert.deepEqual(
-    outposts.glyphs.map((glyph) => [glyph.icon, glyph.says, glyph.dim ?? false]),
-    [
-      ['slots', 'Slots: 1', false],
-      ['outpost', "Your guild's: 1", false],
-    ],
-  );
-  assert.deepEqual(
-    outposts.slots.map((slot) => [slot.id, slot.name, slot.ours]),
-    [['tern-strand', 'Tern Strand', true]],
-  );
-  const none = entriesOf(islandPanelOf(REGIONED, true, FACTS, [100, -700])).find((entry) => entry.kind === 'outposts');
-  assert.deepEqual(
-    none?.glyphs.map((glyph) => [glyph.says, glyph.dim ?? false]),
-    [
-      ['Slots: 1', false],
-      ["Your guild's: none", true],
-    ],
-    'in no guild, or none there, its palisade dim',
-  );
-  const weirlands = entriesOf(islandPanelOf(REGIONED, false, FACTS, [4_800, -700]));
-  assert.ok(!weirlands.some((entry) => entry.kind === 'outposts'), 'a region with no slot has no Outposts tile');
-});
-
-/** The island's screen over Saltmere's Beacon Shore, its outpost slots `slots`, and what it did. */
-function outpostScreen(slots: readonly NodeInfo[]) {
-  const done: string[] = [];
-  let chosen: string | null = null;
-  const nodes = [...NODES.filter((each) => each.kind !== 'outpost'), ...slots];
-  const regions = REGIONED.regions.map((region, place) =>
-    place === 0 ? { ...region, nodes: [...region.nodes, ...slots.map((slot) => slot.id)] } : region,
-  );
-  const screen = islandScreen({
-    landmass: () => ({ ...REGIONED, nodes, regions }) as never,
-    sea: () => ({ position: [100, -700], view: { docked: true } }) as never,
-    chosen: () => chosen,
-    facts: () => ({ activities: DRAWN, gates: null }),
-    named: (id) => id,
-    ours: () => ['gull-cove'],
-    choose: (id) => void (chosen = id),
-    back: () => void done.push('back'),
-    does: {
-      land: (id) => void done.push(`land ${id}`),
-      dungeon: (found) => void done.push(`dungeon ${found.id}`),
-      playlist: (city) => void done.push(`playlist ${city}`),
-    },
-  });
-  return { screen, done, chosen: () => chosen };
-}
-
-const SLOTS = [
-  node('tern-strand', 'outpost', 'Tern Strand', { centre: [-200, 100] }),
-  node('gull-cove', 'outpost', 'Gull Cove', { centre: [300, 200] }),
-  node('salt-hythe', 'outpost', 'Salt Hythe', { centre: [100, -300] }),
-];
-
-test('the Outposts tile opens its region’s slots, each a card with its name, its chart and whether the guild holds it', () => {
-  const { screen, done } = outpostScreen(SLOTS);
-  const { ui, step } = fakeInterface(1280, 720);
-  const root = () => screen.node(ui) ?? { id: 'none' };
-  step(root);
-  step(root, [], 1);
-  const tile = ui.boxOf('island:outposts-the-beacon-shore');
-  assert.ok(tile);
-  const spot = { x: tile.x + 8, y: tile.y + 8 };
-  step(root, [
-    { kind: 'pointer', ...spot },
-    { kind: 'down', ...spot, button: 0 },
-    { kind: 'up', ...spot, button: 0 },
-  ]);
-  step(root, [], 1);
-  assert.deepEqual(done, [], 'a click opens the slots, landing nowhere');
-  assert.equal(ui.boxOf('island-panel'), null, 'the slots stand in the tiles’ place');
-  const cards = SLOTS.map((slot) => ui.boxOf(`outposts:${slot.id}`));
-  assert.ok(cards.every(Boolean), 'a card each');
-  const gull = byId(root(), 'outposts:gull-cove');
-  assert.deepEqual(wordsIn(gull ?? root()), ['Gull Cove', "Your guild's outpost"]);
-  assert.deepEqual(wordsIn(byId(root(), 'outposts:salt-hythe') ?? root()), [
-    'Salt Hythe',
-    "No outpost of your guild's",
-  ]);
-  const charts = ui.laid.filter((each) => each.node.picture?.key.startsWith('outpost chart') === true);
-  assert.equal(charts.length, 3, 'a small chart of the region on each');
-  assert.equal(new Set(charts.map((each) => each.node.picture?.key)).size, 3, 'each its own slot lit');
-  const card = ui.boxOf('outposts:salt-hythe');
-  assert.ok(card);
-  const inside = { x: card.x + 8, y: card.y + 8 };
-  step(root, [
-    { kind: 'pointer', ...inside },
-    { kind: 'down', ...inside, button: 0 },
-    { kind: 'up', ...inside, button: 0 },
-  ]);
-  assert.deepEqual(done, ['land salt-hythe'], 'choosing one lands there');
-});
-
-test('over the slots Enter lands at the lit one, the keys and the pad walk them, and Escape closes them first', () => {
-  const { screen, done, chosen } = outpostScreen(SLOTS);
-  const { ui, step } = fakeInterface(1280, 720);
-  const root = () => screen.node(ui) ?? { id: 'none' };
-  step(root);
-  screen.act('outposts-the-beacon-shore');
-  step(root, [], 1);
-  assert.ok(ui.boxOf('outposts:tern-strand'));
-  for (let press = 0; press < 6 && ui.focusedId !== 'outposts:gull-cove'; press += 1)
-    step(root, [{ kind: 'pad', button: 'right' }]);
-  step(root);
-  assert.equal(chosen(), 'gull-cove', 'the card the pad reached is lit');
-  step(root, [{ kind: 'pad', button: 'accept' }]);
-  assert.deepEqual(done, ['land gull-cove']);
-  screen.act('outposts-the-beacon-shore');
-  screen.act(chosen());
-  assert.deepEqual(done, ['land gull-cove', 'land gull-cove'], 'Enter with no card focused lands at the lit one');
-  screen.act('outposts-the-beacon-shore');
-  screen.act('outposts-the-beacon-shore');
-  assert.deepEqual(done.slice(2), ['land tern-strand'], 'the first open one while none is lit');
-  screen.act('outposts-the-beacon-shore');
-  assert.equal(screen.back(), true, 'Escape closes the slots');
-  assert.equal(chosen(), 'outposts-the-beacon-shore', 'its tile lit again for Enter');
-  step(root, [], 1);
-  assert.ok(ui.boxOf('island-panel'), 'the tiles again');
-  assert.equal(screen.back(), false, 'and then is the sea’s');
-});
-
-test('with one slot in the region, its panel shows that one', () => {
-  const { screen, done } = outpostScreen([SLOTS[0] as NodeInfo]);
-  const { ui, step } = fakeInterface(1280, 720);
-  const root = () => screen.node(ui) ?? { id: 'none' };
-  screen.act('outposts-the-beacon-shore');
-  step(root);
-  step(root, [], 1);
-  assert.ok(ui.boxOf('outposts:tern-strand'));
-  assert.equal(ui.laid.filter((each) => each.node.id?.startsWith('outposts:') === true).length, 1);
-  screen.act(null);
-  assert.deepEqual(done, ['land tern-strand']);
-});
-
-test('the Outposts tile counts in glyphs: a stake a slot, a palisade for each of the guild’s outposts', () => {
-  const regions = REGIONED.regions.map((region, place) =>
-    place === 0 ? { ...region, nodes: [...region.nodes, 'gull-cove', 'salt-hythe'] } : region,
-  );
-  const island = { ...REGIONED, nodes: [...NODES, ...SLOTS.slice(1)], regions };
-  const icons = (ours: string[]) =>
-    entriesOf(islandPanelOf(island, true, { ...FACTS, ours }, [100, -700]))
-      .find((entry) => entry.kind === 'outposts')
-      ?.glyphs.map((glyph) => `${glyph.icon}${glyph.dim ? ' dim' : ''}`);
-  assert.deepEqual(icons(['gull-cove', 'tern-strand']), ['slots', 'slots', 'slots', 'outpost', 'outpost']);
-  assert.deepEqual(icons([]), ['slots', 'slots', 'slots', 'outpost dim']);
 });

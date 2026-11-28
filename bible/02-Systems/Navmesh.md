@@ -64,7 +64,8 @@ and their firing spots by it, and climb and drop where its links say.
    every wall and drop.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
    of corridor. Slivers under 2 m² join their largest neighbour. No region takes, by growing or merging, a cell
-   over, under or beside one of its own that no walk joins it to: where a way winds back over or beside itself, as a
+   over, under, beside or diagonally beside one of its own that no walk joins it to (a diagonal one is joined only
+   where a step each way, either order, reaches it): where a way winds back over or beside itself, as a
    dungeon's does up a flight and back over its own floor, the floor it comes back to is another region, so every
    outline stays a plain loop and the two floors meet by an edge (`regions.rs`). Only the largest part a walk or a link joins is
    kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the water is
@@ -95,7 +96,9 @@ and their firing spots by it, and climb and drop where its links say.
    up to six corners.
    Polys that share an edge are neighbours, across regions too.
 6. **Heights.** Each corner is set on the surface nearest its own level: a block's top, or the ground where no block
-   stands on it, blended between cell centres.
+   stands on it, blended between cell centres but never across an edge higher than a body's step (`Edged`), and only
+   where that surface lies within a step of the corner's own level: farther off, at a cell's edge, it is another
+   floor's or the rock's, and the corner keeps its voxel's height.
 
 **A bake a slice at a time** (`Baking`) is the same bake spread over a room's ticks, for a place's square baked while
 the room runs: twelve rows of the ground sampled a slice, then the voxels, the walkable floor, its erosion, the links

@@ -3,7 +3,16 @@ import course from '../content/testground/course.json' with { type: 'json' };
 import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
-import { type Listed, arrives, cameOutOf, crossingAsked, crossingsOf, reachOf, shipOf } from './arrival.ts';
+import {
+  type Listed,
+  arrives,
+  cameOutOf,
+  crossingAsked,
+  crossingsOf,
+  islandReach,
+  reachOf,
+  shipOf,
+} from './arrival.ts';
 import { Ashore, placeOf } from './ashore.ts';
 import { addressKey } from './address.ts';
 import { Breach, breachAsked, breachHeard, breachRoom, toldBreach } from './breach.ts';
@@ -20,6 +29,7 @@ import {
   nodeRoom,
   passageRoom,
   privateRun,
+  regionDungeonRoom,
   runAsk,
   seaRoom,
   roomFull,
@@ -27,6 +37,7 @@ import {
   TEST_GROUND,
   testRoom,
 } from './roomNames.ts';
+import { regionAsk } from './regionDungeons.ts';
 import { behindDoor, type HeldIsland, openIsland } from './seaIsland.ts';
 import { TestRun } from './testRuns.ts';
 import { present } from './presence.ts';
@@ -273,7 +284,8 @@ export class RoomHost extends DurableObject<Env> {
     // The game's nodes, dungeons, islands and the sea keep characters (at sea, with their ship's hurts): the Test
     // Ground grants gear to try it, a test room gives its test character, and a fleet room is the World Editor's.
     const seas = seaRoom(name);
-    const keeps = ['node-', 'sea-dungeon-', 'isle-', 'passage-'].some((kind) => name.startsWith(kind)) || seas !== null;
+    const kinds = ['node-', 'sea-dungeon-', 'region-dungeon-', 'isle-', 'passage-'];
+    const keeps = kinds.some((kind) => name.startsWith(kind)) || seas !== null;
     const away = (player: number, why?: string, rejoinable?: boolean) => {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       const code = why === undefined ? ELSEWHERE : rejoinable ? AGAIN : SHUT;
@@ -289,8 +301,10 @@ export class RoomHost extends DurableObject<Env> {
     const reached = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
     const passage = passageRoom(name);
     if (reached?.guild) this.keeper.forGuild(reached.guild);
-    const judged = (reached !== null && !tested) || passage !== null;
-    const reach = reached && !tested ? await this.reachOf(reached.id) : null;
+    const region = regionDungeonRoom(name);
+    const judged = (reached !== null && !tested) || passage !== null || region !== null;
+    const reach =
+      reached && !tested ? await this.reachOf(reached.id) : region && islandReach(layout.continents, region.island);
     const judge = (from: string | null, body: string | null) =>
       arrives(name, from, shipOf(body), reach, passagesOf(this.room, body));
     if (judged) this.keeper.judgingArrivals(judge, passage !== null);
@@ -326,7 +340,7 @@ export class RoomHost extends DurableObject<Env> {
     }
     const breach = breachAsk(name, Math.floor(Date.now() / MINUTE_MS));
     if (breach !== null) return this.room.openBreach(breach) && this.room.reseed(seeds);
-    const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));
+    const ask = regionAsk(name, Math.floor(Date.now() / MINUTE_MS)) ?? runAsk(name, Math.floor(Date.now() / MINUTE_MS));
     if (ask !== null || name.startsWith('sea-dungeon-')) {
       if (name.startsWith('sea-dungeon-')) this.island = await behindDoor(name, (sea) => this.env.ROOMS.getByName(sea));
       if (name.startsWith('sea-dungeon-') && !this.island) return false;

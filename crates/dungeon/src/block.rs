@@ -56,6 +56,9 @@ pub(crate) struct BlockLayout {
     pub openings: Vec<Opening>,
     pub nodes: Vec<At>,
     pub order: Vec<usize>,
+    /// Whether it is a warren (`warren.rs`), and the cells of its maze's pieces its ways join besides its nodes.
+    pub warren: bool,
+    pub extra_nodes: Vec<At>,
 }
 
 pub(crate) const fn at(x: usize, y: usize) -> usize {
@@ -158,6 +161,8 @@ impl BlockLayout {
             openings: plan.openings.clone(),
             nodes: Vec::new(),
             order: Vec::new(),
+            warren: false,
+            extra_nodes: Vec::new(),
         };
         for &(x, y) in &plan.reserved {
             block.blocked[at(x, y)] = true;
@@ -208,7 +213,7 @@ impl BlockLayout {
     /// that fit the part, its sides drawn within the form's and the part's, its outline drawn in its rectangle, on the
     /// first of a few drawn spots in its part that its plan's cells leave clear. A storey that is a great room is that
     /// one room: a cave in the caverns, else a hall whose pillars stand.
-    fn carve_rooms(&mut self, lane: &mut Lane, style: &Style, plan: &StoreyPlan) {
+    pub(crate) fn carve_rooms(&mut self, lane: &mut Lane, style: &Style, plan: &StoreyPlan) {
         if let Some(great) = plan.great {
             let shape = if style.key == "caverns" { Shape::Cave } else { Shape::Rectangle };
             let outlined = outline(shape, great.width, great.depth, lane);
@@ -256,7 +261,11 @@ impl BlockLayout {
     fn laid(seed: u32, plan: &StoreyPlan, style: &Style) -> Self {
         let mut lane = Lane::new(seed);
         let mut block = Self::empty(plan);
-        block.carve_rooms(&mut lane, style, plan);
+        if plan.maze {
+            block.carve_warren(&mut lane, style, plan);
+        } else {
+            block.carve_rooms(&mut lane, style, plan);
+        }
         block.join(&mut lane, plan);
         block
     }
@@ -312,7 +321,7 @@ impl BlockLayout {
             }
         }
         let simplest = Style { rooms: (1, 1), forms: SIMPLEST_FORMS, heights: SIMPLEST_HEIGHTS, ..*style };
-        let plain = StoreyPlan { great: None, ..plan.clone() };
+        let plain = StoreyPlan { great: None, maze: false, ..plan.clone() };
         (0..TRIES)
             .map(|attempt| Self::laid(seed.wrapping_add(attempt.wrapping_mul(TRY_STEP)), &plain, &simplest))
             .find(|block| block.one_walk() && roomed(block) && (!way_in || block.exit_spot().is_some()))

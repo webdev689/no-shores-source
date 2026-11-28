@@ -17,12 +17,14 @@ pub mod hand_made;
 mod landmarks;
 pub mod lane;
 pub mod models;
+mod names;
 mod props;
 mod purposes;
 mod shapes;
 mod storeys;
 mod styles;
 mod torches;
+mod warren;
 mod ways;
 
 pub use block::{BLOCK_CELLS, Opening};
@@ -36,6 +38,7 @@ pub use fixtures::{
 pub use forge::{BALUSTRADE_DEEP_M, BALUSTRADE_M};
 pub use landmarks::{LANDMARKS, Landmark, Placed, turned, turned_box};
 pub use models::{Piece, PropModel, prop_model};
+pub use names::named;
 pub use props::{HUNG_M, POSTS_A_ROOM, Prop, posts_for};
 pub use purposes::{Bank, Facing, Lay, Light, Lit, Pattern, Purpose};
 pub use shapes::{Ceiling, Roof, Shape};
@@ -148,13 +151,6 @@ pub fn of_patrol(patrol: &str, number: usize) -> (u32, Style) {
         order.swap(last, lane.below(last + 1));
     }
     (lane::named(&format!("dungeon:{patrol}:{number}")), STYLES[order[number % order.len()]])
-}
-
-/// A dungeon's name from its style and its patrol's: "The Crypt of the Saltgrass Downs".
-#[must_use]
-pub fn name(style: &Style, patrol_name: &str) -> String {
-    let place = patrol_name.strip_prefix("The ").map_or_else(|| patrol_name.to_owned(), |rest| format!("the {rest}"));
-    format!("The {} of {place}", style.noun)
 }
 
 #[cfg(test)]

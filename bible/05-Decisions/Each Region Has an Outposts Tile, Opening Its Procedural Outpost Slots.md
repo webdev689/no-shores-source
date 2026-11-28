@@ -28,7 +28,8 @@ The owner's answers to the questions that followed:
 - **Guild outposts keep working as they do**: each guild plays its outpost at a site in a room of its own
   ([[Outposts]]).
 - **Each region of an island has an outposts tile**, which opens a procedural assortment of that region's outpost
-  slots, each a node of the island, to choose from.
+  slots, each a node of the island, to choose from. (Replaced in part: the outposts tile is taken off until outposts
+  are integrated in a meaningful way, [[Each Region Has Its Own Dungeons, and the Dungeons Go Deeper and Darker]].)
 
 ## Claude's calls
 

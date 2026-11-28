@@ -37,10 +37,10 @@ test('a dungeon laid through WebAssembly is the bytes the crate lays natively', 
   assert.equal(fnv1a(new TextEncoder().encode(text)), AGREED_HASH);
 });
 
-test('a dungeon names its patrol, and an ask the door cannot read is null', () => {
+test('a dungeon is named by its seed and style, as the rules name it, and an ask the door cannot read is null', () => {
   const door = startRoomDoor(compiled);
   const laid = JSON.parse(door.dungeon('saltgrass-downs', 'The Saltgrass Downs', 0)) as { name: string };
-  assert.match(laid.name, /^The \w+ of the Saltgrass Downs$/);
+  assert.equal(laid.name, 'Coldmouth Cloisters');
   assert.equal(door.dungeon('saltgrass-downs', 'The Saltgrass Downs', 1.5), 'null');
 });
 

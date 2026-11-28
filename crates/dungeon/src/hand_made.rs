@@ -53,6 +53,7 @@ pub fn two_storeys() -> Dungeon {
         props: Vec::new(),
         fixtures: Vec::new(),
         landmarks: Vec::new(),
+        warrens: Vec::new(),
     };
     let mut set = |cell: usize, kind: Cell, ceiling: f64| {
         dungeon.cells[cell] = kind;

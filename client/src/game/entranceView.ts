@@ -23,37 +23,74 @@ import type { PropTable } from '../models/tables.ts';
 import type { ShadowMap } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { smallBook, type Wanted } from './dungeonBook.ts';
-import { ENTRANCE_MODELS, type Entrance, layModel, standOf } from './entrances.ts';
+import { ROLE } from './dungeonMesh.ts';
+import { type FacadeLook, layFacade } from './entranceFacades.ts';
+import { doorOf, ENTRANCE_MODELS, type Entrance, type EntranceLook, layModel, standOf } from './entrances.ts';
+import { MATERIALS } from '../city/pictures.ts';
 
 const VIEW_BYTES = CITY_VIEW_BYTES;
 
-/** The entrances' models laid as one, each turned and lifted into the world, from `origin` (x, y). */
+/** The facade an entrance's dungeon builds round its door, in its style's stone and the climate's timber. */
+function facadeLook(look: EntranceLook, climate: CityClimate): FacadeLook {
+  const [set] = look.pictures;
+  const [timberArchive, timberRecord] = MATERIALS[climate.climate].timber;
+  return {
+    style: look.style,
+    wall: [set, ROLE.wall],
+    trim: [set, ROLE.trim],
+    floor: [set, ROLE.floor],
+    timber: [timberArchive, timberRecord],
+  };
+}
+
+/** The entrances' models laid as one, each turned and lifted into the world, from `origin` (x, y), and round each
+ *  door whose dungeon's look is known (`lookOf`) the facade its style builds. */
 export function entrancesModel(
   entrances: readonly Entrance[],
   props: PropTable,
   origin: readonly [number, number],
+  lookOf: (number: number) => EntranceLook | undefined = () => undefined,
+  climate?: CityClimate,
 ): ForgedModel {
   const joined = meshBuilder();
-  for (const entrance of entrances) {
+  entrances.forEach((entrance, number) => {
     const model = propModel(props, ENTRANCE_MODELS[entrance.model] ?? -1);
     const [x, y, z] = standOf(entrance);
     if (model) layModel(joined, model, [x - origin[0], y - origin[1], z], entrance.yaw);
-  }
+    const look = lookOf(number);
+    const door = doorOf(entrance, props);
+    if (!look || !door || !climate) return;
+    const seed =
+      Math.imul(Math.round(entrance.x * 10), 73_856_093) ^ Math.imul(Math.round(entrance.y * 10), 19_349_663);
+    const foot = [door.middle[0], door.middle[1], door.bottom] as const;
+    layFacade(joined, { middle: foot, out: door.out, seed }, facadeLook(look, climate), origin);
+  });
   return joined.model();
 }
 
-/** The pictures the entrances wear: their door's picture for their door, the rest as a prop's. */
-function wantedOf(model: ForgedModel, entrances: readonly Entrance[], props: PropTable): Wanted[] {
+/** The pictures the entrances wear: their door's picture for their door, a facade's style's own by their role (its
+ *  floor as a floor, the rest as walls), the climate's timber as itself, and the rest as a prop's. */
+function wantedOf(
+  model: ForgedModel,
+  entrances: readonly Entrance[],
+  props: PropTable,
+  sets: ReadonlySet<number>,
+  climate: CityClimate,
+): Wanted[] {
   const doors = new Set(
     entrances
       .map((entrance) => props[ENTRANCE_MODELS[entrance.model] ?? -1]?.doorLook)
       .map((look) => look && `${look[0]}.${look[1]}`),
   );
-  return model.parts.map((part): Wanted => [
-    part.archive,
-    part.record,
-    doors.has(`${part.archive}.${part.record}`) ? 'door' : 'prop',
-  ]);
+  const timber = MATERIALS[climate.climate].timber;
+  const facades: Wanted[] = sets.size > 0 ? [[timber[0], timber[1], timber[2], timber[3]]] : [];
+  return [
+    ...facades,
+    ...model.parts.map((part): Wanted => {
+      if (sets.has(part.archive)) return [part.archive, part.record, part.record === ROLE.floor ? 'floor' : 'wall'];
+      return [part.archive, part.record, doors.has(`${part.archive}.${part.record}`) ? 'door' : 'prop'];
+    }),
+  ];
 }
 
 type Drawn = {
@@ -81,15 +118,21 @@ export class EntranceView implements Drawer {
     this.pipelines = cityPipelines(gpu);
   }
 
-  /** Draws these entrances from now on, in the island's climate. */
-  set(entrances: readonly Entrance[], props: PropTable, climate: CityClimate): void {
+  /** Draws these entrances from now on, in the island's climate, each with the facade its dungeon's look builds. */
+  set(
+    entrances: readonly Entrance[],
+    props: PropTable,
+    climate: CityClimate,
+    lookOf: (number: number) => EntranceLook | undefined = () => undefined,
+  ): void {
     this.clear();
     const first = entrances[0];
     if (!first) return;
     const { device } = this.gpu;
     const origin = [first.x, first.y] as const;
-    const model = entrancesModel(entrances, props, origin);
-    const book = smallBook(climate, wantedOf(model, entrances, props));
+    const model = entrancesModel(entrances, props, origin, lookOf, climate);
+    const sets = new Set(entrances.flatMap((_entrance, number) => lookOf(number)?.pictures ?? []));
+    const book = smallBook(climate, wantedOf(model, entrances, props, sets, climate));
     const packed = modelBuffers([model], (archive, record) => book.layerOf(archive, record));
     const buffers: GPUBuffer[] = [];
     const buffer = (bytes: ArrayBuffer | ArrayBufferView, usage: number) => {
