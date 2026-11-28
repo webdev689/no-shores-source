@@ -188,9 +188,16 @@ export interface Crossing {
 }
 
 /** A node file's crossing gates, read leniently: none for a file with none, or no file. */
-export function crossingsOf(text: string | null): readonly Crossing[] {
+export const crossingsOf = (text: string | null): readonly Crossing[] => namedPlaces(text, 'crossings');
+
+/** A patrol zone's landing zones, each named for the place nearest it, where a body lands (`bake::landings_of`):
+ *  its landing's first. Read leniently, as its crossings are. */
+export const landingsOf = (text: string | null): readonly Crossing[] => namedPlaces(text, 'landings');
+
+/** A node file's list of named places under `key`, read leniently: none for a file with none, or no file. */
+function namedPlaces(text: string | null, key: 'crossings' | 'landings'): readonly Crossing[] {
   try {
-    const read = (JSON.parse(text ?? 'null') as { crossings?: unknown } | null)?.crossings;
+    const read = (JSON.parse(text ?? 'null') as Record<string, unknown> | null)?.[key];
     const each = (Array.isArray(read) ? read : []) as { name?: unknown; at?: unknown }[];
     return each.flatMap(({ name, at }) => {
       const [x, y] = Array.isArray(at) ? (at as unknown[]) : [];
@@ -205,6 +212,12 @@ export function crossingsOf(text: string | null): readonly Crossing[] {
 export function crossingAsked(request: Request, crossings: readonly Crossing[]): Crossing | null {
   const from = new URL(request.url).searchParams.get('from');
   return crossings.find((each) => each.name === from) ?? null;
+}
+
+/** The landing zone a join asks to land at (`?landing=<number>`), or null for none of the room's. */
+export function landingAsked(request: Request, landings: readonly Crossing[]): Crossing | null {
+  const asked = new URL(request.url).searchParams.get('landing');
+  return asked !== null && /^[0-9]$/.test(asked) ? (landings[Number(asked)] ?? null) : null;
 }
 
 /** What the arrivals read of an island's passages' web for a week (`web_json`): its patrol zone, the zone behind each

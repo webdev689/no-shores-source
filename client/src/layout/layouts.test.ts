@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { RUN_REACH_M, findsOf, laidNodes, layoutFollower, type NodeLayout, placesOf } from './layouts.ts';
+import { RUN_REACH_M, findsOf, laidNodes, landingsOf, layoutFollower, type NodeLayout, placesOf } from './layouts.ts';
 
 /** A layout whose section is a 100 m square round a point. */
 function square(id: string, x: number, y: number): NodeLayout {
@@ -169,4 +169,22 @@ test("a patrol's chest places and its props that may hold things go to a room pl
     ],
     'every prop: the room keeps the crate and the wardrobe, as the bake does',
   );
+});
+
+test('each landing zone is named for the place nearest it, never a gate, as the bake names it', () => {
+  const areas = [
+    { kind: 'landing', name: 'Shingle Landing', at: [0, 0], radius: 48 },
+    { kind: 'gate', name: '', at: [-90, -95], radius: 40 },
+    { kind: 'breach', name: 'The Sunken Gate', at: [-300, -400], radius: 48 },
+  ] as const;
+  const landings = [
+    [1, 2],
+    [-100, -100],
+    [-280, -380],
+  ] as const;
+  assert.deepEqual(
+    landingsOf({ areas, landings }).map((zone) => zone.name),
+    ['Shingle Landing', 'Shingle Landing', 'The Sunken Gate'],
+  );
+  assert.deepEqual(landingsOf({ areas }), [], 'none for a layout with none');
 });

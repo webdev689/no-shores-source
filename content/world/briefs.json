@@ -4,6 +4,7 @@
   "rock": "whaleback",
   "stone": "chalk",
   "heights": true,
+  "landing_zones": true,
   "areas": [
    {
     "kind": "landing",

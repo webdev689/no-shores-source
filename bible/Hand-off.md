@@ -151,9 +151,13 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   the pull request says what changed. Not yet seen: the great wall's new canyon between the Old Beacon and the
   Saltbreaker Hulks; the ways up to Moorhold climbing their last stretch as a ramp at 0.25, steeper than a track; the
   Tithe Barns' corner turret. Left:
-  - The owner's asks still to come: the Downs' design pass and patrol zone design pass, its enemy placements, the held
-    map's polish and legend, and the three landing zones with their map and fast travel. The owner has settled their
-    direction ([[The Saltgrass Downs Plays as Destiny 2's EDZ, Its Three Landing Zones Spread Across It]]).
+  - The three landing zones, the zone's map to land at one and their fast travel from the held map are built on #265
+    ([[The Downs' Landing Zones as Claude Builds Them]]), tested offline only: the map panel, the fires and the fade
+    are not yet seen in a running game, nor a fast travel in a deployed room.
+  - The owner's asks still to come, their direction settled
+    ([[The Saltgrass Downs Plays as Destiny 2's EDZ, Its Three Landing Zones Spread Across It]]): the Downs' design pass
+    and patrol zone design pass as Destiny 2's EDZ (public events, lost sectors, patrol tasks picked up in the field),
+    its enemies as camps that stand again and patrols walking the ways, and the held map's polish and legend.
   - `tools/modules/breach_gate.py` and `catalogue.py` still say the gate is the Vale's: their next edit sets off the
     modules workflow's bake, so it waits for a modules change.
   - Gates still stand where no way may reach them (`areas::needs_a_way` leaves them out, as they sit at the claim's
@@ -193,8 +197,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
 - **After #216** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]] and the
-  four decisions before it): the Saltgrass Downs' three landing zones, the zone's map and their fast travel,
-  not built; ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore
+  four decisions before it): ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore
   does not sail out from the berth; parked ships kept in the sea rooms' memory alone, so a deploy loses them; a ship
   ashore vanishes up to 15 s after it sails; the island's Elite Dungeon scene and the website's gate alike but not
   shared; the port's tile paints Overlook wherever it is docked. Not yet seen in a running game, on a real GPU or in

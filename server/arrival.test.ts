@@ -12,6 +12,8 @@ import {
   cameOutOf,
   crossingAsked,
   crossingsOf,
+  landingAsked,
+  landingsOf,
   reachOf,
   shipOf,
   toCoast,
@@ -327,6 +329,27 @@ test('a guild dungeon’s run is entered from its guild’s outpost alone, and l
     assert.equal(arrives(run, 'sea', OFF_COAST, reach()), false, 'nor from the sea');
   }
   assert.equal(cameOutOf(plot, plot, 0), false, 'the outpost itself is no run');
+});
+
+test("a player lands at the landing zone they chose on the zone's map, and at the landing for one the zone has not", () => {
+  // The bake writes the landing first, then the north's and the south's, each named for the place nearest it.
+  const text = JSON.stringify({
+    id: 'saltgrass-downs',
+    landings: [
+      { name: 'Shingle Landing', at: [10, 20], radius: 0 },
+      { name: 'The Sunken Gate', at: [-300, -400], radius: 0 },
+      { name: 'Hollow Coven', at: [-250, 300], radius: 0 },
+    ],
+  });
+  const landings = landingsOf(text);
+  assert.equal(landings.length, 3);
+  assert.deepEqual(landingsOf('{"id":"tidewall"}'), [], 'a file with none');
+  const asked = (query: string) =>
+    landingAsked(new Request(`https://rooms/room/node-saltgrass-downs${query}`), landings);
+  assert.deepEqual(asked('?landing=1'), { name: 'The Sunken Gate', at: [-300, -400] });
+  assert.equal(asked('?landing=3'), null, 'no fourth zone');
+  assert.equal(asked('?landing=north'), null);
+  assert.equal(asked(''), null);
 });
 
 test('a player crossing from a patrol zone joins the next at the gate toward the one left, once it keeps them so', () => {

@@ -5,17 +5,15 @@
 //! protocol crate.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
-use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
 use protocol::SeaInput;
-use room::asks::{Counter, CounterKind};
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::travel::TravelRefused;
 use room::sea::{CourseRefused, HelmRefused, Sea};
 use room::winds::epoch_of;
-use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
+use room::{PlayerId, Refused, Room};
 use sent::Sent;
 use serde::Deserialize;
 use std::cell::RefCell;
@@ -24,6 +22,7 @@ mod breach_door;
 mod course_door;
 mod deck_door;
 mod dungeon_door;
+mod node_door;
 mod snapshot_door;
 pub use snapshot_door::snapshot;
 mod dress_door;
@@ -49,6 +48,8 @@ mod waters_door;
 pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute, shut};
+use node_door::NodeFile;
+pub use node_door::open_node;
 pub use passage_room_door::open_passage;
 pub use public_door::parting;
 pub use run_door::{activities_json, gates_json, open_run};
@@ -78,49 +79,6 @@ pub const NO_SUCH_PLAYER: i32 = 3;
 pub const TOO_SOON: i32 = 4;
 /// A course that reads but the sea's law refuses: it crosses land, or its pace or points are not allowed.
 pub const REFUSED: i32 = 5;
-
-/// A node's file as the bake writes it: its id, kind, name, section, window, rect, boxes, whether it is locked, a
-/// patrol's resource places, the roads' places and paths, and its passages' doors; a page alone writes its own, open.
-#[derive(Debug, Deserialize)]
-struct NodeFile {
-    id: String,
-    kind: NodeKind,
-    #[serde(default)]
-    name: String,
-    #[serde(default)]
-    locked: bool,
-    #[serde(default)]
-    continent: String,
-    ring: Vec<[f64; 2]>,
-    spawns: Vec<[f64; 2]>,
-    bounds: [f64; 4],
-    ground: Ground,
-    boxes: Vec<[f64; BLOCK_FLOATS]>,
-    #[serde(default)]
-    counters: Vec<gear_door::NodeCounter>,
-    /// In Overlook's social space, where a player stands to read the bounty board.
-    #[serde(default)]
-    board: Option<[f64; 2]>,
-    #[serde(default)]
-    shape_spots: Vec<[f64; 2]>,
-    #[serde(default)]
-    grounds: Option<public_door::NodeGrounds>,
-    #[serde(default)]
-    resources: Vec<[f64; 2]>,
-    #[serde(flatten)]
-    finds: finds_door::Finds,
-    #[serde(default)]
-    foes: Vec<[f64; 2]>,
-    #[serde(default)]
-    places: Vec<gear::quests::Place>,
-    #[serde(default)]
-    paths: Vec<Vec<[f64; 2]>>,
-    #[serde(default)]
-    doors: Vec<gear::quests::Place>,
-    /// In a patrol area with a Breach's gate, where its module stands and its quarter turns.
-    #[serde(default)]
-    breach: Option<([f64; 3], u8)>,
-}
 
 fn floats_of(bytes: &[u8]) -> Vec<f64> {
     bytes.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect()
@@ -171,50 +129,6 @@ fn open_course(bytes: &[u8], room_on: fn(Vec<Block>, (f64, f64)) -> Room) -> boo
         refusal: None,
         sent: Box::default(),
     });
-    true
-}
-
-/// Opens a new node's room from its file's text: its bodies stand on its window of the ground among its boxes, its
-/// kind's garrison stands (a patrol's territories' and runs' groups as players come near), and it judges against its
-/// section. Answers whether the text was a node with a section and a spawn.
-pub fn open_node(text: &[u8]) -> bool {
-    let Ok(node) = serde_json::from_slice::<NodeFile>(text) else { return false };
-    if node.ring.len() < 3 || node.spawns.is_empty() {
-        return false;
-    }
-    let blocks = node.boxes.iter().map(Block::from_floats);
-    let section = Section { ring: node.ring, spawns: node.spawns, falls_kill: node.kind == NodeKind::Social };
-    // Its garrison stands at its island's levels; a city's social space serves a player's gear at its counters; a
-    // patrol keeps its island's resource nodes and lays its dungeons' entrances; an Elite Dungeon's node lays its one.
-    let levels = gear::world::island_levels(&node.continent);
-    let floor = Floor::Land(Box::new(node.ground));
-    let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
-    room.set_island(&node.continent);
-    room.counters = (node.kind == NodeKind::Social).then(|| {
-        let board = node.board.map(|at| Counter { kind: CounterKind::Board, at });
-        node.counters.iter().filter_map(gear_door::counter_of).chain(board).collect()
-    });
-    room.shape_spots = node.shape_spots;
-    passage_room_door::open_mouths(&mut room, &node.continent, &node.doors, &node.places);
-    room.set_places(node.places);
-    room.set_foe_sites(&node.foes);
-    room.set_paths(node.paths);
-    if let Some(grounds) = node.grounds {
-        room.open_public(&node.id, grounds.into(), levels);
-    }
-    let patrol = node.kind == NodeKind::Patrol;
-    let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
-    if let Some(resource) = resource.filter(|_| patrol) {
-        room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default(), &node.resources);
-        finds_door::lay(&mut room, node.finds);
-    }
-    if node.kind == NodeKind::Dungeon {
-        room.lay_elite_entrance(&node.id);
-    }
-    breach_door::stand_gate(&mut room, node.kind, node.breach);
-    let refusal = dungeon_door::lock_words(node.locked, &node.name);
-    let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));
-    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal, sent });
     true
 }
 

@@ -1,8 +1,8 @@
-//! Keeping a layout's ways and what stands clear of each other: a way stops at the set piece at an area's middle and
-//! bends round a room's corner, and what a way runs over is left out.
+//! Keeping a layout's ways and what stands clear of each other: no way is laid through what stands, a way stops at the
+//! set piece at an area's middle and bends round a room's corner, and what a way runs over is left out.
 
 use crate::field::{CELL_M, Field, Water, distance};
-use crate::paths::{KEEP_OFF_M, Path, Tier};
+use crate::paths::{Blocked, KEEP_OFF_M, Path, Tier};
 use crate::seat::Seating;
 use std::f64::consts::TAU;
 
@@ -251,6 +251,52 @@ pub(crate) fn keep_off_paths(seating: &mut Seating, paths: &[Path], height: &dyn
 
 /// The widest a set piece's solid may be and still be cleared out of a way, metres: a post, a lantern, a stone.
 const SMALL_SOLID_M: f64 = 2.5;
+
+/// The cells a path may not cross: under a building, a set piece's solid or a large prop, or within `KEEP_OFF_M` of
+/// it, each at least a cell wide.
+pub(crate) fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
+    let mut blocked = vec![false; field.columns * field.rows];
+    let solids = seating.solids.iter().map(|solid| {
+        let [west, north, east, south, _, _] = solid.bounds();
+        [west, north, east, south]
+    });
+    let large_props = seating
+        .props
+        .iter()
+        .map(|prop| prop.footprint)
+        .filter(|print| (print[2] - print[0]) * (print[3] - print[1]) > 6.0);
+    // A building walked into blocks every cell reaching under it, so no way runs through its walls.
+    let rooms = seating.buildings.iter().filter(|building| building.open).map(|building| {
+        let [west, north, east, south] = building.footprint;
+        let half = CELL_M / 2.0;
+        [west - half, north - half, east + half, south + half]
+    });
+    let closed = seating.buildings.iter().filter(|building| !building.open).map(|building| building.footprint);
+    let prints: Vec<[f64; 4]> = rooms.chain(closed).chain(solids).chain(large_props).collect();
+    // A cell is blocked where its middle stands under something, or `KEEP_OFF_M` from it; a print thinner than a cell
+    // is taken as a cell wide, so a thin wall never slips between the cells' middles.
+    for [west, north, east, south] in prints {
+        let widen = |low: f64, high: f64| {
+            let short = ((CELL_M - (high - low)) / 2.0).max(0.0);
+            (low - short - KEEP_OFF_M, high + short + KEEP_OFF_M)
+        };
+        let ((west, east), (north, south)) = (widen(west, east), widen(north, south));
+        let column_of = |x: f64| ((x - field.west) / CELL_M - 0.5).ceil().max(0.0) as usize;
+        let row_of = |y: f64| ((y - field.north) / CELL_M - 0.5).ceil().max(0.0) as usize;
+        for row in row_of(north)..=row_of(south).min(field.rows) {
+            for column in column_of(west)..=column_of(east).min(field.columns) {
+                if row >= field.rows || column >= field.columns {
+                    continue;
+                }
+                let [x, y] = field.centre(column, row);
+                if x >= west && x <= east && y >= north && y <= south {
+                    blocked[field.index(column, row)] = true;
+                }
+            }
+        }
+    }
+    Blocked(blocked)
+}
 
 #[cfg(test)]
 mod tests {

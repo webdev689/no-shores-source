@@ -162,6 +162,11 @@ export function landSheetOf(
   const layout = landmass.layouts.find((each) => each.id === node.id);
   if (!layout) return { ...sheet, ...bare, marks: landing() };
   const laid = sorted(piecesOf(layout.solids));
+  // The landing zones past the landing (whose own site marks it), each fast travelled to from the map.
+  const landings = (node.landings ?? []).map((zone) => ({ name: zone.name, at: local(zone.at) }));
+  const zoneMarks = landings
+    .slice(1)
+    .map((zone): LandMark => ({ glyph: 'landing', at: zone.at, word: 'Landing zone' }));
   return {
     ...sheet,
     ...laid,
@@ -183,17 +188,21 @@ export function landSheetOf(
       planting.points.map((point) => ({ tree: !SHRUBS.has(planting.kind), at: local(point) })),
     ),
     places: layout.areas.map((area) => ({ name: area.name, at: local(area.at) })),
-    marks: layout.sites.flatMap((site): LandMark[] => {
-      // A resource node is marked where it stands, named for the island's resource it gives.
-      if (site.kind === 'resource') {
-        const resource = resources.resources.find((each) => each.id === site.holds);
-        return resource && site.node ? [{ glyph: 'resource', at: local(site.node), word: resource.name }] : [];
-      }
-      const glyph = site.kind;
-      return isGlyph(glyph) && glyph in SITE_WORDS
-        ? [{ glyph, at: local(site.at), word: SITE_WORDS[glyph as keyof typeof SITE_WORDS] }]
-        : [];
-    }),
+    ...(landings.length > 1 && { landings }),
+    marks: [
+      ...zoneMarks,
+      ...layout.sites.flatMap((site): LandMark[] => {
+        // A resource node is marked where it stands, named for the island's resource it gives.
+        if (site.kind === 'resource') {
+          const resource = resources.resources.find((each) => each.id === site.holds);
+          return resource && site.node ? [{ glyph: 'resource', at: local(site.node), word: resource.name }] : [];
+        }
+        const glyph = site.kind;
+        return isGlyph(glyph) && glyph in SITE_WORDS
+          ? [{ glyph, at: local(site.at), word: SITE_WORDS[glyph as keyof typeof SITE_WORDS] }]
+          : [];
+      }),
+    ],
   };
 }
 

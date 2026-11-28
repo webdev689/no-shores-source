@@ -30,9 +30,9 @@ import {
 import { askLines, MapAsk, type HoverSaid, type WaterJudge } from './heldMapAsk.ts';
 import { type Painted, SeaLettering } from './seaLettering.ts';
 import { heldCardNode } from './heldMapCard.ts';
+import { LandTravel, litCoins } from './landHeld.ts';
 import { Kept, layoutKey } from './heldMapKept.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
-import { GLYPH_HALF } from './landGlyphs.ts';
 import { LandLettering } from './landLetters.ts';
 import type { LandSheet } from './landSheet.ts';
 import type { Course, HeldMapScene, IsleMark, MapPlace } from './heldMapScene.ts';
@@ -127,6 +127,8 @@ export class HeldMap {
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;
   private lowered: (sail: Point2 | null, travel: MapWater | null) => void = () => undefined;
+  /** On foot, the landing zone picked on the land's map, and what fast travelling there does. */
+  readonly landTravel = new LandTravel();
   /** The water lit under the pointer, and the prompt a course into another water raises; and where the ship lay. */
   private readonly ask = new MapAsk();
   private shipAt: Point2 = [0, 0];
@@ -235,7 +237,7 @@ export class HeldMap {
     if (gauntlets !== this.gauntlets) this.load(gauntlets);
     this.ink = stageOf(viewport).ink;
     this.mapView = viewed(this.ink);
-    [this.choice, this.ask.asking] = [null, null];
+    [this.choice, this.ask.asking, this.landTravel.picked] = [null, null, null];
     this.phase = { kind: 'opening', t: 0 };
   }
 
@@ -300,13 +302,15 @@ export class HeldMap {
     this.mapView = zoomAt(moved, 0, 0, 1, this.ink, this.extent);
   }
 
-  /** A press let go: a click picks the nearest place, or the point of the sea under it; on land, nothing. */
+  /** A press let go: a click picks the nearest place, or the point of the sea under it; on land, the landing zone
+   *  under it, if any, to fast travel to. */
   pointerUp(x: number, y: number): void {
     const press = this.press;
     this.press = null;
-    if (!press || press.panning || this.phase.kind !== 'open' || this.land) return;
+    if (!press || press.panning || this.phase.kind !== 'open') return;
     const [inkX, inkY] = [x - this.ink.x, y - this.ink.y];
     if (inkX < 0 || inkY < 0 || inkX > this.ink.width || inkY > this.ink.height) return;
+    if (this.land) return this.landTravel.pick(this.land, toWorld(this.mapView, inkX, inkY), this.mapView.scale);
     const mark = nearestMark(this.placed, inkX, inkY);
     // A region of the ship's island is sailed for at its anchorage, as a node is at its coast.
     const [world, ship] = [toWorld(this.mapView, inkX, inkY) as Point2, this.shipAt];
@@ -331,6 +335,7 @@ export class HeldMap {
   /** Sets sail for the destination chosen, if it has a course, at the hardest difficulty open up to the one picked: a
    *  shut one never sails, as the sea's room would refuse it. While the prompt asks, travels there: its yes. */
   setSail(): void {
+    if (this.land) return this.landTravel.travel(() => this.close());
     if (!this.choice?.course.ok) return;
     this.difficulty = seasChoices(this.picked, this.shut).picked;
     this.close(this.choice.at, this.ask.asking);
@@ -339,6 +344,7 @@ export class HeldMap {
   /** Escape: the prompt answered no first, its course kept; then the choice let go, with the seas picked on its
    *  card; then the map lowered. */
   escape(): void {
+    if (this.landTravel.picked) return void (this.landTravel.picked = null);
     if (this.ask.answerNo()) return;
     if (this.choice) {
       this.choice = null;
@@ -403,7 +409,11 @@ export class HeldMap {
     const land = this.land !== null;
     const ink = scaled(stage.ink, drop);
     return {
-      pulses: { coins: this.litCoins(scene, ink, dpr), seconds: this.clock, held: motionReduced() },
+      pulses: {
+        coins: litCoins(this.land, [this.mapView, ink], [letterScale(this.ink), dpr], scene.lit),
+        seconds: this.clock,
+        held: motionReduced(),
+      },
       parchment: picture,
       lettering: this.lettering,
       letteringPainted,
@@ -422,21 +432,6 @@ export class HeldMap {
     const pointer = this.ask.pointer;
     const mark = pointer && nearestMark(this.placed, pointer.x - this.ink.x, pointer.y - this.ink.y);
     return mark ? { line: mark.place.name, x: mark.x, y: mark.y, card: true } : null;
-  }
-
-  /** The lit keepers' coins on the land's sheet, `scene.lit` saying which, as the view rings them: each one's middle
-   *  and radius, screen pixels, the map's ink at `ink` (device pixels, `dpr` a CSS pixel); none at sea. */
-  private litCoins(scene: HeldMapScene, ink: Rect, dpr: number): Float32Array {
-    const { land, mapView } = this;
-    const lit = land && scene.lit ? land.marks.filter((mark) => scene.lit?.(mark.glyph)) : [];
-    const radius = GLYPH_HALF * letterScale(this.ink) * dpr;
-    return new Float32Array(
-      lit.flatMap(({ at }) => [
-        ink.x + (at[0] - mapView.left) * mapView.scale * dpr,
-        ink.y + (at[1] - mapView.top) * mapView.scale * dpr,
-        radius,
-      ]),
-    );
   }
 
   /** Paints the parchment's picture, `size` device pixels with the map's top-left at `inkAt` in it, if what `reads`
@@ -575,6 +570,11 @@ export class HeldMap {
    *  is set for, the seas to sail it in, and the press to sail. */
   node(ui: Interface): Child {
     const shown = this.shownAt;
+    const foot = shown && ([this.ink.x + this.ink.width / 2, this.ink.y + shown.drop - 12] as const);
+    if (shown && foot && this.landTravel.picked) {
+      const sail = ['Travel', this.sailKey()].filter(Boolean).join('  ');
+      return this.landTravel.node(ui, [foot, shown.lift], sail, () => this.setSail());
+    }
     const choice = this.choice;
     if (!shown || !choice) return null;
     // A pick kept from an earlier voyage, or another character's, falls to the hardest tier open to this one.

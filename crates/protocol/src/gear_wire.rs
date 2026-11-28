@@ -118,6 +118,8 @@ pub const OUTPOST_CHANGED: u8 = 80;
 pub const TAKE_LODESTONE: u8 = 82;
 pub const DROP_LODESTONE: u8 = 83;
 pub const ENTER_BREACH: u8 = 84;
+/// A fast travel to one of the node's landing zones, by its number in `node`.
+pub const FAST_TRAVEL: u8 = 97;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -229,6 +231,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         TAKE_LODESTONE => Asked::TakeLodestone,
         DROP_LODESTONE => Asked::DropLodestone,
         ENTER_BREACH => Asked::EnterBreach,
+        FAST_TRAVEL => Asked::FastTravel { zone: node },
         _ => return crate::passage_wire::asked_of(ask),
     })
 }
@@ -341,6 +344,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::TakeLodestone => args = messages::AskArgs { kind: TAKE_LODESTONE, ..args },
         Asked::DropLodestone => args = messages::AskArgs { kind: DROP_LODESTONE, ..args },
         Asked::EnterBreach => args = messages::AskArgs { kind: ENTER_BREACH, ..args },
+        Asked::FastTravel { zone } => args = messages::AskArgs { kind: FAST_TRAVEL, node: *zone, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,

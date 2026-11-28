@@ -74,7 +74,7 @@ code:
   - client/src/game/moorings.ts#shipsLying
   - client/src/game/shipConsole.ts#shipConsoleNode
   - client/src/game/islandWords.ts#islandPanelOf
-  - client/src/game/islandPanel.ts#islandScreen
+  - client/src/game/islandScreen.ts#islandScreen
   - client/src/game/aboard.ts#Aboard
   - client/src/game/crew.ts#Crew
   - client/src/game/shipPeople.ts#ShipPeople
@@ -732,11 +732,17 @@ lands in holds to the same rule: from the sea it takes only a player whose ship 
 place ([[Server]], "Arrivals"). A click on a
 tile does what it does: a place lands there (the player stands at its first spawn, facing inland from the ship, or at a
 social space out from its landmark over the city, as on arriving), choosing its node first; an Elite Dungeon opens its
-card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist; the Outposts tile opens the region's sites, choosing one landing there.
+card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist; the Outposts tile opens the region's sites, choosing one landing there; a patrol zone with landing zones (the Saltgrass Downs) opens its map in the tiles' place (`landingZones.ts`), its section, ways and places with a beacon fire at each landing zone, the landing's lit first: a click on a fire, Enter on the one lit, or its Land press lands there, the room standing the player at it (`?landing=`, [[Server]], "Arrivals").
 Tab, the arrows
 and the pad's cross walk the tiles, and Enter or the pad's A presses the one they reach; else Enter does what the lit
 tile does (the one under the pointer, else the first place's). Escape, the pad's B, or Back to the sea, flies back
-down; over the Outposts tile's sites, they close them first, back to the tiles.
+down; over the Outposts tile's sites or a zone's map, they close them first, back to the tiles.
+
+On foot in a patrol zone with landing zones, each is fast travelled to from the land's held map ([[Held Map]], "On
+land"), as Destiny 2's are: the veil falls with "Travelling to" its name, the room is asked (`fastTravel.ts`, the
+ask 97 with the zone's number), and on its yes the room stands the player there, facing as they faced, and the veil
+lifts 0.6 s on; the room refuses it as it refuses a return to the ship, while fallen or within ten seconds of a foe's
+blow, and before the accounts have given it the character, and the veil lifts at once, the HUD saying why.
 
 A sea island's landing docks in sight at once, from wherever the ship lies: it sails for the island's offing, out on
 the bearing it is landed on, planned on water as any route and bent round every island in sight, then in to its

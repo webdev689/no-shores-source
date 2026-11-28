@@ -1424,6 +1424,13 @@ pad have focused is lit, else the one under the pointer, else the first open one
 a card, or Enter or A, lands at its site as a place's tile does; the arrows, Tab and the pad's cross walk the cards,
 the keys and the pad held to the panel while it stands. Back, Escape or the pad's B close it, back to the tiles.
 
+A patrol zone with landing zones (the Saltgrass Downs) opens its map in the tiles' place as the Outposts tile opens
+its sites (`landingsNode` in `landingZones.ts`): a panel 104 px down, its name in brass and "Choose where to land", the
+zone's map as large as fits up to 720 px wide (its section's land, its ways faint, each place a dot) with a beacon
+fire, a small cairn under a flame, at each landing zone, the lit one ringed in brass, and under it the lit zone's
+name, Land and Back. The landing's zone is lit first, then the one the keys or the pad have focused, else the one
+under the pointer. A click on a fire, Enter or A, or Land lands there; Back, Escape or the pad's B close it.
+
 ## The character screen
 
 Where the page has accounts, beginning at the title opens the character screen over the title's scene

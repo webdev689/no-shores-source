@@ -303,7 +303,14 @@ from the sea, fresh water and the claim's edge), then:
     way in (`spawns::round`), each on walkable ground in the section and clear of everything a body runs into (a
     gate's arch stands on its way in): the first three points that are, of the anchor itself, six metres east and
     west of it and three south, then rings round the anchor two metres apart out to 16 m; the anchor alone where none
-    is.
+    is. Where a patrol area's brief asks for `landing_zones` (the Saltgrass Downs), two landing zones stand past the
+    landing (`landings`), one in each half of the claim north and south of its middle: of the ways' points on
+    walkable ground 40 m or more inside the claim and 30 m or more off every place's reach, with room beside the way
+    for its fire, the one that leaves the half's farthest walkable ground nearest to it or to the landing. Its beacon
+    fire (`marks::landing_fire`) stands 3.5 m off the way's edge on the side clear of every way: a low cairn of two
+    rubble courses, a stone fire basket and its flame. A body lands at each where the first spawn round it stands; the
+    layout's `landings` list the landing's own first spawn, then the north's and the south's, and the bake names
+    each for the place nearest it (`bake::landings_of`).
 11. **The plantings** (`plantings`), last, from the kinds the climate's nature already grows
     (`content/nature/flora.json`): its orchard tree and its shrub, the oak and the gorse on a temperate coast (no apple
     or pear grows anywhere). A farm with "orchard" as a whole word of its name is planted with the tree in rows along
@@ -580,10 +587,8 @@ whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]])
 ## Limits
 
 - Only the Saltgrass Downs has runs; the other 8 patrol zones' briefs name none yet.
-- The Saltgrass Downs has one landing, Shingle Landing: its three landing zones, the zone's map to choose one from
-  and their fast travel are decided
-  ([[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]],
-  [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]) but not built.
+- Only the Saltgrass Downs has landing zones (its brief's `landing_zones`); the other patrol zones' are deferred
+  ([[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]).
 - Few mesas show their ledges: a second face needs a radius of 49 m, which only a wide basin's rim has room for, so
   most stand in one face under their flat top.
 - No layout seats a temple to walk into yet, so a temple's benches and lectern have not been seen inside.

@@ -147,6 +147,8 @@ pub struct Room {
     pub(crate) blocks: movement::Blocks,
     pub(crate) floor: Floor,
     spawn_points: Vec<(f64, f64)>,
+    /// Where a body stands at each of a patrol area's landing zones, fast travelled to (`asks.rs`).
+    landings: Vec<[f64; 2]>,
     section: Option<Section>,
     /// Whether players' asks for foes are taken: a course's room takes them, a node's only once told to.
     takes_foe_asks: bool,
@@ -290,6 +292,7 @@ impl Room {
             blocks: blocks.into(),
             floor,
             spawn_points,
+            landings: Vec::new(),
             takes_foe_asks: section.is_none(),
             arts: true,
             story: false,

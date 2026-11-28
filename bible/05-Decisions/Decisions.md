@@ -452,6 +452,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[The Playlist and Its Dungeons as Claude Shapes Them]]
 - [[Set Names and Faction Perks as Claude Drafts Them]]
 - [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]]
+- [[The Downs' Landing Zones as Claude Builds Them]]
 - [[Guilds and Outposts as Claude Shapes Them]]
 - [[The Drowned Vale as Claude Builds It]]
 - [[The Balance and Economy Pass as Claude Shapes It]]

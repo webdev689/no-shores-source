@@ -135,6 +135,9 @@ pub struct Brief {
     /// Whether its places stand at heights by their kind, its ways graded between them (`heights`).
     #[serde(default)]
     pub heights: bool,
+    /// Whether a patrol area has two landing zones past its landing, north and south (`landings`).
+    #[serde(default)]
+    pub landing_zones: bool,
     /// The region of its island it lies in (`content/world/regions.json`, read by `Briefs::regions`): an instance
     /// links only to a patrol area of its own region.
     #[serde(default)]
@@ -207,6 +210,7 @@ fn plain(kind: land::sites::NodeKind) -> Brief {
         stone: None,
         river: false,
         heights: false,
+        landing_zones: false,
         region: None,
     }
 }

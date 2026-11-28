@@ -1,5 +1,6 @@
 //! A patrol zone's landing is a safe place to arrive: on continent 1's patrol zones as the bake makes them, a player
-//! who stands a minute where they land is never struck, and the zone's garrison still stands beyond it.
+//! who stands a minute where they land, or at any of its landing zones, is never struck, and the zone's garrison
+//! still stands beyond it.
 
 use movement::Block;
 use room::{EventKind, Floor, NodeKind, Room, Section};
@@ -31,13 +32,18 @@ fn a_player_standing_where_they_land_in_a_patrol_zone_is_never_struck() {
         // Its territories' and runs' groups too, any within reach of the landing standing as the player lands.
         room.set_foe_sites(&node.foes);
         assert!(room.foes_seen().count() > 0, "{}'s garrison stands", node.id);
-        let player = room.join().expect("a player joins");
+        assert!(node.id != "saltgrass-downs" || node.landings.len() == 3, "the Downs' three landing zones");
+        let mut players = vec![room.join().expect("a player joins")];
+        for landing in &node.landings {
+            let player = room.join().expect("a player joins");
+            assert!(room.put_player(player, landing.at[0], landing.at[1]));
+            players.push(player);
+        }
         for tick in 0..60 * 60 {
             room.tick();
-            let struck = room
-                .take_events()
-                .into_iter()
-                .find(|event| event.defender == player && matches!(event.kind, EventKind::Hit | EventKind::Killed));
+            let struck = room.take_events().into_iter().find(|event| {
+                players.contains(&event.defender) && matches!(event.kind, EventKind::Hit | EventKind::Killed)
+            });
             assert!(struck.is_none(), "{}: struck where they landed at tick {tick}: {struck:?}", node.id);
         }
     }

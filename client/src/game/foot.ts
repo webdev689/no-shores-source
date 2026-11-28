@@ -57,7 +57,7 @@ import { FollowCamera, fallPlayed, followable, livingAmong } from '../player/fol
 import { hearing, placingFolk, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
-import type { NodeInfo } from './worldData.ts';
+import { type NodeInfo, landedOn } from './worldData.ts';
 import { mapMarksOf } from './mapMarks.ts';
 
 /**
@@ -199,7 +199,7 @@ export class Foot {
     const arriving = asked === 'relog' ? undefined : asked;
     // Launched for a Breach's run, the player stands at its gate, where the zone's room stands them.
     const placed = arriving?.breach === undefined ? arriving : await gateArrival(context.land, node, arriving.breach);
-    const [x, y] = placed ? [placed.x, placed.y] : (node.spawns[0] ?? node.centre);
+    const [x, y] = placed ? [placed.x, placed.y] : (landedOn(node) ?? node.spawns[0] ?? node.centre);
     stand(context, x, y, placed?.facing ?? facing, node.kind === 'social');
     const outpost = await outpostJoined(node, guild);
     const address = nodeAddress(context, node, seas, asked, outpost?.guild ?? null);

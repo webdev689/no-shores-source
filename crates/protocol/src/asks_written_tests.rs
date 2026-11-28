@@ -31,6 +31,7 @@ fn the_asks_numbers_are_written_for_the_page() {
         ("PASSAGE_HOME", passage_wire::PASSAGE_HOME),
         ("PASSAGE_BEGIN", passage_wire::PASSAGE_BEGIN),
         ("PASSAGE_OPEN", passage_wire::PASSAGE_OPEN),
+        ("FAST_TRAVEL", gear_wire::FAST_TRAVEL),
     ];
     let listed: Vec<String> = asks.iter().map(|(name, number)| format!("\"{name}\":{number}")).collect();
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");

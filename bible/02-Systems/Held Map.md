@@ -229,7 +229,9 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
   waits; M or Escape turns back. Up, M or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
   plates and compass, and a gate's offer, give way while it is up.
 - **The view** opens centred on the player, 400 m across (in a passage zone, the whole web), held to the land's sheet: its ring and 40 m past it. A drag
-  pans and the wheel zooms, to 8 px a metre at most. A click does nothing: the map is only to look at.
+  pans and the wheel zooms, to 8 px a metre at most. A click does nothing but in a patrol zone with landing zones:
+  a click within 24 px of one picks it, and the card at the map's foot offers "Fast travel to" its name; its press or
+  Enter lowers the map and fast travels there ([[Game]], "Landings"), and Escape lets the pick go first.
 - **What it shows**, painted on the parchment in the map's inks and washes as a surveyor colours a plan, read afresh
   each time it is raised, off the ground as the camera keeps it (exact within 1 km of the player, an island's its
   own):

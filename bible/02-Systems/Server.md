@@ -50,7 +50,7 @@ code:
   - client/src/network/linkMeasure.ts#LinkMeasure
   - tools/wireSizes.mjs
   - crates/room-wasm/src/lib.rs#room_input
-  - crates/room-wasm/src/lib.rs#open_node
+  - crates/room-wasm/src/node_door.rs#open_node
   - crates/room-wasm/src/dungeon_door.rs#open_dungeon
   - crates/room-wasm/src/dungeon_door.rs#room_join_at
   - crates/room-wasm/src/run_door.rs#open_run
@@ -657,7 +657,10 @@ so every decision is Rust and the shell only carries bytes and time.
   spawn (`outOfDoor`). Across a crossing gate from another patrol zone, `?from=<node id>` stands them at the room's
   gate toward that node, as its node file lists its crossings (`bake::crossings_of`), and they stay there only once
   the room keeps their character as come from that node's room at the same seas, else at the next spawn
-  (`outOfDoor`); with one patrol zone on each island, no node file lists one ([[Layouts]], "Gates"). In a social
+  (`outOfDoor`); with one patrol zone on each island, no node file lists one ([[Layouts]], "Gates"). In a patrol
+  zone with landing zones, `?landing=<number>` stands them at that landing zone, as its node file lists them
+  (`bake::landings_of`), chosen on the zone's map as it lands ([[Game]], "Landings"); a number it has not is an
+  ordinary join. In a social
   space's room, `?relog=1` asks, once the room keeps the character, to stand the
   player where that character left the space (`standWhereLeft`; [[Accounts]], "Where a player logs back in"). Each
   binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course

@@ -35,7 +35,7 @@ import { islePlanWorker } from '../network/islePlans.ts';
 import { islesDrawing } from './islesDrawing.ts';
 import { SeaLandings } from './seaLandings.ts';
 import { seaLayer } from './seaScreen.ts';
-import { islandScreen } from './islandPanel.ts';
+import { islandScreen } from './islandScreen.ts';
 import { guildLanded } from './guild/guildHeld.ts';
 import { ashoreOn, ashoreWords } from './isleVisit.ts';
 import { isleMarksOf } from './mapMarks.ts';
@@ -71,6 +71,7 @@ import { arrivalAt, type NodeInfo, portsOf } from './worldData.ts';
 import { startTravel } from './travel.ts';
 import { Drain } from './drain.ts';
 import { returnToShip } from './toShip.ts';
+import { fastTravel } from './fastTravel.ts';
 import { dialogueWaits, speaking } from '../speech/dialogue.ts';
 import { obtainedLayer } from './obtained.ts';
 
@@ -153,6 +154,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ gpu, store, stack, outlines: continents.map((each) => each.outline) },
       sea: () => playing.sea,
       sail: (to, seas, travel) => sailFor(to, seas, travel),
+      travel: (zone) => zoneTravel(zone),
       shut: () => screens.seasShut(),
       made: (map) => {
         if (opened) map.setWaters(opened);
@@ -360,10 +362,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     sea: () => travel({ kind: 'return-to-ship' }, goSea),
     ...{ walker, dead, game: playing, sky: scene.sky },
   });
-  const landAt = (id: string) => {
+  /** Lands at node `id`, at its landing zone `zone` where its map chose one (its room stands the player there). */
+  const landAt = (id: string, zone?: number) => {
     const landing = playing.sea?.view.landingOf(id);
-    const node = playing.landmass.nodes.find((each) => each.id === id);
-    if (!landing || !node || !playing.sea) return;
+    const found = playing.landmass.nodes.find((each) => each.id === id);
+    if (!landing || !found || !playing.sea) return;
+    const node = zone === undefined ? found : { ...found, landedAt: zone };
     const from = playing.sea.position;
     travel({ kind: 'land', node: id, name: landing.name }, () =>
       goFoot(node, arrivalFacing(node, playing.landmass.plan, from)),
@@ -400,6 +404,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     const from = playing.foot;
     returnToShip(from, () => void (playing.foot === from && travel({ kind: 'return-to-ship' }, goSea)), tell);
   };
+
+  /** A fast travel to the landing zone `zone` picked on the land's map, behind the veil, or told why not. */
+  const zoneTravel = (zone: number) => void fastTravel(playing.foot, zone, (words) => hud.veil(words), tell);
 
   /** Moves the flow on for something that needs no veil. */
   const change = (happening: Happening) => void (playing.flow = next(playing.flow, happening));

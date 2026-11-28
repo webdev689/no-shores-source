@@ -52,6 +52,15 @@ fn beacon(kit: &mut Kit, at: [f64; 2]) {
     }
 }
 
+/// A landing zone's beacon fire: a stone fire basket burning on a low cairn of two courses of rubble.
+pub(crate) fn landing_fire(kit: &mut Kit, at: [f64; 2]) {
+    let stones = (Shape::Column { sides: 7, top: 0.8 }, Material::Rubble);
+    part(kit, stones, at, 0.2, [2.2, 2.0, 0.7], 0.3, 0.0);
+    part(kit, stones, at, -0.3, [1.5, 1.35, 0.7], 1.1, 0.0);
+    part(kit, (Shape::Column { sides: 8, top: 1.4 }, Material::Stone), at, -0.95, [0.9, 0.9, 0.45], 0.0, 0.0);
+    part(kit, (Shape::Pyramid { top: 0.2 }, Material::Glow), at, -1.3, [0.7, 0.7, 0.55], 0.0, 0.0);
+}
+
 /// A solid standing on the ground at `spot`, sunk `sunk` metres, turned `turn` and leaning `lean` radians.
 fn part(
     kit: &mut Kit,

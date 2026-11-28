@@ -2,8 +2,11 @@ use super::*;
 use crate::gear_door::{NodeCounter, counter_of};
 use combat::Fighter;
 use combat::sight::apart;
+use land::ground::Ground;
 use movement::{Controls, Flat, TICK_SECONDS, Terrain, standing, step_body};
 use protocol::wire::overlook::wire as messages;
+use room::Floor;
+use room::asks::CounterKind;
 use room::sea::Ship;
 use serde_json::{Value, json};
 

@@ -18,8 +18,8 @@ use world::layout::Continent;
 mod sites;
 use sites::breach_of;
 pub use sites::{
-    OutpostGround, Place, RUN_REACH_M, chests_of, crossings_of, doors_of, foes_of, holders_of, on_plot, outpost_of,
-    places_of, plot_off,
+    OutpostGround, Place, RUN_REACH_M, chests_of, crossings_of, doors_of, foes_of, holders_of, landings_of, on_plot,
+    outpost_of, places_of, plot_off,
 };
 
 /// How far past a section's ring its window reaches, metres: beyond the 60 m where a body dies, so no living body
@@ -79,6 +79,10 @@ pub struct NodeFile {
     /// crossing from that node arrives here.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub crossings: Vec<Place>,
+    /// In a patrol area with landing zones, each one named for the place nearest it, where a body lands: its landing's
+    /// first, then the north's and the south's.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub landings: Vec<Place>,
     /// At an outpost site, the ground its guilds build on and gather at.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub outpost: Option<OutpostGround>,
@@ -214,6 +218,7 @@ pub fn nodes_of(
             paths,
             doors: Vec::new(),
             crossings: Vec::new(),
+            landings: Vec::new(),
             outpost: None,
             breach: None,
         }
@@ -242,6 +247,7 @@ pub fn nodes_of(
         let grounds = laid.and_then(grounds_of);
         let (doors, crossings) = (laid.map(doors_of).unwrap_or_default(), laid.map(crossings_of).unwrap_or_default());
         let breach = laid.and_then(breach_of);
+        let landings = laid.map(landings_of).unwrap_or_default();
         let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
         let outpost =
             laid.filter(|_| node.kind == NodeKind::Outpost).and_then(|layout| outpost_of(layout, &cut.ground));
@@ -256,6 +262,7 @@ pub fn nodes_of(
             paths,
             doors,
             crossings,
+            landings,
             outpost,
             breach,
             ..cut
