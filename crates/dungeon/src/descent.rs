@@ -299,10 +299,14 @@ impl BlockPlan {
 
     /// Now and then a storey of the block is one great room: a rectangle of nine to twelve cells each way, drawn,
     /// inside the rim with rock round it, on the first spot clear of its storey's flights and landings; or nine each
-    /// way where the drawn sides find none. One in five of the six styles' storeys, one in eight of the passages'.
+    /// way where the drawn sides find none. One in five of the six styles' storeys, one in eight of the passages', never
+    /// the cells', whose rooms are all small.
     pub(crate) fn plan_great(&mut self, seed: u32, number: usize, style: &Style) {
-        let share = if deep(style) { GREAT_SHARE } else { PASSAGE_GREAT_SHARE };
+        if !style.lays_great_rooms() {
+            return;
+        }
         let mut lane = Lane::named(&format!("great:{seed}:{number}"));
+        let share = if deep(style) { GREAT_SHARE } else { PASSAGE_GREAT_SHARE };
         for storey in 0..self.storeys.len() {
             if !lane.chance(share) {
                 continue;
@@ -318,10 +322,11 @@ impl BlockPlan {
         }
     }
 
-    /// Now and then a storey of the six styles is a warren: never the way in's, nor a great room, nor the last block's
-    /// deepest, where the end lies in a room of its own.
+    /// Now and then a storey of the six styles but the cells is a warren: never the way in's, nor a great room, nor the
+    /// last block's deepest, where the end lies in a room of its own. The cells, all small rooms and no great one, lay
+    /// none, so an Elite Dungeon in them keeps rooms its seals fit.
     pub(crate) fn plan_warrens(&mut self, seed: u32, number: usize, style: &Style, last: bool) {
-        if !deep(style) {
+        if !deep(style) || !style.lays_great_rooms() {
             return;
         }
         let mut lane = Lane::named(&format!("warren:{seed}:{number}"));

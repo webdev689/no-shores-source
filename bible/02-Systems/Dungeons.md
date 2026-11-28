@@ -175,13 +175,14 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   holds four rooms at most. Each room draws a form of its style, by the forms' weights, among those whose least sides
   fit its part; then its sides within the form's and the part's, which way it lies, its outline, the first of eight
   drawn spots in its part whose cells are rock its plan keeps clear, and its ceiling (a whole number of 0.4 m).
-- **Great rooms** (`plan_great`, on the lane `great:<seed>:<block>`): a block storey is one great room 20 times in 100
-  in the six styles, 12 in the passages' two: a rectangle (a cave in the caverns) of nine to twelve cells each way, drawn, inside
+- **Great rooms** (`plan_great`, on the lane `great:<seed>:<block>`): in every style but the cells, a block storey is
+  one great room 20 times in 100 in the six styles, 12 in the passages' two: a rectangle (a cave in the caverns) of nine to twelve cells each way, drawn, inside
   the rim with rock round it, on the first spot from a drawn one clear of its storey's flights and landings and, where
   one is, of the landings of the storey over it; nine each way where its drawn sides find none. A hewn one stands its
   pillars as any great room does. Over 2000 dungeons about one block storey in twenty is one.
-- **Warrens** (`warren.rs`, on the lane `warren:<seed>:<block>`): in the six styles 18 storeys in 100 but the way in's,
-  a great room's and the last block's deepest (the end's) are warrens, a maze to lose one's way in: two or three
+- **Warrens** (`warren.rs`, on the lane `warren:<seed>:<block>`): in the six styles but the cells 18 storeys in 100 but
+  the way in's, a great room's and the last block's deepest (the end's) are warrens (the cells, all small rooms and no
+  great one, lay none, so an Elite Dungeon in them keeps rooms its seals fit), a maze to lose one's way in: two or three
   small chambers (rectangles and round rooms of 2 to 3 cells, caves of 3 to 4 in the caverns), then a maze of
   one-cell ways through the rock round them, every second cell a crossing, grown by a drawn walk that turns back only
   where it can go no further, and 65 of each 100 of its dead ends broken through into the way beside, so it loops.

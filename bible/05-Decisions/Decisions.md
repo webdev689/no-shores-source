@@ -10,9 +10,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
-- [[Each Region Has Its Own Dungeons, and the Dungeons Go Deeper and Darker]]
 - [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]
 - [[The Music Repeats Less, Patrol Zones First]]
+- [[Each Region Has Its Own Dungeons, and the Dungeons Go Deeper and Darker]]
 - [[TypeScript and Rust]]
 - [[Server-Authoritative Multiplayer]]
 - [[WebGPU Only]]

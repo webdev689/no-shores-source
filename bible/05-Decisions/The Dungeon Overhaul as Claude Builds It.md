@@ -40,8 +40,8 @@ owner's "take autonomy, and treat this like your baby". Each is the owner's to c
 | Choice | Chosen | Why |
 |---|---|---|
 | Storeys | Up to five a block (three before); the way in's block one or two; the last block as deep as the deepest, so the way down ends at the bottom | "deeper dungeons" |
-| Great rooms | One block storey in five in the six styles is one great room (one in eight before, and now in the cells too); up to two of them rise into a gallery over them | "larger rooms" |
-| Warrens | Nearly one storey in five past the way in's is a warren: two or three small chambers in a maze of one-cell ways, most of its dead ends broken through so it loops, its torches every ninth cell; never the last block's deepest storey, where the end stands in a room of its own | "layouts you could get lost in" |
+| Great rooms | One block storey in five in the six styles but the cells is one great room (one in eight before); up to two of them rise into a gallery over them | "larger rooms" |
+| Warrens | Nearly one storey in five past the way in's, in every style but the cells, is a warren: two or three small chambers in a maze of one-cell ways, most of its dead ends broken through so it loops, its torches every ninth cell; never the last block's deepest storey, where the end stands in a room of its own; the cells, all small rooms already, lay none, so an Elite Dungeon in them keeps rooms its seals fit | "layouts you could get lost in" |
 | New rooms | Round rooms, rings round a core of rock, T-shaped rooms and diamonds, each in the styles they suit | "varied geometry" |
 | Flights | A flight's cells stay rock on every storey of its block; its side walls only on its own two storeys; a flight is laid only where half a storey's open cells stay joined round its landings | With four flights in a five-storey block, walling every storey left rooms no room and landings walled off |
 | Names past six uses | A room's name used again past the six words takes four more ("Sunken", "Nameless", "Drowned", "Deepest"), then two words | A five-storey dungeon holds some fifty rooms |
