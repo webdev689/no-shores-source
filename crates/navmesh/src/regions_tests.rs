@@ -69,4 +69,34 @@ fn no_region_lies_over_itself_where_a_way_winds_back_over_its_own_floor() {
         }
     }
     assert_eq!(unjoined, 0, "spans beside a span of their own region they do not link to");
+    assert_eq!(corner_to_corner(&field), 0, "spans corner to corner with a span of their own region, unjoined");
+}
+
+/// The walkable spans corner to corner with one of their own region that no walk joins them to through either column
+/// between: each such pair, a region meeting itself at a cell's corner, is counted from both ends.
+fn corner_to_corner(field: &compact::CompactField) -> usize {
+    let cells_x = field.grid.cells_x;
+    let mut unjoined = 0;
+    for (column, spans) in field.columns.iter().enumerate() {
+        let (ix, iy) = (column % cells_x, column / cells_x);
+        for span in spans.iter().filter(|span| span.walkable) {
+            for direction in 0..4 {
+                let turn = (direction + 1) & 3;
+                let Some((next_x, next_y)) = field.beside(ix, iy, direction) else { continue };
+                let Some((corner_x, corner_y)) = field.beside(next_x, next_y, turn) else { continue };
+                // The span of the corner's column a step one way then the other reaches, either way round.
+                let through = |first: usize, second: usize| {
+                    let (_, _, near) = field.linked(ix, iy, first, span.links[first]?);
+                    near.links[second].filter(|_| near.walkable)
+                };
+                let joined = [through(direction, turn), through(turn, direction)];
+                let corner = &field.columns[corner_x + corner_y * cells_x];
+                let own = |(index, other): &(usize, &compact::OpenSpan)| {
+                    other.walkable && other.region == span.region && !joined.contains(&Some(*index))
+                };
+                unjoined += corner.iter().enumerate().filter(own).count();
+            }
+        }
+    }
+    unjoined
 }

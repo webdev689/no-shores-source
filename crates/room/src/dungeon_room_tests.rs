@@ -621,3 +621,20 @@ fn brine_catacombs_flight_foot_is_one_floor_on_the_navmesh() {
     let way_in = [x, y, room.floor.height_at(x, y)];
     assert!(room.nav.find_path(way_in, [24.0, 11.2, 0.0]).is_some(), "the way in joined to room 14");
 }
+
+#[test]
+fn lion_grasslands_corridor_on_its_deepest_storey_is_one_floor_on_the_navmesh() {
+    // On the fifth storey (floor -32 m), corridor cell (2, 22) has rock over it on every storey and cell (3, 22) beside
+    // it has the floors of the third and fourth storeys over it: the two are one flat floor, and so the way in reaches
+    // the cell beside the stacked floors and rooms 18 to 20 past it.
+    let room = Room::dungeon("lion-grasslands", 1, LEVELS).expect("a patrol's dungeon");
+    let dungeon = forged("lion-grasslands", 1);
+    let at = |x: usize, y: usize| {
+        let [east, south] = dungeon.centre(4 * dungeon.plane() + y * dungeon.columns + x);
+        [east, south, -32.0]
+    };
+    assert!(room.nav.find_path(at(2, 22), at(3, 22)).is_some(), "the two cells joined");
+    let (x, y) = room.spawn_points[0];
+    let way_in = [x, y, room.floor.height_at(x, y)];
+    assert!(room.nav.find_path(way_in, at(3, 22)).is_some(), "the way in joined to the cell beside the stacked floors");
+}

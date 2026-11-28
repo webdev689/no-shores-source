@@ -20,11 +20,13 @@ struct Flat {
 }
 
 impl Flat {
-    /// The spans over, under or beside a span that no walk joins it to: the others of its column, and those of the
-    /// columns beside it but the one it links to each way. A region holding a span and one of these would meet
-    /// itself, flat, where no walk joins it, as one wound up a flight and back over its own floor does: its outline
-    /// would cross or run back along itself, and its corners there, at two heights, weld into one. Most spans, on a
-    /// floor with none over or under it, have none.
+    /// The spans over, under or beside a span that no walk joins it to: the others of its column, those of the
+    /// columns beside it but the one it links to each way, and those of the columns corner to corner with it but the
+    /// ones a step each way reaches, either way round. A region holding a span and one of these would meet itself,
+    /// flat, where no walk joins it, as one wound up a flight and back over its own floor does: its outline would
+    /// cross or run back along itself, or touch itself at a cell's corner, and its corners there, at two heights, weld
+    /// into one, which the region beside it then shares with neither. Most spans, on a floor with none over or under
+    /// it, have none.
     fn apart(&self, at: usize) -> &[usize] {
         &self.apart[self.apart_from[at]..self.apart_from[at + 1]]
     }
@@ -65,17 +67,22 @@ fn flatten(field: &CompactField) -> Flat {
     let (mut apart, mut apart_from) = (Vec::new(), Vec::with_capacity(owner.len() + 1));
     for (at, &(column, _)) in owner.iter().enumerate() {
         apart_from.push(apart.len());
-        let mut keep = |column: usize, joined: Option<usize>| {
+        let mut keep = |column: usize, joined: [Option<usize>; 2]| {
             for &other in index_of[column].iter().flatten() {
-                if Some(other) != joined {
+                if !joined.contains(&Some(other)) {
                     apart.push(other);
                 }
             }
         };
-        keep(column, Some(at));
+        keep(column, [Some(at), None]);
+        // The span a step one way then a step the other reaches.
+        let through = |first: usize, second: usize| neighbours[at][first].and_then(|near| neighbours[near][second]);
         for (direction, &joined) in neighbours[at].iter().enumerate() {
-            if let Some((next_x, next_y)) = field.beside(column % cells_x, column / cells_x, direction) {
-                keep(next_x + next_y * cells_x, joined);
+            let Some((next_x, next_y)) = field.beside(column % cells_x, column / cells_x, direction) else { continue };
+            keep(next_x + next_y * cells_x, [joined, None]);
+            let turn = (direction + 1) & 3;
+            if let Some((corner_x, corner_y)) = field.beside(next_x, next_y, turn) {
+                keep(corner_x + corner_y * cells_x, [through(direction, turn), through(turn, direction)]);
             }
         }
     }
