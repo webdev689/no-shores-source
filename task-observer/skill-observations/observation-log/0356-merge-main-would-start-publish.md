@@ -1,5 +1,5 @@
 ---
-id: 353
+id: 356
 title: "An open PR that clashes with main only in notes merges cleanly without taking main in, when its own lines move clear of main's; the publish guard then needs no yes"
 status: open
 type: workaround
