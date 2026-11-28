@@ -420,6 +420,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]
 - [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
 - [[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]
+- [[The Sea Fight's Camera Keeps Its Zoom, and a Hostile Ship Seen by Night Is One to Click]]
 
 ## Claude's calls
 

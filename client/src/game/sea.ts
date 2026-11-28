@@ -300,8 +300,8 @@ export class Sea {
     return true;
   }
 
-  /** A mark chosen at sea: the ship sails for it, to the water nearest it; for a sighted hostile ship's, the ship
-   *  chases it, the mark kept chosen while it does. True for a mark it sails for. */
+  /** A mark chosen at sea: the ship sails for it, to the water nearest it; for a hostile ship's, the ship chases it,
+   *  the mark kept chosen while it does. True for a mark it sails for. */
   sailToMark(id: string): boolean {
     const toward = this.chase.begin(id, this.room?.hostiles ?? [], this.position);
     if (toward) {
@@ -314,7 +314,7 @@ export class Sea {
     return mark !== undefined;
   }
 
-  /** Chases the hostile ship whose mark is chosen, if one is still sighted: true then. */
+  /** Chases the hostile ship whose mark is chosen, if it is still drawn: true then. */
   chaseChosen(): boolean {
     const { chosen } = this.view;
     return this.view.kind === 'sail' && chosen !== null && chosen.startsWith(HOSTILE_PREFIX) && this.sailToMark(chosen);
@@ -380,7 +380,7 @@ export class Sea {
       this.isles?.groundAt(east, south) ?? this.landmass.heightAt(east, south);
     const picked = pickAt(this.pose, this.viewport, x, y, ground, this.placed);
     const ray = { eye: this.pose.eye, direction: rayThrough(this.pose, this.viewport, x, y) };
-    return orHostile(picked, ray, this.room?.hostiles ?? [], this.position, this.drawnScale, this.hull.shown);
+    return orHostile(picked, ray, this.room?.hostiles ?? [], this.drawnScale, this.hull.shown);
   }
 
   /** The view switched to over the ship, Oversea or Sealevel. */

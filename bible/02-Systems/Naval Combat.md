@@ -684,10 +684,11 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   own law as it comes near along the way.
 - **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of it
   begins the fight with it whatever its temper (outside home waters), as a bold ship that meets a player does; a wary
-  one runs as captains run. The room lets go of the chase once it has left the sea. A click on a sighted hostile
-  ship's hull or rig, its boxes as the view draws it (four times its size from the raised view), chases it as a click
-  on its mark does, where nothing nearer stands under the click (`hostileUnder`): close to, its mark stands high over
-  its masthead.
+  one runs as captains run. The room lets go of the chase once it has left the sea. A click on a hostile ship's hull or
+  rig, sighted or not (by night a dark one drawn past its 220 m,
+  [[The Sea Fight's Camera Keeps Its Zoom, and a Hostile Ship Seen by Night Is One to Click]]), its boxes as the view
+  draws it (four times its size from the raised view), chases it as a click on its mark does, where nothing nearer
+  stands under the click (`hostileUnder`): close to, its mark stands high over its masthead.
 - **Sailed into.** Any hostile ship a player's ship comes within 60 m of (`BUMP_M`, their hulls all but touching)
   meets them, whatever its temper, by day or night, outside home waters and out of a fight, so no ship is sailed
   through another

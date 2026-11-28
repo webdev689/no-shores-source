@@ -124,7 +124,7 @@ test('by night a Grey Tithe ship sails dark and is sighted only close, as the sk
   assert.equal(sightOf({ faction: 0, sight: 25_920 }, night), 650, 'a ship showing her lanterns is seen farther');
 });
 
-test("a click on a sighted hostile ship's hull or rig meets it, the nearest first, as large as it is drawn", () => {
+test("a click on a hostile ship's hull or rig meets it, the nearest first, as large as it is drawn", () => {
   // Heading north (its bow to -y), 2 km east of the player's ship; an eye 200 m west of it and 30 m up.
   const near = hostile(7, 2_000);
   const far = hostile(8, 2_400);
@@ -134,15 +134,16 @@ test("a click on a sighted hostile ship's hull or rig meets it, the nearest firs
     return [east / length, south / length, up / length] as const;
   };
   const atNear = toward(200, 0, -26);
-  assert.deepEqual(hostileUnder(eye, atNear, [far, near], ship, 1)?.id, 'hostile-7', 'its hull, before the one behind');
-  assert.ok(Math.abs((hostileUnder(eye, atNear, [near], ship, 1)?.distance ?? 0) - 195) < 10);
-  assert.equal(hostileUnder(eye, toward(200, 0, -20), [near], ship, 1)?.id, 'hostile-7', 'its sails, over its deck');
-  assert.equal(hostileUnder(eye, toward(200, 0, -10), [near], ship, 1), null, 'the sky over its mastheads');
-  assert.equal(hostileUnder(eye, toward(200, 30, -30), [near], ship, 1), null, 'the water 30 m aft of it');
-  assert.equal(hostileUnder(eye, toward(200, 30, -30), [near], ship, 4)?.id, 'hostile-7', 'drawn four times its size');
-  assert.equal(hostileUnder(eye, toward(0, 1, 0), [near], ship, 1), null, 'looking away');
+  assert.deepEqual(hostileUnder(eye, atNear, [far, near], 1)?.id, 'hostile-7', 'its hull, before the one behind');
+  assert.ok(Math.abs((hostileUnder(eye, atNear, [near], 1)?.distance ?? 0) - 195) < 10);
+  assert.equal(hostileUnder(eye, toward(200, 0, -20), [near], 1)?.id, 'hostile-7', 'its sails, over its deck');
+  assert.equal(hostileUnder(eye, toward(200, 0, -10), [near], 1), null, 'the sky over its mastheads');
+  assert.equal(hostileUnder(eye, toward(200, 30, -30), [near], 1), null, 'the water 30 m aft of it');
+  assert.equal(hostileUnder(eye, toward(200, 30, -30), [near], 4)?.id, 'hostile-7', 'drawn four times its size');
+  assert.equal(hostileUnder(eye, toward(0, 1, 0), [near], 1), null, 'looking away');
+  // By night a dark ship is sighted only close, but one drawn farther is still one to click.
   const unsighted = hostile(9, 2_000, { sight: 1_000 });
-  assert.equal(hostileUnder(eye, atNear, [unsighted], ship, 1), null, 'one beyond its sight is no one to click');
+  assert.equal(hostileUnder(eye, atNear, [unsighted], 1)?.id, 'hostile-9', 'drawn beyond its sight: clicked');
 });
 
 test('a click meets a hostile ship before the sea behind it, but never before a mark, nor before land in front of it', () => {
@@ -150,7 +151,7 @@ test('a click meets a hostile ship before the sea behind it, but never before a 
   const eye = [near.x - 200, near.y, 30] as const;
   const ray = { eye, direction: [200 / 201.7, 0, -26 / 201.7] as const };
   const along = (east: number) => [eye[0] + east, eye[1], 0] as const;
-  const met = (picked: Parameters<typeof orHostile>[0]) => orHostile(picked, ray, [near], ship, 1, (hull) => hull);
+  const met = (picked: Parameters<typeof orHostile>[0]) => orHostile(picked, ray, [near], 1, (hull) => hull);
   assert.deepEqual(met({ kind: 'sea', point: along(230) }), { kind: 'mark', id: 'hostile-7' }, 'the sea behind it');
   assert.deepEqual(met({ kind: 'none' }), { kind: 'mark', id: 'hostile-7' });
   assert.deepEqual(met({ kind: 'mark', id: 'port-1' }), { kind: 'mark', id: 'port-1' }, 'a mark first');

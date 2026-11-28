@@ -539,13 +539,15 @@ sails out from its berth ("Landings").
   set on the held map sails at ×200. There is no pace to choose. At sea level a click on the sea sets no course: the
   helm's keys sail there. A click on the land, a port's icon or a sea island asks first ("Landings", below). A
   route that cannot be planned says why; resumed, a voyage sails at the pace it was set at.
-- **The chase** (`seaChase.ts`). A click on a sighted hostile ship's mark, or Enter while its mark is chosen, sets
-  the course to intercept it: where the ship meets the hostile ship at their ways (its rank's way and a ship's 12 m/s, both on
-  the voyage's clock), planned round the land as any route, again each half second. The voyage's line says "Chasing
-  the Tithe Brig." until it is met, lost from sight, or another course is set (a click, the helm's keys, Stop or
-  Resume, going ashore). Its way is the one the room sends with it (`Hostile.way`). The room is told whom the ship
-  chases: within 750 m of the hostile ship the fight begins, whatever its temper. Evading is turning away from a bold ship, sighted
-  ahead on the ship's course where the bold ship can meet it: held, the course meets the bold ship; turned away, the ship outruns it.
+- **The chase** (`seaChase.ts`). A click on a hostile ship's mark or hull, or Enter while its mark is chosen, sets the
+  course to intercept it: where the ship meets the hostile ship at their ways (its rank's way and a ship's 12 m/s, both
+  on the voyage's clock), planned round the land as any route, again each half second. The voyage's line says "Chasing
+  the Tithe Brig." until it is met, no longer drawn (by night a dark ship is chased past its sight,
+  [[The Sea Fight's Camera Keeps Its Zoom, and a Hostile Ship Seen by Night Is One to Click]]), or another course is set
+  (a click, the helm's keys, Stop or Resume, going ashore). Its way is the one the room sends with it (`Hostile.way`).
+  The room is told whom the ship chases: within 750 m of the hostile ship the fight begins, whatever its temper. Evading
+  is turning away from a bold ship, sighted ahead on the ship's course where the bold ship can meet it: held, the course
+  meets the bold ship; turned away, the ship outruns it.
 - **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the Sealevel view alone; in the Oversea view they
   do nothing, the click sailing there:
   - A and D turn the ship at the helm's 10 degrees a second. Under way it takes a course straight on along its new

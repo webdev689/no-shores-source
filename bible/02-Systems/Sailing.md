@@ -323,7 +323,8 @@ through the dusk with the lamps ([[Sky]], "Lamps at sea").
   reads across the sea at night as her lanterns (`GlowPoints`).
 - **Seen by them.** By night a lit ship is spotted to 650 m and a dark one only to 220 m: by the captains in a fight,
   the player's marks, a player joining a clash, and a hostile ship choosing whom to come for ([[Naval Combat]], "Night
-  sight").
+  sight"). A dark ship drawn past it is still clicked and chased
+  ([[The Sea Fight's Camera Keeps Its Zoom, and a Hostile Ship Seen by Night Is One to Click]]).
 
 ## Its deck
 

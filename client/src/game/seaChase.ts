@@ -1,10 +1,10 @@
-// The chase: the player's course set to intercept a sighted hostile ship, planned again each half second round the
-// land as any route is, until it is met, lost from sight, or another course is set. The voyage's line says whom the
+// The chase: the player's course set to intercept a hostile ship drawn at sea, planned again each half second round
+// the land as any route is, until it is met, no longer drawn, or another course is set. The voyage's line says whom the
 // ship chases meanwhile.
 import type { SeenHostile } from '../network/messages.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { SHIP_SPEED } from '../overworld/voyage.ts';
-import { HOSTILE_PREFIX, hostileName, sightedHostiles } from './seaHostiles.ts';
+import { HOSTILE_PREFIX, hostileName } from './seaHostiles.ts';
 
 /** Seconds between the chase's plans. */
 export const CHASE_EVERY_S = 0.5;
@@ -58,10 +58,10 @@ export class Chase {
     [this.tell, this.speed] = [tell, speed];
   }
 
-  /** Chases the ship of the mark `markId`, if it is among `hostiles` sighted from the ship at `ship`: where to plan
-   *  its course for now; null for no such ship. */
+  /** Chases the ship of the mark `markId`, if it is among `hostiles` drawn round the ship at `ship`, sighted or not
+   *  (by night a dark one is drawn past its sight): where to plan its course for now; null for no such ship. */
   begin(markId: string, hostiles: readonly SeenHostile[], ship: Point2): Point2 | null {
-    const hostile = sightedHostiles(hostiles, ship).find((each) => `${HOSTILE_PREFIX}${each.id}` === markId);
+    const hostile = hostiles.find((each) => `${HOSTILE_PREFIX}${each.id}` === markId);
     if (!hostile) return null;
     [this.quarry, this.since] = [{ id: hostile.id, name: hostileName(hostile) }, 0];
     this.tell(hostile.id);
@@ -80,12 +80,12 @@ export class Chase {
   }
 
   /** Steps `seconds` on among `hostiles` round the ship at `ship`: where to plan its course for, each half second,
-   *  while it is still sighted; none otherwise, the chase ended once it is lost. */
+   *  while it is still drawn; none otherwise, the chase ended once it is lost. */
   step(seconds: number, hostiles: readonly SeenHostile[], ship: Point2): Point2 | null {
     if (!this.quarry) return null;
     const id = this.quarry.id;
-    const hostile = sightedHostiles(hostiles, ship).find((each) => each.id === id);
-    // Lost from sight, or met: within a captain's reach a bold one takes the ship on, and a wary one is caught up.
+    const hostile = hostiles.find((each) => each.id === id);
+    // Lost, no longer drawn, or met: within a captain's reach a bold one takes the ship on, and a wary one is caught up.
     // Lost, the room is told; met, the room meets it itself, so it is not told to let it go first.
     if (!hostile) this.stop();
     if (!hostile || Math.hypot(hostile.x - ship[0], hostile.y - ship[1]) <= this.metM) {
