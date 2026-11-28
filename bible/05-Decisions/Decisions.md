@@ -49,6 +49,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Co-Dev's Toolkit, Whole]]
 - [[Readers of Our Own Formats Only]]
 - [[CLAUDE.md Points Into the Bible]]
+- [[The Kit Runs Only in Cloud Sessions]]
 - [[Which Made-for-DFO Mods Come Over]]
 - [[The World Map]]
 - [[The World Editor Paints in the Browser]]
