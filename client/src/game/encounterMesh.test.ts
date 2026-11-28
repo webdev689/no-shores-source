@@ -119,8 +119,8 @@ test('each rune and plate is ringed in iron inlaid just outside its mark, spoked
     [SEAL_KIND.weighing, PLATE.half],
   ] as const) {
     const corners = cornersOf({ kind, room: 0, pieces, pads: [], drowned: [], doors: [] });
-    const iron = corners.filter((corner) => corner.archive === IRON[0]);
-    assert.ok(iron.length > 0 && iron.every((corner) => corner.z < 0.01), 'iron, flush with the floor');
+    const iron = corners.filter((corner) => corner.archive === COLOUR.gold);
+    assert.ok(iron.length > 0 && iron.every((corner) => corner.z < 0.01), 'gilt, flush with the floor');
     assert.ok(
       iron.every((corner) => corner.x >= 0 && corner.x <= 6.4 && corner.y >= 0 && corner.y <= 3.2),
       'inlaid in its room alone, never past its walls',
@@ -145,7 +145,7 @@ test("an Ascent's pads take iron rungs up their sides, and a Holdfast's relic ha
   // Each rung within a hand of its pad's sides, none on the 0.4 m pad, too low for one.
   assert.ok(rungs.every((corner) => corner.x >= 3.96 && corner.x <= 5.64 && corner.z <= 0.8));
   const relic = { kind: SEAL_KIND.holdfast, room: 0, pieces: [[1.6, 1.6, 0]], pads: [], drowned: [], doors: [] };
-  // The iron hung over the floor: the ring inlaid round it lies flush.
+  // The iron hung over the floor.
   const hung = (ceilings: readonly number[]) =>
     cornersOf(relic, ceilings).filter((corner) => corner.archive === IRON[0] && corner.z > 0.1);
   const chains = hung([4.4, 4.4]);
@@ -166,8 +166,8 @@ test("a plate is all of its room's trim, never the floor's own picture, so it st
     drowned: [],
     doors: [],
   };
-  // Its raised slab, apart from the iron ring inlaid round it.
-  const raised = cornersOf(seal).filter((corner) => corner.archive !== IRON[0]);
+  // Its raised slab, apart from the gilt ring inlaid round it.
+  const raised = cornersOf(seal).filter((corner) => corner.archive !== COLOUR.gold);
   assert.ok(raised.length > 0);
   assert.deepEqual([...new Set(raised.map((corner) => corner.record))], [ROLE.trim]);
 });
