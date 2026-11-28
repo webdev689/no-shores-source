@@ -1,5 +1,5 @@
 ---
-id: 349
+id: 352
 title: "A session branch restarted from main after its PR merged cannot be pushed when main changed a publishing path since the branch's old head"
 status: open
 type: tool-clash
