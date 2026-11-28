@@ -79,3 +79,45 @@ fn a_way_over_a_room_on_a_slab_is_walked_where_its_floor_meets_the_drop_beside_i
     let route = walked.find_path(from, to).expect("across the slab");
     assert!(route.iter().all(|point| point[2].abs() < 0.3), "on the way's floor: {route:?}");
 }
+
+/// A way 3.2 m wide that winds back over itself, as a dungeon's does from one storey to the one over it: a corridor
+/// at -8 m along y, turning east at its north end onto a ramp that climbs south to 0 m, and from the ramp's top a way
+/// at 0 m west, over the corridor on a slab of rock from 4 m over the corridor's floor up to the way's.
+struct OverItself;
+
+impl Terrain for OverItself {
+    fn height_at(&self, x: f64, y: f64) -> f64 {
+        let corridor = x.abs() < 1.6 && (-16.0..12.0).contains(&y);
+        let turn = (-1.6..9.6).contains(&x) && (-16.0..-12.8).contains(&y);
+        let ramp = (6.4..9.6).contains(&x) && (-12.8..3.2).contains(&y);
+        let way = (-6.4..9.6).contains(&x) && (3.2..6.4).contains(&y);
+        if corridor || turn {
+            -8.0
+        } else if ramp {
+            -8.0 + (y + 12.8) * 0.5
+        } else if way {
+            0.0
+        } else {
+            10.0
+        }
+    }
+}
+
+#[test]
+fn a_way_that_winds_up_a_ramp_and_back_over_itself_is_walked_end_to_end() {
+    let slab = movement::Block { min_x: -1.6, min_y: 3.2, max_x: 1.6, max_y: 6.4, top: 0.0, bottom: -4.0 };
+    // Over this field one region once grew from the corridor up the ramp, along the way and back over the corridor
+    // under it: its outline crossed itself, and its polys overlapped and never linked.
+    let field = Bounds { min_x: -12.0, min_y: -24.0, max_x: 16.0, max_y: 16.0 };
+    let agent = navmesh::Agent { cell_size: 0.4, walks_to_drops: true, ..AGENT };
+    let from = [0.0, 10.0, -8.0];
+    let navmesh = NavMesh::bake_anchored(&[slab], &OverItself, field, &agent, from);
+    let (under, over) = ([0.0, 4.8, -8.0], [0.0, 4.8, 0.0]);
+    let along =
+        [under, [0.0, -4.0, -8.0], [4.0, -14.4, -8.0], [8.0, -4.8, -4.0], [8.0, 4.8, 0.0], over, [-5.0, 4.8, 0.0]];
+    for to in along {
+        assert!(navmesh.find_path(from, to).is_some(), "a way to {to:?}");
+    }
+    let round = navmesh.path_length(under, over).expect("from under the slab to over it");
+    assert!(round > 30.0, "by the ramp, not up through the slab: {round:.1} m");
+}

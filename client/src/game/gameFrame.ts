@@ -52,6 +52,7 @@ import { HULLS } from '../water/hullMask.ts';
 import { chatAtSea, chatInRun, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
 import { interfaceScale } from '../ui/interfaceSize.ts';
 import { drawnWhole, frameDrawn, setBehindVeil, standIns } from '../standIns.ts';
+import { FRAME_MOST_S, lateSeconds } from './lateTicks.ts';
 
 /** What the frames read and change as the game goes: the flow, the mode's own pieces, the open landmass and its
  *  drawers, whether the place behind the veil is ready and how long it has waited, whether the map is wanted, and the
@@ -86,7 +87,7 @@ export interface Playing {
 export function startFrames(parts: FrameParts, playing: Playing): void {
   const { gpu, canvas, hud, input, scene, walker, firstPerson, footView, traffic, charting } = parts;
   const { ui, stack, drain } = parts;
-  let [last, clock] = [performance.now(), 0];
+  let [last, clock, late] = [performance.now(), 0, 0];
   let wasWalking = false;
   /** Whether the view was in the player's eyes before the land's held map took it there; null while it has not. */
   let eyesBeforeMap: boolean | null = null;
@@ -143,8 +144,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (parts.heed(here)) return true;
     const { flow, helmMap } = playing;
     const paused = flow.mode !== 'foot' || gearScreenOpen() || socialUp();
-    // Others see three dots over a player in a menu.
-    here.fight.menuOpen = gearScreenOpen() || socialUp();
+    // Others see three dots over a player in a menu; a slow frame's ticks are made up on foot (`lateTicks.ts`).
+    [here.fight.menuOpen, here.fight.late] = [gearScreenOpen() || socialUp(), late];
     const aspect = size.width / Math.max(1, size.height);
     // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered; a
     // dungeon's map covers the view and leaves the eyes as they are.
@@ -507,7 +508,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   };
   const step = (now: number) => {
     const elapsed = (now - last) / 1000;
-    const seconds = Math.min(0.1, elapsed);
+    const seconds = Math.min(FRAME_MOST_S, elapsed);
+    late = lateSeconds(elapsed);
     last = now;
     clock += seconds;
     drain.step(seconds);

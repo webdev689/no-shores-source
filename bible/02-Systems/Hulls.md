@@ -109,7 +109,10 @@ the part `glass`, which `paint_ship.py` keeps, and `export_ship.py` writes it as
 byte 2 (`GLASS_SHELL`). The game draws it as it draws a lantern's glass, burning evenly
 while its ship's lanterns burn and flickering with them, and pale horn on a ship running dark ([[Sailing]], "Lanterns
 at night"). The `ships` workflow tests the
-export's bytes (`tools/ships/test_export.py`) before it builds.
+export's bytes (`tools/ships/test_export.py`) before it builds. The prologue's wreck keeps its ships' panes in
+`glass`, its ground counting them as solid as iron; `export_wreck.py` writes each as iron with its vertices' third
+part byte `GLASS_SHELL`, and the wreck's shader burns it as a lit ship's pane, flickering as a lantern does
+([[The Wreck's Stern Windows Glow]]).
 
 ## What the code needs
 

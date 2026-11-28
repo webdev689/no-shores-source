@@ -23,7 +23,7 @@ the owner's PC. The owner wrote:
 
 ## What it settles
 
-- A heavy forge render may run on GitHub's runners in the public mirror `Lattymoy/no-shores-forge`, where they cost
+- A heavy forge render may run on GitHub's runners in the public mirror `webdev689/no-shores-forge`, where they cost
   no Actions minutes, when the owner says so; otherwise it runs on the owner's PC
   ([[Heavy Renders Run on the Owner's PC, Not on Actions]]).
 - The mirror holds the forge from `tools/forge` whole, the owner's own models, the horse and the specs from Daggerfall

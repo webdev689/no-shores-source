@@ -15,13 +15,43 @@ fn elite_plans() -> Vec<(String, Dungeon, EncounterPlan)> {
         .collect()
 }
 
+/// The rooms of a dungeon a seal may stand in, in walk order: never the way in's, the end, a landmark's or a vault's.
+fn seal_rooms(laid: &Dungeon) -> Vec<usize> {
+    let shut: Vec<usize> = laid.landmarks.iter().map(|placed| placed.room).chain(laid.vaults.clone()).collect();
+    let mut rooms: Vec<usize> = (0..laid.rooms.len())
+        .filter(|room| *room != laid.end() && *room != laid.way_in.room && !shut.contains(room))
+        .collect();
+    rooms.sort_by_key(|&room| (laid.rooms[room].walk, room));
+    rooms
+}
+
+/// Whether a seal of `kind` fits a room of `laid` that holds no seal of `plan`, among `rooms`: a Litany's fit hangs on
+/// its runes' draw, so each room is tried on several lanes, any fit counting.
+fn fits_elsewhere(dungeon: &Dungeon, plan: &EncounterPlan, kind: SealKind, rooms: &[usize]) -> bool {
+    let reading = Reading::of(dungeon);
+    let free = rooms.iter().filter(|room| plan.seals.iter().all(|seal| seal.room != **room));
+    free.collect::<Vec<_>>().into_iter().any(|&room| {
+        (0..8).any(|draw| laid(&reading, &mut Lane::named(&format!("probe {draw}")), kind, room).is_some())
+    })
+}
+
 #[test]
 fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_alike() {
     let plans = elite_plans();
     assert_eq!(plans.len(), 18);
     let mut kinds_seen = std::collections::BTreeSet::new();
+    let mut short = Vec::new();
     for (place, laid, plan) in &plans {
-        assert_eq!(plan.seals.len(), seals_for(laid.squares.len()), "{place}: its seals");
+        if plan.seals.len() < seals_for(laid.squares.len()) {
+            // Fewer only where no room left fits a kind not yet laid: a Holdfast wants a great room, an Ascent a tall
+            // one.
+            let missing = KINDS.into_iter().filter(|kind| plan.seals.iter().all(|seal| seal.kind != *kind));
+            for kind in missing {
+                assert!(!fits_elsewhere(laid, plan, kind, &seal_rooms(laid)), "{place}: a {kind:?} fits a room left");
+            }
+            short.push(place.clone());
+        }
+        assert!(plan.seals.len() >= 2, "{place}: two seals at the least");
         let landmarked: Vec<usize> = laid.landmarks.iter().map(|placed| placed.room).collect();
         for (at, seal) in plan.seals.iter().enumerate() {
             kinds_seen.insert(seal.kind as u8);
@@ -69,6 +99,7 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
         }
     }
     assert_eq!(kinds_seen.len(), 4, "every kind is laid somewhere among the 18");
+    assert!(short.len() <= 2, "dungeons a seal short: {short:?}");
 }
 
 #[test]
@@ -77,17 +108,17 @@ fn a_dungeon_of_four_blocks_holds_two_seals_and_one_of_five_three() {
 }
 
 #[test]
-fn each_seal_is_laid_nearest_the_middle_of_its_stretch_of_the_walk_not_at_its_start() {
+fn the_walks_first_room_stands_no_climb_and_another_seal_only_where_nothing_further_on_fits_it() {
     for (place, laid, plan) in elite_plans() {
-        let end = laid.end();
-        let landmarked: Vec<usize> = laid.landmarks.iter().map(|placed| placed.room).collect();
-        let mut rooms: Vec<usize> = (0..laid.rooms.len())
-            .filter(|room| *room != end && *room != laid.way_in.room && !landmarked.contains(room))
-            .collect();
-        rooms.sort_by_key(|&room| (laid.rooms[room].walk, room));
-        if rooms.len() >= 4 {
-            assert_ne!(plan.seals[0].room, rooms[0], "{place}: the first seal is not the first room on the walk");
-        }
+        let rooms = seal_rooms(&laid);
+        let Some(seal) = plan.seals.iter().find(|seal| rooms.len() >= 4 && seal.room == rooms[0]) else { continue };
+        // The first room on the walk stands no climb, and another seal only where no other room fits it.
+        assert_ne!(seal.kind, SealKind::Ascent, "{place}: a climb straight from the way in");
+        assert!(
+            !fits_elsewhere(&laid, &plan, seal.kind, &rooms[1..]),
+            "{place}: a {:?} that fits further on",
+            seal.kind
+        );
     }
 }
 
@@ -392,6 +423,45 @@ fn a_seal_fits_round_its_own_storeys_solids_and_furniture_alone() {
                 let (seal, alone_seal) = (laid(&reading, &mut first, kind, room), laid(&own, &mut second, kind, room));
                 assert_eq!(seal, alone_seal, "{place}: room {room}'s {kind:?}");
             }
+        }
+    }
+}
+
+#[test]
+fn a_holdfast_stands_only_in_a_great_room_its_ring_whole_on_the_floor_and_its_doorways_outside_it() {
+    let mut holdfasts = 0;
+    for (place, laid, plan) in elite_plans() {
+        for seal in plan.seals.iter().filter(|seal| seal.kind == SealKind::Holdfast) {
+            holdfasts += 1;
+            let room = &laid.rooms[seal.room];
+            let (width, depth) = (room.width, room.depth);
+            assert!(width.min(depth) >= HOLDFAST_ROOM_CELLS, "{place}: a Holdfast in a room {width} by {depth}");
+            let relic = seal.pieces[0];
+            // Every point of the ring on its room's floor, out to its edge, all the way round.
+            for step in 0..72 {
+                let turn = f64::from(step) * std::f64::consts::TAU / 72.0;
+                for share in [0.0, 0.25, 0.5, 0.75, 0.999] {
+                    let reach = RELIC_RING_M * share;
+                    let at = [relic[0] + reach * libm::cos(turn), relic[1] + reach * libm::sin(turn), relic[2]];
+                    let cell = plan.cell_at(at).expect("in the dungeon");
+                    assert_eq!(laid.room_at(cell), Some(seal.room), "{place}: its ring on its room's floor at {at:?}");
+                }
+            }
+            for door in &seal.doors {
+                let off = libm::hypot(door[0] - relic[0], door[1] - relic[1]);
+                assert!(off >= RELIC_RING_M + RELIC_DOORS_CLEAR_M - 1e-9, "{place}: a doorway {off} m from the relic");
+            }
+        }
+    }
+    assert!(holdfasts >= 5, "{holdfasts} of the 18 lay a Holdfast");
+}
+
+#[test]
+fn a_litany_stands_in_a_room_three_cells_or_more_each_way() {
+    for (place, laid, plan) in elite_plans() {
+        for seal in plan.seals.iter().filter(|seal| seal.kind == SealKind::Litany) {
+            let room = &laid.rooms[seal.room];
+            assert!(room.width.min(room.depth) >= LITANY_ROOM_CELLS, "{place}: {} by {}", room.width, room.depth);
         }
     }
 }

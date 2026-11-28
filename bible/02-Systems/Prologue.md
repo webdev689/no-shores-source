@@ -582,7 +582,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   it there (`light_wreck.py`), with its shadows and what the timber throws back, flickering through space and time as
   the fires burn, the brightest rolled off softly toward gold. The game's sky lights it as it lights a ship, at the
   story's hour, under its cloud and lightning, darkened in every hollow and overhang the bake found. The light is laid
-  in blocks, as the game's pixels are, and kept as its square root, so its dim falloff keeps its steps. Each fire is
+  in blocks, as the game's pixels are, and kept as its square root, so its dim falloff keeps its steps. Its ships'
+  stern windows burn as a lit ship's do at sea ([[The Wreck's Stern Windows Glow]], [[Hulls]]). Each fire is
   also a lamp of the night, lighting the figures, the ships and the sea round it. The wreck does not ride the swell,
   which rises past its decks: every beat that draws it hands the water its ships' waterlines and its rafts as
   footprints (`dry`, the water's hull masks), so no sea is drawn inside a hull or over any of its ground, its dead ends'

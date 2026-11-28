@@ -95,7 +95,9 @@ small zones across the island, twenty deep ([[Passages Web Out From the Patrol Z
   without a way in is given one from the nearest. Ways lead deeper only.
 - **The public way**: one zone a depth (`Zone::public`), from a zone of the first depth along one of each marked
   zone's ways on, where players in public rooms meet.
-- **Each zone** is drawn its ground (under ground, a style by depth, chalk and barrow among them; above ground, a
+- **Each zone** is drawn its ground (under ground, a style by depth, chalk and barrow among them, a Hold's never the
+  cells, whose rooms are all too small for its ring and which lay no great room: one drawn there is laid in its depth's
+  next style, `held_ground`; above ground, a
   hollow of six forms), its size (small, medium or large, 40, 35 and 25 in a hundred to depth 10 and 15, 45 and 40
   past it, a lamp's zone and a vault medium at least), its deal (a lamp at every fifth depth, else a skirmish, a
   mission of seven, a vault, a vein or a reliquary, by weight; a vault only under ground, its draw above ground a
@@ -157,10 +159,12 @@ passages' own pieces standing in it with their solids.
   walk maps) from each next seed, above ground dressed again, up to eight times, the laying that misses fewest kept. The
   page's door keeps the last zone it laid, so a zone's plan, its heights and its local room are laid once.
 - **The pieces**: the way in, the onward mouths, the lamp (a plinth 1.6 m square in a ring of five standing stones
-  3.5 m out, facing the arrival turned half a stone's step, so the way from it comes in between two stones), and what
-  the deal stands on the spots farthest from the way in: three dead lamps for a Kindle, three tally posts for a Sever,
-  six nodes for a vein, a reliquary, a Hold's ring (`passage.ring`, no solid: 32 worn flat stones of the grey-green
-  stone laid end to end in the floor on its 6 m, none 5 cm over it, so a body walks over it).
+  3.5 m out, facing the arrival turned half a stone's step, so the way from it comes in between two stones, each
+  stone's solid its drawn slab at its widest, 1.08 m across its broad face and 0.58 m through, in three pieces along
+  its face, each turned with it and held as the square round its turned corners: `Kind::solids_at`), and what the deal
+  stands on the spots farthest from the way in: three dead lamps for a Kindle, three tally posts for a Sever, six nodes
+  for a vein, a reliquary, a Hold's ring (`passage.ring`, no solid: 32 worn flat stones of the grey-green stone laid end
+  to end in the floor on its 6 m, none 5 cm over it, so a body walks over it).
 
 ## A dive
 

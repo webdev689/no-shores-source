@@ -121,9 +121,16 @@ impl<'mesh> MeshRoutes<'mesh> {
     }
 
     /// The point to walk for along a path: a metre on square along the link the way crosses from `from`, if it stands
-    /// at one's start, else the corner ahead.
+    /// at one's start, else the corner ahead, each corner moved where a body stands clear of the solids beside it (a
+    /// dungeon's mesh keeps less than a body's radius off a rock), so none is a corner the foe never reaches.
     fn onward(&self, way: &Way, points: &[[f64; 3]], from: [f64; 3], to: [f64; 3]) -> [f64; 3] {
-        self.mesh.crossing(way, from).map_or_else(|| ahead(points, from, to), |link| link.ahead_of(from))
+        self.mesh.crossing(way, from).map_or_else(
+            || {
+                let clear: Vec<[f64; 3]> = points.iter().map(|&point| self.floor.standing_clear(point)).collect();
+                ahead(&clear, from, to)
+            },
+            |link| link.ahead_of(from),
+        )
     }
 
     fn placed(&self, goal: [f64; 3]) -> Option<[f64; 3]> {

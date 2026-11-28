@@ -27,6 +27,9 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 
 ## Every session
 
+The kit runs only in a cloud session, where `CLAUDE_CODE_REMOTE` is `true`. On the owner's own computer, skip steps 1
+and 3 and the kit's scripts in step 4; read and rewrite the hand-off all the same.
+
 1. From the repo root: `KIT_DIR=$PWD/tools/claude-toolkit REPO_DIR=$PWD bash tools/claude-toolkit/install-all.sh`.
    Read any FAIL line it prints.
 2. Read `bible/03-Code/Toolkit.md` (how to use each tool and worker) and `bible/Hand-off.md`. Before resuming work

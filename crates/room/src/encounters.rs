@@ -10,11 +10,38 @@ use ::foes::Rank;
 use combat::fighter::FighterId;
 
 /// How many foes a wave stands: one for each living player it is stood against, two at the fewest and four at the most;
-/// and the most of a seal's foes that stand at once, so a wave left alone never fills the dungeon.
+/// and how many of a seal's or the Court's waves' foes stand at once: two for each of those players, four at the fewest
+/// and eight at the most, so waves left alone never crowd a company or fill the dungeon.
 pub const WAVE_FOES: (usize, usize) = (2, 4);
-pub const WAVE_LIVING_MOST: usize = 8;
+pub const WAVE_LIVING_EACH: usize = 2;
+pub const WAVE_LIVING: (usize, usize) = (4, 8);
+/// A wave due but refused while its waves stand as many as they may is tried again this long on, not given up.
+pub const WAVE_RETRY_TICKS: u64 = 60;
 /// The waves' draws are made on a stream of their own, so drawing them moves no garrison draw.
 const WAVE_STREAM: u64 = 0x7365_616c;
+
+/// How many of a seal's or the Court's waves' foes may stand at once against `living` players (WAVE_LIVING).
+#[must_use]
+pub const fn wave_living_most(living: usize) -> usize {
+    let most = WAVE_LIVING_EACH * living;
+    if most < WAVE_LIVING.0 {
+        WAVE_LIVING.0
+    } else if most > WAVE_LIVING.1 {
+        WAVE_LIVING.1
+    } else {
+        most
+    }
+}
+
+/// Whose waves a wave's foes count among: a seal's, by its number, the Court's, or, in a test, none (a group stood
+/// alone).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum WaveOf {
+    Seal(usize),
+    Court,
+    #[cfg(test)]
+    Alone,
+}
 
 /// How a seal stands, by its number on the wire.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -62,9 +89,9 @@ impl Seal {
 }
 
 /// The Court as it stands: when its Boss woke, how many wards it has broken, whether one is up now and was told, when
-/// it rose and how many waves it has stood, how long each anchor has been stood on and when each last was, when the
-/// Reckonings began, when Fury's clock began (a living player first in the end room), and whether the Boss's health
-/// was made a match for the company.
+/// it rose and how many waves it has stood, when a wave it was refused is tried again, its waves' foes, how long each
+/// anchor has been stood on and when each last was, when the Reckonings began, when Fury's clock began (a living player
+/// first in the end room), and whether the Boss's health was made a match for the company.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Court {
     pub woke_at: Option<u64>,
@@ -73,6 +100,8 @@ pub(crate) struct Court {
     pub ward_told: bool,
     pub ward_at: u64,
     pub ward_waves: usize,
+    pub ward_retry: u64,
+    pub waves: Vec<FighterId>,
     pub anchors: Vec<u64>,
     pub anchors_left: Vec<u64>,
     pub reckoning_from: Option<u64>,
@@ -252,43 +281,59 @@ impl Room {
     }
 
     /// A wave of the dungeon's own foes, one for each of `living` players (WAVE_FOES), at `spots` in turn, each hunting
-    /// the living player nearest it; none while the room or the seal has no room for them.
+    /// the living player nearest it; none while the room, or the seal's or the Court's waves, have no room for them.
     pub(crate) fn stand_seal_wave(
         &mut self,
         encounters: &mut Encounters,
-        seal: Option<usize>,
+        of: WaveOf,
         spots: &[[f64; 3]],
         living: usize,
     ) -> usize {
         let count = living.clamp(WAVE_FOES.0, WAVE_FOES.1);
-        self.stand_foes(encounters, seal, spots, count)
+        self.stand_foes(encounters, of, spots, count, living)
     }
 
-    /// `count` of the dungeon's own Major and Elite foes at `spots` in turn, hunting the nearest living player; their
-    /// number. A seal's waves are kept to WAVE_LIVING_MOST living at once. They drop nothing, as a defence tried again
-    /// stands foes that drop nothing: an encounter's foes come again, and its seal and cache are its reward.
+    /// `count` of the dungeon's own Majors at `spots` in turn, hunting the nearest living player; their number. An
+    /// encounter's foes are never its Elites, which stand only in the garrison, and a seal's or the Court's waves, or
+    /// a group stood alone, are kept to `wave_living_most` of the `living` players they are stood against. They drop
+    /// nothing, as a defence tried again stands foes that drop nothing: an encounter's foes come again, and its seal
+    /// and cache are its reward.
     pub(crate) fn stand_foes(
         &mut self,
         encounters: &mut Encounters,
-        seal: Option<usize>,
+        of: WaveOf,
         spots: &[[f64; 3]],
         count: usize,
+        living: usize,
     ) -> usize {
-        let living = |room: &Self, ids: &[FighterId]| {
+        let standing = |room: &Self, ids: &[FighterId]| {
             ids.iter().filter(|id| room.foes.get(id).is_some_and(|foe| !foe.fighter.dead())).count()
         };
-        let kept = seal.map_or(0, |seal| living(self, &encounters.seals[seal].waves));
+        let kept = match of {
+            WaveOf::Seal(seal) => standing(self, &encounters.seals[seal].waves),
+            WaveOf::Court => standing(self, &encounters.court.waves),
+            #[cfg(test)]
+            WaveOf::Alone => 0,
+        };
         let Some(&first) = spots.first() else { return 0 };
-        if self.living_foes() + count > self.foes_most || kept + count > WAVE_LIVING_MOST {
+        // A group stood alone is held to the same most, its own foes the only ones counted.
+        let crowded = kept + count > wave_living_most(living);
+        if self.living_foes() + count > self.foes_most || crowded {
             return 0;
         }
-        let stood = seal.map_or(0, |seal| encounters.seals[seal].stood);
-        let seed =
-            self.world_seed ^ WAVE_STREAM ^ (stood << 8) ^ seal.map_or(0xff, |seal| seal as u64) ^ self.clock << 20;
+        let (stood, stream) = match of {
+            WaveOf::Seal(seal) => (encounters.seals[seal].stood, seal as u64),
+            WaveOf::Court => (encounters.court.ward_waves as u64, 0xfe),
+            #[cfg(test)]
+            WaveOf::Alone => (0, 0xff),
+        };
+        let seed = self.world_seed ^ WAVE_STREAM ^ (stood << 8) ^ stream ^ self.clock << 20;
         let mut draws = draws_of(seed);
+        let majors: Vec<(u8, Rank)> = DUNGEON.into_iter().filter(|&(_, rank)| rank == Rank::Major).collect();
+        // On the mesh, and a body's radius clear of every rock and solid, which the mesh keeps less off.
         let on_mesh = |room: &Self, [x, y, z]: [f64; 3]| {
             let place = [x, y, movement::Terrain::height_under(&room.floor, x, y, z)];
-            room.nav.nearest_point(place).unwrap_or(place)
+            room.floor.standing_clear(room.nav.nearest_point(place).unwrap_or(place))
         };
         let at = on_mesh(self, first);
         let mut post = Post {
@@ -306,7 +351,7 @@ impl Room {
             arrival: true,
         };
         for nth in 0..count {
-            let (number, rank) = DUNGEON[index(&mut draws, DUNGEON.len())];
+            let (number, rank) = majors[index(&mut draws, majors.len())];
             let spot = on_mesh(self, spots[nth % spots.len()]);
             let (level, shield) =
                 gird_of(seed, u32::try_from(nth).unwrap_or(0), encounters.levels, self.shield_chance());
@@ -319,9 +364,16 @@ impl Room {
         let ids = self.garrison[posted].standing.clone();
         self.quests.spoilless.extend(&ids);
         self.hunt_nearest(&ids);
-        if let Some(seal) = seal.and_then(|seal| encounters.seals.get_mut(seal)) {
-            seal.waves.extend(&ids);
-            seal.stood += 1;
+        match of {
+            WaveOf::Seal(seal) => {
+                if let Some(seal) = encounters.seals.get_mut(seal) {
+                    seal.waves.extend(&ids);
+                    seal.stood += 1;
+                }
+            }
+            WaveOf::Court => encounters.court.waves.extend(&ids),
+            #[cfg(test)]
+            WaveOf::Alone => {}
         }
         ids.len()
     }

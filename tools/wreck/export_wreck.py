@@ -24,6 +24,7 @@ TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, TOOLS)
 sys.path.insert(0, os.path.join(TOOLS, 'ships'))
+from export_ship import GLASS, GLASS_SHELL  # noqa: E402
 from light_wreck import FIRE_FULL, SKY_FULL  # noqa: E402
 from wreck_course import CELL_M, SQUARE_CELLS, blocks, measure, squares  # noqa: E402
 from wreck_dress import gate_boxes  # noqa: E402
@@ -40,8 +41,8 @@ PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
 # The ground is measured over this box of the wreck's frame (west, south, east, north), round every piece.
 BOUNDS = (-38.0, -44.0, 38.0, 18.0)
 HALF_SQUARE_M = CELL_M * SQUARE_CELLS / 2
-# A vertex: position (3 × float32), normal (4 × snorm8), the picture's UV (2 × float32, metres), its part and piece
-# (4 × uint8), the light's UV (2 × unorm16).
+# A vertex: position (3 × float32), normal (4 × snorm8), the picture's UV (2 × float32, metres), its part, piece and
+# shell (4 × uint8: a window's pane is iron with the shell GLASS_SHELL, as a ship's is), the light's UV (2 × unorm16).
 VERTEX = '<3f4b2f4B2H'
 
 
@@ -54,8 +55,8 @@ def unorm16(value):
 
 
 def corners(wreck):
-    """Each triangle of the wreck by its piece: three corners (position, normal, uv, part, light uv) each, in the
-    game's frame, mirrored from Blender's as the ships' are, so each keeps its corners' order."""
+    """Each triangle of the wreck by its piece: three corners (position, normal, uv, part, shell, light uv) each, in
+    the game's frame, mirrored from Blender's as the ships' are, so each keeps its corners' order."""
     mesh = wreck.data
     mesh.calc_loop_triangles()
     names = [slot.material.name.split('.')[0] for slot in wreck.material_slots]
@@ -64,13 +65,14 @@ def corners(wreck):
     light = mesh.uv_layers['light']
     by_piece = {}
     for triangle in mesh.loop_triangles:
-        part = PARTS.index(names[min(triangle.material_index, len(names) - 1)])
+        name = names[min(triangle.material_index, len(names) - 1)]
+        part, shell = (PARTS.index('iron'), GLASS_SHELL) if name == GLASS else (PARTS.index(name), 0)
         found = []
         for loop in triangle.loops:
             point = mesh.vertices[mesh.loops[loop].vertex_index].co
             normal = mesh.corner_normals[loop].vector
             found.append(((point.x, -point.y, point.z - SEA_Z), (normal.x, -normal.y, normal.z),
-                          tuple(pictures.data[loop].uv), part, tuple(light.data[loop].uv)))
+                          tuple(pictures.data[loop].uv), part, shell, tuple(light.data[loop].uv)))
         by_piece.setdefault(pieces[triangle.polygon_index].value, []).append(found)
     return by_piece
 
@@ -82,9 +84,9 @@ def mesh_bytes(by_piece):
     for piece in sorted(by_piece):
         first = len(indices)
         for triangle in by_piece[piece]:
-            for position, normal, uv, part, light in triangle:
-                packed = struct.pack(VERTEX, *position, *(snorm8(value) for value in normal), 0, *uv, part, piece, 0,
-                                     0, unorm16(light[0]), unorm16(light[1]))
+            for position, normal, uv, part, shell, light in triangle:
+                packed = struct.pack(VERTEX, *position, *(snorm8(value) for value in normal), 0, *uv, part, piece,
+                                     shell, 0, unorm16(light[0]), unorm16(light[1]))
                 if packed not in index_of:
                     index_of[packed] = len(index_of)
                     vertices += packed

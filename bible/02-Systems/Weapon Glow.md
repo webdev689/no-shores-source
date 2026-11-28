@@ -9,6 +9,7 @@ code:
   - client/src/player/glowCards.ts#GlowCards
   - client/src/player/cards.ts#Cards
   - client/src/player/gear.ts#heldElements
+  - client/src/player/dressing.ts#weaponGlow
   - client/src/firstperson/firstPerson.ts#glowOf
   - client/src/combat/sparks.ts#trail
   - client/src/combat/tracers.ts#ribbonsOf
@@ -17,15 +18,19 @@ code:
 
 The player's own weapon glows in its element while it is drawn: Blaze, Volt or Cosmic, the [[Gear]]'s element on the
 loadout drawn, in both hands for a pair and in the right alone otherwise, since a shield is no weapon
-([[Your Weapon Glows in Its Element]], [[Pick - Weapon Glow]]). It glows in [[First Person]] and on
-the player's own figure; the player's shots and landed blows take the element too. Other players' figures, foes and
-the menu's pictures stay plain.
+([[Your Weapon Glows in Its Element]], [[Pick - Weapon Glow]]). It glows in [[First Person]], on
+the player's own figure and on other players' figures ([[Other Players' Weapons Glow in Their Element]]); the
+player's shots and landed blows take the element too. Foes and the menu's pictures stay plain.
 
 ## How it works
 
 - **The outline.** A glowing picture carries a field, worked out once when the picture is made: each pixel's distance
   to the weapon's nearest pixel, whether the weapon lies straight below it, and whether it is inside the weapon, on its
-  edge or off it. The field reaches 9 of the picture's pixels round the weapon, so an outline is never cut square. Its
+  edge or off it. The field reaches 9 of the picture's pixels round the weapon, so an outline is never cut square.
+  Its quad is the picture grown by that reach; a pixel its edge crosses reads the field's nearest texel
+  (`glow_texel`), as multisampling shades it from the pixel's middle, which can lie outside the quad, and a read
+  outside the field gives nothing on most GPUs, which would read as touching the weapon and light a thin box round
+  the figure. Its
   shader draws a band round the weapon in four hard steps of the element's colours, white-hot by the weapon and
   darkest at the band's reach, on the picture's own pixels, and lights the weapon's own edge.
 - **Blaze** climbs in tongues. Its band reaches 1.8 times as far up as across and 0.6 times as far down, its reach two
@@ -44,6 +49,10 @@ the menu's pictures stay plain.
 - **On the figure.** The forge's compositor marks the weapon's pixels. A glowing figure's frame is composed apart from
   a plain one, its field made with it and let go with it. Its outline is drawn after the figures, blended over them
   and tested against their depth, in the [[Test Ground]] and the [[Game]].
+- **Other players.** A player's page sends the element each hand's weapon glows in with the dress it tells the room
+  (`glow`, none for a plain weapon); another player's page draws their figure glowing in its right hand's element while
+  their weapon is drawn (`weaponGlow`), at rest (no surge), as their own figure is composed. A `glow` the page cannot
+  read (a later page's element, a broken one) is dropped, the rest of the dress kept.
 - **In first person.** A sword or a dagger laid over its hand glows on its blade only; every other weapon's picture
   glows whole. Each hand glows in its own weapon's element, each outline drawn just after its picture. A picture
   standing on the screen's foot takes no light along it.
@@ -66,4 +75,7 @@ the menu's pictures stay plain.
 ## Limits
 
 - The figure takes one element, the drawn loadout's: every weapon pixel on it glows in that, a shield's too.
+- Another player's glow comes with their dress, which their page sends at most once a second, so a loadout swapped
+  shows its new element up to a second late; it never surges and leaves no trail off their swing's arc, though their
+  landed blows burst in their element as the room tells it.
 - A first-person picture at the screen's side keeps its light along that side.

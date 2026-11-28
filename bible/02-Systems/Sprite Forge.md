@@ -170,7 +170,8 @@ The weapons take under a minute on four cores; `weaponart.py --check` checks the
 
 The `figures` workflow draws figure strips for both bodies and publishes them, only when a run is asked for: by hand
 (`anims`, the moves, and `layers`, empty for every layer), or by a push to a branch other than `main` that changes
-`tools/forge/figures-request.txt`, its first line the moves and its second the layers. A cloud session holds no
+`tools/forge/figures-request.txt`, its first line the moves and its second the layers; a push whose request file is
+`main`'s own, as a merge of `main` brings it in, asks for nothing. A cloud session holds no
 Cloudflare key, so this is how a figure strip reaches R2 from one. It runs a job for each set of layers
 (`layers.py --set`: classic, wardrobe, armour), body and move in parallel, and one for each body's hair and beasts'
 layers in every move (`forge_publish.py jobs`), each with up to 360 minutes and no secret. Each draws from an index
@@ -181,14 +182,15 @@ was drawn in. It publishes only once every job has drawn, and its log ends with 
 `tools/forge_figures_local.py --run <id>` does the same on one machine of the owner's, costing no Actions minutes, as a
 heavy render does ([[Heavy Renders Run on the Owner's PC, Not on Actions]]): it takes the jobs a run finished from its
 artifacts (`gh`), draws the rest side by side, and publishes them with the first person's flask. A heavy redraw may
-instead run on the runners of the public mirror `Lattymoy/no-shores-forge`, which cost no Actions minutes, when the
+instead run on the runners of the public mirror `webdev689/no-shores-forge`, which cost no Actions minutes, when the
 owner says so; its strips are laid into the studio on the owner's PC, the publish staged there
 (`R2_STAGE=<folder> python3 -I tools/forge_publish.py add`) and the stage uploaded where the repository's token is held,
 with `python3 -I tools/r2.py upload <folder>` as `forge.yml`'s publish job does
 ([[Heavy Forge Renders May Run on the Public Forge Mirror]]).
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes
-`tools/lattice/render-request.txt`, whose first line names the foes, or by hand on `main`. Its actions are pinned by
+`tools/lattice/render-request.txt`, whose first line names the foes (not when it is `main`'s own, as for the
+figures), or by hand on `main`. Its actions are pinned by
 commit, as `ci.yml`, `pages.yml` and `rooms.yml` pin theirs. A job plans one render job for each move of each foe asked
 for and one for the wave (`tools/lattice/jobs.py`), they render in parallel without the token, and one job pulls the
 tables, lays them all in (`lattice`), adds them to what is published and ends its log with the manifest. A first line

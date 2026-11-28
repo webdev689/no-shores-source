@@ -261,7 +261,7 @@ impl BlockPlan {
     /// twelve cells each way, drawn, inside the rim with rock round it, on the first spot clear of its storey's flights
     /// and landings; or nine each way where the drawn sides find none.
     pub(crate) fn plan_great(&mut self, seed: u32, number: usize, style: &Style) {
-        if style.key == "cells" {
+        if !style.lays_great_rooms() {
             return;
         }
         let mut lane = Lane::named(&format!("great:{seed}:{number}"));

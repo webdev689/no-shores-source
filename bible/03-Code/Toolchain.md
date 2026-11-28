@@ -74,10 +74,11 @@ code:
 
 ## The toolkit
 
-The co-dev's Claude Code toolkit lives in `tools/claude-toolkit/` ([[The Co-Dev's Toolkit, Whole]]). Each session
-starts with `bash tools/claude-toolkit/install-all.sh`, which installs its plugins, MCP servers and hooks and ends
-with a check of every tool. How to use each tool and worker: [[Toolkit]]. Its working folders, `graphify-out/` and
-`.serena/`, are ignored by git.
+The co-dev's Claude Code toolkit lives in `tools/claude-toolkit/` ([[The Co-Dev's Toolkit, Whole]]). Each cloud
+session starts with `bash tools/claude-toolkit/install-all.sh`, which installs its plugins, MCP servers and hooks and
+ends with a check of every tool; a session on the owner's own computer goes without it
+([[The Kit Runs Only in Cloud Sessions]]). How to use each tool and worker: [[Toolkit]]. Its working folders,
+`graphify-out/` and `.serena/`, are ignored by git.
 
 ## Python
 

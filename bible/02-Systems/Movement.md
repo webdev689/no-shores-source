@@ -17,6 +17,7 @@ code:
   - crates/room/src/floor.rs#standing_on
   - client/src/rules/movementRules.ts#startMovementRules
   - client/src/player/player.ts#updatePlayer
+  - client/src/game/lateTicks.ts#lateSeconds
 ---
 # Movement
 
@@ -172,4 +173,8 @@ and holds them equal at every tick.
   underside just over it.
 - Pushed out of a block it fell beside, a body moves up to 0.35 m sideways in one tick.
 - Whether the body is mounted is the client's to say; the rules take it as a control.
-- A frame counts for at most 0.1 s, so below 10 frames a second the body moves slower than real time.
+- A frame counts for at most 0.1 s, so below 10 frames a second the body moves slower than real time. On foot
+  (`lateTicks.ts`), the player's own ticks, and a room in the page with them, make up a slow frame to 0.3 s: the 24
+  ticks a room waits on late inputs less the 6 it leaves once they come again ([[Server]], "A player whose inputs
+  stop"), so its inputs keep the room's clock and are not stood still for. The rest of a longer frame is not made
+  up: the room has stood the player still for it.

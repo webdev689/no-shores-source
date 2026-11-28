@@ -387,7 +387,9 @@ impl Room {
         (draws, beats): (&mut Mulberry32, &mut Mulberry32),
     ) -> Option<Post> {
         let mesh = self.mesh_at([x, y, 0.0]);
-        let at = mesh.nearest_point([x, y, self.floor.height_at(x, y)])?;
+        // Each place on the mesh and a body's radius clear of a dungeon's rock and solids, which the mesh keeps less
+        // off.
+        let at = self.floor.standing_clear(mesh.nearest_point([x, y, self.floor.height_at(x, y)])?);
         let round = &group.members[usize::from(group.leads)..];
         let start = draws.draw() * TAU;
         let mut members = Vec::new();
@@ -399,7 +401,7 @@ impl Room {
         for (turn, &(number, rank)) in round.iter().enumerate() {
             let outward = start + TAU * turn as f64 / round.len() as f64;
             let place = [at[0] + libm::sin(outward) * SPREAD, at[1] - libm::cos(outward) * SPREAD, at[2]];
-            members.push((number, rank, mesh.nearest_point(place)?, outward));
+            members.push((number, rank, self.floor.standing_clear(mesh.nearest_point(place)?), outward));
         }
         // A Boss's or a Miniboss's group, at the farthest post, holds it: the one fight a player seeks out there.
         let walks = !group.farthest && !group.holds;

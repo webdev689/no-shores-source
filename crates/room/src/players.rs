@@ -135,9 +135,12 @@ pub struct Player {
     /// last made: their browser's dress or their gear.
     pub dress_sent: String,
     pub(crate) dress_stale: bool,
-    /// The room's clock when the player joined, and how many of their inputs have stepped their fighter since.
+    /// The room's clock when the player joined, and how many of its ticks have been theirs since: each input that
+    /// stepped their fighter, each tick stood still, and the ticks let pass as their inputs came again (`resumed`).
     pub joined: u64,
     pub stepped: u64,
+    /// Whether the room has stood them still for want of an input since it last took one, or has taken none yet.
+    pub(crate) stalled: bool,
     /// Whether the room plays the player's inputs: held, they are taken in their order and played as standing still,
     /// as a run holds one it does not yet keep.
     pub held: bool,
@@ -229,6 +232,7 @@ impl Player {
             dress_stale: false,
             joined,
             stepped: 0,
+            stalled: true,
             held: false,
             received: 0,
             acknowledged: 0,
@@ -541,6 +545,7 @@ impl Room {
         let view = self.fighters();
         let Some(found) = self.players.get_mut(&id) else { return };
         found.stepped += 1;
+        found.stalled = true;
         let fighter = if dead { found.armed(found.fighter) } else { found.fighter };
         let (next, happening) = combat::player_tick(id, &fighter, &standing, &view, &self.blocks, &self.floor);
         found.fighter = next;
@@ -560,11 +565,22 @@ impl Room {
         }
         let input = found.waiting.pop_front()?;
         found.stepped += 1;
+        if std::mem::take(&mut found.stalled) {
+            found.stepped = resumed(found.stepped, clock - found.joined, found.waiting.len());
+        }
         found.acknowledged = found.acknowledged.wrapping_add(1);
         let seen =
             input.seen.min(clock).min(found.seen + SEEN_STEP).max(found.seen).max(clock.saturating_sub(VIEW_LAG));
         Some((input, seen))
     }
+}
+
+/// The ticks counted as a player's once their inputs come again after the room stood them still, or come first: as
+/// many as leave no more of the clock's `ticks` unspent than their inputs `waiting` and the slack need. A player whose
+/// screen fell behind once (a slow frame, a load) is then not stood still again at every late input after, which their
+/// screen never foresees; time is only ever taken from them this way, never banked.
+pub(crate) fn resumed(stepped: u64, ticks: u64, waiting: usize) -> u64 {
+    stepped.max(ticks.saturating_sub(waiting as u64 + SLACK_TICKS))
 }
 
 /// What a body the section killed is stepped by each tick: no push and its facing kept, letting go of any wall or lip
