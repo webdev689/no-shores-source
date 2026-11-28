@@ -17,6 +17,23 @@ fn saltmere() -> &'static Island {
     island("continent-1").expect("Saltmere's passages")
 }
 
+/// The kinds a zone is of, for a sampled sweep: its ground with its size, and its ground with its deal.
+pub(crate) fn kinds(zone: &Zone) -> Vec<String> {
+    let ground = match &zone.ground {
+        Ground::Under { style } => format!("under {style}"),
+        Ground::Open { form } => format!("open {}", form.key()),
+    };
+    vec![format!("{ground} {}", zone.size.key()), format!("{ground} {}", zone.deal.key())]
+}
+
+/// The zones of a run of weeks' webs a sweep checks (`keep` picks which), by week and number: every one on a full
+/// sweep, otherwise the first of each of their kinds.
+pub(crate) fn swept(weeks: core::ops::Range<u64>, keep: impl Fn(&Zone) -> bool) -> Vec<(u64, u16)> {
+    let zones = weeks.flat_map(|week| Web::of(saltmere(), week).zones.into_iter().map(move |zone| (week, zone)));
+    let kept = sweep::one_of_each(zones.filter(|(_, zone)| keep(zone)), |(_, zone)| kinds(zone));
+    kept.into_iter().map(|(week, zone)| (week, zone.number)).collect()
+}
+
 /// The weeks the tests walk: a run of them, so a rule holds for every web a week draws, not one.
 const WEEKS: core::ops::Range<u64> = 2_900..2_916;
 
@@ -235,17 +252,14 @@ fn time_the_layings() {
 #[test]
 fn every_zone_of_a_year_is_laid_where_a_body_walks_to_all_it_asks() {
     let mut fell_back = Vec::new();
-    for week in 2_900..2_952 {
+    for (week, number) in swept(2_900..2_952, |_| true) {
         let web = Web::of(saltmere(), week);
-        for zone in &web.zones {
-            let plan = Plan::of(&web, zone.number).expect("a plan");
-            let missed = plan.unwalked();
-            if missed > 0 {
-                fell_back.push(format!(
-                    "week {week} zone {} {:?} {:?}: {missed} missed",
-                    zone.number, zone.ground, zone.deal
-                ));
-            }
+        let zone = &web.zones[usize::from(number)];
+        let plan = Plan::of(&web, zone.number).expect("a plan");
+        let missed = plan.unwalked();
+        if missed > 0 {
+            fell_back
+                .push(format!("week {week} zone {} {:?} {:?}: {missed} missed", zone.number, zone.ground, zone.deal));
         }
     }
     assert!(fell_back.is_empty(), "{} zones kept a laying with misses: {fell_back:#?}", fell_back.len());
@@ -416,8 +430,8 @@ fn a_hollows_dressing_stands_clear_of_its_holds_levelled_ring() {
     assert!(on.is_empty(), "dressing on a Hold's ring: {on:?}");
 }
 
-/// Every zone laid under ground over a run of weeks, each with its plan, its dungeon and a name for its asserts.
-fn under_plans(weeks: core::ops::Range<u64>, keep: fn(&Zone) -> bool) -> Vec<(String, Plan, dungeon::Dungeon)> {
+/// Every zone laid under ground over some weeks, each with its plan, its dungeon and a name for its asserts.
+fn under_plans(weeks: impl IntoIterator<Item = u64>, keep: fn(&Zone) -> bool) -> Vec<(String, Plan, dungeon::Dungeon)> {
     let mut found = Vec::new();
     for week in weeks {
         let web = Web::of(saltmere(), week);
@@ -489,7 +503,9 @@ fn under_ground_the_lamp_and_the_deals_pieces_stand_clear_of_the_forges_solids_a
 #[test]
 fn every_under_ground_lamp_of_ten_years_stands_under_a_ceiling_tall_enough() {
     let mut low = Vec::new();
-    for (what, plan, dungeon) in under_plans(2_900..3_420, Zone::has_lamp) {
+    // A low ceiling over a lamp is rare, not a kind: the sample is 52 weeks spread evenly over the ten years, the whole
+    // on a full sweep.
+    for (what, plan, dungeon) in under_plans(sweep::sample(2_900..3_420, 52), Zone::has_lamp) {
         let Some(lamp) = plan.sites.lamp else { continue };
         // The lamp never stands in the way in's room.
         let rooms = dungeon.rooms.iter().enumerate().filter(|(number, _)| *number != dungeon.way_in.room);

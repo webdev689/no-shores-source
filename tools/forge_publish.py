@@ -3,8 +3,8 @@
     python3 -I tools/forge_publish.py publish   # pack tools/forge/public/art/studio, upload, write the manifest
     python3 -I tools/forge_publish.py add       # the same for the pictures there, beside those already published
     python3 -I tools/forge_publish.py pull [--strips]   # the tables back, and with --strips every strip as PNG
-    python3 -I tools/forge_publish.py roll <folder>     # DFO's dodge roll laid in beside the studio's, for `add`
-    python3 -I tools/forge_publish.py lattice <folder>...   # the Lattice's renders laid in the same way
+    python3 -I tools/forge_publish.py roll|lattice|figures <folder>...   # a roll, Lattice or figures run laid in
+    python3 -I tools/forge_publish.py jobs <moves>      # the figures workflow's render jobs, as a matrix
 
 Every object is named by the SHA-256 of its bytes, so a published object never changes and is cached for good. The
 upload goes through tools/r2.py.
@@ -308,11 +308,108 @@ def lattice(folders):
     print(f'{laid} Lattice strips laid in from {len(folders)} folders; the looks and skins tables have them')
 
 
+# The forge's sets of layers (layers.py --set), each drawn by a run of its own: the classic set first, as it draws the
+# body, whose cell a move takes; the hair and the beasts' bodies are few, so each draws every move asked for at once.
+SETS = ('classic', 'wardrobe', 'armour', 'hair', 'beast')
+WHOLE_SETS = ('hair', 'beast')
+FIGURE_BODIES = ('male', 'female')
+
+
+def jobs(moves):
+    """The figures workflow's render jobs for `moves`: one for each set, body and move, and one for each of the few
+    sets' and body's every move, as GitHub Actions' `include` list."""
+    named = list(dict.fromkeys(move for move in moves.split(',') if move))
+    bad = [move for move in named if not re.fullmatch(r'[a-z0-9_]+', move)]
+    if bad or not named:
+        sys.exit(f'figures wants moves by their names, comma-separated: {moves!r}')
+    out = []
+    for kind in SETS:
+        for body in FIGURE_BODIES:
+            for run in ([','.join(named)] if kind in WHOLE_SETS else named):
+                out.append({'set': kind, 'body': body, 'anims': run, 'name': f'{kind}-{body}-{run.replace(",", "-")}'})
+    return out
+
+
+def merge_figures(looks, own, claimed):
+    """A figures job's index (`own`: layers.py's for one set's layers in some moves, begun empty, so each move's cell
+    is reckoned from that set's layers alone) laid into the forge's. The first job laid in for a body's move replaces
+    what was published of it: its cell becomes the move's, and a published layer it did not draw keeps the cell its
+    strip was drawn in as its own until a later job draws it. A layer drawn in a cell other than the move's keeps that
+    cell as its own. `claimed` holds the (body, move) pairs laid in so far."""
+    place = lambda c: (c['cell'], c['root'])   # noqa: E731
+    for name, body in own['bodies'].items():
+        kept = looks['bodies'].setdefault(name, {})
+        moves_of, cells, anims = (kept.setdefault(k, {}) for k in ('layers', 'cells', 'anims'))
+        for anim, cell in body.get('anims', {}).items():
+            drew = [layer for layer, moves in body.get('layers', {}).items() if anim in moves]
+            if (name, anim) not in claimed:
+                claimed.add((name, anim))
+                old = anims.get(anim)
+                for layer, moves in moves_of.items():
+                    if old and place(old) != place(cell) and anim in moves and anim not in cells.get(layer, {}):
+                        cells.setdefault(layer, {})[anim] = old
+                anims[anim] = cell
+            for layer in drew:
+                mine = body.get('cells', {}).get(layer, {}).get(anim)
+                if mine is None and place(cell) != place(anims[anim]):
+                    mine = cell
+                if mine is not None:
+                    cells.setdefault(layer, {})[anim] = mine
+                elif anim in cells.get(layer, {}):
+                    del cells[layer][anim]
+                    if not cells[layer]:
+                        del cells[layer]
+                listed = moves_of.setdefault(layer, [])
+                if anim not in listed:
+                    listed.append(anim)
+    for table in LOOK_VALUES:
+        looks.setdefault(table, {}).update(own.get(table, {}))
+    for table in LOOK_LISTS:
+        listed = looks.setdefault(table, []) if own.get(table) else []
+        listed += [layer for layer in own.get(table, []) if layer not in listed]
+    looks.setdefault('depth', own.get('depth'))
+
+
+def figures(folders):
+    """Every figures job's folder laid in beside the studio's, for `add` to publish: its strips, and its index merged
+    (`merge_figures`), the classic set's first."""
+    path = os.path.join(TABLES_DIR, TABLES['looks'])
+    with open(path) as file:
+        looks = json.load(file)
+
+    def order(folder):
+        name = f'-{os.path.basename(folder)}'
+        return next((k for k, kind in enumerate(SETS) if f'-{kind}-' in name), len(SETS))
+
+    claimed, laid = set(), 0
+    for folder in sorted(folders, key=lambda folder: (order(folder), folder)):
+        index = os.path.join(folder, 'forgeLooks.json')
+        if not os.path.exists(index):   # a set with no layer in the moves asked for draws nothing
+            continue
+        with open(index) as file:
+            own = json.load(file)
+        merge_figures(looks, own, claimed)
+        for name, body in own['bodies'].items():
+            if not re.fullmatch(r'[a-z_]+', name) or name not in FIGURE_BODIES:
+                sys.exit(f'a figures job names a body {name!r}: only the figures\' bodies')
+            target = os.path.join(ART, 'studio', 'forge', 'layers', name)
+            os.makedirs(target, exist_ok=True)
+            for layer, moves in body.get('layers', {}).items():
+                for anim in moves:
+                    for z in ('', '_z'):
+                        shutil.copyfile(os.path.join(folder, name, f'{layer}_{anim}{z}.png'),
+                                        os.path.join(target, f'{layer}_{anim}{z}.png'))
+                        laid += 1
+    with open(path, 'w') as file:
+        json.dump(looks, file, separators=(',', ':'))
+    print(f'{laid} figure strips laid in from {len(folders)} folders; the looks table has them')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    parser.add_argument('command', choices=['publish', 'add', 'pull', 'roll', 'lattice'])
+    parser.add_argument('command', choices=['publish', 'add', 'pull', 'roll', 'lattice', 'jobs', 'figures'])
     parser.add_argument('folder', nargs='*', help="roll: the folder DFO's forge drew the roll into; lattice: the "
-                                                  "Lattice's render folders")
+                                                  "Lattice's render folders; jobs: the moves; figures: its folders")
     parser.add_argument('--strips', action='store_true', help='pull: unpack every strip as PNG too')
     args = parser.parse_args()
     if args.command == 'publish':
@@ -323,6 +420,14 @@ def main():
         if len(args.folder) != 1:
             parser.error("roll needs the folder DFO's forge drew the roll into")
         roll(args.folder[0])
+    elif args.command == 'jobs':
+        if len(args.folder) != 1:
+            parser.error('jobs needs the moves, comma-separated')
+        print(json.dumps(jobs(args.folder[0]), separators=(',', ':')))
+    elif args.command == 'figures':
+        if not args.folder:
+            parser.error("figures needs the figures jobs' folders")
+        figures(args.folder)
     elif args.command == 'lattice':
         if not args.folder:
             parser.error("lattice needs the Lattice's render folders")

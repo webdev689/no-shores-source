@@ -1,0 +1,10 @@
+[package]
+name = "sweep"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "How many cases a test sweeping the world checks: a fixed sample by default, and every case where NO_SHORES_FULL_SWEEP is set, as the nightly run on main does."
+
+[lints]
+workspace = true

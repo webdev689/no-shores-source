@@ -291,8 +291,8 @@ def walk(frame, view, yaw, rest=False):
     if rest:   # the right arm empty, swinging against the left leg as the free arm swings against the right
         back = (-14 if frame == 0 else 11 if frame == 2 else 0)
         arm.update({'clav_R': (0, 6, 0), 'uarm_R': (back, 15, 0), 'farm_R': (-16, 0, -8)})
-    else:
-        arm['clav_R'] = (0, 6, 0)
+    else:   # the free left arm hangs as near the side as the right's carry: its fist as far out as the right fist
+        arm.update({'uarm_L': (swing, -4, 0), 'farm_L': (-16, 0, 0), 'clav_R': (0, 6, 0)})
     p = stance({
         'pelvis': (0, 0, -5 if lead_left else 5), 'spine': (8, 0, 0), 'chest': (3, 0, 3 if lead_left else -3),
         'neck': (6, 0, 0), 'head': (-8, 0, 0), **arm, **legs}, yaw)

@@ -22,7 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # the code every strip is drawn by: a change to any of it draws every strip again
 CORE = ('layers.py', 'forge.py', 'fit.py', 'stage.py', 'body.py', 'gear.py', 'shape.py', 'rendercache.py')
 # and the code a drape is hung by
-CLOTH = ('drape.py', 'clothkit.py', 'clothes.py', 'fabric.py')
+CLOTH = ('drape.py', 'clothkit.py', 'clothes.py', 'fabric.py', 'cloth.py', 'rigcape.py')
 # the forge's drawing version, raised by hand when the code draws a strip differently from what its inputs (meshes,
 # materials, poses, grades, the stage) already say; `cloth` for how a drape hangs. A key holds these numbers, never the
 # code itself, so a change that draws nothing new keeps every strip. keys/version.json records the code's digest
@@ -31,6 +31,24 @@ VERSION_FILE = os.path.join(HERE, 'keys', 'version.json')
 VERSION = json.load(open(VERSION_FILE)) if os.path.exists(VERSION_FILE) else {'draw': 0, 'cloth': 0}
 OFF = os.environ.get('FORGE_CACHE') == 'off'
 _SUFFIX = re.compile(r'(\.\d{3,})+$')
+
+
+def exclusive(file):
+    """Hold `file`, a lock file open for writing, for this process alone until it is closed, waiting while another
+    holds it: flock where there is one; on Windows, which has none, a byte lock on its first byte."""
+    if os.name != 'nt':
+        import fcntl
+        fcntl.flock(file, fcntl.LOCK_EX)
+        return
+    import msvcrt
+    import time
+    file.seek(0)
+    while True:
+        try:
+            msvcrt.locking(file.fileno(), msvcrt.LK_NBLCK, 1)
+            return
+        except OSError:
+            time.sleep(0.05)
 
 
 def plain(name):
@@ -254,10 +272,9 @@ class Manifest:
     def write(self):
         """This run's keys laid over the file as it stands now, under a lock, so runs side by side keep each other's;
         written a strip a line, so two branches' keys merge line by line."""
-        import fcntl
         os.makedirs(os.path.dirname(self.path) or '.', exist_ok=True)
         with open(self.path + '.lock', 'w') as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
+            exclusive(lock)
             now = json.load(open(self.path)) if os.path.exists(self.path) else {}
             now.update({n: self.keys[n] for n in getattr(self, 'mine', ())})
             self.keys = {**now, **{n: self.keys[n] for n in getattr(self, 'mine', ())}}

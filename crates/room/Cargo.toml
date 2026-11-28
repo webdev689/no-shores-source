@@ -32,6 +32,7 @@ bake = { path = "../bake" }
 layout = { path = "../layout" }
 city = { path = "../city" }
 serde_json.workspace = true
+sweep = { path = "../sweep" }
 
 [lints]
 workspace = true
