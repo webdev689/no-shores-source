@@ -84,6 +84,26 @@ test('a route goes round an island without touching it, keeping its margin where
   assert.ok(route.points.length <= 6, `pulled into a few legs: ${route.points.length} points`);
 });
 
+test('a route that would hold more points than allowed leaves out those it can best do without, still over water', () => {
+  const rows = Array.from({ length: 40 }, (_cell, row) =>
+    Array.from({ length: 40 }, (_unused, column) =>
+      column > 4 && column < 35 && (row + column) % 9 === 0 ? '#' : '.',
+    ).join(''),
+  );
+  const mask = maskOf(rows);
+  const [from, to] = [cellMiddle(1, 1), cellMiddle(38, 38)];
+  const free = planSeaRoute(mask, from, to, { marginM: 1_500 });
+  assert.ok(free.ok);
+  const most = Math.ceil(free.points.length / 2);
+  const held = planSeaRoute(mask, from, to, { marginM: 1_500, mostPoints: most });
+  assert.ok(held.ok);
+  assert.ok(free.points.length > 6, `the free route holds ${free.points.length} points`);
+  assert.ok(held.points.length <= most, `held to ${held.points.length} of ${most}`);
+  assert.deepEqual([held.points[0], held.points.at(-1)], [from, to], 'its ends kept');
+  assert.ok(nearestLand(mask, held) > 0, 'never over land');
+  assert.deepEqual(planSeaRoute(mask, from, to, { marginM: 1_500, mostPoints: 99 }), free, 'within it, as planned');
+});
+
 test('with no margin a route rounds the island close in', () => {
   const mask = maskOf(ISLAND);
   const wide = planSeaRoute(mask, cellMiddle(2, 9), cellMiddle(27, 9), { marginM: 3_000 });

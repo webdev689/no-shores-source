@@ -219,6 +219,47 @@ test('a held aim keeps the side it was taken on; taken again on the other, it go
   );
 });
 
+test('a held aim dragged across 120 px swings round to the other side, out over the stern, aiming all the while', () => {
+  const idle = new AimCamera();
+  idle.drag(-500);
+  assert.equal(settled(idle, asked(1)).look?.bearing, 90, 'no aim was held, so none was swung');
+  const camera = new AimCamera();
+  settled(camera, asked(1));
+  camera.drag(-60);
+  assert.equal(settled(camera, asked(1), 30).look?.bearing, 90, 'half as far, and the aim holds its side');
+  for (let flick = 0; flick < 10; flick++) camera.drag(-30, 40);
+  assert.equal(
+    settled(camera, asked(1), 30).look?.bearing,
+    90,
+    'a flick laying range, more down than across, swings none',
+  );
+  // From starboard a drag to the left turns the look forward: the eye goes out astern, where the home now stands.
+  camera.drag(-150);
+  const [low, high] = hullBox(SLOOP_HULL);
+  const sides = new Set<number>();
+  let [frame, laid, astern] = [camera.frame(asked(1), 1 / 60), 0, false];
+  for (let step = 0; step < 240; step++) {
+    frame = camera.frame(asked(1), 1 / 60);
+    if (frame.look) laid += 1;
+    const [east, south, up] = frame.eye;
+    const [along, out] = [SHIP.y - south, east - SHIP.x];
+    astern ||= along < low[0] - 10;
+    if (along > low[0] && along < high[0] && Math.abs(out) < high[1] + 1 && up < 20) sides.add(Math.sign(out));
+  }
+  assert.ok(sides.size < 2, 'never across the ship');
+  assert.ok(astern, 'out over the stern');
+  assert.equal(frame.look?.bearing, -90, 'laid to port at the end, though the orbit still looks to starboard');
+  assert.ok(laid > 0 && laid < 240, 'nothing laid until it is there');
+  assert.ok(gap(frame.eye, [SHIP.x - STATION.eye[1], ON_STARBOARD[1], ON_STARBOARD[2]]) < 0.01);
+  camera.frame(asked(null), 1 / 60);
+  camera.drag(-500);
+  assert.equal(
+    settled(camera, asked(-1)).look?.bearing,
+    -90,
+    'let go, a drag swings nothing; the next aim is taken where it looks',
+  );
+});
+
 test('the eye rides the ship as drawn: its heave, its bow rising and its heel carry it', () => {
   const camera = new AimCamera();
   settled(camera, asked(1));

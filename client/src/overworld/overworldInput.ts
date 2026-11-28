@@ -1,4 +1,4 @@
-import { orbitBy, turnCamera, zoomTarget, type OverworldCamera, type Rig } from './overworldCamera.ts';
+import { orbitBy, turnCamera, type Rig } from './overworldCamera.ts';
 
 /** A press that moves further than this many pixels before it lifts is a drag that orbits, not a click that picks. */
 export const CLICK_SLOP_PX = 6;
@@ -41,11 +41,6 @@ export function wheelNotches(deltaY: number, deltaMode: number, pageHeight: numb
   const delta = Number.isFinite(deltaY) ? deltaY : 0;
   const pixels = deltaMode === 1 ? delta * WHEEL.lineHeightPx : deltaMode === 2 ? delta * (pageHeight || 800) : delta;
   return Math.max(-WHEEL.mostNotches, Math.min(WHEEL.mostNotches, -pixels / WHEEL.pixelsPerNotch));
-}
-
-/** The camera's height target after some zoom notches under the ceiling. */
-export function zoomCamera(camera: OverworldCamera, notches: number, ceiling: number): OverworldCamera {
-  return notches ? { ...camera, heightTarget: zoomTarget(camera.heightTarget, notches, ceiling) } : camera;
 }
 
 /** The look keys while held, radians a second: they orbit and tilt the view, not the ship. */

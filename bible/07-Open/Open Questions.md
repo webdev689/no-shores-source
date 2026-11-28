@@ -111,3 +111,17 @@ owner has said "later" or "not now", the owner's words follow the question.
   - A Breach space's foe paths are baked as it is first reached and never again, so no foe paths through a seal
     opened since: whether a space should be baked again as its seal opens, which changes how its foes move.
 - **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): more emblems and where they come from.
+- **Docking with no way in.** Yes to a landing within reach sails the ship in to its berth, but where no way in to
+  the berth can be planned the ship stays at sea, the voyage's line saying why, and no landing is made. What it
+  should do then is the owner's to say
+  ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]).
+- **A parked ship's plate.** It follows its player's level while they are ashore, but not a username or guild tag
+  changed meanwhile, which come from the accounts and not the character: whether those should follow too.
+- **The sea's polish**
+  ([[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]), each
+  built on Claude's reading ([[The Sea's Polish as Claude Builds It]]):
+  - "Oceanview" was read as the Oversea view, whose wheel zoom is gone; the sea fight's camera still zooms with the
+    wheel out of the aim. Whether it should not.
+  - By night a Grey Tithe ship runs dark, so it is marked, clicked and chased only within 220 m, though it is drawn
+    farther out than that, where a moonlit sea may show it. Whether a ship that can be seen should always be one to
+    click, or not be drawn past its night sight.

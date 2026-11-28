@@ -28,6 +28,7 @@ code:
   - client/src/ships/sails.ts#gaffTrim
   - client/src/ships/sails.ts#squareBrace
   - client/src/ships/shipModels.ts#ShipModels
+  - client/src/ships/shipModels.ts#hang
   - client/src/ships/shipTags.ts#tagShip
   - client/src/ships/shipShader.ts#shipKit
   - client/src/game/seaShips.ts#heelShare
@@ -89,9 +90,12 @@ ball put in a Tithe hulk moored off Overlook, then home to dock, each step ticke
   order the room takes just after a world minute turns can bring a small correction. A fight takes the sea's weather
   where and when it began, and keeps it while it lasts (`sea_weather.rs`).
 - **Its pose.** It takes the mean of the water under its bow, stern, sides and middle at its waterline as its height,
-  and its slope along and across it as its pitch and roll, each felt through its inertia: every wave answered as a
-  first-order lag answers it, its time constant 0.02 s a metre of its waterline's length (`lag_of`), so a bigger hull
-  answers slower and rides the short waves less. The swell replaces the mod's sine bob over a flat sea. It heels into
+  and its slope along and across it as its pitch and roll, each felt through its inertia: every wave shrunk as a
+  first-order lag shrinks it, by 1 / √(1 + (its frequency × the hull's time constant)²), its crest kept on time, the
+  time constant 0.02 s a metre of its waterline's length (`lag_of`), so a bigger hull rides the short waves less, and
+  rides every crest as it comes: in the highest sea the water stands at most 0.9 m up a Sloop's sides, under its
+  deck, and 1.8 m up a Frigate's, just over its waist's deck at a storm's worst
+  ([[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]). The swell replaces the mod's sine bob over a flat sea. It heels into
   a turn as the mod's boat did, once it makes a wake (0.5 m/s). On a lake or river it floats at its level.
 - **Its hurts.** A ship's damage holds back the way its sails may ask ([[Naval Combat]]): bare poles leave it 35% of
   it. A sound ship's step is unchanged.
@@ -311,8 +315,10 @@ through the dusk with the lamps ([[Sky]], "Lamps at sea").
 - **Her stern windows.** A lit ship's stern windows burn with her lanterns, and a dark ship's stay dark
   ([[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]], [[Hulls]], "Stern
   windows").
-- **Near.** Each of a lit ship's lanterns is a lamp reaching 13 m, the nearest sixteen of the sky's lamps lit, lighting
-  her deck and the water round her ("Its lanterns" above).
+- **Near.** Each of a lit ship's lanterns is a lamp reaching 13 m, hung where the ship lies in the frame that draws
+  it before that frame lights the sky's lamps, so its light never trails a moving ship (`ShipModels.hang`); the
+  nearest sixteen of the sky's lamps lit, lighting her deck and the water round her ("Its lanterns" above). A sea
+  fight's flashes and fires light from the frame before, as the fight makes them while it draws.
 - **Far.** Past 45 m a lit ship shows up to four of her lanterns (her first, her last and spread between) as warm points
   over the water, fading in over 45 m, half a metre across or 0.004 of their distance, whichever is more, so a ship
   reads across the sea at night as her lanterns (`GlowPoints`).
@@ -351,7 +357,8 @@ The [[Held Map]] takes the ship anywhere at sea, in its own water or another, th
 ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]],
 [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]],
 [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]). A course chosen asks
-whether to travel there; yes runs the travel (`TravelFade`, `SeaTravel`; with no sea room to ask, as when its link
+whether to travel there, a port's, a node's and a region's as the open sea's: each sailed for off the island's
+outline, which judges every course, and planned within the points the sea room takes ([[Held Map]], "Choosing"); yes runs the travel (`TravelFade`, `SeaTravel`; with no sea room to ask, as when its link
 is lost, yes sails the course as Set sail does), which no key, press or wheel breaks: the ship's console goes
 while it runs, Stop and the view switch do nothing however they are asked, the menu does not open, and nothing takes
 the player elsewhere (the company's Go to them waits); a travel left behind any other way ends when they come aboard:

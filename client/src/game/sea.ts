@@ -7,6 +7,7 @@ import {
   forwardOf,
   horizonOf,
   poseOf,
+  rayThrough,
   type Viewport,
 } from '../overworld/overworldCamera.ts';
 import { type Press, pressAt, pressMove } from '../overworld/overworldInput.ts';
@@ -28,12 +29,12 @@ import { Passage } from './passage.ts';
 import type { SeaFrame, SeaInput } from './seaFrame.ts';
 import { Chase } from './seaChase.ts';
 import { Wake } from './seaWake.ts';
-import { HOSTILE_PREFIX, SeaWatch, type WaterNamed } from './seaHostiles.ts';
+import { HOSTILE_PREFIX, orHostile, SeaWatch, type WaterNamed } from './seaHostiles.ts';
 import { islandMarksOf, landfallMarks, seaMarks } from './seaMarks.ts';
 import { type SeaHull, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
-import { type Landfall, landfallOf, pictureAt, roomWords, shownScale } from './seaLaw.ts';
+import { type Landfall, landfallOf, pictureAt, roomWords, seaNote, shownScale } from './seaLaw.ts';
 import { isleOff, isleWords, keptClear } from './isleLaw.ts';
 import type { Isles } from './isles.ts';
 import { seaPlated } from './seaPlates.ts';
@@ -92,6 +93,8 @@ export class Sea {
   private joins = 0;
   /** The picture's pose as last shown, brought in close or not, and its size: clicks and marks are taken on it. */
   private pose: CameraPose | null = null;
+  /** The size the frame last drew the ships at, which a click on one is judged against. */
+  private drawnScale = 1;
   private viewport: Viewport = { width: 1, height: 1 };
   private placed: PlacedMark[] = [];
   private islandMarks: readonly Mark[] = [];
@@ -367,14 +370,17 @@ export class Sea {
     else if (this.view.kind === 'sail' && !this.aboard.active) this.view.drag(moved);
   }
 
-  /** A press let go: what the click met, the sea's islands' ground too, for the landings to answer; null for a drag. */
+  /** A press let go: what the click met, the sea's islands' ground too, for the landings to answer; null for a drag.
+   *  A sighted hostile ship met before what stands behind it is met as its mark is. */
   pointerUp(x: number, y: number): ReturnType<typeof pickAt> | null {
     const press = this.press;
     this.press = null;
     if (!press || press.dragging || this.view.kind !== 'sail' || this.aboard.active || !this.pose) return null;
     const ground = (east: number, south: number) =>
       this.isles?.groundAt(east, south) ?? this.landmass.heightAt(east, south);
-    return pickAt(this.pose, this.viewport, x, y, ground, this.placed);
+    const picked = pickAt(this.pose, this.viewport, x, y, ground, this.placed);
+    const ray = { eye: this.pose.eye, direction: rayThrough(this.pose, this.viewport, x, y) };
+    return orHostile(picked, ray, this.room?.hostiles ?? [], this.position, this.drawnScale, this.hull.shown);
   }
 
   /** The view switched to over the ship, Oversea or Sealevel. */
@@ -387,10 +393,9 @@ export class Sea {
     if (!this.combat && !this.aboard.active && !this.travelling) this.view.switchLevel(level);
   }
 
-  /** The wheel's notches, positive in, zoom the Oversea camera over the ship; they never change the view. */
+  /** The wheel's notches, positive in, zoom a walker's view on deck; the views over the ship keep their distance. */
   zoom(notches: number): void {
     if (this.aboard.active) this.aboard.zoom(notches);
-    else if (this.view.kind === 'sail') this.view.zoom(notches, ceilingFor(SKY_NOW.current.reading));
   }
 
   /** One frame at sea. */
@@ -458,6 +463,7 @@ export class Sea {
     // Asked again no time on, its swing stands: it is posed on the swell at the size it is drawn.
     const place = scale === 1 ? truePlace : this.drawn.placeOf('own', own, scale, this.water, 0, time);
     const lying: Lying = { ...ship, scale, heave: place.z, pitch: place.pitch, roll: place.roll };
+    this.drawnScale = scale;
     if (combat?.done) {
       this.passage.placeAt(this.room?.takeWashed() ?? combat.lying);
       this.combat = null;
@@ -486,6 +492,8 @@ export class Sea {
     // A hostile ship's mark stays chosen only while it is chased.
     if (this.chase.chasing === null && view.chosen?.startsWith(HOSTILE_PREFIX)) view.chosen = null;
     this.placed = marks.placed;
+    const helmsman = this.aboard.walking && this.passage.sailing;
+    const noted = { fighting: this.combat !== null, overShip: view.kind === 'sail', voyage: this.voyageNote, helmsman };
     return {
       shot: shown,
       ships: combat
@@ -517,7 +525,7 @@ export class Sea {
       stirs: combat ? combat.stirs() : own.underWay ? this.wake.stirs(lying, this.hull.waterline, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],
       fightHeard: combat?.heard ?? null,
-      note: this.note(),
+      note: seaNote(roomWords(this.room, this.roomLost), noted),
       landfall: this.landfall,
       sailing: this.passage.sailing,
       pace: this.passage.pace,
@@ -567,15 +575,6 @@ export class Sea {
     this.travelling?.cut(this.room);
     this.travelling = null;
     if (this.view.kind === 'travel') this.view.sail();
-  }
-
-  private note(): string {
-    const room = roomWords(this.room, this.roomLost);
-    if (this.combat) return `Fighting${room}`;
-    if (this.view.kind !== 'sail') return room.slice(3);
-    // Off the helm, its helmsman has it while it sails on.
-    const helmsman = this.aboard.walking && this.passage.sailing ? ' · Your helmsman has the helm' : '';
-    return this.voyageNote + helmsman + room;
   }
 
   /** Where the voyage stands: a chase, under way, hove to, or at anchor. */

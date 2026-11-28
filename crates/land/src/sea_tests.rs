@@ -152,8 +152,8 @@ fn a_hull_slow_to_answer_rides_the_short_waves_least() {
     }
     let (still, small, large) = (spread(&swell, 0.0), spread(&swell, 0.4), spread(&swell, 1.0));
     assert!(still > small && small > large && large > 0.3 * still, "{still} {small} {large}");
-    // One wave alone: a first order lag of time constant 1 / frequency answers 1 / √2 as high, an eighth of a period
-    // late: the water peaks at 3π/2 s, the hull at 7π/4.
+    // One wave alone: a lag of time constant 1 / frequency rides it 1 / √2 as high, its crest on time: the water
+    // peaks at 3π/2 s, and the hull with it.
     let wave = Wave { direction: [1.0, 0.0], number: 0.1, frequency: 1.0, amplitude: 1.0, shift: 0.0, phase: 0.0 };
     let lone = Swell { bearing: 0.0, wind: [0.0; 2], waves: vec![wave] };
     let ride = |step: i32| lone.lagged_height_at(0.0, 0.0, f64::from(step) * 0.001, 300.0, 1.0);
@@ -161,5 +161,5 @@ fn a_hull_slow_to_answer_rides_the_short_waves_least() {
         .map(|step| (f64::from(step) * 0.001, ride(step)))
         .fold((0.0, 0.0), |most, now| if now.1 > most.1 { now } else { most });
     assert!((peak - 0.5_f64.sqrt()).abs() < 1e-3, "{peak}");
-    assert!((when - 1.75 * std::f64::consts::PI).abs() < 0.01, "{when}");
+    assert!((when - 1.5 * std::f64::consts::PI).abs() < 0.01, "{when}");
 }
