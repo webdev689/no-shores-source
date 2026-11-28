@@ -764,10 +764,9 @@ as standing none (`readDungeon`).
   green over its bed whose glow breathes slowly (`FOUL_FLAG`), apart from the dungeon's plain still water, gone as it
   breaks, seething with bubbles of a brighter bile that swell and burst so it reads as the floor that harms; a stepped
   slab of the end room's trim under each anchor, 8 cm high, and a crystal over each relic. Each seal's room is laid as
-  a rite in its own stone (`rite`): a circle inlaid in the floor round its pieces (round a relic at the ring its
-  company holds), spokes out to each, the Litany's runes as slabs of trim set in the floor, iron arms inlaid between
-  the Weighing's plates as a balance's, iron rungs up the Ascent's pads, and the Holdfast's relic hung on two chains
-  from the ceiling; all of it drawn only, flush with the floor, on a pad's side or over every head. On the floor, rings: runes
+  a rite (`rite`): a ring of iron inlaid in the floor just outside each rune's, plate's and relic's mark, a Litany's
+  and a Weighing's joined by iron spokes to a hub amid them, iron rungs up the Ascent's pads, and the Holdfast's relic
+  hung on two chains from the ceiling; all of it drawn only, flush with the floor, on a pad's side or over every head. On the floor, rings: runes
   dim, lit gold under a beam while showing, green once stepped and red under a beam for a second when stepped wrong,
   each with a glyph of its own (one, two or three strokes round a dot, then round a small ring, so no two of six read
   alike however turned); plates in play under a beam, dim at rest and gold and filled while held; the seal stone's ring,

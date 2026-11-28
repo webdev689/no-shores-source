@@ -59,5 +59,5 @@ owner's "take autonomy, and treat this like your baby". Each is the owner's to c
 | Choice | Chosen | Why |
 |---|---|---|
 | "Mission types" | The Litany, the Weighing, the Ascent and the Holdfast, and the tier shown on tiles and cards | The owner's "Both of those" |
-| Each seal's room | A rite in its dungeon's own stone: a circle inlaid round its pieces with spokes to each, the Litany's runes as slabs set in the floor, iron balance arms inlaid between the Weighing's plates, iron rungs up the Ascent's pads, the Holdfast's relic hung on chains from the ceiling | The owner's "Your call": each room reads as a place of ritual before it is played, in keeping with the dread |
+| Each seal's room | A rite in iron: a ring inlaid in the floor just outside each rune's, plate's and relic's mark, a Litany's and a Weighing's spoked to a hub amid them, iron rungs up the Ascent's pads, the Holdfast's relic hung on chains from the ceiling | The owner's "Your call": each room reads as a place of ritual before it is played, in keeping with the dread; iron, since the room's own trim was lost against its floor in the pictures |
 | The skulls | The skull of the Journal's icons, one, two or three in a row beside the name, on a region's dungeon's tile and its card and on every entrance's card | The owner's "Skulls by tier" |
