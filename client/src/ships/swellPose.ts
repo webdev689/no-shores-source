@@ -12,9 +12,11 @@ const SAIL = { moveSpeed: 2, turnSpeedDeg: 10 } as const;
  *  wake threshold). */
 export const WAKE_WAY = 0.5;
 /** How a hull rides the swell: its time constant, seconds a metre of its waterline's length (crates/sailing/src/pose.rs
- *  `LAG_S_PER_M`, so a bigger hull answers slower); how fast its stem must close on a crest to slam as it pitches
- *  down into it, metres a second; and how long a slam's spray lasts, seconds. */
-export const RIDE = { lagSPerM: 0.02, slamClosingMS: 1, slamSprayS: 0.8 } as const;
+ *  `LAG_S_PER_M`, so a bigger hull answers slower); how fast a crest over its stem must rise past it to slam, metres
+ *  a second; and how long a slam's spray lasts, seconds. Riding each crest on time, a hull's bow lifts with it, so a
+ *  slam is told by the crest outrunning the lift: in the highest sea some one a ship's two minutes, in a lesser one
+ *  none. */
+export const RIDE = { lagSPerM: 0.02, slamClosingMS: 0.8, slamSprayS: 0.8 } as const;
 
 /** Its waterline's middle over still water, metres; its bow's rise and its heel to starboard, radians. */
 export interface SwellPose {
@@ -76,11 +78,10 @@ export function lagOf(lengthM: number): number {
   return RIDE.lagSPerM * lengthM;
 }
 
-/** Whether its bow slams: pitching down (`pitchRate`, radians a second, bow up positive) as the crest at its stem
- *  rises over it (`bowUnder`, metres: the sea's height there less its stem's) faster than a slam's closing speed
- *  (`closingMS`, how fast `bowUnder` grows). */
-export function slams(pitchRate: number, bowUnder: number, closingMS: number): boolean {
-  return pitchRate < 0 && bowUnder > 0 && closingMS > RIDE.slamClosingMS;
+/** Whether its bow slams: the crest at its stem standing over it (`bowUnder`, metres: the sea's height there less its
+ *  stem's) and rising past it faster than a slam's closing speed (`closingMS`, how fast `bowUnder` grows). */
+export function slams(bowUnder: number, closingMS: number): boolean {
+  return bowUnder > 0 && closingMS > RIDE.slamClosingMS;
 }
 
 /** Its bow's spray, 0 to 1: a little at way, more the rougher the sea, and a burst `sinceSlamS` after a slam that

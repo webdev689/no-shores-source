@@ -14,7 +14,7 @@ export function reach(swell: Swell, depth: number): number {
 
 /** Where the water at rest at (x, y) is carried at `time` in the sea `depth` metres deep: east, south and up, the
  *  height as a hull of time constant `lag` seconds feels it (crates/land/src/sea.rs `lagged_displacement`: each wave
- *  answered as a first-order lag answers a sine). */
+ *  shrunk as a first-order lag shrinks a sine, its crest kept on time). */
 export function displacement(
   swell: Swell,
   x: number,
@@ -34,7 +34,7 @@ export function displacement(
     const slowness = wave.frequency * lag;
     east += wave.shift * wave.direction[0] * cosine;
     south += wave.shift * wave.direction[1] * cosine;
-    up += (wave.amplitude * (sine + slowness * cosine)) / (1 + slowness * slowness);
+    up += (wave.amplitude * sine) / Math.sqrt(1 + slowness * slowness);
   }
   out[0] = east * share;
   out[1] = south * share;

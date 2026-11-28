@@ -420,6 +420,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]
 - [[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]
 - [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
+- [[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]
 
 ## Claude's calls
 
@@ -470,6 +471,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Island Textures as Claude Builds Them]]
 - [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
 - [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
+- [[The Sea's Polish as Claude Builds It]]
 
 ## Replaced
 

@@ -15,6 +15,10 @@ export const AIM_CAM_TAU = 0.22;
 const DRIFT_TAU = 0.25;
 /** Taken again on the other side, the view goes out there once it has eased this near home. */
 const SWAP_SHARE = 0.05;
+/** A held aim's drags across this many pixels, their last fading over `fadeS` seconds, swing it round to the other
+ *  side: a deliberate turn, not a slip of the hand laying range; the right stick leant whole does it in half a
+ *  second. */
+export const SWING = { px: 120, fadeS: 0.3 } as const;
 /** The eye's way round the ship is felt every this many radians of bearing (5°), and every this many metres of height. */
 const ROUND_STEP = Math.PI / 36;
 const ROUND_RISE_M = 0.5;
@@ -149,8 +153,9 @@ export interface AimAsk {
   readonly lay: Laid | null;
 }
 
-/** The aim's view, eased in and out, kept from frame to frame. A held aim keeps the side it was taken on; taken
- *  again on the other side, the view eases home before it goes out there, never across the ship. */
+/** The aim's view, eased in and out, kept from frame to frame. A held aim keeps the side it was taken on until it is
+ *  let go or swung to the other by a drag across (`drag`); taken again or swung there, the view eases home before it
+ *  goes out there, never across the ship. */
 export class AimCamera {
   /** How far in the eye has eased, 0 home to 1 at the battery, before it is smoothstepped. */
   private share = 0;
@@ -159,12 +164,32 @@ export class AimCamera {
   private held: 1 | -1 | null = null;
   /** How far along the keel past its battery's middle the view's middle meets the water, eased (`laidAlong`). */
   private drift = 0;
+  /** The drags across the aim held now, pixels to the right, fading; and while it swings, the bearing off its bow
+   *  its home looks along in place of the orbit's. */
+  private swingPx = 0;
+  private swungHome: number | null = null;
+
+  /** A drag of the view while an aim is held, pixels to the right and down: one more across than down counts, so a
+   *  hand laying range up and down swings nothing; far enough, the aim laid swings round to the
+   *  other side the way the drag turns the view, aiming all the while. Its home turns to look along the keel that way
+   *  (from starboard, astern for a drag to the right and ahead for one to the left; the mirror from port), so the view
+   *  eases out over that end of the ship, its look turning as the drag did, and in to the other battery as an aim
+   *  taken again does; nothing is laid on the way round, so nothing fires. */
+  drag(right: number, down = 0): void {
+    if (this.held && Math.abs(right) > Math.abs(down)) this.swingPx += right;
+  }
 
   /** The frame `seconds` on. */
   frame(ask: AimAsk, seconds: number): AimFrame {
     const step = 1 - Math.exp(-Math.max(0, seconds) / AIM_CAM_TAU);
-    const { home, ship } = ask;
-    if (!ask.want || !this.held) this.held = ask.want;
+    const { ship } = ask;
+    if (!ask.want || !this.held) [this.held, this.swingPx, this.swungHome] = [ask.want, 0, null];
+    this.swingPx *= Math.exp(-Math.max(0, seconds) / SWING.fadeS);
+    if (this.held && this.side === this.held && this.share > 0.99 && Math.abs(this.swingPx) >= SWING.px) {
+      this.swungHome = ((this.held + Math.sign(this.swingPx)) * Math.PI) / 2;
+      [this.held, this.swingPx] = [this.held === 1 ? -1 : 1, 0];
+    }
+    const home = this.swungHome === null ? ask.home : turnedRound(ask.home, ship, ship.heading + this.swungHome);
     const wanted = this.held;
     const swapping = wanted !== null && this.side !== null && wanted !== this.side;
     this.share += ((wanted && !swapping ? 1 : 0) - this.share) * step;
@@ -213,6 +238,18 @@ export class AimCamera {
       eased: k,
     };
   }
+}
+
+/** `view` turned round the ship's middle to look along `yaw`, its eye as far out and as high. */
+function turnedRound(view: AimView, ship: AimShip, yaw: number): AimView {
+  const [east, south] = [view.eye[0] - ship.x, view.eye[1] - ship.y];
+  const bearing = Math.atan2(east, -south) + yaw - view.yaw;
+  const out = Math.hypot(east, south);
+  return {
+    eye: [ship.x + Math.sin(bearing) * out, ship.y - Math.cos(bearing) * out, view.eye[2]],
+    yaw,
+    pitch: view.pitch,
+  };
 }
 
 /** The point `share` of the way from `from` to an eye `to` (both in a ship's frame) laying `side` (1 starboard, -1

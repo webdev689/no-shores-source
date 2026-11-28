@@ -515,7 +515,7 @@ sails out from its berth ("Landings").
   eased down to instead. On each view near the ship every ship is its true size, its pose on the swell, its footprint on the
   water and everyone aboard with it.
 - **Two views** ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). The Oversea view is DFO's raised camera over the ship (`stepCamera`):
-  drag to orbit, the wheel to zoom it between its lowest and highest, the arrow keys to turn. The ship first lies
+  drag to orbit and the arrow keys to turn, at the height it first stood at: the wheel zooms neither view. The ship first lies
   facing the island, and the view looks 30 degrees down, so the island stands in it. The Sealevel view
   (`seaClose.ts`) brings the eye down along the camera's own look to 25 m from the point 4.5 m over its waterline that
   the World Editor looks at, every ship drawn as its size coming in has it, from whatever height the Oversea view

@@ -28,6 +28,8 @@ code:
   - client/src/heldmap/mapLayout.ts#handsCover
   - client/src/heldmap/mapKey.ts#keyPlace
   - client/src/game/worldShown.ts#worldShown
+  - client/src/game/worldShown.ts#offCoast
+  - client/src/overworld/seaRoute.ts#COURSE_POINTS
   - client/src/game/landMap.ts#landSheetOf
   - client/src/heldmap/landSheet.ts#relief
   - client/src/heldmap/landLetters.ts#paintLand
@@ -170,8 +172,18 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   from the whole world fitting the parchment to 6 px a kilometre; the world stays centred on an axis it does not
   fill. A press that moves more than 6 px is a pan, not a click.
 - **Choosing.** A click picks the port or ruin within 16 px of it, or else the region or the point of the sea under
-  it; a port is sailed for at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
-  sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
+  it. A port and a node are sailed for just off their island's coast nearest them, 400 m clear of its outline
+  (`offCoast`), straight out from them, or where land stands across that way within 5 km (a narrow inlet's far wall)
+  at the nearest such point any way round, as the sea room judges a course by the outline and refuses one that ends
+  on it; a region at its
+  anchorage ([[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]).
+  The way there round the land is planned at once ([[Game]], "Sailing") within the 64 points the room takes in a
+  course: 48 at most, those it can best do without left out, leaving room for its bends round the sea's islands
+  (`COURSE_POINTS`); a way round most of Saltmere's coast would hold some 80. It is inked, and a card over the
+  parchment offers Set sail (named with its key as bound, Enter or the pad's A), or says why no way leads there: one
+  that still holds more points, its bends and all, is none ("The way there winds too much to sail at once: choose a
+  nearer place."), and a voyage bent past them on the way by an island come into sight heaves to, its line saying
+  so. Escape lets the choice go, then lowers the map.
 - **The regions** ([[World Map]], "Regions"). At sea, the land of the island whose waters the ship is in is lit by
   region as the pointer passes over it: the land's cells of the waters' grid whose middle lies inside the island's
   outline and nearest that region's centre of the island's own, its land brightened and lined as another water's sea

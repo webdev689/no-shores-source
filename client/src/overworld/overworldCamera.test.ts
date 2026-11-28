@@ -27,8 +27,6 @@ import {
   TILT,
   turnCamera,
   upOf,
-  ZOOM_STEP,
-  zoomTarget,
 } from './overworldCamera.ts';
 
 const degrees = (value: number) => (value * Math.PI) / 180;
@@ -163,13 +161,7 @@ test('ground behind the eye steeper than the tilt steepens the view until the ey
   assert.deepEqual(clearView(ship, 0, TILT.initial, 260, sea), { height: 260, tilt: TILT.initial });
 });
 
-test('the wheel scales the height by 1.18 a notch inside the band; a drag orbits and tilts, the tilt held', () => {
-  assert.equal(ZOOM_STEP, 1.18);
-  close(zoomTarget(260, 1, 450), 260 / 1.18, 1e-9, 'a notch in');
-  close(zoomTarget(260, -1, 450), 260 * 1.18, 1e-9, 'a notch out');
-  assert.equal(zoomTarget(160, 5, 450), 150);
-  assert.equal(zoomTarget(400, -5, 450), 450);
-  assert.equal(zoomTarget(400, -5, 300), 300, 'nor over a low deck');
+test('a drag orbits and tilts, the tilt held', () => {
   const camera = initialCamera(ship, 1);
   assert.equal(camera.height, HEIGHT.initial);
   assert.equal(camera.tilt, TILT.initial);
@@ -186,12 +178,12 @@ test('a frame eases the focus onto the ship, takes a jump whole, and eases the h
   assert.ok(eased.camera.focus[0] > ship[0] && eased.camera.focus[0] < moved[0], 'eased');
   const landed: Vec3 = [ship[0] + FOLLOW.jumpM + 1, ship[1], 0];
   assert.deepEqual(stepCamera(camera, { feet: landed, dt: 1 / 60, ceiling: 450 }).camera.focus, landed, 'a jump');
-  const zoomed = { ...camera, heightTarget: 400 };
-  const rising = stepCamera(zoomed, { feet: ship, dt: 1 / 60, ceiling: 450 });
+  const raised = { ...camera, heightTarget: 400 };
+  const rising = stepCamera(raised, { feet: ship, dt: 1 / 60, ceiling: 450 });
   assert.ok(rising.camera.height > 260 && rising.camera.height < 400);
-  const fogged = stepCamera({ ...zoomed, height: 400 }, { feet: ship, dt: 1 / 60, ceiling: 90 });
+  const fogged = stepCamera({ ...raised, height: 400 }, { feet: ship, dt: 1 / 60, ceiling: 90 });
   assert.equal(fogged.camera.height, 90, 'never over the deck, even mid-ease');
-  assert.equal(fogged.camera.heightTarget, 400, 'the zoom is kept under the deck');
+  assert.equal(fogged.camera.heightTarget, 400, 'its rest height is kept under the deck');
   let cleared = fogged.camera;
   for (let i = 0; i < 120; i++) cleared = stepCamera(cleared, { feet: ship, dt: 1 / 60, ceiling: 450 }).camera;
   assert.ok(cleared.height > 380, 'and climbs back once the deck lifts');

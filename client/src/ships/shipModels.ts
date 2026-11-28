@@ -97,7 +97,7 @@ export class ShipModels {
   private readonly failed = new Map<HullName, { at: number; waitMs: number; said: boolean }>();
   /** Hulls a caller of `load` waits on. */
   private readonly loading = new Set<HullName>();
-  /** The lamps the last frame's lanterns lit, kept and moved; and what `shine` last lit with them. */
+  /** The lamps this frame's lanterns light, kept and moved; and what the sky's lamps were last told with them. */
   private readonly lanterns: Kept[] = [];
   private lanternCount = 0;
   private lit: LampPlace[] = [];
@@ -174,9 +174,27 @@ export class ShipModels {
     return fetching;
   }
 
+  /** Hangs a frame's lanterns where `ships` lie as the frame draws them, seen from `eye`, and lights the sky's lamps
+   *  with them and `more` (a sea fight's flashes and fires, in the same metres), before the frame reads its lamps: a
+   *  lamp hung a frame late trails a moving ship by its way in that frame, and wavers as the frames' lengths do. Their
+   *  lights reach round them whether or not the ship is in view: a ship astern lights the water ahead. A ship sinking
+   *  has them out, and one running dark (the Grey Tithe's, a merchant fleeing) never lights them. */
+  hang(ships: readonly DrawnShip[], eye: readonly [number, number, number], more: readonly LampPlace[] = []): void {
+    this.lanternCount = 0;
+    this.halos.length = 0;
+    this.each(ships, (model, ship, slot) => {
+      if (!this.halo && model.lamps.length > 0) this.halo = new PuffView(model.gpu);
+      if (ship.place.z <= -SINKING_M || !lanternsLit(ship.look)) return;
+      const seed = shipSeed(ship.hull, slot);
+      for (const lantern of model.lamps) this.light(ship, lantern, seed, eye);
+    });
+    this.shine(more);
+  }
+
   /** Draws a frame's ships, each by its hull's model once it has come, the ships of one hull in its slots in turn, in
-   *  the sun's shadows when a map is given. A ship out of view is not drawn but keeps its slot, so every other ship
-   *  stays in the slot its shadow was cast from. */
+   *  the sun's shadows when a map is given, their lanterns' glass alight at `seconds` where given. A ship out of view
+   *  is not drawn but keeps its slot, so every other ship stays in the slot its shadow was cast from. The lanterns'
+   *  halos are the frame's `hang`'s. */
   draw(
     pass: GPURenderPassEncoder,
     ships: readonly DrawnShip[],
@@ -185,18 +203,11 @@ export class ShipModels {
     seconds: number | null = null,
   ): void {
     const planes = viewPlanes(camera.fromEye);
-    this.lanternCount = 0;
-    this.halos.length = 0;
     this.each(ships, (model, ship, slot) => {
-      // Its lanterns light round them whether or not it is in view: a ship astern lights the water ahead. A ship
-      // sinking has them out, and one running dark (the Grey Tithe's, a merchant fleeing) never lights them.
       const lit = seconds !== null && ship.place.z > -SINKING_M && lanternsLit(ship.look) ? seconds : null;
-      const seed = shipSeed(ship.hull, slot);
-      if (lit !== null) for (const lantern of model.lamps) this.light(ship, lantern, seed, camera.eye);
       const bounds = model.boundsAt(ship.place, camera.eye, ship.rig);
       if (!bounds || sphereSeen(planes, ...bounds))
-        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow, lit, seed);
-      if (!this.halo && model.lamps.length > 0) this.halo = new PuffView(model.gpu);
+        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow, lit, shipSeed(ship.hull, slot));
     });
     this.halo?.set(this.halos, camera);
   }
@@ -236,10 +247,9 @@ export class ShipModels {
     });
   }
 
-  /** Lights the sky's lamps with this frame's lanterns and `more` (a sea fight's flashes and fires, in the same
-   *  metres), in place of the last frame's: the land's lamps are told only when the list itself changes, its places
-   *  moved where they stand. */
-  shine(more: readonly LampPlace[] = []): void {
+  /** Lights the sky's lamps with this frame's lanterns and `more`, in place of the last frame's: the land's lamps are
+   *  told only when the list itself changes, its places moved where they stand. */
+  private shine(more: readonly LampPlace[]): void {
     const count = this.lanternCount + more.length;
     const same =
       count === this.lit.length &&

@@ -1,7 +1,7 @@
 // The drawers that stand on the open landmass each frame, in the order they draw: its city and layouts, the public
 // events' props (before the nature, as the fissure opens the land under it), its nature, on foot the fight's blood,
-// the ships near (with a sea fight's effects, and the lamps their lanterns and the fight light), the figures, and on
-// foot the fight's marks over them.
+// the ships near (with a sea fight's effects, and the lamps their lanterns and the fight light, hung before the frame
+// reads its lamps), the figures, and on foot the fight's marks over them.
 import type { CardAt } from '../player/cards.ts';
 import type { ShipLights } from '../ships/shipLights.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
@@ -42,17 +42,18 @@ export function standingDrawers(
     parts.isles,
     fight?.under,
     {
-      // The far ships' lanterns as points over the water, where each ship lies this frame.
-      prepare: (shot) =>
-        parts.shipLights?.light(ships, (hull) => parts.shipModels.model(hull)?.lamps ?? null, shot.eye),
+      // The ships' lanterns, and the fight's flashes and fires, light what stands round them from this frame's lamps,
+      // hung where each ship lies this frame before the frame reads them; far off, they are points over the water.
+      prepare: (shot) => {
+        parts.shipModels.hang(ships, shot.eye, parts.seaFight?.lamps() ?? []);
+        parts.shipLights?.light(ships, (hull) => parts.shipModels.model(hull)?.lamps ?? null, shot.eye);
+      },
       castInto: (pass, fromEye, shot, _time, shadow) =>
         parts.shipModels.castInto(pass, ships, { fromEye, eye: shot.eye }, shadow),
       drawInto: (pass, fromEye, shot, time, shadow) => {
         const camera = { fromEye, eye: shot.eye };
         parts.shipModels.draw(pass, ships, camera, shadow, time);
         parts.seaFight?.draw(pass, camera, time, shadow);
-        // The ships' lanterns and the fight's flashes and fires light what stands round them from the next frame.
-        parts.shipModels.shine(parts.seaFight?.lamps() ?? []);
       },
       // The lanterns' halos, the far ships' lanterns' points, a sea fight's see-through puffs and its aim after the
       // water, and their glow.
