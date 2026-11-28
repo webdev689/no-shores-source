@@ -1,0 +1,2 @@
+https://github.com/webdev689/no-shores-forge/releases/download/forge-stage-5033c088e0ef/forge-stage-5033c088e0ef.tar
+5033c088e0ef779758e7bbe70b82c07465a544f6e23347fed652bdbccffbb95b
