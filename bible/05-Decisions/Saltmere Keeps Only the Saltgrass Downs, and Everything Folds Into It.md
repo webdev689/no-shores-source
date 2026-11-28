@@ -60,3 +60,6 @@ patrol zones and their links), [[Zones Rise and Fall, Above and Below Ground]] a
 alone) and [[The Drowned Vale as Claude Builds It]] (where it opens).
 
 It builds on [[Each Island Keeps One Patrol Zone, the One by Its Port City]].
+
+Its design pass, enemies and landing zones are settled in
+[[The Saltgrass Downs Plays as Destiny 2's EDZ, Its Three Landing Zones Spread Across It]].

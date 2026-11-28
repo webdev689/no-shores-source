@@ -152,7 +152,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   Saltbreaker Hulks; the ways up to Moorhold climbing their last stretch as a ramp at 0.25, steeper than a track; the
   Tithe Barns' corner turret. Left:
   - The owner's asks still to come: the Downs' design pass and patrol zone design pass, its enemy placements, the held
-    map's polish and legend, and the three landing zones with their map and fast travel.
+    map's polish and legend, and the three landing zones with their map and fast travel. The owner has settled their
+    direction ([[The Saltgrass Downs Plays as Destiny 2's EDZ, Its Three Landing Zones Spread Across It]]).
   - `tools/modules/breach_gate.py` and `catalogue.py` still say the gate is the Vale's: their next edit sets off the
     modules workflow's bake, so it waits for a modules change.
   - Gates still stand where no way may reach them (`areas::needs_a_way` leaves them out, as they sit at the claim's

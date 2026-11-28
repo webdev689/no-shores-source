@@ -57,7 +57,8 @@ How it works: [[Interface]], "The island's tiles"; [[Game]], "Landings".
 
 Saltmere's one patrol zone is now the Saltgrass Downs
 ([[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]), so its three landing zones are the ones to
-build.
+build: spread across it, fast travelled between as Destiny 2's
+([[The Saltgrass Downs Plays as Destiny 2's EDZ, Its Three Landing Zones Spread Across It]]).
 
 Not built yet: the three landing zones, the zone's map to choose one from, and their fast travel. A patrol zone's tile
 lands at the zone's one landing site, as before; its scene paints the three lanterns the decision asks for.

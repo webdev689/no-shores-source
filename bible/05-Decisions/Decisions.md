@@ -419,6 +419,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
 - [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
 - [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]
+- [[The Saltgrass Downs Plays as Destiny 2's EDZ, Its Three Landing Zones Spread Across It]]
 
 ## Claude's calls
 
