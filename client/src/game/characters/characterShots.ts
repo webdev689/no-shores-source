@@ -94,8 +94,8 @@ const ENTRIES: TestEntry[] = [
   ['abyss', 'Abyss Playlist', 'An Elite Dungeon drawn as it starts · Foes at level 32'],
   ['week-elite', 'Elite Dungeon of the week', 'The Cinder Deep · Foes at level 30'],
   ['week-abyss', 'Abyss Dungeon of the week', 'The Silt Barrows · Foes at level 32'],
-  ['breach-normal', 'The Drowned Vale · Normal', 'From the gate in a copy of Gullwing Vale of its own'],
-  ['breach-hard', 'The Drowned Vale · Hard', 'From the gate in a copy of Gullwing Vale of its own'],
+  ['breach-normal', 'The Drowned Vale · Normal', 'From the gate in a copy of Saltgrass Downs of its own'],
+  ['breach-hard', 'The Drowned Vale · Hard', 'From the gate in a copy of Saltgrass Downs of its own'],
 ].map(([kind, name, about]) => ({ kind, name, about, room: () => '' }) as TestEntry);
 
 const NAMES: Record<string, string> = { 'overlook-social': 'Overlook' };

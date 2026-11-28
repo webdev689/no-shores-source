@@ -23,6 +23,16 @@ pub struct Ledge {
     pub way: [f64; 2],
 }
 
+impl Ledge {
+    /// Its cut as a floor: from where its slot leaves the low floor to its stair's top on the high one, as wide as the
+    /// slot, from one point to another with a half-width.
+    #[must_use]
+    pub fn cut(&self) -> [f64; 5] {
+        let top = [self.edge[0] + self.way[0] * OVER_M, self.edge[1] + self.way[1] * OVER_M];
+        [self.start[0], self.start[1], top[0], top[1], SLOT_HALF_M]
+    }
+}
+
 /// The least and the most a ledge climbs, metres: the lowest and the tallest stair baked.
 const LEAST_RISE_M: f64 = 4.0;
 const MOST_RISE_M: f64 = 24.0;

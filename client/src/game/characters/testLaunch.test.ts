@@ -12,7 +12,7 @@ const storeOf = (kept: Record<string, string> = {}) => ({
 });
 const NODES = [
   { id: 'pearl-tomb', kind: 'patrol' },
-  { id: 'gullwing-vale', kind: 'patrol' },
+  { id: 'saltgrass-downs', kind: 'patrol' },
 ] as NodeInfo[];
 
 /** The watch over a tab kept for `room`, the player standing as `standing` says, a second a look. */
@@ -64,7 +64,7 @@ test('a playlist test run is gone into once on foot, asked again while refused, 
 });
 
 test('a Breach test goes to its gate, its zone copy counting as the test; nothing without a test kept', () => {
-  const run = 'node-gullwing-vale--breach-hard--test-ab12cd34';
+  const run = 'node-saltgrass-downs--breach-hard--test-ab12cd34';
   const watch = watching(run);
   watch.tick([]);
   assert.deepEqual(watch.asked, [`breach ${run}`], 'at sea too, the way to the gate is asked');

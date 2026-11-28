@@ -16,6 +16,36 @@ test("the table lists each glyph the land holds once, keepers before sites, and 
   );
 });
 
+test('the table keys each line the sheet draws, a track, a footpath and what stands, before the arrow', () => {
+  const path = (track: boolean, plain: { faint?: boolean; inked?: boolean } = {}) => ({
+    track,
+    width: 4,
+    points: [],
+    ...plain,
+  });
+  const square = [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 1],
+  ] as const;
+  const rows = tableRows({
+    marks: [mark('landing', 'Landing')],
+    paths: [path(true), path(false), path(false, { faint: true })],
+    standing: [square],
+  });
+  assert.deepEqual(
+    rows.map((row) => row.word),
+    ['Landing', 'Track', 'Path', 'Walls and buildings', 'You'],
+  );
+  const plain = tableRows({ marks: [], paths: [path(false, { faint: true }), path(true, { inked: true })] });
+  assert.deepEqual(
+    plain.map((row) => row.word),
+    ['You'],
+    "a faint or inked line, a passage web's other ways, is keyed by none",
+  );
+});
+
 test('a long table is laid in columns of at most seven rows', () => {
   const { painter } = recorder();
   const glyphs = ['mage', 'vault', 'weaponsmith', 'armorsmith', 'tailor', 'tack', 'stormcallers', 'lamplighters'];

@@ -23,7 +23,7 @@ const SEA_STARTED = /--sea--run-[a-z0-9]{8}$/;
 /** A test run's instance, after `--test-` where its real run's is after `--run-`; and the patrol zones whose Breach's
  *  gate a test copies, each zone copy named by the instance of the test run it opens (`gear::breach::DROWNED_VALE`). */
 const TEST = /^test-([a-z0-9]{8})$/;
-const BREACH_GATES = ['gullwing-vale'];
+const BREACH_GATES = ['saltgrass-downs'];
 
 /** A node's room by the name after `node-`: `<id>` at Normal, `<id>--elite` or `<id>--abyss`; a patrol's dungeon's
  *  room with `--dungeon-<number>` after that; and a run with `--run-<instance>` last. A patrol's dungeon is one shared

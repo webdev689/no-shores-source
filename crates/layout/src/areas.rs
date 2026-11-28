@@ -188,6 +188,8 @@ pub fn place(
     pull: &dyn Fn([f64; 2]) -> f64,
 ) -> Option<[f64; 2]> {
     let mut best: Option<(f64, [f64; 2])> = None;
+    let mut best_reached: Option<(f64, [f64; 2])> = None;
+    let reached = placed.first().filter(|_| needs_a_way(kind)).map(|first| reached_from(field, first.at));
     for row in (1..field.rows.saturating_sub(1)).step_by(2) {
         for column in (1..field.columns.saturating_sub(1)).step_by(2) {
             let at = field.centre(column, row);
@@ -207,9 +209,59 @@ pub fn place(
             if best.is_none_or(|(top, _)| total > top) {
                 best = Some((total, at));
             }
+            let way_to = reached.as_ref().is_some_and(|reached| reached[field.index(column, row)]);
+            if way_to && best_reached.is_none_or(|(top, _)| total > top) {
+                best_reached = Some((total, at));
+            }
         }
     }
-    best.map(|(_, at)| at)
+    best_reached.or(best).map(|(_, at)| at)
+}
+
+/// Whether an area of a kind stands only where a way reaches it from the first: all but those at the claim's edge or
+/// in the water, whose ways come in from outside it or are bridged.
+fn needs_a_way(kind: AreaKind) -> bool {
+    !matches!(
+        kind,
+        AreaKind::Landing | AreaKind::Gate | AreaKind::Entrance | AreaKind::Dock | AreaKind::Wreck | AreaKind::Causeway
+    )
+}
+
+/// The cells a way is laid to from `from` (`paths::find`'s ground): dry land or a river, no steeper than a stepped way
+/// climbs, as far in from the claim's edge as a way keeps but round its start. An area placed off them would stand
+/// where no way comes, its basin sealed in its rock.
+fn reached_from(field: &Field, from: [f64; 2]) -> Vec<bool> {
+    use crate::paths::{EDGE_KEEP_M, END_YARD_M, STEPPED, STEPS};
+    let start = field.nearest(from[0], from[1]);
+    let start_at = field.centre(start % field.columns, start / field.columns);
+    let passable = |at: usize| {
+        let by_start = distance(field.centre(at % field.columns, at / field.columns), start_at) <= END_YARD_M;
+        (field.inside[at] >= EDGE_KEEP_M || by_start)
+            && matches!(field.water[at], Water::Dry | Water::River)
+            && field.slope[at] <= 1.2
+    };
+    let mut reached = vec![false; field.columns * field.rows];
+    reached[start] = true;
+    let mut open = vec![start];
+    while let Some(cell) = open.pop() {
+        let (column, row) = ((cell % field.columns) as i32, (cell / field.columns) as i32);
+        for (step_x, step_y) in STEPS {
+            let (next_column, next_row) = (column + step_x, row + step_y);
+            if next_column < 0 || next_row < 0 || next_column >= field.columns as i32 || next_row >= field.rows as i32 {
+                continue;
+            }
+            let next = field.index(next_column as usize, next_row as usize);
+            let middle = field.index((column + step_x / 2) as usize, (row + step_y / 2) as usize);
+            let length = CELL_M * f64::from(step_x * step_x + step_y * step_y).sqrt();
+            let grade = (field.height[next] - field.height[cell]).abs() / length;
+            if reached[next] || !passable(next) || !passable(middle) || grade > STEPPED {
+                continue;
+            }
+            reached[next] = true;
+            open.push(next);
+        }
+    }
+    reached
 }
 
 #[cfg(test)]
@@ -221,6 +273,34 @@ mod tests {
         assert_eq!(bell(50.0, 25.0, 220.0, 100.0), 1.0);
         assert_eq!(bell(0.0, 25.0, 220.0, 100.0), 0.75);
         assert_eq!(bell(500.0, 25.0, 220.0, 100.0), 0.0);
+    }
+
+    #[test]
+    fn an_area_stands_on_land_a_way_reaches_from_the_landing_never_past_the_sea_from_it() {
+        // A level claim cut north to south by the sea, the landing on its west, and a pull east so the hulks would
+        // rather stand on the far shore, where no way could come to them.
+        let mut field = Field::level(-160.0, -160.0, 40, 40);
+        for row in 0..field.rows {
+            for column in 18..22 {
+                let at = field.index(column, row);
+                field.water[at] = Water::Sea;
+            }
+        }
+        let landing = Area {
+            kind: AreaKind::Landing,
+            name: "The Landing".into(),
+            at: [-120.0, 0.0],
+            radius: 48.0,
+            leads_to: None,
+            crosses: false,
+        };
+        let east = |at: [f64; 2]| at[0] / 100.0;
+        let hulks = place(&field, AreaKind::Hulks, 30.0, std::slice::from_ref(&landing), 3, &east).expect("a place");
+        assert!(hulks[0] < -16.0, "on the landing's side of the sea, at {hulks:?}");
+        let alone = place(&field, AreaKind::Hulks, 30.0, &[], 3, &east).expect("a place");
+        assert!(alone[0] > 16.0, "with nothing placed, wherever it would stand: {alone:?}");
+        let dock = place(&field, AreaKind::Dock, 30.0, &[landing], 3, &east);
+        assert!(dock.is_some_and(|at| at[0] > -16.0), "a dock stands by the water wherever it is: {dock:?}");
     }
 
     #[test]

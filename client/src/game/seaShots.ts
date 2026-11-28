@@ -63,7 +63,7 @@ export const landingAskShot = (ui: Interface): Node =>
 const WHERE = { continent: 'continent-1', ring: [], spawns: [], centre: [0, 0] as const };
 const node = (id: string, kind: NodeInfo['kind'], name: string, more: object = {}) =>
   ({ ...WHERE, id, kind, name, ...more }) as unknown as NodeInfo;
-/** Saltmere as docked at Overlook: its city, its three patrol zones, two Elite Dungeons, missions, boss and outpost. */
+/** Saltmere as docked at Overlook: its city, its patrol zone, two Elite Dungeons, missions, boss and outpost. */
 const SALTMERE = {
   id: 'continent-1',
   plan: {
@@ -94,8 +94,6 @@ const SALTMERE = {
         [3, 3],
       ],
     }),
-    node('gullwing-vale', 'patrol', 'The Gullwing Vale'),
-    node('driftwood-moors', 'patrol', 'The Driftwood Moors'),
     node('krakens-grotto', 'dungeon', "Kraken's Grotto"),
     node('pearl-tomb', 'dungeon', 'The Pearl Tomb'),
     node('burned-mill', 'mission', 'The Burned Mill', { locked: true }),

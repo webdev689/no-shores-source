@@ -15,15 +15,23 @@ const STEP_ROOM_M: f64 = 5.0;
 const STRIP_HALF_M: f64 = 6.0;
 /// The least a block steps up to be worth its ramp, a share of the massif's height (about a metre).
 const LEAST_STEP: f64 = 0.03;
+/// The most the massif's roll (`land::sculpts::massif_at`) may lift the land round a building on a terrace from one
+/// side to the other, metres, and how far round it that land is measured: where its doors open.
+const ROLL_MOST_M: f64 = 0.9;
+const DOORS_M: f64 = 4.0;
 
-/// A hamlet's terraces where the brief asks for heights: its blocks up its hillside (by the ground their buildings were
-/// seated on), each a step higher than the last on a terrace over its whole tile and `STEP_ROOM_M` past it, with a
-/// ramp straight up to it from the plaza at the hamlet's middle, at a lower step where its lane holds no longer a
-/// ramp. The lowest block, and any a way runs into (the block holding the hub its ways end at), stand on the plaza's
-/// floor; so does a block whose ramp would run along a way or whose terrace would stand across a building. A terrace
-/// is laid as level strips across its tile (`STRIP_HALF_M` each), so its edge runs square along the tile's; the
-/// strips stand on one ramp between them.
-pub(crate) fn steps(area: &Area, seating: &Seating, paths: &[Path]) -> Vec<[f64; 7]> {
+/// A hamlet's terraces where the brief asks for heights: its blocks up its hillside, each a step higher than the last
+/// on a terrace over its tile and `STEP_ROOM_M` past it, with a ramp straight up from the plaza. The lowest block, any
+/// a way runs into, and any whose ramp would run along a way or whose terrace would stand across a building stay on
+/// the plaza's floor. A terrace is laid as level strips across its tile, on one ramp between them. Its level, a share
+/// of the massif's height (the hamlet's `level` and its step), rolls with the massif (`rise` metres high, of a
+/// `seed`), so a block steps up no higher than keeps that roll round each of its buildings within `ROLL_MOST_M`.
+pub(crate) fn steps(
+    area: &Area,
+    seating: &Seating,
+    paths: &[Path],
+    (level, rise, seed): (f64, f64, u32),
+) -> Vec<[f64; 7]> {
     let half = city::grid::CELL_M / 2.0 + STEP_ROOM_M;
     let square = |[x, y]: [f64; 2]| [x - half, y - half, x + half, y + half];
     let inside =
@@ -75,7 +83,13 @@ pub(crate) fn steps(area: &Area, seating: &Seating, paths: &[Path]) -> Vec<[f64;
             edge += 0.5;
         }
         let top_out = edge + 2.0;
-        let step = (f64::from(rank + 1) * HAMLET_STEP).min(top_out * RAMP_STEEPEST / TALLEST_LEVEL_M);
+        let rolls = seating
+            .buildings
+            .iter()
+            .filter(|building| inside(tile, middle_of(building.footprint)))
+            .map(|building| roll_round(building.footprint, rise, seed));
+        let highest = ROLL_MOST_M / rolls.fold(1e-9, f64::max) - level;
+        let step = (f64::from(rank + 1) * HAMLET_STEP).min(top_out * RAMP_STEEPEST / TALLEST_LEVEL_M).min(highest);
         if step < LEAST_STEP {
             continue;
         }
@@ -94,4 +108,18 @@ pub(crate) fn steps(area: &Area, seating: &Seating, paths: &[Path]) -> Vec<[f64;
         terraces.push([foot[0], foot[1], top[0], top[1], RAMP_HALF_M, 0.0, step]);
     }
     terraces
+}
+
+/// How far the massif's height rolls from its lowest to its highest round a building's footprint, `DOORS_M` past it,
+/// metres: a level standing on it at a share of its height rolls that share of it.
+fn roll_round([west, north, east, south]: [f64; 4], rise: f64, seed: u32) -> f64 {
+    let (west, north, wide, deep) =
+        (west - DOORS_M, north - DOORS_M, east - west + 2.0 * DOORS_M, south - north + 2.0 * DOORS_M);
+    let heights = (0..25).map(|at| {
+        let [x, y] = [west + wide * f64::from(at % 5) / 4.0, north + deep * f64::from(at / 5) / 4.0];
+        land::sculpts::massif_at(rise, seed, x, y)
+    });
+    let (low, high) =
+        heights.fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), each| (low.min(each), high.max(each)));
+    high - low
 }

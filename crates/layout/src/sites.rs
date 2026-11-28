@@ -234,6 +234,44 @@ pub fn mark(
     sites
 }
 
+/// How far apart along a way its patrols stand, metres, and how far each keeps off every place's reach, every other
+/// foes' site and every landing zone; and how many a zone holds at most.
+const WAY_PATROL_EVERY_M: f64 = 200.0;
+const WAY_PATROL_CLEAR_M: [f64; 3] = [60.0, 150.0, 80.0];
+const WAY_PATROLS_MOST: usize = 8;
+
+/// What a way's patrol's foes' site holds, so the map leaves it unmarked, as it walks.
+pub const WAY_PATROL: &str = "patrol";
+
+/// The foes' sites of a patrol area's patrols on its ways, where its brief asks for them: a point of a way every
+/// `WAY_PATROL_EVERY_M` along it that keeps off every place, every foes' site in `sites` and every landing zone in
+/// `landings`, holding `WAY_PATROL`; the room stands each site's group to walk its beat along the way there.
+#[must_use]
+pub fn way_patrols(areas: &[Area], ways: &[Path], sites: &[Site], landings: &[[f64; 2]]) -> Vec<Site> {
+    let [place_clear, site_clear, landing_clear] = WAY_PATROL_CLEAR_M;
+    let mut found: Vec<[f64; 2]> =
+        sites.iter().filter(|site| site.kind == SiteKind::Foes).map(|site| site.at).collect();
+    let mut patrols = Vec::new();
+    for way in ways {
+        let mut travelled = 0.0;
+        for pair in way.points.windows(2) {
+            travelled += distance(pair[0], pair[1]);
+            let at = pair[1];
+            let clear = areas.iter().all(|area| distance(area.at, at) - area.radius >= place_clear)
+                && found.iter().all(|other| distance(*other, at) >= site_clear)
+                && landings.iter().all(|landing| distance(*landing, at) >= landing_clear);
+            if travelled < WAY_PATROL_EVERY_M || !clear || patrols.len() >= WAY_PATROLS_MOST {
+                continue;
+            }
+            travelled = 0.0;
+            found.push(at);
+            let holds = Some(WAY_PATROL.to_owned());
+            patrols.push(Site { kind: SiteKind::Foes, at, radius: 0.0, holds, node: None, facing: None });
+        }
+    }
+    patrols
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

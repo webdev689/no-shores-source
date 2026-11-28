@@ -645,6 +645,54 @@ fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while
 }
 
 #[test]
+fn a_fast_travel_stands_the_player_at_the_landing_zone_asked_and_is_refused_as_returning_to_the_ship_is() {
+    use crate::asks::{Asked, FALLEN, FIGHTING, NOT_YET, OUT_OF_REACH, TRAVELLED};
+    let mut room = room();
+    room.set_landings(&[[0.0, 0.0], [40.0, -30.0], [-25.0, 60.0]]);
+    let player = room.join().expect("a room with space");
+    let mut sequence = 0;
+    let mut travel = |room: &mut Room, zone: u8| {
+        for _ in 0..crate::asks::ASK_EVERY_TICKS {
+            room.tick();
+        }
+        sequence += 1;
+        let ask = Some(Asked::FastTravel { zone });
+        room.input(player, crate::Input { sequence, ask, seen: room.clock(), ..crate::Input::default() }).unwrap();
+        room.tick();
+        room.player(player).expect("in").answer
+    };
+    let at = |room: &Room| {
+        let body = room.fighter(player).expect("in").body;
+        [body.x, body.y]
+    };
+    assert_eq!(travel(&mut room, 1), NOT_YET, "the room does not yet know whose character it holds");
+    room.none_kept(player);
+    assert_eq!(travel(&mut room, 1), TRAVELLED);
+    assert!((at(&room)[0] - 40.0).abs() < 0.5 && (at(&room)[1] + 30.0).abs() < 0.5, "at the north's: {:?}", at(&room));
+    assert_eq!(travel(&mut room, 3), OUT_OF_REACH, "a zone the node has not");
+    assert_eq!(travel(&mut room, 0), TRAVELLED, "back to the landing's");
+    let foe = stand_type(
+        &mut room,
+        ::foes::foe_type(::foes::roster::COLLECTOR).expect("a type"),
+        ::foes::Rank::Minor,
+        1,
+        -1.5,
+    );
+    let whole = room.fighter(player).expect("in").health;
+    while room.fighter(player).expect("in").health >= whole {
+        room.tick();
+        assert!(room.clock() < 60 * 60, "the foe strikes within a minute");
+    }
+    room.foes.remove(&foe);
+    assert_eq!(travel(&mut room, 2), FIGHTING, "struck a moment ago, it stays");
+    assert!(at(&room)[0].abs() < 3.0 && at(&room)[1].abs() < 3.0, "not moved: {:?}", at(&room));
+    let mut fallen = *room.fighter(player).expect("in");
+    fallen.action = combat::Action::Dead { elapsed: 0 };
+    room.set_fighter(player, fallen);
+    assert_eq!(travel(&mut room, 2), FALLEN);
+}
+
+#[test]
 fn a_page_saying_its_player_is_mounted_rides_only_with_a_horse_and_never_on_a_boarded_deck() {
     let ask_mounted = |room: &mut Room, player: PlayerId, sequence: u32| {
         let mut input = asking(sequence, room, CombatInput::default());

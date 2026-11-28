@@ -84,6 +84,13 @@ pub struct Sculpt {
     pub roofed: Vec<[f64; 5]>,
 }
 
+/// The height of a massif `rise` metres high at a point, for a sculpt of a seed, metres: its rise varied slowly by its
+/// noise, so the top rolls, and every level standing on it (a raised floor's share of it) rolls with it.
+#[must_use]
+pub fn massif_at(rise: f64, seed: u32, x: f64, y: f64) -> f64 {
+    rise * (0.7 + 0.45 * (0.5 + 0.5 * fbm(seed ^ 0x51, x / 230.0, y / 230.0, 3)))
+}
+
 /// The floors, the outcrops, the climbs, the runs and the raised floors near one bucket, by their places in a sculpt's
 /// lists.
 type Near = (Vec<u32>, Vec<u32>, Vec<u32>, Vec<u32>, Vec<u32>);
@@ -332,7 +339,7 @@ impl Sculpts {
     /// A sculpt's massif's height at a point, metres: its rise, varied slowly by its noise, so the top rolls.
     fn rise_at(&self, number: usize, x: f64, y: f64) -> f64 {
         let sculpt = &self.sculpts[number];
-        sculpt.rise * (0.7 + 0.45 * (0.5 + 0.5 * fbm(sculpt.seed ^ 0x51, x / 230.0, y / 230.0, 3)))
+        massif_at(sculpt.rise, sculpt.seed, x, y)
     }
 
     /// A sculpt's massif's top at a point, metres: its rise, or on a terraced sculpt one of its plateaus, held up to

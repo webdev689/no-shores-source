@@ -15,8 +15,8 @@ pub struct EliteDungeon {
     pub boss: u8,
 }
 
-/// An island's places as the draws know them: its continent, its patrol zones (Saltmere's three; the one by its port
-/// city on every other island) and its two Elite Dungeons, each in its land file's order.
+/// An island's places as the draws know them: its continent, its patrol zone (the one by its port city) and its two
+/// Elite Dungeons, each in its land file's order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Island {
     pub continent: &'static str,
@@ -32,7 +32,7 @@ const fn elite(id: &'static str, style: &'static str, boss: u8) -> EliteDungeon 
 pub const ISLAND_PLACES: [Island; 9] = [
     Island {
         continent: "continent-1",
-        patrols: &["saltgrass-downs", "gullwing-vale", "driftwood-moors"],
+        patrols: &["saltgrass-downs"],
         elite: [elite("krakens-grotto", "caverns", 21), elite("pearl-tomb", "crypt", 22)],
     },
     Island {

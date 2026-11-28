@@ -44,6 +44,8 @@ pub const TO_SHIP: u8 = 107;
 pub const INTO_BREACH: u8 = 108;
 /// The player keeps no ship yet to return to: the Harbourmaster hands over the first (`gear::ship::fleet`).
 pub const NO_SHIP: u8 = 109;
+/// A player fast travelled to a landing zone (`Room::fast_travel`): its own yes, as `TO_SHIP` is.
+pub const TRAVELLED: u8 = 110;
 /// How long past a foe's blow a player waits to return to their ship: ten seconds.
 pub const TO_SHIP_AFTER_TICKS: u64 = 10 * 60;
 
@@ -95,6 +97,11 @@ pub enum Asked {
     TakeLodestone,
     DropLodestone,
     EnterBreach,
+    /// Fast travels to one of the node's landing zones by its number: refused as `ToShip` is, while fallen or within
+    /// ten seconds of a foe's blow.
+    FastTravel {
+        zone: u8,
+    },
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -318,6 +325,31 @@ impl Room {
         TO_SHIP
     }
 
+    /// The node's landing zones, each where a body stands there: its landing's first, as the bake lays them.
+    pub fn set_landings(&mut self, landings: &[[f64; 2]]) {
+        self.landings = landings.to_vec();
+    }
+
+    /// Stands a player at one of the node's landing zones, facing as they faced: `TRAVELLED`, or why not
+    /// (`OUT_OF_REACH` for a zone the node has not, `NOT_YET`, `FALLEN`, `FIGHTING`, as `to_ship` refuses).
+    fn fast_travel(&mut self, player: PlayerId, zone: u8) -> u8 {
+        let Some(&[x, y]) = self.landings.get(usize::from(zone)) else { return OUT_OF_REACH };
+        let body = self.stand((x, y));
+        let clock = self.clock;
+        let Some(found) = self.players.get_mut(&player) else { return OUT_OF_REACH };
+        if !found.claimed {
+            return NOT_YET;
+        }
+        if found.fighter.dead() || matches!(found.standing, Standing::Dead { .. }) {
+            return FALLEN;
+        }
+        if found.struck_at.is_some_and(|struck| clock <= struck + TO_SHIP_AFTER_TICKS) {
+            return FIGHTING;
+        }
+        found.fighter.body = movement::Body { facing: found.fighter.body.facing, ..body };
+        TRAVELLED
+    }
+
     /// A player's dice for one roll: the room's seed, the tick, and the count of rolls made, so no two rolls share
     /// one and none can be foreseen without the seed, which a host keeps secret (`reseed`).
     pub(crate) fn dice(&mut self, player: PlayerId) -> Dice {
@@ -423,6 +455,7 @@ impl Room {
                 }
             }
             Asked::EnterBreach => self.ask_enter_breach(player),
+            Asked::FastTravel { zone } => self.fast_travel(player, zone),
         };
         if let Some(found) = self.players.get_mut(&player) {
             // An errand with the accounts is answered once they answer (`outpost_answered`).

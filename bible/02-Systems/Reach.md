@@ -63,8 +63,8 @@ rooms' worker, so the same room judges.
 
 A node's room stands its garrison inside its section, its posts at least 25 m from every spawn and 10 m inside its
 edge (its beats' ways 2.5 m inside), on the
-navmesh it bakes by its first spawn; a cleared group stands again only once no player is within 40 m of its post
-([[Enemies]]). Foes are never judged against the section: one that chases a player past the edge follows them.
+navmesh it bakes by its first spawn; a cleared group stands again on time in a patrol zone's open land, elsewhere
+only once no player is within 40 m of its post ([[Enemies]]). Foes are never judged against the section: one that chases a player past the edge follows them.
 
 ## Limits
 

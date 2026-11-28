@@ -88,8 +88,8 @@ small zones across the island, twenty deep ([[Passages Web Out From the Patrol Z
   Barns' doors, in `content/passages/saltmere.json`), then three or four at each depth to the twentieth.
 - **Where zones lie**: along the island's spine, a line on its land from the patrol zone to its far side whose every
   point holds the depth reached there; a depth's zones 14 km apart across it, each in every week at least 2 km inside
-  the island's coast as the world's layout draws it. On Saltmere the spine runs under the
-  Grey Reach, past the Driftwood Moors at depth 10, and ends under the Weirlands by the Gullwing Vale at 20.
+  the island's coast as the world's layout draws it. On Saltmere the spine runs from the Saltgrass Downs under the
+  Grey Reach, past its middle at depth 10, and ends under the Weirlands by its middle at 20.
 - **The ways on**: each zone leads on to one to three zones of the next depth beside it across the spine, the nearest
   always and two at least where two lie beside it, so a way is chosen at every depth but the last; a zone left
   without a way in is given one from the nearest. Ways lead deeper only.
@@ -104,7 +104,9 @@ small zones across the island, twenty deep ([[Passages Web Out From the Patrol Z
   mission), its currents (none to three by depth, three in four a
   bane, each one its deal takes, none saying again what the week's two modifiers do: `Current::fits`,
   `Current::restates`), its seed and its name (`names.rs`): under a place of the island's already named within 28 km
-  (`content/passages/saltmere.json`'s places), "Under Grey Point Light"; else its ground's and its deal's, "A chalk
+  (`content/passages/saltmere.json`'s places: the instances of the Weirlands and the Grey Reach and the names of the
+  land there, such as the Driftwood Moors, Moorend, the Gullwing Vale and Weir Mill; none is a place of the Saltgrass
+  Downs), "Under Moorend"; else its ground's and its deal's, "A chalk
   cut held by the Tithe", no two zones of a web the same. Its foes' band is the island's raised by depth (`levels`):
   on Saltmere 1 to 4 at depth 1, 27 to 30 at depth 20.
 - **The week's two modifiers** for an island's passages are drawn in gear (`week_modifiers`) from the runs' eight,

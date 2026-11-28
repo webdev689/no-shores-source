@@ -13,7 +13,7 @@ import {
 import { BREACH_EVENT } from '../../../network/breachMessages.ts';
 import { hearBreach, momentOf } from './breachHearing.ts';
 
-/** A Breach's run as the page hears it: the Gullwing Vale's climate, no sky underground. */
+/** A Breach's run as the page hears it: the Saltgrass Downs' climate, no sky underground. */
 const RUN: Hearing = {
   place: { kind: 'island', climate: 'temperate-coast', node: 'patrol' },
   dead: false,

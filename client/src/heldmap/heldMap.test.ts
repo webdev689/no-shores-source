@@ -6,6 +6,7 @@ import { HeldMap } from './heldMap.ts';
 import { Kept, layoutKey } from './heldMapKept.ts';
 import type { HeldMapScene } from './heldMapScene.ts';
 import { MapAsk } from './heldMapAsk.ts';
+import { LandTravel, litCoins } from './landHeld.ts';
 import { GLYPH_HALF } from './landGlyphs.ts';
 import { letterScale } from './mapLayout.ts';
 
@@ -73,6 +74,7 @@ function mapUp(shut: readonly (string | null)[] = []) {
     lowered: () => undefined,
     sailKey: () => 'Enter',
     ask: new MapAsk(),
+    landTravel: new LandTravel(),
   });
   const stack = new Stack();
   stack.add((ui) => map.node(ui));
@@ -152,18 +154,14 @@ test('no to the prompt keeps the course inked, to be sailed the long way, and th
 });
 
 test("on land, a lit keeper's coin is ringed where it is painted, as large; an unlit one and the sea's map ring none", () => {
-  const map = Object.create(HeldMap.prototype) as HeldMap;
   const marks = [
     { glyph: 'mail', at: [30, 40], word: 'The Postmaster' },
     { glyph: 'mage', at: [50, 60], word: 'The Mage' },
-  ];
-  Object.assign(map, { land: { marks }, ink: { x: 0, y: 0, width: 800, height: 450 }, mapView: view });
+  ] as const;
+  let land: Parameters<typeof litCoins>[0] = { marks } as unknown as Parameters<typeof litCoins>[0];
+  const ink = { x: 100, y: 50, width: 1600, height: 900 };
   const coins = (lit: (glyph: string) => boolean, dpr = 2) => [
-    ...(map as unknown as { litCoins: (...args: unknown[]) => Float32Array }).litCoins(
-      { ...scene, lit },
-      { x: 100, y: 50, width: 1600, height: 900 },
-      dpr,
-    ),
+    ...litCoins(land, [view, ink], [letterScale({ height: 450 }), dpr], lit),
   ];
   const [x, y, radius] = coins((glyph) => glyph === 'mail');
   // Where landLetters paints it: the sheet's metres less the view's corner, its pixels a metre, a device pixel apart.
@@ -175,7 +173,7 @@ test("on land, a lit keeper's coin is ringed where it is painted, as large; an u
     [],
     'none lit',
   );
-  Object.assign(map, { land: null });
+  land = null;
   assert.deepEqual(
     coins(() => true),
     [],
@@ -196,6 +194,7 @@ test('art that fails for gauntlets the map is no longer held in leaves the map r
     store: { strip },
     view: { ready: false },
     ask: new MapAsk(),
+    landTravel: new LandTravel(),
     shut: [],
     picked: 'normal',
     lowered: () => lowered.push('lowered'),

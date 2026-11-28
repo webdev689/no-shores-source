@@ -201,7 +201,7 @@ pub(crate) fn baked_ground(room: &mut Room, place: &gear::quests::Place, reach: 
 }
 
 #[test]
-fn a_cleared_group_stands_again_two_minutes_after_its_last_fell_once_no_player_is_within_40_m() {
+fn a_cleared_group_stands_again_two_minutes_after_its_last_fell_around_a_player_at_its_post() {
     let mut room = node(NodeKind::Patrol, "glade");
     let player = room.join().unwrap();
     stand_player(&mut room, player, [-150.0, -150.0]);
@@ -210,15 +210,12 @@ fn a_cleared_group_stands_again_two_minutes_after_its_last_fell_once_no_player_i
     run(&mut room, 1);
     let fell = room.clock();
     assert_eq!(room.garrison[0].cleared_at, Some(fell));
-    run(&mut room, STAND_AGAIN - 1);
-    assert!(room.garrison[0].cleared_at.is_some(), "not before two minutes");
     let at = room.garrison[0].at;
     stand_player(&mut room, player, [at[0] + CLEAR_AROUND - 1.0, at[1]]);
-    run(&mut room, 120);
-    assert!(room.garrison[0].cleared_at.is_some(), "not with a player within 40 m");
-    stand_player(&mut room, player, [at[0] + CLEAR_AROUND + 1.0, at[1]]);
+    run(&mut room, STAND_AGAIN - 1);
+    assert!(room.garrison[0].cleared_at.is_some(), "not before two minutes");
     run(&mut room, 1);
-    assert_eq!(room.garrison[0].cleared_at, None, "at once when the player stands off");
+    assert_eq!(room.garrison[0].cleared_at, None, "on time, around the player still at its post: the owner's");
     let again: Vec<FoeSeen> = room.foes_seen().filter(|foe| room.garrison[0].standing.contains(&foe.foe)).collect();
     assert_eq!(again.len(), before.len());
     for (new, old) in again.iter().zip(&before) {

@@ -1,7 +1,7 @@
-//! A zone's public events, run by its room on a clock as Destiny 1's are: each of Saltmere's three zones runs one
-//! every PERIOD_MINUTES of wall time, alternating its two, the zones ZONE_APART_MINUTES apart, so somewhere on the
-//! island one begins every five minutes. Each has COUNTDOWN_MINUTES to win; won or failed, its result shows for
-//! RESULT_TICKS, and the next is shown from then. The Fissure (`fissure.rs`) is sealed with shards its foes drop; the
+//! A zone's public events, run by its room on a clock as Destiny 1's are: each zone in ZONES (the Saltgrass Downs
+//! alone) runs one every PERIOD_MINUTES of wall time, the Fissure and the raid in turn; a zone added to ZONES runs
+//! ZONE_APART_MINUTES after the one before it, the other kind first. Each has COUNTDOWN_MINUTES to win; won or failed,
+//! its result shows for RESULT_TICKS, and the next is shown from then. The Fissure (`fissure.rs`) is sealed with shards its foes drop; the
 //! Grey Tithe's raid (`raid.rs`) is held at a hamlet's stores. Every player who took part in a win gets a chest of
 //! their own (`chest.rs`). The room knows only the node's grounds, its minute and its zone; it keeps no event across
 //! its closing, and one opened during an event starts it with the time its start minute leaves.
@@ -25,7 +25,7 @@ pub(crate) use chest::Paid;
 pub use seen::{PublicMark, PublicSeen};
 
 /// The zones that hold public events, in the order of their place on the clock.
-pub const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
+pub const ZONES: [&str; 1] = ["saltgrass-downs"];
 pub const PERIOD_MINUTES: u64 = 15;
 pub const ZONE_APART_MINUTES: u64 = 5;
 pub const COUNTDOWN_MINUTES: u64 = 8;

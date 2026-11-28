@@ -1,7 +1,7 @@
-//! A patrol zone's foes hold its territories and its runs: on Saltmere's zones as the bake makes them, every area but
-//! where players arrive or pass, where folk live, where events are fought, a Breach's hollow and a guild's plot, and
-//! its runs' beats; each foes' site stands its group as a player comes near it, and a player walked into a territory
-//! or along a run meets the group there.
+//! A patrol zone's foes hold its territories and its runs and patrol its ways: on Saltmere's zone as the bake makes
+//! it, every area but where players arrive or pass, where folk live, where events are fought, a Breach's hollow and a
+//! guild's plot, its runs' beats and its ways' patrols; each foes' site stands its group as a player comes near it,
+//! and a player walked into a territory, to a way's patrol or along a run meets the group there.
 
 use combat::Intent;
 use layout::brief::AreaKind;
@@ -42,7 +42,9 @@ fn zones() -> Vec<(bake::NodeFile, Vec<layout::runs::Run>, Vec<[f64; 2]>)> {
                         | AreaKind::Plot
                 )
             });
-            (node, laid.runs.clone(), held.map(|area| area.at).collect())
+            // Its ways' patrols stand at points of its ways (`layout::sites::way_patrols`).
+            let patrols = laid.sites.iter().filter(|site| site.holds.as_deref() == Some(layout::sites::WAY_PATROL));
+            (node, laid.runs.clone(), held.map(|area| area.at).chain(patrols.map(|site| site.at)).collect())
         })
         .collect()
 }
@@ -51,11 +53,14 @@ fn apart(one: [f64; 2], two: [f64; 2]) -> f64 {
     libm::hypot(one[0] - two[0], one[1] - two[1])
 }
 
-/// A point `far` from `site` inside the zone's section, round the compass from north: an area may lie by its edge,
-/// and a player standing outside strays to their death.
+/// A point inside the zone's section `far` from `site`, or up to 40 m farther, round the compass from north: an area
+/// may lie by its edge or at the end of a way, and a player standing outside strays to their death.
 fn inside_from(ring: &[[f64; 2]], site: [f64; 2], far: f64) -> [f64; 2] {
-    let ways = (0..16).map(|turn| f64::from(turn) * core::f64::consts::TAU / 16.0);
-    let mut points = ways.map(|way| [site[0] + libm::sin(way) * far, site[1] - libm::cos(way) * far]);
+    let ways = (0..64).map(|turn| f64::from(turn) * core::f64::consts::TAU / 64.0);
+    let mut points = (0..=4).flat_map(|farther| {
+        let out = far + f64::from(farther) * 10.0;
+        ways.clone().map(move |way| [site[0] + libm::sin(way) * out, site[1] - libm::cos(way) * out])
+    });
     points.find(|&[x, y]| reach::inside(ring, x, y)).expect("a point that far inside the zone")
 }
 
@@ -128,7 +133,7 @@ fn meets(room: &mut Room, player: PlayerId, group: &BTreeSet<u32>) -> bool {
 #[test]
 fn a_player_walked_into_each_territory_and_along_each_run_of_saltmere_meets_the_group_there() {
     let zones = zones();
-    assert_eq!(zones.len(), 3, "Saltmere's three zones");
+    assert_eq!(zones.len(), 1, "Saltmere's one patrol zone, the Saltgrass Downs");
     let mut territories_met = 0;
     for (node, runs, territories) in &zones {
         let held = |run: &layout::runs::Run| run.beats.split_last().map_or(&[][..], |(_, held)| held).to_vec();
@@ -165,7 +170,7 @@ fn a_player_walked_into_each_territory_and_along_each_run_of_saltmere_meets_the_
             let toward = inside_from(&node.ring, site, 100.0);
             assert!(room.put_player(player, toward[0], toward[1]));
             // Its place's mesh is baked a slice a tick, so the group stands within a few seconds (a keep's walls and
-            // floors bake slowest: Valeguard's in 174 ticks).
+            // floors bake slowest).
             let group = (0..300).find_map(|_| {
                 room.tick();
                 Some(stood_within(&room, &known, site, reach)).filter(|group| group.len() >= 2)
@@ -220,5 +225,5 @@ fn a_player_walked_into_each_territory_and_along_each_run_of_saltmere_meets_the_
             assert!(met.iter().all(|met| *met), "{}: {} meets its beats' groups: {met:?}", node.id, run.name);
         }
     }
-    assert!(territories_met >= 15, "Saltmere's zones hold territories across them: {territories_met}");
+    assert!(territories_met >= 10, "the Downs hold territories across them: {territories_met}");
 }

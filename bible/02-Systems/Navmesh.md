@@ -105,6 +105,11 @@ some 45 slices, each 15 ms at most natively (tested offline, over all 77 squares
 watershed visits at each level only the cells it reaches still without a region, and the ear-clip keeps each corner's
 ear between clips, trying again only those a clip can change, so neither grows with the square of the floor.
 
+**A gap a body fits through** (0.7 m or more) between two solids of a dungeon's storey that face each other, one of
+them or both trimmed, is kept open: trimmed alike, the 0.4 m grid closes such a gap up to 1.5 m wide, and the floor
+past it is off the mesh, so the trimmed one's facing side is cut back further, no narrower than 2 cm across, until the
+cell nearest the gap's middle wholly inside it stays open (`dungeon_gaps::open`).
+
 **Links** join two floors that no step joins, where the [[Movement]] rules carry a body between them. Along every side
 of every block, a metre apart and no nearer its ends than 0.5 m, the bake stands a body by the side and steps it by the
 rules themselves, with the controls a foe crosses with: walked square into the side with jump pressed (a vault, a
@@ -120,7 +125,9 @@ it joins (step 3). Ramps are not blocks the rules know: no link is tried over on
 0.5 m), runs A* across the polys' neighbours and the links leaving them, each link at its cost, and pulls the line taut
 through the shared edges (the funnel), on either side of each link. A walker standing on a shared edge is already
 through it: the funnel opens past it, never back to the edge's far end. Its waypoints run from the start to the goal,
-both included, each on the surface walked there, on the poly nearest the level of the waypoint before it, so a path
+both included, each on the surface walked there (a block's footprint its edges included to within a nanometre, so
+a waypoint on the cell's edge where a dungeon's slab ends rides the slab, never the ground sampled under that edge,
+halfway between the storeys), on the poly nearest the level of the waypoint before it, so a path
 that runs under a bridge and climbs onto it ends on its deck; a link's start and end stand in it, one after the other. There is no
 path when an end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk or a link joins, so
 a goal on another island has no path without a search. A path's length, as a foe weighs a walk, counts each link at its

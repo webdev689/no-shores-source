@@ -37,7 +37,7 @@ test('every kind of tile paints its whole sheet, the same each time, and two pla
     assert.deepEqual(sceneSheet(scene, 147, 93).cells, sheet.cells, `${kind}: the same each time`);
     assert.equal(rgbaOf(sheet).length, 147 * 93 * 4);
     if (kind === 'island' || kind === 'playlist') continue;
-    const other = sceneSheet({ kind, id: 'gullwing-vale' }, 147, 93);
+    const other = sceneSheet({ kind, id: 'highwater-fells' }, 147, 93);
     assert.notDeepEqual(other.cells, sheet.cells, `${kind}: another place is painted otherwise`);
   }
 });

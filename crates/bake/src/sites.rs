@@ -169,6 +169,18 @@ pub fn crossings_of(layout: &layout::Layout) -> Vec<Place> {
     crossing.filter_map(|area| Some(Place { name: area.leads_to.clone()?, at: area.at, radius: area.radius })).collect()
 }
 
+/// A layout's landing zones, each named for the place nearest it and standing where a body lands there.
+#[must_use]
+pub fn landings_of(layout: &layout::Layout) -> Vec<Place> {
+    let named = layout.areas.iter().filter(|area| !area.name.is_empty());
+    let nearest = |at: [f64; 2]| {
+        let by = |area: &&layout::areas::Area| layout::field::distance(area.at, at);
+        named.clone().min_by(|one, other| by(one).total_cmp(&by(other)))
+    };
+    let landing = |&at: &[f64; 2]| nearest(at).map(|area| Place { name: area.name.clone(), at, radius: 0.0 });
+    layout.landings.iter().filter_map(landing).collect()
+}
+
 /// A layout's runs' sealed doors, each its run's name and its door's middle, reached from 0 m.
 #[must_use]
 pub fn doors_of(layout: &layout::Layout) -> Vec<Place> {

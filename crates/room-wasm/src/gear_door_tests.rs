@@ -72,12 +72,13 @@ fn at_sea_the_patrol_zone_a_kept_character_came_from_puts_its_ship_off_that_zone
     let player = room_join();
     let mut body = gear::Character::starting();
     assert!(body.give_first_ship(), "a ship the sea lets in");
-    body.ship_at = Some([2_805_282, 1_196_621]);
-    let given = json!({ "body": body.to_json(), "vault": null, "from": "node-gullwing-vale" });
+    // Kept off the Weirlands' anchorage, back from the Saltgrass Downs on the Beacon Shore.
+    body.ship_at = Some([2_334_343, 1_824_977]);
+    let given = json!({ "body": body.to_json(), "vault": null, "from": "node-saltgrass-downs" });
     assert!(restore_joined(player, given.to_string().as_bytes()));
     let at = crate::with_open(|opened| {
         let crate::Opened::Sea(sea) = opened else { panic!("a sea is open") };
         sea.ships().find(|(each, _)| *each == player).map(|(_, ship)| (ship.x, ship.y))
     });
-    assert_eq!(at, Some(Some((2_334_343.0, 1_824_977.0))), "at the Weirlands' anchorage, off the Gullwing Vale");
+    assert_eq!(at, Some(Some((2_805_282.0, 1_196_621.0))), "at the Beacon Shore's anchorage, off the Saltgrass Downs");
 }

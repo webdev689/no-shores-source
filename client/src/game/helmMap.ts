@@ -35,6 +35,8 @@ export interface HelmMapContext {
   /** Why each difficulty's seas are shut to the player by their level, by tier (null where open). */
   readonly shut: () => readonly (string | null)[];
   readonly sail: (to: Point2, seas: Difficulty, travel: MapWater | null) => void;
+  /** On foot, fast travels to the landing zone the land's map picked, by its number. */
+  readonly travel?: (zone: number) => void;
   readonly made: (map: HeldMap) => void;
   readonly quest?: () => readonly string[];
 }
@@ -80,6 +82,7 @@ export class HelmMap {
     made.sailKey = () => boundWord('confirm');
     made.noKey = () => (BINDS.device === 'pad' ? 'B' : 'Escape');
     made.regions.names = ISLANDS;
+    made.landTravel.travelled = (zone) => this.context.travel?.(zone);
     made.onLowered((sail, travel) => {
       if (this.onLand) return;
       this.sea()?.view.fromHelm();

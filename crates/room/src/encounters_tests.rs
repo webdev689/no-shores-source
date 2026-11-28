@@ -91,7 +91,7 @@ fn every_elite_dungeon_run_lays_its_encounters_and_no_other_dungeon_does() {
         assert!((2..=3).contains(&seen.seals.len()), "{}", elite.id);
         assert!(!seen.woken && seen.boss == 0, "{}: its Boss held back", elite.id);
     }
-    let patrol = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 1 };
+    let patrol = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 0 };
     let room = Room::dungeon_run(&patrol, gear::Difficulty::Elite, FRIDAY_NINE).expect("a patrol's run");
     assert!(room.encounter_seen().is_none(), "a patrol's dungeon has none");
 }

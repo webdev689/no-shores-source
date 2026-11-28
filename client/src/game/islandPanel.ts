@@ -13,13 +13,11 @@ import { DIM } from './hudPieces.ts';
 import { hudPress, said } from './hudParts.ts';
 import {
   type IslandEntry,
-  type IslandFacts,
   type IslandPanel,
   type OutpostSlot,
   type OutpostsEntry,
   type PlaylistBanner,
   entriesOf,
-  islandPanelOf,
   KIND_WORDS,
   tagOf,
 } from './islandWords.ts';
@@ -28,9 +26,6 @@ import { CREST_SPOTS, type Scene, sceneSheet, TEXEL } from './islandArt.ts';
 import { rgbaOf } from '../art/sheet.ts';
 import { drawCrest } from './playlistCrest.ts';
 import { scrolledNode } from './playlistParts.ts';
-import type { Landmass } from './landmass.ts';
-import type { Sea } from './sea.ts';
-import type { NodeInfo } from './worldData.ts';
 
 const BRASS = '#f3cf86';
 /** A tile's scene drawn 90% opaque, so the island shows through it a little; and its edge at rest. */
@@ -496,102 +491,5 @@ export function outpostsNode(
 }
 
 /** The slot Enter lands at: the one chosen, else the first open one. */
-const litSlot = (entry: OutpostsEntry, chosen: string | null): OutpostSlot | undefined =>
+export const litSlot = (entry: OutpostsEntry, chosen: string | null): OutpostSlot | undefined =>
   entry.slots.find((slot) => slot.id === chosen) ?? entry.slots.find((slot) => slot.shut === null);
-
-/** What the island's panel reads off the game, and what its entries do. */
-export interface IslandGame {
-  readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'nodes' | 'outline' | 'regions'>;
-  readonly sea: () => Pick<Sea, 'position' | 'view'> | null;
-  readonly chosen: () => string | null;
-  readonly facts: () => Omit<IslandFacts, 'named'> | null;
-  readonly named: (id: string) => string;
-  /** The sites the player's guild holds outposts at. */
-  readonly ours: () => readonly string[];
-  readonly choose: (id: string) => void;
-  readonly back: () => void;
-  readonly does: {
-    readonly land: (id: string) => void;
-    readonly dungeon: (node: NodeInfo) => void;
-    readonly playlist: (city: string) => void;
-  };
-}
-
-/** The island's tiles as the game shows them while a landing is chosen, and what Enter does: the lit tile's press,
- *  the first place's while none is lit. */
-export function islandScreen(game: IslandGame): {
-  readonly node: (ui: Interface) => Node | null;
-  readonly act: (id: string | null) => void;
-  readonly back: () => boolean;
-} {
-  /** The Outposts tile whose slots stand open, by its id; none while the tiles show. */
-  let picking: string | null = null;
-  const panelNow = (): IslandPanel | null => {
-    const sea = game.sea();
-    if (!sea) return null;
-    const facts = game.facts();
-    const read = {
-      ...{ activities: facts?.activities ?? null, gates: facts?.gates ?? null },
-      ...{ named: game.named, ours: game.ours() },
-    };
-    return islandPanelOf(game.landmass(), sea.view.docked, read, sea.position);
-  };
-  // The open slots' tile as the panel is now: none once the ship lies off another region.
-  const pickedOf = (panel: IslandPanel | null): OutpostsEntry | undefined =>
-    picking === null
-      ? undefined
-      : (panel?.groups.flatMap((group) => group.entries).find((entry) => entry.id === picking) as
-          OutpostsEntry | undefined);
-  // The flow lands only at the node chosen, so a landing chooses its node first.
-  const landAt = (id: string) => ((picking = null), game.choose(id), game.does.land(id));
-  // Closing the slots lights their tile again, so Enter on the tiles never holds a slot's id no tile has.
-  const close = () => {
-    if (picking !== null) game.choose(picking);
-    picking = null;
-  };
-  const land = (slot: OutpostSlot) => void (slot.shut === null && landAt(slot.id));
-  const act = (entry: IslandEntry) => {
-    if (entry.shut !== null) return;
-    const landmass = game.landmass();
-    if (entry.act.does === 'land') return landAt(entry.id);
-    if (entry.act.does === 'outposts') return void (picking = entry.id);
-    if (entry.act.does === 'playlist') return landmass.plan && game.does.playlist(landmass.plan.id);
-    const node = landmass.nodes.find((each) => each.id === entry.id);
-    if (node) game.does.dungeon(node);
-  };
-  return {
-    node: (ui) => {
-      const [panel, sea] = [panelNow(), game.sea()];
-      if (!panel || !sea) return null;
-      const landmass = game.landmass();
-      const harbour = landmass.plan && !landmass.plan.ruined ? landmass.plan.harbour : null;
-      const chart = { id: landmass.id, outline: landmass.outline, harbour, ship: sea.position };
-      const picked = pickedOf(panel);
-      if (picked) {
-        return outpostsNode(ui, picked, game.chosen(), chart, { choose: game.choose, land, close });
-      }
-      return islandPanelNode(ui, panel, game.chosen(), chart, {
-        choose: game.choose,
-        act,
-        back: game.back,
-      });
-    },
-    act: (id) => {
-      const panel = panelNow();
-      const picked = pickedOf(panel);
-      if (picked) {
-        const slot = litSlot(picked, id);
-        return void (slot && land(slot));
-      }
-      const entries = panel ? entriesOf(panel) : [];
-      const entry = entries.find((each) => each.id === id) ?? (id === null ? entries[0] : undefined);
-      if (entry) act(entry);
-    },
-    // Escape and the pad's B close the slots first, back to the tiles.
-    back: () => {
-      const open = pickedOf(panelNow()) !== undefined;
-      close();
-      return open;
-    },
-  };
-}

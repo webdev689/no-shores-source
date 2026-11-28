@@ -113,7 +113,7 @@ const ROSTER: Roster = {
       member('Namaskar', 'Member', 'stormborn', 'Overlook'),
       member('Nephrys', 'Member', 'boatswain', null),
       member('Tamrielo', 'Member', 'first_mate', null),
-      member('Ashwyn', 'Admin', 'commodore', 'The Gullwing Vale'),
+      member('Ashwyn', 'Admin', 'commodore', 'The Saltgrass Downs'),
     ],
     invited: [],
   },

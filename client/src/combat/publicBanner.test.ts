@@ -88,14 +88,14 @@ test("a banner of one line (an Elite Dungeon's or a Breach's between encounters)
     ...shown,
     tone: 'next',
     kicker: 'Next',
-    elsewhere: 'Raid at Gullwing Vale',
+    elsewhere: 'Inside: Ada; Ben',
     bar: null,
     heroic: null,
     bonus: null,
   };
   banner.update(next, 1);
   const words = wordsIn(banner.node(1280, 1));
-  assert.ok(words.includes('Raid at Gullwing Vale'));
+  assert.ok(words.includes('Inside: Ada; Ben'));
   assert.ok(!words.includes('3 / 12 shards'), 'no bar in one line');
   assert.ok(laidOf(banner.node(1280, 1) as Node).length > 0, 'it lays out');
   const line = banner.node(1280, 1) as Node;

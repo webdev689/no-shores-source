@@ -318,7 +318,7 @@ test('the room a character came from is given with it, so the sea can put the sh
   const { clock, kept, token } = await world();
   const zone = roomOf();
   zone.held.set(1, '{"starting":true}');
-  const left = new Keeper(kept, zone, 'node-gullwing-vale', () => undefined);
+  const left = new Keeper(kept, zone, 'node-saltgrass-downs', () => undefined);
   assert.equal(
     await left.signIn(
       1,
@@ -349,8 +349,8 @@ test('the room a character came from is given with it, so the sea can put the sh
     ),
     true,
   );
-  assert.deepEqual(froms, ['node-gullwing-vale'], 'the zone it left');
-  assert.equal(back.cameFrom(2), 'node-gullwing-vale');
+  assert.deepEqual(froms, ['node-saltgrass-downs'], 'the zone it left');
+  assert.equal(back.cameFrom(2), 'node-saltgrass-downs');
 });
 
 test("a leaver's chest is opened and what lies for them mailed before their last save reads it; the room lets them go last", () => {
@@ -413,7 +413,7 @@ test('a room that turns an arrival away judges before it claims, so the room pla
   const far = roomOf();
   far.held.set(2, '{"starting":true}');
   const sent: [number, string | undefined][] = [];
-  const judging = new Keeper(kept, far, 'node-gullwing-vale', (player, why) => sent.push([player, why]));
+  const judging = new Keeper(kept, far, 'node-saltgrass-downs', (player, why) => sent.push([player, why]));
   judging.judgingArrivals(() => false);
   assert.equal(
     await judging.signIn(
@@ -445,7 +445,7 @@ test('a room that judges arrivals, whose look the accounts never answer, leaves 
   const judging = new Keeper(
     silent,
     room,
-    'node-gullwing-vale',
+    'node-saltgrass-downs',
     (player, why) => sent.push([player, why]),
     () => Promise.resolve(),
   );

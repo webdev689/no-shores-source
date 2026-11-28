@@ -20,6 +20,7 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - #258 Armour, cloaks and clothes get large icons in the gear screens, as the weapons do
 - #259 The wreck exports again, its stern windows glowing as a lit ship's
 - #264 The hand-off says the repository is public under webdev689, and what the owner sets for it
+- #265 Saltmere keeps only the Saltgrass Downs, everything folds into it, and its three landing zones
 - Drafts: #93 The toolkit's first review; #114 The gear message carries the pledge once
 
 ## Built
@@ -156,6 +157,31 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 - **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
   and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
   the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
+- **The Saltgrass fold-in** (#265; [[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]],
+  [[The Saltgrass Fold-In as Claude Builds It]]). Built and tested offline, the Downs never seen in a running game;
+  the pull request says what changed. Not yet seen: the great wall's new canyon between the Old Beacon and the
+  Saltbreaker Hulks; the ways up to Moorhold climbing their last stretch as a ramp at 0.25, steeper than a track; the
+  Tithe Barns' corner turret. Left:
+  - The three landing zones, the zone's map to land at one and their fast travel from the held map are built on #265
+    ([[The Downs' Landing Zones as Claude Builds Them]]), tested offline only: the map panel, the fires and the fade
+    are not yet seen in a running game, nor a fast travel in a deployed room.
+  - The design pass, built on #265 under the owner's grant of autonomy
+    ([[The Saltgrass Downs' Design Pass as Claude Builds It]]), tested offline only: camps standing again around
+    players, six dungeons a patrol zone, patrols walking the Downs' ways (left unmarked on the held map), and the
+    held map's table keying its lines ("Track", "Path", "Walls and buildings"; pictured headless on the Downs). Not
+    yet seen: the patrols on the roads, six entrances' places, a camp standing again round a player.
+  - #265 merges with `main` cleanly but does not take it in: `main` holds #259's wreck tools, so a merge pushed from
+    this branch would start the wreck's publishing run. CI runs on the merge as GitHub makes it; the full check
+    passed locally on that merge. Its two dungeon navmesh fixes (a path riding a slab to its edge, a gap a body fits
+    kept open, `dungeon_gaps.rs`) sit below #256's trim and do nothing without it. Lion-grasslands' dungeon 3 reaches
+    0.981 of the floor beside its solids, just over the 0.98 bar: a prop-to-wall gap of 0.7 to 0.95 m stays shut.
+  - `tools/modules/breach_gate.py` and `catalogue.py` still say the gate is the Vale's: their next edit sets off the
+    modules workflow's bake, so it waits for a modules change.
+  - Gates still stand where no way may reach them (`areas::needs_a_way` leaves them out, as they sit at the claim's
+    edge); `reached_from` is filled again for each area placed, where once a node would do.
+  - Unchecked: whether a Sunday Elite clear of the Downs' first dungeon keeps the day's Vestige as its item (a test
+    saw none laid or kept there, its record marked; every other day's clear paid one).
+  - The garrison pace figures in `gear::band` were measured on the three zones before the cut.
 - **The players' first asks** (#236), tested offline only: the mouse taken back as a window shuts is unchecked in a
   browser where the player freed it with Escape first (Chrome may refuse; the desktop app takes it); the interface at
   2x and above is unseen; the sea map still lays its names out each frame a drag or the wheel moves its view (about
@@ -184,8 +210,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
 - **After #216** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]] and the
-  four decisions before it): the three landing zones of Saltmere's patrol zones, the zone's map and their fast travel,
-  not built; ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore
+  four decisions before it): ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore
   does not sail out from the berth; parked ships kept in the sea rooms' memory alone, so a deploy loses them; a ship
   ashore vanishes up to 15 s after it sails; the island's Elite Dungeon scene and the website's gate alike but not
   shared; the port's tile paints Overlook wherever it is docked. Not yet seen in a running game, on a real GPU or in
@@ -344,7 +369,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 - **The rules on foot**: swimming, which the water has in TypeScript, moves into the `movement` crate; the walker gets
   a body in the water ([[Water]]); running's stamina and casting's harm ([[Combat]]).
 - **The enemies** ([[Enemies]], [[Server]]): a garrison stands within its room's 70 m navmesh, not its whole section;
-  a player waiting near a fallen group keeps it from standing again; a rejoin loses the player's place, any fight and
+  a player waiting near a fallen group in a dungeon, a run or a mission keeps it from standing again; a rejoin loses the player's place, any fight and
   its foes; the boarding fight on a deck that the deck crews are for. None is tested in a deployed room.
 - **The Test Ground**: the shield, torch and lantern in first person, weapon wear, riding speeds of Overlook's own.
 - **The world** ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them (none comes

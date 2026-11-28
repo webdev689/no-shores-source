@@ -42,6 +42,8 @@ const GROWTH_M: [f64; 3] = [17.0, 14.0, 20.0];
 const FISSURE_M: [f64; 3] = [12.0, 9.0, 15.0];
 pub const FISSURE_HALF: [f64; 2] = [7.7, 4.9];
 pub const FISSURE_CLEAR: f64 = 1.0;
+/// How many 15 degree turns either side of the line to the nearest camp a raid's way in is looked for along.
+const WAY_IN_TURNS: u8 = 6;
 
 /// What a box covers, west, north, east and south.
 type Print = [f64; 4];
@@ -106,9 +108,36 @@ fn stores(field: &Field, around: (&[Print], &[Path]), hamlet: &Area, seating: &S
 
 /// The first clear point along a line out from `from` toward `toward`, trying from `out` in toward the middle.
 fn out_along(field: &Field, around: (&[Print], &[Path]), from: [f64; 2], toward: [f64; 2], out: f64) -> [f64; 2] {
+    clear_along(field, around, from, toward, out).unwrap_or([from[0] + toward[0] * out, from[1] + toward[1] * out])
+}
+
+fn clear_along(
+    field: &Field,
+    around: (&[Print], &[Path]),
+    from: [f64; 2],
+    toward: [f64; 2],
+    out: f64,
+) -> Option<[f64; 2]> {
     let along = |metres: f64| [from[0] + toward[0] * metres, from[1] + toward[1] * metres];
     let steps = (0..12).map(|step| out - f64::from(step) * 3.0);
-    steps.map(along).find(|&at| open(field, around, at, [0.5, 0.5], 0.5)).unwrap_or_else(|| along(out))
+    steps.map(along).find(|&at| open(field, around, at, [0.5, 0.5], 0.5))
+}
+
+/// The way the raiders come in: toward `toward`, or where a house or a way stands across every point of that line,
+/// the nearest bearing either side of it, 15 degrees apart, that has a clear point, so they never come in through a
+/// wall. None is clear: the line asked.
+fn way_in(field: &Field, around: (&[Print], &[Path]), from: [f64; 2], toward: [f64; 2]) -> [f64; 2] {
+    let turned = |degrees: f64| {
+        let (sine, cosine) = (libm::sin(degrees.to_radians()), libm::cos(degrees.to_radians()));
+        [toward[0] * cosine - toward[1] * sine, toward[0] * sine + toward[1] * cosine]
+    };
+    let bearings = std::iter::once(0.0)
+        .chain((1..=WAY_IN_TURNS).flat_map(|turn| [f64::from(turn) * 15.0, -f64::from(turn) * 15.0]))
+        .map(turned);
+    bearings
+        .into_iter()
+        .find(|&bearing| clear_along(field, around, from, bearing, APPROACH_M).is_some())
+        .unwrap_or(toward)
 }
 
 /// The sites a zone's public events stand on, in a zone that holds them (EVENT_ZONES) and nowhere else: its first
@@ -143,6 +172,7 @@ pub fn mark(zone: &str, field: &Field, areas: &[Area], paths: &[Path], seating: 
             .min_by(|one, two| distance(one.at, area.at).total_cmp(&distance(two.at, area.at)));
         let toward = camp.map_or(field.seaward, |camp| crate::unit(camp.at, area.at, field.seaward));
         let toward = if toward == [0.0, 0.0] { [0.0, -1.0] } else { toward };
+        let toward = way_in(field, around, area.at, toward);
         sites.push(site(SiteKind::Approach, out_along(field, around, area.at, toward, APPROACH_M), 3.0, &area.name));
         let edge = [area.at[0] + toward[0] * BANNERS_M, area.at[1] + toward[1] * BANNERS_M];
         for side in [-1.0, 1.0] {
@@ -220,8 +250,8 @@ pub fn store_boxes(sites: &[Site], height: &dyn Fn(f64, f64) -> f64) -> Vec<Box3
         .collect()
 }
 
-/// The zones that hold public events: Saltmere's three, for now, at the owner's word.
-pub const EVENT_ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
+/// The zones that hold public events: Saltmere's one, the Saltgrass Downs, at the owner's word (`room::public::ZONES`).
+pub const EVENT_ZONES: [&str; 1] = ["saltgrass-downs"];
 /// How far round the fissure its event is fought, metres; and how far past its stores a raid's ground reaches, and
 /// the least it reaches from its middle.
 pub const FISSURE_RADIUS: f64 = 25.0;

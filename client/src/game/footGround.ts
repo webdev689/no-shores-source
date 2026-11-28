@@ -4,7 +4,7 @@ import type { CombatRules } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { FootContext } from './foot.ts';
 import type { Rect } from './nodes.ts';
-import type { NodeInfo } from './worldData.ts';
+import { type NodeInfo, landedOn } from './worldData.ts';
 
 /** Cuts a node's window of the land over the rect, and its city's boxes there, and stands the movement rules and the
  *  fight's on them as its room stands its bodies. Answers the boxes and the window's text. */
@@ -45,9 +45,13 @@ export function nodeText(
     paths = [],
     chests = [],
     holderProps = [],
+    landings = [],
   } = node;
+  // A room in the page stands its first join at the landing zone chosen on the zone's map, as the servers' do.
+  const landed = landedOn(node);
+  const joined = landed ? [landed, ...spawns] : spawns;
   const resources = (node.resources ?? []).map((site) => site.at);
   const fought = grounds === 'null' ? '' : `,"grounds":${grounds}`;
   const finds = `"chests":${JSON.stringify(chests)},"props":${JSON.stringify(holderProps)}`;
-  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"resources":${JSON.stringify(resources)},"foes":${JSON.stringify(foes)},${finds},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"places":${JSON.stringify(places)},"doors":${JSON.stringify(doors)},"paths":${JSON.stringify(paths)},"ground":${ground}${fought}}`;
+  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(joined)},"landings":${JSON.stringify(landings)},"resources":${JSON.stringify(resources)},"foes":${JSON.stringify(foes)},${finds},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"places":${JSON.stringify(places)},"doors":${JSON.stringify(doors)},"paths":${JSON.stringify(paths)},"ground":${ground}${fought}}`;
 }

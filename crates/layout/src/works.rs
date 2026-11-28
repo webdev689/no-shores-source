@@ -27,6 +27,9 @@ const WORKS_APART_M: f64 = 250.0;
 /// Where the carving first raises the floor this much, metres, is a cliff's foot (rocks.rs FOOT_RISE_M).
 const FOOT: f64 = crate::rocks::FOOT_RISE_M;
 
+/// How far a work's box keeps off a cavern's or a ledge's cut floor past its half-width, metres: in the rock round it.
+const CUT_CLEAR_M: f64 = 2.0;
+
 /// The widest a canyon is measured, metres, either side of its way.
 const MOST_HALF_M: f64 = 200.0;
 
@@ -52,12 +55,25 @@ fn longest_run(path: &Path, areas: &[Area]) -> Option<Run> {
     Some((points[nearest], way, length, crate::carve::canyon_half_at(path, points[nearest], areas)))
 }
 
+/// What the works keep off: every way's walked width, and the floors cut into the rock before them (each cavern's
+/// tunnel and hollow, each ledge's slot onto its stair's top), as capsules from one point to another with a
+/// half-width.
+#[derive(Debug, Clone, Copy)]
+pub struct Kept<'a> {
+    pub ways: &'a [Path],
+    pub cuts: &'a [[f64; 5]],
+}
+
 /// Whether every one of a work's pieces that stands lower than a head over the floor keeps clear of every way's
-/// walked width: its box, square to the world, as a body meets it.
-fn clear_of_ways(pieces: &[Solid], paths: &[Path], floor: f64) -> bool {
+/// walked width and every cut floor: its box, square to the world, as a body meets it.
+fn clear_of_ways(pieces: &[Solid], kept: Kept, floor: f64) -> bool {
     pieces.iter().filter(|piece| piece.at[2] < floor + 2.0).all(|piece| {
         let [west, north, east, south, ..] = piece.bounds();
-        crate::paths::clear_of([west, north, east, south], paths)
+        let print = [west, north, east, south];
+        let off_cut = |cut: &[f64; 5]| {
+            crate::paths::rect_off_line(print, [cut[0], cut[1]], [cut[2], cut[3]]) > cut[4] + CUT_CLEAR_M
+        };
+        crate::paths::clear_of(print, kept.ways) && kept.cuts.iter().all(off_cut)
     })
 }
 
@@ -81,8 +97,9 @@ fn clear_of_outcrops(run: &Run, outcrops: &[Outcrop]) -> bool {
 
 /// Builds a layout's great works: the wall across the longest track's straightest run, the viaduct over the next
 /// longest path's and a natural arch over a third, each clear of the outcrops.
-/// `paths` are the ways the works are set on; `kept`, every way they keep off, the climbs' among them.
-pub fn build(kit: &mut Kit, areas: &[Area], (paths, kept): (&[Path], &[Path]), outcrops: &[Outcrop], carved: &Sculpts) {
+/// `paths` are the ways the works are set on; `kept`, every way they keep off, the climbs' among them, and the cut
+/// floors.
+pub fn build(kit: &mut Kit, areas: &[Area], (paths, kept): (&[Path], Kept), outcrops: &[Outcrop], carved: &Sculpts) {
     // Each run's canyon as carved: a way opened into one floor between near places, or a floor's wander, is as wide
     // as the land makes it, not as wide as the way alone would cut it.
     let carved_half = |(middle, way, length, half): Run| -> Run {
@@ -124,7 +141,7 @@ pub fn build(kit: &mut Kit, areas: &[Area], (paths, kept): (&[Path], &[Path]), o
     if let Some((_, (middle, way, _, half))) =
         runs.iter().find(|(_, run)| clear_of(wall, run.0) && clear_of(viaduct_at, run.0))
     {
-        crate::skyline::natural_arch(kit, (*middle, *way, *half), kept, carved);
+        crate::skyline::natural_arch(kit, (*middle, *way, *half), kept.ways, carved);
     }
 }
 
@@ -141,7 +158,7 @@ pub fn retaining_walls(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: 
 /// buttressed on both faces, battlemented, and broken through where the track runs, the breach's sides stepped where
 /// its courses fell and their stones heaped below. The breach opens until no piece stands on a way, and no fallen
 /// stone lies on one; where no breach up to 12 m wider clears every way, no wall is built and it returns false.
-fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path], carved: &Sculpts) -> bool {
+fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, kept: Kept, carved: &Sculpts) -> bool {
     let run = land::sculpts::CLIFF_RUN_M;
     let floor = carved_at(kit, carved, middle);
     let across = [-way[1], way[0]];
@@ -186,7 +203,7 @@ fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Pa
     };
     let least = tier.width() / 2.0 + BREACH_SPARE_M;
     let breach =
-        (0..12).map(|wider| least + f64::from(wider)).find(|&breach| clear_of_ways(&pieces(breach), paths, floor));
+        (0..12).map(|wider| least + f64::from(wider)).find(|&breach| clear_of_ways(&pieces(breach), kept, floor));
     let Some(breach) = breach else { return false };
     for piece in pieces(breach) {
         kit.solid(piece);
@@ -200,7 +217,7 @@ fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Pa
         let base = carved_at(kit, carved, at) - 0.4;
         let stone = Solid::upright(Shape::Block, [at[0], at[1], base], size, Material::Stone).turned(spin);
         if (out.abs() >= WALL_THICK_M / 2.0 + 2.0 || along.abs() >= tier.width())
-            && clear_of_ways(&[stone], paths, floor)
+            && clear_of_ways(&[stone], kept, floor)
         {
             kit.solid(stone);
         }
@@ -210,7 +227,7 @@ fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Pa
 
 /// A viaduct: a deck from cliff top to cliff top across the canyon, on piers standing at the canyon's sides with
 /// arches between them, and one span fallen, its stones lying in the gorge beside the way.
-fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path], carved: &Sculpts) {
+fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, kept: Kept, carved: &Sculpts) {
     let run = land::sculpts::CLIFF_RUN_M;
     let floor = carved_at(kit, carved, middle);
     let across = [-way[1], way[0]];
@@ -227,7 +244,7 @@ fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path]
     // A pier turned across the way reaches further than its middle: its box keeps off every way. One that would stand
     // on a way is moved out from the middle until it stands clear, by half a span at most, or left out (the middle's
     // own pier is only left out); each span then runs between two piers that stand, so no arch hangs over the way.
-    let clear = |along: f64| along.abs() > tier.width() / 2.0 + PIER_M && clear_of_ways(&[pier(along)], paths, floor);
+    let clear = |along: f64| along.abs() > tier.width() / 2.0 + PIER_M && clear_of_ways(&[pier(along)], kept, floor);
     let piers: Vec<f64> = (0..=spans)
         .filter_map(|number| {
             let along = -reach + f64::from(number) * span;

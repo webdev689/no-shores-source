@@ -3,7 +3,17 @@ import course from '../content/testground/course.json' with { type: 'json' };
 import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
-import { type Listed, arrives, cameOutOf, crossingAsked, crossingsOf, reachOf, shipOf } from './arrival.ts';
+import {
+  type Listed,
+  arrives,
+  cameOutOf,
+  crossingAsked,
+  crossingsOf,
+  landingAsked,
+  landingsOf,
+  reachOf,
+  shipOf,
+} from './arrival.ts';
 import { Ashore, placeOf } from './ashore.ts';
 import { addressKey } from './address.ts';
 import { Breach, breachAsked, breachHeard, breachRoom, toldBreach } from './breach.ts';
@@ -137,6 +147,7 @@ export class RoomHost extends DurableObject<Env> {
   private outpost: OutpostHost | null = null;
   /** A patrol zone's gates crossing to the others, where a player crossing from one joins (`?from=`). */
   private crossings: ReturnType<typeof crossingsOf> = [];
+  private landings: ReturnType<typeof landingsOf> = [];
 
   /** The sea's word on its island `id`, for that island's room: empty unless this is the open sea and it stands. */
   async islandWord(id: number): Promise<string> {
@@ -207,6 +218,8 @@ export class RoomHost extends DurableObject<Env> {
     const player = atDoor || this.guarded(() => this.room.join(), 0);
     const across = atDoor ? null : crossingAsked(request, this.crossings);
     if (across && player) this.guarded(() => this.room.putPlayer(player, across.at[0], across.at[1]), false);
+    const landed = atDoor || across ? null : landingAsked(request, this.landings);
+    if (landed && player) this.guarded(() => this.room.putPlayer(player, landed.at[0], landed.at[1]), false);
     if (player === 0) {
       // A full room, or a locked node's, still takes the socket, to say why it closes.
       const locked = this.guarded(() => this.room.refusal(), null);
@@ -347,6 +360,7 @@ export class RoomHost extends DurableObject<Env> {
     if (!named) return false;
     const text = await this.nodeText(named.id);
     this.crossings = named.dungeon === null && named.run === null ? crossingsOf(text) : [];
+    this.landings = named.dungeon === null && named.run === null ? landingsOf(text) : [];
     // A guild's outpost opens only on a node whose file has an outpost's ground; the bare node is the wild site.
     const ground = named.guild !== null && text !== null ? outpostGround(text) : null;
     if (named.guild !== null && !ground) return false;

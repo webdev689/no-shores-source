@@ -18,12 +18,17 @@ const bytes = await readFile(
 });
 const module = WebAssembly.compile(bytes);
 const FRIDAY_NINE = 29_919_420;
-const vale = { id: 'gullwing-vale', name: 'The Gullwing Vale', kind: 'patrol', continent: 'continent-1' } as NodeInfo;
+const downs = {
+  id: 'saltgrass-downs',
+  name: 'The Saltgrass Downs',
+  kind: 'patrol',
+  continent: 'continent-1',
+} as NodeInfo;
 const gearAt = (level: number, activity: ActivityRecord) => ({ level, prologueDone: true, activity }) as GearState;
 const nothing = { day: 20_778, cleared: [], week: 2_968, elite: false, abyss: false, boon: false };
-/** A player on foot before the Gullwing Vale's entrances at Elite seas, their gear as given. */
+/** A player on foot before the Saltgrass Downs' entrances at Elite seas, their gear as given. */
 const standing = (gear: GearState, fallen = false): ScreensFoot => ({
-  node: vale,
+  node: downs,
   seas: 'elite',
   dungeon: null,
   fallen,
@@ -64,7 +69,7 @@ test('This Week reads the last word a room sent of the character, kept at sea, a
   let clock = FRIDAY_NINE * 60_000;
   let look = () => undefined as void;
   let here: ScreensFoot | null = standing(gearAt(12, { ...nothing, cleared: [1] }));
-  const screens = startActivityScreens(module, [vale], () => here, nowhere, null, {
+  const screens = startActivityScreens(module, [downs], () => here, nowhere, null, {
     now: () => clock,
     every: (run) => (look = run),
   });
@@ -75,7 +80,7 @@ test('This Week reads the last word a room sent of the character, kept at sea, a
     screens.week()?.today.tiers.map((row) => row.state),
     ['Not taken', 'Taken', 'Abyss seas open at level 20.'],
   );
-  assert.match(screens.week()?.today.dungeons[0]?.name ?? '', /Gullwing Vale$/);
+  assert.match(screens.week()?.today.dungeons[0]?.name ?? '', /Saltgrass Downs$/);
   here = null;
   look();
   assert.equal(screens.kept()?.level, 12, 'the last word of the character, kept at sea');
@@ -92,7 +97,7 @@ test('at sea the Journal reads the sea’s word of the character as it counts, a
   const clock = { now: () => FRIDAY_NINE * 60_000, every: (run: () => void) => (look = run) };
   const screens = startActivityScreens(
     module,
-    [vale],
+    [downs],
     () => here,
     nowhere,
     null,
@@ -118,12 +123,13 @@ test('E at an entrance opens its card: tier, level, modifiers and pay; Enter goe
   const entered: unknown[][] = [];
   const here = standing(gearAt(12, nothing));
   const trips = { enter: (...given: unknown[]) => void entered.push(given) };
-  const screens = startActivityScreens(module, [vale], () => here, trips, null, still);
+  const screens = startActivityScreens(module, [downs], () => here, trips, null, still);
   const root = drawn(screens);
   await module;
-  screens.card(0, 'The Caverns of the Gullwing Vale');
+  // On Friday at nine the Downs' second dungeon is Saltmere's of the day, at Burn.
+  screens.card(1, 'The Mines of the Saltgrass Downs');
   for (const words of [
-    'THE CAVERNS OF THE GULLWING VALE',
+    'THE MINES OF THE SALTGRASS DOWNS',
     'Elite seas · Levels 3 to 6',
     'Burn (Shadow)',
     'Once a day at each tier, on any island: a Vestige and a richer cache.',
@@ -131,24 +137,24 @@ test('E at an entrance opens its card: tier, level, modifiers and pay; Enter goe
     assert.ok(root.find(words), words);
   assert.equal(gearScreenOpen(), true, 'the game’s keys rest under it');
   root.press('card-enter')?.click();
-  assert.deepEqual(entered, [[0, 'The Caverns of the Gullwing Vale']]);
+  assert.deepEqual(entered, [[1, 'The Mines of the Saltgrass Downs']]);
   assert.equal(gearScreenOpen(), false);
-  screens.card(0, 'The Caverns of the Gullwing Vale');
+  screens.card(1, 'The Mines of the Saltgrass Downs');
   assert.equal(gearScreenOpen(), true);
   window.dispatchEvent(new FakeEvent('keydown', { key: 'Escape' }));
   assert.equal(gearScreenOpen(), false);
   assert.equal(entered.length, 1, 'closed, not entered');
-  screens.card(1, 'The Mines of the Gullwing Vale');
+  screens.card(0, 'The Caverns of the Saltgrass Downs');
   window.dispatchEvent(new FakeEvent('keydown', { key: 'e' }));
-  assert.deepEqual(entered[1], [1, 'The Mines of the Gullwing Vale'], 'E again goes in');
+  assert.deepEqual(entered[1], [0, 'The Caverns of the Saltgrass Downs'], 'E again goes in');
 });
 
 test('the card leads each modifier with its icon, its words as large as the menu’s on the same screen', async () => {
   fakeWindow();
   const here = standing(gearAt(12, nothing));
-  const screens = startActivityScreens(module, [vale], () => here, nowhere, null, still);
+  const screens = startActivityScreens(module, [downs], () => here, nowhere, null, still);
   await module;
-  screens.card(0, 'The Caverns of the Gullwing Vale');
+  screens.card(1, 'The Mines of the Saltgrass Downs');
   const burn = (tree: Child) =>
     nodesOf(tree).find((node) => node.children?.some((child) => child && child.text?.words === 'Burn (Shadow)'));
   const narrow = drawn(screens);
@@ -165,13 +171,13 @@ test('a shut card says why and does not go in, and before the rules are read E g
   const entered: unknown[][] = [];
   const trips = { enter: (...given: unknown[]) => void entered.push(given) };
   const young = standing(gearAt(9, nothing));
-  const screens = startActivityScreens(new Promise(() => undefined), [vale], () => young, trips, null, still);
-  screens.card(0, 'The Caverns of the Gullwing Vale');
-  assert.deepEqual(entered, [[0, 'The Caverns of the Gullwing Vale']], 'no rules to show it by');
-  const shut = startActivityScreens(module, [vale], () => young, trips, null, still);
+  const screens = startActivityScreens(new Promise(() => undefined), [downs], () => young, trips, null, still);
+  screens.card(0, 'The Caverns of the Saltgrass Downs');
+  assert.deepEqual(entered, [[0, 'The Caverns of the Saltgrass Downs']], 'no rules to show it by');
+  const shut = startActivityScreens(module, [downs], () => young, trips, null, still);
   const root = drawn(shut);
   await module;
-  shut.card(0, 'The Caverns of the Gullwing Vale');
+  shut.card(0, 'The Caverns of the Saltgrass Downs');
   assert.ok(root.find('Elite seas open at level 10.'));
   root.press('card-enter')?.click();
   window.dispatchEvent(new FakeEvent('keydown', { key: 'e' }));
@@ -184,16 +190,16 @@ test('the card goes when its player falls or leaves the place, and gives the key
   let look = () => undefined as void;
   let here: ScreensFoot | null = standing(gearAt(12, nothing));
   const clock = { now: still.now, every: (run: () => void) => void (look = run) };
-  const screens = startActivityScreens(module, [vale], () => here, nowhere, null, clock);
+  const screens = startActivityScreens(module, [downs], () => here, nowhere, null, clock);
   await module;
-  screens.card(0, 'The Caverns of the Gullwing Vale');
+  screens.card(0, 'The Caverns of the Saltgrass Downs');
   look();
   assert.equal(gearScreenOpen(), true, 'standing there still');
   here = standing(gearAt(12, nothing), true);
   look();
   assert.equal(gearScreenOpen(), false, 'fallen');
   here = standing(gearAt(12, nothing));
-  screens.card(0, 'The Caverns of the Gullwing Vale');
+  screens.card(0, 'The Caverns of the Saltgrass Downs');
   here = null;
   look();
   assert.equal(gearScreenOpen(), false, 'gone from the place');
@@ -204,7 +210,7 @@ test('the seas a level shuts are read from the rules by the last word of the cha
   let look = () => undefined as void;
   let here: ScreensFoot | null = null;
   const clock = { now: still.now, every: (run: () => void) => void (look = run) };
-  const screens = startActivityScreens(module, [vale], () => here, nowhere, null, clock);
+  const screens = startActivityScreens(module, [downs], () => here, nowhere, null, clock);
   await module;
   assert.deepEqual(screens.seasShut(), [], 'no word yet');
   here = standing(gearAt(9, nothing));
@@ -298,7 +304,7 @@ test('Stop and Escape leave the search; the week’s Abyss Dungeon, a patrol and
   const warrens = await finding(dungeonAt('saltworm-warrens', 'Saltworm Warrens', 'continent-7'), 'abyss', 30);
   assert.ok(!warrens.root.press('card-find'));
   assert.ok(warrens.root.find('Never matched. Bring your company.'));
-  assert.ok(!(await finding(vale, 'elite', 12)).root.press('card-find'), 'a patrol’s dungeon');
+  assert.ok(!(await finding(downs, 'elite', 12)).root.press('card-find'), 'a patrol’s dungeon');
   assert.ok(!(await finding(grotto, 'normal', 12, FRIDAY_NINE, null)).root.press('card-find'), 'offline');
 });
 

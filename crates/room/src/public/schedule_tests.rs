@@ -1,12 +1,11 @@
-//! The clock: each of Saltmere's zones runs one event every fifteen minutes, alternating its two, the zones five
-//! minutes apart; a room opened during an event starts it with what its start minute leaves; and two zones' rooms
-//! agree on the clock.
+//! The clock: the Saltgrass Downs runs one event every fifteen minutes, the Fissure and the raid in turn; a room
+//! opened during an event starts it with what its start minute leaves; and two rooms of the zone agree on the clock.
 
 use super::fixture::{FISSURE_MINUTE, ZONE, room_at, running};
 use super::{COUNTDOWN_TICKS, Kind, PERIOD_MINUTES, TICKS_PER_MINUTE, ZONES, schedule};
 
 #[test]
-fn across_a_day_one_event_starts_on_saltmere_every_five_minutes_each_zone_alternating_its_two() {
+fn across_a_day_the_saltgrass_downs_starts_an_event_every_fifteen_minutes_the_fissure_and_the_raid_in_turn() {
     let day = 20_000 * 1_440_u64;
     let mut starts = Vec::new();
     for minute in day..day + 1_440 {
@@ -14,20 +13,16 @@ fn across_a_day_one_event_starts_on_saltmere_every_five_minutes_each_zone_altern
             let (kind, start) = schedule(zone, minute).expect("an event zone");
             assert!(start <= minute && minute < start + PERIOD_MINUTES, "{zone} at {minute}: its slot holds it");
             if start == minute {
-                starts.push((minute, zone, kind));
+                starts.push((minute, kind));
             }
         }
     }
-    assert_eq!(starts.len(), 1_440 / 5, "one start every five minutes");
-    assert!(starts.windows(2).all(|pair| pair[1].0 - pair[0].0 == 5 && pair[1].1 != pair[0].1));
-    for zone in ZONES {
-        let own: Vec<Kind> = starts.iter().filter(|(_, at, _)| *at == zone).map(|(_, _, kind)| *kind).collect();
-        assert_eq!(own.len(), 96);
-        assert!(own.windows(2).all(|pair| pair[0] != pair[1]), "{zone} alternates its two");
-    }
-    assert!(starts.windows(2).all(|pair| pair[0].2 != pair[1].2), "the zone after runs the other event");
+    assert_eq!(ZONES, ["saltgrass-downs"], "Saltmere's one patrol zone alone holds events");
+    assert_eq!(starts.len(), 1_440 / 15, "one start every fifteen minutes");
+    assert!(starts.windows(2).all(|pair| pair[1].0 - pair[0].0 == 15), "fifteen minutes apart");
+    assert!(starts.windows(2).all(|pair| pair[0].1 != pair[1].1), "the Fissure and the raid in turn");
     assert_eq!(schedule("the-glade", day), None, "a zone holding no events");
-    assert_eq!(schedule("gullwing-vale", 4), None, "before its first slot");
+    assert_eq!(schedule("gullwing-vale", day), None, "a zone cut from its island holds none");
 }
 
 #[test]
@@ -50,19 +45,15 @@ fn an_event_begins_in_the_first_tick_its_minute_comes_and_a_room_opened_during_i
 }
 
 #[test]
-fn two_zones_rooms_agree_on_the_clock_each_showing_the_next_the_other_runs_five_minutes_on() {
-    let (mut downs, _) = room_at(FISSURE_MINUTE + 2, 0);
-    let (mut vale, _) = super::fixture::room_at(FISSURE_MINUTE + 2, 0);
-    vale.public.as_mut().unwrap().zone = ZONES[1];
-    downs.tick();
-    vale.tick();
-    let (downs, vale) = (downs.public_seen().unwrap(), vale.public_seen().unwrap());
-    assert_eq!((downs.kind, downs.next_kind), (Kind::Fissure as u8, Kind::Raid as u8));
-    let (vale_kind, vale_start) = schedule(ZONES[1], FISSURE_MINUTE + 5).unwrap();
-    assert_eq!((vale.next_kind, vale_start), (vale_kind as u8, FISSURE_MINUTE + 5), "the Vale's comes next");
-    assert_eq!(u64::from(vale.next_ticks), 3 * TICKS_PER_MINUTE, "three minutes on");
-    assert_eq!(u64::from(downs.next_ticks), 13 * TICKS_PER_MINUTE);
-    assert_ne!(vale_kind as u8, downs.kind, "neighbours run different events at once");
+fn two_rooms_of_the_zone_agree_on_the_clock_each_showing_the_raid_next_thirteen_minutes_on() {
+    let (mut one, _) = room_at(FISSURE_MINUTE + 2, 0);
+    let (mut other, _) = room_at(FISSURE_MINUTE + 2, 0);
+    one.tick();
+    other.tick();
+    let (one, other) = (one.public_seen().unwrap(), other.public_seen().unwrap());
+    assert_eq!((one.kind, one.next_kind), (Kind::Fissure as u8, Kind::Raid as u8));
+    assert_eq!(u64::from(one.next_ticks), 13 * TICKS_PER_MINUTE);
+    assert_eq!((other.kind, other.next_kind, other.next_ticks), (one.kind, one.next_kind, one.next_ticks));
     assert_eq!(ZONE, ZONES[0]);
 }
 

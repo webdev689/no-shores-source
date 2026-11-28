@@ -398,7 +398,8 @@ mod tests {
     #[test]
     fn a_dungeon_answers_every_field_of_the_pages_layout_each_consistent_with_the_rest() {
         let (mut deeper, mut placing) = (0, 0);
-        for nth in 0..60 {
+        // 180 dungeons, every patrol's every one.
+        for nth in 0..180 / dungeon::PER_PATROL {
             for number in 0..dungeon::PER_PATROL {
                 let patrol = format!("patrol-{nth}");
                 let ask = format!(r#"{{"patrol":"{patrol}","name":"The Patrol","number":{number}}}"#);
@@ -518,7 +519,9 @@ mod tests {
     #[test]
     fn an_ask_that_does_not_read_or_names_no_dungeon_is_null() {
         assert_eq!(dungeon_json(b"not json"), "null");
-        assert_eq!(dungeon_json(br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":3}"#), "null");
+        let past =
+            format!(r#"{{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":{}}}"#, dungeon::PER_PATROL);
+        assert_eq!(dungeon_json(past.as_bytes()), "null", "a number past its patrol's dungeons");
         assert_eq!(dungeon_json(br#"{"name":"The Cove","number":0}"#), "null", "neither a patrol nor a seed");
         assert_eq!(dungeon_json(br#"{"name":"The Cove","seed":7}"#), "null", "a seed with no style");
         assert_eq!(dungeon_json(br#"{"name":"The Cove","seed":7,"style":"grotto"}"#), "null", "no such style");

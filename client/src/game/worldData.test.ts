@@ -5,11 +5,11 @@ import { arrivalAt, ringMiddle, sitesOf, type WorldData } from './worldData.ts';
 
 const saltmere = readFileSync(new URL('../../../content/world/land/continent-1.json', import.meta.url), 'utf8');
 
-test("Saltmere's edits file holds Overlook, its eleven places and its nine outpost slots", () => {
+test("Saltmere's edits file holds Overlook, its eight places and its nine outpost slots", () => {
   const { city, nodes } = sitesOf('continent-1', saltmere, []);
   assert.equal(city?.name, 'Overlook');
   assert.equal(city?.motif, 'beacon');
-  assert.equal(nodes.length, 19);
+  assert.equal(nodes.length, 17);
   const kinds = nodes.map((node) => node.kind).sort();
   assert.deepEqual(kinds, [
     'boss',
@@ -20,8 +20,6 @@ test("Saltmere's edits file holds Overlook, its eleven places and its nine outpo
     'mission',
     'mission',
     ...Array<string>(9).fill('outpost'),
-    'patrol',
-    'patrol',
     'patrol',
   ]);
   for (const node of nodes) assert.equal(node.continent, 'continent-1');
@@ -71,13 +69,7 @@ test('a port city’s social space is arrived at by its name; a desolate city’
 });
 
 test('every patrol area and mission is locked but those the open list names; other kinds never are', () => {
-  const { nodes } = sitesOf('continent-1', saltmere, ['gullwing-vale', 'tidewall']);
+  const { nodes } = sitesOf('continent-1', saltmere, ['saltgrass-downs', 'tidewall']);
   const locked = nodes.filter((node) => node.locked).map((node) => node.id);
-  assert.deepEqual(locked.sort(), [
-    'broken-causeway',
-    'burned-mill',
-    'driftwood-moors',
-    'saltgrass-downs',
-    'shrine-tides',
-  ]);
+  assert.deepEqual(locked.sort(), ['broken-causeway', 'burned-mill', 'shrine-tides']);
 });

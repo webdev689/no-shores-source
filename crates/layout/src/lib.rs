@@ -23,6 +23,7 @@ pub mod halls;
 mod hamlets;
 pub mod heights;
 pub mod interiors;
+pub mod landings;
 pub mod ledges;
 pub mod marks;
 pub mod masses;
@@ -51,7 +52,7 @@ use crate::areas::{Area, place, radius_of};
 use crate::book::Book;
 use crate::brief::{AreaKind, Brief};
 use crate::field::{CELL_M, Field, distance};
-use crate::paths::{Blocked, KEEP_OFF_M, Path, Tier};
+use crate::paths::{Path, Tier};
 use crate::seat::{Seating, hub};
 use land::exact::seed_of;
 use land::ground::Ground;
@@ -82,6 +83,10 @@ pub struct Layout {
     /// The section a body may walk, metres east and south, and the spawns a player lands and respawns at.
     pub ring: Vec<[f64; 2]>,
     pub spawns: Vec<[f64; 2]>,
+    /// Where a body stands at each of its landing zones, where its brief asks for them: its landing's first spawn,
+    /// then the north's and the south's (`landings`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub landings: Vec<[f64; 2]>,
     pub areas: Vec<Area>,
     pub paths: Vec<Path>,
     pub sites: Vec<sites::Site>,
@@ -185,16 +190,19 @@ pub fn plan(
             (false, _) => hub(&seating, area.at),
         })
         .collect();
-    let blocked = blocked_by(&field, &seating);
+    let blocked = clearing::blocked_by(&field, &seating);
     let (mut paths, joined) = paths::lay(&field, &areas, &hubs, &blocked, patrol, seed);
     // A way ending at an area's middle stops at what stands there: its set piece, tower or hull; or at a plot's rim,
     // past its square's corners.
+    let mut rims = Vec::new();
     for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
         // A plot's rim stays inside its platform's edge, so a way crossing that edge is ramped up to it.
         let rim =
             if area.kind == AreaKind::Plot { areas::PLOT_CORNER_M + 1.0 } else { clearing::rim_of(&seating, area.at) };
         clearing::end_at_rim(&mut paths, area.at, rim);
+        rims.extend((patrol && area.kind != AreaKind::Plot).then_some((area.at, rim)));
     }
+    let ways = clearing::join_round(&mut paths, &rims, &field, &seating);
     clearing::round_rooms(&mut paths, &seating);
     clearing::keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0xB41D, draws: 0, into: &mut seating };
@@ -207,12 +215,27 @@ pub fn plan(
             }
         }
     }
-    dressing::dress(&mut kit, &areas, &paths, &moduled);
+    dressing::dress(&mut kit, &areas, (&paths, ways), &moduled);
     let mut sites = sites::mark(&field, &areas, &paths, &seating, seed, resource);
     sites.extend(grounds::mark(&node.id, &field, &areas, &paths, &seating));
     grounds::mark_events(&node.id, &areas, &mut sites);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x51E5, draws: 0, into: &mut seating };
     marks::build(&mut kit, &sites);
+    let zones = if patrol && brief.landing_zones {
+        let landing = areas.first().map_or_else(|| middle_of(node), |area| area.at);
+        landings::zones(&field, &claim_of(node), &areas, &paths, landing)
+    } else {
+        Vec::new()
+    };
+    for zone in &zones {
+        marks::landing_fire(&mut kit, zone.fire);
+    }
+    if patrol && brief.way_patrols {
+        let landings: Vec<[f64; 2]> =
+            areas.first().map(|area| area.at).into_iter().chain(zones.iter().map(|zone| zone.at)).collect();
+        let patrols = sites::way_patrols(&areas, &paths[..ways], &sites, &landings);
+        sites.extend(patrols);
+    }
     let anchor = areas.first().map_or_else(|| middle_of(node), |area| area.at);
     let exits: Vec<([f64; 2], [f64; 2])> = areas
         .iter()
@@ -305,7 +328,9 @@ pub fn plan(
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     // The works keep off the climbs' ways as off every other, though those are walked only once the works stand.
     let kept: Vec<paths::Path> = paths.iter().cloned().chain(carve::climb_ways(&sculpt.climbs)).collect();
-    works::build(&mut kit, &areas, (&paths, &kept), &sculpt.outcrops, &carved);
+    let cuts: Vec<[f64; 5]> =
+        caverns.iter().flat_map(caverns::Cavern::floors).chain(ledges.iter().map(ledges::Ledge::cut)).collect();
+    works::build(&mut kit, &areas, (&paths, works::Kept { ways: &kept, cuts: &cuts }), &sculpt.outcrops, &carved);
     for cavern in &caverns {
         caverns::build(&mut kit, cavern, &carved);
     }
@@ -413,6 +438,11 @@ pub fn plan(
         walkable && field::ring_holds(&ring, x, y) && collide::stands_clear(&seated, [x, y], carved_height(x, y))
     };
     let spawns = spawns::round(anchor, &stands);
+    let landings: Vec<[f64; 2]> = if zones.is_empty() {
+        Vec::new()
+    } else {
+        spawns.iter().take(1).copied().chain(zones.iter().map(|zone| spawns::round(zone.at, &stands)[0])).collect()
+    };
     // Last of the sites, once all stands where it will, so its chests keep clear of everything.
     if patrol {
         let rounds = chests::rounds_of(&areas, &sculpt.climbs, &runs);
@@ -448,6 +478,7 @@ pub fn plan(
         theme: brief.theme.clone(),
         ring,
         spawns,
+        landings,
         areas,
         paths,
         sites,
@@ -513,7 +544,9 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
         }
     } else {
         let entrance = brief.areas.iter().find(|area| area.kind == AreaKind::Entrance);
-        let towards = links.first().map_or_else(|| middle_of(node), |link| link.towards);
+        // One its region gives no patrol area is landed at from the sea, so its way in lies on its seaward side.
+        let seaward = [middle_of(node)[0] + field.seaward[0] * span, middle_of(node)[1] + field.seaward[1] * span];
+        let towards = links.first().map_or(seaward, |link| link.towards);
         let name = entrance.map_or("The Way In", |area| area.name.as_str());
         put(&mut areas, AreaKind::Entrance, name, 0, links.first().map(|link| link.id.clone()), &edge_pull(towards));
         let later: Vec<_> = brief.areas.iter().filter(|area| area.kind != AreaKind::Entrance).collect();
@@ -539,52 +572,6 @@ fn unit(to: [f64; 2], from: [f64; 2], otherwise: [f64; 2]) -> [f64; 2] {
     } else {
         otherwise
     }
-}
-
-/// The cells a path may not cross: under a building, a set piece's solid or a large prop, or within `KEEP_OFF_M` of
-/// it, each at least a cell wide.
-fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
-    let mut blocked = vec![false; field.columns * field.rows];
-    let solids = seating.solids.iter().map(|solid| {
-        let [west, north, east, south, _, _] = solid.bounds();
-        [west, north, east, south]
-    });
-    let large_props = seating
-        .props
-        .iter()
-        .map(|prop| prop.footprint)
-        .filter(|print| (print[2] - print[0]) * (print[3] - print[1]) > 6.0);
-    // A building walked into blocks every cell reaching under it, so no way runs through its walls.
-    let rooms = seating.buildings.iter().filter(|building| building.open).map(|building| {
-        let [west, north, east, south] = building.footprint;
-        let half = CELL_M / 2.0;
-        [west - half, north - half, east + half, south + half]
-    });
-    let closed = seating.buildings.iter().filter(|building| !building.open).map(|building| building.footprint);
-    let prints: Vec<[f64; 4]> = rooms.chain(closed).chain(solids).chain(large_props).collect();
-    // A cell is blocked where its middle stands under something, or `KEEP_OFF_M` from it; a print thinner than a cell
-    // is taken as a cell wide, so a thin wall never slips between the cells' middles.
-    for [west, north, east, south] in prints {
-        let widen = |low: f64, high: f64| {
-            let short = ((CELL_M - (high - low)) / 2.0).max(0.0);
-            (low - short - KEEP_OFF_M, high + short + KEEP_OFF_M)
-        };
-        let ((west, east), (north, south)) = (widen(west, east), widen(north, south));
-        let column_of = |x: f64| ((x - field.west) / CELL_M - 0.5).ceil().max(0.0) as usize;
-        let row_of = |y: f64| ((y - field.north) / CELL_M - 0.5).ceil().max(0.0) as usize;
-        for row in row_of(north)..=row_of(south).min(field.rows) {
-            for column in column_of(west)..=column_of(east).min(field.columns) {
-                if row >= field.rows || column >= field.columns {
-                    continue;
-                }
-                let [x, y] = field.centre(column, row);
-                if x >= west && x <= east && y >= north && y <= south {
-                    blocked[field.index(column, row)] = true;
-                }
-            }
-        }
-    }
-    Blocked(blocked)
 }
 
 #[cfg(test)]

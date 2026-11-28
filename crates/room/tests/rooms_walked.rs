@@ -1,5 +1,5 @@
-//! Saltmere's walk-in buildings in its three zones, as the bake lays them, walked by the movement rules: a body walks in
-//! through every ground-floor door, and up to every upper floor.
+//! The walk-in buildings of Saltmere's patrol zone, the Saltgrass Downs, as the bake lays them, walked by the movement
+//! rules: a body walks in through every ground-floor door, and up to every upper floor.
 
 use layout::book::Measure;
 use layout::seat::Seated;
@@ -17,7 +17,7 @@ struct Downs {
     buildings: Vec<(Seated, Measure)>,
 }
 
-/// Saltmere's three zones as the bake lays them, each with its walk-in buildings.
+/// Saltmere's patrol zones as the bake lays them, each with its walk-in buildings.
 fn zones() -> Vec<(String, Downs)> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
@@ -30,7 +30,7 @@ fn zones() -> Vec<(String, Downs)> {
     city::settle(&mut landmass, &city).expect("its city settles");
     let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
     let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("continent-1 bakes");
-    ["saltgrass-downs", "gullwing-vale", "driftwood-moors"]
+    ["saltgrass-downs"]
         .into_iter()
         .map(|id| {
             let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");

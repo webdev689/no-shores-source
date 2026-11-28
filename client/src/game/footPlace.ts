@@ -115,7 +115,7 @@ export function nodeAddress(
   // Launched for a Breach's test run, the player joins the zone's copy its test is opened from.
   const breach = typeof asked === 'object' ? asked.breach : undefined;
   const room = (breach !== undefined && testZoneOf(breach)) || nodeRoom(node, seas, guild);
-  return `${context.rooms(room)}${joinAsk(asked, node.across)}`;
+  return `${context.rooms(room)}${joinAsk(asked, node.across, node.landedAt)}`;
 }
 
 /** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out; or
@@ -184,11 +184,13 @@ export interface Held {
 
 /** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,
  *  or at the gate of the Breach's run the player was launched for (`arrivalQuery`), or at the gate toward the patrol
- *  zone `across` they came from; or to stand where the kept character left this social space, logging back in
- *  (`relog.ts`). */
-export const joinAsk = (asked?: AtEntrance | 'relog', across?: string): string => {
+ *  zone `across` they came from, or at the landing zone `landedAt` chosen on its map; or to stand where the kept
+ *  character left this social space, logging back in (`relog.ts`). */
+export const joinAsk = (asked?: AtEntrance | 'relog', across?: string, landedAt?: number): string => {
   if (asked === 'relog') return '?relog=1';
-  return asked ? arrivalQuery(asked) : across ? `?from=${encodeURIComponent(across)}` : '';
+  if (asked) return arrivalQuery(asked);
+  if (across) return `?from=${encodeURIComponent(across)}`;
+  return landedAt === undefined ? '' : `?landing=${landedAt}`;
 };
 
 /** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */

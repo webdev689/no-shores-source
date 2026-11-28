@@ -87,3 +87,24 @@ export function heldCardNode(ui: Interface, card: HeldCard, pick: (seas: Difficu
     ],
   };
 }
+
+/** On foot, the card for a landing zone picked on the land's map: its words and the press to fast travel there. */
+export function travelCardNode(
+  ui: Interface,
+  card: Pick<HeldCard, 'words' | 'lift' | 'at' | 'sail'>,
+  travel: () => void,
+): Node {
+  return {
+    id: 'held-travel-card',
+    gap: 14,
+    alignY: 'center',
+    padding: [8, 14],
+    opacity: card.lift,
+    draw: cardGround,
+    float: { to: 'screen', anchor: [0.5, 1], x: Math.round(card.at[0]), y: Math.round(card.at[1]) },
+    children: [
+      { text: { words: card.words, colour: TONES.ink, wrap: false }, through: true },
+      button(ui, 'held-travel', card.sail, travel, { role: 'primary', padding: [7, 14] }),
+    ],
+  };
+}

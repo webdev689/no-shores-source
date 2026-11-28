@@ -181,7 +181,7 @@ test("a dev page's bots play its own room's events through, the heroic task take
 });
 
 test("the dev address's play: ticks a frame, bots, and the heroic task left alone only when asked", () => {
-  assert.deepEqual(askedPlay('?at=gullwing-vale&public=raid&speed=12&bots=3'), { speed: 12, bots: 3, heroic: true });
+  assert.deepEqual(askedPlay('?at=saltgrass-downs&public=raid&speed=12&bots=3'), { speed: 12, bots: 3, heroic: true });
   assert.deepEqual(askedPlay('?bots=2&heroic=0'), { speed: 0, bots: 2, heroic: false });
   assert.deepEqual(askedPlay('?speed=999&bots=-4'), { speed: 64, bots: 0, heroic: true });
   assert.equal(askedPlay('?public=fissure&speed=x'), null);

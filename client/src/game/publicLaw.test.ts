@@ -61,38 +61,46 @@ test('the Fissure running: its name, place, countdown, shards, bonus; the growth
 });
 
 test('the raid running: its wave, the stores standing as its bar, the tithe-taker while his window is open', () => {
-  const shown = bannerOf(raid({ heroic: HEROIC.offered, heroicTicks: 50 * 60 }), 'driftwood-moors');
+  const shown = bannerOf(raid({ heroic: HEROIC.offered, heroicTicks: 50 * 60 }), 'saltgrass-downs');
   assert.equal(shown?.title, 'The Grey Tithe Raid');
-  assert.equal(shown?.place, 'Moorend');
+  assert.equal(shown?.place, 'Saltgrass');
   assert.equal(shown?.objective, 'Hold the stores: wave 2 of 3');
   assert.deepEqual(shown?.bar, { share: 0.73, label: 'Stores 73%' });
-  assert.equal(bannerOf(raid({ progress: 996 }), 'driftwood-moors')?.bar?.label, 'Stores 99%', 'whole only when whole');
+  assert.equal(bannerOf(raid({ progress: 996 }), 'saltgrass-downs')?.bar?.label, 'Stores 99%', 'whole only when whole');
   assert.equal(shown?.heroic?.text, 'Kill the tithe-taker');
-  const marrow = bannerOf(raid({ stage: 4, stages: 4, heroic: HEROIC.met }), 'driftwood-moors');
+  const marrow = bannerOf(raid({ stage: 4, stages: 4, heroic: HEROIC.met }), 'saltgrass-downs');
   assert.equal(marrow?.objective, 'Break Reeve Ancel Marrow, the Tithe’s Hand');
-  const lost = bannerOf(raid({ bonus: false }), 'driftwood-moors');
+  const lost = bannerOf(raid({ bonus: false }), 'saltgrass-downs');
   assert.equal(lost?.bonus?.state, 'lost');
 });
 
 test('the result: won with its chest tier, or failed and why; no banner between events', () => {
-  const won = bannerOf(fissure({ phase: PUBLIC_PHASE.won, heroic: HEROIC.met, ticksLeft: 600 }), 'gullwing-vale', true);
+  const won = bannerOf(
+    fissure({ phase: PUBLIC_PHASE.won, heroic: HEROIC.met, ticksLeft: 600 }),
+    'saltgrass-downs',
+    true,
+  );
   assert.equal(won?.tone, 'won');
   assert.equal(won?.kicker, 'Event complete');
   assert.equal(won?.objective, 'Your chest waits at the ground: heroic, with the bonus');
   assert.equal(won?.clock, '');
-  const plain = bannerOf(raid({ phase: PUBLIC_PHASE.won, bonus: false, heroic: HEROIC.missed }), 'gullwing-vale', true);
+  const plain = bannerOf(
+    raid({ phase: PUBLIC_PHASE.won, bonus: false, heroic: HEROIC.missed }),
+    'saltgrass-downs',
+    true,
+  );
   assert.equal(plain?.objective, 'Your chest waits at the ground');
-  const unchested = bannerOf(raid({ phase: PUBLIC_PHASE.won, bonus: false }), 'gullwing-vale');
+  const unchested = bannerOf(raid({ phase: PUBLIC_PHASE.won, bonus: false }), 'saltgrass-downs');
   assert.equal(unchested?.objective, 'The Tithe gave up', 'no chest promised to one who took no part');
-  const sealed = bannerOf(fissure({ phase: PUBLIC_PHASE.won }), 'gullwing-vale');
+  const sealed = bannerOf(fissure({ phase: PUBLIC_PHASE.won }), 'saltgrass-downs');
   assert.equal(sealed?.objective, 'The fissure is sealed');
-  const fell = bannerOf(raid({ phase: PUBLIC_PHASE.failed, progress: 0 }), 'gullwing-vale');
+  const fell = bannerOf(raid({ phase: PUBLIC_PHASE.failed, progress: 0 }), 'saltgrass-downs');
   assert.equal(fell?.tone, 'failed');
   assert.equal(fell?.objective, 'Every store fell');
-  const timed = bannerOf(fissure({ phase: PUBLIC_PHASE.failed }), 'gullwing-vale');
+  const timed = bannerOf(fissure({ phase: PUBLIC_PHASE.failed }), 'saltgrass-downs');
   assert.equal(timed?.objective, 'Time ran out: the Lattice sank back into the earth');
   const waiting = fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextTicks: 30 * 60 });
-  assert.equal(bannerOf(waiting, 'gullwing-vale'), null, 'the next one is marked on the compass, not on a banner');
+  assert.equal(bannerOf(waiting, 'saltgrass-downs'), null, 'the next one is marked on the compass, not on a banner');
 });
 
 test('the tracker: the steps of the task now, each counting what is left', () => {
@@ -132,17 +140,17 @@ test('the compass marks the ground (the next one between events) and the heroic 
 });
 
 test('the dev address asks for an event, and the minute that starts it at once in its zone', () => {
-  assert.equal(askedPublic('?at=gullwing-vale&public=raid'), 'raid');
+  assert.equal(askedPublic('?at=saltgrass-downs&public=raid'), 'raid');
   assert.equal(askedPublic('?public=other'), null);
   assert.equal(askedMinute('?at=saltgrass-downs&minute=29891550'), 29_891_550);
   for (const search of ['?at=x', '?minute=', '?minute=1.5', '?minute=-3', '?minute=noon'])
     assert.equal(askedMinute(search), null, search);
-  // The Downs (place 0) run the Fissure in even slots: minute 0, 30, 60...; the Vale (place 1) the raid in slots
-  // 0, 2, 4 from minute 5 (crates/room/src/public/mod.rs schedule).
+  // The Downs run the Fissure in even slots, minute 0, 30, 60..., and the raid in odd ones, minute 15, 45, 75...
+  // (crates/room/src/public/mod.rs schedule).
   assert.equal(minuteShift('saltgrass-downs', 'fissure', 31), 29);
   assert.equal(minuteShift('saltgrass-downs', 'raid', 31), 14);
-  assert.equal(minuteShift('gullwing-vale', 'raid', 5), 0);
-  assert.equal(minuteShift('gullwing-vale', 'fissure', 5), 15);
+  assert.equal(minuteShift('saltgrass-downs', 'raid', 15), 0, 'the raid starting this minute');
+  assert.equal(minuteShift('saltgrass-downs', 'fissure', 15), 15, 'the Fissure one slot on');
   assert.equal(minuteShift('overlook-social', 'raid', 5), null);
 });
 
@@ -161,10 +169,10 @@ test('a chest waiting is a step of its own, with the time it still lies', () => 
 
 test("the raid's next wave counts down in its objective while one is coming", () => {
   assert.equal(
-    bannerOf(raid({ nextWaveTicks: 22 * 60 }), 'driftwood-moors')?.objective,
+    bannerOf(raid({ nextWaveTicks: 22 * 60 }), 'saltgrass-downs')?.objective,
     'Hold the stores: wave 2 of 3 · Next wave 0:22',
   );
-  assert.equal(bannerOf(raid({ nextWaveTicks: 0 }), 'driftwood-moors')?.objective, 'Hold the stores: wave 2 of 3');
+  assert.equal(bannerOf(raid({ nextWaveTicks: 0 }), 'saltgrass-downs')?.objective, 'Hold the stores: wave 2 of 3');
 });
 
 test("the page's schedule is the room's: every minute of a day, the shift to each event", async () => {
@@ -179,7 +187,7 @@ test("the page's schedule is the room's: every minute of a day, the shift to eac
     return slot;
   };
   const names = Object.keys(zones);
-  assert.equal(names.length, 3);
+  assert.deepEqual(names, ['saltgrass-downs'], 'the Saltgrass Downs alone holds events');
   for (let minute = first; minute < first + 1440; minute += 1) {
     for (const zone of names) {
       for (const kind of [PUBLIC_KIND.fissure, PUBLIC_KIND.raid]) {

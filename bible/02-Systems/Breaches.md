@@ -32,9 +32,10 @@ code:
 
 The Breaches are the game's hardest content: a company of up to eight through a raid of encounters and traversals, at
 Normal and Hard ([[The First Breach Follows the Vault of Glass, at Normal and Hard]]). The first is **the Drowned
-Vale**, opened at the Sunken Gate in the Gullwing Vale; its opening is fought in the patrol zone and the rest in its
-own run ([[The Breach Opens in the Patrol Zone, and the Rest Is Its Own Instance]]). What the owner did not decide is
-Claude's ([[The Drowned Vale as Claude Builds It]]).
+Vale**, the Gullwing Vale as it was, drowned and written over, opened at the Sunken Gate in the Saltgrass Downs
+([[Saltmere Keeps Only the Saltgrass Downs, and Everything Folds Into It]]); its opening is fought in the patrol zone
+and the rest in its own run ([[The Breach Opens in the Patrol Zone, and the Rest Is Its Own Instance]]). What the
+owner did not decide is Claude's ([[The Drowned Vale as Claude Builds It]]).
 
 ## How it works
 
@@ -58,10 +59,10 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   Steward six and a half, the Mender and the Warden one and a half.
 - **The company.** Companies hold eight, as a Breach is taken on by up to eight
   ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); a Breach's run holds eight and every other run four. It is
-  launched from the Playlist: the finder (`/v1/find/node-gullwing-vale--breach-<tier>?launch`) starts the run for the
-  launcher's company at once, at its tier's level. Its room is `node-gullwing-vale--breach-<tier>--run-<8>`.
+  launched from the Playlist: the finder (`/v1/find/node-saltgrass-downs--breach-<tier>?launch`) starts the run for the
+  launcher's company at once, at its tier's level. Its room is `node-saltgrass-downs--breach-<tier>--run-<8>`.
 - **The opening, in the patrol zone.** The bake writes where the layout stood the Sunken Gate (the `breach-gate`
-  module, area kind `breach`) into Gullwing Vale's node file, and its room stands the gate there. A launched player
+  module, area kind `breach`) into the Saltgrass Downs' node file, and its room stands the gate there. A launched player
   joins the zone with `?breach=<run>`, may arrive there from anywhere, and stands at the gate in their run's company.
   One company holds the gate at a time: **the Waking**. Its three moorings held at once by its living players fill
   the Spire (150 s); fewer let it ebb (at a quarter the pace at Normal, a half at Hard), and a Bulwark sent out claims
@@ -73,7 +74,7 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   (a wipe, or the Spire standing empty a whole minute), the company stands whole at the gate's arrival and the gate is
   free. The zone hears only the runs it opened, so a run no one was let into shows no company inside. The gate's
   company holds eight at most, and only those the Breach would let in (its tier's level, and Hard's Normal win); one
-  refused is told why (`ShutOut`). The gate stands only in the Gullwing Vale's room at Normal seas, its doorway shut by
+  refused is told why (`ShutOut`). The gate stands only in the Saltgrass Downs' room at Normal seas, its doorway shut by
   rock behind its seal. Everyone in the zone sees the Waking, and the companies inside the run by the name of their run's first player, tier and encounter.
 - **Into the run.** The run's room lets a character in only once the zone's room says its company's gate opened
   (`server/breach.ts`), and its first player must be one the run was launched for. The zone's room judges a gate's day
@@ -94,8 +95,8 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 ## The Breach's test
 
 A developer tests the Breach from the Test Room ([[Activities]], "Test runs"): its run is
-`node-gullwing-vale--breach-<normal|hard>--test-<instance>`, and its gate stands in a copy of the Gullwing Vale of its
-own, `node-gullwing-vale--test-<instance>`, opened as the zone's node is and made a test room. A developer who joins
+`node-saltgrass-downs--breach-<normal|hard>--test-<instance>`, and its gate stands in a copy of the Saltgrass Downs of
+its own, `node-saltgrass-downs--test-<instance>`, opened as the zone's node is and made a test room. A developer who joins
 the copy with `?breach=` and the test run's name is held in that run's company at once, with nothing asked of the
 accounts, and arrives at the gate as a launched company does; the Waking and the gate open as they do. The test run
 asks its zone copy whether its gate opened, as a real run asks its zone (`breachRun` names the copy). In a test room
@@ -139,7 +140,7 @@ alone:
 
 - **Launched from the Playlist** (`playlistBreach.ts`, `breachTrips.ts`): its crest opens Find a Company's Launch at
   its tier ("Launch", never "Go alone"); its card says it is played online with a company, the Prestige each tier
-  reaches and the standing-again times. The run found, the page travels to the Gullwing Vale joined with the run,
+  reaches and the standing-again times. The run found, the page travels to the Saltgrass Downs joined with the run,
   standing at the gate. A refusal shows its words: the gate's own (112), "Too far from the gate." (100), that the gate
   did not answer, or why the gate's company shut a player out (`ShutOut`: full, under the level, Hard before Normal).
 - **The gate in the zone** (`breachView.ts`, `breachWords.ts`): within 60 m of the gate its banner takes the zone's
@@ -149,7 +150,7 @@ alone:
   and its company hears the tension music while it fills. The seal stands in its doorway until the gate opens to the
   viewer's company, which sees the doorway as the dark of the way in (the seal's shape black, a violet sheen low in
   it) and is offered "Enter the Drowned Vale" there. The Waking's moments and stings reach only its company and those
-  in the hollow. Within 60 m the hollow's own air stands at the gate over the vale's ambience, and while the viewer's
+  in the hollow. Within 60 m the hollow's own air stands at the gate over the zone's ambience, and while the viewer's
   company holds the Waking the Spire hums at the Spire, louder as it fills; while the Waking runs, each mooring newly
   held catches, and the Spire rings out on its waking for its company ([[Ambience]]). What changed while the tab was
   hidden is not heard on its return.

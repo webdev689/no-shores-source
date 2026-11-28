@@ -257,8 +257,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   public event's ground, which the event's own foes hold. A site's group stands when a player comes within 150 m of
   it while it stands none, none is within 40 m, and the room's living foes leave room for all of it, on a navmesh
   baked round the site then, a slice a tick, as a quest's place's is ([[Navmesh]]): within a second or two, a
-  keep's walls and floors within three. So a room opens as quickly as before. Saltmere's three zones hold 15 territories (Saltgrass
-  Downs five, Gullwing Vale five, Driftwood Moors five) beside their runs' beats. It is drawn as a
+  keep's walls and floors within three. So a room opens as quickly as before. How many territories the Saltgrass
+  Downs holds over its fourteen areas, beside its runs' beats, is unchecked. It is drawn as a
   patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
   raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
   stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes
@@ -336,10 +336,16 @@ WebAssembly, so names, factions and weapons are read in one place.
   garrison sent away calls none. No two places a garrison gives ground to stand within 1 m of each other or of a wave's
   where the floor round them has room: each is tried round three rings of twelve, 2.5 m apart, and in a pocket too small
   for them all the last go on their ring regardless.
+- **The ways' patrols**: in a patrol zone whose brief asks for them (the Saltgrass Downs), a foes' site on a way
+  ([[Layouts]], "How a layout is planned") stands its band as a territory's does as a player comes near, and walks
+  its beat along the way, over the points of the room's lattice within 4 m of it; the held map marks none, as it
+  walks ([[Held Map]], "On land").
 - **Standing again**: a group whose last foe has fallen stands again by airship under the open sky ("Arrivals"),
   whole and idle at its places at its post and its beat begun again from there, 120 s later (a group with a Miniboss or a Boss, 10 minutes later, so neither is
   farmed: [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]), once
-  no player stands within 40 m of its post and the room's living foes leave room for all of it. In a dungeon run a
+  the room's living foes leave room for all of it: in a patrol zone's open land on time, around any players still
+  at its post ([[The Saltgrass Downs Plays as Destiny 2's EDZ, Its Three Landing Zones Spread Across It]]); in a
+  dungeon, a run or a mission's node once no player stands within 40 m of its post. In a dungeon run a
   band whose fall won a checkpoint holds its ground instead while anyone is in the room; elsewhere, a mission's group
   among them, its checkpoint falls back as it stands again ([[Revives]]).
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a patrol's 32, 8 more
@@ -441,7 +447,8 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
 - A garrison stands within its room's navmesh, a 70 m square by the first spawn, never across the whole section:
   baking a section's whole ring costs more time and memory than a room has. A garrison foe gives up a player who
   leaves the mesh more than 14 m from it; a foe a player asked for, or one a Boss called, chases them off it and walks straight.
-- A cleared group stands again only while no player is within 40 m of its post, so a player waiting nearby holds it.
+- Outside a patrol zone's open land a cleared group stands again only while no player is within 40 m of its post, so
+  a player waiting nearby holds it.
 - A wave is brought by airship and set down at least 25 m from every player: its room's navmesh has no ground beyond
   its square to walk it in from.
 - An airship and a crown are the page's drawing alone: nothing meets a ship's hull, and the room knows only the

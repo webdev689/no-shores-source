@@ -1,6 +1,7 @@
 //! A patrol's chest places as the bake plans them on continent 1: several in every patrol, apart from one another and
 //! from its resource places, beacons and spawns, each on its section's floor, clear of every way, of what stands and
-//! of what grows, and tucked with its back to something taller than a chest.
+//! of what grows, and tucked with its back to something taller than a chest; and its resource places, Saltmere's
+//! brineglass, each at a tide pool with its node clear before it.
 
 use layout::Layout;
 use layout::chests::{OUT_M, PLACES_MOST};
@@ -47,7 +48,7 @@ fn every_patrol_lays_several_chest_places_and_no_other_node_any() {
         assert!((4..=PLACES_MOST).contains(&count), "{}: {count} chest places", laid.id);
         patrols_seen += 1;
     }
-    assert!(patrols_seen >= 3, "continent 1 has Saltmere's three zones at least");
+    assert!(patrols_seen >= 1, "continent 1 has Saltmere's patrol zone, the Saltgrass Downs");
     let others = continent_one().iter().filter(|laid| laid.kind != land::sites::NodeKind::Patrol);
     for laid in others {
         assert!(chests(laid).is_empty(), "{}: only a patrol stands chests", laid.id);
@@ -173,5 +174,41 @@ fn a_chest_and_its_lids_swing_hold_nothing_that_stands_and_keep_off_a_runs_way_t
                 assert!(apart >= site.radius + 3.0, "{id}: chest {:?} on a {:?} site", place.at, site.kind);
             }
         }
+    }
+}
+
+#[test]
+fn each_of_saltmeres_resource_nodes_is_brineglass_clear_before_its_tide_pool() {
+    for laid in patrols() {
+        let id = &laid.id;
+        let resources: Vec<_> = laid.sites.iter().filter(|site| site.kind == SiteKind::Resource).collect();
+        assert!(!resources.is_empty(), "{id} lays resource nodes");
+        let mut standing = 0;
+        for site in resources {
+            assert_eq!(site.holds.as_deref(), Some("brineglass"), "{id}: Saltmere's resource");
+            // Its tide pool: still water at the place's middle, its node standing clear before it.
+            let pool = laid.seating.solids.iter().any(|solid| {
+                solid.material == city::solids::Material::Water && distance([solid.at[0], solid.at[1]], site.at) < 0.1
+            });
+            assert!(pool, "{id}: a resource place at {:?} with no tide pool", site.at);
+            let Some(node) = site.node else { continue };
+            assert!(distance(node, site.at) > 4.0, "{id}: its node clear of the pool");
+            // Where the room gathers it and the page draws it: in bounds, clear of what stands and what grows.
+            assert!(ring_holds(&laid.ring, node[0], node[1]), "{id}: node {node:?} out of bounds");
+            let blocked = laid.seating.solids.iter().find(|solid| {
+                let [west, north, east, south, bottom, top] = solid.bounds();
+                let clear = layout::sites::NODE_CLEAR_M;
+                top - bottom > 0.3
+                    && node[0] > west - clear
+                    && node[0] < east + clear
+                    && node[1] > north - clear
+                    && node[1] < south + clear
+            });
+            assert!(blocked.is_none(), "{id}: node {node:?} against {blocked:?}");
+            let planted = laid.plantings.iter().flat_map(|planting| &planting.points);
+            assert!(planted.into_iter().all(|&point| distance(point, node) >= 1.5), "{id}: node {node:?} planted over");
+            standing += 1;
+        }
+        assert!(standing > 0, "{id}: no node stands");
     }
 }

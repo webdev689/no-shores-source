@@ -125,6 +125,9 @@ export const ASKS = {
   takeLodestone: 82,
   dropLodestone: 83,
   enterBreach: 84,
+  /** A fast travel to one of the node's landing zones, by its number in `node`, which the room answers (110 yes, or
+   *  as a return to the ship is refused, and 100 for a zone the node has not). */
+  fastTravel: 97,
   /** The Harbourmaster's asks, the hull's number in `column`: a hull bought, a ship kept sailed, a dress bought by its
    *  number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its words' places in `node`
    *  and `slot`, 255 for no first word; `count` 1 for a renaming at the shipyard's price, 0 for the first, free name).

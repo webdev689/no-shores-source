@@ -156,39 +156,34 @@ pub fn lighthouse(kit: &mut Kit, area: &Area) {
 }
 
 /// A graveyard of ships: great hulls and smaller ones driven up and left at every angle, half sunk in the ground,
-/// their masts snapped and their timbers, crates and rigging strewn between them, a fire where scavengers camp.
+/// their masts snapped and their timbers, crates and rigging strewn between them, a fire where scavengers camp. Its
+/// middle, where its way ends, holds the salvage heaped there and the scavengers' fire, and the greatest hull lies
+/// behind it from the way in.
 pub fn hulks(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     let middle = area.at;
+    let salvage = kit.pick(&model::CRATES);
+    kit.prop(salvage, middle, yaw_toward(toward));
+    // Out round the open middle, where its way ends and the way round it runs (`clearing::round_rim`).
     let hulls: [(u32, f64, f64); 5] = [
-        (model::GREAT_SHIP, 0.0, 0.0),
-        (model::SHIP, 38.0, 1.1),
-        (model::SHIP, 42.0, 3.4),
-        (model::GREAT_SHIP, 55.0, 4.9),
-        (model::SHIP, 30.0, 2.3),
+        (model::GREAT_SHIP, 60.0, 2.8),
+        (model::SHIP, 46.0, 1.1),
+        (model::SHIP, 50.0, 3.4),
+        (model::GREAT_SHIP, 64.0, 4.9),
+        (model::SHIP, 44.0, 2.3),
     ];
     for (number, &(hull, out, angle)) in hulls.iter().enumerate() {
         let at = ahead(middle, toward, out.min(area.radius * 0.7), angle + kit.draw() * 0.3);
         let yaw = yaw_toward(toward) + 40.0 * number as f64 + kit.draw() * 50.0;
         kit.prop(hull, at, yaw);
-    }
-    for mast in 0..6 {
-        let at = ahead(middle, toward, 12.0 + kit.draw() * area.radius * 0.6, f64::from(mast) * 1.1);
-        let base = kit.height(at) - 0.3;
-        let lean = 1.0 + kit.draw() * 0.5;
-        let turn = kit.draw() * std::f64::consts::TAU;
-        let length = 10.0 + kit.draw() * 8.0;
-        kit.solid(
-            Solid {
-                lean,
-                ..Solid::upright(
-                    Shape::Column { sides: 8, top: 0.8 },
-                    [at[0], at[1], base],
-                    [0.55, 0.55, length],
-                    Material::Timber,
-                )
-            }
-            .turned(turn),
-        );
+        // Its snapped mast stands askew by it, within the ground the hull covers, which every way goes round: one
+        // lying its length along the ground would lie across a way that keeps off only its foot.
+        let mast = [at[0] + kit.draw() * 4.0 - 2.0, at[1] + kit.draw() * 4.0 - 2.0];
+        let base = kit.height(mast) - 0.3;
+        let (lean, turn, length) =
+            (0.15 + kit.draw() * 0.3, kit.draw() * std::f64::consts::TAU, 7.0 + kit.draw() * 5.0);
+        let column = Shape::Column { sides: 8, top: 0.8 };
+        let upright = Solid::upright(column, [mast[0], mast[1], base], [0.55, 0.55, length], Material::Timber);
+        kit.solid(Solid { lean, ..upright }.turned(turn));
     }
     for plank in 0..24 {
         let at = ahead(middle, toward, kit.draw() * area.radius * 0.8, f64::from(plank) * 0.27);
@@ -202,5 +197,6 @@ pub fn hulks(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
             kit.stand(Shape::Block, at, size, spin, Material::Timber, 0.02);
         }
     }
-    fire(kit, ahead(middle, toward, area.radius * 0.35, 2.6), 1.6);
+    // The scavengers' fire beside the salvage at the middle, in the open ground the hulls leave there.
+    fire(kit, ahead(middle, toward, 10.0, 1.6), 1.6);
 }

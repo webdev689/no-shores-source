@@ -74,7 +74,7 @@ code:
   - client/src/game/moorings.ts#shipsLying
   - client/src/game/shipConsole.ts#shipConsoleNode
   - client/src/game/islandWords.ts#islandPanelOf
-  - client/src/game/islandPanel.ts#islandScreen
+  - client/src/game/islandScreen.ts#islandScreen
   - client/src/game/aboard.ts#Aboard
   - client/src/game/crew.ts#Crew
   - client/src/game/shipPeople.ts#ShipPeople
@@ -155,7 +155,7 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |
 | On foot in a patrol zone with passages | E at a run's sealed door, a route and a start chosen on the mouths' card, and the room's yes | Passing to the zone behind the mouth, or to the lamp begun at ([[Passages]], "Played") |
 | On foot in a passage zone | Through an open onward mouth | Passing: the way between zones in place of the veil ([[Passages]], "The way between zones"), then on foot at the next zone's way in |
-| On foot in a patrol zone | E in the basin of a gate toward another patrol zone, offered as "Go to" and its name | Passing: the way between zones, the dots running from one zone's place to the other's, then on foot at its gate toward the one left ([[Layouts]], "Gates") |
+| On foot in a patrol zone | E in the basin of a gate toward another patrol zone of its island (none stands while each island holds one), offered as "Go to" and its name | Passing: the way between zones, the dots running from one zone's place to the other's, then on foot at its gate toward the one left ([[Layouts]], "Gates") |
 | On foot at a lit lamp | Home | Passing, the way running back to the patrol zone, then on foot there |
 | Passing | The way played and the place come | On foot there |
 | Passing | The room's gate shuts to the character | The veil, the room's reason and "Returning to your ship", then at sea |
@@ -373,7 +373,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 
 ## A dungeon
 
-A patrol's three dungeons and each Elite Dungeon ([[Dungeons]], [[Activities]]) are entered on foot from their
+A patrol's six dungeons and each Elite Dungeon ([[Dungeons]], [[Activities]]) are entered on foot from their
 node's entrances, and a sea island's from its door at sea, each through the Game's veil (`footTrips.ts`,
 `dungeonTrips`).
 
@@ -714,8 +714,8 @@ taken) and the player has the helm with nothing else holding them, a ship lying 
 ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen pulling away,
 and is the player's to sail from there. A course the player sets first, or the room placing the ship away from its
 berth, leaves it as it is; either way it is docked no more. Back at sea from a patrol zone's own land (at any tier;
-never its dungeon, a run, a Breach's gate copy, an Elite Dungeon or a run started at sea), walked to through the
-crossing gates or landed on, with the ship off another region of the zone's island (the region of that island whose
+never its dungeon, a run, a Breach's gate copy, an Elite Dungeon or a run started at sea), however it was come to,
+with the ship off another region of the zone's island (the region of that island whose
 centre is nearest the ship; [[World Map]], "Regions"), the ship lies at the zone's region's anchorage, 3 km off its
 coast, facing as it did, and the view stands over it there (`regionLeft.ts`); the room places it there too
 ([[Server]], "The sea"), and the player sails from there, in reach to land on that zone again. From a zone of the
@@ -732,11 +732,17 @@ lands in holds to the same rule: from the sea it takes only a player whose ship 
 place ([[Server]], "Arrivals"). A click on a
 tile does what it does: a place lands there (the player stands at its first spawn, facing inland from the ship, or at a
 social space out from its landmark over the city, as on arriving), choosing its node first; an Elite Dungeon opens its
-card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist; the Outposts tile opens the region's sites, choosing one landing there.
+card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist; the Outposts tile opens the region's sites, choosing one landing there; a patrol zone with landing zones (the Saltgrass Downs) opens its map in the tiles' place (`landingZones.ts`), its section, ways and places with a beacon fire at each landing zone, the landing's lit first: a click on a fire, Enter on the one lit, or its Land press lands there, the room standing the player at it (`?landing=`, [[Server]], "Arrivals").
 Tab, the arrows
 and the pad's cross walk the tiles, and Enter or the pad's A presses the one they reach; else Enter does what the lit
 tile does (the one under the pointer, else the first place's). Escape, the pad's B, or Back to the sea, flies back
-down; over the Outposts tile's sites, they close them first, back to the tiles.
+down; over the Outposts tile's sites or a zone's map, they close them first, back to the tiles.
+
+On foot in a patrol zone with landing zones, each is fast travelled to from the land's held map ([[Held Map]], "On
+land"), as Destiny 2's are: the veil falls with "Travelling to" its name, the room is asked (`fastTravel.ts`, the
+ask 97 with the zone's number), and on its yes the room stands the player there, facing as they faced, and the veil
+lifts 0.6 s on; the room refuses it as it refuses a return to the ship, while fallen or within ten seconds of a foe's
+blow, and before the accounts have given it the character, and the veil lifts at once, the HUD saying why.
 
 A sea island's landing docks in sight at once, from wherever the ship lies: it sails for the island's offing, out on
 the bearing it is landed on, planned on water as any route and bent round every island in sight, then in to its

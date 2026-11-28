@@ -2,8 +2,11 @@ use super::*;
 use crate::gear_door::{NodeCounter, counter_of};
 use combat::Fighter;
 use combat::sight::apart;
+use land::ground::Ground;
 use movement::{Controls, Flat, TICK_SECONDS, Terrain, standing, step_body};
 use protocol::wire::overlook::wire as messages;
+use room::Floor;
+use room::asks::CounterKind;
 use room::sea::Ship;
 use serde_json::{Value, json};
 
@@ -456,9 +459,10 @@ fn a_patrols_dungeon_opens_from_its_node_file_with_its_cache_shut_and_a_player_a
     let mut mission = node_file();
     mission["kind"] = json!("mission");
     assert!(!open_dungeon(mission.to_string().as_bytes(), 0), "a mission has no dungeons");
-    assert!(!open_dungeon(patrol.as_bytes(), 3), "a patrol has three");
+    let dungeons = dungeon::PER_PATROL;
+    assert!(!open_dungeon(patrol.as_bytes(), dungeons), "a patrol has PER_PATROL");
     assert!(!open_dungeon(b"not a node", 0));
-    for number in 0..3 {
+    for number in 0..dungeons {
         assert!(open_dungeon(patrol.as_bytes(), number));
         let player = room_join();
         room_tick();
@@ -490,12 +494,12 @@ fn a_patrols_room_is_joined_before_an_entrance_and_sends_its_entrances() {
     assert!(open_node(patrol.to_string().as_bytes()));
     let player = dungeon_door::room_join_at(1);
     assert_ne!(player, 0);
-    assert_eq!(dungeon_door::room_join_at(3), 0, "no such entrance");
+    assert_eq!(dungeon_door::room_join_at(u32::try_from(dungeon::PER_PATROL).unwrap()), 0, "no such entrance");
     room_tick();
     let sent = gear(player);
     let entrances: Vec<f64> =
         messages::root_as_from_room(&sent).unwrap().gear().unwrap().dungeons().expect("its entrances").iter().collect();
-    assert_eq!(entrances.len(), 15, "three entrances, five numbers each");
+    assert_eq!(entrances.len(), 5 * dungeon::PER_PATROL, "each dungeon its entrance, five numbers each");
     let body = players_in(&snapshot(player)).into_iter().find(|(id, ..)| *id == player).expect("in").2;
     assert!(apart([body.x, body.y], [entrances[5], entrances[6]]) < 15.0, "by the second entrance: {body:?}");
     let mut mission = node_file();

@@ -46,17 +46,30 @@ export async function askToShip(
   if (fallen) return refusedWords(FALLEN);
   const first = asker();
   if (!first) return rejoining() ? UNANSWERED : null;
-  if (!first.gear) return UNANSWERED;
+  const answer = await answerOf(asker, { kind: ASKS.toShip }, ANSWERS, wait);
+  return answer === null ? UNANSWERED : refusedWords(answer);
+}
+
+/** Asks the room `ask` and waits for its answer, one of `answers`: that answer, or null where none came in time (or
+ *  the room sent no gear to answer with). An ask sent before this one may be answered first: only one of `answers`
+ *  is its word. */
+export async function answerOf(
+  asker: () => ShipAsker | null,
+  ask: GearAsk,
+  answers: readonly number[],
+  wait: (span: number) => Promise<void> = (span) => new Promise((done) => setTimeout(done, span)),
+): Promise<number | null> {
+  const first = asker();
+  if (!first?.gear) return null;
   const before = first.gear.answered;
-  first.ask({ kind: ASKS.toShip });
+  first.ask(ask);
   for (let waited = 0; waited < ANSWER_WAIT_MS; waited += POLL_MS) {
     await wait(POLL_MS);
     const now = asker()?.gear;
-    if (!now) return UNANSWERED;
-    // An ask sent before this one may be answered first: only an answer a return to the ship takes is its word.
-    if (now.answered !== before && ANSWERS.includes(now.answer)) return refusedWords(now.answer);
+    if (!now) return null;
+    if (now.answered !== before && answers.includes(now.answer)) return now.answer;
   }
-  return UNANSWERED;
+  return null;
 }
 
 /** Returns the player on foot to their ship on the room's yes (with no room, at once), else says why: `travel` goes,

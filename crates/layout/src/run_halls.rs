@@ -217,14 +217,17 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
 }
 
 /// A turret taller than the wall at each corner of a keep's ward (its middle, floor and inner half-width) but the one
-/// its climb comes onto, and any its way passes near.
+/// its climb comes onto, and any its way passes near: within 1.5 m of its side, or near enough its box that the run
+/// would leave it out (`run_kits::near_way`), which would leave its merlons standing on nothing.
 fn ward_turrets(out: &mut Vec<Solid>, run: &Run, (middle, ground, half): ([f64; 2], f64, f64), climb: Option<&Climb>) {
     let way = run.way();
     for corner in [[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]] {
         let at = [middle[0] + corner[0] * (half + WALL_M / 2.0), middle[1] + corner[1] * (half + WALL_M / 2.0)];
         let off_way = way.windows(2).map(|pair| off_line(at, pair[0], pair[1])).fold(f64::INFINITY, f64::min);
         let climbed = climb.and_then(|climb| climb.walk.last()).is_some_and(|top| distance(*top, at) < 1.0);
-        if !climbed && off_way > TURRET_M / 2.0 + 1.5 {
+        let reach = TURRET_M / 2.0;
+        let boxed = crate::run_kits::near_way(run, [at[0] - reach, at[1] - reach, at[0] + reach, at[1] + reach]);
+        if !climbed && off_way > TURRET_M / 2.0 + 1.5 && !boxed {
             turret(out, at, [ground - 1.0, ground + TOWER_UP_M], None, Material::Stone);
         }
     }

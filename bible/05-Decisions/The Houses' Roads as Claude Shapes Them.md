@@ -94,3 +94,5 @@ point. Every task has an `id`, and the save keeps each road and task by id, so a
 player's place. A figure, a ward and a puzzle's points are the player's own: other players in the room do not see them.
 
 Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the foes a road stands are the island's Grey Tithe.
+Replaced in part by [[The Saltgrass Fold-In as Claude Builds It]]: the tasks set in the Gullwing Vale and on the
+Driftwood Moors stand on the Saltgrass Downs, their lines reworded for its places.

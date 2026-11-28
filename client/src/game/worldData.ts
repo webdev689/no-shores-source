@@ -50,7 +50,16 @@ export interface NodeInfo {
   readonly holderProps?: readonly (readonly [number, number, number, number, number, number])[];
   /** Gone to across a crossing gate, the patrol area crossed from: its room stands the player at its gate toward it. */
   readonly across?: string;
+  /** A patrol area's landing zones, each named for the place nearest it, where a body lands: its landing's first
+   *  (layouts.ts `landingsOf`). */
+  readonly landings?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
+  /** Landed at from the sea, the landing zone chosen on its map, by its number: its room stands the player there. */
+  readonly landedAt?: number;
 }
+
+/** Where a node landed at from the sea stands the player: at the landing zone chosen on its map; none for none. */
+export const landedOn = (node: Pick<NodeInfo, 'landings' | 'landedAt'>): Point | undefined =>
+  node.landedAt === undefined ? undefined : node.landings?.[node.landedAt]?.at;
 
 /** A continent's port city, as its edits file names it. */
 export interface CityInfo {

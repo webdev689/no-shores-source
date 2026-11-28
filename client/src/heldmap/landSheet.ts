@@ -73,6 +73,9 @@ export interface LandSheet extends Relief {
     readonly loss?: boolean;
   }[];
   readonly marks: readonly LandMark[];
+  /** A patrol zone's landing zones where it has several, each named for the place nearest it, fast travelled to from
+   *  the map; the landing's first. */
+  readonly landings?: readonly { readonly name: string; readonly at: Point2 }[];
   /** How much of it the map opens across, metres: 400 round the player unless said (the passages' web, whole). */
   readonly span?: number;
 }

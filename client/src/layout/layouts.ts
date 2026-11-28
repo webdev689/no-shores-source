@@ -75,6 +75,8 @@ export interface NodeLayout {
   readonly theme: string;
   readonly ring: readonly Point[];
   readonly spawns: readonly Point[];
+  /** Where a body stands at each of its landing zones, its landing's first; none written when it has none. */
+  readonly landings?: readonly Point[];
   readonly areas: readonly LayoutArea[];
   readonly paths: readonly LaidPath[];
   readonly sites: readonly LaidSite[];
@@ -116,6 +118,20 @@ export function placesOf(layout: Pick<NodeLayout, 'areas' | 'runs'>): NodePlace[
   return [...areas, ...runs.map(({ name, mouth }) => ({ name, at: mouth, radius: RUN_REACH_M }))];
 }
 
+/** A layout's landing zones, each named for the place nearest it, where a body lands, as the bake's `landings_of`
+ *  writes them for its rooms. */
+export function landingsOf(layout: Pick<NodeLayout, 'areas' | 'landings'>): NodePlace[] {
+  const named = layout.areas.filter((area) => area.name !== '');
+  return (layout.landings ?? []).flatMap((stand) => {
+    const far = (area: LayoutArea) => Math.hypot(area.at[0] - stand[0], area.at[1] - stand[1]);
+    const nearest = named.reduce<LayoutArea | null>(
+      (best, area) => (!best || far(area) < far(best) ? area : best),
+      null,
+    );
+    return nearest ? [{ name: nearest.name, at: stand, radius: 0 }] : [];
+  });
+}
+
 /** A layout's runs' sealed doors, each its run's name and its door's middle, reached from 0 m, as the bake's
  *  `doors_of` writes them: where its room lays the passages' mouths. */
 export function doorsOf(layout: Pick<NodeLayout, 'runs'>): NodePlace[] {
@@ -132,6 +148,7 @@ interface Placed {
   readonly foes?: readonly Point[];
   readonly places?: readonly NodePlace[];
   readonly doors?: readonly NodePlace[];
+  readonly landings?: readonly NodePlace[];
   readonly paths?: readonly (readonly Point[])[];
   /** A patrol's chest places (x, y, facing) and its props (model, box across, origin's height), of which a room
    *  playing alone keeps those that hold things. */
@@ -158,8 +175,9 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
     const foes = laid.sites.flatMap(({ kind, at }) => (kind === 'foes' ? [at] : []));
     const paths = laid.paths.map((path) => path.points);
     const finds = laid.kind === 'patrol' ? findsOf(laid) : {};
-    const [places, doors] = [placesOf(laid), doorsOf(laid)];
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places, doors, paths, ...finds };
+    const [places, doors, landings] = [placesOf(laid), doorsOf(laid), landingsOf(laid)];
+    const spawns = laid.spawns;
+    return { ...node, ring: laid.ring, spawns, centre, resources, foes, places, doors, landings, paths, ...finds };
   });
 }
 

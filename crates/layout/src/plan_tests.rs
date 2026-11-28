@@ -44,7 +44,7 @@ fn a_camps_way_in_stays_open_on_the_path_grid_at_every_turn() {
             let mut seating = Seating::default();
             let mut kit = pieces::Kit { ground: &ground, book: &book, seed: 7, draws: 0, into: &mut seating };
             pieces::build(&mut kit, &area, toward, [0.0, -1.0]);
-            let blocked = blocked_by(&field, &seating);
+            let blocked = crate::clearing::blocked_by(&field, &seating);
             let outside = [at[0] + toward[0] * 70.0, at[1] + toward[1] * 70.0];
             let laid = vec![false; field.columns * field.rows];
             if paths::find(&field, [outside, at], Tier::Footpath.steepest(), &laid, &blocked, 7).is_none() {

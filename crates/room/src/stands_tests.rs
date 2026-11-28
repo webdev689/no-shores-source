@@ -72,6 +72,30 @@ fn a_patrol_s_foes_site_stands_its_group_the_first_time_a_player_comes_within_15
 }
 
 #[test]
+fn a_site_on_a_way_stands_a_patrol_that_walks_its_beat_along_the_way() {
+    let mut room = node(NodeKind::Patrol, "glade");
+    // A way running east and west through the site.
+    room.set_paths(vec![vec![[SITE[0] - 90.0, SITE[1]], [SITE[0] + 90.0, SITE[1]]]]);
+    room.set_foe_sites(&[SITE]);
+    let (posts, foes) = (room.garrison.len(), room.foes_seen().count());
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [SITE[0], SITE[1] + SITE_NEAR - 5.0]);
+    run_baked(&mut room, 3);
+    assert_eq!(room.garrison.len(), posts + 1, "its group stands");
+    let ids: Vec<FighterId> = room.foes_seen().skip(foes).map(|foe| foe.foe).collect();
+    let (mut west, mut east) = (f64::INFINITY, f64::NEG_INFINITY);
+    for _ in 0..60 * 60 {
+        room.tick();
+        for foe in room.foes_seen().filter(|foe| ids.contains(&foe.foe)) {
+            let [x, y] = feet(&foe);
+            assert!((y - SITE[1]).abs() <= 7.0, "it keeps to the way: {x:.1}, {y:.1}");
+            (west, east) = (west.min(x), east.max(x));
+        }
+    }
+    assert!(east - west > 15.0, "and walks along it: {west:.1} to {east:.1}");
+}
+
+#[test]
 fn a_site_s_group_never_stands_beside_a_player_but_waits_till_none_is_within_40_m() {
     let mut room = node(NodeKind::Patrol, "glade");
     room.set_foe_sites(&[SITE]);

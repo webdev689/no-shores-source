@@ -94,8 +94,8 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 | Breaches | The Drowned Vale, launched to the Sunken Gate ([[Breaches]]) | Normal, foes at 26; Hard, at 30 | Campaign's end, level 24; Hard at 28, once Normal is won |
 
 - **Draws** are `gear::activities`, seeded by the clock's day or week number alone, so every room and page sees the
-  same. Each island's dungeon of the day is one of its patrol zones' dungeons (Saltmere's nine, three on every
-  other island), evenly; the day's modifier is one of the eight,
+  same. Each island's dungeon of the day is one of its patrol zone's six dungeons (on Saltmere the Saltgrass
+  Downs'), evenly; the day's modifier is one of the eight,
   and Burn's Art one of the three. The week's two are two of the 18 Elite Dungeons, never the same one; the Elite's
   has one modifier, the Abyss's three of different kinds.
 - **The dungeon of the day** carries one modifier of the day at Elite and Abyss.
@@ -477,8 +477,8 @@ The owner's decision is [[Developers Launch Activities From a Test Room, in Max 
   - a playlist's: `node-<Elite Dungeon>--elite--playlist-<foes' level>--test-<instance>`, or `--abyss--`, the foes'
     level one of the playlist's bands' (`Playlist::foes_at`, as the activities' playlists give it);
   - the week's Elite or Abyss Dungeon: `node-<Elite Dungeon>--elite--test-<instance>`, or `--abyss--`;
-  - the Breach's: `node-gullwing-vale--breach-normal--test-<instance>`, or `--breach-hard--`, with its gate in a copy
-    of the zone of its own, `node-gullwing-vale--test-<instance>`, the same instance. The page joins the zone copy with
+  - the Breach's: `node-saltgrass-downs--breach-normal--test-<instance>`, or `--breach-hard--`, with its gate in a
+    copy of the zone of its own, `node-saltgrass-downs--test-<instance>`, the same instance. The page joins the zone copy with
     `?breach=` and the run's whole name, as a launched company joins the zone ([[Breaches]], "The Breach's test").
   Any other spelling is no room: no test of a patrol's dungeon, of a run at Normal, of a guild's, or of one marked
   `--sea`, and no zone copy of a zone with no Breach's gate. A test room is never a real run's room or a real zone's.

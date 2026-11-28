@@ -28,7 +28,7 @@ export const BED_RECORDINGS = {
   'frogs.chorus': 'amb.wet.frogs',
   'insects.marsh': 'amb.swamp.insects',
   'wind.snow': 'amb.tundra.snow',
-  // A Breach's: its gate's hollow and the Spire's hum in the vale, and its run's spaces under it.
+  // A Breach's: its gate's hollow and the Spire's hum in its zone, and its run's spaces under it.
   'breach.hollow': 'amb.breach.hollow',
   'spire.hum': 'breach.spire.fill',
   'breach.cave': 'amb.breach.cave',

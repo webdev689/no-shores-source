@@ -1,6 +1,6 @@
 // The ways between a patrol area and its instances: standing in a gate's basin a player may go through it into the
 // instance it leads to, arriving at the instance's way in; standing at an instance's way in, back out to the gate.
-// A gate the layout marks as crossing to another patrol area (Saltmere's three link each to both others) crosses to
+// A gate the layout marks as crossing to another patrol area (none stands while each island holds one) crosses to
 // it, arriving at its gate toward the one left.
 import type { NodeLayout } from './layouts.ts';
 

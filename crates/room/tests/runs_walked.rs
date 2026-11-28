@@ -1,7 +1,11 @@
 //! Continent 1's nodes as the bake lays them, walked by the movement rules: a body walks each of Saltmere's runs from
-//! its mouth along its line to its door, and pressing on past the door gets it nowhere; up every ramp, the instances'
-//! too, onto the terrace it serves; along every ruin's spoke from its plaza onto its tier; up every climb to its lookout on the massif's top; and over every bridge, a
-//! path's or a gorge's, both ways.
+//! its mouth along its line to its door, and pressing on past the door gets it nowhere; up every keep's stair, and
+//! down every undercroft's from its chapel floor (the cut zones' laid back in, support/cut_zones.rs); up every ramp,
+//! the instances' too, onto the terrace it serves; along every ruin's spoke from its plaza onto its tier; up every
+//! climb to its lookout on the massif's top; and over every bridge, a path's or a gorge's, both ways.
+
+#[path = "support/cut_zones.rs"]
+mod cut_zones;
 
 use layout::field::distance;
 use layout::paths::off_line;
@@ -109,16 +113,22 @@ fn spokes_of(laid: &layout::Layout) -> Vec<[f64; 7]> {
 }
 
 fn zones() -> Vec<Zone> {
-    zones_of("continent-1")
+    zones_of("continent-1", false)
 }
 
-fn zones_of(id: &str) -> Vec<Zone> {
+/// A continent's nodes as laid and baked, continent 1's with the zones cut from it laid back in or not.
+fn zones_of(id: &str, cut: bool) -> Vec<Zone> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let layout = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
     let continent = layout.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
-    let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
-    let builders = bake::builders(&root).expect("the builders read");
+    let mut text = read(&format!("content/world/land/{id}.json"));
+    let mut builders = bake::builders(&root).expect("the builders read");
+    if cut {
+        text = cut_zones::edits(&text);
+        cut_zones::briefs(&mut builders.briefs);
+    }
+    let edits = land::edits::parse(&text).expect("the edits parse");
     let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
     let mut landmass = land::landmass::generate(&continent, edits.clone()).expect("the continent generates");
     city::settle(&mut landmass, &city).expect("its city settles");
@@ -245,7 +255,10 @@ fn every_run_is_walked_to_its_door_and_no_further() {
 
 #[test]
 fn every_keep_is_climbed_to_its_turret_top_and_every_undercroft_walked_down_from_its_chapel_floor() {
-    let zones = zones();
+    // The Downs' keep, and the cut zones' keep and undercroft.
+    let mut zones = zones();
+    let cut = zones_of("continent-1", true).into_iter();
+    zones.extend(cut.filter(|zone| ["gullwing-vale", "driftwood-moors"].contains(&zone.id.as_str())));
     let (mut keeps, mut undercrofts, mut failed) = (0, 0, Vec::new());
     for zone in &zones {
         for run in zone.runs.iter().filter(|run| run.kind.building()) {
@@ -291,7 +304,7 @@ fn every_keep_is_climbed_to_its_turret_top_and_every_undercroft_walked_down_from
             }
         }
     }
-    assert!(keeps >= 2 && undercrofts >= 1, "Saltmere's keeps and undercroft: {keeps}, {undercrofts}");
+    assert!(keeps >= 2 && undercrofts >= 1, "the keeps and the undercroft: {keeps}, {undercrofts}");
     assert!(failed.is_empty(), "{failed:#?}");
 }
 
@@ -429,7 +442,7 @@ fn every_climb_is_walked_to_its_lookout() {
 #[test]
 fn every_bridge_is_walked_over_both_ways() {
     // Continent 9 holds the world's one path crossing a river, in the Whitewind Tundra.
-    let zones: Vec<Zone> = ["continent-1", "continent-9"].into_iter().flat_map(zones_of).collect();
+    let zones: Vec<Zone> = ["continent-1", "continent-9"].into_iter().flat_map(|id| zones_of(id, false)).collect();
     let (mut bridges, mut failed) = (0, Vec::new());
     for zone in &zones {
         for &Bridge { deck, ends, .. } in &zone.bridges {
@@ -467,7 +480,7 @@ fn every_bridge_is_walked_over_both_ways() {
 
 #[test]
 fn no_bridge_rail_stands_on_its_walked_width_or_leaves_a_gap() {
-    let zones: Vec<Zone> = ["continent-1", "continent-9"].into_iter().flat_map(zones_of).collect();
+    let zones: Vec<Zone> = ["continent-1", "continent-9"].into_iter().flat_map(|id| zones_of(id, false)).collect();
     let (mut rails, mut failed) = (0, Vec::new());
     for zone in &zones {
         for bridge in &zone.bridges {

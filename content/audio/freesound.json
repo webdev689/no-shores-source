@@ -3113,7 +3113,7 @@
     },
     {
       "id": "amb.breach.hollow",
-      "use": "The Sunken Gate's hollow in the vale, looped: wind moving round split stone",
+      "use": "The Sunken Gate's hollow on the Downs, looped: wind moving round split stone",
       "query": "canyon wind",
       "seconds": [
         20.0,

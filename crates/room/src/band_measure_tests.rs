@@ -189,7 +189,7 @@ fn row(name: &str, (felled, given_up, seconds): (usize, usize, f64)) {
 #[ignore = "a measurement, printed by hand in release"]
 fn measure_the_pace() {
     eprintln!("| Clear | Foes felled | Given up | Seconds | Seconds a foe |");
-    for id in ["saltgrass-downs", "gullwing-vale", "driftwood-moors"] {
+    for id in ["saltgrass-downs", "highwater-fells", "whitewind-tundra"] {
         let ring = vec![[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
         let section = Section { ring, spawns: vec![[0.0, 180.0]], falls_kill: false };
         let mut room = Room::garrisoned(Floor::Flat, Vec::new(), section, NodeKind::Patrol, (id, Some((1, 1))));

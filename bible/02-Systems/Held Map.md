@@ -241,7 +241,9 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
   waits; M or Escape turns back. Up, M or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
   plates and compass, and a gate's offer, give way while it is up.
 - **The view** opens centred on the player, 400 m across (in a passage zone, the whole web), held to the land's sheet: its ring and 40 m past it. A drag
-  pans and the wheel zooms, to 8 px a metre at most. A click does nothing: the map is only to look at.
+  pans and the wheel zooms, to 8 px a metre at most. A click does nothing but in a patrol zone with landing zones:
+  a click within 24 px of one picks it, and the card at the map's foot offers "Fast travel to" its name; its press or
+  Enter lowers the map and fast travels there ([[Game]], "Landings"), and Escape lets the pick go first.
 - **What it shows**, painted on the parchment in the map's inks and washes as a surveyor colours a plan, read afresh
   each time it is raised, off the ground as the camera keeps it (exact within 1 km of the player, an island's its
   own):
@@ -263,8 +265,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler, and the Postmaster, who
     keeps no stall, a sealed letter on a slate coin, the blue of his vest toward the ink; each faction's coin in its
     cloth with its banner's emblem (the Stormcallers' bolt, the Lamplighters' flame over a lamp, the Veiled's crescent
-    and star). Each site: a landing's chevrons, a public event's red-brown diamond, a gate's open arch and a sealed
-    door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
+    and star). Each site: a landing's chevrons (at each landing zone too), a public event's red-brown diamond, a gate's open arch and a sealed
+    door's barred one, an objective's target, foes' crossed blades (none for a way's patrol, which walks), a beacon's tower, and a resource node's small ring with
     a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
     where they look.
   - **What moves on it** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]): every other player in the room the player stands in, a patrol zone's or a social
@@ -282,8 +284,9 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     never painted again for them, and the gauntlets cover them as they cover the coin.
   - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
     (keeping its corner while it can), the names then laid again clear of it: the land's name at its head; then each
-    glyph the land holds, once, beside what it is ("The Mage", "Public event"), in columns of at most seven, and the
-    player's arrow, "You", then "Your company" and "Other players" while the map shows one; under them a bar
+    glyph the land holds, once, beside what it is ("The Mage", "Public event"), in columns of at most seven; each line
+    the sheet draws, a sample of it beside its word ("Track", cased; "Path", dashed; "Walls and buildings", solid), a
+    faint or inked one (a passage web's) keyed by none; the player's arrow, "You", then "Your company" and "Other players" while the map shows one; under them a bar
     of the ground's length at the map's zoom ("25 m").
   - **Other land** (an island's): its ground, edge and landing.
 
