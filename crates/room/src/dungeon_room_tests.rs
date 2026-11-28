@@ -499,3 +499,124 @@ fn a_player_leaving_a_dungeon_by_its_exit_door_or_its_open_portal_is_kept_as_com
     room.cache.as_mut().expect("its cache").open = true;
     assert!(out(&mut room, portal), "at its portal once it stands open");
 }
+
+/// How far a point stands off a solid's footprint (0 inside it).
+fn off_box([x, y]: [f64; 2], solid: &[f64; 6]) -> f64 {
+    let (east, south) = ((solid[0] - x).max(x - solid[2]).max(0.0), (solid[1] - y).max(y - solid[3]).max(0.0));
+    libm::hypot(east, south)
+}
+
+/// Whether a body stands at a point on a floor: on open floor, its radius clear of every solid of that floor (`near`)
+/// and of the rock round it.
+fn body_fits(dungeon: &Dungeon, near: &[&[f64; 6]], at: [f64; 2], floor: f64) -> bool {
+    let radius = TUNING.radius;
+    let open = |cell: usize| matches!(dungeon.cells[cell], Cell::Room(_) | Cell::Corridor);
+    let rock_clear =
+        [[-radius, 0.0], [radius, 0.0], [0.0, -radius], [0.0, radius], [0.0, 0.0]].iter().all(|[east, south]| {
+            at[0] + east >= 0.0 && at[1] + south >= 0.0 && open(dungeon.cell_at([at[0] + east, at[1] + south, floor]))
+        });
+    rock_clear && near.iter().all(|other| off_box(at, other) >= radius - 1e-6)
+}
+
+/// Of the floor a body stands on within a metre of a solid (a rock, a pillar, a jamb, a brazier), sampled every 0.3 m,
+/// how many points there are and how many the room's navmesh finds a way to from the arrival.
+fn reached_beside_solids(room: &Room, dungeon: &Dungeon) -> (usize, usize) {
+    const STEP_M: f64 = 0.3;
+    const BESIDE_M: f64 = 1.0;
+    let (arrival, _) = dungeon.arrival();
+    let from = [arrival[0], arrival[1], room.floor.height_at(arrival[0], arrival[1])];
+    let boxes = dungeon.boxes();
+    let (mut stood, mut reached) = (0, 0);
+    for solid in &boxes {
+        let floor = solid[4];
+        let storey: Vec<&[f64; 6]> = boxes.iter().filter(|other| (other[4] - floor).abs() < 0.5).collect();
+        let (across, down) = (((solid[2] - solid[0]) / STEP_M) as i32, ((solid[3] - solid[1]) / STEP_M) as i32);
+        let reach = (BESIDE_M / STEP_M) as i32;
+        for column in -reach..=across + reach {
+            for row in -reach..=down + reach {
+                let at = [solid[0] + f64::from(column) * STEP_M, solid[1] + f64::from(row) * STEP_M];
+                if off_box(at, solid) > BESIDE_M || !body_fits(dungeon, &storey, at, floor) {
+                    continue;
+                }
+                stood += 1;
+                reached += usize::from(room.nav.find_path(from, [at[0], at[1], floor]).is_some());
+            }
+        }
+    }
+    (stood, reached)
+}
+
+#[test]
+fn a_point_the_navmesh_gives_beside_a_solid_is_moved_where_a_body_stands_clear_of_it() {
+    let (mut given, mut stood) = (0, 0);
+    for elite in gear::activities::elite_dungeons() {
+        let room = crate::encounters::encounters_tests::elite_room(elite.id);
+        let laid = crate::encounters::encounters_tests::laid_dungeon(elite.id);
+        let boxes = laid.boxes();
+        for solid in &boxes[laid.jamb_and_loose_boxes().1] {
+            let floor = solid[4];
+            let storey: Vec<&[f64; 6]> = boxes.iter().filter(|other| (other[4] - floor).abs() < 0.5).collect();
+            let middle = [(solid[0] + solid[2]) / 2.0, (solid[1] + solid[3]) / 2.0];
+            for nth in 0..16 {
+                let turn = core::f64::consts::TAU * f64::from(nth) / 16.0;
+                let reach = (solid[2] - solid[0]).max(solid[3] - solid[1]) / 2.0 + 0.6;
+                let asked = [middle[0] + reach * libm::cos(turn), middle[1] + reach * libm::sin(turn), floor];
+                let Some(near) = room.nav.nearest_point(asked) else { continue };
+                given += 1;
+                let [x, y, _] = room.floor.standing_clear(near);
+                stood += usize::from(body_fits(&laid, &storey, [x, y], floor));
+            }
+        }
+    }
+    let share = stood as f64 / given as f64;
+    assert!(given > 10_000, "{given} points");
+    assert!(share >= 0.998, "{stood} of {given} points a body stands at, once moved clear ({share:.4})");
+}
+
+#[test]
+fn foes_find_a_way_to_the_floor_beside_a_dungeons_rocks_pillars_and_jambs() {
+    let mut rooms: Vec<(String, Room, Dungeon)> = Vec::new();
+    for patrol in PATROLS {
+        for number in 0..dungeon::PER_PATROL {
+            let room = Room::dungeon(patrol, number, LEVELS).expect("a patrol's dungeon");
+            rooms.push((format!("{patrol} {number}"), room, forged(patrol, number)));
+        }
+    }
+    for elite in gear::activities::elite_dungeons() {
+        let room = crate::encounters::encounters_tests::elite_room(elite.id);
+        rooms.push((elite.id.to_owned(), room, crate::encounters::encounters_tests::laid_dungeon(elite.id)));
+    }
+    // The passages' own styles, one storey deep as a passage lays them, their rubble and rock standing free.
+    for (key, seed) in [("chalk", 7_u32), ("chalk", 8), ("barrow", 11), ("barrow", 12)] {
+        let style = dungeon::style_of(key).expect("a style");
+        let laid = Dungeon::forge_storeys(seed, style, (2, 2), 1);
+        let room = Room::laid_dungeon(key, &laid, LEVELS, (REEVE, Miniboss), None).expect("a dungeon");
+        rooms.push((format!("{key} {seed}"), room, laid));
+    }
+    let (mut stood, mut reached, mut worst) = (0, 0, (1.0, String::new()));
+    for (place, room, laid) in &rooms {
+        let (here, found) = reached_beside_solids(room, laid);
+        let share = found as f64 / here.max(1) as f64;
+        if share < worst.0 {
+            worst = (share, place.clone());
+        }
+        (stood, reached) = (stood + here, reached + found);
+    }
+    let share = reached as f64 / stood as f64;
+    assert!(stood > 50_000, "{stood} points beside solids");
+    assert!(share >= 0.98, "the navmesh finds a way to {reached} of {stood} points beside solids ({share:.3})");
+    assert!(worst.0 >= 0.98, "{}: {:.3} of its points beside solids", worst.1, worst.0);
+}
+
+#[test]
+fn brine_catacombs_flight_foot_is_one_floor_on_the_navmesh() {
+    // At the foot of the flight up from the third storey (x 4.8, y 8 to 24), the floor either side of a diagonal edge,
+    // 0.2 m apart on one flat floor, is one floor, and rooms 14 to 17 past it are reached: there the watershed would
+    // grow one region up the flight and back over the storey's own corridor, whose outline then crosses itself.
+    let room = crate::encounters::encounters_tests::elite_room("brine-catacombs");
+    let (west, east) = ([4.3, 8.4, -16.0], [4.5, 8.4, -16.0]);
+    assert!(room.nav.find_path(west, east).is_some(), "the foot's two sides joined");
+    let (x, y) = room.spawn_points[0];
+    let way_in = [x, y, room.floor.height_at(x, y)];
+    assert!(room.nav.find_path(way_in, [24.0, 11.2, 0.0]).is_some(), "the way in joined to room 14");
+}

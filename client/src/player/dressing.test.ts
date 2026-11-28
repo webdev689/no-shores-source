@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { dressFrom, figureOf, layerRamps, lookOutfit, wardrobeOf } from './dressing.ts';
+import { dressFrom, figureOf, layerRamps, lookOutfit, wardrobeOf, weaponGlow } from './dressing.ts';
 
 const rampsOf = (...args: Parameters<typeof layerRamps>) => layerRamps(...args).ramps;
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
@@ -108,6 +108,19 @@ test('another player’s dress is taken only when it has a dress’s shape', () 
     JSON.stringify({ ...dress, outfit: { ...outfit, hair: { style: 'crop' } } }),
   ])
     assert.equal(dressFrom(broken), null, broken.slice(0, 60));
+  for (const glow of [[4, 0], [1], '1', null])
+    assert.deepEqual(dressFrom(JSON.stringify({ ...dress, glow })), dress, `a glow of ${JSON.stringify(glow)} dropped`);
+});
+
+test('another player’s weapon glows in the element their dress says while it is drawn, and nothing else does', () => {
+  const armed = { body: 'male', race: 'human', tone: 0.3, outfit: { ...outfit, right: 'sword_iron', drawn: true } };
+  const blazing = dressFrom(JSON.stringify({ ...armed, glow: [1, 0] }));
+  assert.ok(blazing);
+  assert.equal(weaponGlow(blazing), 1);
+  assert.equal(weaponGlow({ ...blazing, outfit: { ...blazing.outfit, drawn: false } }), 0, 'put away');
+  const plain = dressFrom(JSON.stringify(armed));
+  assert.ok(plain);
+  assert.equal(weaponGlow(plain), 0, 'a dress that says none, as one sent before the glow was, glows in nothing');
 });
 
 test('a dye worn takes every armour piece and garment, never a weapon, a shield, the cloak or the hair', () => {

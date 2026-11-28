@@ -157,6 +157,13 @@ const GLOW_BLAZE_MOST = ${(GLOW_PAD / BLAZE_UP - 0.05).toFixed(3)};
 // A flame at rest reaches this far across at most: six pixels up.
 const GLOW_BLAZE_REST = ${(6 / BLAZE_UP).toFixed(3)};
 
+// The field's texel under a share 'at' of its quad. Multisampling shades a pixel the quad's edge crosses from the
+// pixel's middle, which can lie outside the quad, and a read outside the field gives nothing on most GPUs: a field of
+// nothing reads as touching the weapon, and would light a thin box round the whole quad.
+fn glow_texel(at: vec2f, size: vec2f) -> vec2f {
+  return clamp(floor(at * size), vec2f(0.0), size - 1.0);
+}
+
 fn glow_ramp(look: u32, stop: u32) -> vec3f {
   return GLOW_RAMP[(look - 1u) * 4u + min(stop, 3u)];
 }

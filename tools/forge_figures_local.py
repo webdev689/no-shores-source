@@ -18,7 +18,7 @@ sys.path.insert(0, HERE)
 import forge_publish  # noqa: E402
 
 FORGE = os.path.join(HERE, 'forge')
-REPO = 'Lattymoy/no-shores-source'
+REPO = 'webdev689/no-shores-source'
 
 
 def draw(job, work, threads):

@@ -10,6 +10,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
+- [[The Holdfast Stands Only in a Larger Room, With a Larger Ring and Fewer Elites]]
+- [[Other Players' Weapons Glow in Their Element]]
 - [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]
 - [[The Music Repeats Less, Patrol Zones First]]
 - [[TypeScript and Rust]]
@@ -42,12 +44,14 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Come Sail Away's Sailing Comes Over]]
 - [[Ships' Lanterns Come Over From DFO]]
 - [[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]
+- [[The Wreck's Stern Windows Glow]]
 - [[Ship Models Live on R2]]
 - [[The Sloop's Trim]]
 - [[The Server Gets Its Own Rules]]
 - [[The Co-Dev's Toolkit, Whole]]
 - [[Readers of Our Own Formats Only]]
 - [[CLAUDE.md Points Into the Bible]]
+- [[The Kit Runs Only in Cloud Sessions]]
 - [[Which Made-for-DFO Mods Come Over]]
 - [[The World Map]]
 - [[The World Editor Paints in the Browser]]
@@ -414,6 +418,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]
 - [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]
 - [[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]
+- [[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]
 - [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
 
 ## Claude's calls

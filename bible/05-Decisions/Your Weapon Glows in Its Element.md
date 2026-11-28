@@ -25,3 +25,5 @@ Volt in Overlook's electric blue, Cosmic a new purple swirl with star glints), t
   with star glints.
 
 DFO's weapon glow was marked Cut on the [[Pick List]]; this is the owner's approval of it ([[Pick - Weapon Glow]]).
+
+Replaced in part by [[Other Players' Weapons Glow in Their Element]]: other players' figures glow too.

@@ -9,14 +9,18 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **Merging on the owner's yes once CI passes on its head**: #249 ("Use your gifts" counts a step done before it, so
-  none is asked again; a lesson's steps tick in the tracker alone, with no notice at the foot; tested offline, the
-  notices not yet seen in a running game). A merge deploys the page, the site, the rooms and the bot.
-- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`).
-- **To come**: the owner's 120-character line check for the bible and code comments, with every
-  longer line rewrapped (observation #53); the record is in `toolkit-data`'s `reviews/2026-11-27/REVIEW.md`.
-- **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
+- #159 The rooms' worker tests wait for what they check, not for the clock
+- #234 The owner's answers to the Open Questions, recorded and built
+- #250 The kit runs only in cloud sessions
+- #251 Drops are larger and brighter, and weapons and armour lie on the ground as real pickups
+- #253 Record No Shores (Mobile): rebuilt in Rust, beside the browser game
+- #254 Sea polish: the aim swings between sides, lamps hold still, ships ride high waves, the map travels to every place
+- #256 Weapon glow fixes, a great-room Holdfast with lighter waves, and pathing round rocks
+- #257 Lines in the bible and code comments held to 120 characters, every longer one rewrapped (review 8)
+- #258 Armour, cloaks and clothes get large icons in the gear screens, as the weapons do
+- #259 The wreck exports again, its stern windows glowing as a lit ship's
+- #264 The hand-off says the repository is public under webdev689, and what the owner sets for it
+- Drafts: #93 The toolkit's first review; #114 The gear message carries the pledge once
 
 ## Built
 
@@ -104,6 +108,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   Developer role appears once the layout is built again.
 - **Branches**: delete `ccr-9e470c58-pm6nyz` (#211, merged) and `ccr-c7c30290-wwnvc5` (#221, merged); a session
   cannot.
+- **The repository is public, under webdev689**: `main` has no protection. In Settings: a ruleset on `main` (a pull
+  request and the `check` status, no force-push or deletion); secret scanning with push protection, private
+  vulnerability reporting and Dependabot alerts; Actions asking approval for outside contributors, with a read-only
+  default token; interaction limits to collaborators. A pattern scan of every branch's history found no key (tested
+  offline, not exhaustive).
+- **The Pages address moved** to `webdev689.github.io/no-shores-source/`: `lattymoy.github.io` is still named by the
+  accounts' `PAGES` (`server/accounts/wrangler.jsonc`), `site.yml`'s `PAGE_ORIGIN`, tests and notes, so a sign-in
+  from the Pages copy is unchecked. Changing them changes a deploy: the owner's word first.
 - **Security and deploys found by the tooling audit** (each needs the owner's named approval, as a rule on keys,
   security or deploys does): any branch's push runs the asset workflows (`modules.yml`, flora, ships, wreck, freesound,
   dungeon-modules, island-modules; lattice on every branch but main) with `CLOUDFLARE_TOKEN`, which writes the bucket
@@ -132,6 +144,13 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **#256's leftovers**: the outline's fix and other players' glow unseen on a real GPU and in a deployed room; the
+  Holdfast, the waves' caps, the trimmed navmesh and foes placed clear of solids unplayed; a navmesh region kept from
+  meeting itself costs `partition` some 2 ms more on a 70 m square (release, a noisy machine), and two floors of one
+  region touching only diagonally can still weld one corner at the wrong height. The audit's low findings left: a
+  Court in a 2 by 2 end room stands its anchors inside the slam (an anchor keeps what it holds, so stepping out costs
+  nothing); a passage Hold's ring can stand a mouth 5.5 m off under ground; a lamp's zone whose 64 seeds all miss
+  lays its lamp unchecked; a vein's gathers each call a wave, never waiting.
 - **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
   and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
   the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
