@@ -508,13 +508,13 @@ def hood(body, mats, name='hood', cloak=None, neck=None):
 
 
 def cloak(body, mats, name, hem=0.42, hooded=False, fur=False, short=False):
-    """A cloak hung from the shoulders down the back to `hem` (a cape's to the hips, its hem barely wider than its
-    shoulders, so it hangs flat), lined, its edges turned, held at the throat by a gilt clasp; `hooded`, its hood up;
+    """A cloak worn from the nape down the back to `hem` (a cape's to the hips, its hem barely wider than its
+    shoulders, so it hangs flat), lined, its edges turned; `hooded`, its hood up;
     `fur`, a fur collar over its shoulders (a formal cloak's), or with its hood up a hood of fur and no collar, as
     Daggerfall's hooded formal cloak wears it."""
     import drape
     c = drape.Cloak(name, mats, hem=HIP_Z + 0.05 if short else hem, fullness=1.15 if short else 1.4)
-    out = [c, drape.Clasp(f'{name}_clasp', mats, c)]
+    out = [c]
     if fur and hooded:
         furred = list(mats)
         furred[SLOT['cloth']] = furred[SLOT['hem']] = mats[SLOT['fur']]

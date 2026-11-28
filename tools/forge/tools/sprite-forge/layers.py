@@ -248,8 +248,8 @@ def held_anims(weapon):
         return [*onehand.TWIN, *agility.HELD, *blows.PAIR]
     if weapon == torch3p.LAYER:
         return list(torch3p.ANIMS)
-    if weapon in CROSSBOW_LAYERS:   # and carried at port arms in its own sprint (gunplay.py `xbowrun`)
-        return ['bow', *BOW_REST, 'death', 'fallen', 'xbowrun']
+    if weapon in CROSSBOW_LAYERS:   # at rest in the right hand, hanging at the side as a held weapon does, and carried
+        return ['bow', *poses.AT_REST.values(), 'death', 'fallen', 'xbowrun']   # at port arms in its own sprint
     if weapon in BOW_LAYERS:   # in hand at rest too, let fall as any weapon is, and in its own holds (bowhold.py)
         return ['bow', *BOW_REST, 'death', 'fallen', *bowhold.ANIMS]
     if weapon == 'bow':
@@ -678,9 +678,9 @@ def set_graded(ly, *args):
 
 def armour_layers(body, classify, materials_=None):
     """Each armour set's layers over `body`: its pieces (`<piece>_<material>`) and its under-suit
-    (`under_<material>`), worn where no clothing covers the body."""
+    (`under_<material>`), worn where no clothing covers the body. Every set by default, the guilds' with the metals'."""
     out = []
-    for m in materials_ or armour.MATERIALS:
+    for m in materials_ or (*armour.MATERIALS, *armour.GUILDS):
         A = Dressed(body)
         mat, skins = armour.dress(A.M, A.skins[0], A.parts, m, woman=body == 'female')
         A.skins += skins
@@ -1038,9 +1038,10 @@ def render(layer, anim, frame, view, per, tmp, names):
     """A layer's frame: its colour (graded as the forge grades) and its depth, cut to the box it fills, with that
     box's corner on the work frame; None where the layer draws nothing."""
     p, gear = pose(anim, frame, view, per, layer.weapon)
-    if layer.weapon == 'crossbow':   # held where the bow is held, in the bow's place; at rest, by its stock
-        W = p.world()
-        held = (crossbow_frame(*gear['xbow']) if 'xbow' in gear else crossbow_fallen(gear['axe']) if 'axe' in gear
+    if layer.weapon == 'crossbow':   # held where the bow is held, in the bow's place; at rest, by its stock in the right
+        W = p.world()                # fist, hanging at the side
+        held = (crossbow_frame(*poses.xbow_in_right(p)) if anim in poses.AT_REST.values()
+                else crossbow_frame(*gear['xbow']) if 'xbow' in gear else crossbow_fallen(gear['axe']) if 'axe' in gear
                 else crossbow_at(gear['bow'], W['farm_L'].translation, W['hand_L'].translation))
         gear = {k: v for k, v in gear.items() if k not in ('bow', 'nock', 'draw', 'arrow', 'xbow')} | {'axe': held}
     elif layer.extras and 'axe' in gear:   # a bow let fall as any weapon is, its grip at the fist
