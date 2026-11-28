@@ -11,15 +11,11 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 - #159 The rooms' worker tests wait for what they check, not for the clock
 - #234 The owner's answers to the Open Questions, recorded and built
-- #250 The kit runs only in cloud sessions
 - #251 Drops are larger and brighter, and weapons and armour lie on the ground as real pickups
 - #253 Record No Shores (Mobile): rebuilt in Rust, beside the browser game
-- #254 Sea polish: the aim swings between sides, lamps hold still, ships ride high waves, the map travels to every place
-- #256 Weapon glow fixes, a great-room Holdfast with lighter waves, and pathing round rocks
 - #257 Lines in the bible and code comments held to 120 characters, every longer one rewrapped (review 8)
 - #258 Armour, cloaks and clothes get large icons in the gear screens, as the weapons do
-- #259 The wreck exports again, its stern windows glowing as a lit ship's
-- #264 The hand-off says the repository is public under webdev689, and what the owner sets for it
+- #267 A hostile ship seen by night is one to click, and the sea fight keeps its zoom
 - Drafts: #93 The toolkit's first review; #114 The gear message carries the pledge once
 
 ## Built
@@ -151,8 +147,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   Court in a 2 by 2 end room stands its anchors inside the slam (an anchor keeps what it holds, so stepping out costs
   nothing); a passage Hold's ring can stand a mouth 5.5 m off under ground; a lamp's zone whose 64 seeds all miss
   lays its lamp unchecked; a vein's gathers each call a wave, never waiting.
-- **The sea's polish (#254)**: tested offline only, not yet seen on a real GPU or played by hand; its questions are in
-  [[Open Questions]].
+- **The sea's polish (#254, merged; #267)**: tested offline only, not yet seen on a real GPU or played by hand; the
+  owner's answers to its two questions are in #267.
 - **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
   and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
   the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
