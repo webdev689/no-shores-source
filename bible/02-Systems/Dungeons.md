@@ -203,8 +203,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **A room's shape** (`outline`) lies inside its rectangle, and is always one walk. A rectangle takes all of it; an L
   leaves a corner quarter rock; a cross leaves each corner block rock, a third of each side; an octagon leaves each
   corner cell rock; a round room keeps the cells inside its rectangle's ellipse, a diamond those inside its rhombus;
-  a ring walks round a core of rock left standing as stones (the walk two cells wide where the room is seven or more
-  that way); a T keeps a bar along one long side and a stem down the middle of the rest. Alcoves line one or both long walls of a hall with single cells cut one deep into the rock, every
+  a ring walks round a core of rock left standing as stones, the walk two cells wide (no purpose that lays rows
+  suits a ring, whose rows would cut its walk into lanes too narrow to pass); a T keeps a bar along one long side and a stem down the middle of the rest. Alcoves line one or both long walls of a hall with single cells cut one deep into the rock, every
   second cell from the second, never at a wall's end: a crypt's burial niches and the cells' cells. A cave is bitten
   from its rectangle as the Forge bites one: each cell kept where it lies inside the rectangle's ellipse, its edge
   pushed in or out by a draw, and only the cells one walk from its middle kept. A great cave, 5 cells or more each
