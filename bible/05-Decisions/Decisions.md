@@ -306,6 +306,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Heal Is a Subtle Swirl]]
 - [[Heavy Renders Run on the Owner's PC, Not on Actions]]
 - [[Heavy Forge Renders May Run on the Public Forge Mirror]]
+- [[Cloaks Hang From the Neck Down the Back, Rigged to the Body]]
+- [[Maces, Warhammers and Flails Are Worn When Put Away]]
+- [[The Crossbow Rests in the Right Hand]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -140,7 +140,10 @@ WOOD_LOOK = {'Metallic': 0.0, 'Roughness': 0.8, 'Specular IOR Level': 0.2}
 METAL_LOOK = {'Metallic': 0.45, 'Roughness': 0.35}
 # the wood's colour under the first-person lamps, multiplied in linear light: the lamps lift the owner's wood half again
 # above the crossbow the owner drew at rest and wash its red out, so it is laid darker and warmer to match that picture
-WOOD_TONE = (0.17, 0.12, 0.06)
+WOOD_TONE = (0.148, 0.104, 0.052)
+# and the metal's, by the crossbow's metal: the lamps make it bright where the owner's picture at rest has it dull, the
+# pale and gilt makes most of all, so each is laid darker to its own picture's light
+METAL_TONE = {'iron': 0.45, 'steel': 0.36, 'silver': 0.13, 'elven': 0.11, 'dwarven': 0.13, 'mithril': 0.45}
 
 
 def _toned(m, node, tone):
@@ -158,8 +161,9 @@ def _toned(m, node, tone):
     tree.links.new(mix.outputs['Result'], base)
 
 
-def dress(m):
-    """`m` dressed for the eye, its colours its own: its wood matte and toned, its metal more lamp-lit than mirrored."""
+def dress(m, metal='iron'):
+    """`m` dressed for the eye, its colours its own: its wood matte, its metal more lamp-lit than mirrored, each toned to
+    the owner's picture at rest (`metal`'s own tone for its metal)."""
     wood = m.name.lower().startswith('wood')
     look = WOOD_LOOK if wood else METAL_LOOK
     for node in list(m.node_tree.nodes) if m.node_tree else ():
@@ -168,8 +172,8 @@ def dress(m):
                 node.inputs[k].default_value = v
             for link in list(node.inputs['Normal'].links):   # its bump is made for the model's own size, not ours
                 m.node_tree.links.remove(link)
-            if wood and not m.get('fp_toned'):
-                _toned(m, node, WOOD_TONE)
+            if not m.get('fp_toned'):
+                _toned(m, node, WOOD_TONE if wood else (METAL_TONE.get(metal, METAL_TONE['iron']),) * 3)
                 m['fp_toned'] = True
     return m
 
@@ -179,7 +183,8 @@ def palette():
     gets one nothing wears."""
     import bpy
     import fpmodel
-    mats = _load(fpmodel.SHAPE.get('metal', 'iron'))
+    metal = fpmodel.SHAPE.get('metal', 'iron')
+    mats = _load(metal)
     out = {}
     for i, n in enumerate(OWN):
         m = mats[i] if i < len(mats) else None
@@ -187,7 +192,7 @@ def palette():
             m = bpy.data.materials.get(f'xbow.unused.{i}') or bpy.data.materials.new(f'xbow.unused.{i}')
             if m.node_tree is None:
                 m.use_nodes = True
-        out[n] = dress(m)
+        out[n] = dress(m, metal)
     return out
 
 

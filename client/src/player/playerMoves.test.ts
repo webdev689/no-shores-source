@@ -161,7 +161,7 @@ test("a shot plays its weapon's own move whole, then its reload; a brace fires r
   assert.equal(shot('pistolet', null, true, false, 0).anim, 'pistolreload');
   assert.deepEqual(shot('pistolet', 'pistolet_l', false, true, 0.2), { anim: 'braceshot', frame: 3, frameSeconds: 0 });
   assert.equal(shot('crossbow_iron', null, false, false, 0.5).anim, 'bow');
-  assert.equal(shot('crossbow_iron', null, true, false, 0.5).anim, 'idle_bow');
+  assert.equal(shot('crossbow_iron', null, true, false, 0.5).anim, 'idle');
 });
 
 test('in the air the jump shows rising, at the top and falling; on a wall the climb moves', () => {
@@ -241,6 +241,17 @@ test('running with a gun or a crossbow drawn plays its own run; put away, the pl
   assert.equal(shownMove({ ...running, right: 'crossbow_iron' }, frames, classic).anim, 'xbowrun');
   assert.equal(shownMove({ ...running, right: 'crossbow_iron', drawn: false }, frames, classic).anim, 'run');
   assert.ok(likelyMoves('crossbow_iron', null, classic).includes('xbowrun'));
+});
+
+test('a crossbow drawn rests and walks in the body’s own moves, hanging from the right hand, never the bow’s', () => {
+  const crossbow = { ...doing, right: 'crossbow_iron' };
+  assert.equal(shownMove(crossbow, frames, classic).anim, 'idle');
+  assert.equal(shownMove({ ...crossbow, moving: true, speed: 2 }, frames, classic).anim, 'walk');
+  assert.equal(
+    shownMove({ ...doing, right: 'bow_long_iron' }, frames, classic).anim,
+    'idle_bow',
+    'a bow keeps its own',
+  );
 });
 
 /** Each ranged kind as the figure holds it: its hands, its shot's move, the frame its shot leaves on (a gun's flash, a

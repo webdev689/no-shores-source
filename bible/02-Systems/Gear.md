@@ -818,8 +818,11 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   draw for a body falls to the nearest of its own content's, then to the nearest on the ladder of every set by worth
   (leather to daedric); a faction's straight to the ladder.
 - **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; a faction's cape is the formal
-  cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is.
-- **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled Normal weapon is iron to level 10 and steel
+  cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is. It hangs from the
+  neck down the back ([[Cloaks Hang From the Neck Down the Back, Rigged to the Body]]). Put away, a mace, a warhammer
+  or a flail is worn on the body ([[Maces, Warhammers and Flails Are Worn When Put Away]]).
+- **The hands** hold the loadout drawn in its look (`weaponLook`); a crossbow rests in the right hand
+  ([[The Crossbow Rests in the Right Hand]]). A rolled Normal weapon is iron to level 10 and steel
   past it from any content, as Normal armour is clothes; a Magic or finer one is made in its content's metals: the
   world's climbing them over levels 1 to 20 and one more by its look roll where one is left, another content's chosen
   by its look roll alone (`rolledMetal`). Its make is chosen by its look roll's sixths: a Sword & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's

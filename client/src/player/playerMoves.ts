@@ -164,7 +164,8 @@ function ownKit(right: string | null, left: string | null, draws: Draws): Kit {
     return draws('bowready', right)
       ? { idle: 'bowready', walk: 'bowwalk', attack: 'bow', run: 'bowrun' }
       : { idle: 'idle_bow', walk: 'walk_bow', attack: 'bow' };
-  if (kind === 'crossbow') return { idle: 'idle_bow', walk: 'walk_bow', attack: 'bow', run: 'xbowrun' };
+  // A crossbow rests in the right hand, hanging at the side, in the body's own moves.
+  if (kind === 'crossbow') return { idle: 'idle', walk: 'walk', attack: 'bow', run: 'xbowrun' };
   if (kind === 'staff') return { idle: 'idle_staff', walk: 'walk_staff', attack: 'attack_staff' };
   if (kind === 'thunderlock')
     return { idle: 'gunready', walk: 'gunwalk', attack: 'gunshot', reload: 'gunreload', run: 'gunrun' };
@@ -238,11 +239,11 @@ export function steadyMoves(
   return [...new Set([kit.idle, kit.walk, ...(kit.run ? [kit.run] : []), 'idle', 'walk', 'run', ...drink])];
 }
 
-/** A move as the right hand's bow, crossbow or staff plays it, where the forge draws its own (`hurt_bow`); else the
- *  move itself. */
+/** A move as the right hand's bow or staff plays it, where the forge draws its own (`hurt_bow`); else the move itself,
+ *  as a crossbow, at rest in the right hand, plays it. */
 function ownMove(anim: string, right: string | null, draws: Draws): string {
   const kind = right?.split('_')[0];
-  const special = kind === 'bow' || kind === 'crossbow' ? `${anim}_bow` : kind === 'staff' ? `${anim}_staff` : null;
+  const special = kind === 'bow' ? `${anim}_bow` : kind === 'staff' ? `${anim}_staff` : null;
   return special && draws(special, right) ? special : anim;
 }
 

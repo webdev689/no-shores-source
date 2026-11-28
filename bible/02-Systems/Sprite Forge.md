@@ -182,8 +182,9 @@ costing no Actions minutes, as a heavy render does ([[Heavy Renders Run on the O
 takes the jobs a run finished from its artifacts (`gh`), draws the rest side by side, and publishes them with the
 first person's flask. A heavy redraw may instead run on the runners of the public mirror `webdev689/no-shores-forge`,
 which cost no Actions minutes, when the owner says so; its strips are laid into the studio on the owner's PC, the
-publish staged there (`R2_STAGE=<folder> python3 -I tools/forge_publish.py add`) and the stage uploaded where the
-repository's token is held, with `python3 -I tools/r2.py upload <folder>` as `forge.yml`'s publish job does
+publish staged there (`R2_STAGE=<folder> python3 -I tools/forge_publish.py add`), its tar laid on a release of the
+mirror, and the stage uploaded by `forge-stage.yml` with the repository's token: a push of `tools/forge/stage-request.txt`
+(the tar's address, then its SHA-256) asks for it, and a request that is `main`'s own asks for nothing
 ([[Heavy Forge Renders May Run on the Public Forge Mirror]]).
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes

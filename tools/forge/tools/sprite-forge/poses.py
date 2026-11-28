@@ -607,6 +607,17 @@ def bow_in_left(pose, fist=None):
             'fist': {'L': True, 'R': False}}
 
 
+def xbow_in_right(pose):
+    """The crossbow at rest in the right fist, where the right hand is: held by its stock, pointing down and forward,
+    as the left fist holds it under the bow (`bow_in_left`). Its frame's parts (gear.py `crossbow_frame`)."""
+    rot = root_matrix(pose).to_3x3()
+    H = pose.world()['hand_R']
+    at = H.translation + H.to_3x3() @ Vector((0, 0, -FIST))
+    aim = (rot @ Vector(XBOW_AIM)).normalized()
+    lift = Vector((0.0, 0.0, 1.0))
+    return at, aim, (lift - lift.project(aim)).normalized(), XBOW_HOLD
+
+
 def walk_bow(frame, view, yaw):
     return walk(frame, view, yaw, rest=True)
 

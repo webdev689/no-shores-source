@@ -1,7 +1,8 @@
 """The rigged cape: a cloak cut and hung once on the body standing, then worn on its bones as armour is.
 
-Its yoke, the rows over the shoulders, is skinned to the neck, the chest and the collarbones (a little to the upper
-arms), so a shrug lifts it and nothing re-lays it from frame to frame. The cloth below swings on a few chains of
+Only its middle is worn, from the nape down the back between the shoulder blades, never over the shoulders' tops
+(`_slim`). Its yoke, its top rows, is skinned to the neck, the chest and the collarbones (a little to the upper arms),
+so a shrug lifts it and nothing re-lays it from frame to frame. The cloth below swings on a few chains of
 links down from the yoke's foot: each link a weighted pendulum under gravity (turned with the chest as cloth.py
 `_held` turns it) and in the air the body moves through, the chains held a cloth's width apart, and every link kept
 off a handful of capsules round the body's bones - its trunk, its hips, its arms and its legs - and off the floor.
@@ -17,15 +18,17 @@ from scipy.spatial.transform import Rotation
 
 import rig
 
-VERSION = 1            # raised whenever the rig hangs a cloak differently: every cloak's strips drawn again
+VERSION = 2            # raised whenever the rig hangs a cloak differently: every cloak's strips drawn again
 CHAINS = 11           # the chains across the cloth, its two front edges among them
 LINKS = 5              # the links of each, from the yoke's foot to the hem
 STEP = 1.0 / 120       # seconds a step of the swing
 DRAG = 2.0             # the air's hold on the cloth: its speed through the air lost this share a second
 HOLD = 1.0             # how hard the cloth is drawn back to the shape it hung in, as a share of gravity's pull on a
 LEVER_MIN = 0.1        # pendulum as long as the cloth above each point (no shorter than this, metres)
-SLIM = 0.30            # the share of its width round the body the cloth keeps below the shoulders
-SLIM_FROM = 6          # the row it leaves the shoulders' tops by, a hood's mantle sewn there (drape.py `MANTLE`)
+TOP = 0.38             # the share of its width round the body the cloth keeps from its collar to `SLIM_FROM`: on the
+#                        nape and the upper back, reaching toward the shoulders but never over their tops
+SLIM = 0.30            # and the share it keeps below, down the back
+SLIM_FROM = 6          # the row it is drawn in from `TOP` below, on the shoulder blades
 TAPER = 0.3            # the share of the way down from there over which it draws in to `SLIM`
 DAMP = 4.0             # its own swing lost this share a second
 SETTLE = 1.0           # seconds it hangs at the first key before the move begins
@@ -39,7 +42,8 @@ PACE = {'run': (0.15, True, 2.5), 'gunrun': (0.15, True, 2.5), 'bowrun': (0.15, 
 # the bones the yoke is worn on, each from its joint to the next, and how firmly
 YOKE = (('neck', 'head', 1.0), ('chest', 'neck', 1.0), ('clav_L', 'uarm_L', 1.0), ('clav_R', 'uarm_R', 1.0),
         ('uarm_L', 'farm_L', 0.3), ('uarm_R', 'farm_R', 0.3))
-YOKE_REACH = 0.06      # metres: a bone's hold on the yoke falls away over about this
+YOKE_REACH = 0.12      # metres: a bone's hold on the yoke falls away over about this, so its corners on the shoulder
+#                        blades ride the collarbones and the upper arms as the shoulders move, not the chest alone
 # the capsules it is kept off: the trunk it lies on (each made no fatter than lets it lie as it was hung), and the
 # limbs that swing into it
 TRUNK = (('pelvis', 'spine'), ('spine', 'chest'), ('chest', 'neck'), ('thigh_L', 'thigh_R'))
@@ -127,17 +131,17 @@ def _closest(X, A, B):
 
 
 def _slim(G):
-    """The cloth below the shoulders drawn in toward the back's middle: each row laid along its own course as it
-    hung, but over only `SLIM` of it, the share falling from the whole at row `SLIM_FROM` (where the cloth leaves the
-    shoulders' tops, and a hood's mantle is sewn) over the first `TAPER` of the way down from there, so the shoulders
-    wear it as they did and below them it hangs slim down the back."""
+    """The cloth drawn in toward the back's middle from its collar down: each row laid along its own course as it
+    hung, but over only `TOP` of it to row `SLIM_FROM`, so it sits on the nape and the upper back and never over the
+    shoulders' tops, then over a share falling to `SLIM` over the first `TAPER` of the way down from there, so it hangs
+    slim down the back."""
     G = G.copy()
     cols = G.shape[1]
     mid = (cols - 1) / 2   # the back's middle: the cloak runs round from one front edge to the other
-    rows = np.arange(SLIM_FROM + 1, G.shape[0])
-    u = (rows - SLIM_FROM) / max(G.shape[0] - 1 - SLIM_FROM, 1)
+    rows = np.arange(G.shape[0])
+    u = np.clip((rows - SLIM_FROM) / max(G.shape[0] - 1 - SLIM_FROM, 1), 0.0, None)
     w = np.clip(u / TAPER, 0.0, 1.0)
-    share = 1 - (1 - SLIM) * w * w * (3 - 2 * w)
+    share = TOP + (SLIM - TOP) * w * w * (3 - 2 * w)
     for r, s in zip(rows, share):
         at = mid + (np.arange(cols) - mid) * s
         lo = np.clip(np.floor(at).astype(int), 0, cols - 2)
@@ -164,7 +168,7 @@ class Rig:
         self.rows, self.cols, self.k = G0.shape[0], G0.shape[1], yoke
         inv = np.linalg.inv(W0['chest'])
         local = lambda X: X @ inv[:3, :3].T + inv[:3, 3]   # noqa: E731
-        G0 = _slim(np.asarray(G0, float))   # the cut as worn: slim below the shoulders, its yoke too
+        G0 = _slim(np.asarray(G0, float))   # the cut as worn: its middle alone, from the collar down
         G = local(G0.reshape(-1, 3)).reshape(G0.shape)
         # the yoke, worn on its bones: each point's place on each bone, and the bone's hold on it
         Y = G0[:yoke].reshape(-1, 3)

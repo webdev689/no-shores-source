@@ -1,8 +1,8 @@
 {
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
-  "index": "index/7c0b2a7e360d183915f68a274d214187f4caad84de77fbf520185593b32b5880.json",
+  "index": "index/86d29d848ed57e15370fad035be1b6b917e7e56cf472cbed21341b0abcfbfdc5.json",
   "tables": {
-    "looks": "tables/ddc8df339059db03b4702041713da8e8ba9952f63d5f316135f495d28cedcf6d.json",
+    "looks": "tables/3f9dcb48153da3786a947a7f690edc482834ff1566fede645ec4e603c20651a2.json",
     "skins": "tables/536b8c79c7ec714df318bbb7934e17213b211d93c75adc06d3db00912820c2bd.json",
     "hair": "tables/cf7d5c8c092def912cf1b7a10389cbb9319b5ba5f5426fa31f74b9aadc6a19f0.json",
     "points-male": "tables/06a1b8a287f9bafd75fabce6604e6ba09c7282b63d8011f70dac401c0543237e.json",

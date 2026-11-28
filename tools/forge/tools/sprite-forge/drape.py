@@ -434,7 +434,7 @@ PACE_ELSE = (0.11, False, 0.0)
 RIG = os.environ.get('FORGE_RIG', '1') != '0'
 YOKE = 0.2   # how far down a cloak its yoke lies over the shoulders
 YOKE_SPAN = 1.1   # the yoke's foot, either way round from the back: on the shoulder blades, so it hangs between the arms
-MANTLE = 6   # the row of a cloak's yoke its hood's mantle is sewn to, most of the way down the shoulders
+COWL = 0.14   # how far a hood on a cloak spreads its foot past the jaw's ring: a short cowl round the neck, no further
 _MESHES = {}
 
 
@@ -714,7 +714,8 @@ class Cloak(Drape):
     are its own cloth's. It falls over the shoulders and off their edges, behind the arms and down the
     back to `hem` (a height at rest), and is carried through each animation: a stride sways it and the air the body
     walks into blows it back, an arm swung back pushes into it, an arm raised lifts its edge. Its collar opens a
-    hand's width at the throat where its clasp closes it; its edges are turned (the hem's cloth)."""
+    hand's width at the throat; its edges are turned (the hem's cloth). Rigged (`RIG`), only its middle is worn, from
+    the nape down the back between the shoulder blades, never over the shoulders' tops (rigcape.py `_slim`)."""
 
     def __init__(self, name, mats, hem=0.42, ease=0.012, fullness=1.4, gap=0.3, rows=40, cols=44, over=None,
                  rigid=('armour_',), thick=0.004, seed=1.1):
@@ -728,7 +729,6 @@ class Cloak(Drape):
         self.yoke_rows = int(YOKE / (self.length / (rows - 1))) + 1   # the rows that lie on the shoulders
         self.cloth, self.drop, self.states, self.frame = None, None, None, 0
         self.clear = None
-        self.corners, self.worn = None, None
         super().__init__(name, mats, rows, cols, False, thick, border=(1, 1, 2))
 
     def snapshot(self, W, fighter):
@@ -944,8 +944,6 @@ class Cloak(Drape):
         F = Frame(W)
         neck = np.array(W['neck'])[:3, 3]
         out = _grid_out(G.reshape(-1, 3), self.rows, self.cols, neck, F.up).reshape(G.shape)
-        self.corners = (G[1, 0], G[1, -1], F)
-        self.worn = G   # as it lies this frame: a hood's mantle is sewn to its yoke
         self.set(G, out)
 
 
@@ -961,9 +959,9 @@ def _grid_out(g, rows, cols, at, up):
 class Hood(Drape):
     """A hood over the head, open at the face, as Daggerfall's mages wear theirs: roomy over the skull, rising behind
     to a soft peak, its rim standing forward round the face so the face lies deep in its shade, folds
-    running from the crown. Worn alone (a robe's) its cowl falls over the shoulders; on a cloak (`cloak`) its foot
-    spreads over the cloak's yoke as a short mantle and is sewn to it there, so hood and cloak are one cloth. `skull`
-    is the shaped skull's rest points."""
+    running from the crown. Worn alone its cowl falls over the shoulders; on a cloak (`cloak`) its foot closes round
+    the neck in a short cowl (`COWL`) laid over the cloak's top at the nape, the cloak hanging from under it; on a
+    garment (`neck`, a robe's top) it is sewn to the neckline. `skull` is the shaped skull's rest points."""
 
     def __init__(self, name, mats, skull, ease=0.048, tail=0.035, opening=0.72, peak=0.07, brim=0.045,
                  flare=0.4, rows=24, cols=56, thick=0.004, cloak=None, neck=None, seed=2.3):
@@ -1030,9 +1028,7 @@ class Hood(Drape):
         flat = ring - F.up * (ring @ F.up)[:, None]
         way = flat / np.maximum(np.linalg.norm(flat, axis=1, keepdims=True), 1e-9)
         collar, over = None, 0.004
-        if self.cloak is not None and self.cloak.worn is not None:   # a mantle over the cloak's yoke, sewn to it
-            collar, over = self.cloak.worn[MANTLE], 0.014
-        elif self.neck_loop is not None:   # sewn to the garment's neckline, as it stands
+        if self.neck_loop is not None:   # sewn to the garment's neckline, as it stands
             from body import coords
             collar = coords(self.neck.me)[self.neck_loop]
         if collar is not None:
@@ -1052,37 +1048,14 @@ class Hood(Drape):
                 grid[rows - foot + j] = last + (seam - last) * e + way * 0.01 * math.sin(s * math.pi)
                 outv[rows - foot + j] = way
         else:
-            # alone, its cowl spreads over the shoulders round the neck, hanging down the world in uneven folds
+            # alone, its cowl spreads over the shoulders round the neck, hanging down the world in uneven folds; on a
+            # cloak it closes round the neck instead, short, over the cloak's top at the nape
+            spread, drop, fold = (COWL, 0.04, 0.008) if self.cloak is not None else (0.42, 0.05, 0.012)
             for j in range(foot):
                 s = (j + 1) / foot
-                folds = 0.012 * s * ripple(self.th + 0.5 * s, 9.0, self.seed + 1)
-                grid[rows - foot + j] = last + flat * (0.42 * s) + way * folds[:, None] - F.up * (0.05 * s)
+                folds = fold * s * ripple(self.th + 0.5 * s, 9.0, self.seed + 1)
+                grid[rows - foot + j] = last + flat * (spread * s) + way * folds[:, None] - F.up * (drop * s)
                 outv[rows - foot + j] = way
-        self.set(grid, outv)
-
-
-class Clasp(Drape):
-    """A cloak's clasp at the throat: a gilt boss at each of its front corners and a cord between them across the
-    chest, drawn each frame from where the cloak hangs (`cloak`)."""
-
-    def __init__(self, name, mats, cloak, rows=10, cols=6):
-        self.cloak = cloak
-        super().__init__(name, [mats[3]] + list(mats[1:]), rows, cols, True, 0.002, slots=(0, 0))
-
-    def update(self, W, fighter):
-        a, b, F = self.cloak.corners
-        rows, cols = self.rows, self.cols
-        grid, outv = np.zeros((rows, cols, 3)), np.zeros((rows, cols, 3))
-        fwd = -F.y
-        for i in range(rows):
-            t = i / (rows - 1)
-            c = (a + (b - a) * t + fwd * (0.006 + 0.008 * math.sin(t * math.pi))
-                 - F.up * 0.012 * math.sin(t * math.pi))   # a short cord across the throat, sagging a little
-            rad = 0.003 + 0.009 * max(0.0, 1 - min(t, 1 - t) * 8)                      # a boss at each end
-            u, w = F.up, fwd
-            ring = np.array([c + rad * (math.cos(q) * u + math.sin(q) * w) for q in np.linspace(0, TAU, cols, endpoint=False)])
-            grid[i] = ring
-            outv[i] = (ring - c) / max(rad, 1e-9)
         self.set(grid, outv)
 
 

@@ -1,0 +1,63 @@
+name: forge-stage
+
+# Uploads to R2 a forge publish staged outside a workflow, with the repository's CLOUDFLARE_TOKEN: how a heavy redraw
+# drawn on the runners of the public forge mirror is published. Its strips are laid into the studio on the owner's PC,
+# which stages the publish without the token (R2_STAGE=<folder> python3 -I tools/forge_publish.py add) and names the
+# stage's tar, a release asset of the mirror, in tools/forge/stage-request.txt: its first line the asset's address,
+# its second the tar's SHA-256. A push that changes that file on a branch other than main asks for a run; one whose
+# request is main's own, brought in by a merge of main, asks for nothing. Only the tar the request's hash names is
+# opened, and tools/r2.py uploads each of its files only if it is named by its own hash under a folder a publisher
+# writes.
+on:
+  push:
+    branches-ignore: [main]
+    paths:
+      - tools/forge/stage-request.txt
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # It publishes the same tables as the forge, figures and Lattice workflows: one publishes at a time.
+    concurrency:
+      group: forge
+      cancel-in-progress: false
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Fetch the stage the request names
+        id: fetch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          main=$(gh api "repos/$GITHUB_REPOSITORY/contents/tools/forge/stage-request.txt?ref=main" \
+            -H 'Accept: application/vnd.github.raw') || main=''
+          if [ "$main" = "$(cat tools/forge/stage-request.txt)" ]; then
+            echo "::notice::the request file is main's own, brought in by a merge: nothing is uploaded"
+            exit 0
+          fi
+          url=$(sed -n 1p tools/forge/stage-request.txt); sum=$(sed -n 2p tools/forge/stage-request.txt)
+          asset='^https://github\.com/webdev689/no-shores-forge/releases/download/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+\.tar$'
+          [[ "$url" =~ $asset ]] || { echo "::error::the stage is a .tar release asset of the mirror"; exit 1; }
+          [[ "$sum" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::the second line is the tar's SHA-256"; exit 1; }
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/stage.tar" "$url"
+          echo "$sum  $RUNNER_TEMP/stage.tar" | sha256sum -c -
+          python3 -I -c 'import sys, tarfile; tarfile.open(sys.argv[1]).extractall(sys.argv[2], filter="data")' \
+            "$RUNNER_TEMP/stage.tar" "$RUNNER_TEMP/stage"
+          echo "fetched=true" >> "$GITHUB_OUTPUT"
+      - name: Check the token is set
+        id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+      - name: Upload the stage
+        if: steps.token.outputs.set == 'true' && steps.fetch.outputs.fetched == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: python3 -I tools/r2.py upload "$RUNNER_TEMP/stage"
