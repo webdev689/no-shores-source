@@ -43,19 +43,19 @@ export function sightedHostiles(hostiles: readonly SeenHostile[], ship: Point2):
   return hostiles.filter((hostile) => apart(hostile, ship) <= sightOf(hostile));
 }
 
-/** The sighted hostile ship whose hull or rig, drawn `scale` times its size as hull `shown` draws it, a ray from `eye`
- *  along the unit `direction` meets first, and how far along it: a click on the ship itself is a click on its mark.
- *  Its box is its hull's and its sails' as far as they swing (`sweptBoxes`), turned to its heading; none met, null. */
+/** The hostile ship whose hull or rig, drawn `scale` times its size as hull `shown` draws it, a ray from `eye` along
+ *  the unit `direction` meets first, and how far along it: a click on the ship itself is a click on its mark, whether
+ *  or not it is sighted (by night a dark one drawn past its sight is still one to click). Its box is its hull's and its
+ *  sails' as far as they swing (`sweptBoxes`), turned to its heading; none met, null. */
 export function hostileUnder(
   eye: Vec3,
   direction: Vec3,
   hostiles: readonly SeenHostile[],
-  ship: Point2,
   scale: number,
   shown: (hull: number) => number = (hull) => hull,
 ): { readonly id: string; readonly distance: number } | null {
   let met: { readonly id: string; readonly distance: number } | null = null;
-  for (const hostile of sightedHostiles(hostiles, ship)) {
+  for (const hostile of hostiles) {
     const boxes = sweptBoxes(shown(hullOfCaptain(hostile)));
     const low = [0, 1, 2].map((axis) => Math.min(...boxes.map((box) => box[0][axis] ?? 0)) * scale);
     const high = [0, 1, 2].map((axis) => Math.max(...boxes.map((box) => box[1][axis] ?? 0)) * scale);
@@ -88,19 +88,18 @@ export function hostileUnder(
   return met;
 }
 
-/** What a click at sea met: `picked` (a mark, else the land or the sea under it), or a sighted hostile ship standing
- *  nearer along its `ray` than what it met, as that ship's mark; the ships drawn `scale` times their size in the
- *  hulls `shown` draws them as. */
+/** What a click at sea met: `picked` (a mark, else the land or the sea under it), or a hostile ship standing nearer
+ *  along its `ray` than what it met, as that ship's mark; the ships drawn `scale` times their size in the hulls `shown`
+ *  draws them as. */
 export function orHostile(
   picked: Picked,
   ray: { readonly eye: Vec3; readonly direction: Vec3 },
   hostiles: readonly SeenHostile[],
-  ship: Point2,
   scale: number,
   shown: (hull: number) => number,
 ): Picked {
   if (picked.kind === 'mark') return picked;
-  const hostile = hostileUnder(ray.eye, ray.direction, hostiles, ship, scale, shown);
+  const hostile = hostileUnder(ray.eye, ray.direction, hostiles, scale, shown);
   const met = (point: readonly number[]) => Math.hypot(...point.map((value, axis) => value - (ray.eye[axis] ?? 0)));
   const behind = picked.kind === 'none' ? Infinity : met(picked.point);
   return hostile && hostile.distance < behind ? { kind: 'mark', id: hostile.id } : picked;

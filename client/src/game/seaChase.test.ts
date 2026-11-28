@@ -17,19 +17,22 @@ test('the chase heads where it will be: lead pursuit, or where it is if it canno
   near(meetingPoint([0, 0], { ...hostile, way: undefined }), [0, -12_000]);
 });
 
-test('a chase plans again each half second while it is sighted, says whom, and ends once it is lost', () => {
+test('a chase plans again each half second while it is drawn, says whom, and ends once it is lost', () => {
   const chase = new Chase();
   chase.metM = 750;
   const hostile: SeenHostile = { id: 3, x: 0, y: -8_000, heading: 0, faction: 1, rank: 4, hull: 2, sight: 25_920 };
   assert.deepEqual(chase.begin('hostile-3', [hostile], [0, 0]), meetingPoint([0, 0], hostile));
   const schooner = new Chase({ speed: () => 13.8 });
   assert.deepEqual(schooner.begin('hostile-3', [hostile], [0, 0]), meetingPoint([0, 0], hostile, 13.8), 'at its way');
-  assert.equal(chase.begin('hostile-9', [hostile], [0, 0]), null, 'no such ship sighted');
+  assert.equal(chase.begin('hostile-9', [hostile], [0, 0]), null, 'no such ship drawn');
+  const dark = { ...hostile, sight: 220 };
+  assert.deepEqual(new Chase().begin('hostile-3', [dark], [0, 0]), meetingPoint([0, 0], dark), 'drawn past its sight');
   assert.equal(chase.words, 'Chasing the Tithe Brig.');
   assert.equal(chase.chasing, 3);
   assert.equal(chase.step(CHASE_EVERY_S / 2, [hostile], [0, 0]), null, 'not yet half a second');
   assert.ok(chase.step(CHASE_EVERY_S / 2, [hostile], [0, 0]), 'planned again');
-  assert.equal(chase.step(CHASE_EVERY_S, [{ ...hostile, y: -30_000 }], [0, 0]), null, 'out of its sight');
+  assert.ok(chase.step(CHASE_EVERY_S, [{ ...hostile, sight: 1_000 }], [0, 0]), 'past its sight, still drawn');
+  assert.equal(chase.step(CHASE_EVERY_S, [], [0, 0]), null, 'no longer drawn');
   assert.deepEqual([chase.words, chase.chasing], [null, null], 'lost: the chase is over');
   chase.begin('hostile-3', [hostile], [0, 0]);
   chase.step(CHASE_EVERY_S, [hostile], [0, -7_300]);
