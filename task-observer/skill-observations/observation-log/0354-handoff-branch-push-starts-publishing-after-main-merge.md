@@ -1,5 +1,5 @@
 ---
-id: 349
+id: 354
 title: "Merging main into a feature branch carries main's publishing-path changes, so its push is refused (twice: a hand-off branch, then a dirty PR)"
 status: open
 type: internal

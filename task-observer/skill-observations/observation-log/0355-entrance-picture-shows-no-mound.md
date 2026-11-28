@@ -1,5 +1,5 @@
 ---
-id: 350
+id: 355
 title: "A headless picture 11 m before a patrol's dungeon entrance shows no mound, on a build with and without the facade wiring"
 status: open
 type: internal
