@@ -10,6 +10,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
+- [[The Holdfast Stands Only in a Larger Room, With a Larger Ring and Fewer Elites]]
+- [[Other Players' Weapons Glow in Their Element]]
 - [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]
 - [[The Music Repeats Less, Patrol Zones First]]
 - [[TypeScript and Rust]]
@@ -42,6 +44,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Come Sail Away's Sailing Comes Over]]
 - [[Ships' Lanterns Come Over From DFO]]
 - [[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]
+- [[The Wreck's Stern Windows Glow]]
 - [[Ship Models Live on R2]]
 - [[The Sloop's Trim]]
 - [[The Server Gets Its Own Rules]]
@@ -419,6 +422,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Pull Requests Merge Up to Date, and a Newer Merge Cancels an Older Check]]
 - [[Pull Requests Sample the World's Sweeps, the Full Sweep Runs Nightly, and Builds Link Faster]]
 - [[A Lesson's Steps Tick in the Tracker Alone, Not at the Foot]]
+- [[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]
 
 ## Claude's calls
 
@@ -469,6 +473,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Island Textures as Claude Builds Them]]
 - [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]
 - [[Each Region Has an Outposts Tile, Opening Its Procedural Outpost Slots]]
+- [[The Sea's Polish as Claude Builds It]]
 
 ## Replaced
 

@@ -38,12 +38,13 @@ DFO's frame is y up, with +z north and +x east. Its points come over as (x, -z, 
 degrees down (52 to start), stays 60 m under a cloud deck's base (never under 40 m), and keeps 25 m over the ground,
 the sea, and the far half of its line of sight to the ship. Where ground behind the eye out-climbs every lift, it
 looks more steeply instead. The focus eases onto the ship and trails it by at most 60 m; a ship that moves more than
-2 km in one frame has jumped and is taken whole. The height eases toward the player's zoom, which a low deck holds
-down without losing.
+2 km in one frame has jumped and is taken whole. The height eases toward the height it rests at, its first, which a
+low deck holds down without losing.
 
-The wheel scales the height by 1.18 a notch in the Oversea view alone, a drag orbits and tilts, and the look keys orbit
-and tilt at fixed rates. The Sealevel view brings the eye down close on the ship, switched to and from, never by the
-wheel ([[Game]], "At sea").
+The wheel zooms neither view at sea
+([[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]): a drag
+orbits and tilts, and the look keys orbit and tilt at fixed rates. The Sealevel view brings the eye down close on the
+ship, switched to and from, never by the wheel ([[Game]], "At sea").
 A press that moves under 6 px is a click (`overworldInput.ts`).
 
 Each frame gives a pose: the eye, its forward, right and up, and a 65-degree vertical field of view. From the air the
@@ -111,8 +112,8 @@ the climb reads as one steady zoom.
 - **Each frame**: the ship's place, the frame's seconds, the cloud deck's base and the ground (`landHeightAt` over
   the loaded land) into `stepCamera`; `flyRig` for the island's fly-in; `horizonOf` for the lens's planes. The shot
   goes to the renderer; its pose from `poseOf` goes to `pickAt` and to `placeMarks`, which lays the marks' layer.
-- **Input**: presses through `pressAt` and `pressMove` (a drag orbits by `dragCamera`), the wheel through
-  `wheelNotches` into `zoomCamera` in the Oversea view, the look keys into `keyTurn`.
+- **Input**: presses through `pressAt` and `pressMove` (a drag orbits by `dragCamera`), the look keys into `keyTurn`;
+  the wheel through `wheelNotches` only to a walker's view on deck.
 - **A click at sea**: `pickAt`, then `clickAtSea`. On the sea in the Oversea view the ship sails there:
   `planSeaRoute`, then `voyageOf`; each frame `shipAt`. On the land or a port's icon it asks to dock or go ashore.
   Near a coast, `nearestIsland`, `sideNodes` and `frameSide` frame the island's side, its nodes chosen from its

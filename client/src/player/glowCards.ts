@@ -62,7 +62,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
   let size = vec2f(textureDimensions(glow_field));
   var at = in.corner;
   if (card.feet.w > 0.5) { at.x = 1.0 - at.x; }
-  let texel = min(floor(at * size), size - 1.0);
+  let texel = glow_texel(at, size);
   let field = textureLoad(glow_field, vec2i(texel), 0);
   let colour = glow_colour(u32(card.size.z), field, texel - floor(size / 2.0), view.right.z, max(card.size.w, 1.0));
   if (colour.a <= 0.0) { discard; }

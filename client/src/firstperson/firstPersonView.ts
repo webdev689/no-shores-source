@@ -56,7 +56,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
   let size = vec2f(textureDimensions(glow_field));
   var across = in.corner.x;
   if (glow.drawn.x > 0.5) { across = 1.0 - across; }
-  let texel = min(floor(vec2f(across, in.corner.y) * size), size - 1.0);
+  let texel = glow_texel(vec2f(across, in.corner.y), size);
   let field = textureLoad(glow_field, vec2i(texel), 0);
   let look = u32(glow.drawn.y);
   let cell = texel - floor(size / 2.0);

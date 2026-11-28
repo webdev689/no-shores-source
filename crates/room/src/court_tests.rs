@@ -258,6 +258,54 @@ fn a_ward_stands_a_wave_for_each_living_player_and_another_fifteen_seconds_on() 
 }
 
 #[test]
+fn a_wards_wave_comes_in_at_the_end_rooms_doorways_clear_of_the_anchors_and_once_refused_comes_when_there_is_room() {
+    let (mut room, player, boss) = court();
+    let laid = anchors(&room);
+    let doors = room.encounters.as_ref().expect("encounters").plan.court_doors.clone();
+    assert!(!doors.is_empty(), "the end room's doorways");
+    let off =
+        |at: [f64; 3]| laid.iter().map(|anchor| crate::encounters::seals::near(at, *anchor)).fold(f64::MAX, f64::min);
+    // Fill the Court's waves to a lone player's most before the ward rises, so its first wave is refused.
+    let mut encounters = room.encounters.take().expect("encounters");
+    let of = crate::encounters::WaveOf::Court;
+    assert_eq!(
+        room.stand_seal_wave(&mut encounters, of, &doors, 1) + room.stand_seal_wave(&mut encounters, of, &doors, 1),
+        4
+    );
+    room.encounters = Some(encounters);
+    let most = room.foes[&boss].fighter.health_max;
+    strike(&mut room, player, boss, most);
+    let waves = |room: &Room| room.encounters.as_ref().expect("encounters").court.waves.clone();
+    room.tick();
+    assert_eq!(waves(&room).len(), 4, "refused while four stand");
+    for id in waves(&room) {
+        let found = room.foes.get_mut(&id).expect("standing");
+        (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+    }
+    ticks(&mut room, crate::encounters::WAVE_RETRY_TICKS);
+    let stood: Vec<FighterId> = waves(&room).into_iter().skip(4).collect();
+    assert_eq!(stood.len(), 2, "the ward's wave, once there was room");
+    let farthest = doors.iter().map(|door| off(*door)).fold(0.0, f64::max);
+    for id in stood {
+        let body = room.foes[&id].fighter.body;
+        let apart = off([body.x, body.y, body.z]);
+        assert!(apart >= crate::encounters::seals::WAVE_OFF_PIECES_M.min(farthest) - 1.0, "{apart} m off an anchor");
+    }
+}
+
+#[test]
+fn the_courts_waves_are_kept_to_two_for_each_living_player_four_at_the_fewest() {
+    let (mut room, _, _) = court();
+    let laid = anchors(&room);
+    let mut encounters = room.encounters.take().expect("encounters");
+    let of = crate::encounters::WaveOf::Court;
+    assert_eq!(room.stand_seal_wave(&mut encounters, of, &laid, 1), 2);
+    assert_eq!(room.stand_seal_wave(&mut encounters, of, &laid, 1), 2, "four for a lone player");
+    assert_eq!(room.stand_seal_wave(&mut encounters, of, &laid, 1), 0, "and no more while they stand");
+    room.encounters = Some(encounters);
+}
+
+#[test]
 fn with_three_living_players_a_filled_anchor_empties_six_seconds_after_it_is_left() {
     let (mut room, player, boss) = court();
     let _others = [hardy(&mut room), hardy(&mut room)];

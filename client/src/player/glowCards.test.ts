@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GLOW_PAD } from '../elementGlow.ts';
+import { runInNewContext } from 'node:vm';
+import { GLOW_PAD, GLOW_WGSL } from '../elementGlow.ts';
 import { PART, type Strip } from '../forge/compose.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
@@ -14,6 +15,24 @@ test('a glowing quad grows by the reach and keeps its feet', () => {
   assert.equal(quad.width, (20 + 2 * GLOW_PAD) * 0.025);
   assert.equal(quad.height, (40 + 2 * GLOW_PAD) * 0.025);
   assert.deepEqual(quad.root, [(10 + GLOW_PAD) * 0.025, (40 + GLOW_PAD) * 0.025]);
+});
+
+/** The shaders' own `glow_texel`, run as JavaScript on one axis: each of its sums works axis by axis. */
+const glowTexel: (at: number, size: number) => number = (() => {
+  const wgsl = /fn glow_texel\(at: vec2f, size: vec2f\) -> vec2f \{\s*return ([^;]+);\s*\}/.exec(GLOW_WGSL);
+  assert.ok(wgsl, "the shader's glow_texel");
+  const body = (wgsl[1] ?? '').replace(/vec2f\(([^)]*)\)/g, '($1)');
+  const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
+  return runInNewContext(`(at, size) => ${body}`, { clamp, floor: Math.floor });
+})();
+
+test('an edge pixel shaded from outside its quad reads the field inside it, never a box round the figure', () => {
+  // Multisampling shades a pixel the quad's edge crosses from the pixel's middle, a hair outside the quad.
+  for (const share of [-0.004, -1e-6, 0, 0.5, 1, 1.004]) {
+    const texel = glowTexel(share, 40);
+    assert.ok(texel >= 0 && texel <= 39 && Number.isInteger(texel), `${share} reads texel ${texel}`);
+  }
+  assert.equal(glowTexel(0.5, 40), 20);
 });
 
 // A figure one pixel wide and two tall, holding a sword drawn over its lower pixel.

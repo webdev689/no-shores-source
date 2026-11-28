@@ -291,7 +291,7 @@ test('while aiming the look may rise over the horizon to the longest throw; the 
   assert.ok(shot && shot.pitch >= 0.05 - 1e-9, `the orbit looks ${shot?.pitch} down`);
 });
 
-test('a held aim looks off the side it was taken on at its lay: a drag across lays nothing new, up and down lays range', async () => {
+test('a held aim looks off the side it was taken on at its lay: a small drag across lays nothing new, up and down lays range', async () => {
   const { fight, orders, frames } = ordered();
   const turn = (degrees: number) => fight.drag((degrees * Math.PI) / 180 / 0.005, 0);
   const heading = vessel.ship[2] ?? 0;
@@ -304,9 +304,9 @@ test('a held aim looks off the side it was taken on at its lay: a drag across la
   // At its lay, off the battery's middle, from an eye aboard half a metre forward of it: within a few degrees of square.
   assert.ok(last && Math.abs(last.yaw - (heading + Math.PI / 2)) < 0.05, `it looks along ${last?.yaw}`);
   const range = orders.at(-1)?.aim?.range ?? 0;
-  turn(-200);
+  turn(-20);
   await frames(5);
-  assert.equal(orders.at(-1)?.aim?.bearing, 90, 'dragged across the bow, it holds its side');
+  assert.equal(orders.at(-1)?.aim?.bearing, 90, 'dragged a little toward the bow, it holds its side');
   assert.ok(Math.abs((orders.at(-1)?.aim?.range ?? 0) - range) < 1e-9, 'and its range');
   fight.drag(0, -40);
   await frames(2);
@@ -319,6 +319,61 @@ test('a held aim looks off the side it was taken on at its lay: a drag across la
   fight.aim(true);
   await frames(30);
   assert.equal(orders.at(-1)?.aim?.bearing, -90, 'aimed again looking to port, port lays');
+});
+
+test('a held aim dragged across swings round to the other side the way the drag turns, aiming all the while', async () => {
+  const { fight, orders, frames } = ordered();
+  const [x = 0, y = 0, heading = 0] = vessel.ship;
+  const along = (shot: Shot) => (shot.eye[0] - x) * Math.sin(heading) - (shot.eye[1] - y) * Math.cos(heading);
+  fight.drag(Math.PI / 2 / 0.005, 0);
+  fight.aim(true);
+  await frames(60);
+  assert.equal(orders.at(-1)?.aim?.bearing, 90, 'laid to starboard');
+  // A drag to the left from the starboard side turns the look toward the bow: the eye comes round over the stern.
+  fight.drag(-150, 0);
+  const round = await frames(90);
+  const sent = orders.slice(-90);
+  assert.ok(
+    sent.some((order) => !order.aim),
+    'nothing is laid on the way round, so nothing fires',
+  );
+  assert.ok(
+    round.some((shot) => along(shot) < -15),
+    'the eye goes out over the stern',
+  );
+  assert.ok(
+    round.every((shot) => along(shot) < 15),
+    'never over the bow',
+  );
+  assert.equal(orders.at(-1)?.aim?.bearing, -90, 'and lays to port, the aim never let go');
+  assert.equal(fight.aimingNow, true);
+  const last = round.at(-1);
+  assert.ok(last && Math.abs(last.yaw - (heading - Math.PI / 2)) < 0.05, `it looks along ${last?.yaw}`);
+  // A drag to the right from port turns the look toward the bow too: round over the stern again, back to starboard.
+  fight.drag(150, 0);
+  const back = await frames(90);
+  assert.ok(back.every((shot) => along(shot) < 15) && back.some((shot) => along(shot) < -15), 'over the stern again');
+  assert.equal(orders.at(-1)?.aim?.bearing, 90, 'starboard once more');
+  // A drag to the right from starboard turns the look aft: the eye comes round over the bow.
+  fight.drag(150, 0);
+  const forward = await frames(90);
+  assert.ok(forward.some((shot) => along(shot) > 15) && forward.every((shot) => along(shot) > -15), 'over the bow');
+  assert.equal(orders.at(-1)?.aim?.bearing, -90);
+  fight.aim(false);
+  await frames(1);
+  assert.equal(orders.at(-1)?.fire, true, 'let go, the port side fires');
+});
+
+test('drags across a held aim that fade before they add up, as a hand laying range drifts, swing nothing', async () => {
+  const { fight, orders, frames } = ordered();
+  fight.drag(Math.PI / 2 / 0.005, 0);
+  fight.aim(true);
+  await frames(60);
+  for (let step = 0; step < 20; step++) {
+    fight.drag(-30, 5);
+    await frames(15);
+  }
+  assert.equal(orders.at(-1)?.aim?.bearing, 90, 'thirty pixels every half second, still starboard');
 });
 
 test("the fight's camera, zoomed all the way in, stands back past its own ship's rig, easing there", async () => {
