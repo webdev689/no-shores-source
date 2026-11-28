@@ -19,7 +19,6 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - #257 Lines in the bible and code comments held to 120 characters, every longer one rewrapped (review 8)
 - #258 Armour, cloaks and clothes get large icons in the gear screens, as the weapons do
 - #259 The wreck exports again, its stern windows glowing as a lit ship's
-- #263 Stop a player snapping back on foot after a stall, a load or slow frames
 - #264 The hand-off says the repository is public under webdev689, and what the owner sets for it
 - Drafts: #93 The toolkit's first review; #114 The gear message carries the pledge once
 

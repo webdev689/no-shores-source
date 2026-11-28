@@ -1,6 +1,7 @@
 //! What keeps a room fair whatever a browser sends or however its line stalls: no banked time spent as speed, no
-//! dodge frozen open, no weapon swapped mid-swing, a view that cannot leap, a full room, a gun judged as its shooter
-//! saw, a foe's answers that count the same at any lag, and the grace a player stands again with.
+//! dodge frozen open, a screen once behind not stood still at each late input after, no weapon swapped mid-swing, a
+//! view that cannot leap, a full room, a gun judged as its shooter saw, a foe's answers that count the same at any
+//! lag, and the grace a player stands again with.
 
 use super::*;
 use combat::arms::{OffHand, Ranged, Stroke, WeaponClass};
@@ -61,6 +62,52 @@ fn a_player_who_stops_sending_mid_dodge_does_not_stay_in_its_safe_stretch() {
     let fighter = room.fighter(player).expect("in");
     assert_eq!(fighter.action, Action::Idle, "stepped standing once a view's lag behind");
     assert!(fighter.dodging().is_none());
+}
+
+/// Walking north and jumping now and then: input `sequence`'s.
+fn walking(sequence: u32, seen: u64) -> Input {
+    let mut input = asking(sequence, seen, FISTS, CombatInput::default(), 1.0);
+    input.intent.controls.jump = sequence.is_multiple_of(40);
+    input
+}
+
+#[test]
+fn a_screen_that_fell_behind_once_is_not_stood_still_again_at_each_late_input_after() {
+    // A second's load before the first input. The page foresees its inputs after it taken in order, one a tick, as a
+    // twin room takes them.
+    let mut twin = room();
+    let twin_player = twin.join().expect("a room with space");
+    for _ in 0..60 {
+        twin.tick();
+    }
+    let mut foreseen = vec![twin.fighter(twin_player).expect("in").body];
+    for sequence in 1..=600 {
+        twin.input(twin_player, walking(sequence, twin.clock())).unwrap();
+        twin.tick();
+        foreseen.push(twin.fighter(twin_player).expect("in").body);
+    }
+    // The same load, then one a tick, every seventh a tick late and the next with it.
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    for _ in 0..60 {
+        room.tick();
+    }
+    let mut sequence = 0;
+    for tick in 0..600 {
+        let due = match tick % 7 {
+            6 => 0,
+            0 if tick > 0 => 2,
+            _ => 1,
+        };
+        for _ in 0..due {
+            sequence += 1;
+            room.input(player, walking(sequence, room.clock())).unwrap();
+        }
+        room.tick();
+        let found = &room.players[&player];
+        let taken = found.acknowledged as usize;
+        assert_eq!(found.fighter.body, foreseen[taken], "after input {taken}, as the page foresaw it");
+    }
 }
 
 #[test]
