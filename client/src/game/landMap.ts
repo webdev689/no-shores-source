@@ -93,11 +93,13 @@ export function landSheetOf(
     rivers: riversOn(landmass.view.rivers, local, { width, height }),
     ring: node.ring.map(local),
   };
-  /** Every piece of a plan's solids that is built (not natural rock, nor a module's later surfaces), each module by
-   *  its parts, whose ground reaches onto the sheet; with the solid's material. */
+  /** Every piece of a plan's solids that is built (not natural rock, nor the loose stone fallen from it, tipped as it
+   *  lies: the layout crate's `rocks::loose`, nor a module's later surfaces), each module by its parts, whose ground
+   *  reaches onto the sheet; with its material. */
   const piecesOf = (solids: readonly Solid[]) =>
     solids.flatMap((solid) => {
-      if (!BUILT.has(solid.shape) || (solid.shape === 'module' && solid.group !== 0)) return [];
+      const loose = solid.material === 'rubble' && (solid.lean !== 0 || solid.roll !== 0);
+      if (!BUILT.has(solid.shape) || loose || (solid.shape === 'module' && solid.group !== 0)) return [];
       const middle = local([solid.at[0], solid.at[1]]);
       const [across, deep, tall] = solid.size;
       const parts = solid.shape === 'module' ? moduleParts(solid.module) : [];

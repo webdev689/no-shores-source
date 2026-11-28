@@ -227,6 +227,52 @@ test("a patrol area's sheet is its layout: paths, buildings, plantings, areas by
   );
 });
 
+test("a patrol area's sheet leaves off loose stone and its ways' patrols, and marks each landing zone", () => {
+  const stone = { shape: 'dome', size: [2, 2, 2], turn: 0, material: 'rubble' } as const;
+  const layout = {
+    id: 'reach-1',
+    ring: RING,
+    paths: [],
+    buildings: [],
+    // A drystone wall's length, upright, and a stone fallen from a face, tipped as it lies.
+    solids: [
+      { ...stone, shape: 'block', at: [1050, 2050, 30], lean: 0, roll: 0 },
+      { ...stone, at: [1150, 2050, 30], lean: 0.2, roll: 0.1 },
+    ],
+    landings: [
+      [1100, 2090],
+      [1020, 2010],
+    ],
+    areas: [{ kind: 'landing', name: 'The Landing', at: [1100, 2090], radius: 20 }],
+    sites: [
+      { kind: 'landing', at: [1100, 2090], radius: 20 },
+      { kind: 'foes', at: [1120, 2030], radius: 0, holds: 'patrol' },
+    ],
+  } as unknown as NodeLayout;
+  const patrol: NodeInfo = {
+    ...SOCIAL,
+    id: 'reach-1',
+    kind: 'patrol',
+    name: 'The Reach',
+    stations: [],
+    landings: [
+      { name: 'The Landing', at: [1100, 2090], radius: 0 },
+      { name: 'The Landing', at: [1020, 2010], radius: 0 },
+    ],
+  };
+  const sheet = landSheetOf(patrol, landmass([layout]), flat);
+  assert.equal(sheet.standing.length + sheet.low.length, 1, 'the wall, and no loose stone');
+  assert.deepEqual(
+    sheet.marks.map((mark) => [mark.glyph, mark.at]),
+    [
+      ['landing', [60, 50]],
+      ['landing', [140, 130]],
+    ],
+    "each landing zone marked as the landing is; no mark for a way's patrol, which walks",
+  );
+  assert.equal(sheet.landings?.length, 2, 'fast travelled to from the map');
+});
+
 test('land with no layout, an island, shows its ground, its edge and where players land', () => {
   const isle: NodeInfo = { ...SOCIAL, id: 'isle-cove-1', kind: 'patrol', name: 'A cove', stations: [] };
   const sheet = landSheetOf(isle, landmass(), (x) => (x < 1000 ? -1 : 3));

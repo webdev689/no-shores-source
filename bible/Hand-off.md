@@ -154,10 +154,10 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   - The three landing zones, the zone's map to land at one and their fast travel from the held map are built on #265
     ([[The Downs' Landing Zones as Claude Builds Them]]), tested offline only: the map panel, the fires and the fade
     are not yet seen in a running game, nor a fast travel in a deployed room.
-  - The owner's asks still to come, their direction settled
-    ([[The Saltgrass Downs Plays as Destiny 2's EDZ, Its Three Landing Zones Spread Across It]]): the Downs' design pass
-    and patrol zone design pass as Destiny 2's EDZ (public events, lost sectors, patrol tasks picked up in the field),
-    its enemies as camps that stand again and patrols walking the ways, and the held map's polish and legend.
+  - The design pass, built on #265 under the owner's grant of autonomy
+    ([[The Saltgrass Downs' Design Pass as Claude Builds It]]), tested offline only: camps standing again around
+    players, six dungeons a patrol zone, patrols walking the Downs' ways (left unmarked on the held map). Not yet
+    seen: the patrols on the roads, six entrances' places, a camp standing again round a player.
   - `tools/modules/breach_gate.py` and `catalogue.py` still say the gate is the Vale's: their next edit sets off the
     modules workflow's bake, so it waits for a modules change.
   - Gates still stand where no way may reach them (`areas::needs_a_way` leaves them out, as they sit at the claim's
