@@ -140,3 +140,28 @@ test('the story moving on from the helm ends its windows, and the step ending th
   assert.equal(making.done, false, 'a helm left is not done');
   assert.equal(helm.look, FIRST_LOOK, 'what the step answers after the helm is left dresses nobody');
 });
+
+test('signed in at the helm to an account whose character has played the story, the player goes past it', async () => {
+  Object.assign(globalThis, { localStorage: { getItem: () => null } });
+  const account = async () => ({ kind: 'account', username: 'ada' }) as const;
+  const asked: string[] = [];
+  const played = (answer: boolean) => async () => {
+    asked.push('played');
+    return answer;
+  };
+  const { story: past } = story();
+  Object.assign(past, { link: { keepLook: async () => undefined } });
+  const onward = new Making(past, { account, look: async () => FIRST_LOOK, played: played(true) });
+  await settle();
+  assert.ok(onward.done && onward.onward, 'no look to make: the story ends here');
+  const { story: fresh } = story();
+  Object.assign(fresh, { link: { keepLook: async () => undefined } });
+  const making = new Making(fresh, { account, look: async () => FIRST_LOOK, played: played(false) });
+  await settle();
+  assert.ok(making.done && !making.onward, 'one not past it makes their look and plays on');
+  const { story: alone } = story();
+  const guest = new Making(alone, { ...steps(FIRST_LOOK), played: played(true) });
+  await settle();
+  assert.ok(guest.done && !guest.onward, 'going on without an account asks nothing');
+  assert.deepEqual(asked, ['played', 'played']);
+});

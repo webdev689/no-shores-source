@@ -84,3 +84,18 @@ fn a_pledged_player_holding_the_towns_and_their_factions_bounties_sees_each_once
     let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
     assert!(gear.bounties().expect("the board").iter().all(|row| !row.paid()), "yesterday's turned in, none today");
 }
+
+#[test]
+fn each_bounty_carried_carries_the_line_of_its_tale() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.set_minute(FRIDAY_NINE);
+    let player = room.join().expect("a room with space");
+    let bytes = gear_bytes(&room, player).expect("written");
+    let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+    let rows = gear.bounties().expect("the board");
+    assert!(!rows.is_empty());
+    for row in rows {
+        let bounty = bounty_at(DAY, row.place()).expect("on the board");
+        assert_eq!(row.tale(), Some(bounty.tale), "{}'s tale", bounty.name);
+    }
+}

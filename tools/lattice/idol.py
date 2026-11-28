@@ -1,4 +1,4 @@
-"""The Idol, the displaced gone ranged. After the owner's own in project-final: a Flicker's gaunt, tall, purple body,
+"""The Idol, the displaced gone ranged. After its design in project-final: a Flicker's gaunt, tall, purple body,
 its two crystal arms welded at the wrists into one forward emitter, a barrel running to a focusing lens ringed by an
 iris of shards; its head kept where the Flicker's is a headless spray, behind a faceted crystal mask with one eye,
 ringed by a crown of eight spikes. The lens and the eye glow cyan, apart from the violet, so the head and the weapon

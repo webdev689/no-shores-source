@@ -1,4 +1,4 @@
-// The dungeon's cache: the owner's chest (models/chest.ts) in the dungeon's wood and iron, lit by its torches, its lid
+// The dungeon's cache: the chest (models/chest.ts) in the dungeon's wood and iron, lit by its torches, its lid
 // shut or swung open, where the room says it stands and the way it faces; and the chests the dungeon stands for the
 // player to find (finds.ts), the same chest, each lid as far open as it has swung, a vault's in gold.
 import { CHEST_OPEN_RAD, chestFaces, chestScale, chestTall } from '../models/chest.ts';

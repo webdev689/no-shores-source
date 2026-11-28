@@ -1,7 +1,7 @@
-// A lit city's lights as the page draws them ([[Overlook's City Below Is Lit at Night, in Detail]]): each kind's post
-// and flame, the glowing points that make them read from afar (`glowPoints.ts`), and the pools of light they lay on
-// the paving and the walls round them, written once into a light map of the city when it is built and read by its
-// shaders at night, so thousands of lamps cost no loop a pixel and none of the sky's sixteen lamps.
+// A lit city's lights as the page draws them: each kind's post and flame, the glowing points that make them read from
+// afar (`glowPoints.ts`), and the pools of light they lay on the paving and the walls round them, written once into a
+// light map of the city when it is built and read by its shaders at night, so thousands of lamps cost no loop a pixel
+// and none of the sky's sixteen lamps.
 import type { GlowPoint } from '../sky/glowPoints.ts';
 import { seedAt } from '../sky/lamps.ts';
 import type { MeshData } from './mesh.ts';

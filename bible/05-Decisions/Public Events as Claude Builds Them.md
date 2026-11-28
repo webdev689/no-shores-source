@@ -125,7 +125,7 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The reward feed | A chest opened shows its tier as four pips, "+N XP" and "+N <faction> reputation" beside what it paid | All three rewards seen |
 | The raid's end | Won: its banners topple over 1.4 s, a bright shimmer (`story.flash`, 4.4 s) at its ground, the victory sting carrying the triumph; failed, `story.crash`; a failed Fissure closes into the plain turf, the sealed scar only for a seal | A win and a loss felt apart |
 | The Lattice at night (replaced in part: the figure shaded darker, only its crystal's brightest points glowing, [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]) | A Lattice figure's bright, strongly hued texels never lit below 0.8; a warm lamp 6 m round each raid banner's head, 0.3 m under its pole's top | The crystal reads in the dark, the raid's ground is lit |
-| The Tithe's banner's cloth | Unmarked grey, as the Tithe's sails, drawn so by the props' drawer; every other canvas (the stores' tarps and sacks) oiled tan, with darker weathered stains | The banner reads as the Tithe's; a grey tarp reads as a lump at night, a tan one does not |
+| The Tithe's banner's cloth | Unmarked grey, drawn so by the props' drawer; every other canvas (the stores' tarps and sacks) oiled tan, with darker weathered stains | The banner reads as the Tithe's; a grey tarp reads as a lump at night, a tan one does not |
 | The raid's next wave | "· Next wave 0:22" after the objective while one is coming | The room sends when it comes |
 | The seal from afar | A red shock ring spreading 45 m over 1.6 s, the crack's glow quadrupled as its flash, a tremor (0.8, to nothing at 120 m); the seal's wave in its picture's own texels | Seen and felt across the down |
 | A store's stack | Compact and square-edged, its tarp pegged 0.12 m out from its corners, its part the box round it: a 2.6 by 1.85 m, b 2.2 by 2.2, c 2.6 by 1.3, plundered 2.5 by 2.0 | A box round each stack fits it closely, nothing standing far outside it |
@@ -173,3 +173,8 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The held map's public event marks on Saltmere's three zones | Where the Fissure opens (its wilds) and where the raid comes (its hamlet), and on no other wilds or arena there | The map marked every wilds and arena, not the raid's hamlet; elsewhere it still marks them, the grounds to come |
 | The forge's index on this branch | `main`'s whole; the Lattice's figures to be laid in by the Lattice's workflow from its earlier renders | Neither index holds both, and only a workflow run can publish one that does |
 | The scripted pair's raid under `main`'s harm | The door test keeps two players at level 6 and Rare gear, and takes the result the rules give: the heroic task met and the clock run out | Under `main`'s ×1.5 and ×0.75 the pair no longer holds it in time (×2 and ×0.5 restored, they do); how hard the raid is for two is the owner's to set, not the test's |
+
+The owner's answers on it:
+
+- [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]
+- [[What the Owner Kept, Walking the Open Questions]]

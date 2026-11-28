@@ -84,26 +84,17 @@ fn a_travel_whose_last_leg_is_shorter_than_400_metres_puts_the_ship_at_the_legs_
 }
 
 #[test]
-fn a_travel_waits_the_players_next_roll_its_first_wait_and_never_brings_it_sooner() {
+fn a_travel_leaves_the_players_next_roll_where_it_was_and_its_clock_runs_on() {
     let mut sea = sea();
     let player = at_sea(&mut sea);
     ticks(&mut sea, 600);
     let before = sea.hostiles.wait_of(player).unwrap();
     assert!(before < FIRST_ROLL_S, "the roll's wait ran down: {before}");
     sea.travel(player, &[[550_000.0, 150_000.0]], 10).unwrap();
-    assert_eq!(sea.hostiles.wait_of(player), Some(FIRST_ROLL_S), "a wait run down waits its first again");
-    // Once the roll has come, the next waits half a minute or more, and a travel's wait brings it no sooner (the roll's
-    // ship may chase the player, which refuses a travel, so the wait the travel sets is asked of the hostiles alone).
-    for _ in 0..120 {
-        if sea.hostiles.wait_of(player).unwrap() > FIRST_ROLL_S {
-            break;
-        }
-        ticks(&mut sea, 60);
-    }
-    let longer = sea.hostiles.wait_of(player).unwrap();
-    assert!(longer > FIRST_ROLL_S, "the roll came and the next waits longer: {longer}");
-    sea.hostiles.wait_first(player);
-    assert_eq!(sea.hostiles.wait_of(player), Some(longer), "travelling again brings it no sooner");
+    assert_eq!(sea.hostiles.wait_of(player), Some(before), "a travel sets no wait of its own");
+    ticks(&mut sea, 60);
+    let after = sea.hostiles.wait_of(player).unwrap();
+    assert!((before - 1.0 - after).abs() < 1e-9, "a second on, a second less: {after}");
 }
 
 #[test]
@@ -113,7 +104,6 @@ fn a_travel_within_the_ships_own_water_is_taken() {
     assert_eq!(sea.travel(player, &[[250_000.0, 300_000.0]], 10), Ok(()));
     assert_eq!(told(&sea, player), Some(0.0));
     assert_eq!([ship(&sea, player).x, ship(&sea, player).y], [250_000.0, 299_600.0], "400 m short of its end");
-    assert_eq!(sea.hostiles.wait_of(player), Some(FIRST_ROLL_S), "its next roll waits as after any travel");
 }
 
 #[test]

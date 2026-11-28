@@ -1,6 +1,6 @@
 //! The parked ships' doors (`room::sea::parked`): a room on land's word on each of its players, the sea's answer to a
-//! place's room naming its players ashore with it, and the ships that answer gives an island's room to send in its
-//! snapshots.
+//! place's room naming its players ashore with it, and the ships and taken traffic ids that answer gives an island's
+//! room to send in its snapshots.
 
 use crate::{Opened, hand_over, with_open};
 use room::PlayerId;
@@ -27,7 +27,8 @@ struct Named {
 }
 
 /// A player a place's room names to the sea: their account, the ship their character sails now as others see it
-/// (`ShipLook::of`) and their level, which their ship lying parked takes on (`Sea::refit`).
+/// (`ShipLook::of`), their level, and their username and guild tag as the accounts told the room (each empty until
+/// it is told, and the tag for no guild), which their ship lying parked takes on (`Sea::refit`).
 #[derive(Deserialize, Serialize)]
 struct NamedWord {
     account: String,
@@ -36,6 +37,10 @@ struct NamedWord {
     name: [u8; 2],
     emblem: u16,
     level: u8,
+    #[serde(default)]
+    username: String,
+    #[serde(default)]
+    tag: String,
 }
 
 /// A parked ship as the sea tells a place's room of it, and as the room is given it: its account, the number it is
@@ -53,8 +58,17 @@ struct ParkedWord {
     emblem: u16,
 }
 
-/// The open sea's answer to a place's room's word naming its players ashore (`Sea::ashore`), as JSON: each parked ship
-/// seen lying at its island. Empty with no sea open, or for a word that does not read.
+/// The sea's answer to a place's room, and what an island's room is given of its seas' answers: each parked ship seen
+/// lying at the island, and each traffic id the sea has taken off its route (`Sea::taken`), which a page ashore draws
+/// on its route no more.
+#[derive(Debug, Deserialize, Serialize)]
+struct Answer {
+    ships: Vec<ParkedWord>,
+    taken: Vec<u64>,
+}
+
+/// The open sea's answer to a place's room's word naming its players ashore (`Sea::ashore`), as JSON (`Answer`).
+/// Empty with no sea open, or for a word that does not read.
 #[must_use]
 pub fn sea_ashore(text: &[u8]) -> String {
     let Ok(named) = serde_json::from_slice::<Named>(text) else { return String::new() };
@@ -71,14 +85,14 @@ pub fn sea_ashore(text: &[u8]) -> String {
             named.afloat.iter().for_each(|account| sea.unpark(account));
             for each in &named.named {
                 let look = ShipLook { hull: each.hull, dress: each.dress, name: each.name, emblem: each.emblem };
-                sea.refit(&each.account, look, each.level);
+                sea.refit(&each.account, look, each.level, (&each.username, &each.tag));
             }
-            Some(sea.ashore(place, &accounts))
+            Some((sea.ashore(place, &accounts), sea.taken()))
         }
         _ => None,
     });
-    let Some(answer) = answer.flatten() else { return String::new() };
-    let words: Vec<ParkedWord> = answer
+    let Some((parked, taken)) = answer.flatten() else { return String::new() };
+    let ships: Vec<ParkedWord> = parked
         .into_iter()
         .map(|(account, parked)| {
             let ShipLook { hull, dress, name, emblem } = parked.look;
@@ -86,12 +100,12 @@ pub fn sea_ashore(text: &[u8]) -> String {
             ParkedWord { account, number, x, y, heading, hull, dress, name, emblem }
         })
         .collect();
-    serde_json::to_string(&words).unwrap_or_default()
+    serde_json::to_string(&Answer { ships, taken }).unwrap_or_default()
 }
 
 /// The open room on land's word on one of its players for the seas it names them to (`sea_ashore`'s `named`), as
-/// JSON: their account and their ship and level as their character has them now. Empty for a player of no account
-/// here, or with no room on land open.
+/// JSON: their account, their ship and level as their character has them now, and the username and guild tag on their
+/// plate. Empty for a player of no account here, or with no room on land open.
 #[must_use]
 pub fn land_named(player: PlayerId) -> String {
     let word = with_open(|opened| match opened {
@@ -99,20 +113,23 @@ pub fn land_named(player: PlayerId) -> String {
             let found = room.player(player)?;
             let ShipLook { hull, dress, name, emblem } = ShipLook::of(Some(&found.character));
             let level = found.character.level();
-            Some(NamedWord { account: found.owner.clone()?, hull, dress, name, emblem, level })
+            let (_, plate) = room.plates().find(|(each, _)| *each == player)?;
+            let (username, tag) = (plate.name, plate.tag);
+            Some(NamedWord { account: found.owner.clone()?, hull, dress, name, emblem, level, username, tag })
         }
         _ => None,
     });
     word.flatten().and_then(|word| serde_json::to_string(&word).ok()).unwrap_or_default()
 }
 
-/// Gives the open room on land the ships parked at its island, as its seas told them (`sea_ashore`'s answers, each
-/// ship's number as its host gives it): its snapshots send every player all of them, so a page reloaded ashore draws
-/// its own. False, changing nothing, with no room on land open or for text that is not such ships.
+/// Gives the open room on land the ships parked at its island and the traffic ids taken off their routes, as its seas
+/// told them (`sea_ashore`'s answers, each ship's number as its host gives it): its snapshots send every player all of
+/// them, so a page reloaded ashore draws its own ship, and no page draws a taken ship on its route. False, changing
+/// nothing, with no room on land open or for text that is not such an answer.
 #[must_use]
 pub fn land_parked(text: &[u8]) -> bool {
-    let Ok(words) = serde_json::from_slice::<Vec<ParkedWord>>(text) else { return false };
-    let ships = words
+    let Ok(Answer { ships, taken }) = serde_json::from_slice::<Answer>(text) else { return false };
+    let ships = ships
         .into_iter()
         .map(|word| {
             let ship = room::sea::Ship { x: word.x, y: word.y, heading: word.heading, pace: 0, rate: 0 };
@@ -122,7 +139,7 @@ pub fn land_parked(text: &[u8]) -> bool {
         .collect();
     with_open(|opened| match opened {
         Opened::Land { sent, .. } => {
-            sent.park(ships);
+            sent.park(ships, taken);
             true
         }
         _ => false,

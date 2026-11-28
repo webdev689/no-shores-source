@@ -3,8 +3,8 @@
 
 use crate::activity::{Activity, BOUNTIES, BOUNTY_PLACES, FACTION_BOUNTIES, POSTING_FACTIONS};
 use crate::bounties::{
-    BOUNTY_NAME_MOST, DUNGEONS, FACTION_POOLS, LAND, PASSAGES, SEA, board, bounty_at, bounty_pay, faction_at,
-    faction_board, faction_bounty_reputation, faction_places,
+    BOUNTY_NAME_MOST, BOUNTY_TALE_MOST, DUNGEONS, FACTION_POOLS, LAND, PASSAGES, SEA, board, bounty_at, bounty_pay,
+    faction_at, faction_board, faction_bounty_reputation, faction_places,
 };
 use crate::dice::Dice;
 use crate::factions::factions;
@@ -89,6 +89,22 @@ fn every_bounty_of_the_town_and_the_factions_has_a_short_plain_name_of_its_own()
     }
     let tiers: BTreeSet<u8> = FACTION_POOLS.iter().flatten().map(|template| template.tier).collect();
     assert_eq!(tiers, BTreeSet::from([1, 2, 3]));
+}
+
+#[test]
+fn every_bounty_carries_one_short_line_of_its_tale_of_its_own_as_posted() {
+    let towns = LAND.iter().chain(&SEA).chain(&DUNGEONS).chain(&PASSAGES);
+    let tales: Vec<&str> = towns.chain(FACTION_POOLS.iter().flatten()).map(|template| template.tale).collect();
+    let unique: BTreeSet<&str> = tales.iter().copied().collect();
+    assert_eq!(unique.len(), tales.len(), "each its own line");
+    for tale in tales {
+        let dashed =
+            ['\u{2014}', '\u{2013}', '\u{2026}'].iter().any(|mark| tale.contains(*mark)) || tale.contains("--");
+        let line = !tale.is_empty() && tale.chars().count() <= BOUNTY_TALE_MOST && !tale.contains('\n');
+        assert!(line && !dashed && tale.ends_with('.'), "{tale:?} is one short plain line");
+    }
+    let posted = board(DAY).into_iter().chain(faction_board(DAY, 3).into_iter().flatten());
+    assert!(posted.into_iter().all(|bounty| !bounty.tale.is_empty()), "the board carries each one's tale");
 }
 
 #[test]

@@ -5,7 +5,8 @@ use super::*;
 use crate::asks::{NOT_THE_TEST_GROUND, OUT_OF_REACH, answer_code};
 use combat::arms::{OffHand, Stroke, WeaponClass};
 use combat::{CombatInput, Intent};
-use gear::{Ask, Rarity, Refusal, Slot, Vestige};
+use gear::grid::Column;
+use gear::{Ask, Kind, Rarity, Refusal, Slot, Vestige};
 use movement::Controls;
 use std::collections::BTreeMap;
 
@@ -14,6 +15,17 @@ use std::collections::BTreeMap;
 pub(crate) const SEALING_SEED: u64 = 5;
 
 const SWORD: u32 = 2;
+/// The item a test's own Breach sword is, and its armour the items after it.
+const SWORD_WORN: u32 = 9_000;
+/// A swing straight down, its blow judged as it begins.
+const DOWN: combat::fighter::Attack = combat::fighter::Attack {
+    stroke: Stroke::Down,
+    elapsed: 0,
+    strike: 24,
+    end: 60,
+    swing: combat::fighter::Swing::Plain,
+    left_hand: false,
+};
 
 fn room() -> Room {
     Room::new(Vec::new(), (0.0, 0.0))
@@ -96,14 +108,7 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
     assert_eq!(room.foes[&level_one].struck_by.get(&player).map(|(_, hand)| *hand), Some(Slot::Melee));
     let level_five = stand(&mut room, ::foes::Role::Brute, 5, -40.0);
     let striker = *room.fighter(player).expect("in");
-    let attack = combat::fighter::Attack {
-        stroke: Stroke::Down,
-        elapsed: 0,
-        strike: 24,
-        end: 60,
-        swing: combat::fighter::Swing::Plain,
-        left_hand: false,
-    };
+    let attack = DOWN;
     let blow = combat::judge::swing_blow(player, &striker, &attack, level_five);
     assert_eq!(room.empower(blow, level_five).damage, 0.0, "four levels below, a player strikes for nothing");
     let foe_blow = combat::judge::swing_blow(level_five, room.fighter(level_five).expect("standing"), &attack, player);
@@ -111,6 +116,44 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
     let times = gear::power::on_player(room.player(player).expect("in").character.defense(), 1, 5);
     let eased = foe_blow.damage * times * crate::power::FOE_HARM;
     assert!((struck - eased).abs() < 1e-9 && times > 2.0, "and the foe strikes them twice as hard as it would");
+}
+
+#[test]
+fn a_forged_weapon_out_hits_a_normal_one_by_a_level_even_where_the_foes_level_caps_its_reach() {
+    // A player in a Breach's Legendary armour, each piece won at Hard or not, swings a Breach's Legendary sword, every
+    // upgrade bought, at a level 30 foe: their level, and how far the sword Forged outweighs it won at Normal.
+    let forged_over_normal = |armour_hard: [bool; 4]| {
+        let mut room = room();
+        let player = room.join().expect("a room with space");
+        let foe = stand(&mut room, ::foes::Role::Brute, 30, -1.5);
+        let character = &mut room.players.get_mut(&player).expect("in").character;
+        character.xp = gear::power::xp_for_level(20);
+        let kinds = [Kind::Sword, Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs];
+        for ((id, kind), hard) in (SWORD_WORN..).zip(kinds).zip([false].into_iter().chain(armour_hard)) {
+            let mut piece = gear::Item::new(id, kind, Rarity::Legendary, 20, kind.slot());
+            (piece.breach, piece.hard) = (true, hard);
+            for (column, _) in piece.columns().iter().enumerate().filter(|(_, column)| **column == Column::Upgrade) {
+                piece.bought |= piece.node_bit(column, 0).expect("an upgrade's node");
+            }
+            if let Some(was) = character.worn(kind.slot()).map(|was| was.id) {
+                character.items.remove(&was);
+            }
+            character.items.insert(id, (piece, gear::At::Worn(kind.slot())));
+        }
+        let level = character.level();
+        let blow = combat::judge::swing_blow(player, room.fighter(player).expect("in"), &DOWN, foe);
+        let normal = room.empower(blow, foe).damage;
+        let items = &mut room.players.get_mut(&player).expect("in").character.items;
+        items.get_mut(&SWORD_WORN).expect("the sword").0.hard = true;
+        let forged = room.empower(blow, foe).damage;
+        (level, forged / normal)
+    };
+    let (level, times) = forged_over_normal([true; 4]);
+    assert_eq!(level, 30, "Hard's armour reaches level 30");
+    assert!((times - 1.07).abs() < 1e-9, "its 15 Attack more strikes a level harder, past the foe's level: {times}");
+    let (level, times) = forged_over_normal([true, true, true, false]);
+    assert_eq!(level, 29, "a Normal piece among them, a level short");
+    assert!((times - 1.07).abs() < 1e-9, "a level harder below the foe's level, as ever: {times}");
 }
 
 #[test]

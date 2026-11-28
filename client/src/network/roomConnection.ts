@@ -5,6 +5,7 @@ import { ROOM_TICK_S, WORLD_CLOCK } from '../sky/worldClock.ts';
 import { LinkMeasure, type Measured } from './linkMeasure.ts';
 import { SnapshotKeeper } from './snapshots.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
+import { TOLD_EVERY } from '../../../server/budget.ts';
 
 /** A room's snapshot, as a link hands it on. */
 export type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
@@ -84,6 +85,8 @@ interface Heard {
   readonly gear: (gear: GearMessage) => void;
   /** Each snapshot as it came, and whether it was made whole and handed on, for the link's measure. */
   readonly came?: (snapshot: Snapshot, kept: boolean) => void;
+  /** The room's word on how many messages it has taken from the socket. */
+  readonly taken?: (messages: number) => void;
 }
 
 /** Hands on a socket's messages to `heard`. */
@@ -99,6 +102,7 @@ function hear(socket: WebSocket, heard: Heard): void {
     if (message?.kind === 'joined') heard.welcomed(message);
     else if (whole) heard.snapshot(whole);
     else if (message?.kind === 'gear') heard.gear(message);
+    else if (message?.kind === 'taken') heard.taken?.(message.messages);
   });
 }
 
@@ -142,6 +146,10 @@ export class RoomConnection implements RoomLink {
   private waiting: ReturnType<typeof setTimeout> | null = null;
   /** Messages sent since the room was last heard. */
   private unheard = 0;
+  /** Inputs sent on this socket, and how many messages the room last said it had taken from it, which it tells every
+   *  `TOLD_EVERY`. The session's token, sent once a join, goes uncounted: the page holds one message later. */
+  private sent = 0;
+  private taken = 0;
   /** The last welcome, until a snapshot after it carries its dresses and plates on. */
   private welcomeUnheard: Welcome | null = null;
 
@@ -195,7 +203,8 @@ export class RoomConnection implements RoomLink {
       };
       const told = (shot: Snapshot) => (made ? made.snapshot(shot) : snapshot(shot));
       const came = (shot: Snapshot, kept: boolean) => made?.came(shot, kept);
-      hear(socket, { welcomed, snapshot: told, gear: (sent) => (made ? made.heard(sent) : gear(sent)), came });
+      const taken = (messages: number) => made?.took(socket, messages);
+      hear(socket, { welcomed, snapshot: told, gear: (sent) => (made ? made.heard(sent) : gear(sent)), came, taken });
       // The player is told in words; the room's address is for the console.
       socket.addEventListener(
         'error',
@@ -230,9 +239,10 @@ export class RoomConnection implements RoomLink {
   private rejoin(): void {
     this.waiting = null;
     const socket = this.connect(this.url);
-    this.socket = socket;
+    [this.socket, this.sent, this.taken] = [socket, 0, 0];
     const welcomed = (welcome: Welcome) => this.welcomed(socket, welcome);
-    hear(socket, { welcomed, snapshot: this.snapshot, gear: (sent) => this.heard(sent), came: this.came });
+    const taken = (messages: number) => this.took(socket, messages);
+    hear(socket, { welcomed, snapshot: this.snapshot, gear: (sent) => this.heard(sent), came: this.came, taken });
     this.watch(socket);
   }
 
@@ -258,6 +268,11 @@ export class RoomConnection implements RoomLink {
       this.socket.send(this.session);
   }
 
+  /** The room's word on how many messages it has taken from `socket`, kept while it is the link's. */
+  private took(socket: WebSocket, messages: number): void {
+    if (socket === this.socket) this.taken = messages;
+  }
+
   /** The room's word on the player's gear: its trim and arms kept, and the whole handed on. */
   private heard(gear: GearMessage): void {
     if (gear.trim) this.trim = gear.trim;
@@ -271,12 +286,13 @@ export class RoomConnection implements RoomLink {
   send(bytes: Uint8Array<ArrayBuffer>): void {
     if (this.rejoining || this.socket.readyState !== WebSocket.OPEN) return;
     this.socket.send(bytes);
-    this.unheard += 1;
+    [this.unheard, this.sent] = [this.unheard + 1, this.sent + 1];
   }
 
-  /** Whether the room has gone unheard for `UNHEARD_MOST` messages: what the page sends next waits for its word. */
+  /** Whether the room has gone unheard for `UNHEARD_MOST` messages, or, though it speaks, has taken that many fewer
+   *  than were sent, past those it has yet to tell (an upload held up): what the page sends next waits for its word. */
   get quiet(): boolean {
-    return this.unheard >= UNHEARD_MOST;
+    return this.unheard >= UNHEARD_MOST || this.sent - this.taken >= UNHEARD_MOST + TOLD_EVERY;
   }
 
   /** The link's lag and loss as the page measures them. */

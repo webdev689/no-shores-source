@@ -66,9 +66,9 @@ import { mapMarksOf } from './mapMarks.ts';
  * in the rooms' worker on the same ground; online, the server's. It judges the edge and the fight, and the page
  * predicts the player by its own rules and takes its word; every other player and foe is shown where it last saw
  * them. Online, the room keeps the player's gear, which their figure wears; a mark stands over what E uses within
- * reach: a station's keeper, Shape or a dungeon's entrance. A social space's keepers and townsfolk walk it. In a
- * patrol, E at an entrance's door goes into its dungeon; in a dungeon, its floor is the ground, and E at its exit door
- * goes out.
+ * reach: a station's keeper, Shape or a dungeon's entrance. A social space's keepers and townsfolk walk it, a patrol's
+ * guards and townsfolk its hamlets, farms and mills. In a patrol, E at an entrance's door goes into its dungeon; in a
+ * dungeon, its floor is the ground, and E at its exit door goes out.
  */
 export class Foot {
   readonly node: NodeInfo;
@@ -113,7 +113,7 @@ export class Foot {
   private readonly dressed: Dressed = { gear: null, loadout: 0 };
   /** The last word on the gear the room was told the prologue is done for. */
   private prologueTold: GearState | null = null;
-  /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
+  /** A social space's people or a patrol's folk, and what E does where the player stands, low in the view's middle. */
   private readonly plaza: PlazaLife | null;
   /** At an outpost site, its outpost as the accounts keep it. */
   readonly outpost: OutpostHere | null;
@@ -167,7 +167,7 @@ export class Foot {
     this.prompt = context.usePrompt;
     this.floor = floorOver(node.kind === 'social' ? opened.boxes : [], (x, y) => context.movement.standing(x, y).z);
     const placing = placingFolk(this.folk, (id) => context.forge.forget(id));
-    this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
+    this.plaza = opened.dungeon || opened.run ? null : new PlazaLife(node, placing, this.floor);
     this.outpost = outpostAt(node, opened, context, parts.combat, people.held);
     this.publicView = new PublicView(node.id, this.feel, {
       boxes: opened.boxes,

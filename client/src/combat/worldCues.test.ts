@@ -245,11 +245,11 @@ test('every cue the world can play is one the Freesound list searches for', () =
   add(actionCue(idle, { kind: 'dodge', elapsed: 0, toward: [0, 1] }, 0));
   add(actionCue(idle, { kind: 'draw', elapsed: 0 }, arms(FISTS, BOW)));
   for (const cue of possible) assert.ok(searched.has(cue), `${cue} is searched for`);
-  // The interface's, the ambience's, the ships', the story's, the sea fight's, the voice's, the horses', a Breach's
-  // and the music's cues are each checked where they play.
+  // The interface's, the ambience's, the ships', the story's, the sea fight's, the voice's, the horses', a Breach's,
+  // the foes' arrivals' and the music's cues are each checked where they play.
   const world = listed.cues
     .map((cue) => cue.id)
-    .filter((id) => !/^(ui|hold|gain|ship|amb|story|sea|speech|horse|breach|music)\./.test(id));
+    .filter((id) => !/^(ui|hold|gain|ship|amb|story|sea|speech|horse|breach|arrival|music)\./.test(id));
   assert.deepEqual(
     world.filter((id) => !possible.has(id)),
     [],

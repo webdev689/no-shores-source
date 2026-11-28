@@ -325,9 +325,10 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   no patrol, and its garrison stands at the patrol's island band. Its first clear pays the day's while it is its
   island's dungeon of the day; set to a harder tier it would pay none, since it carries no day's modifier. At Elite
   or Abyss a patrol's dungeon is only a run, `node-<patrol id>--elite--dungeon-<number>--run-<instance>` or
-  `--abyss--`, as every Elite Dungeon is; a sea island's dungeon is shared at Normal and a run above it. A run opens
-  from its name alone (`runAsk`, `open_run`) and lets in one company; a patrol's dungeon's run reads its patrol's node
-  file too. While its patrol is locked ([[World Map]], "Seen whole, reached by nodes"), neither its shared room nor
+  `--abyss--`, as every Elite Dungeon is; a sea island's dungeon is shared at Normal and a run at Elite or Abyss
+  (`sea-dungeon-...--elite--run-<instance>`), at the tier its island was landed at ([[Islands]], "The door"). A run
+  opens from its name alone (`runAsk`, `open_run`) and lets in one company; a patrol's dungeon's run reads its
+  patrol's node file too. While its patrol is locked ([[World Map]], "Seen whole, reached by nodes"), neither its shared room nor
   any run of it takes a player, as the patrol's own room takes none, by an entrance or otherwise.
 - **A run's room** (`Room::dungeon_run`) stands any dungeon for a run at a tier, opened at a minute. The run is fixed
   as it opens; at Abyss it carries five revives the company shares, and a wipe starts it over ([[Activities]]).
@@ -553,12 +554,12 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
 - **A wipe at Abyss** keeps every broken seal; the rest wait again, every wave is gone before the posts stand again
   (any dungeon's, as a wave never stands again), and the Court starts over, its Boss held back again unless every seal
   is broken. Leaving and coming back keeps everything: it is the room's.
-- **The Court's darkness.** While the Boss stands the Court's cells are a darkness zone ([[Revives]]): no one fallen
-  there respawns by their own ask, and only an ally stands them up; one fallen outside it may. A company all down
-  while the Boss stands, below Abyss, falls back to the Court's checkpoint once the last of them has lain four
-  seconds, every player whole at its door: its waves
-  are gone, its ward, anchors and Fury begin again, and its Boss stands again whole and awake; every seal stays
-  broken.
+- **The Court's darkness.** At Elite and Abyss, while the Boss stands, the Court's cells are a darkness zone
+  ([[Revives]]): no one fallen there respawns by their own ask, and only an ally stands them up; one fallen outside it
+  may. At Normal the Court is no darkness zone, and its fallen respawn by their own ask at its checkpoint. A company all
+  down in the dark at Elite falls back to the Court's checkpoint once the last of them has lain four seconds, every
+  player whole at its door: its waves are gone, its ward, anchors and Fury begin again, and its Boss stands again
+  whole and awake; every seal stays broken.
 - **On the wire.** Each snapshot carries the encounters whole (`EncounterSeen`, about 240 bytes): each seal's kind,
   state, progress, its pieces' marks (a Litany's runes dark, showing, lit or wrong; a Weighing's plates in play and a
   Holdfast's ring stood on; an Ascent's players on its stone and the living in its room) and its relic's strength;
@@ -578,8 +579,8 @@ as standing none (`readDungeon`).
 - **The ways in** (`dungeonTrips`): a patrol's dungeon from its entrance, its shared room at Normal and a run above it,
   the company's where a member is in one; an Elite Dungeon from its node's entrance, as the week's run where it is the
   week's at the node's tier (the week by the rooms' clock, `roomNow`), else its run at Normal; and a sea island's from
-  its door in the sea's room, by its name, laid by its seed and style and named "The <Style> of the Sea", left back to
-  the sea.
+  its door on the island, by its name at the island's tier, laid by its seed and style and named "The <Style> of the
+  Sea", left back to the sea.
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the

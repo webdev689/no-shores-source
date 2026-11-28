@@ -58,3 +58,11 @@ status: in force
 - What the Cube is called, by us and by Overlook's people.
 - How long it stays unseen.
 - What calls in the deep.
+
+Replaced in part by
+[[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]: the Cube is
+called the Axis, a name given by the people who have witnessed it.
+
+The owner's answers on it:
+
+- [[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]

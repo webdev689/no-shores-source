@@ -1,6 +1,6 @@
-//! The owner's edits to one landmass, kept in `content/world/land/<id>.json`: brush strokes that reshape the ground
+//! The hand edits to one landmass, kept in `content/world/land/<id>.json`: brush strokes that reshape the ground
 //! the generator made. A stroke is its brush and the points it was dabbed at, whole metres, so a file holds a great
-//! deal of sculpting in little space and reads as what the owner did. Strokes apply in order, each dab reading the
+//! deal of sculpting in little space and reads as what was done. Strokes apply in order, each dab reading the
 //! ground the dabs before it left, so the same file makes the same ground on any machine.
 
 use crate::exact::smooth;

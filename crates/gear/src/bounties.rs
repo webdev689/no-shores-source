@@ -15,7 +15,8 @@ use crate::factions::factions;
 use crate::objectives::{Deed, ELITE_RANK, GREY_TITHE, MINIBOSS_RANK, Objective};
 use crate::rewards::at_level;
 
-/// A bounty on the board: what it counts, how many, its words, its name, where it counts and who posts it.
+/// A bounty on the board: what it counts, how many, its words, its name, where it counts, who posts it and a line of
+/// its tale.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Bounty {
     pub objective: Objective,
@@ -30,6 +31,8 @@ pub struct Bounty {
     pub tier: u8,
     /// The faction that posts it, by its number; 0 for the town's.
     pub faction: u8,
+    /// One line of its tale, as its card shows under its task: content, never kept or matched.
+    pub tale: &'static str,
 }
 
 /// What a first tier's bounty pays at level 5, raised as a kill is by (5 + the character's level) ÷ 10 when turned in.
@@ -38,8 +41,11 @@ pub const BOUNTY_AUREM: u32 = 60;
 
 /// The most characters a bounty's name holds, as its card heads it.
 pub const BOUNTY_NAME_MOST: usize = 16;
+/// The most characters a line of a bounty's tale holds, so it stays one short line under its task.
+pub const BOUNTY_TALE_MOST: usize = 80;
 
-/// A bounty as the board draws it: what it counts, how many, its words and name, where it counts and its tier.
+/// A bounty as the board draws it: what it counts, how many, its words and name, where it counts, its tier and a
+/// line of its tale.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Template {
     pub(crate) objective: fn() -> Objective,
@@ -48,6 +54,14 @@ pub(crate) struct Template {
     pub(crate) name: &'static str,
     pub(crate) pool: u8,
     pub(crate) tier: u8,
+    pub(crate) tale: &'static str,
+}
+
+impl Template {
+    /// The template with a line of its tale, written after the rest so each bounty keeps to a line or two.
+    const fn told(self, tale: &'static str) -> Self {
+        Self { tale, ..self }
+    }
 }
 
 const fn posted(
@@ -58,7 +72,7 @@ const fn posted(
     pool: u8,
     tier: u8,
 ) -> Template {
-    Template { objective, target, words, name, pool, tier }
+    Template { objective, target, words, name, pool, tier, tale: "" }
 }
 
 const fn felled(faction: Option<u8>, rank: Option<u8>) -> Objective {
@@ -76,25 +90,36 @@ const fn cleared() -> Objective {
 /// The town's bounties, on land, at sea and in dungeons. None names an island or a water: the board is the same for
 /// every level, and the islands' bands run from 1 to 30.
 pub(crate) static LAND: [Template; 4] = [
-    posted(|| felled(Some(GREY_TITHE), None), 30, "Defeat 30 Grey Tithe foes.", "Tithe Collector", 0, 2),
-    posted(|| felled(None, Some(ELITE_RANK)), 6, "Defeat 6 foes of Elite rank or higher.", "A Cut Above", 0, 2),
-    posted(|| Objective::Gather { resource: None }, 6, "Gather 6 resource nodes.", "Honest Work", 0, 1),
-    posted(|| felled(None, Some(MINIBOSS_RANK)), 2, "Defeat 2 foes of Miniboss rank or higher.", "Big Game", 0, 3),
+    posted(|| felled(Some(GREY_TITHE), None), 30, "Defeat 30 Grey Tithe foes.", "Tithe Collector", 0, 2)
+        .told("They count every hold in the Expanse. Somebody ought to count them back."),
+    posted(|| felled(None, Some(ELITE_RANK)), 6, "Defeat 6 foes of Elite rank or higher.", "A Cut Above", 0, 2)
+        .told("Every band has its hardest few. Overlook would sleep better with fewer."),
+    posted(|| Objective::Gather { resource: None }, 6, "Gather 6 resource nodes.", "Honest Work", 0, 1)
+        .told("Somebody has to keep the forges fed. Today it pays."),
+    posted(|| felled(None, Some(MINIBOSS_RANK)), 2, "Defeat 2 foes of Miniboss rank or higher.", "Big Game", 0, 3)
+        .told("The big ones keep the small ones brave. Take away the big ones."),
 ];
 pub(crate) static SEA: [Template; 3] = [
-    posted(|| sunk(None), 3, "Sink or take 3 ships.", "Broadside", 1, 1),
-    posted(|| sunk(Some(ELITE_RANK)), 1, "Sink or take a ship of Elite rank or higher.", "Bigger Fish", 1, 2),
-    posted(|| sunk(None), 6, "Sink or take 6 ships.", "Sea Wolf", 1, 3),
+    posted(|| sunk(None), 3, "Sink or take 3 ships.", "Broadside", 1, 1)
+        .told("Every hull you send down is one that won't come for Overlook."),
+    posted(|| sunk(Some(ELITE_RANK)), 1, "Sink or take a ship of Elite rank or higher.", "Bigger Fish", 1, 2)
+        .told("Their best captains carry more guns. They sink like the rest."),
+    posted(|| sunk(None), 6, "Sink or take 6 ships.", "Sea Wolf", 1, 3)
+        .told("Six hulls in a day. The Tithe will start to learn your sails."),
 ];
 pub(crate) static DUNGEONS: [Template; 3] = [
-    posted(cleared, 1, "Clear a dungeon.", "Into the Dark", 2, 1),
-    posted(cleared, 2, "Clear 2 dungeons.", "Deeper Still", 2, 2),
-    posted(cleared, 3, "Clear 3 dungeons.", "Deep Delver", 2, 3),
+    posted(cleared, 1, "Clear a dungeon.", "Into the Dark", 2, 1)
+        .told("Some doors on these islands were shut for a reason. Open one anyway."),
+    posted(cleared, 2, "Clear 2 dungeons.", "Deeper Still", 2, 2)
+        .told("The second door is always older than the first, whatever the stones say."),
+    posted(cleared, 3, "Clear 3 dungeons.", "Deep Delver", 2, 3)
+        .told("Come back up with the same name you went down with."),
 ];
 
 /// The passages' six, of which the board shows two a day.
 pub(crate) static PASSAGES: [Template; 6] = [
-    posted(|| Objective::Passage(Deed::Lamp), 1, "Light a lamp in the passages.", "Lamplighter", 3, 3),
+    posted(|| Objective::Passage(Deed::Lamp), 1, "Light a lamp in the passages.", "Lamplighter", 3, 3)
+        .told("Cold, the lamps below are grey. Touched, they go gold. Gold is for home."),
     posted(
         || Objective::Passage(Deed::Mission),
         3,
@@ -102,20 +127,28 @@ pub(crate) static PASSAGES: [Template; 6] = [
         "Errand Runner",
         3,
         2,
-    ),
-    posted(|| Objective::Passage(Deed::Felled), 25, "Defeat 25 foes in the passages.", "Down Below", 3, 1),
-    posted(|| Objective::Passage(Deed::Deep(8)), 1, "Go 8 zones deep in the passages.", "Further In", 3, 2),
-    posted(|| Objective::Passage(Deed::Reliquary), 2, "Open 2 reliquaries in the passages.", "Relic Hunter", 3, 2),
-    posted(|| Objective::Passage(Deed::Vein), 1, "Gather a vein in the passages.", "Seam Worker", 3, 1),
+    )
+    .told("Down below, the ways change by the week. The work down there doesn't."),
+    posted(|| Objective::Passage(Deed::Felled), 25, "Defeat 25 foes in the passages.", "Down Below", 3, 1)
+        .told("The Tithe guard wherever the counting is worth guarding. Thin them out."),
+    posted(|| Objective::Passage(Deed::Deep(8)), 1, "Go 8 zones deep in the passages.", "Further In", 3, 2)
+        .told("The ground below is longer than the chart. See how much longer."),
+    posted(|| Objective::Passage(Deed::Reliquary), 2, "Open 2 reliquaries in the passages.", "Relic Hunter", 3, 2)
+        .told("Whoever made the ways left their things below. They haven't come back for them."),
+    posted(|| Objective::Passage(Deed::Vein), 1, "Gather a vein in the passages.", "Seam Worker", 3, 1)
+        .told("The seams below run richer than any above, and nobody knows why."),
 ];
 
 /// Each faction's own four, by its number less one: the Stormcallers' fights, the Lamplighters' lamps and sea lanes,
 /// and the Veiled's quiet work against the strong.
 pub(crate) static FACTION_POOLS: [[Template; 4]; POSTING_FACTIONS as usize] = [
     [
-        posted(|| felled(None, None), 40, "Defeat 40 foes.", "Storm Front", 0, 1),
-        posted(|| felled(None, Some(ELITE_RANK)), 8, "Defeat 8 foes of Elite rank or higher.", "Thunderhead", 0, 2),
-        posted(|| sunk(None), 4, "Sink or take 4 ships.", "Squall Line", 1, 2),
+        posted(|| felled(None, None), 40, "Defeat 40 foes.", "Storm Front", 0, 1)
+            .told("A storm doesn't pick and choose. Neither should you."),
+        posted(|| felled(None, Some(ELITE_RANK)), 8, "Defeat 8 foes of Elite rank or higher.", "Thunderhead", 0, 2)
+            .told("Lightning goes for the tallest thing on the field. So do we."),
+        posted(|| sunk(None), 4, "Sink or take 4 ships.", "Squall Line", 1, 2)
+            .told("No caller calls the Storm from a deck. You'll have to use the guns."),
         posted(
             || felled(None, Some(MINIBOSS_RANK)),
             3,
@@ -123,18 +156,26 @@ pub(crate) static FACTION_POOLS: [[Template; 4]; POSTING_FACTIONS as usize] = [
             "Eye of the Storm",
             0,
             3,
-        ),
+        )
+        .told("It's calmest in the eye. Go and stand in it."),
     ],
     [
-        posted(|| Objective::Gather { resource: None }, 8, "Gather 8 resource nodes.", "Lamp Oil", 0, 1),
-        posted(|| sunk(None), 3, "Sink or take 3 ships.", "Calm Waters", 1, 1),
-        posted(cleared, 2, "Clear 2 dungeons.", "Light the Way", 2, 2),
-        posted(|| sunk(Some(ELITE_RANK)), 2, "Sink or take 2 ships of Elite rank or higher.", "Harbour Light", 1, 3),
+        posted(|| Objective::Gather { resource: None }, 8, "Gather 8 resource nodes.", "Lamp Oil", 0, 1)
+            .told("Aud's light burns on nothing. Ours still need oil, and wicks, and hands."),
+        posted(|| sunk(None), 3, "Sink or take 3 ships.", "Calm Waters", 1, 1)
+            .told("A light is no use to a ship that never reaches it. Keep the lanes clear."),
+        posted(cleared, 2, "Clear 2 dungeons.", "Light the Way", 2, 2)
+            .told("Every dark place was lit once, by someone. Take a light back in."),
+        posted(|| sunk(Some(ELITE_RANK)), 2, "Sink or take 2 ships of Elite rank or higher.", "Harbour Light", 1, 3)
+            .told("The Beacon shows the way home. See that the Tithe never follow it in."),
     ],
     [
-        posted(|| felled(Some(GREY_TITHE), None), 25, "Defeat 25 Grey Tithe foes.", "Quiet Knives", 0, 1),
-        posted(cleared, 1, "Clear a dungeon.", "Below Stairs", 2, 1),
-        posted(|| felled(None, Some(ELITE_RANK)), 10, "Defeat 10 foes of Elite rank or higher.", "Night Work", 0, 2),
+        posted(|| felled(Some(GREY_TITHE), None), 25, "Defeat 25 Grey Tithe foes.", "Quiet Knives", 0, 1)
+            .told("Every collector you stop is a column the Tithe cannot fill."),
+        posted(cleared, 1, "Clear a dungeon.", "Below Stairs", 2, 1)
+            .told("What is kept below is never in the ledger. Go and see what is."),
+        posted(|| felled(None, Some(ELITE_RANK)), 10, "Defeat 10 foes of Elite rank or higher.", "Night Work", 0, 2)
+            .told("The strong are counted first. Make sure the count comes up short."),
         posted(
             || felled(None, Some(MINIBOSS_RANK)),
             2,
@@ -142,14 +183,15 @@ pub(crate) static FACTION_POOLS: [[Template; 4]; POSTING_FACTIONS as usize] = [
             "No Witnesses",
             0,
             3,
-        ),
+        )
+        .told("Nobody saw. Nobody wrote it down. That is the whole of the work."),
     ],
 ];
 
 /// A template as the board posts it, by the faction that posts it.
 fn bounty_of(template: &Template, faction: u8) -> Bounty {
-    let Template { objective, target, words, name, pool, tier } = *template;
-    Bounty { objective: objective(), target, words, name, pool, tier, faction }
+    let Template { objective, target, words, name, pool, tier, tale } = *template;
+    Bounty { objective: objective(), target, words, name, pool, tier, faction, tale }
 }
 
 /// The town's eight, in its order: places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, then the passages'

@@ -41,10 +41,10 @@ const vec3 = (values: readonly number[]) => `vec3f(${list(values)})`;
 
 /**
  * The meadow, drawn instanced: each instance a tuft of a cell, `instance_index` its cell's slot times `TUFTS` and
- * its number in the cell. Where it stands in its cell, which of the owner's sprites it wears and how tall come of a
+ * its number in the cell. Where it stands in its cell, which of the meadow's sprites it wears and how tall come of a
  * hash of its cell and number; how lush its patch is, of noise over the cells; whether it grows, of its cell's grid.
  * Each tuft is three crossed cards turned its own way, fixed in the world, each cut to its sprite's drawn box, its foot
- * following the slope, swaying in the plants' own wind. Its colours are the owner's, moved by the ground under them
+ * following the slope, swaying in the plants' own wind. Its colours are its sprite's, moved by the ground under them
  * (meadowLaw.ts `texelOver`), lit as the plants are, and given way to the ground's colour far off. It fades by its
  * samples toward the reach, a tuft's share of the cell thinning first, so far cells hold fewer.
  */

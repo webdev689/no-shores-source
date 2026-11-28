@@ -11,15 +11,13 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 - #159 The rooms' worker tests wait for what they check, not for the clock
 - #234 The owner's answers to the Open Questions, recorded and built
-- #250 The kit runs only in cloud sessions
 - #251 Drops are larger and brighter, and weapons and armour lie on the ground as real pickups
 - #253 Record No Shores (Mobile): rebuilt in Rust, beside the browser game
 - #254 Sea polish: the aim swings between sides, lamps hold still, ships ride high waves, the map travels to every place
-- #256 Weapon glow fixes, a great-room Holdfast with lighter waves, and pathing round rocks
 - #257 Lines in the bible and code comments held to 120 characters, every longer one rewrapped (review 8)
 - #258 Armour, cloaks and clothes get large icons in the gear screens, as the weapons do
-- #259 The wreck exports again, its stern windows glowing as a lit ship's
-- #264 The hand-off says the repository is public under webdev689, and what the owner sets for it
+- #265 Saltmere: Saltgrass Downs fold-in
+- #266 Region dungeons, deeper and darker
 - Drafts: #93 The toolkit's first review; #114 The gear message carries the pledge once
 
 ## Built
@@ -41,8 +39,8 @@ when its code changed ([[The Rooms Deploy When Their Code Changes]], [[The Disco
   section at a time, the [[Overworld]] ([[Cities]], [[Reach]], [[Layouts]], [[Modules]], [[Islands]], [[Held Map]]).
 - **The fight**: [[Combat]], [[Foes]], [[Enemies]] (the Grey Tithe and the [[Lattice]], territories and arrivals by
   airship and crown), [[Navmesh]], [[Arts]], [[Factions]], [[Revives]].
-- **Gear**: [[Gear]], Vestiges and [[Item Pictures]], house pieces dropping in the world, the keepers' screens after
-  Destiny 2's, the [[Shipyard]], [[Guilds]] and [[Outposts]].
+- **Gear**: [[Gear]], Vestiges and [[Item Pictures]], house pieces dropping in the world and its dungeons, the
+  keepers' screens after Destiny 2's, the [[Shipyard]], [[Guilds]] and [[Outposts]].
 - **The sea**: [[Sailing]], [[Naval Combat]], [[Hulls]], [[Ship Power]], [[Crew]].
 - **Story and activities**: the [[Prologue]], [[Quests]] with the houses' roads, the welcome's gifts, the hordes,
   the riding escort and the riding and sailing lessons, [[Dungeons]], [[Breaches]] (the
@@ -144,6 +142,15 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **After #234** ([[The Open Questions' Answers as Claude Builds Them]]): a friendly ship in a fight still flies
+  Overlook's blue; travelling aboard another's ship has no getting off at will, no fight of the captain's shown, the
+  helm's controls still offered, no going ashore together, and no way back for one keeping no ship let off far from
+  Overlook; a Breach checkpoint moved less than a second before its last player leaves may not be stored. Its new
+  questions for the owner are in [[Open Questions]]. Not yet seen in a running game, on a real GPU or in a deployed
+  room: all of it, the sign-in limit's Cloudflare binding and a run's storage alarm among it.
+- **A Breach space's paths after its seal opens**: a space's navmesh is baked as it is first reached and never again,
+  so no foe paths through a seal opened since, in a run restored or not (found by #234's audit, as it was before it).
+  Baking a space again as its seal opens would change how foes move: the owner's to say.
 - **#256's leftovers**: the outline's fix and other players' glow unseen on a real GPU and in a deployed room; the
   Holdfast, the waves' caps, the trimmed navmesh and foes placed clear of solids unplayed; a navmesh region kept from
   meeting itself costs `partition` some 2 ms more on a 70 m square (release, a noisy machine), and two floors of one
@@ -205,8 +212,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   route lines; a strand's hull stands tilted; an open mouth's daylight is a flat pale sheet; islands' modules sample
   the rock texture on every fragment; f32 time in the shaders drifts from the CPU's flicker after hours.
 
-- **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
-  splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
+- **The five longest system notes**: Interface (1,881 lines), Server (1,003), Game, Gear and Naval Combat (905 to
+  978) want splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
   merge").
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.

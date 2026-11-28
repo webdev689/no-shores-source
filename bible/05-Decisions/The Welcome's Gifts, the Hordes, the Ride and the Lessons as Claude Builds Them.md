@@ -28,7 +28,7 @@ your baby". Each is the owner's to change.
 | One past the round before the gifts | Owed nothing new (on "Take your ship" or later, pledged, or done) | The owner's word is for the tutorial's visits; they made theirs with the stranger's Aurem |
 | "Arm yourself" | Gone; its id is "Put them on"'s old id, so a save there reads on "Put them on", its counts at nothing | The gifts arm the player; nothing is left to buy |
 | "Put them on" | Asks the Melee weapon, the four armour pieces and the Ranged weapon, the Ranged last | The player chose a Ranged weapon too; last, so the goals before keep their places |
-| An old save on "Put them on" or "Arm yourself" | Asked the Ranged weapon too, bought at 50 Aurem from what is left of the stranger's 400, as nothing is owed past the round | One rule for every save; the owner may rather have them given it |
+| An old save on "Put them on" or "Arm yourself" | Asked the Ranged weapon too, and given it free at the Weaponsmith's counter, once, as her gift is (its Melee weapon was bought before she gave them) | The owner's "Give it free" ([[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]) |
 | The stranger's words | Two lines: her history ("Grey sails take a tenth of every hold. Overlook gives the Tithe nothing.") and her farewell ("That's why your ship never made port. Every keeper has a gift. Go well."), both face to face; every scene naming a place gone with its flight | The owner's "Keep removed. Rework dialouge to be better": the Tithe's levy as [[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]] has it, tied to the player's own wreck (a ship bound for Overlook gets no mercy; the prologue's crew "raise Overlook by first light"), and her wish; a third line of hers in a row would break [[Dialogue]]'s two a turn |
 | The keepers' round lines | Each says what they give ("Pick one blade and one to shoot with. Both are my gift."); the Vault Keeper gains a line for the cloak | Each gift is said where it is given, within [[Dialogue]] |
 | The notice | A notice for each gift as it comes (the Bay and the Sloop too), its words made by one function, `giftNotice` | One place for the gifts' words, shown as the keepers' screen's notice |
@@ -163,8 +163,13 @@ your baby". Each is the owner's to change.
 
 | Call | Chosen | Why |
 |---|---|---|
-| "The world" | A Vestige of the world's content (`Source::World`: a kill's or a chest's in the patrols and the world's places, a sea fight's, a public event's, a mission's, a faction's or a guild's package, the keepers' Vestiges) as it is opened; not a dungeon's, an Elite or Abyss Dungeon's, a sea dungeon's or a Breach's, which keep their own sets | The owner's "the world loot pool": each of those contents' drops wears its own set ([[Every Drop Wears Its Content's Set, With Random Perks]]); the world's alone is the pool |
+| "The world" | A Vestige of the world's content (`Source::World`: a kill's or a chest's in the patrols and the world's places, a sea fight's, a public event's, a mission's, a faction's or a guild's package, the keepers' Vestiges) as it is opened, and a dungeon's too: a patrol's, an Elite or Abyss Dungeon's, a sea dungeon's and a Breach's, whose other pieces keep their own sets | The owner's "the world loot pool", then "Dungeons,Elite/Abyss,Sea dungeons,Breaches" ([[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]) |
 | Where it is rolled | As the Vestige is opened at the Mage's (`identify`), on the opened rarity, Magic or Rare | Magic and finer drop sealed: the piece is made when it is opened, so the share is of what opens Magic or Rare. A smith's ware and a ship's module are made elsewhere and never become one |
 | The dice | A purpose of its own (`HouseDrop`, 3,000), one roll for whether and one for which | No roll any other purpose makes moves, so every other drop, and native and WebAssembly, stay as they were |
 | Which piece | Evenly among the house's four armour pieces and its two weapons, whatever slot the Vestige held | The owner's "its four armour pieces and its weapons"; each its own kind, so the slot follows the piece |
 | One way for both | `vestige::house_piece`: the entry's kind, look and name on a piece rolled at the rarity given, its content the factions' | The leader's Magic gift and the drops at Magic and Rare are the same piece; the catalogue, the wares and the Legendary pieces stay as they were |
+
+The owner's answers on it:
+
+- [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]
+- [[What the Owner Kept, Walking the Open Questions]]

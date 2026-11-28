@@ -1,7 +1,7 @@
 //! The band: an hour of each activity at a level, reckoned on average from the rules' own pay and the measured times
 //! below, against a patrol zone's at the same level, the game's floor of play, so no activity is the one place worth
 //! playing ("I dont want it to be the goto where other content doesnt matter"). XP and Aurem stand within 0.7 and
-//! twice a patrol zone's; loot within three quarters and five times, for the owner's order asks harder content to drop
+//! twice a patrol zone's; loot within three quarters and five times, since harder content is to drop
 //! more and better. Loot weighs each colour twice the one below, as each drops half as often or less. What is counted
 //! and the table are in `Activities` ("The band").
 
@@ -27,7 +27,7 @@ pub const COLOUR_WEIGHT: [f64; 5] = [1.0, 2.0, 4.0, 8.0, 16.0];
 pub const PAY_BAND: (f64, f64) = (0.7, 2.0);
 pub const LOOT_BAND: (f64, f64) = (0.75, 5.0);
 
-/// The hours of play a week holds, two a day, over which the day's and the week's rewards are spread: Claude's call,
+/// The hours of play a week holds, two a day, over which the day's and the week's rewards are spread:
 /// a player who plays most days, as Destiny 1's weekly caps were set for.
 pub const PLAY_HOURS_A_WEEK: f64 = 14.0;
 const DAYS_A_WEEK: f64 = 7.0;
@@ -45,16 +45,16 @@ pub const NODE_APART_M: f64 = 180.0;
 pub const RUN_M_A_SECOND: f64 = 7.59;
 pub const GATHER_SECONDS: f64 = 2.0;
 /// A public event comes every 15 minutes in each zone that runs them (`room::public::PERIOD_MINUTES`), and takes 2.5
-/// to 5.5 minutes as scripted (`Public Events as Claude Builds Them`): 3.5 on average.
+/// to 5.5 minutes as scripted: 3.5 on average.
 pub const EVENTS_AN_HOUR: f64 = 4.0;
 pub const EVENT_SECONDS: f64 = 210.0;
-/// How often an event's chest is of each tier (won, with its bonus, heroic, heroic with its bonus): Claude's call,
+/// How often an event's chest is of each tier (won, with its bonus, heroic, heroic with its bonus):
 /// evenly, for no code fixes how often a bonus or a heroic is met.
 pub const CHEST_TIER_SHARES: [f64; 4] = [0.25, 0.25, 0.25, 0.25];
 
 /// A patrol's dungeon: its foes but its Reeve, and the seconds a scripted player takes for each, its rooms walked
 /// (`measure_the_pace`, nine dungeons: 7 to 22 foes, 17 on average; 21 to 38 s a foe, 28 over them all); with its
-/// Reeve's 51 s (`measure_blows`), and the walk back out to the next of the patrol's three: Claude's minute.
+/// Reeve's 51 s (`measure_blows`), and the walk back out to the next of the patrol's three: a minute.
 pub const DUNGEON_FOES: f64 = 17.0;
 pub const DUNGEON_SECONDS: f64 = 17.0 * 28.0 + 51.0;
 pub const DUNGEON_WALK_SECONDS: f64 = 60.0;
@@ -67,7 +67,7 @@ pub const ELITE_SECONDS: f64 = 22.0 * 27.0 + 106.0;
 pub const RUN_WAIT_SECONDS: f64 = 60.0;
 
 /// The sea: a ship sighted every four to six minutes and a fight of three and a half to four and a half
-/// (`ship::SINKING_KILLS`'s measure, `The Balance and Economy Pass as Claude Shapes It`).
+/// (`ship::SINKING_KILLS`'s measure).
 pub const SIGHTING_SECONDS: f64 = 300.0;
 pub const SEA_FIGHT_SECONDS: f64 = 240.0;
 /// The ranks a sighting sends by the band's first level, Minor to Miniboss (`room::sighting::RANKS_BY_BAND`).
@@ -90,14 +90,14 @@ pub const SEA_PIECES: [f64; 4] = [3.0, 4.0, 5.0, 6.0];
 /// A passage zone: its foes felled and the seconds a scripted player takes over its deal to done, on foot
 /// (`room::deal_measure_tests::measure_the_deals`, six weeks' zones, three of each deal and lamp, the 43 of 45 it did:
 /// 6.4 foes and 202 s a zone, each deal weighed as the web deals it, 38 s a foe against a patrol's 12), and the passage
-/// between zones, 1.5 s up, 2 s across and 1.5 s down and in (`Passages as Claude Builds Them`).
+/// between zones, 1.5 s up, 2 s across and 1.5 s down and in.
 pub const PASSAGE_FOES: f64 = 6.4;
 pub const PASSAGE_SECONDS: f64 = 202.0;
 pub const PASSAGE_BETWEEN_SECONDS: f64 = 5.0;
 /// The passages' island, Saltmere's band, and its depths.
 pub const PASSAGE_BAND: (u8, u8) = (1, 4);
 pub const DEPTHS: u8 = 20;
-/// The share of a haul lost to death between lamps: Claude's stated rate, one dive in twenty at the first depth, one
+/// The share of a haul lost to death between lamps: one dive in twenty at the first depth, one
 /// in four at the twentieth, rising evenly.
 #[must_use]
 pub fn haul_lost(depth: u8) -> f64 {

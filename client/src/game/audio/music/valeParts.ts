@@ -1,4 +1,4 @@
-// The Drowned Vale's band and harmony: every track a Freesound recording the owner picks (a `music.*` cue) over the FM
+// The Drowned Vale's band and harmony: every track a Freesound recording once picked (a `music.*` cue) over the FM
 // program it plays until then; the kit's skins and swells on recordings too; the chords voiced by hand in D Phrygian,
 // low, each song set in its own key by a shift; and the raid's one theme. The fights' takes are written over these
 // (valeTakes.ts), the songs in valeScore.ts, the bosses in valeBosses.ts.

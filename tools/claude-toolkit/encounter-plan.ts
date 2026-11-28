@@ -369,7 +369,7 @@ steps.push({ frames: 1 });
 encounter(7, 0, 420);
 freeze(true);
 picture(beside, anchor0, 'third,8,25', 'court_reckoning');
-const url = `http://localhost:${port}/?at=1&spawn=&run=node-${place}--run-qaqa0001&view=third,7`;
+const url = `http://localhost:${port}/?at=1&spawn=&offline&run=node-${place}--run-qaqa0001&view=third,7`;
 const anyPort = port !== '5173';
 writeFileSync(
   planPath,

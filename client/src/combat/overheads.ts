@@ -43,22 +43,23 @@ function lay(out: number[], picture: Sprite, ramp: readonly Rgb[], middle: Point
 }
 
 /** What stands over a foe whose figure's feet are drawn at `feet`, seen from `eye` at `clock` (page seconds): its
- *  stars while `staggered`, its diamond while `exposed`. */
+ *  stars while `staggered`, its diamond while `exposed`, each placed on a figure `size` times a man's (1 unless
+ *  said). */
 export function overheadMarks(
   out: number[],
   feet: Point,
   eye: Point,
   clock: number,
-  { staggered, exposed }: { readonly staggered: boolean; readonly exposed: boolean },
+  { staggered, exposed, size = 1 }: { readonly staggered: boolean; readonly exposed: boolean; readonly size?: number },
 ): void {
   if (staggered) {
     const step = Math.floor((clock / DAZE.turn) * DAZE.steps);
     for (let star = 0; star < DAZE.stars; star++) {
       const angle = ((step / DAZE.steps + star / DAZE.stars) % 1) * Math.PI * 2;
       const place: Point = [
-        feet[0] + Math.cos(angle) * DAZE.radius,
-        feet[1] + Math.sin(angle) * DAZE.radius,
-        feet[2] + DAZE.high,
+        feet[0] + Math.cos(angle) * DAZE.radius * size,
+        feet[1] + Math.sin(angle) * DAZE.radius * size,
+        feet[2] + DAZE.high * size,
       ];
       lay(out, STAR, GOLD, place, eye);
     }
@@ -67,9 +68,9 @@ export function overheadMarks(
   const [toX, toY] = [feet[0] - eye[0], feet[1] - eye[1]];
   const apart = Math.hypot(toX, toY) || 1;
   const beside: Point = [
-    feet[0] - (toY / apart) * MARK.aside,
-    feet[1] + (toX / apart) * MARK.aside,
-    feet[2] + MARK.high,
+    feet[0] - (toY / apart) * MARK.aside * size,
+    feet[1] + (toX / apart) * MARK.aside * size,
+    feet[2] + MARK.high * size,
   ];
   lay(out, CRACKED, GLOW_RAMPS[3], beside, eye);
 }

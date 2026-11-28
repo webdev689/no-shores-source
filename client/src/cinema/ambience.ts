@@ -1,6 +1,6 @@
 // The sea's and the storm's ambience for the prologue's cutscenes: seven beds (rain, wind, waves, fire, the deep,
 // gulls, creaking timbers) that glide to the levels a scene asks for, the gulls' cries that ride on theirs, and the
-// mission's one-shots. Each is the owner's Freesound pick, as loud as the sound it took the place of, and silent until
+// mission's one-shots. Each is picked from Freesound, as loud as the sound it took the place of, and silent until
 // its recording has come. Nothing plays until the game's world output answers, and the output may come and go: the
 // levels keep gliding meanwhile, and the sound picks up where they stand once it returns.
 

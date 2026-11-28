@@ -21,6 +21,7 @@ import type { Shot } from './camera.ts';
 import type { Drawer, GameScene } from './scene.ts';
 import { withWrecks } from './wrecks.ts';
 import { cityPlantings } from './cityPlants.ts';
+import { grassShare } from './graphicsChoices.ts';
 
 /** The forged models' tables and the RMB blocks read so far, shared by every landmass's city. */
 export interface CityAssets {
@@ -192,7 +193,7 @@ export function landDrawers(
   const cleared = (x: number, y: number) =>
     landmass.cleared(x, y) || (city?.cleared(x, y) ?? false) || (laid?.view.cleared(x, y) ?? false);
   const nature = biome ? new NatureView(gpu) : null;
-  const meadow = biome && MEADOW_BIOMES.has(biome) ? new MeadowView(gpu) : null;
+  const meadow = biome && MEADOW_BIOMES.has(biome) ? new MeadowView(gpu, undefined, grassShare) : null;
   const cityPlanted = cityPlantings(plan?.social.plants ?? [], biome ?? '');
   // Nature is updated once a frame, for its shadow's pass and its own alike.
   let updatedFor: Float32Array | null = null;

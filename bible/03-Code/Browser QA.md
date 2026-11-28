@@ -65,7 +65,7 @@ game runs every frame at full speed, its interface still laid and read; it takes
 
 ## The QA hooks
 
-A page playing alone with `&spawn=` in its address lends the driver its hooks; a development build
+A page playing alone (`&offline`) with `&spawn=` in its address lends the driver its hooks; a development build
 (`NODE_ENV=development npx vite build`) lends the rest. A player's page has none. Each answers whether it did, and
 one that did nothing says why on the console, which the driver prints.
 
@@ -96,9 +96,9 @@ one that did nothing says why on the console, which the driver prints.
 
 ## Places and how to reach them
 
-- **The sea.** A development page offline with `&spawn=` (`/?at=overlook-social&spawn=`): `__qaSea()`, then wait for
-  `flow.mode === 'sea'`. Place a ship staged on the water ahead of the camera's bearing. Watch the driver's exit, or a
-  line only it prints, never a grep for "Error", which matches the plan's own text.
+- **The sea.** A development page offline with `&spawn=` (`/?at=overlook-social&spawn=&offline`): `__qaSea()`, then wait
+  for `flow.mode === 'sea'`. Place a ship staged on the water ahead of the camera's bearing. Watch the driver's exit, or
+  a line only it prints, never a grep for "Error", which matches the plan's own text.
 - **Many views in one load.** `{ "views": "target/shots/saltmere.json", "zone": "<id>", "into": "<folder>",
   "settle": 15 }` arrives the body at each `[east, south, bearing, "first" | "third,<m>", "name"]` and writes
   `<into>/<name>.png`; a view outside the loaded node is refused. `cargo test -p room --test shots_listed shot_list

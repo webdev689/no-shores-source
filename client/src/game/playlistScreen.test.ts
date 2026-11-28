@@ -32,6 +32,7 @@ function standing(width = 1600, height = 900, search: PlaylistSearch = IDLE, sho
   const view = new PlaylistView({
     launch: (entry) => void pressed.push(`launch ${entry.kind}`),
     find: (entry) => void pressed.push(`find ${entry.kind}`),
+    reset: (entry) => void pressed.push(`reset ${entry.kind}`),
     stop: () => void pressed.push('stop'),
     close: () => void pressed.push('close'),
   });
@@ -129,6 +130,22 @@ test('Find a Company is the primary press of a matched entry; Launch goes alone 
     const label = byId(breach.built(), 'playlist-launch')?.label;
     assert.equal(label, company ? 'Go with your company' : 'Launch', 'a Breach is never gone alone');
   }
+});
+
+test('a Breach’s open tier offers Reset checkpoints by click or R, and no other entry nor a search does', () => {
+  const breach = standing(1600, 900, IDLE, WITH_BREACH);
+  assert.equal(byId(breach.built(), 'playlist-reset'), undefined, 'not on a playlist');
+  breach.key('r');
+  breach.click('playlist-tile-4');
+  breach.frame();
+  assert.equal(byId(breach.built(), 'playlist-reset')?.label, 'Reset checkpoints');
+  breach.click('playlist-reset');
+  breach.key('r');
+  assert.deepEqual(breach.pressed, ['reset breach-normal', 'reset breach-normal']);
+  const searching = standing(1600, 900, { ...IDLE, finding: 'Finding…' }, WITH_BREACH);
+  searching.view.show(WITH_BREACH, { ...IDLE, launching: true, finding: 'Launching…' });
+  searching.key('r');
+  assert.deepEqual(searching.pressed, [], 'nothing reset while a launch runs');
 });
 
 test('a shut entry says why in neutral ink with a padlock, on its crest and beside the resting Launch', () => {

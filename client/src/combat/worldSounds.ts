@@ -1,6 +1,6 @@
 // The world's sounds: each fighter's swings, blows, guards, shots, steps, jumps and rolls, the Arts' spells and the
 // statuses they give, the drops landing and the player standing again, heard where each happens. A cue plays only once
-// the owner has picked its recording on the sound sheet (soundSamples.ts); until then it is silent, never stood in for.
+// its recording is picked on the sound sheet (soundSamples.ts); until then it is silent, never stood in for.
 
 import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';

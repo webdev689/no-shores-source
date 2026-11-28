@@ -5,8 +5,7 @@ use std::f64::consts::PI;
 /// One tick of the simulation, in seconds: the server and every predicting browser step bodies by exactly this.
 pub const TICK_SECONDS: f64 = 1.0 / 60.0;
 
-/// The body's measures and pace, in metres, metres a second and seconds: DFO's numbers, the owner's choice ("Same
-/// numbers").
+/// The body's measures and pace, in metres, metres a second and seconds: DFO's numbers.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Tuning {
     pub walk: f64,
@@ -39,7 +38,7 @@ pub struct Tuning {
     /// The steepest terrain walked up, in metres of rise a metre across: about 50°. The game's own, not DFO's.
     pub slope: f64,
     /// A rider's boost: how much faster the horse goes, for how long, and how long it then takes to recharge
-    /// (seconds), the owner's numbers, the same as a ship's burst.
+    /// (seconds), the same as a ship's burst.
     pub ride_boost: f64,
     pub boost_seconds: f64,
     pub recharge_seconds: f64,

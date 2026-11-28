@@ -31,3 +31,7 @@ Asked whether it goes into the pull request of the keepers' gifts, hordes and le
 - It replaces in part [[Every Drop Wears Its Content's Set, With Random Perks]] (one in ten of the world's Magic and
   Rare drops wears the house's look, not the area's set) and [[Each Faction Sells Gear of Its Own, in Its Own Colour]]
   (house pieces also drop, at Magic and Rare; the Legendary ones are still sold alone).
+
+The owner's answers on it:
+
+- [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]

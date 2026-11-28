@@ -134,7 +134,7 @@ test('an Abyss run’s revives, the darkness and revives under way are heard fro
   assert.equal(takeWipe(held, true), false, 'once');
 });
 
-test("a land room's word on the ships parked by its island is held, each snapshot's in place of the last", () => {
+test("a land room's word on the ships parked by its island and the traffic ships taken is held, each snapshot's in place of the last", () => {
   const held = { gear: null, alone: null, ...unheard() };
   const heard = hearRoom(
     held,
@@ -144,10 +144,10 @@ test("a land room's word on the ships parked by its island is held, each snapsho
   );
   const parked = { player: 4, x: 10, y: 20, heading: 1, pace: 0, hull: 2, dress: [], name: [], emblem: 0 };
   const word = { cache: [], revives: -1, events: [], encounter: null, darkness: false, reviving: [], outpost: 0 };
-  heard.snapshot({ ...word, ships: [parked] } as never);
-  assert.deepEqual(held.ships, [parked]);
-  heard.snapshot({ ...word, ships: [] } as never);
-  assert.deepEqual(held.ships, []);
+  heard.snapshot({ ...word, ships: [parked], taken: [2_605] } as never);
+  assert.deepEqual([held.ships, [...held.taken]], [[parked], [2_605]]);
+  heard.snapshot({ ...word, ships: [], taken: [] } as never);
+  assert.deepEqual([held.ships, [...held.taken]], [[], []]);
 });
 
 test("a run played alone opens on the minute by the rooms' clock, not a page clock that is wrong", async () => {

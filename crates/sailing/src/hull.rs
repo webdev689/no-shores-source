@@ -36,7 +36,7 @@ pub struct Hull {
     pub sails: &'static [Sail],
 }
 
-/// The owner's Sloop, its waterline measured off its model by the ship export. It sails as Come Sail Away's
+/// The Sloop, its waterline measured off its model by the ship export. It sails as Come Sail Away's
 /// Large Boat II, whose rig is the Sloop's (a small staysail and a small gaff sail, as its manifest lists them): its
 /// handling is the mod's own, unscaled, and its gain DFO's for that rig.
 pub const SLOOP: Hull = Hull {

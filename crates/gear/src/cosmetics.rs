@@ -193,9 +193,9 @@ pub fn read_dress(sent: &str) -> Option<serde_json::Map<String, serde_json::Valu
 }
 
 /// A dress as a browser wrote it, made the room's word on what others see, not the browser's: the dye, coat and
-/// barding worn put in its outfit, and none of a start piece; its armour and the things in its hands only looks the
-/// page could draw the pieces worn in on the dress's body (`looks::shown`), a light in the left hand kept; and its
-/// own dyes keeping a faction's colour or a cosmetic dye only on a layer the character may show it on
+/// barding worn put in its outfit, and none of a start piece; its armour, its garments and the things in its hands only
+/// looks the page could draw the pieces worn in on the dress's body (`looks::shown`), a light in the left hand kept;
+/// and its own dyes keeping a faction's colour or a cosmetic dye only on a layer the character may show it on
 /// (`colours_shown`). None for a dress that does not read.
 #[must_use]
 pub fn dressed(sent: &str, character: &Character) -> Option<String> {
@@ -205,6 +205,9 @@ pub fn dressed(sent: &str, character: &Character) -> Option<String> {
     let serde_json::Value::Object(outfit) = dress.get_mut("outfit")? else { return None };
     if let Some(serde_json::Value::Object(armour)) = outfit.get_mut("armour") {
         armour.retain(|piece, set| set.as_str().is_some_and(|set| looks.armour.contains(&(piece.as_str(), set))));
+    }
+    if let Some(serde_json::Value::Array(garments)) = outfit.get_mut("garments") {
+        garments.retain(|garment| garment.as_str().is_some_and(|garment| looks.garments.contains(&garment)));
     }
     for hand in ["right", "left"] {
         let held = outfit.get(hand).and_then(serde_json::Value::as_str);

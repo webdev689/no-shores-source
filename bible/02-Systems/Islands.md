@@ -94,15 +94,17 @@ The sea room holds its islands (`sea_islands.rs`):
 
 ## Ashore
 
-- **The room.** An island's room is `isle-<number>-<seed>` (its seed in 16 hex digits, so an island rolled after the
-  sea restarts never opens an older one's room). It opens only on the sea's word: the server's room asks the `sea`
-  room for the island by its number, and opens it if it stands with that seed ([[Server]]); while players stand ashore
-  it holds that island, by its number and seed, as it names them to the sea every 15 seconds ([[Server]], "Parked
-  ships"). Its ground and blocks stand in the world's metres, the island's own moved to its place, as a node's do, so
-  the page predicts the player on the room's own ground to the bit.
-- **Guards.** An isle stands three groups of the Grey Tithe's foes at its water's levels: one led by a Reeve at its
-  Elite rank at the landmark, a band at the door and two to four at the camp, on a navmesh baked over
-  their posts. A cove holds none.
+- **The room.** An island's room is `isle-<number>-<seed>` (its seed in 16 hex digits, so an island rolled after the sea
+  restarts never opens an older one's room), with `--elite` or `--abyss` after it at those tiers: the player walks
+  ashore at the tier the voyage set out at, Normal before one has, as at a node ([[Held Map]], "The difficulty"), and
+  its room's gate turns away a level that tier's seas shut. It opens only on the sea's word: the server's room asks the
+  one `sea` room, at Normal whatever the island's tier, for the island by its number, and opens it if it stands with
+  that seed ([[Server]]); while players stand ashore it holds that island, by its number and seed, as it names them to
+  the sea every 15 seconds ([[Server]], "Parked ships"). Its ground and blocks stand in the world's metres, the island's
+  own moved to its place, as a node's do, so the page predicts the player on the room's own ground to the bit.
+- **Guards.** An isle stands three groups of the Grey Tithe's foes at its water's levels, raised by its room's tier as a
+  node's foes are: one led by a Reeve at its Elite rank at the landmark, a band at the door and two to four at the camp,
+  on a navmesh baked over their posts. A cove holds none.
 - **Landing.** The sea lands an account on an island while its ship lies at rest within 40 m of the island's
   anchorage (the page anchors within 30 m), and keeps it landed while the player stands ashore, until its ship is at
   sea and under way or elsewhere, or the island fades. The server's island room checks it: as an account joins, the
@@ -126,11 +128,12 @@ The sea room holds its islands (`sea_islands.rs`):
   `gather_on`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]). They are drawn as the resource's picture
   alone, with no place built round them.
 - **The door** stands where the dungeon of its style is entered: E there gives the dungeons' trip its room,
-  `sea-dungeon-<continent>-<style>-<the island's seed folded to 32 bits, 8 hex digits>` and the sea's tier
-  (`--elite`, `--abyss`), and the door's place in the world and the bearing its front faces (`isleLaw.ts`,
-  `DungeonDoor`), and the trip goes in (`enterSeaDungeon`): shared at Normal, a run at Elite or Abyss ([[Game]], "A
-  sea island's dungeon"). Its room opens only behind the door of an island the sea holds, for accounts the sea has
-  landed there ([[Server]], "The sea"; [[The Server Is the Authority Over Everything]]). Leaving it, the player goes back to the sea at their ship.
+  `sea-dungeon-<continent>-<style>-<the island's seed folded to 32 bits, 8 hex digits>` and the island's room's tier
+  (`--elite`, `--abyss`, none at Normal), and the door's place in the world and the bearing its front faces
+  (`isleLaw.ts`, `DungeonDoor`), and the trip goes in (`enterSeaDungeon`): shared at Normal, a run at Elite or Abyss
+  ([[Game]], "A sea island's dungeon"). Its room opens only behind the door of an island the sea holds, for accounts the
+  sea has landed there ([[Server]], "The sea"; [[The Server Is the Authority Over Everything]]). Leaving it, the player
+  goes back to the sea at their ship.
 
 ## On the page
 

@@ -8,10 +8,10 @@
 
 use super::beat::near_on;
 use super::{PATROL, POSTS_APART, Post, SPAWN_CLEAR, SPREAD, draws_of, gird_of, ground_middle, index, open_points};
-use crate::Room;
+use crate::{Room, foes::MeshRoutes};
 use ::foes::roles::Role;
 use ::foes::tuning::{DEFEND, ENGAGE_RANGE};
-use ::foes::{Alertness, Mood, Orders, Rank, faction, foe_type};
+use ::foes::{Alertness, Mood, Orders, Rank, Routes, faction, foe_type};
 use combat::Status;
 use combat::arms::OffHand;
 use combat::fighter::FighterId;
@@ -323,7 +323,8 @@ impl Room {
 
     /// Gives a group's foes their places round its anchor, each tick, and those fighting fall back to them as it moves:
     /// at the last stand, its own places there or its place in the `gathering`. With none, a group holding its post
-    /// goes back to its places there, and one on a beat walks it again.
+    /// goes back to its places there, and one on a beat walks it again. A foe its routes do not take to its new place
+    /// keeps the one it had.
     fn keep_anchor(&mut self, post: usize, anchor: Option<[f64; 3]>, placing: &BTreeMap<FighterId, ([f64; 3], f64)>) {
         let was = core::mem::replace(&mut self.garrison[post].anchor, anchor);
         let living = self.living(post);
@@ -335,6 +336,12 @@ impl Room {
         };
         let moved = anchor.is_some() && was != anchor;
         for (id, (place, facing)) in living.iter().zip(places) {
+            let Some(body) = self.foes.get(id).map(|foe| foe.fighter.body) else { continue };
+            // Leashed to a place its routes do not reach, it would walk home straight into whatever stands between.
+            let routes = MeshRoutes::new(self.mesh_at(place), &self.floor, &self.blocks, BTreeMap::new());
+            if !routes.walkable([body.x, body.y, body.z], place) {
+                continue;
+            }
             let Some(foe) = self.foes.get_mut(id) else { continue };
             foe.brain.keep_to(place, facing, false);
             if moved {

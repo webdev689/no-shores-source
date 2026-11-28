@@ -2,7 +2,7 @@ use super::Problem;
 
 /// What a crate may depend on: other crates of this workspace, and outside crates. `*` allows any. A door crate may
 /// hold unsafe code, to hand memory across a boundary; no other may. A new crate is declared here in the same change
-/// as its entry in the Code Map note.
+/// as its entry in the code's map.
 #[derive(Debug)]
 pub struct CrateRule {
     pub name: &'static str,

@@ -224,8 +224,9 @@ test('each great formation lights a lamp of the crystal, over its foot; the crow
 
 test("the plaza's window holds no crystal the page lays", () => {
   const plan = { social: { bounds: [0, 0, 100, 50] } } as unknown as CityPlan;
-  assert.ok(inPlazaWindow([-100, 25], 3, plan) && inPlazaWindow([-112, 25], 3, plan));
-  assert.ok(!inPlazaWindow([-115, 25], 3, plan) && !inPlazaWindow([50, 200], 3, plan));
+  assert.ok(inPlazaWindow([-100, 25], 3, plan, 110) && inPlazaWindow([-112, 25], 3, plan, 110));
+  assert.ok(!inPlazaWindow([-115, 25], 3, plan, 110) && !inPlazaWindow([50, 200], 3, plan, 110));
+  assert.ok(inPlazaWindow([-2, 25], 3, plan, 0) && !inPlazaWindow([-4, 25], 3, plan, 0), 'the plaza alone');
   const standing = (east: number, scale: number): CrystalPlace => ({
     formation: 36,
     at: [east, 25, 0],
@@ -235,7 +236,7 @@ test("the plaza's window holds no crystal the page lays", () => {
   });
   const reach = FORMATION_REACH[36];
   assert.ok(
-    clearOfPlaza(standing(-111 - reach, 1), plan) && !clearOfPlaza(standing(-111 - reach, 1.5), plan),
+    clearOfPlaza(standing(-111 - reach, 1), plan, 110) && !clearOfPlaza(standing(-111 - reach, 1.5), plan, 110),
     'as far as it reaches',
   );
 });

@@ -23,6 +23,8 @@ interface Env {
   readonly DISCORD_CLIENT_SECRET?: string;
   /** The bot's Members (`bot/main.ts`), which says who is a developer; without it, no one is. */
   readonly BOT?: Developers;
+  /** Cloudflare's count of sign-ins by address (`wrangler.jsonc`'s `ratelimits`). */
+  readonly SIGN_INS?: RateLimit;
   /** The commit the deploy came from, which `/v1/health` names. */
   readonly ACCOUNTS_COMMIT?: string;
 }
@@ -59,6 +61,14 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
 
   launched(account: string, room: string, within?: number): Promise<boolean> {
     return this.kept.launched(account, room, within);
+  }
+
+  forgetRun(room: string): Promise<boolean> {
+    return this.kept.forgetRun(room);
+  }
+
+  keepRun(room: string): Promise<boolean> {
+    return this.kept.keepRun(room);
   }
 
   guild(account: string): ReturnType<Characters['guild']> {
@@ -116,6 +126,8 @@ export default {
           }
         : null;
     const pages = env.PAGES.split(/\s+/).filter(Boolean);
+    const signIns = env.SIGN_INS ?? null;
+    return handle(request, { database: env.DB, now: Date.now, discord, pages, bot: env.BOT ?? null, signIns });
     const commit = env.ACCOUNTS_COMMIT ?? '';
     return handle(request, { database: env.DB, now: Date.now, discord, pages, bot: env.BOT ?? null, commit });
   },

@@ -22,7 +22,15 @@ import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidR
 import type { LampPlace } from '../sky/lamps.ts';
 import { FORMATION_HEIGHT, FORMATION_REACH, FORMATIONS, formationMeshes } from './crystalFormations.ts';
 import { type CrystalInstances, crystalInstances } from './crystalInstances.ts';
-import { clearOfPlaza, type CrystalPlace, crystalLamps, greatLamp, worksGrowth, wreckCrust } from './overtaken.ts';
+import {
+  clearOfPlaza,
+  type CrystalPlace,
+  crystalLamps,
+  greatLamp,
+  PLAZA_CLEAR_M,
+  worksGrowth,
+  wreckCrust,
+} from './overtaken.ts';
 import { meshSolid } from './solidMesh.ts';
 import { finished } from './steps.ts';
 import { type Reach, reachesWhole, reachFrom } from './tiers.ts';
@@ -256,7 +264,7 @@ export function* cityBuildSteps(
   // them; the rest by chunk, or at every distance.
   const chunkAt = (point: readonly number[]) =>
     chunkOf(Math.floor((point[0] - plan.grid.west) / CELL_M), Math.floor((point[1] - plan.grid.north) / CELL_M));
-  const works = plan.ruined ? worksGrowth(plan.works).filter((place) => clearOfPlaza(place, plan)) : [];
+  const works = plan.ruined ? worksGrowth(plan.works).filter((place) => clearOfPlaza(place, plan, PLAZA_CLEAR_M)) : [];
   yield;
   // the works' formations are all great ones, standing in no building's cell
   const placedCrystal = [

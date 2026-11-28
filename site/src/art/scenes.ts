@@ -1,6 +1,6 @@
 // The website's pictures, each by its name: what stands where and in which light, drawn by the modules beside this
 // one. Each is drawn from fixed seeds, so a picture is the same at every build. What each shows comes from the premise
-// and the owner's decisions: Overlook a lantern-lit port stepping up Saltmere's rock, the Grey Tithe's grey unmarked
+// and the game's decisions: Overlook a lantern-lit port stepping up Saltmere's rock, the Grey Tithe's grey
 // sails, Thule's flagship, the call in the deep, the ruined ports overtaken by the Lattice's red and purple crystal,
 // the shore the captain wakes on.
 import { GAME_SCENES } from './gameScenes.ts';

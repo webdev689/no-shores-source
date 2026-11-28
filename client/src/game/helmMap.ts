@@ -24,8 +24,9 @@ const MARKS_EVERY_S = 0.1;
 export type MapDraw = (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
 
 /** What the map is made with: the GPU, every continent's coast, the forge's art, the interface it draws its marks on, and
- *  the ship at sea, if one is; what a destination set does (sails for it, in the sea room of the difficulty the map
- *  set, or travels there, the prompt answered yes); what is handed to the map once it is made (the waters' tint); and the nodes the quest walked names. */
+ *  the ship at sea, if one is; what a destination set does (sails for it, or travels there, the prompt answered yes);
+ *  what is handed to the map once it is made (the waters' tint); and the nodes the quest walked names. The tier the map
+ *  sets is read from it as the voyage lands (`difficulty`): every voyage sails the one sea at Normal. */
 export interface HelmMapContext {
   readonly gpu: Gpu;
   readonly outlines: readonly (readonly Point2[])[];
@@ -34,7 +35,7 @@ export interface HelmMapContext {
   readonly sea: () => Sea | null;
   /** Why each difficulty's seas are shut to the player by their level, by tier (null where open). */
   readonly shut: () => readonly (string | null)[];
-  readonly sail: (to: Point2, seas: Difficulty, travel: MapWater | null) => void;
+  readonly sail: (to: Point2, travel: MapWater | null) => void;
   readonly made: (map: HeldMap) => void;
   readonly quest?: () => readonly string[];
 }
@@ -83,7 +84,7 @@ export class HelmMap {
     made.onLowered((sail, travel) => {
       if (this.onLand) return;
       this.sea()?.view.fromHelm();
-      if (sail) this.context.sail(sail, made.difficulty, travel);
+      if (sail) this.context.sail(sail, travel);
     });
     this.context.made(made);
     this.map = made;

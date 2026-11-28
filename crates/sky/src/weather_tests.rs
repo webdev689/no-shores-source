@@ -3,7 +3,7 @@ use crate::lightning::strikes_near;
 use crate::weather::{Ground, Weather, ground_at, weather_at};
 use land::exact::fingerprint;
 
-/// Each climate's island at the latitude its continent lies at on the owner's map, metres down it.
+/// Each climate's island at the latitude its continent lies at on the world map, metres down it.
 const PLACES: [(&str, f64); 10] = [
     ("temperate-coast", 1_520_000.0),
     ("highland", 640_000.0),

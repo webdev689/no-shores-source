@@ -46,16 +46,23 @@ export const NO_WAY_HERE = 'You cannot reach this place from where you were.';
  *  (`SIDE.coastReachM`), and the ship heaves to a moment after it does. */
 export const LANDFALL_M = 32_000;
 
-/** What a node's room knows of where its node lies and what leads into it: whether it is landed on from every tier's
- *  sea (a social space, or an outpost site, whose rooms are at Normal alone), its island (its continent's id) and that
- *  island's coast, and the nodes whose gates lead into it. */
+/** How near a living port city's centre a ship lies docked at its port, metres: its pier, and its roadstead about
+ *  3.7 km out, where a ship anchors once the pier's places are taken (`berths.ts`), lie within it. */
+export const PORT_REACH_M = 5_000;
+
+/** Why the week's run launched from the Playlist turns away one whose ship is not docked at a port. */
+export const DOCK_AT_PORT = 'Dock at a port to enter the dungeon of the week.';
+
+/** What a node's room knows of where its node lies and what leads into it: its island (its continent's id) and that
+ *  island's coast, the nodes whose gates lead into it, and where the living port cities stand. */
 export interface Reach {
-  readonly social: boolean;
   readonly continent: string;
   readonly coast: readonly Point[];
   readonly gatedFrom: readonly string[];
   /** Whether its island has no name yet, so its sea is locked: no one comes ashore there from the sea. */
   readonly locked: boolean;
+  /** The living port cities' centres (`world::ports::MAIN_PORTS`), not a ruin's. */
+  readonly ports: readonly Point[];
 }
 
 /** A node as the bake's index lists it (`generated/nodes/index.json`). */
@@ -66,11 +73,13 @@ export interface Listed {
   readonly gates?: readonly string[];
 }
 
-/** A node's reach from the bake's index and the world layout's continents; null for a node the index does not list. */
+/** A node's reach from the bake's index, the world layout's continents and the living port cities' centres; null for a
+ *  node the index does not list. */
 export function reachOf(
   index: readonly Listed[],
   continents: readonly { readonly id: string; readonly outline: readonly (readonly number[])[] }[],
   id: string,
+  ports: readonly Point[] = [],
 ): Reach | null {
   const node = index.find((each) => each.id === id);
   if (!node) return null;
@@ -79,11 +88,11 @@ export function reachOf(
   const gatedFrom = index.filter((each) => each.gates?.includes(id)).map((each) => each.id);
   const locked = !Object.hasOwn(islands, node.continent);
   return {
-    social: node.kind === 'social' || node.kind === 'outpost',
     continent: node.continent,
     coast,
     gatedFrom,
     locked,
+    ports,
   };
 }
 
@@ -107,14 +116,15 @@ const inside = (place: NonNullable<ReturnType<typeof nodeRoom>>) => place.dungeo
 
 /** Whether a kept character may arrive in `room` by a way that needs no one there: from `from`, the room that held it
  *  before (null for none), its ship lying at `ship` as the sea kept it; `reach` is the node's, null where unknown. A
- *  room that is no node's is not judged here. */
+ *  room that is no node's is not judged here. Words instead turn the character away whatever way it came, one of its
+ *  company playing there or not. */
 export function arrives(
   room: string,
   from: string | null,
   ship: Point | null,
   reach: Reach | null,
   passages: Passages | null = null,
-): boolean {
+): boolean | string {
   if (passageRoom(room)) return passages !== null && intoPassage(room, from, passages);
   if (!room.startsWith('node-') || room === from || room === FIRST_ROOM) return true;
   const [to, was] = [nodeOf(room), nodeOf(from)];
@@ -122,8 +132,12 @@ export function arrives(
   const left = passageRoom(from);
   if (left) return passages !== null && !inside(to) && to.guild === null && litHome(left, to, passages);
   // A run started at sea (from the Playlist, beside any port, or an Elite Dungeon's at Normal) is entered from the
-  // sea alone; one at Normal, from its island's tile, with the ship off that island's coast.
+  // sea alone; one at Normal, from its island's tile, with the ship off that island's coast. The week's run, launched
+  // from the Playlist, only with the ship docked at a port, by any way.
   if (startedAtSea(room)) {
+    const docked =
+      !!ship && !!reach?.ports.some((port) => Math.hypot(ship[0] - port[0], ship[1] - port[1]) <= PORT_REACH_M);
+    if (to.seas > 0 && to.playlist === null && !docked) return DOCK_AT_PORT;
     if (from === null || seaRoom(from) === null) return false;
     const offIsland = !!ship && !!reach && !reach.locked && toCoast(ship, reach.coast) <= LANDFALL_M;
     return to.seas > 0 || to.playlist !== null || offIsland;
@@ -145,10 +159,9 @@ export function arrives(
   if (inside(to)) return false;
   // Through a gate, from a node whose gate leads here, at the same seas.
   if (was && !inside(was) && was.seas === to.seas && reach?.gatedFrom.includes(was.id)) return true;
-  // Ashore from the sea at the node's seas (a social space's from any), the ship off its island's coast, and off the
-  // node's region where one lists it.
-  const seas = from ? seaRoom(from) : null;
-  if (seas === null || !reach || !ship || reach.locked || (!reach.social && seas !== to.seas)) return false;
+  // Ashore from the sea, which sails at Normal whatever tier the voyage set out at, the ship off its island's coast and
+  // off the node's region where one lists it.
+  if (from === null || seaRoom(from) === null || !reach || !ship || reach.locked) return false;
   return toCoast(ship, reach.coast) <= LANDFALL_M && offRegionOf(to.id, reach.continent, ship);
 }
 

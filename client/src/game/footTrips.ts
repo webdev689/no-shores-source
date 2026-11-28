@@ -120,7 +120,7 @@ export function hearRoom(
       held.cache = cacheOf(snapshot.cache);
       heardRun(held, snapshot, own());
       held.plots = snapshot.outpost;
-      held.ships = snapshot.ships;
+      [held.ships, held.taken] = [snapshot.ships, new Set(snapshot.taken)];
       held.passage = snapshot.passage ?? null;
     },
     gear: (sent) => {
@@ -282,4 +282,5 @@ export const unheard = () => ({
   passage: null as PassageSeenState | null,
   breach: null as BreachSeen | null,
   ships: [] as readonly SeenShip[],
+  taken: new Set() as ReadonlySet<number>,
 });

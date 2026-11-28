@@ -69,7 +69,7 @@ export function wordsFor(event: FightEvent, nameOf: (ship: number) => string): s
   return null;
 }
 
-/** The owner's fight in the World Editor: the rules' last answer, the ticks the page owes it, the presses waiting
+/** The fight played in the World Editor: the rules' last answer, the ticks the page owes it, the presses waiting
  *  for a step (the release, the load, a rung, a burst), the events not yet shown, and the messages on the panel. One
  *  step is with the rules at a time. */
 export class Fighting {

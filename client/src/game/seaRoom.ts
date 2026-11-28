@@ -90,6 +90,8 @@ export class SeaRoom {
   hearDeck: ((snapshot: Snapshot) => void) | null = null;
   /** Where the room moored the player's ship once they washed up (crates/room/src/harbour.rs), until it is taken. */
   private washedAt: { readonly x: number; readonly y: number; readonly heading: number } | null = null;
+  /** Whether the player, travelling aboard a company member's ship, was let off as its captain left the sea. */
+  letOff = false;
   /** The room's tick by its last snapshot (none before the first), the tick the last course was sent at, and a course
    *  waiting to be sent. */
   private tick: number | null = null;
@@ -187,6 +189,7 @@ export class SeaRoom {
     const told = snapshot.told.filter((each) => each.player === this.own).map((each) => each.numbers[0]);
     const travelled = snapshot.told.find((each) => each.player === this.own && each.numbers[0] === TOLD.TRAVELLED);
     if (travelled) [this.travelled, this.travelAsked] = [travelled.numbers[2] ?? null, false];
+    if (told.includes(TOLD.LET_OFF)) this.letOff = true;
     if (told.includes(TOLD.WASHED_UP)) this.washUp(snapshot);
     else if (told.includes(TOLD.MOORED)) this.moor(snapshot);
     // Washed up, the fight was sunk first; otherwise one the room no longer lists is gone.

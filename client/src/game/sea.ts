@@ -84,7 +84,7 @@ export class Sea {
   readonly view: SeaView;
   /** Its wake; and whether the sea room's link was lost. */
   private readonly wake = new Wake();
-  private roomLost = false;
+  roomLost = false;
   /** A travel by the held map under way, faded out and in, until the player has the ship again. */
   travelling: SeaTravel | null = null;
   private press: Press | null = null;

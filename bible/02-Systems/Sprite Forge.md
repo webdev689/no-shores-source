@@ -154,10 +154,11 @@ A layer takes its set's or metal's own grades by its name (`layers.set_of`), a p
 sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
 The `forge` workflow renders the Arts' birds, the weapons drawn large, the material nodes and the first person's flask,
-and adds them to what is published whenever `artbirds.py`, `weaponart.py`, the item forge's models (`items/`, which
-the nodes are laid from), `itempics.py`, the nodes' rows, `fpflask.py`, the flask's specs or their pinned packages
-change on main, or when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends with the
-manifest; a second job uploads them with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes the
+and adds them to what is published whenever any of the forge's modules (`*.py`: `artbirds.py`, `weaponart.py`,
+`itempics.py` and `fpflask.py`, and what they import, which for the weapons is most of the forge), the item forge's
+models (`items/`, which the nodes are laid from), the nodes' rows, the flask's specs or their pinned packages change on
+main, or when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends
+with the manifest; a second job uploads them with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes the
 manifest into `content/forge/renders.json`.
 A run asked for may also draw the first person's dagger and sword blade layers (`firstperson`: runs split by `;`, each
 `weapon|metals`, the weapon `dagger` or `sword`, the metals empty for every make), for the right hand and the left's
@@ -196,9 +197,10 @@ tables, lays them all in (`lattice`), adds them to what is published and ends it
 repository by a push or by hand, downloads its `lattice-*` artifacts (while GitHub keeps them) and lays them into the
 tables as published now, those `main`'s `content/forge/renders.json` names (the publish job starts from it, not the
 branch's), refusing a body whose name is not lower-case letters and underscores, so the forge's own changes to the
-tables never need the Lattice rendered again. Both workflows publish in one concurrency group (`forge`), as both publish
-the same tables: one publishes at a time, and GitHub keeps one more waiting, so a newer run that waits replaces an older
-one still waiting. Each installs only the exact wheels its requirements name by their hashes (the forge
+tables never need the Lattice rendered again. The forge's runs share one concurrency group (`forge`): one runs at a
+time, and GitHub keeps one more waiting, so a newer run that waits replaces an older one still waiting. The Lattice's
+publish job is in no group, so no forge run cancels it while it waits: every object either uploads is named by its own
+hash, so the two may publish at once. Each installs only the exact wheels its requirements name by their hashes (the forge
 `tools/forge/tools/sprite-forge/artbirds-requirements.txt`, the Lattice `tools/lattice/requirements.txt`: the forge's
 wheels, SciPy among them, and nothing more), and its checkout keeps no git credential.
 

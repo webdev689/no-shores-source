@@ -4,7 +4,7 @@ import { TONES } from '../plus/tones.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { baselineRise } from './barDraw.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { BOSS_RANK, PUBLIC_CLIMAX } from '../rules/roster.ts';
+import { BOSS_RANK, PUBLIC_CLIMAX, rankSize } from '../rules/roster.ts';
 import { FoePlate, type MarkedFoe, OVERHEAD_SIZES, plateTier } from './foePlate.ts';
 import type { Box } from './hitWords.ts';
 import {
@@ -109,11 +109,15 @@ export class FoeBars {
   private readonly alerts = new Map<number, { alert: number; since: number }>();
 
   /** Lays the foes' bars, each over the point `spotOf` puts above its head (null off the screen) with how far that is
-   *  from the eye, as `viewing` sees them, `seconds` on. Answers the Boss on the boss bar. */
+   *  from the eye, its figure drawn `size` times a man's, as `viewing` sees them, `seconds` on. Answers the Boss on
+   *  the boss bar. */
   update(
     foes: readonly MarkedFoe[],
     own: FighterView | null,
-    spotOf: (view: FighterView) => { readonly x: number; readonly y: number; readonly depth: number } | null,
+    spotOf: (
+      view: FighterView,
+      size: number,
+    ) => { readonly x: number; readonly y: number; readonly depth: number } | null,
     viewing: PlateViewing,
     seconds: number,
   ): MarkedFoe | null {
@@ -135,9 +139,10 @@ export class FoeBars {
       const turned = foe.alert === ALERT.alert && was?.alert !== ALERT.alert;
       const since = turned ? 0 : (was?.since ?? 0) + seconds;
       this.alerts.set(foe.id, { alert: foe.alert, since });
-      const spot = spotOf(foe.view);
+      const size = rankSize(foe.rank);
+      const spot = spotOf(foe.view, size);
       const feet = [foe.view.x, foe.view.y, foe.view.z] as const;
-      const head = [feet[0], feet[1], feet[2] + HEAD_M] as const;
+      const head = [feet[0], feet[1], feet[2] + HEAD_M * size] as const;
       const far = !!camera && Math.hypot(head[0] - camera.eye[0], head[1] - camera.eye[1]) > PLATE_RANGE_M;
       if (foe.view.action.kind === 'dead' || !spot || far) {
         this.cones.delete(foe.id);

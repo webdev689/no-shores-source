@@ -18,3 +18,7 @@ status: in force
 How it is built: [[Breaches]] ("Rewards"), [[Gear]]. Their elements:
 [[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]. Its armour and its perks:
 [[Forged Perks Are Stronger, and Hard Armour Is Forged Too]].
+
+The owner's answers on it:
+
+- [[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]

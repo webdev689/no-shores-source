@@ -18,7 +18,7 @@ export interface SailSource {
 const STILL: Helm = { steer: 0, climb: 0 };
 export { SAILS_RUNG } from './afloat.ts';
 
-/** The ship under the owner's hand in the World Editor: its hull, its numbers as the rules last answered them, the
+/** The ship sailed by hand in the World Editor: its hull, its numbers as the rules last answered them, the
  *  ticks the page owes it, and the rung presses waiting for a step. One step is with the rules at a time. */
 export class Sailing extends Afloat {
   readonly hullKind: number;

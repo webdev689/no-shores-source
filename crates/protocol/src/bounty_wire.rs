@@ -42,6 +42,7 @@ pub(crate) fn bounties_of<'built>(
                 tier: bounty.tier,
                 place,
                 faction: bounty.faction,
+                tale: Some(builder.create_string(bounty.tale)),
             };
             messages::GearBounty::create(builder, &args)
         })

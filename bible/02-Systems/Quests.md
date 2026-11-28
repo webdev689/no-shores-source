@@ -225,7 +225,9 @@ before the lessons keeps its place by its task's id: one on the round rides once
 or later is not sent back, and one that pledges midway through a lesson walks its house's road from then on.
 
 Every save keeps its place. A save on `arm-yourself` (a Melee weapon and the four armour pieces bought) reads on
-**Put them on** (its `was`), its counts at nothing. A save kept partway round the counters with no gift recorded is
+**Put them on** (its `was`), its counts at nothing. A save on **Put them on** from before the keepers' gifts, never
+given the Weaponsmith's choice, is given the Ranged weapon the task asks for, free at her counter once, as her gift is
+(`give_gifts_due`). A save kept partway round the counters with no gift recorded is
 given, as it is read, the gift of each keeper it has heard, and the rest as it hears them. One who pledges
 before the round is done is given, as they pledge, every gift the opening's tasks still held, the Weaponsmith's choice
 kept free at her counter, as the Tack gives the Bay. A character past the round before the gifts (on **Take your ship from the Harbourmaster** or
@@ -413,7 +415,7 @@ acquired are kept by quest id (`acquired`). Claude's calls:
 
 ## Limits
 
-- **Online only.** A page playing alone (no `?room=`) keeps no character, so it walks no road, as it keeps no gear.
+- **Online only.** A page playing alone (`?offline`) keeps no character, so it walks no road, as it keeps no gear.
 - **Saves by id**: a road is kept by its quest's id and its place by its task's id; a task the file no longer holds
   reads as its quest's first.
 - **Steps**: a task holds one of the six varied kinds at most. An escort's figure rides at the player's gallop

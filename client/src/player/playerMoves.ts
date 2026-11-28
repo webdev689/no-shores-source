@@ -246,7 +246,7 @@ function ownMove(anim: string, right: string | null, draws: Draws): string {
   return special && draws(special, right) ? special : anim;
 }
 
-/** The forge's own strokes the owner gave the player, by the swing's direction. */
+/** The forge's own strokes for the player, by the swing's direction. */
 const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
   up: 'thrust',
   down: 'chop',
@@ -254,7 +254,7 @@ const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
   right: 'swing2h',
 };
 
-/** The owner's blows (the forge's blows.py): a stroke for each way a weapon is held, nine frames, the weapon landing on
+/** The forge's blows (blows.py): a stroke for each way a weapon is held, nine frames, the weapon landing on
  *  the fifth. */
 const BLOW = { frames: 9, lands: 4 } as const;
 /** How far through its wind-up's frames, 0 to 1, a strike is at `progress` through its swing, landing at `lands`: at
@@ -277,7 +277,7 @@ const HOLD_OF: Readonly<Record<string, string>> = {
 /** The blow a swing in `direction` strikes with these hands, where the forge draws it with both: its stroke (down the
  *  overhead, up the thrust, any other the side cut) and its hold (a blade or mace in each hand as a pair, else the
  *  weapon's own). Null where none is drawn. */
-/** One of the owner's blows by name: its stroke and its hold, standing or on the move. */
+/** One of the forge's blows by name: its stroke and its hold, standing or on the move. */
 const BLOW_NAME = /^(over|side|thrust)(1h|haft|hilt|pair|staff)(walk)?$/;
 
 /** The way a blow's blade goes as the forge draws it, for the striker's right hand: the overhead down, the thrust out,
@@ -337,7 +337,7 @@ export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): num
 /**
  * The move the player's figure shows, by DFO's law: a move chosen by hand first; then on a ledge or a wall its move by
  * progress or looping; mounted, the horse's, off a drop too; in the air the jump by rising or falling; a cast; a
- * blow, the owner's blow for the stroke and the hold where drawn, else a stroke of the weapon's attack (frames 0-2,
+ * blow, the forge's blow for the stroke and the hold where drawn, else a stroke of the weapon's attack (frames 0-2,
  * the next blow 3-5); a shot, its weapon's own move, then its reload; crouching; running, its strides slowed below a
  * full run; else the weapon's own walk and rest, the walk's steps slowed below a full walk. `draws` says whether the
  * forge draws a held thing in a move. Moving, a blow, a shot, a reload, a ranged weapon aimed and the cast play their
@@ -392,7 +392,7 @@ export function shownMove(
     if (struck)
       return { anim: moved(struck), frame: blowFrame(blow.progress, blow.lands ?? BLOW_LANDS), frameSeconds: 0 };
     const stroke = blow.direction && STROKE_OF[blow.direction];
-    // The owner's strokes for a weapon held alone: an off hand's blade, shield or torch is drawn in none of them.
+    // The forge's strokes for a weapon held alone: an off hand's blade, shield or torch is drawn in none of them.
     const anim = stroke && doing.right && !doing.left && draws(stroke, doing.right) ? stroke : kit.attack;
     // A shot is one stroke of its move; a brace fires right, then left.
     const strokes = frames(anim) >= 6 && (blow.direction !== null || anim === 'braceshot') ? 2 : 1;

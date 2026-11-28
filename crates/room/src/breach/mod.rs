@@ -2,14 +2,15 @@
 //! spaces its plan stands (`plan.rs`), walked from the Descent's arrival to the Steward's court; its encounters fought
 //! in turn, each waiting until a living player stands in its space, running, then won, its seal on opening; the stages
 //! a fallen player stands again at; how the fallen stand at each tier (`fallen.rs`); the Lodestone and the marks it
-//! cleanses (`lodestone.rs`); and each encounter's rules in a file of its own. Its opening, the Waking, is fought in
-//! the patrol zone (`gate.rs`). The numbers are Claude's.
+//! cleanses (`lodestone.rs`); each encounter's rules in a file of its own; and the checkpoint it keeps past its room's
+//! life (`kept.rs`). Its opening, the Waking, is fought in the patrol zone (`gate.rs`).
 
 pub mod plan;
 
 mod choir;
 mod fallen;
 pub mod gate;
+pub mod kept;
 mod lodestone;
 mod mending;
 mod rejoin;
@@ -236,13 +237,7 @@ impl Room {
     /// An encounter is won: its seal opens, its foes go, the fallen stand again at the next stage, and each player
     /// is paid its first clear of the week at this tier and its lore.
     pub(crate) fn win_encounter(&mut self, breach: &mut Breach, encounter: usize) {
-        breach.phases[encounter] = Phase::Won;
-        let key = DROWNED_VALE.encounters[encounter].key;
-        for (number, seal) in breach.plan.seals.iter().enumerate() {
-            if seal.opens == key {
-                breach.open_seals.insert(number);
-            }
-        }
+        breach.won(encounter);
         for id in std::mem::take(&mut breach.foes) {
             if self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead()) {
                 self.gone(id);

@@ -87,8 +87,8 @@ one player alone. There is no list of who is in a channel. Claude's calls are in
   `#f4b86c` for anyone else. The band is black at three quarters, so its lightest words read over a white sky.
 - **Shut**, it shows the newest five lines, each whole for 15 s and then fading out over 5 s, in steps of a twentieth,
   the band fading with its newest line. It keeps the newest 200 lines.
-- **Open** (Chat, T, on foot, at the helm and in a sea fight, while no window of the menu, a player's menu or Inspect
-  is up), it shows the newest 12 lines, fewer in a view too short to keep its top 200 px clear (3 at the fewest, the
+- **Open** (Chat, T, or the pad's View and Start together, on foot, at the helm and in a sea fight, while no window
+  of the menu, a player's menu or Inspect is up; the key strip shows it at rest on foot), it shows the newest 12 lines, fewer in a view too short to keep its top 200 px clear (3 at the fewest, the
   band cut to fit, its oldest rows first), and a field, its channel before it ("Local:", the water's name, "World:",
   or "To Ada:"), and holds the keys while it is open. Enter says the line and shuts it, an empty Enter or Escape shuts
   it, Tab turns the channel between Local (Region at sea) and World, and the up and down arrows read back as many
@@ -104,7 +104,6 @@ one player alone. There is no list of who is in a channel. Claude's calls are in
 ## Limits
 
 - There is no reporting a line yet.
-- The pad has no button for the chat.
 - A mute or unmute reaches the hall's other speakers within 30 s, as it keeps whom each is kept apart from; the page
   hides or shows the lines at once.
 - Not yet tried live: tested offline (the hall, the law, the hall's queries, the link and the log), and pictured

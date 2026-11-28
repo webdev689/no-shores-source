@@ -51,6 +51,13 @@ export function rankMark(rank: number): 'elite' | 'miniboss' | null {
   return rank === 3 ? 'elite' : rank === 4 ? 'miniboss' : null;
 }
 
+/** How many times its type's size a foe of a rank is drawn: a Miniboss larger, a Boss larger still, as Destiny's
+ *  bosses stand over its other foes. Only the drawing grows: the rules' body, its hit box and its reach, stays its
+ *  type's. */
+export function rankSize(rank: number): number {
+  return rank >= BOSS_RANK ? 1.5 : rank === 4 ? 1.25 : 1;
+}
+
 interface RosterRow {
   readonly type: number;
   readonly name: string;

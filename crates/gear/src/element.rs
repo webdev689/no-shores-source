@@ -63,7 +63,7 @@ pub fn rolled(kind: Kind, rarity: Rarity, dice: &Dice) -> Option<Element> {
 }
 
 /// A Forged weapon's element (a Breach's weapon won at Hard): always one, chosen evenly as a rolled weapon's is; a
-/// Breach's weapon won at Normal carries none, as the owner decided.
+/// Breach's weapon won at Normal carries none.
 #[must_use]
 pub fn forged(kind: Kind, dice: &Dice) -> Option<Element> {
     if !kind.weapon() {
@@ -75,13 +75,18 @@ pub fn forged(kind: Kind, dice: &Dice) -> Option<Element> {
 /// The share of foes that stand with a shield, and the share of a foe's health its shield holds.
 pub const SHIELD_CHANCE: f64 = 0.2;
 pub const SHIELD_SHARE: f64 = 0.5;
+/// How long, in the room's ticks of 1/60 s, a foe whose shield broke goes unstruck before the shield grows back whole:
+/// as long as a blow on a foe still shares its kill (`rewards::SHARE_TICKS`), so it regrows once that fight lapses.
+pub const SHIELD_REGROWS: u64 = crate::rewards::SHARE_TICKS;
 
-/// A foe's shield: its element, what it holds still, and what it held whole.
+/// A foe's shield: its element, what it holds still, what it held whole, and the room's tick a blow last landed on its
+/// foe.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Shield {
     pub element: Element,
     pub left: f64,
     pub most: f64,
+    pub struck_at: u64,
 }
 
 impl Shield {
@@ -101,7 +106,15 @@ impl Shield {
     #[must_use]
     pub fn whole(element: Element, health: f64) -> Self {
         let most = health * SHIELD_SHARE;
-        Self { element, left: most, most }
+        Self { element, left: most, most, struck_at: 0 }
+    }
+
+    /// Grows a broken shield back whole once its foe has gone `SHIELD_REGROWS` unstruck by the room's tick `now`; one
+    /// only worn stays as it is.
+    pub fn regrow(&mut self, now: u64) {
+        if self.left <= 0.0 && now >= self.struck_at.saturating_add(SHIELD_REGROWS) {
+            self.left = self.most;
+        }
     }
 
     /// Takes a blow of `damage` with `element` on the shield, and answers what of it reaches the foe's health: none
@@ -155,6 +168,20 @@ mod tests {
         assert_eq!(whole.struck(0.0, Some(Element::Volt)), 0.0);
         assert_eq!(whole.left, 30.0, "nothing wears it");
         assert!(whole.struck(10.0, Some(Element::Volt)) >= 0.0, "an exact break reaches no less than nothing");
+    }
+
+    #[test]
+    fn a_broken_shield_regrows_whole_once_its_foe_has_gone_unstruck_a_while_and_a_worn_one_stays_worn() {
+        let mut shield = Shield::whole(Element::Volt, 60.0);
+        shield.struck(10.0, None);
+        shield.regrow(SHIELD_REGROWS * 2);
+        assert_eq!(shield.left, 20.0, "worn, not broken");
+        shield.struck(100.0, None);
+        shield.struck_at = 50;
+        shield.regrow(50 + SHIELD_REGROWS - 1);
+        assert_eq!(shield.left, 0.0, "not yet");
+        shield.regrow(50 + SHIELD_REGROWS);
+        assert_eq!(shield.left, shield.most, "whole again");
     }
 
     #[test]

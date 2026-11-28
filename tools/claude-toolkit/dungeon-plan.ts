@@ -350,7 +350,7 @@ function inward(side: number) {
 
 steps.push({ eval: 'self.__qaEye(null)' }, { eval: 'JSON.stringify(self.__packs)' });
 const plan = `${out}/${patrol}-${number}.json`;
-const url = `http://localhost:${port}/?at=1&spawn=&run=node-${patrol}--elite--dungeon-${number}--run-qaqa0001`;
+const url = `http://localhost:${port}/?at=1&spawn=&run=node-${patrol}--elite--dungeon-${number}--run-qaqa0001&offline`;
 writeFileSync(plan, JSON.stringify({ url, size: [1280, 800], init, routes: { 'room.wasm': wasm }, anyPort: port !== '5173', steps }, null, 1));
 writeFileSync(`${plan}.labels.json`, JSON.stringify(labels, null, 1));
 const storeys = `${planes.length} storeys, ${layout.stairs?.length ?? 0} flights`;

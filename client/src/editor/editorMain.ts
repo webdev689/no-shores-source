@@ -227,7 +227,7 @@ async function start(): Promise<void> {
     },
   };
 
-  /** The layout as the file holds it, or null if the owner chose not to save with continents left out. */
+  /** The layout as the file holds it, or null if saving with continents left out was declined. */
   const written = (): { text: string; whole: boolean } | null => {
     const { layout: drafted, heldBack } = draft();
     const names = heldBack.join(', ');

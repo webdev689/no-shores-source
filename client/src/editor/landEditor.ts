@@ -27,7 +27,7 @@ import type { TerrainData } from '../terrain/terrainView.ts';
 import { FleetDock } from './fleetDock.ts';
 import { fleetOffered, platesOf, readoutOffered } from './fleetLink.ts';
 
-/** The Land mode: the land the generator makes from the painted coasts, shaped by the owner's brushes. */
+/** The Land mode: the land the generator makes from the painted coasts, shaped by the editor's brushes. */
 export interface LandEditor {
   /** Shows the Land mode for this layout, generating its landmasses in the background. */
   activate(layoutText: string): void;

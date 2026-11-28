@@ -16,6 +16,7 @@ import {
   entranceCardOf,
   thisWeekOf,
 } from './activityWords.ts';
+import type { Opened } from './companyJoin.ts';
 import { type FinderSocket, type Finding, findCompany, findingWords } from './companyFinder.ts';
 import { askDungeon } from './dungeonLayout.ts';
 import { countBy } from './npc/npcClock.ts';
@@ -87,7 +88,7 @@ export function startActivityScreens(
     fromSea?(node: NodeInfo): void;
     toBreach?(run: string): void;
   },
-  link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster'>>) | null,
+  link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster' | 'social'>>) | null,
   clock: ScreensClock = PAGE_CLOCK,
   atSea: () => GearState | null = () => null,
   onSea: () => boolean = () => true,
@@ -287,7 +288,8 @@ export function startActivities(
   const dungeons = dungeonTrips({ ...game, companyPlaces: () => companyPlaces(link) });
   const breaches = breachTrips({ ...game, nodes });
   // A company member in a Breach's run is joined in its run; in any other, as a dungeon's.
-  const join = (node: NodeInfo, place: string) => void (breaches.joinRun(place) || dungeons.join(node, place));
+  const join = (node: NodeInfo, place: string, opened?: Opened) =>
+    void (breaches.joinRun(place) || dungeons.join(node, place, opened));
   const trips = { ...dungeons, ...breaches, join, toBreach: breaches.toGate };
   const atSea = game.atSea;
   const screens = startActivityScreens(

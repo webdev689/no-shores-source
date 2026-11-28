@@ -209,10 +209,10 @@ Each Boss: 1,120 health, 210 poise. Thule fights with an ebony sword, Corvane wi
 
 On a course, a player asks the room for a foe by type and rank (a rank the type does not come in takes its first); the
 room stands it 5 m before them. A node's room stands its garrison as it opens ([[Server]]) and takes no such ask, but
-one a page playing alone runs is told to take them, for trying a fight on the node's land ([[Game]], `?foes=`). Every
-foe stands on the surface its place on the navmesh was found on: a block's top within a step of it, else the ground. The
-room sends each foe's type, rank, faction, phase and alert state. The rules hand the browser the roster through
-WebAssembly, so names, factions and weapons are read in one place.
+one a page playing alone runs is told to take them, for trying a fight on the node's land ([[Game]], `?offline&foes=`).
+Every foe stands on the surface its place on the navmesh was found on: a block's top within a step of it, else the
+ground. The room sends each foe's type, rank, faction, phase and alert state. The rules hand the browser the roster
+through WebAssembly, so names, factions and weapons are read in one place.
 
 **A garrison** is a node's groups of the Grey Tithe's land foes, by the node's kind:
 
@@ -233,7 +233,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   the rest round it facing out; the others walk beats as any group does.
 - **Levels and shields** ([[Garrisons Take the Gear Loop's Levels and Shields]]): each foe stands at a level drawn
   evenly from its island's band ([[Gear]], "Where foes stand"), raised by the difficulty its voyage set out at, and one foe in
-  five, a Boss or a Miniboss never, with a shield of an element drawn evenly, holding half its health; both are drawn
+  five, a Boss or a Miniboss never, with a shield of an element drawn evenly, holding half its health and growing back
+  once broken and left ten seconds unstruck ([[Gear]], "Elements and shields"); both are drawn
   from the node's id, so a group stands again with the same. Its level sets its power against a player's gear, and its
   rank multiplies on top: a Grey Tithe Elite at level 13 has 2.2 times a Major's health, times 1.07 to the 13th (2.41),
   5.30 times in all, and its blow is 1.15 times a Major's, times 2.41 on a level-13 player with no Defense. A Boss's
@@ -250,15 +251,16 @@ WebAssembly, so names, factions and weapons are read in one place.
   [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]).
 - **Territories and runs** ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]): a patrol
   zone's layout marks foes' sites, and its room stands a group of the Grey Tithe at each: its territories across the
-  zone, every area but where players arrive or pass (its landing, gates and entrances), where folk live (a hamlet),
-  where public events are fought (wilds), a Breach's hollow and a guild's plot, at the area's middle ([[Layouts]],
+  zone, every area but where players arrive or pass (its landing, gates and entrances), where folk live and work the
+  land (a hamlet, a farm or a mill, which hold civilians only: [[Game]], "A patrol zone's folk"), where public events
+  are fought (wilds), a Breach's hollow and a guild's plot, at the area's middle ([[Layouts]],
   "How a layout is planned"); and its runs' beats short of their end arenas, which hold their objective's site ([[Layouts]], "Runs").
   One in the garrison's own square stands none, its ground held already, and none within 60 m of the edge of a
   public event's ground, which the event's own foes hold. A site's group stands when a player comes within 150 m of
   it while it stands none, none is within 40 m, and the room's living foes leave room for all of it, on a navmesh
   baked round the site then, a slice a tick, as a quest's place's is ([[Navmesh]]): within a second or two, a
-  keep's walls and floors within three. So a room opens as quickly as before. Saltmere's three zones hold 15 territories (Saltgrass
-  Downs five, Gullwing Vale five, Driftwood Moors five) beside their runs' beats. It is drawn as a
+  keep's walls and floors within three. So a room opens as quickly as before. Saltmere's three zones hold 12 territories (Saltgrass
+  Downs four, Gullwing Vale three, Driftwood Moors five) beside their runs' beats. It is drawn as a
   patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
   raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
   stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes
@@ -378,8 +380,14 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
 
 ## On screen
 
-- **Over each foe**, just over its head (1.9 m over its feet, over its parry ring round the head), its plate in the
-  [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
+- **A Miniboss and a Boss stand larger** than the ranks under them
+  ([[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]): a Miniboss is drawn 1.25 times its
+  type's size, a Boss 1.5 times (a Lattice foe's own size grown alike), and what stands on it grows with it: its plate
+  and the line to its head a plate is seen by, its parry ring, "Dodge!", a stagger's stars, the Exposed diamond, a
+  Lattice foe's looks and wave (`rankSize`). Only the drawing grows: the rules' body, its hit box and its reach, stays
+  its type's, and the crosshair rests on that body.
+- **Over each foe**, just over its head (1.9 m over a man-sized foe's feet, over its parry ring round the head), its
+  plate in the [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
   above a thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before
   the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]). An ally on the
@@ -432,7 +440,9 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
   shards falling to the land under each and sinking. The page runs the room's ticks on between its snapshots, eased
   onto each and never stepped back (`foeArrivals.ts`), so a ship's flight and a foe's build run smoothly. Each is heard
   from recordings the owner picked, a beat it was long past when first seen not heard
-  ([[Foe Arrivals as Claude Builds Them]]).
+  ([[Foe Arrivals as Claude Builds Them]]); the airship's engines and hatch and the crown's forming borrow recordings
+  picked for other things until the owner picks their own on the sound sheet (`arrival.*` in
+  `content/audio/freesound.json`), each then heard in place of the ones it borrowed.
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
 - **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.
 

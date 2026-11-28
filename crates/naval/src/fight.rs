@@ -39,7 +39,7 @@ pub const STRUCK_GRACE_S: f64 = 2.0;
 /// A captain who struck lies hove to this long (seconds) for a player to board; with no one aboard by then, scuttled.
 pub const STRUCK_HOLD_S: f64 = 90.0;
 /// How much faster every ship sails and rows in a sea fight than at sea (half again, and a fifth on that), and how much
-/// faster it swings and answers its helm, at the owner's word.
+/// faster it swings and answers its helm.
 pub const FIGHT_PACE: f64 = 1.8;
 pub const FIGHT_TURN: f64 = 2.0;
 

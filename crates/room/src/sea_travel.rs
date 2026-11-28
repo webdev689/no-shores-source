@@ -1,8 +1,8 @@
 //! Travel by the held map: a course anywhere at sea, in the ship's own water or another, asked with the travel flag,
 //! takes the ship most of the way at once. The room judges it as any course, and refuses it besides while the ship
 //! fights, has a hostile ship on its heels, or its player is off the helm. Taken, the ship lies on the course's last
-//! leg short of its end, heading along it, and sails the rest; the player's next roll for a hostile ship waits its
-//! first wait again.
+//! leg short of its end, heading along it, and sails the rest. The player's roll for a hostile ship keeps its clock
+//! through a travel, so one who keeps travelling meets as many as one who sails.
 
 use super::{COURSE_EVERY_TICKS, Coast, CourseRefused, Sea, leg_meets_land, on_land};
 use crate::PlayerId;
@@ -89,7 +89,6 @@ impl Sea {
         (sailing.ship.x, sailing.ship.y) = (placed[0], placed[1]);
         sailing.ship.heading = heading.unwrap_or(sailing.ship.heading);
         sailing.course.drain(..sailing.course.len() - 1);
-        self.hostiles.wait_first(player);
         Ok(())
     }
 }

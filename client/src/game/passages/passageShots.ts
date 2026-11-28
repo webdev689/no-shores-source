@@ -1,4 +1,4 @@
-// Pictures of the passages headless, for `tools/uiShot.mjs` (`Passages.md` "Pictures"), each drawn by the game's own
+// Pictures of the passages headless, for `tools/uiShot.mjs`, each drawn by the game's own
 // drawers: a zone of a week's web laid by the room module as the page lays it (above ground the islands' ground,
 // modules and plants lit by the sky of the hollow's own climate, under ground the dungeon's scene lit by its torches
 // and the pieces' lights), its pieces over it; the way between zones as its camera frames the island, its dots over a

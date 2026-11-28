@@ -1,4 +1,4 @@
-// The looks each content gives, as the owner chose: every armour set and weapon metal the forge draws belongs to the
+// The looks each content gives: every armour set and weapon metal the forge draws belongs to the
 // content that drops it (`content/gear/looks.json`, numbered as the gear crate's `Source`), so what a player wears says
 // where it was earned. A rolled piece climbs its own content's sets and metals by its level and name, and is named by
 // the set it is drawn in.

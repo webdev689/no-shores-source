@@ -14,9 +14,8 @@ export type Flow =
   | { readonly mode: 'landing'; readonly chosen: string | null };
 
 /** The veil stays down until everything round the player is ready, or this long; and once it is, for this many frames
- *  more drawn whole under it, so the first frames' own work (pipelines made, pictures sent) is done unseen
- *  ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]). The way between passage zones waits as long
- *  on the body its room stands. */
+ *  more drawn whole under it, so the first frames' own work (pipelines made, pictures sent) is done unseen. The way
+ *  between passage zones waits as long on the body its room stands. */
 export const READY_WAIT_S = 20;
 
 /** Something that happened, from the player or the world. */
@@ -28,6 +27,8 @@ export type Happening =
   | { readonly kind: 'land'; readonly node: string; readonly name: string }
   | { readonly kind: 'pass'; readonly node: string; readonly name: string; readonly into: boolean }
   | { readonly kind: 'join'; readonly node: string; readonly name: string }
+  /** Aboard a company member's ship at sea, named by its captain's username. */
+  | { readonly kind: 'aboard'; readonly name: string }
   | { readonly kind: 'enter'; readonly node: string; readonly name: string }
   | { readonly kind: 'leave'; readonly node: string; readonly name: string }
   | { readonly kind: 'surface'; readonly name: string; readonly fell: boolean }
@@ -92,6 +93,9 @@ export function next(flow: Flow, happening: Happening): Flow {
         words: `Joining your company at ${happening.name}`,
         then: { mode: 'foot', node: happening.node },
       };
+    case 'aboard':
+      if (flow.mode !== 'foot' && flow.mode !== 'sea') return flow;
+      return { mode: 'loading', words: `Boarding ${happening.name}'s ship`, then: { mode: 'sea' } };
     case 'enter':
     case 'leave': {
       // Into a dungeon, on foot, or at sea or over an island's side as the Playlist starts a run, or out of one to its
@@ -127,8 +131,10 @@ export function next(flow: Flow, happening: Happening): Flow {
     case 'shut': {
       // A room whose gate shuts to the player sends them back to their ship, or ashore where one waits for them, the
       // veil saying why.
-      if (flow.mode !== 'foot' && flow.mode !== 'loading' && flow.mode !== 'passing') return flow;
       const { why, ashore } = happening;
+      // At sea, one let off a company member's ship who keeps none of their own goes ashore so.
+      const atSea = flow.mode === 'sea' && ashore !== undefined;
+      if (flow.mode !== 'foot' && flow.mode !== 'loading' && flow.mode !== 'passing' && !atSea) return flow;
       if (ashore)
         return {
           mode: 'loading',

@@ -45,7 +45,10 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   is left as its end would leave it. Holding Space (or a touch anywhere on the view) for a second skips (`HoldToSkip`):
   the hint shows faintly at the bottom right while a cutscene can be skipped, and brightens with its share filled.
 - **The screen** (`Screen`), drawn by the game as a layer of its interface over every other, the HUD's and the
-  menu's: fades to black or white over any time, a white flash, the letterbox's bars, a darkening for waking, the
+  menu's: fades to black or white over any time, a white flash, the letterbox's bars, a darkening for waking, an
+  insert held over the middle of the view as a film cuts to a chart (`showInsert`: a picture three wide to two tall,
+  at most 640 pixels or 60% of the view's width, under the flash and the fades, eased in and out over 0.6 s, named
+  to a screen reader, and gone as the screen is cleared), the
   title (the owner's logo over a brass rule, at a whole multiple of its cells within half the view's width), a
   prompt that breathes under it, and over the black the loading screen (`showLoading`: the logo and a breathing
   LOADING, said to a screen reader as it shows; `logo.ts` `loadingNode`, which every trip's veil draws too, [[One Loading Screen Covers Every Trip Until the Place Is Ready]]). Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`),

@@ -81,7 +81,8 @@ the light through it fall on every card alike.
 
 Cells in view with any grass are drawn nearest first, a draw a cell, its tufts thinned toward the reach: from 88 m a cell draws a
 falling share of its tufts, the last of them fading out by the samples of the pixel as the plants fade. The shader
-draws a tuft it does not grow, or one past its share, nowhere.
+draws a tuft it does not grow, or one past its share, nowhere. Settings' Grass draws half each cell's share, or no
+meadow at all ([[Interface]], "Graphics").
 
 ## Limits
 

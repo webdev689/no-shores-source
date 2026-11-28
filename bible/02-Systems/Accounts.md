@@ -101,6 +101,14 @@ they play in holds it while they are there.
   networks can hold a name's sign-ins for the rest of its ten minutes, while a session already held and Discord still
   sign its owner in. A name no account could hold is refused before it is kept, and a request's body is read only up
   to 2 KB, however it is sent. States, tickets and codes past their time are let go.
+- **Sign-in is limited at Cloudflare too**
+  ([[Sign-In Is Rate-Limited, Two Checks Join the Repo, and Comments Stop Saying Who Chose]]). Before the database
+  or a password's hash is reached, a sign-in is counted by Cloudflare's rate limit (`SIGN_INS` in `wrangler.jsonc`),
+  by address as above: ten a minute in each of Cloudflare's locations, past which the page shows "Too many sign-ins
+  from here. Wait a minute." So a flood from one network spends neither the hash's CPU nor a limit's write. The count
+  is Cloudflare's, kept apart in each location, so the database's limits still hold a name against many networks. Its
+  namespace (`4401`) is a number of our own, unique in the Cloudflare account; nothing is set in the dashboard. A
+  test, or a Worker without the binding, keeps only the database's limits.
 - **Sessions lapse, and guests go unused.** A session of an account with a username or Discord lapses once it has
   gone unseen 30 days (each sight, or a room's claim, keeps it a month more); the page then says so and plays on as a
   guest until its player signs in again. A guest's session never lapses, its token the only way back to it, but a
@@ -113,11 +121,13 @@ they play in holds it while they are there.
   when another ask changed the same rows first, 500 otherwise. Discord sends players back only to pages under those listed in
   the Worker's `PAGES`, by origin and path: the game at `https://noshores.online/play/` (and `www.`), the copy still
   published at `https://lattymoy.github.io/no-shores-source/`, and under `npm run accounts` the dev server's.
-- **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
-  rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is
+- **Where a session goes.** The page plays on the deployed accounts and rooms unless its address names others, and
+  `?offline` plays with none ([[Game]], "Rooms"). It sends its session only to the deployed accounts and rooms, or to
+  accounts and rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is
   kept apart from any other's. A room reads the session's token as it connects, so a sign-in made after the page
   opened (at the story's helm) is the one the rooms use; the helm's account step tells the page the account changed
-  as it ends, so the menu's mark and banner and the company HUD ask again and show that account.
+  as it ends, so the menu's mark and banner and the company HUD ask again and show that account, and an account whose
+  character in play has played the story ends it there ([[Prologue]], "The helm").
 - **An ask is given up.** An ask the accounts leave unanswered for 10 s is given up, and answered as the accounts out
   of reach, so nothing waiting on them (the helm's account step) is held.
 
@@ -300,14 +310,22 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   A seeker whose kept character has not played the prologue (`story.prologue`, none for one never kept) is closed
   with 4003 and the gate's "This place opens after the prologue.", as every run a finder starts opens after it; one
   under the week's Elite Dungeon's level, on its bases, with "This dungeon opens at level 24." (`WEEK_ELITE_OPENS`).
-- **Launch** (`?launch` on a playlist's address, `opened(socket, alone)`): the seeker's run is started at the next
-  look, alone, its Elite Dungeon drawn and kept for them as a found run is; no other seeker joins it, and it joins no
-  group. Only a playlist and a Breach launch: on an Elite Dungeon's base a launch waits as any search does. A Breach
-  is only launched ("A Breach is launched by its company from the Playlist."): at its tier's level (24, Hard 28) and,
-  at Hard, once the character has won it at Normal (`story.breaches`); its run is named for its zone's gate, and its
-  company may come to the gate from anywhere for half an hour after (`LAUNCH_ARRIVES_MS`). A playlist's run
-  lets in first one it was found or launched for, or one of their company (`launchedFor`), as it would let them
-  in after them: a member back first, the room forgotten while empty, is not shut out.
+- **Launch** (`?launch` on a playlist's address, `opened(socket, alone)`): the seeker's run is started at the next look,
+  alone, its Elite Dungeon drawn and kept for them as a found run is; no other seeker joins it, and it joins no group.
+  Only a playlist and a Breach launch: on an Elite Dungeon's base a launch waits as any search does. A Breach is only
+  launched ("A Breach is launched by its company from the Playlist."): at its tier's level (24, Hard 28) and, at Hard,
+  once the character has won it at Normal (`story.breaches`); its run is named for its zone's gate, and its company may
+  come to the gate from anywhere for half an hour after (`LAUNCH_ARRIVES_MS`). Launched again by the account or anyone
+  of its company as it is now within its gate's day (`BREACH_RELAUNCH_MS`), it is the company's newest run of that
+  Breach and tier (`companyRunOf`), so a member who joined since goes to the same run; a run whose gate shut again is
+  forgotten (`forgetRun`, every row of it), one whose gate opened is kept a day from then (`keepRun`), one who leaves a
+  company or is put out of it hands its runs to those staying and one who joins brings none (a run follows its company),
+  a Launch back into a run takes it only while it is still kept, and a company's leader, or a player alone, resets its
+  checkpoints with `company/reset` and the Breach's base (`{"base":"node-gullwing-vale--breach-normal"}`), forgetting
+  the company's own rows of its runs, so the next Launch starts a new run. Anyone else is told "Only your company's
+  leader can reset its checkpoints." (403), and a base that is no Breach's "Choose a Breach." (400). A playlist's run
+  lets in first one it was found or launched for, or one of their company (`launchedFor`), as it would let them in after
+  them: a member back first, the room forgotten while empty, is not shut out.
 - **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks
   none of those taken and is blocked by none of them. A run starts with four as soon as there are four, or with as
   many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while it holds a
@@ -392,5 +410,5 @@ The character screen reads and changes the four by the session's bearer token, 1
 ## Limits
 
 - There is no changing a password yet.
-- A sign-in derives PBKDF2 at 100,000 iterations, about 50 ms of CPU: on Cloudflare's Workers Free plan, whose
-  limit is 10 ms, it would fail. Untested live.
+- A sign-in derives PBKDF2 at 100,000 iterations, about 50 ms of CPU, which the paid Workers plan the accounts run
+  on allows; on the Free plan, whose limit is 10 ms, it would fail. Untested live.

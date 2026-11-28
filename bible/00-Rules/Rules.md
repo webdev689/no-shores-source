@@ -19,5 +19,5 @@ something DFO Online taught us ([[Lessons from DFO]]). A new rule needs the owne
 | [[Short Branches, Green Main]] | Small changes, merged within days; main always passes | CI, review |
 | [[Generated Files Stay Out of Git]] | Renders, bakes and builds live outside git | assets check |
 | [[Versions Are Not Counters]] | Migrations by timestamp, protocol versions by hash | versions check, review |
-| [[Plain Text]] | Text is easily explained, never AI text, never bloat | review |
+| [[Plain Text]] | Text is easily explained, never AI text, never bloat | plain text check, review |
 | [[Dialogue]] | Short lines, short scenes, no em dashes, every line heard | dialogue check, review |

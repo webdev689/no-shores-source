@@ -82,7 +82,7 @@ export function startGearWindow(
   link: AccountLink | null,
   here: () => GearHere | null,
   ship: () => ShipPanel | null,
-  travel: (place: string) => string | null = () => null,
+  travel: (place: string, name?: string) => string | null = () => null,
   resting: () => boolean = () => false,
   fed: () => GearHere | null = here,
   source: JournalSource | null = null,

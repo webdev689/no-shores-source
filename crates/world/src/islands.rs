@@ -1,4 +1,4 @@
-//! The islands' names the owner has given, by their continent's id (`content/world/islands.json`, which the page reads
+//! The islands' names, by their continent's id (`content/world/islands.json`, which the page reads
 //! too): an island with none yet has its sea locked, as the held map shows it, and no ship sails or travels into it.
 use std::collections::BTreeMap;
 use std::sync::OnceLock;

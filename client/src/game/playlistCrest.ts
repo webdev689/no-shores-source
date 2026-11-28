@@ -1,4 +1,4 @@
-// An entry's crest on the Playlist screen (`playlistParts.ts` lays it), after the owner's reference, Destiny's Vanguard
+// An entry's crest on the Playlist screen (`playlistParts.ts` lays it), after Destiny's Vanguard
 // screen: a shield of worked metal, bevelled and studded, a gem at its head and its device raised over a lit field;
 // the glow behind it, the dial behind that on the chart, the light that sweeps it as it is lit, and the dot of a
 // reward waiting with the ring that spreads from it. Each is drawn once (the sweep once a step) and moved by the

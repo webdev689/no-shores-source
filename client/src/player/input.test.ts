@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEFAULTS, HOLD_S } from './binds.ts';
 import { BINDS, handsFree, IDLE, Input, type InputFrame, axis, keyNameOf, pressTakenBy } from './input.ts';
-import type { PadState } from './pad.ts';
+import { CHORD_S, type PadState } from './pad.ts';
 
 /** A page with one standard pad whose buttons `held` are down (a trigger by its pull) and sticks at `axes`, read
  *  through a stubbed Gamepad API, and a clock the test moves; its key listeners kept to press keys with. */
@@ -44,7 +44,9 @@ function padPage() {
   };
   return { input, pad, frame, key, done };
 }
-const [BUTTON_A, BUTTON_B, BUMPER_L, BUMPER_R, TRIGGER_L, TRIGGER_R, START, STICK_CLICK] = [0, 1, 4, 5, 6, 7, 9, 10];
+const [BUTTON_A, BUTTON_B, BUMPER_L, BUMPER_R, TRIGGER_L, TRIGGER_R, VIEW, START, STICK_CLICK] = [
+  0, 1, 4, 5, 6, 7, 8, 9, 10,
+];
 
 test('RT swings and LT guards a melee weapon; a ranged one turns them round, RT firing and LT aiming', () => {
   const { pad, frame, done } = padPage();
@@ -104,6 +106,23 @@ test('B tapped dodges as it comes up, B held crouches, and LB with RB casts the 
   done();
 });
 
+test('View and Start pressed together open the chat, and neither the sheet nor the menu', () => {
+  const { input, pad, frame, done } = padPage();
+  const heard: string[][] = [];
+  input.onPad((pressed) => heard.push([...pressed]));
+  for (const context of ['foot', 'dead', 'helm', 'fight'] as const) {
+    input.context = context;
+    pad.held = { [VIEW]: 1, [START]: 1 };
+    frame();
+    pad.held = {};
+    frame();
+    frame(CHORD_S);
+    assert.deepEqual(heard, [['chat']], context);
+    heard.length = 0;
+  }
+  done();
+});
+
 test('a button held as a window opens or closes acts on nothing until let go; Start is heard in a window', () => {
   const { input, pad, frame, done } = padPage();
   const heard: string[][] = [];
@@ -123,6 +142,8 @@ test('a button held as a window opens or closes acts on nothing until let go; St
   frame();
   pad.held = { [START]: 1 };
   frame();
+  // Start waits a moment for View, the chat's pair, before it is Start alone.
+  frame(CHORD_S);
   assert.deepEqual(heard.at(-1), ['character']);
   const before = heard.length;
   pad.held = { [BUTTON_B]: 1 };

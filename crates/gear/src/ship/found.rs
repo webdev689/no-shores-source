@@ -55,7 +55,7 @@ pub(crate) fn holds(source: Source) -> Holds {
             let rank = f64::from(rank.clamp(1, 5));
             Holds { commons: 1, each: [1, 3], heartwood: 0.02 * rank, module: 0.36 + 0.12 * rank }
         }
-        // A cove's two or three wrecks together hold less than a Minor ship's whole lot, as the owner chose: found
+        // A cove's two or three wrecks together hold less than a Minor ship's whole lot: found
         // unguarded, once.
         Source::Wreckage { isle: false } => Holds { commons: 1, each: [1, 2], heartwood: 0.015, module: 0.03 },
         Source::Wreckage { isle: true } => Holds { commons: 3, each: [3, 6], heartwood: 0.15, module: 0.2 },

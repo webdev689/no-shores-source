@@ -119,10 +119,8 @@ jobs:
     permissions:
       contents: read
       actions: read
-    # It publishes the same tables as the forge workflow: its publishing waits for theirs, and theirs for it.
-    concurrency:
-      group: forge
-      cancel-in-progress: false
+    # No concurrency group: every object it uploads is named by its own hash, as the forge's are, so it may publish
+    # beside a forge run, and a group would let a third run queued cancel it while it waits, its renders unpublished.
     timeout-minutes: 30
     # The token reaches only the two steps that check it and publish; what they import is installed as the exact
     # wheels the requirements name by their hashes, and the checkout keeps no git credential.

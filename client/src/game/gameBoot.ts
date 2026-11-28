@@ -24,7 +24,7 @@ import { openForge } from './forge.ts';
 import { Hud } from './hud.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
-import { accountOf, roomsFrom } from './rooms.ts';
+import { accountOf, roomAsked, roomsFrom } from './rooms.ts';
 import { keepBinds } from './bindsKept.ts';
 import { keepGuild } from './guild/guildHeld.ts';
 import { keepSites, siteOfWorld } from './guild/siteNames.ts';
@@ -56,7 +56,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   hud.veil(flow.mode === 'loading' ? flow.words : null);
   const story = flow.mode === 'story' ? new StoryHost(stack, canvas, () => hud.controls.open) : null;
   const base = import.meta.env.BASE_URL;
-  const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
+  const rooms = roomsFrom(roomAsked(location.search));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
   if (link) void keepBinds(link);
   if (link) keepGuild(link);

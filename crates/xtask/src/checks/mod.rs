@@ -9,6 +9,7 @@ mod html;
 mod layers;
 mod layout;
 mod pins;
+mod plain_text;
 mod python;
 mod schema;
 mod script_comments;
@@ -43,7 +44,7 @@ impl fmt::Display for Problem {
     }
 }
 
-/// Kept exactly as their authors ship them, by the owner's choice: the co-dev's toolkit, and DFO's sprite forge with
+/// Kept exactly as their authors ship them: the co-dev's toolkit, and DFO's sprite forge with
 /// its models. Our code and asset rules are for the code we write.
 const KEPT_AS_SHIPPED: [&str; 2] = ["tools/claude-toolkit/", "tools/forge/"];
 
@@ -94,6 +95,9 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     let (story, skipped) = repo.sources(|path| path.starts_with(dialogue::STORY_ROOT) || path == dialogue::QUESTS);
     problems.extend(unreadable(&skipped));
     problems.extend(dialogue::check(&story));
+    let (content, skipped) = repo.sources(plain_text::is_read);
+    problems.extend(unreadable(&skipped));
+    problems.extend(plain_text::check(&content));
     problems.extend(client_tests::check(&code));
     problems.extend(pins::check(&code));
     let (schemas, skipped) = repo.sources(|path| path.ends_with(".fbs"));

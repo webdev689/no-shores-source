@@ -106,7 +106,8 @@ from the sea, fresh water and the claim's edge), then:
    is entered: a landing's boardwalk, lanterns, stores and a beached boat; a gate's stone arch between palisades; a
    camp's palisade round tents and a fire, its gap toward the path, no stake within a cell and a metre (9 m) of the
    line out through it along the grid's rows or columns, whichever lie more across it, so a cell's middle always lies
-   in the gap for a way to reach the camp by (how it is measured waits on the owner: [[Open Questions]]); a watchtower with a brazier on its battlements; a
+   in the gap for a way to reach the camp by (measured so, as the owner kept it:
+   [[What the Owner Kept, Walking the Open Questions]]); a watchtower with a brazier on its battlements; a
    lighthouse; a jetty; a mill and its wheel; a quarry's stepped faces and crane; a wreck; a graveyard of hulls; ribs
    and a skull; a broken causeway; a cave's mouth; the wilds' outcrops and broken walls, set every 10 m round a ring
    at about 0.58 of its reach (an arena's every 8 m) with a share left out, round its standing stone.
@@ -246,9 +247,11 @@ from the sea, fresh water and the claim's edge), then:
    paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
    5 m clear of every way's edge and a metre clear of every building and of every module's foot, whose floors level
    the land under it once the sites are marked, each resource 12 m from every other and from each beacon, and where
-   foes hold ground: a foes' site at the middle of every area but a landing, a gate, an entrance, a hamlet, a wilds, a
-   Breach's hollow and a guild's plot, its patrol's territories
-   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]; [[Enemies]], "Territories and runs"). Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
+   foes hold ground: a foes' site at the middle of every area but a landing, a gate, an entrance, a hamlet, a farm, a
+   mill, a wilds, a Breach's hollow and a guild's plot, its patrol's territories
+   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]; [[Enemies]], "Territories and runs");
+   and a folk site at the middle of each hamlet, farm and mill, reaching 0.8 of its radius, where civilians walk
+   instead ([[Game]], "A patrol zone's folk"). Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
    nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside
    the section's ring, on water, within a metre of a solid taller than a step or within 1.5 m of a planting, once all is
    laid), and a patrol stands its material nodes there, every one at once ([[Server]]). Each beacon and

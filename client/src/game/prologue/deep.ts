@@ -1,4 +1,4 @@
-// The owner's twelfth beat: the player sinking into the deep beside the wreck, its hulls and fires above seen through
+// The story's twelfth beat: the player sinking into the deep beside the wreck, its hulls and fires above seen through
 // the surface, the dead of their crew sinking round them; then through their own eyes, looking up as the light fails,
 // until a bright flash, a voice from nowhere, and black.
 import { Cues } from '../../cinema/cues.ts';

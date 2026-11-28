@@ -1,4 +1,4 @@
-// The owner's sixth beat: the fight won, the air goes still while the storm rages on, and the camera comes down from
+// The story's sixth beat: the fight won, the air goes still while the storm rages on, and the camera comes down from
 // the fight to the Brig's deck, where the crew talk among the wrecks of the ships they beat; the lookout cuts the
 // mate off (the ram beat's first cry).
 import { Cues } from '../../cinema/cues.ts';

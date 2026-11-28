@@ -420,6 +420,17 @@ pub fn joined_bytes(player: u32, present: Present<'_>, node: Option<(&str, [f64;
     builder.finished_data().to_vec()
 }
 
+/// The room's word on how many messages it has taken from the socket it is sent on.
+#[must_use]
+pub fn taken_bytes(messages: u32) -> Vec<u8> {
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let taken = messages::Taken::create(&mut builder, &messages::TakenArgs { messages });
+    let message =
+        messages::FromRoom::create(&mut builder, &messages::FromRoomArgs { taken: Some(taken), ..Default::default() });
+    builder.finish(message, None);
+    builder.finished_data().to_vec()
+}
+
 /// The numbers the messages give each standing.
 pub const INSIDE: u8 = 0;
 pub const WARNED: u8 = 1;

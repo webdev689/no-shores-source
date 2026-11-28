@@ -1,5 +1,5 @@
 """The Husk's own moves for the Sprite Forge: its idle, its shambling walk, its lunge and its Gore, each a pose a frame
-as the forge's own cast is (casting.py). After the owner's own Husk in project-final: irregular snap-then-plant
+as the forge's own cast is (casting.py). After the Husk in project-final: irregular snap-then-plant
 footfalls, uneven strides, a constant tremor, the odd deep shudder, the head cocking on its own. Its attacks start and
 end in its idle's stance. Angles as motion.py's."""
 import numpy as np

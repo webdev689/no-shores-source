@@ -1,4 +1,4 @@
-// The owner's No Shores logo as a pixel picture, written by `tools/logo/write.py` from the owner's PNG: 255 by
+// The No Shores logo as a pixel picture, written by `tools/logo/write.py` from its PNG: 255 by
 // 64 cells, each 8 by 8 of its pixels, in 11 colours light to dark. Write it again rather than editing it.
 
 import type { PixelPicture } from '../combat/dropPictures.ts';

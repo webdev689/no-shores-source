@@ -100,6 +100,16 @@ test('at sea the friendly ships take only the slots of their hull the room’s o
   assert.equal(frame.marks.length, 30);
 });
 
+test('on foot the friendly ships the seas have taken off their routes are drawn on them no more', async () => {
+  const ships = [sloop(1, 100), sloop(2, 200)];
+  const waters = { rules: { shipsNear: () => ships }, table: { friendlySpeedMS: 5 } } as unknown as OpenWaters;
+  const traffic = new FriendlyTraffic(Promise.resolve(waters), 16);
+  await Promise.resolve();
+  const still = { swell: undefined, depthAt: () => 50 };
+  assert.equal(traffic.onFoot([0, 0, 2], still, 0.1, 1, new Set()).marks.length, 2);
+  assert.equal(traffic.onFoot([0, 0, 2], still, 0.1, 1, new Set([2])).marks.length, 1, 'as the island’s room says');
+});
+
 test('the held map washes the Lattice’s waters in its crystal’s red, lit a third again', () => {
   const srgb = (linear: number) =>
     Math.round(255 * (linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055));

@@ -1,3 +1,5 @@
+import type { Errand } from './accounts/errand.ts';
+
 /** A block of a room's course: its footprint (x east, y south, metres), its top and its underside. */
 export interface CourseBlock {
   readonly minX: number;
@@ -61,6 +63,10 @@ export interface RoomDoor {
   breachOpened(run: string): boolean;
   /** In a Breach's run: how far its company has come, as JSON (`{"tier","encounter"}`), or `null`. */
   breachProgress(): string;
+  /** What a run's or a gate's Breach keeps past the room's life, as JSON (`kept_json`), or `null`. */
+  breachKept(): string;
+  /** Gives the room back what its Breach kept (`breachKept`); whether it was taken. */
+  breachRestore(kept: string): boolean;
   /** What is on at a Unix minute, as JSON: the day's and the week's numbers, the minutes to the next of each, each
    *  island's dungeon of the day, the day's modifier, the week's two with their modifiers and levels, each island's
    *  band at each tier, the revives, and each modifier's name and words. */
@@ -93,12 +99,13 @@ export interface RoomDoor {
    *  island's `island` number and `seed` (which it holds), or neither for a run started at sea, and the host's time
    *  (`seconds` since the Unix epoch), by which the sea times its namings; or another sea's word naming no one, of the
    *  accounts back at that sea (`afloat`), whose ships parked here it lets go. The answer is JSON of the ships parked
-   *  at that island, each its `account`, `number`, `x`, `y`, `heading`, `hull`, `dress`, `name` and `emblem`. Empty
-   *  with no sea open. */
+   *  at that island (`ships`, each its `account`, `number`, `x`, `y`, `heading`, `hull`, `dress`, `name` and `emblem`)
+   *  and each traffic id the sea has taken off its route (`taken`). Empty with no sea open. */
   seaAshore(word: string): string;
-  /** Gives the open room on land the ships parked at its island, as its seas answered (`seaAshore`, each `number` as
-   *  the host gives it): its snapshots send every player all of them. Whether a room on land is open. */
-  parked(ships: string): boolean;
+  /** Gives the open room on land the ships parked at its island and the traffic ids taken off their routes, as its seas
+   *  answered (`seaAshore`, each `number` as the host gives it): its snapshots send every player all of them. Whether
+   *  a room on land is open. */
+  parked(answer: string): boolean;
   /** The number of the open sea's landing of an account on its island of that number and seed (its ship at rest at
    *  the island's anchorage when last at sea), or 0 if it is not landed there. */
   seaLanded(id: number, seed: string, account: string): number;
@@ -150,6 +157,8 @@ export interface RoomDoor {
    *  at sea every ship near them and only what is theirs of the sea's own part; in a fleet every ship, its balls and
    *  what happened. */
   snapshotFor(player: number): Uint8Array;
+  /** The room's word on how many messages it has taken from a player's socket, to send them alone. */
+  taken(messages: number): Uint8Array;
   /** Lays out a course's stall, where a social space's asks are answered, and its resource nodes; false with no
    *  course open. */
   furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
@@ -197,6 +206,10 @@ export interface RoomDoor {
   name(player: number, name: string): boolean;
   /** Gives a player their guild's tag for their plate, or takes it with none (''); false on no land. */
   tag(player: number, tag: string): boolean;
+  /** At sea, a player just joined asks to travel aboard another's ship; then, their account known, boards the ship of
+   *  `{ captain, company }`, their captain's username and their company's accounts (`aboard.ts`). */
+  askAboard(player: number): boolean;
+  goAboard(player: number, word: string): boolean;
   /** Tells the room a player's guild as the accounts tell it (`guildWeeks.ts` `guildTold`), as text; '' for none. */
   guild(player: number, told: string): boolean;
   /** At sea, the name of the water a player's ship lies in; null off the sea or before it puts to sea. */
@@ -265,19 +278,6 @@ export interface RoomDoor {
   outpostGate(gate: readonly [number, number, number] | null): boolean;
 }
 
-/** An errand an outpost's room holds for its host, as `room-wasm`'s outpost door writes it. */
-export interface Errand {
-  readonly id: number;
-  /** The accounts' id for it, which the character carries until it is answered. */
-  readonly rid: string;
-  readonly player: number;
-  readonly account: string;
-  readonly kind: 'deposit' | 'deliver' | 'take' | 'horn' | 'changed';
-  readonly amount?: number;
-  readonly structure?: number;
-  readonly stuff?: 'timber' | 'canvas' | 'iron' | 'heartwood' | 'island';
-}
-
 interface RoomExports {
   readonly memory: WebAssembly.Memory;
   reserve(length: number): number;
@@ -295,6 +295,8 @@ interface RoomExports {
   room_breach_inside(address: number, length: number): number;
   room_breach_opened(address: number, length: number): number;
   room_breach_progress(): bigint;
+  room_breach_kept(): bigint;
+  room_breach_restore(address: number, length: number): number;
   room_activities(minute: number): bigint;
   room_gates(level: number, prologue: number): bigint;
   room_open_deck(hull: number, faction: number, rank: number, level: number): number;
@@ -327,6 +329,7 @@ interface RoomExports {
   room_tick(): void;
   room_snapshot_prepare(): void;
   room_snapshot_for(player: number): bigint;
+  room_taken(messages: number): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
   room_judged_moved(player: number): number;
@@ -343,6 +346,8 @@ interface RoomExports {
   room_own(player: number, address: number, length: number): number;
   room_name(player: number, address: number, length: number): number;
   room_tag(player: number, address: number, length: number): number;
+  room_ask_aboard(player: number): number;
+  room_board(player: number, address: number, length: number): number;
   room_guild(player: number, address: number, length: number): number;
   room_water(player: number): bigint;
   room_hold(player: number, held: number): number;
@@ -437,6 +442,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     breachInside: (word) => openWith(exports.room_breach_inside, word),
     breachOpened: (run) => openWith(exports.room_breach_opened, run),
     breachProgress: () => new TextDecoder().decode(take(exports.room_breach_progress())),
+    breachKept: () => new TextDecoder().decode(take(exports.room_breach_kept())),
+    breachRestore: (kept) => openWith(exports.room_breach_restore, kept),
     activities: (minute) => new TextDecoder().decode(take(exports.room_activities(minute >>> 0))),
     gates: (level, prologue) => new TextDecoder().decode(take(exports.room_gates(level >>> 0, prologue ? 1 : 0))),
     openDeck: (hull, faction, rank, level) => exports.room_open_deck(hull, faction, rank, level) === 1,
@@ -455,7 +462,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     seaDungeon: (room) => new TextDecoder().decode(take(openWithAnswer(exports.room_sea_dungeon, room))),
     seaAshore: (word) => new TextDecoder().decode(take(openWithAnswer(exports.room_sea_ashore, word))),
     named: (player) => new TextDecoder().decode(take(exports.room_named(player))),
-    parked: (ships) => openWith(exports.room_parked, ships),
+    parked: (answer) => openWith(exports.room_parked, answer),
     seaLanded: (id, seed, account) => {
       const bytes = new TextEncoder().encode(account);
       return lend(bytes, (address) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, bytes.length));
@@ -501,6 +508,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     snapshotPrepare: () => exports.room_snapshot_prepare(),
     snapshotFor: (player) => take(exports.room_snapshot_for(player)),
+    taken: (messages) => take(exports.room_taken(messages >>> 0)),
     furnish: (stall, nodes) => {
       const numbers = [
         stall?.x ?? Number.NaN,
@@ -539,6 +547,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     name: (player, name) => openWith((address, length) => exports.room_name(player, address, length), name),
     tag: (player, tag) => openWith((address, length) => exports.room_tag(player, address, length), tag),
+    askAboard: (player) => exports.room_ask_aboard(player) === 1,
+    goAboard: (player, word) => openWith((address, length) => exports.room_board(player, address, length), word),
     guild: (player, told) => openWith((address, length) => exports.room_guild(player, address, length), told),
     water: (player) => {
       const bytes = take(exports.room_water(player));

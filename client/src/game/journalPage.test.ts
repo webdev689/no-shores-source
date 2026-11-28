@@ -24,6 +24,7 @@ const bounty = (words: string, target: number, count = 0, held = false, paid = f
   name: `Sample ${pool}`,
   tier: 1,
   faction: 0,
+  tale: 'A line of its tale.',
 });
 const BOARD = [
   bounty('Defeat 30 Grey Tithe foes.', 30),

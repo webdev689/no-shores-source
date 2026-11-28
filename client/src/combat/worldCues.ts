@@ -220,7 +220,7 @@ export interface StepGround {
   readonly sea?: boolean;
 }
 
-// Exposed, Charged and Haste make no sound, as the owner chose.
+// Exposed, Charged and Haste make no sound.
 const STATUS_CUES: readonly (readonly [StatusName, string])[] = [
   ['linked', 'status.linked'],
   ['veiled', 'status.veil'],

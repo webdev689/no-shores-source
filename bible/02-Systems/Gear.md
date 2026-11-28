@@ -162,12 +162,16 @@ number is one of [[Gear as Claude Shapes It]].
   level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 28 from Normal, to 30
   from Hard, [[Breaches]]), an Atheric 21 to 30, each climbing by equal steps over its upgrades, however many its
   grid holds (a ship's guns five, armour three).
-- **Attack and Defense.** A weapon's blow is times 1.07 for each of the foe's levels up to its Attack ÷ 15, and
-  falls to 0.67, 0.56, 0.47 and none as the player is one to four levels below the foe. A foe's health is its kind's
-  times 1.07 for each of its levels, so a matched player fells it in the blows combat is tuned for. A foe's blow is
-  times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each level the player is
-  below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full set's, torso 0.3375,
-  arms 0.2625, legs 0.2375.
+- **Attack and Defense.** A Legendary weapon's Attack climbs from 248 to 300 over its upgrades, an Atheric's from
+  260, and a Breach's won at Hard (Forged) from 263 to 315, a level's Attack further, as Hard's armour reaches the
+  level past Normal's ([[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]).
+  A weapon's blow is times 1.07 for each of the foe's levels up to its Attack ÷ 15, a Forged one's for a level past
+  the foe's too, so its 15 more counts even where the foe's level stops a Normal one's, as on Hard's level 30 foes in
+  Hard's armour, and falls to 0.67, 0.56, 0.47 and none as the player is one to four levels below the foe. A foe's
+  health is its kind's times 1.07 for each of its levels, so a matched player fells it in the blows combat is tuned
+  for. A foe's blow is times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each
+  level the player is below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full
+  set's, torso 0.3375, arms 0.2625, legs 0.2375.
 - **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]], [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], [[Kills Drop Four Times as Often, and a Miniboss Half the Time]]). A kill may leave a Vestige for each player who
   struck the foe, seen by them alone: by the foe's rank (Minor 8 in 100, Major 16, Elite 40, Miniboss 50, a Boss always;
   `vestige::chance`), raised by the voyage's tier, a chance past one leaving one sure and another by what is over; its
@@ -184,14 +188,15 @@ number is one of [[Gear as Claude Shapes It]].
   level 20, its Prestige a Legendary's, its nodes asking for an island's resource rolled among the catalogue's, and a
   Breach's Legendary armour climbs to 28 Prestige from Normal (19, and 3 an upgrade) and to 30 from Hard (21). A Breach's armour or weapon rolls its perk columns from the
   Breaches' own perks ("Verbs", "The Breaches' perks"). A ship's Legendary module is a named one ([[Ship Power]]).
-- **The house's pieces in the world's loot** ([[Magic and Rare House Pieces Drop in the World, for the Pledged House]]).
-  One in ten of the Magic and Rare pieces a Vestige of the world's content opens to (`vestige::house_drop`, on its own
+- **The house's pieces in the loot** ([[Magic and Rare House Pieces Drop in the World, for the Pledged House]],
+  [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]). One in ten of the
+  Magic and Rare pieces a Vestige of the world's content or a dungeon's opens to (`vestige::house_drop`, on its own
   dice, `Purpose::HouseDrop`) is a piece of the house the player is pledged to, drawn evenly among its four armour
   pieces and its two weapons, never its cape: its entry's kind, look and name, at the rarity and level opened, its
   content the factions', its traits rolled as any piece of that rarity's and a weapon's element as any weapon's
-  (`vestige::house_piece`). A player not pledged finds none; a dungeon's, an Elite or Abyss Dungeon's, a sea
-  dungeon's and a Breach's Vestiges open to their own sets alone. The catalogue's entries stay the Legendary pieces
-  the house sells ([[Factions]], "The faction's wares"); the leader's gift is made the same way, at Magic.
+  (`vestige::house_piece`). The dungeons are a patrol's, the Elite and Abyss Dungeons, the sea's and the Breaches,
+  whose Vestiges open to their own sets otherwise. A player not pledged finds none. The catalogue's entries stay the
+  Legendary pieces the house sells ([[Factions]], "The faction's wares"); the leader's gift is made the same way, at Magic.
 - **Commons drop as themselves** ([[Commons Drop as Themselves, Never as Vestiges]]). A Vestige is Magic or finer:
   wherever a Vestige rolls Normal (a kill's, a Boss's or a Miniboss's, at sea too, a chest's, a first clear's, a
   playlist's, the [[Test Ground]]'s), the Normal item comes instead, made as that Vestige would have opened, at
@@ -720,7 +725,7 @@ the Tack in [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes
   one that arrives.
 - **Replaced, they go to the pack**, as any piece does; dismantled, they give nothing back. A goal to put armour on
   is not met by them (`tell_held`), so the opening's "Put them on" asks for the pieces bought.
-- **Others see them** as the page sends them: garments are never held back by the room.
+- **Others see them** as the room keeps them: plain pieces' garments, and no others ("Looks").
 
 ## Elements and shields
 
@@ -735,10 +740,15 @@ the Tack in [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes
   from the fists; a shot keeps the one it was loosed with.
 - **A foe's shield.** One foe in five that a garrison stands carries a shield of an element chosen evenly, holding half
   its health, drawn from its node's id, so its group stands with the same shields each time; a Boss or a Miniboss never
-  does. A foe a Boss calls stands with none. While it holds, a blow wears the shield and not the foe's health: three
-  times as hard with the shield's own element, half as hard with another, as hard as on health with none. A blow the
-  shield holds whole fills no poise; what a guard pays in stamina is paid as ever. What a breaking shield cannot hold
-  reaches health. A shield does not come back.
+  does. Garrisons stand in a patrol zone, a patrol's dungeon, an Elite or Abyss Dungeon (whose encounters' waves are
+  drawn alike) and a sea island's dungeon. A Breach's foes are drawn so too, its encounters' and its Waking's, each from
+  its own number (`breach_shield`), but never its bells or Watchers. A foe a Boss calls stands with none, as does a
+  public event's. While it holds, a blow wears the shield and not the foe's health: three times as hard with the
+  shield's own element, half as hard with another, as hard as on health with none. A blow the shield holds whole fills
+  no poise; what a guard pays in stamina is paid as ever. What a breaking shield cannot hold reaches health. A broken
+  shield grows back whole once no blow has landed on its foe for ten seconds, as long as a blow still shares a kill
+  (`SHIELD_REGROWS`); one worn but not broken stays as it is, and one the Lodestone strips does not come back
+  ([[Breaches]]).
 - **What is told.** The room tells each blow a shield takes, with what it took, and its breaking; the browser draws a
   shielded foe's shield over its health in its element's colour, says what the shield took in that colour for the
   player's own blows, and stacks the words told of one foe at once. Its glyphs show the elements on the screens
@@ -858,16 +868,20 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   hidden, and in the riding view its own published strip. Own Colours, Bay and Bare change nothing. The room puts the
   worn dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
   player's dress naming one that is not of its kind is refused as any broken dress is. A dress's armour and the things
-  in its hands keep only the looks the page could draw the pieces worn in on the dress's body (`looks::shown`,
+  in its hands, and its garments, keep only the looks the page could draw the pieces worn in on the dress's body
+  (`looks::shown`,
   [[The Room Keeps Only Looks of a Piece's Own Content]]): the prologue's own armour's steel, an armour piece's
   faction's set, the set written on a named piece, or else its content's by its rarity (a Magic piece's lightest, a world Rare piece's chain to steel, none for a
   Normal piece's clothes); a weapon and its shield in its faction's metal, its written metal and make, or else its
-  content's metals (a Normal one's iron or steel, a gun's plain or gilded) with any of its shield's or bow's makes; and
+  content's metals (a Normal one's iron or steel, a gun's plain or gilded) with any of its shield's or bow's makes; a
+  Normal torso or legs piece any of its rarity's clothes and a Magic one any of its own, plain clothes the shore's
+  shirt, breeches and boots, and a cloak the casual one, or the formal one from Rare or as its faction's cape (the
+  clothes listed in `content/gear/looks.json`, which the page dresses by too); and
   for each look the forge does not draw for the body, the one the page falls to, read from the forge's table of drawn
   layers (`content/gear/drawn.json`, which `forgeDrawn.test.ts` holds to the fitted bodies). The page picks one look by
   the piece's level, name and number; the room keeps any it could pick, and drops any other from what others see. A
   page test dresses every item the game can hold on each body and passes the dress through the room module
-  (`room_dressed`), which must keep every layer (`modelsWorn.test.ts`). A light in the left hand stays.
+  (`room_dressed`), which must keep every layer and garment (`modelsWorn.test.ts`). A light in the left hand stays.
   Of the colours a dress lays by
   layer, the room keeps a faction's only on the layers of that faction's pieces worn (a helm's, a cuirass's, its
   pauldrons' and padding, gauntlets', greaves', boots' and padding, a weapon's own), a faction's dye only on its cape

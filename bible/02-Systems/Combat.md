@@ -215,7 +215,7 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   110 m/s, so it can be dodged; a foe's ball strikes two thirds of its gun's damage (`FOE_GUN`), so an Elite
   Marksman's aimed shot fells a player of its level in three, not two. A foe's arrow and bolt strike whole. A body is an upright cylinder
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
-  one coming down over a head meets its top.
+  one coming down over a head meets its top. One loosed inside the ground (a cliff's face) stops where it is loosed.
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a
   pistolet's 1.9, a thunderlock's 2.2. A double pistolet fires its right, then its left once the right's firing frames
   have played (0.5 s, the pistolet's in first person), and only then reloads both, for 2.85 s, half again a
@@ -259,7 +259,9 @@ gives every one through one door, `Room::give`, for the status's own time unless
   counter, a telegraphed or iron blow, a shot, a spell, or an Atheric's leap, burst or bite ([[Gear]], "Atherics"); a
   leap's and a burst's say too which fighter they came from.
 - **Haste in the movement rules.** The movement rules step a body at a share of its pace on the ground; a Hasted
-  fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does.
+  fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does. A Hasted
+  player's figure is lit round its edge in Volt, and leaves no trail ([[Arts]], "Statuses";
+  [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]).
 - **A foe walking home** sheds its Expose and its Charge, with the Charge's stagger and the immunity after one, as it
   turns home, so its next fight is fresh ([[Foes]], "The leash").
 - **The Arts** give statuses through the same door: Quicken's Haste, Arc Lash's Charge, the Sunwell's Linked,
@@ -283,8 +285,9 @@ A foe never drinks.
   charge held and health short of its most; it is kept 8 ticks as any press, so one made in a swing's or a dodge's
   last 8 ticks begins as it ends. It lasts a second (60 ticks), in which the player walks, never running, jumping or
   crouching (Haste still quickens the walk), facing the look, the weapon put away, and casts no Art ([[Arts]]). As it
-  ends it spends its charge and gives back 40% of the player's most health, never past the most, and the room tells
-  the heal. A blow that lands cuts it short with its charge kept, as it flinches the drinker; a stagger, a fall and a
+  ends it spends its charge and gives back 40% of the player's most health, never past the most (half that under a
+  run's Exposure, as every heal on a player, carried in the trim the page predicts by: [[Activities]]), and the room
+  tells the heal. A blow that lands cuts it short with its charge kept, as it flinches the drinker; a stagger, a fall and a
   Charge's hold cut it too. Leaving the ground (a climb begun, a fall) or taking the saddle puts it down, and one
   ending at full health (a spell topped the player up) or with no charge left heals nothing: each keeps what it
   holds. A dodge does not leave a drink: one pressed in its last 8 ticks hops as it ends, and a drink pressed in a

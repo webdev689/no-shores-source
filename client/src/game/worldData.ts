@@ -38,6 +38,8 @@ export interface NodeInfo {
   readonly wrecks?: readonly Point[];
   /** A patrol area's foes' sites, its territories, where its room stands groups (`laidNodes`). */
   readonly foes?: readonly Point[];
+  /** A patrol area's folk sites, where no foe holds the ground and its guards and townsfolk walk (`zoneFolk`). */
+  readonly folk?: readonly { readonly at: Point; readonly radius: number }[];
   /** The places its layout names, which a quest's goals stand at (layouts.ts `placesOf`); none for a node not laid. */
   readonly places?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
   /** Its runs' sealed doors by name (layouts.ts `doorsOf`), where its room lays the passages' mouths. */
@@ -181,7 +183,7 @@ export async function loadWorld(base: string): Promise<WorldData> {
  *  `mainPorts` (the rules' own; with none known, by its name alone). Null for an id the world does not hold, or a
  *  locked one: played alone too, the page goes nowhere the server would refuse. */
 export function arrivalAt(
-  world: WorldData,
+  world: Pick<WorldData, 'nodes' | 'cities'>,
   id: string,
   mainPorts: readonly string[] | null = null,
 ): { continent: string; node: string; name: string } | null {

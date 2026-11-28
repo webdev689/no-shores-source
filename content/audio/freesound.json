@@ -1354,6 +1354,33 @@
       "picked": 535320
     },
     {
+      "id": "arrival.airship.engine",
+      "use": "A Grey Tithe airship's combustible thrusters: rumbling as it comes in, opening up as it flies on",
+      "query": "rocket engine",
+      "seconds": [
+        1.0,
+        10.0
+      ]
+    },
+    {
+      "id": "arrival.airship.hatch",
+      "use": "A Grey Tithe airship's drop hatch opening as it comes to hang over its ground",
+      "query": "hatch open",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "arrival.crown.forms",
+      "use": "A Lattice crown forming in the air, its crystal drawn in to its heart",
+      "query": "crystal magic",
+      "seconds": [
+        1.0,
+        6.0
+      ]
+    },
+    {
       "id": "respawn",
       "use": "Standing again at a spawn",
       "query": "holy spell",

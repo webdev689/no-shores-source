@@ -100,7 +100,7 @@ function rampsOn(palette: readonly Rgb[]): Ramps {
   if (found) return found;
   // A table with no palette (a test's) snaps nothing.
   const snap = palette.length > 0 ? new PaletteSnap(palette) : null;
-  // A faction's colour is snapped as the owner chose it, its steps as they fall; a dye's and a coat's rise.
+  // A faction's colour is snapped as it was chosen, its steps as they fall; a dye's and a coat's rise.
   const ramp = (look: readonly string[], rising = true) => (snap ? snappedRampOf(look, snap, rising) : rampOf(look));
   const made: Ramps = {
     cosmetics: new Map(

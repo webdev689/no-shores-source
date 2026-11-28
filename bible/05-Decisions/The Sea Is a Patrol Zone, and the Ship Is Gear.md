@@ -50,7 +50,8 @@ status: in force
 - The ship is gear: hull, guns, sails and crew, each with perks. Crew is the companion system, ported from DFO.
 - A company sails as a fleet. Players do not fight each other at sea.
 - Merchantmen come to sea, for escorts and events, beside the hostile ships that were the only ones sailing.
-- Being the pirate is open ([[Open Questions]]), and so is the opening voyage.
+- Being the pirate is open ([[Open Questions]]); the opening voyage carries the chart
+  ([[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]]).
 - First come the ships themselves: every type, chosen by Claude, built in Blender one at a time, UV-mapped and
   painted ([[The Ships as Claude Shapes Them]], [[Hulls]]).
 

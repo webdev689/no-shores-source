@@ -4,7 +4,7 @@
 import { BINDS } from '../player/input.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { type OnFoot, footStrip, stripOf, withMapKey } from './hints.ts';
+import { type OnFoot, footStrip, stripOf, withMapAndChat } from './hints.ts';
 import { Hud } from './hud.ts';
 
 const DUSK = '#4a5662';
@@ -38,7 +38,7 @@ function hudOver(ui: Interface, name: string, set: (hud: Hud) => void): Node {
 /** At rest on foot, an Art worn, the map's key and the leave's; the leave held 60% of its way. */
 export function stripRestShot(ui: Interface): Node {
   return hudOver(ui, 'rest', (hud) => {
-    hud.strip(withMapKey(footStrip(REST)));
+    hud.strip(withMapAndChat(footStrip(REST)));
     // Held 60% of its way, and kept there.
     if (hud.leaving.held === 0) hud.leaving.frame(true, true, null, 0.9);
   });
@@ -46,7 +46,7 @@ export function stripRestShot(ui: Interface): Node {
 
 /** A melee weapon drawn, the mouse free. */
 export function stripMeleeShot(ui: Interface): Node {
-  return hudOver(ui, 'melee', (hud) => hud.strip(withMapKey(footStrip({ ...REST, drawn: true, free: true }))));
+  return hudOver(ui, 'melee', (hud) => hud.strip(withMapAndChat(footStrip({ ...REST, drawn: true, free: true }))));
 }
 
 /** Sailing in the Oversea view. */
@@ -59,7 +59,7 @@ export function stripPadShot(ui: Interface): Node {
   const device = BINDS.device;
   BINDS.device = 'pad';
   try {
-    return hudOver(ui, 'pad', (hud) => hud.strip(withMapKey(footStrip(REST))));
+    return hudOver(ui, 'pad', (hud) => hud.strip(withMapAndChat(footStrip(REST))));
   } finally {
     BINDS.device = device;
   }
@@ -68,7 +68,7 @@ export function stripPadShot(ui: Interface): Node {
 /** At rest on foot under a quest's tracker, as a narrow view stands the tracker across from the strip. */
 export function stripTrackedShot(ui: Interface): Node {
   return hudOver(ui, 'tracked', (hud) => {
-    hud.strip(withMapKey(footStrip(REST)));
+    hud.strip(withMapAndChat(footStrip(REST)));
     hud.tasks.show({
       name: 'The Opening',
       task: 'Meet the houses',

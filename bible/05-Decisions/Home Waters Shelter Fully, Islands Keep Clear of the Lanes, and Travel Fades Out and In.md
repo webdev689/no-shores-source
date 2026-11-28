@@ -70,3 +70,6 @@ sails off does; home waters shelter fully."
 | A travel with no sea room | Not begun; the course is sailed as Set sail sails it | Nothing would answer it |
 | A fight with several players | Its captains break off once every player in it lies inside home waters; one struck or going down stays | Each captain fights the fight's players together; a struck one waits on boarders |
 | A no-move travel's answer | Refused as a course the sea would not take ("The sea would not take that course.") | No new words for a travel the page never asks |
+
+Replaced in part by [[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]: a travel no
+longer holds the next hostile roll back.

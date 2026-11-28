@@ -152,7 +152,15 @@ Dresses and the name's words cross the wire by their place in their lists, so bo
   battery's weight lands, so a wary one rates a Frigate a little above what it throws.
 - A player joined to a companion in a place entered only from the sea (a sea island, a run begun at sea) is not asked
   for a ship. Leaving, one who keeps none is turned away by the sea, and the page sails on alone, kept by no room,
-  until they come ashore. Whether a shipless player may join a companion there is the owner's to choose.
+  until they come ashore.
+- A player may travel aboard a company member's ship instead of their own, shipless or not
+  ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]): the Roster's "Go to them" on
+  one at sea boards their ship, online ([[Server]], "The sea"). Aboard, the passenger sees what its captain sees and
+  takes no helm; let off as the captain leaves the sea, they go back to their own ship, or, keeping none, to Overlook.
+  Not built yet: a way to get off at will other than leaving for another place, the captain's fight shown to the
+  passenger, the helm's controls hidden from them (the room refuses their courses), going ashore with the captain
+  other than by "Go to them" once the captain has landed, and a let-off far from Overlook's island for one keeping
+  no ship.
 - A page the accounts leave unkept at sea sails the Sloop as built whatever it keeps, as it is kept by no one.
 - Playing offline the page holds no gear, so it sails the Sloop as built.
 - A figurehead waits on a model of one; the owner's ask was the models built.

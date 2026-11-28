@@ -4,7 +4,7 @@
 //! armour climbs to the most Prestige. Its opening is fought in its patrol zone and the rest in its own run.
 //! Each encounter's first clear in a week,
 //! at each tier, pays each character once; the Breach's own rewards (its banner, its dye and its horse) come from its
-//! last. The numbers are Claude's.
+//! last.
 
 use crate::character::{Character, Stuff, Vestige};
 use crate::dice::{Dice, Purpose};

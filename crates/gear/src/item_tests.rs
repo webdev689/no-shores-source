@@ -28,6 +28,20 @@ fn a_legendary_climbs_from_248_to_300_and_an_atheric_from_260() {
 }
 
 #[test]
+fn a_forged_weapon_climbs_one_levels_attack_past_a_breachs_normal_one() {
+    let breach = |hard| {
+        let mut item = Item::new(1, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::Melee);
+        (item.breach, item.hard) = (true, hard);
+        attacks(&item)
+    };
+    assert_eq!(breach(false), [248, 258, 269, 279, 290, 300], "Normal's as any Legendary's");
+    let forged = breach(true);
+    assert_eq!((forged[0], *forged.last().expect("its most")), (263, 315), "Forged, 15 more at each end");
+    let reach = |attack| crate::power::by_player(attack, 29, 30);
+    assert!(reach(315) > reach(300), "a level further against the foes of Hard, as its armour's level 30 is");
+}
+
+#[test]
 fn a_lesser_weapon_rises_with_its_level_and_stays_under_a_legendary() {
     let at = |rarity, level| attacks(&Item::new(1, Kind::GreatAxe, rarity, level, Slot::Melee));
     let ends = |rarity| {

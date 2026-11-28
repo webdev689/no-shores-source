@@ -174,8 +174,10 @@ code:
   - client/src/game/accountTab.ts#AccountPanel
   - client/src/game/menuPages.ts#shipPage
   - client/src/game/settingsPage.ts#Settings
+  - client/src/game/graphicsChoices.ts#keptChoice
   - client/src/game/menuPage.ts#PlainContext
   - client/src/game/rosterTab.ts#RosterPage
+  - client/src/game/companyJoin.ts#companyJoin
   - client/src/game/rosterPanel.ts#panelParts
   - client/src/game/rosterRows.ts#actionsFor
   - client/src/game/playerDetails.ts#detailsNode
@@ -619,7 +621,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   did besides (Staggered) rides on its number as a small word, and the player's blow on a foe winding up that does
   not break it says "Holds". Stepping onto an Ammo box the room leaves lying, the ammunition full, says "Ammo full" on
   the player in plain grey, once each time ([[Gear]], "Ammo full"). A drink's heal says what it gave back ("+40") on
-  the player in green, and in plain grey on another player.
+  the player in green, and in plain grey on another player. What befalls a fighter in a fight the player is not in
+  (another player's blow, heal or parry, a companion's) is said only where a foe's plate would show: its fighter's
+  head within 60 m across the ground and not hidden by the place's blocks or its land
+  ([[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]).
 - **Reduced motion.** With it asked for, no piece falls, no word pops or rises (each stands and blinks out), no edge
   blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
@@ -711,7 +716,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and the Melee loadout; aiming, the fire and letting go; Dusk Daggers aimed, only letting go of the first Tenet;
   riding, getting down, the gallop, the boost and the leave held; hanging from a ledge, the climb and letting go, and on a wall
   the kick off too, whatever is drawn; the Arts' three while one is worn and the hands are free to cast, Shadow's
-  first Tenet apart as held to aim Dusk Daggers; the held map's key wherever it can be raised, before the leave's;
+  first Tenet apart as held to aim Dusk Daggers; the held map's key wherever it can be raised, before the leave's,
+  and where the leave's shows, the chat's last before All controls, so it is the first row to give way;
   the click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told and
   the room would take it, and nothing while the fall plays out; fallen in a fight, Respawn once it may be pressed,
   and nothing before it or in a darkness zone; Follow first in a Breach while a company member stands. The prompt for Use says what it does, with Use's key or button, so the strip
@@ -786,7 +792,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   jumps, B tapped dodges and held crouches, X uses, Y draws or sheathes, LB and RB cast the Tenets and both together the
   Anima, the cross's left and right draw the loadouts, its down drinks and its up mounts, the right stick's click
   changes the view, Start opens the menu at Character, View the sheet and View held leaves ("The leave held"); dead, A
-  respawns.
+  respawns. View and Start pressed together open the chat ([[Chat]]) on foot, dead, at the helm and in a sea fight,
+  so each waits 0.12 s for the other before it acts alone, the menu's own Start and View too.
   While the pad was played last and no menu is up, its presses fight on foot whether or not the pointer is locked
   (`handsFree`), as a pad cannot lock it; a click on a free pointer only locks it. At the helm A sets sail,
   lands or docks, X stops or resumes, the cross's left switches between the Oversea and Sealevel views, its up opens
@@ -1132,8 +1139,10 @@ never while a press is held. Each press is an ask the room answers.
   panel beside it, or over it near the page's foot: who and where, then all that may be done with them, what cannot
   be undone held and saying so ("Hold to …"), blocking and reporting apart under a rule. A member of the company
   playing elsewhere can be gone to. Details shows another player's nameplate, guild, power and
-  worn pieces, each under its slot's name (a horse under MOUNT, with its rarity and no power). A join goes to them if they are on foot on this landmass, unless the player is in a fight at sea or
-  has fallen; then they go to them once it is over. The Roster is asked for again every 15
+  worn pieces, each under its slot's name (a horse under MOUNT, with its rarity and no power). A join goes to them on any landmass, on foot or in a dungeon or run, at
+  their seas (`companyJoin.ts`): one not open is opened behind the join's veil first, as a trip to the hub opens
+  Overlook's, and the one left put back should the join fail; the ship stays where it lies. In a fight at sea or
+  fallen, the player goes to them once it is over. The Roster is asked for again every 15
   seconds while it is seen.
 - **The company on the heads-up display**: each other member's nameplate under the place's name, with where they are,
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
@@ -1155,10 +1164,12 @@ never while a press is held. Each press is an ask the room answers.
   not behind a veil, nor as the view goes down to the helm's map. While the credits show the footer says Back, and
   showing them or putting them away gives the focus to their way back or to their press, never an exit.
   - **Graphics**: under Display, the resolution the world is drawn at ("Resolution": Auto, the first, or 100%, 85%,
-    75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the interface staying at the screen's own.
-    Under it the interface's size ("Interface size": Auto, the screen's own ratio to a whole pixel, or 1x to 4x,
-    each a whole number of the screen's pixels to an interface pixel so it stays sharp, offered where it leaves the
-    view at least 960 by 540, kept in this browser; `interfaceSize.ts`). In the
+    75%, 67% or 50%; [[Game]], "Drawing"), the interface staying at the screen's own; the interface's size ("Interface
+    size": Auto, the screen's own ratio to a whole pixel, or 1x to 4x, each a whole number of the screen's pixels to an
+    interface pixel so it stays sharp, offered where it leaves the view at least 960 by 540; `interfaceSize.ts`); the
+    meadow's grass ("Grass": Full, the first, Half, half the tufts of each patch, or Off, none drawn); and the sun's
+    shadows ("Shadows": On, the first, or Off, no shadow cast or drawn), each kept in this browser
+    (`graphicsChoices.ts`) and drawn from the next frame, each sparing the GPU its pass's work. In the
     [[Desktop App]] an App part follows: the graphics API where there is a choice, what the app draws with and on
     which card, the version and the update, with Restart now or Download (`desktopSettings.ts`).
   - **Audio**: under Volume, the master volume over every sound ("Master", whole at first), then the volumes of the
@@ -1186,7 +1197,9 @@ has picked its recording on the sound sheet ([[The World Sounds From the Sound P
 put in by `tools/freesound/publish.py` through the `freesound` workflow ([[Code Map]]), or one of DFO's own, by
 `tools/freesound/own.py` ([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have,
 plays any but the one it played last. The Duskraven plays its raven with a fire of its own under it
-([[The Duskraven Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules
+([[The Duskraven Sounds With Fire Under Its Raven]]). The foes' arrivals, the Tithe's airships and the Lattice's
+crowns, are heard through it too: their engines, hatch and forming (`arrival.*`) borrow other cues' recordings until
+the owner picks their own on the arrivals' sound sheet ([[Enemies]], "On screen"). Which cue a moment calls for is chosen by pure rules
 (`combat/worldCues.ts`):
 
 - **Blows.** A swing as its blade sweeps to its blow, started so its recording's loudest 20 ms meet the tick the blow
@@ -1307,9 +1320,12 @@ it over the crests. The footer bar holds the search's word at the left ("Finding
 with four, or with fewer after a minute." beside it on a wide screen; "Launching…" while Launch asks the server; or why
 the last ended, "The accounts did not answer. Try again." where they did not), why a shut entry is shut beside its
 resting Launch, and the presses: Find a Company (F) first and primary where the entry is matched, open and the page
-signed in, Stop finding (F) while it finds; Launch (E), "Go alone", or "Go with your company" once the Roster shows the
-player in one, primary where nothing is matched, drawn dim and resting while the entry is shut, and not offered while
-a search or a launch runs;
+signed in, Stop finding (F) while it finds; on a Breach's tier open to the player, Reset checkpoints (R), not offered
+while a search or a launch runs: its first press asks "Reset your company's checkpoints? Press Reset again: its next
+Launch starts from the Waking.", the second asks the accounts (`company/reset`) and says "Your company's checkpoints
+are reset: its next Launch starts the Breach fresh." or why not, in their words; Launch (E), "Go alone", or "Go with
+your company" once the Roster shows the player in one, primary where nothing is matched, drawn dim and resting while
+the entry is shut, and not offered while a search or a launch runs;
 and Close (Esc, the pad's B). Under 1100 pixels the word stands over the presses, which wrap. As a search starts or ends
 the focus goes to the press that takes the other's place, Close where none does. Launch and a run found close the screen
 and go into the run from the sea; so does leaving the sea, the screen closing and its search stopped once the player
@@ -1727,7 +1743,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   - **The card** of the tile pointed at or holding the keys floats beside it (`bountyCardNode`): its name in capitals
     and its kind ("Land bounty" by the mark of where it counts, two peaks, a wave, an arched door, or for the
     passages' "Passage bounty" a lamp; or "Lamplighters bounty" by its faction's emblem) on a
-    band in its poster's colour; its words; its count once taken, green once done; "Rewards" with what it pays the player now by its tier (`payOf`: XP by its
+    band in its poster's colour; its words, and under them the line of its tale in faint italics ([[Activities]],
+    "Bounties"); its count once taken, green once done; "Rewards" with what it pays the player now by its tier (`payOf`: XP by its
     letters, and the town's Aurem by its coin or the faction's reputation by its emblem), resting once turned in; for
     a faction's, "Counts while pledged to them and wearing their cape", ticked while it is met (`serves`); and along
     its foot "Click / E" with its press, Take on one not held or Turn in on one done, or "Turned in". A locked well's card says "Pledge
@@ -1874,8 +1891,8 @@ button's corner and screen, and the Tailor's wares.
   over figures are laid apart. Two Boss ships' plates stand 56 px apart, as far as the first stands down.
 - Another player's details show their pieces' initials, not their pictures, and not their figure: the page draws
   pictures on the player's own figure, which is not theirs.
-- A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
-  or at sea, is not reached, and the Roster says so.
+- A join reaches a company member on foot, in a dungeon or in a run on any landmass, and online one at sea aboard
+  their ship; one at sea offline, in a sea island's dungeon or in the passages is not reached, and the Roster says so.
 - A player's plate shows their username and guild's tag from the room their account last claimed their character in,
   read again when they take a username or their guild changes on the page they play from; a guild changed elsewhere
   shows from their next room.

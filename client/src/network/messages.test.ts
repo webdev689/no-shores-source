@@ -20,6 +20,10 @@ const built = (path: string, how: string) =>
   });
 const written = async (name: string) => new Uint8Array(await built(`protocol/${name}`, 'run `cargo test -p protocol`'));
 
+test("the room's word on how many messages it took reads back as the server wrote it", async () => {
+  assert.deepEqual(readFromRoom(await written('taken.bin')), { kind: 'taken', messages: 4_294_967_290 });
+});
+
 test('a welcome and a snapshot the server wrote read back to the bit', async () => {
   // protocol_tests.rs writes these messages: a welcome into Overlook's social space, in the protocol both were built
   // from; one player standing inside, one after half a second's walk, swinging and warned; and the first's dress.

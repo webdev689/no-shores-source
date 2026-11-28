@@ -8,7 +8,7 @@ import { Glides } from '../player/glide.ts';
 import { likelyMoves, Loop, shownMove } from '../player/playerMoves.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { Mode } from '../rules/movementRules.ts';
-import { type FoeType, shownType } from '../rules/roster.ts';
+import { type FoeType, rankSize, shownType } from '../rules/roster.ts';
 import type { Fighting, KeptFoe } from './fighting.ts';
 import { type Flashes, dissolveShare } from './flashes.ts';
 import { RoomTicks, arrivalLook } from './foeArrivals.ts';
@@ -89,8 +89,9 @@ export class FoeFigures {
   private readonly trails = new Map<number, { tick: number; view: FighterView }[]>();
   /** Each dying foe's dissolve: its element, and when it begins (page seconds). */
   private readonly dissolves = new Map<number, { readonly look: GlowLook; readonly start: number }>();
-  /** What stands over each foe drawn last: where its feet were drawn, and whether it is staggered or Exposed. */
-  private readonly over = new Map<number, { feet: Point; staggered: boolean; exposed: boolean }>();
+  /** What stands over each foe drawn last: where its feet were drawn, whether it is staggered or Exposed, and how many
+   *  times a man's size it is drawn. */
+  private readonly over = new Map<number, { feet: Point; staggered: boolean; exposed: boolean; size: number }>();
   /** Each Lattice foe drawn from its own pictures as last drawn, for what the game draws over them. */
   private readonly lattice = new Map<number, LatticeShown>();
   /** Each Lattice foe's telegraphed blow, held in its tell or played on past it. */
@@ -194,6 +195,8 @@ export class FoeFigures {
       if (arriving.hidden) continue;
       const typeDress = this.dressOf(kept);
       if (!typeDress) continue;
+      // A Miniboss and a Boss are drawn larger than the ranks under them, and all that stands on them with them.
+      const size = rankSize(kept.rank);
       // A Lattice foe is drawn from its own pictures once they are published, else as a plain figure its size.
       const kind = latticeOfBody(typeDress.body);
       const plain = !!kind && !forge.draws(typeDress.body, `${typeDress.body}_idle`, null);
@@ -207,7 +210,7 @@ export class FoeFigures {
         // The Fissure pours its foes out: each that comes while it runs climbs out of its death wave, played back, but
         // one forming under a crown, which is its coming.
         if (kind && !kept.arrival && this.seenIn === fight.joins && pouring(fight.public, x, y))
-          latticeWaves.burst([x, y, z], kind.strain, kind.scale, clock, true);
+          latticeWaves.burst([x, y, z], kind.strain, kind.scale * size, clock, true);
       }
       // Its moves as its drawing shows them, held back while a blow landing holds it.
       const view = feel ? feel.held(kept.id, kept.view) : kept.view;
@@ -273,7 +276,7 @@ export class FoeFigures {
         // Its wave bursts as it falls; one long dead when first seen burst and faded already.
         const fresh = action.elapsed * tickSeconds < 1;
         this.dying.set(kept.id, fresh ? clock : clock - WAVE.fadeS);
-        if (fresh) latticeWaves.burst(drawnAt, kind.strain, kind.scale, clock);
+        if (fresh) latticeWaves.burst(drawnAt, kind.strain, kind.scale * size, clock);
       }
       if (alive) this.dying.delete(kept.id);
       const dying = this.dying.get(kept.id);
@@ -287,10 +290,11 @@ export class FoeFigures {
             : this.dissolving(kept.id, alive, clock);
       const exposed = (kept.statuses?.expose ?? 0) > 0;
       const staggered = action.kind === 'staggered' && action.cause !== 'charged';
-      this.over.set(kept.id, { feet: drawnAt, staggered, exposed: exposed && alive });
+      this.over.set(kept.id, { feet: drawnAt, staggered, exposed: exposed && alive, size });
       if (own && alive)
         this.lattice.set(kept.id, {
           ...own,
+          scale: own.scale * size,
           anim: move.anim,
           frame: frameShown,
           frames: moveFrames,
@@ -301,6 +305,8 @@ export class FoeFigures {
         });
       else this.lattice.delete(kept.id);
       if (dissolve && dissolve.share >= 1) continue;
+      // A Lattice foe drawn as a plain figure stands its kind's size; its own pictures are drawn at it.
+      const scale = (plain && kind ? kind.scale : 1) * size;
       const card = forge.card(placed.id, drawnDress, move.anim, side, frameShown, flip, 0, drawnAt);
       const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y, eye.nearest);
       if (card)
@@ -316,7 +322,7 @@ export class FoeFigures {
           dissolve,
           ...(arriving.share !== undefined && { arrival: arriving.share, arriving: arriving.look }),
           smear: feel?.smear?.(kept.id) ?? null,
-          ...(plain && kind && { scale: kind.scale }),
+          ...(scale !== 1 && { scale }),
           ...(own && { crystal: true }),
         });
     }

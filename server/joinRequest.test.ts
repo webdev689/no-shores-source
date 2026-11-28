@@ -18,7 +18,6 @@ test('a join names its room by its one spelling, and only a room’s name', () =
 test('only a name the rooms open is a room: any other is refused before an object is made for it', () => {
   const rooms = [
     'sea',
-    'sea--abyss',
     'node-tidewall--elite',
     'isle-7-0123456789abcdef--elite',
     'sea-dungeon-continent-1-crypt-0123abcd',
@@ -27,7 +26,18 @@ test('only a name the rooms open is a room: any other is refused before an objec
     'test-room-launch-1',
   ];
   for (const name of rooms) assert.equal(roomName(asked(`room/${name}`)), name, name);
-  for (const name of ['a1', 'a99999', 'sea--normal', 'isle-zz', 'sea-dungeon-x', 'passage-x', 'node-', 'fleet', 'test'])
+  for (const name of [
+    'a1',
+    'a99999',
+    'sea--normal',
+    'sea--abyss',
+    'isle-zz',
+    'sea-dungeon-x',
+    'passage-x',
+    'node-',
+    'fleet',
+    'test',
+  ])
     assert.equal(roomName(asked(`room/${name}`)), null, name);
 });
 

@@ -29,14 +29,16 @@ const SQUARE_SEA = JSON.stringify({
 
 /** crates/room-wasm/src/parked_door_tests.rs pins the same answer natively (`ANSWER`). */
 const ANSWER =
-  '[{"account":"ann","number":1,"x":98000.0,"y":150000.0,"heading":0.0,"hull":0,"dress":[0,10,18,30],' +
-  '"name":[255,255],"emblem":0}]';
+  '{"ships":[{"account":"ann","number":1,"x":98000.0,"y":150000.0,"heading":0.0,"hull":0,"dress":[0,10,18,30],' +
+  '"name":[255,255],"emblem":0}],"taken":[]}';
 
 /** Ann as a room names her while her character sails the Sloop as built, as her ship lies parked. */
 const ANN = { account: 'ann', hull: 0, dress: [0, 10, 18, 30], name: [255, 255], emblem: 0, level: 1 };
 
-/** crates/room-wasm/src/parked_door_tests.rs pins the same word on Ann once she sails the Brig at level 9 (`REFIT`). */
-const REFIT = '{"account":"ann","hull":2,"dress":[0,10,18,30],"name":[255,255],"emblem":0,"level":9}';
+/** crates/room-wasm/src/parked_door_tests.rs pins the same word on Ann once she sails the Brig at level 9, before the
+ *  room is told her username or guild tag (`REFIT`). */
+const REFIT =
+  '{"account":"ann","hull":2,"dress":[0,10,18,30],"name":[255,255],"emblem":0,"level":9,"username":"","tag":""}';
 
 /** A sea island's word, as its sea gives it, for its room to open on. */
 const ISLAND = '{"seed":"41","climate":"desert","at":[700000,300000],"guards":0,"levels":null}';
@@ -69,7 +71,7 @@ test('the sea answers an island’s room with the ships parked at it as it does 
       [ann, 0],
     ],
   );
-  assert.equal(door.seaAshore(JSON.stringify({ named: [], seconds: minute * 60 + 46 })), '[]');
+  assert.equal(door.seaAshore(JSON.stringify({ named: [], seconds: minute * 60 + 46 })), '{"ships":[],"taken":[]}');
   assert.deepEqual(
     shipsOf(door.snapshot(near)).map((ship) => ship.player),
     [near],
@@ -77,7 +79,7 @@ test('the sea answers an island’s room with the ships parked at it as it does 
   );
 });
 
-test('an island’s room sends each player every ship parked at it, their own too', () => {
+test('an island’s room sends each player every ship parked at it, their own too, and the traffic ships taken', () => {
   const door = startRoomDoor(compiled);
   assert.equal(door.openIsland(ISLAND), true);
   const [ann, bea] = [door.join(), door.join()];
@@ -93,7 +95,7 @@ test('an island’s room sends each player every ship parked at it, their own to
     name: [5, 6],
     emblem: 7,
   });
-  assert.equal(door.parked(JSON.stringify([ship('ann', 7), ship('bea', 8)])), true);
+  assert.equal(door.parked(JSON.stringify({ ships: [ship('ann', 7), ship('bea', 8)], taken: [2_605] })), true);
   door.tick();
   const { account, number, ...seen } = ship('bea', 8);
   assert.equal(account, 'bea');
@@ -103,6 +105,8 @@ test('an island’s room sends each player every ship parked at it, their own to
       shipsOf(door.snapshot(player)).map((each) => each.player),
       [7, 8],
     );
+  const read = readFromRoom(door.snapshot(bea));
+  assert.deepEqual(read?.kind === 'snapshot' ? read.taken : null, [2_605], 'which its page draws on no route');
 });
 
 test('an island’s room names its player to the seas as their character has them now, as it does natively', () => {
@@ -115,4 +119,6 @@ test('an island’s room names its player to the seas as their character has the
   assert.ok(door.restoreCharacter(ann, JSON.stringify(refit)));
   assert.equal(door.named(ann), REFIT);
   assert.equal(door.named(guest), '', 'a player of no account is named by none');
+  assert.ok(door.name(ann, 'Ann') && door.tag(ann, 'SD'));
+  assert.equal(door.named(ann), REFIT.replace('"username":"","tag":""', '"username":"Ann","tag":"SD"'), 'as told now');
 });

@@ -14,7 +14,7 @@ export type Standing =
       readonly respawnIn: number;
       /** Dead by a fall in a social space, not by straying. */
       readonly fell: boolean;
-      /** Whether death is told yet: the grey veil, the words and Respawn, which wait for a fall to play. */
+      /** Whether death is told yet: the darkened edge, the words and Respawn, which wait for a fall to play. */
       readonly told: boolean;
       /** Where the place's room never takes Respawn and stands the fallen again itself (a Breach's running encounter
        *  at Hard, once it is won or the company falls). */
@@ -50,9 +50,10 @@ export function standingOf(
 /** How dark the screen's edge grows once death is told. */
 export const DEAD_SHADE = 0.85;
 
-/** Whether the world drains to grey: once death is told, so a fall plays out in colour first. */
+/** Whether the world drains to grey: as the player dies, so a fall looks as a death in a fight does, its tumble and
+ *  the held shot after it played out in grey before its death is told. */
 export function greyed(standing: Standing): boolean {
-  return standing.kind === 'dead' && standing.told;
+  return standing.kind === 'dead';
 }
 
 /** The words under "You died": how the player died, and where the place stands them again itself (`waits`), when;
@@ -92,7 +93,7 @@ export const KIND_WORDS = {
 
 export type MarkKind = keyof typeof KIND_WORDS;
 
-/** The islands' names the owner has given, by continent (the room's own, crates/world/src/islands.rs): an island with
+/** The islands' names, by continent (the room's own, crates/world/src/islands.rs): an island with
  *  none has its sea locked. */
 export const ISLANDS: Readonly<Record<string, string>> = islands;
 /** The sea's name where no water of the waters' table holds the ship. */

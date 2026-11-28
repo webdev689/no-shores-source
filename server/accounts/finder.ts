@@ -21,7 +21,7 @@ export class CompanyFinder extends DurableObject<{ readonly DB: D1Database }> {
     const database = this.env.DB;
     this.finder ??= new Finder(base, {
       seeker: (token) => seekerOf(database, token, Date.now()),
-      found: (run, accounts) => foundRun(database, run, accounts, Date.now()),
+      found: (run, accounts, again) => foundRun(database, run, accounts, Date.now(), again),
       relaunched: (account, base) => companyRunOf(database, account, base, Date.now(), BREACH_RELAUNCH_MS),
       now: Date.now,
       instance: () => runInstance(),

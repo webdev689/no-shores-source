@@ -1,10 +1,9 @@
 // The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at,
-// and in the desktop app its graphics API and version), Audio (the volumes, and the recorded sounds' credits behind a
-// press of their own), Controls (how dialogue moves on, and every control, bound anew there as in the sheet K opens)
-// and Account (the account and
-// the players blocked or muted), down a rail with Switch character (online), Exit to Menu and Exit to Desktop at its
-// foot, each held. The resolution, the volumes and the dialogue's pace are kept in this browser, the binds with the
-// account.
+// the interface's size, the grass and the shadows, and in the desktop app its graphics API and version), Audio (the volumes, and the
+// recorded sounds' credits behind a press of their own), Controls (how dialogue moves on, and every control, bound
+// anew there as in the sheet K opens) and Account (the account and the players blocked or muted), down a rail with
+// Switch character (online), Exit to Menu and Exit to Desktop at its foot, each held. The graphics, the volumes and
+// the dialogue's pace are kept in this browser, the binds with the account.
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -20,7 +19,8 @@ import { INK, words } from './gearNodes.ts';
 import type { PlainContext } from './menuPage.ts';
 import { PRESS_PADDING, answerNode, headingNode, hintNode } from './menuPages.ts';
 import { REBINDING, type Rebinding } from './rebinding.ts';
-import { RESOLUTIONS, resolution, setResolution } from './renderScale.ts';
+import { GRASS, SHADOWS, type keptChoice } from './graphicsChoices.ts';
+import { RESOLUTION } from './renderScale.ts';
 import { interfaceSize, screenPixels, setInterfaceSize, sizesOffered } from '../ui/interfaceSize.ts';
 import { soundCredits } from '../soundSamples.ts';
 import { PACES, dialoguePace, setDialoguePace } from '../speech/pace.ts';
@@ -81,10 +81,10 @@ const PANEL_LEAST = 200;
 /** The tab's panel, which scrolls beside the rail. */
 const LIST = 'settings-list';
 /** The page's drop-down lists, each shut as the page is shown again. */
-const RESOLUTION_LIST = 'resolution';
+const [RESOLUTION_LIST, GRASS_LIST, SHADOWS_LIST] = ['resolution', 'grass', 'shadows'];
 const SIZE_LIST = 'interface-size';
 const DIALOGUE_LIST = 'dialogue-pace';
-const LISTS = [RESOLUTION_LIST, SIZE_LIST, API_LIST, DIALOGUE_LIST];
+const LISTS = [RESOLUTION_LIST, SIZE_LIST, GRASS_LIST, SHADOWS_LIST, API_LIST, DIALOGUE_LIST];
 /** Switch character's held press. */
 export const SWITCH = 'settings-switch-character';
 /** The credits' press in Audio and their way back. */
@@ -345,12 +345,18 @@ function held(
   };
 }
 
-/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, and the interface's size, each kept
- *  in this browser; and in the desktop app, the app's own graphics and version. The launcher shows the same. */
+/** A setting kept in this browser as a row: its name, and its list, whose choice is kept as it is made. */
+function keptRow(ui: Interface, name: string, id: string, setting: ReturnType<typeof keptChoice>): Node {
+  const { node, chosen } = choice(ui, id, setting.get(), setting.choices);
+  if (chosen !== setting.get()) setting.set(chosen);
+  const said = setting.choices.find((option) => option.value === chosen)?.words ?? chosen;
+  return settingRow(name, { ...node, label: `${name}, ${said}` });
+}
+
+/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, the interface's size, how much
+ *  grass is drawn and whether the sun casts shadows, each kept in this browser; and in the desktop app, the app's own
+ *  graphics and version. The launcher shows the same. */
 export function graphicsNode(ui: Interface): Node {
-  const { node, chosen } = choice(ui, RESOLUTION_LIST, resolution(), RESOLUTIONS);
-  if (chosen !== resolution()) setResolution(chosen);
-  const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
   const screen = screenPixels();
   const offered = sizesOffered(screen.width, screen.height);
   const sized = choice(ui, SIZE_LIST, interfaceSize(), offered);
@@ -359,10 +365,12 @@ export function graphicsNode(ui: Interface): Node {
   return column([
     headingNode('Display'),
     { height: 4 },
-    settingRow('Resolution', { ...node, label: `Resolution, ${said}` }),
+    keptRow(ui, 'Resolution', RESOLUTION_LIST, RESOLUTION),
     hintNode('Auto lowers the resolution while the game runs slow. The interface stays sharp.'),
     settingRow('Interface size', { ...sized.node, label: `Interface size, ${sizeSaid}` }),
     hintNode('Each step draws the interface larger by a whole pixel, so it stays sharp.'),
+    keptRow(ui, 'Grass', GRASS_LIST, GRASS),
+    keptRow(ui, 'Shadows', SHADOWS_LIST, SHADOWS),
     ...desktopNodes(ui, settingRow),
   ]);
 }

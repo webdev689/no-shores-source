@@ -1,7 +1,7 @@
 //! What the passages pay: a deal's cache to each player who took part, once a dive, at the zone's level and depth; and
 //! a lamp lit, which keeps the haul and pays the day's lamp (the day's first lamp lit on an island) and the week's (the
 //! first time each week each lamp of an island is lit). Going home from a lit lamp keeps what was found since and ends
-//! the dive. The table is the design's ([[Passages as Claude Builds Them]]).
+//! the dive. The table is the design's.
 
 use crate::activities::Weekly;
 use crate::atheric_bounty::Toward;

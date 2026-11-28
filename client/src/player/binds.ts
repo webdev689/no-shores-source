@@ -48,8 +48,7 @@ export const PAD_BUTTONS = [
 /** A button held this long, seconds, is its hold (`B hold`), where one is bound; let go sooner, its tap. */
 export const HOLD_S = 0.3;
 
-/** DFO's keys, as the owner chose them ("same control scheme"), and Destiny's pad, as the owner chose it ("#1 but b
- *  to dodge/b hold to crouch"). */
+/** DFO's keys, and Destiny's pad (its first layout, but B to dodge and B held to crouch). */
 export const CONTROLS = {
   forward: control(['w'], ['LS up'], FOOT),
   back: control(['s'], ['LS down'], FOOT),
@@ -91,8 +90,9 @@ export const CONTROLS = {
   // On an item's page, the piece worn in its slot set beside it.
   compare: control(['c'], [], ['menu']),
   controls: control(['k'], ['View'], EVERYWHERE),
-  // The chat's field opens on T wherever the player plays, the owner's choice: at the helm Enter sets sail.
-  chat: control(['t'], [], ['foot', 'dead', 'helm', 'fight']),
+  // The chat's field opens on T wherever the player plays, since at the helm Enter sets sail. On the
+  // pad View and Start together, the one pair no fight or helm hears, whose menus wait a moment for it.
+  chat: control(['t'], ['View+Start'], ['foot', 'dead', 'helm', 'fight']),
   steerLeft: control(['a'], ['LS left'], HELM),
   steerRight: control(['d'], ['LS right'], HELM),
   sailOn: control(['w'], ['LS up'], HELM),
@@ -121,8 +121,8 @@ export const CONTROLS = {
   shotBack: control([], ['Left'], FIGHT),
   shotNext: control([], ['Right'], FIGHT),
   brace: control(['c'], ['B'], FIGHT),
-  // A line of the dialogue box typed whole, or the next begun: the left click, Space or E, and the pad's A, as the
-  // owner chose; while a line waits the press is the line's alone (`dialogue.ts`).
+  // A line of the dialogue box typed whole, or the next begun: the left click, Space or E, and the pad's A; while a
+  // line waits the press is the line's alone (`dialogue.ts`).
   continue: control(['mouse0', ' ', 'e'], ['A'], ['talk']),
 } as const satisfies Record<string, Control>;
 export type BindId = keyof typeof CONTROLS;

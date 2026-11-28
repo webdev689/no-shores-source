@@ -12,7 +12,9 @@ code:
   - client/src/game/prologue/intro.ts#Intro
   - client/src/game/prologue/introShots.ts#islandFrame
   - client/src/game/prologue/storm.ts#StormDive
+  - client/src/game/prologue/chart.ts#chartLines
   - client/src/game/prologue/making.ts#Making
+  - client/src/game/characters/characterMark.ts#inPlayPlayed
   - client/src/game/prologue/helm.ts#openingTurn
   - client/src/game/prologue/creation.ts#accountStep
   - client/src/game/prologue/creation.ts#lookStep
@@ -99,10 +101,14 @@ from, at its end or on a failure, lets go of what it holds (the helm its windows
 beat that fails is left for the next with what it said stopped and the view cleared before the next begins; a last
 beat that fails ends the story with its screen kept, so the black lifts only once the game's veil is up under it.
 The intro offers no skip once it has reached Saltmere. Each beat sets its own weather, sound and lightning at
-its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. A player who
-has played the story to its end (kept in the browser, `noshores.prologue`) sees the intro and the title, and Begin
-takes them straight to Overlook's social space. Where the page has accounts, Begin opens the character screen first
-([[Interface]], "The character screen"), which sets `noshores.prologue` and `noshores.look` from the character chosen. Every way onto foot comes after the story, played through or passed
+its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. Whether the
+story, and the stranger's welcome at its end, have been played is the character's, kept by its room
+([[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]): Begin opens
+the character screen ([[Interface]], "The character screen"), and a character past the story goes straight to the
+game, one not past it into the storm, whichever browser it plays on; the screen sets `noshores.prologue` and
+`noshores.look` in this browser from the character chosen. The browser's own mark decides only where there are no
+accounts (`?offline`) or the accounts do not answer ("Play without saving"): a player who has played the story there
+sees the intro and the title, and Begin takes them straight to Overlook's social space. Every way onto foot comes after the story, played through or passed
 over (Begin, `?at=`, a story that could not start or go on), so on foot the page tells each room on land whose word
 on the gear says the prologue is not kept that it is done (`Ask::FinishPrologue`), and the room keeps it with the
 character, the page's word while the prologue pays nothing ([[The Server Is the Authority Over Everything]]). At
@@ -135,13 +141,13 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | Beat | What happens | Played or shown |
 |---|---|---|
 | `intro` | First light over the cloud; then down through it to Saltmere, ships under sail off its harbour and gulls over it, the title, "Press any key to begin" ("Tap to begin" on a touch screen, "Press A to begin" on the pad, A being the jump's button as bound; Space begins too) | shown |
-| `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, then well out along its port side (16 m and more, past its yards and its spanker's swing), its crew at work across its deck, and in under the spanker's boom to the helm's own shot off its port side, outboard of its rail ([[The Prologue's Camera Flights Stand Clear and Go Slower]]), where it ends riding its deck as the helm's camera does (all its rise and fall at the helm, a quarter of its pitch and roll about it), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
+| `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out, and the captain's chart is held over the view as the flash fades (below); low over the swell to the Brig, then well out along its port side (16 m and more, past its yards and its spanker's swing), its crew at work across its deck, and in under the spanker's boom to the helm's own shot off its port side, outboard of its rail ([[The Prologue's Camera Flights Stand Clear and Go Slower]]), where it ends riding its deck as the helm's camera does (all its rise and fall at the helm, a quarter of its pitch and roll about it), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
 | `sighted` | From the shot the creation last drew (framed for the screen it was framed for), the camera turns from the player to look down its deck; the lookout and the bosun cry out and the mate and the gunner speak; the camera pulls out over its stern as three Grey Tithe Sloops come out of the dark, and comes down behind it through the fight's own lens | shown |
 | `battle` | The sea's own fight against the three, every ship taken up under the sail and way it was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as its own, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships fighting the player still afloat and "No need to sink them", until every one is beaten, sunk or struck; the fight's readout, its keys and DFO's messages as toasts | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to its deck; the beaten ships lie where and as the fight left them, each in its own settle, trim and list, and its sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them (whichever shoulder leaves it the more room from the foremast and its shrouds), then pushing in on it until it reads however far off it lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round it; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at its side at 6 m/s (about 12 knots), lightning striking past it at 2.3 s and 4.8 s so its masts and sails stand against it: Captain Brannoc Thule's Frigate at its own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of its stem first touches the Brig's side where its hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
-| `wake` | First person on the deck ([[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]): the view darkening and lightening as the eyes blink slowly open, pulsing darker with each beat of the heart until they are open, the view swimming and clearing a step with each beat of the heart, the ringing; up on the feet, looking round; the camera eases out of the eyes to over the player's shoulder, the shot the run's camera takes as the camera leaves the eyes (a run that opens later is eased to from wherever the camera then is), their hands empty and their figure drawn once the camera stands a metre out of the eyes, where play begins 15.5 s in ([[The Wreck Opens by Teaching the Player]]); skipped at any moment, or left however it is left, its eyes are open and the view neither dark nor blurred, the frame the director draws after its skip too | shown |
+| `wake` | First person on the deck ([[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]): the view darkening and lightening as the eyes blink slowly open, pulsing darker with each beat of the heart until they are open, the view swimming and clearing a step with each beat of the heart, the ringing; up on the feet, looking round; the camera eases out of the eyes to over the player's shoulder, the shot the run's camera takes as the camera leaves the eyes (a run that opens later is eased to from wherever the camera then is, over 1 s at least, play waiting for it), their hands empty and their figure drawn once the camera stands a metre out of the eyes, where play begins 15.5 s in ([[The Wreck Opens by Teaching the Player]]); skipped at any moment, or left however it is left, its eyes are open and the view neither dark nor blurred, the frame the director draws after its skip too | shown |
 | `wreck` | Taught on the quiet deck: the sword and shield found and equipped, the feet found, the player readied, a boarder met one on one, its bow taken up and taught; a wisp out of the storm that engulfs the player and gives them the Storm; the next fight teaching each of its abilities; then fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
 | `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck, turned from the rail most of the way toward the camera; skipped, the screen is black at once, so the deep comes in from black | shown |
 | `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface, the sea taking the story's steel and arms: from here on the player is drawn in the plain clothes a player with nothing wears in Overlook, nothing in hand or at the hip (`seaTakenDress`); the view darkening as the eyes close; a flash; a voice; black | shown |
@@ -231,6 +237,18 @@ story begun at the calm lays each struck with its crew whole. Thule's Frigate co
 wheel and six of his deck's hands about it. The stage draws them (`Stage.draw`); the Brig's own crew the story places
 itself.
 
+**The captain's chart** ([[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]])
+is held over the storm's run from half a second after the leap's flash until 5.5 s after it, before the Brig comes
+close, as a film cuts to a chart (`chart.ts`; [[Cinema]], "The screen"): parchment, Saltmere washed and its coast
+inked from its outline as the held map draws it, and beside it, faintly, the coast an older chart drew. The old line
+agrees with the coast on the town's side and falls short of it beyond: each point past the town is drawn at 0.84 of
+its way out from the town toward the island's middle, so the land runs longer than the chart
+(`OLD_CHART_SHARE`). The Brig's course is pencilled in, dashed, from a cross where the storm is to the harbour's
+anchorage. It has no words, a screen reader hears "The captain's chart", no one remarks on it, and a skip shows none.
+
+**The sighting's ships are unknown**: the bosun's cry is "Three! No lights!", the mate's "Running dark in a storm like
+this?". The Grey Tithe fly their colours ([[Lore]]); these come running dark, no lantern lit to show their flag.
+
 **The intro** ([[The Intro Goes Straight to Saltmere]]) rises at first light over the cloud above Saltmere, goes
 down into the cloud with a rush of air, the white whole for a second, and lifts on Saltmere's glide in from the sea to
 the title, each shot laid on the island's own town and harbour (`islandFrame`). Saltmere is the land the game opened,
@@ -266,12 +284,14 @@ Discord or play as a guest. A player already signed in is offered "Go on as" the
 Discord alone keeps; with the accounts out of reach, "Go on without an account", as the game played before. An ask
 the accounts leave unanswered for 10 s is given up as out of reach, so the way on is offered. A Discord sign-in that
 came back is said once, with that offer ("You are signed in with Discord.", or "Discord is linked." before "You are
-signed in as" the username); one that did not go through is said under the form, as a refusal is. Offline (no
-`?room=`) it says "Accounts are kept when you play online." and offers "Go on". A player who leaves for Discord comes
+signed in as" the username); one that did not go through is said under the form, as a refusal is. Offline
+(`?offline`) it says "Accounts are kept when you play online." and offers "Go on". A player who leaves for Discord comes
 back to the helm at the account step, not the story's start: the tab marks it (`noshores.story.helm`), read once and
 cleared at the next load, and never heeded once the story has been played through. The rooms read the session as each
 connects, and the step's end tells the page the account changed, so the menu's mark and banner and the company HUD
-follow the account signed in to at the helm.
+follow the account signed in to at the helm. One signed in there to an account whose character in play has played
+the story (on another browser, say) goes on past it as the character screen sends one, its slot set in this browser
+(`inPlayPlayed`): the story ends at the helm and the player arrives where that character last was, with no welcome.
 The camera stands off the player's port side, abeam of them on a screen wider than tall and 60° round from before them
 on one taller (`openingTurn`): from before them the wheel and its binnacle stand between it and the figure, and astern
 the boom's crutches and the taffrail. "Turn left" and "Turn right" (A and D) turn the figure on the spot, an eighth of a
@@ -290,7 +310,7 @@ their slots and shown on the Character page and in the pack ("Steel Cuirass", "S
 drawn in steel from the gear as the game's gear is drawn (`gearOutfit`, `STORY_SET`). On the wreck the figure is
 dressed from their gear as on foot (`dressInGear`): once they equip the story's sword and shield they hold the item as
 their gear has it, a Normal Sword & Shield drawn in iron, and once they equip its bow it is their other loadout; the
-Melee loadout put away is their dress for the rest of the story; a swing draws it and swings, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
+Melee loadout put away is their dress for the rest of the story; a swing draws it and swings, as the game's does. Their look is kept with the character and in the browser (`noshores.look`), and dresses them in the game afterwards.
 
 ## The wreck
 
@@ -591,8 +611,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 
 - Every ship is a Sloop by the naval rules, whatever is drawn: the Brig's guns and hull are the Sloop's in the fight.
 - Thule's ship is drawn as the Frigate, without the Tithe Ram's iron ram bow ([[Hulls]]): the Tithe Ram is not built.
-- The look is kept in the browser; whether the story was played is kept in the browser, and with the account once a
-  room is told.
+- The look and whether the story was played are kept with the character, and in the browser for a page with no
+  accounts. A character from before the four keeps only what its rooms wrote: a body kept before the story was is past
+  it, as the rules read it.
 - The story's songs are written to its beats' lengths, not timed to their moments: a song begins on the director's
   bar line, so a moment can fall up to a bar from its music.
 - The decks are boxes half a metre across: a deck's camber and the slope of its sheer are steps of 5 cm, a mast or a

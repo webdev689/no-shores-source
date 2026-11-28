@@ -3,7 +3,8 @@
 //! its first phase, it walks to its place healing so it is whole as it arrives, turns as it was posted and stands idle.
 //! Leashed, it heeds nothing it sees or hears on the way, so the one it gave up on cannot draw it out again at once;
 //! only a blow brings it back. After a search it heeds them as ever, and turns back to the fight only once they alert
-//! it. Falling back as its group gives ground, it runs to its new place, its target and its awareness kept.
+//! it. Falling back as its group gives ground, it runs to its new place, its target and its awareness kept, or fights
+//! on where it stands when its routes do not reach that place.
 
 use crate::awareness::{Awareness, look};
 use crate::board::Board;
@@ -42,7 +43,7 @@ pub fn leash(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Optio
 }
 
 /// Its run back to its group's new place, its turn given up, until it stands within FALLEN_BACK of it, or has no
-/// target left to fight from there; a wind-up of its own it finishes first.
+/// target left to fight from there, or its routes do not reach the place; a wind-up of its own it finishes first.
 fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Home) -> Option<Ask> {
     if matches!(here.fighter.action, Action::Telegraph(_)) {
         return None;
@@ -50,7 +51,9 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
     // A target that fell, left or is left be is no target to fight from there: its senses let it go as they do.
     let fighting = brain.target.is_some_and(|target| here.enemy(target).is_some());
     let left = apart(here.at(), [home.at[0], home.at[1]]);
-    let way = (away(here, home, left, FALLEN_BACK) && fighting).then(|| way_to(here, home.at)).flatten();
+    // The routes walk straight at a place they do not reach, so a foe would run into what stands between for good.
+    let reached = || here.world.routes.walkable(here.feet(), home.at);
+    let way = (away(here, home, left, FALLEN_BACK) && fighting && reached()).then(|| way_to(here, home.at)).flatten();
     let Some(way) = way else {
         brain.returning = None;
         return None;

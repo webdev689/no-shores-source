@@ -1,12 +1,13 @@
 // What a cutscene lays over the picture: a fade to black or white, the letterbox's bars, a flash, a darkening for
-// waking, the game's title and a prompt that breathes, drawn by the game as a layer of its interface over every other;
+// waking, an insert held over the view, the game's title and a prompt that breathes, drawn by the game as a layer of
+// its interface over every other;
 // and a blur on the view, which the scene draws into its own picture under the interface (game/blur.ts). Each eases by
 // its own time as the page's transitions eased, but the darkening and the blur, which the story drives frame by frame.
 // While it stands, a touch on the view is the story's alone: no drag pans the page or pulls it to reload, so a held
 // touch is never cut short.
 import { motionReduced } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
-import type { Child, Node } from '../ui/node.ts';
+import type { Child, Node, PictureSource } from '../ui/node.ts';
 import { touchesHeld } from '../ui/page.ts';
 import type { Layer, Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -30,6 +31,13 @@ const TITLE_RULE = ruleOf('cinema rule', [
   [0.82, '#b8975a'],
 ]);
 
+/** What an insert shows: its look's key, what it is to a screen reader, and its drawing at the size it is laid. */
+export interface Insert {
+  readonly key: string;
+  readonly label: string;
+  readonly draw: Extract<PictureSource, { draw: unknown }>['draw'];
+}
+
 /** The screen's layers, drawn as a layer of `stack` over the game's interface. */
 export class Screen {
   private readonly canvas: HTMLCanvasElement;
@@ -41,6 +49,8 @@ export class Screen {
   private readonly prompted = new Eased(0);
   private readonly skipShown = new Eased(0, ease);
   private readonly loading = new Eased(0);
+  private readonly inserted = new Eased(0);
+  private insert: Insert | null = null;
   private dark = 0;
   private blurred = 0;
   private prompt = '';
@@ -96,6 +106,15 @@ export class Screen {
     this.titled.set(shown ? 1 : 0, 2.4, this.clock());
   }
 
+  /** An insert held over the middle of the view, as a film cuts to a chart or a letter, or none. */
+  showInsert(insert: Insert | null): void {
+    this.inserted.set(insert ? 1 : 0, 0.6, this.clock());
+    if (!insert) return;
+    this.insert = insert;
+    // Nothing focuses it, so a screen reader is told as it shows.
+    announce(insert.label);
+  }
+
   /** A prompt that breathes under the title, or none. */
   showPrompt(text: string | null): void {
     if (text !== null) this.prompt = text;
@@ -127,6 +146,7 @@ export class Screen {
     this.darken(0);
     this.blur(0);
     this.showTitle(false);
+    this.showInsert(null);
     this.showPrompt(null);
     this.showSkip(null);
     this.showLoading(false);
@@ -172,6 +192,7 @@ export class Screen {
         bar(true),
         bar(false),
         this.dark > 0 && { id: 'cinema-dark', width, height, fill: BLACK, opacity: this.dark, float: { to: 'screen' } },
+        this.insetNode(width, height, now),
         this.titleNode(width, height, now),
         this.promptNode(width, height, now, still),
         this.skipNode(now),
@@ -194,6 +215,23 @@ export class Screen {
       label: 'Loading',
       float: { to: 'screen' },
       children: [loadingNode(width, now, still)],
+    };
+  }
+
+  /** The insert, three wide to two tall, across 60% of the view's width or height at most, in its middle. */
+  private insetNode(width: number, height: number, now: number): Child {
+    const [shown, insert] = [this.inserted.value(now), this.insert];
+    if (shown <= 0 || !insert) return null;
+    const wide = Math.round(Math.min(640, width * 0.6, height * 0.9));
+    const tall = Math.round((wide * 2) / 3);
+    return {
+      id: 'cinema-insert',
+      width: wide,
+      height: tall,
+      opacity: shown,
+      label: insert.label,
+      float: { to: 'screen', at: [0.5, 0.5], anchor: [0.5, 0.5] },
+      picture: { key: `${insert.key} ${wide}x${tall}`, source: { draw: insert.draw } },
     };
   }
 

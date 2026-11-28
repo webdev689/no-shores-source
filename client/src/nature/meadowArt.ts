@@ -1,4 +1,4 @@
-// The owner's meadow sprites as pixel pictures, written by `tools/meadow/write.py` from the owner's PNGs: a tall
+// The meadow sprites as pixel pictures, written by `tools/meadow/write.py` from their PNGs: a tall
 // tuft, the same tuft cut short, a tuft of flowers and a dry tuft, 32 by 32, and a bush, 64 by 64, in the
 // meadow's order. Write it again rather than editing it.
 
@@ -14,7 +14,7 @@ export interface MeadowSprite {
   readonly picture: MeadowPicture;
 }
 
-/** The owner's five, in the atlas's order. */
+/** The five sprites, in the atlas's order. */
 export const MEADOW_SPRITES: readonly MeadowSprite[] = [
   {
     name: 'tall',

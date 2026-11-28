@@ -21,6 +21,10 @@ export const SEA_PORTS = portsOf(
   LANDS.flatMap((land, index) => sitesOf(`continent-${index + 1}`, JSON.stringify(land), []).city ?? []),
 );
 
+/** The living port cities' centres, by the rules' port cities' ids (`room_main_ports`, as JSON). */
+export const livingPorts = (main: string) =>
+  SEA_PORTS.filter((port) => (JSON.parse(main) as string[]).includes(port.id)).map((port) => port.centre);
+
 /** The sea room's opening text: the layout, its ports and the islands' names (crates/room-wasm/src/lib.rs
  *  `SeaRequest`). */
 export const SEA_REQUEST = JSON.stringify({ layout, ports: SEA_PORTS, islands });

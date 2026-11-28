@@ -75,7 +75,7 @@ function meadowPipelines(gpu: Gpu): MeadowPipelines {
 }
 
 /**
- * The meadow round the eye: the owner's tufts, flowers and bushes over the grass, drawn with WebGPU into the land's
+ * The meadow round the eye: tufts, flowers and bushes over the grass, drawn with WebGPU into the land's
  * pass after the plants. Each frame: `update` with the camera and the ground the plants grow on, then `drawInto`.
  */
 export class MeadowView {
@@ -90,9 +90,12 @@ export class MeadowView {
   private readonly bind: GPUBindGroup;
   private anchor: [number, number] | null = null;
   private draws: CellDraw[] = [];
+  /** The share of each cell's tufts drawn, as Settings chose it: none draws no meadow at all. */
+  private readonly share: () => number;
 
-  constructor(gpu: Gpu, budgetMs = 3) {
+  constructor(gpu: Gpu, budgetMs = 3, share: () => number = () => 1) {
     this.gpu = gpu;
+    this.share = share;
     const { device } = gpu;
     this.pipelines = meadowPipelines(gpu);
     this.field = new MeadowField(KEPT_CELLS, budgetMs);
@@ -118,7 +121,7 @@ export class MeadowView {
         level.height,
       ]),
     );
-    // The owner's pixels, never blurred: each tuft reads one texel of one level.
+    // The sprites' pixels, never blurred: each tuft reads one texel of one level.
     const nearest = device.createSampler({ magFilter: 'nearest', minFilter: 'nearest', mipmapFilter: 'nearest' });
     this.bind = device.createBindGroup({
       layout: this.pipelines.layout,
@@ -137,7 +140,8 @@ export class MeadowView {
    *  so a page that draws only when asked draws again. */
   update(frame: NatureFrame, ground: NatureGround): boolean {
     this.draws = [];
-    if (!MEADOW_BIOMES.has(ground.biome)) return false;
+    const share = this.share();
+    if (share <= 0 || !MEADOW_BIOMES.has(ground.biome)) return false;
     const [eyeX, eyeY, eyeZ] = frame.eye;
     if (eyeZ - ground.sample(eyeX, eyeY).height * frame.exaggeration > REACH_M + HIGH_MARGIN_M) return false;
     const waiting = this.field.update(eyeX, eyeY, ground);
@@ -181,7 +185,7 @@ export class MeadowView {
       const highest = [west + CELL_M + WIDEST_M, north + CELL_M + WIDEST_M, high];
       if (!boxSeen(planes, lowest, highest)) continue;
       const fade = 1 - smooth(0.55 * REACH_M, REACH_M, away);
-      const count = Math.min(TUFTS, Math.ceil(TUFTS * fade * 1.15));
+      const count = Math.min(TUFTS, Math.ceil(TUFTS * fade * 1.15 * share));
       if (count > 0) this.draws.push({ slot: cell.slot, count, far: away > FAR_FROM * REACH_M, away });
     }
     this.draws.sort((a, b) => a.away - b.away);

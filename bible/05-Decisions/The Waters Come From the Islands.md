@@ -68,7 +68,8 @@ status: in force
   ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 - The held map tints each water by its owner, with its name and level band, and hatches the contested seam
   ([[Held Map]]). Claude names the waters, and the owner can change any name.
-- Which port faction each friendly ship belongs to waits until later ([[Open Questions]]).
+- Each friendly ship sails for one of the three houses
+  ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]).
 
 Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: no water is the pirates'; the fourth is the Grey Tithe's, and the contested seam, where the pirates fought the Tithe, is gone with them. The ruined cities' waters are the Lattice's, sailed by the Grey Tithe for now ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]).
 

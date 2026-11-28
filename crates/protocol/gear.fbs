@@ -91,7 +91,7 @@ table GearLetter {
 
 // A bounty of the day's board as it stands for a player: its words, how many it asks, how many they have counted,
 // whether they hold it and whether they turned it in; where it counts, its name and tier, its place on the board and
-// the faction that posts it.
+// the faction that posts it, and a line of its tale.
 table GearBounty {
   words: string;
   target: uint;
@@ -109,6 +109,8 @@ table GearBounty {
   place: ubyte;
   // The faction that posts it, by its number: it pays that faction's reputation for the town's Aurem; 0 the town's.
   faction: ubyte;
+  // One line of its tale, as its card shows under its task.
+  tale: string;
 }
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,

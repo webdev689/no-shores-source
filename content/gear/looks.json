@@ -8,5 +8,17 @@
     {"key": "abyss", "name": "an Abyss Dungeon", "armour": ["adamantium", "ebony"], "metals": ["adamantium", "ebony"], "sets": {"adamantium": "Deepwarden", "ebony": "Blackwater"}},
     {"key": "sea", "name": "a sea dungeon", "armour": ["elven", "dwarven"], "metals": ["elven", "dwarven"], "sets": {"elven": "Reefborn", "dwarven": "Brassbound"}},
     {"key": "breach", "name": "a Breach", "armour": ["daedric"], "metals": ["daedric"], "sets": {"daedric": "Lattice"}}
-  ]
+  ],
+  "clothes": {
+    "about": "The garments a torso or legs piece is drawn in as clothes, by rarity (Normal, then Magic), each list a choice the page makes by the piece's number among those the forge draws; and plain clothes' own, each with its dye. The page dresses by them and the room keeps no others in a dress.",
+    "torso": [
+      [["shirt_long_v", "shirt_long_round", "shirt_long_deep", "peasant_blouse", "shirt_short_round"]],
+      [["shirt_long_round", "shirt_long_v", "peasant_blouse"], ["short_tunic", "formal_tunic", "vest"]]
+    ],
+    "legs": [
+      [["breeches", "casual_pants", "long_skirt", "tights"], ["shoes", "sandals"]],
+      [["breeches", "casual_pants", "tights"], ["tall_boots", "shoes"]]
+    ],
+    "plain": {"torso": [["shirt_long_v", "White"]], "legs": [["breeches", "DarkBrown"], ["boots", "DarkBrown"]]}
+  }
 }

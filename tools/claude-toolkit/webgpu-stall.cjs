@@ -95,7 +95,8 @@ async function main() {
     });
   };
   let [lastFrames, why] = [null, ''];
-  await page.goto('http://localhost:5173/');
+  // Offline, so a probe plays alone and makes no account in the live rooms.
+  await page.goto('http://localhost:5173/?offline');
   while (Date.now() - started < seconds * 1000 && !stalled) {
     await page.waitForTimeout(10_000);
     if (!worker) {

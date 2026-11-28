@@ -1,13 +1,13 @@
 import { DurableObject } from 'cloudflare:workers';
 import course from '../content/testground/course.json' with { type: 'json' };
-import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
-import { type Listed, arrives, cameOutOf, crossingAsked, crossingsOf, reachOf, shipOf } from './arrival.ts';
+import { arrives, cameOutOf, crossingAsked, crossingsOf, shipOf } from './arrival.ts';
+import { nodeReach, nodeText } from './nodeFiles.ts';
 import { Ashore, placeOf } from './ashore.ts';
 import { addressKey } from './address.ts';
-import { Breach, breachAsked, breachHeard, breachRoom, toldBreach } from './breach.ts';
-import { type Count, admitsFrom, counted } from './budget.ts';
+import { Breach, breachAsked, breachRoom, restoring, toldBreach } from './breach.ts';
+import { type Count, MESSAGE_MOST, admitsFrom, counted, tellsTaken } from './budget.ts';
 import { delveAsk } from './delveHost.ts';
 import { entranceOf, joinedRoom, roomName, sessionHash } from './joinRequest.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
@@ -31,6 +31,7 @@ import { behindDoor, type HeldIsland, openIsland } from './seaIsland.ts';
 import { TestRun } from './testRuns.ts';
 import { present } from './presence.ts';
 import { SEA_REQUEST } from './seaPorts.ts';
+import { Aboard } from './aboard.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 interface Env {
@@ -65,18 +66,15 @@ const SHUT = 4003;
 /** The close code for a player a run cannot keep for now, the accounts not answering: the page joins again. */
 const AGAIN = 1013;
 
-/** The most bytes one input may be: an input with the largest dress fits well inside it. */
-const MESSAGE_MOST = 8192;
-
 /**
  * One room on Cloudflare: a Durable Object for each room's name (`roomNames.ts`), keeping the room in WebAssembly:
- * `sea` the sea (with `--elite` or `--abyss` at a harder tier); `node-...` a node's room, a patrol's shared dungeon, or
- * a run (`--run-<instance>`, kept to one company); `sea-dungeon-...` a sea island's dungeon and `isle-...` an island a
- * sea rolled, each opened on that sea's word; `passage-...` a passage zone's room (`passageRoom`); `fleet-<name>` a
+ * `sea` the sea, at Normal for now; `node-...` a node's room, a patrol's shared dungeon, or a run (`--run-<instance>`,
+ * kept to one company); `sea-dungeon-...` a sea island's dungeon and `isle-...` an island the sea rolled, each
+ * opened on its word at its name's tier; `passage-...` a passage zone's room (`passageRoom`); `fleet-<name>` a
  * fleet's place; `test-<name>` the Test Ground's course.
  * Each binary message on a player's WebSocket is an input. While anyone is in, it ticks the room with the clock and
- * sends each player each tick's snapshot. Its sockets live and die with it: the room is kept only in memory, so a
- * socket must never outlast it. A browser's one text message is its session's token, which keeps its character.
+ * sends each player each tick's snapshot. Its sockets live and die with it, the room kept in its memory (what its
+ * Breach keeps, stored), so a socket never outlasts it. A browser's one text message, its token, keeps its character.
  */
 export class RoomHost extends DurableObject<Env> {
   /** The room's WebAssembly, made when it is first used: an object asked for without a WebSocket holds none. */
@@ -127,12 +125,15 @@ export class RoomHost extends DurableObject<Env> {
   private island: HeldIsland | null = null;
   /** In a sea island's dungeon, the players the sea says are landed on its island: no one else's inputs are played. */
   private readonly ashore = new Set<number>();
-  /** On an island, its players named to the seas, which answer with the ships parked there (`ashore.ts`). */
+  /** On an island, its players named to the seas, which answer with the ships parked there and the traffic ships taken
+   *  off their routes (`ashore.ts`). */
   private readonly shore = new Ashore(
     (sea) => this.env.ROOMS.getByName(sea),
-    (ships) => this.guarded(() => this.room.parked(ships), false),
+    (answer) => this.guarded(() => this.room.parked(answer), false),
     (player) => this.guarded(() => this.room.named(player), ''),
   );
+  /** At sea, its players travelling aboard a company member's ship (`aboard.ts`). */
+  private aboard: Aboard | null = null;
   /** At a guild's outpost, what stands its plot and runs its players' errands with the accounts. */
   private outpost: OutpostHost | null = null;
   /** A patrol zone's gates crossing to the others, where a player crossing from one joins (`?from=`). */
@@ -158,16 +159,22 @@ export class RoomHost extends DurableObject<Env> {
     return this.guarded(() => this.room.seaLanded(id, seed, account), 0);
   }
 
-  /** A place's room names its players ashore (`ashore.ts`): the answer is the ships parked at its island, as JSON. */
+  /** A place's room names its players ashore (`ashore.ts`): the answer is the ships parked at its island and the
+   *  traffic ships taken off their routes, as JSON. */
   async ashoreWord(word: string): Promise<string> {
     if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return '';
     return this.guarded(() => this.room.seaAshore(word), '');
   }
 
-  /** A Breach's word between its zone and its run (`breach.ts`): whether a run's gate opened, or how far it came. */
-  async breachWord(kind: 'opened' | 'inside', text: string): Promise<boolean> {
-    if ((await this.opened) !== true) return false;
-    return this.guarded(() => breachHeard(this.room, kind, text, Math.floor(Date.now() / MINUTE_MS)), false);
+  /** A Breach's word between its zone and its run (`breach.ts`), the zone's room opened for it where it is not yet. */
+  async breachWord(kind: 'opened' | 'inside', text: string, zone: string): Promise<boolean> {
+    if (!(await this.openOnce(zone))) return false;
+    return this.guarded(() => this.breach?.heard(this.room, kind, text, Date.now()) ?? false, false);
+  }
+
+  /** A run's checkpoint let go a day after it last moved, its gate's day out (`Breach.store`). */
+  override async alarm(): Promise<void> {
+    await this.ctx.storage.deleteAll();
   }
 
   override async fetch(request: Request): Promise<Response> {
@@ -175,12 +182,9 @@ export class RoomHost extends DurableObject<Env> {
       return new Response('A room is joined by WebSocket', { status: 426 });
     if (this.closing) clearTimeout(this.closing);
     this.closing = null;
-    this.opened ??= this.openRoom(roomName(request) ?? '').catch(() => false);
-    const opened = await this.opened;
+    const opened = await this.openOnce(roomName(request) ?? '');
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     if (!opened) {
-      // Nothing opened, so nothing is lost by asking again on the next join.
-      this.opened = null;
       if (this.why === '') return new Response('No such room', { status: 404 });
       server.accept();
       server.close(SHUT, this.why);
@@ -221,6 +225,7 @@ export class RoomHost extends DurableObject<Env> {
     const held = { player, address, count: undefined, signed: false, spoke: false, token: null, door, relog };
     this.players.set(server, held);
     this.breach?.joined(player, breachAsked(request, this.name));
+    this.guarded(() => this.aboard?.joined(player, request), undefined);
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
     // In a run no one plays before the room keeps their character, nor in a sea island's dungeon before the sea says
     // they are landed on its island: their inputs are taken in their order and stand still until then.
@@ -246,7 +251,13 @@ export class RoomHost extends DurableObject<Env> {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  /** Opens the room its name says, once: a node's from its baked file, which only that node's room reads, a patrol's
+  /** Opens the room its name says once (one that did not open, again at the next ask), restoring its Breach. */
+  private openOnce(name: string): Promise<boolean> {
+    const again = () => (this.opened = null);
+    return (this.opened ??= restoring(this.openRoom(name), () => this.breach, again));
+  }
+
+  /** Opens the room its name says: a node's from its baked file, which only that node's room reads, a patrol's
    *  shared dungeon's from its patrol's, a run from its name alone, and a sea island's dungeon from its name on its
    *  sea's word (`behindDoor`). */
   private async openRoom(name: string): Promise<boolean> {
@@ -260,6 +271,7 @@ export class RoomHost extends DurableObject<Env> {
         if (owned && !this.name.startsWith('sea-dungeon-')) this.guarded(() => this.room.hold(player, false), false);
         if (owned && this.island) void this.landOn(this.island, player, account);
         if (owned) this.shore.own(player, account, seaRoom(this.name));
+        if (owned) void this.aboard?.owned(player, account);
         return owned;
       },
     });
@@ -269,6 +281,7 @@ export class RoomHost extends DurableObject<Env> {
       room: breachRoom(this.room, this.guarded.bind(this)),
       zone: (zone) => this.env.ROOMS.getByName(zone),
       launched: (account, run, within) => (tested ? Promise.resolve(true) : accounts.launched(account, run, within)),
+      ...{ storage: this.ctx.storage, runs: accounts },
     });
     // The game's nodes, dungeons, islands and the sea keep characters (at sea, with their ship's hurts): the Test
     // Ground grants gear to try it, a test room gives its test character, and a fleet room is the World Editor's.
@@ -280,6 +293,7 @@ export class RoomHost extends DurableObject<Env> {
       if (socket) this.dismiss(socket, code, why ?? 'your character joined another room');
     };
     this.keeper = new Keeper(keeps && !tested ? accounts : null, room, name, away);
+    if (seas !== null) this.aboard = new Aboard(this.room, (account) => accounts.companions(account, name), away);
     const gateOpen = breachRun(name) ? () => this.breach?.gateOpen() ?? Promise.resolve(false) : undefined;
     this.tester = tested ? new TestRun({ accounts, room, away, ...(gateOpen ? { gateOpen } : {}) }) : null;
     if (privateRun(name)) this.keeper.forCompany();
@@ -290,7 +304,8 @@ export class RoomHost extends DurableObject<Env> {
     const passage = passageRoom(name);
     if (reached?.guild) this.keeper.forGuild(reached.guild);
     const judged = (reached !== null && !tested) || passage !== null;
-    const reach = reached && !tested ? await this.reachOf(reached.id) : null;
+    const ports = this.guarded(() => this.room.mainPorts(), '[]');
+    const reach = reached && !tested ? await nodeReach(this.env.NODES, reached.id, ports) : null;
     const judge = (from: string | null, body: string | null) =>
       arrives(name, from, shipOf(body), reach, passagesOf(this.room, body));
     if (judged) this.keeper.judgingArrivals(judge, passage !== null);
@@ -321,7 +336,9 @@ export class RoomHost extends DurableObject<Env> {
     // A guild dungeon's run opens only while its guild's Delve Gate stands at its tier (`delveHost.ts`).
     if (reached?.guild && reached.run !== null) {
       const outposts = (room: string) => this.env.ACCOUNTS.outpost(room);
-      const delve = await delveAsk(name, Math.floor(Date.now() / MINUTE_MS), outposts, (id) => this.nodeText(id));
+      const delve = await delveAsk(name, Math.floor(Date.now() / MINUTE_MS), outposts, (id) =>
+        nodeText(this.env.NODES, id),
+      );
       return delve !== null && this.room.openRun(delve) && this.room.reseed(seeds);
     }
     const breach = breachAsk(name, Math.floor(Date.now() / MINUTE_MS));
@@ -333,7 +350,7 @@ export class RoomHost extends DurableObject<Env> {
       if (this.island) this.shore.stand(placeOf(this.name, null, this.island));
       // A patrol's dungeon's run reads its patrol's file, as its shared dungeon does, and keeps its lock.
       const patrol = node === undefined ? null : nodeRoom(node);
-      const text = patrol && patrol.dungeon !== null ? await this.nodeText(patrol.id) : '';
+      const text = patrol && patrol.dungeon !== null ? await nodeText(this.env.NODES, patrol.id) : '';
       return ask !== null && text !== null && this.room.openRun(ask, text) && this.room.reseed(seeds);
     }
     if (node === undefined)
@@ -345,7 +362,7 @@ export class RoomHost extends DurableObject<Env> {
       );
     const named = nodeRoom(node);
     if (!named) return false;
-    const text = await this.nodeText(named.id);
+    const text = await nodeText(this.env.NODES, named.id);
     this.crossings = named.dungeon === null && named.run === null ? crossingsOf(text) : [];
     // A guild's outpost opens only on a node whose file has an outpost's ground; the bare node is the wild site.
     const ground = named.guild !== null && text !== null ? outpostGround(text) : null;
@@ -362,12 +379,6 @@ export class RoomHost extends DurableObject<Env> {
     return opened && this.room.reseed(seeds) && this.room.minute(Math.floor(Date.now() / MINUTE_MS));
   }
 
-  /** Where a node lies and what leads into it, from the bake's index (`arrival.ts`); null when the index is missing. */
-  private async reachOf(id: string): Promise<ReturnType<typeof reachOf>> {
-    const index = await this.env.NODES.fetch('https://nodes/index.json');
-    return index.ok ? reachOf((await index.json()) as Listed[], layout.continents, id) : null;
-  }
-
   /** Stands a player joined before an entrance or at a crossing gate at a spawn, as an ordinary join, unless the room
    *  keeps their character as come out of that entrance's dungeon or run, by its exit door or its open portal, or as
    *  come across from the node the gate leads to. */
@@ -379,12 +390,6 @@ export class RoomHost extends DurableObject<Env> {
     const cameOut = cameOutOf(this.name, this.keeper?.cameFrom(held.player) ?? null, door);
     if (!cameOut || (typeof door === 'number' && !this.keeper?.leftByWayOut(held.player)))
       this.guarded(() => this.room.standAtSpawn(held.player), false);
-  }
-
-  /** A node's baked file's text, or null when there is none. */
-  private async nodeText(id: string): Promise<string | null> {
-    const file = await this.env.NODES.fetch(`https://nodes/${id}.json`);
-    return file.ok ? await file.text() : null;
   }
 
   /** Asks the sea whether a player's account is landed on this room's island: landed, they may scavenge and gather, a
@@ -428,6 +433,8 @@ export class RoomHost extends DurableObject<Env> {
           // At sea a ship played unkept is its session's, so a rejoin brings it back where the sea last had it.
           const owner = !kept && seaRoom(this.name) !== null ? `unkept:${await sessionHash(message)}` : null;
           if (here() && owner !== null) this.guarded(() => this.room.own(player, owner), undefined);
+          // A passenger played unkept has no company here, so is sent away as one whose has no such ship.
+          if (here() && owner !== null) void this.aboard?.owned(player, owner);
           if (here()) this.guarded(() => this.room.noneKept(player), undefined);
           // Logging back in, the kept character stands where it left this social space, by the room's own word on it.
           if (here() && kept && held.relog) this.guarded(() => this.room.standWhereLeft(player), false);
@@ -448,6 +455,8 @@ export class RoomHost extends DurableObject<Env> {
       this.guarded(() => this.room.noneKept(player), undefined);
     }
     if (!within) return this.dismiss(socket, 1008, 'too many messages');
+    const taken = tellsTaken(count) ? this.guarded(() => this.room.taken(count.taken), new Uint8Array()) : null;
+    if (taken?.length) socket.send(taken);
     // The token again, from a player who took a username since: they are named anew, once in a while at most.
     if (typeof message === 'string' && TOKEN.test(message) && held.signed) {
       if (Date.now() - (held.renamed ?? 0) < RENAMED_EVERY_MS) return;

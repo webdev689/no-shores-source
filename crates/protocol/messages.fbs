@@ -659,7 +659,7 @@ table Snapshot {
   // of each other player's ship sent, every snapshot.
   plates: [Plate];
   // At sea, each traffic id the room has taken off its route, which the page draws no more, and those of its friendly
-  // ships the room keeps at sea.
+  // ships the room keeps at sea; on an island's own ground, each traffic id its seas have taken, as they told its room.
   taken: [ulong];
   friendlies: [Friendly];
   // In an Elite Dungeon's room, its encounters, sent whole in each snapshot; none in any other room.
@@ -704,11 +704,18 @@ table PassageSeen {
   holding_share: double;
 }
 
+// How many messages the room has taken from the socket it is sent on, told every 30th: the page holds what it sends
+// once too many it sent are not yet taken, as an upload held up builds no backlog past the room's budget.
+table Taken {
+  messages: uint;
+}
+
 // What a room sends: exactly one of these is present.
 table FromRoom {
   joined: Joined;
   snapshot: Snapshot;
   gear: Gear;
+  taken: Taken;
 }
 
 root_type FromRoom;

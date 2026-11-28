@@ -1,6 +1,6 @@
-"""The Grey Tithe's airship (`tithe-airship`): one of their brigs retrofitted to fly, as the owner has them: "Large
+"""The Grey Tithe's airship (`tithe-airship`): one of their brigs retrofitted to fly: "Large
 modified vessels retrofitted with combustible thrusters". Her hull is the Brig's own, from the ships' builder
-(shipkit), so she is the vessel the sea sails; what is fitted to her is in the bible's Modules note. She is built in
+(shipkit), so she is the vessel the sea sails, fitted for the air. She is built in
 the ships' frame (x toward her bow, y to port, z up) and turned at the end so her bow points along the module's front
 (Blender's -y), her keel's bottom amidships at the origin: the page flies her and lights her fires at her sockets.
 """

@@ -1,14 +1,14 @@
 // Every spell in the room drawn as the marks are, in its Art's element: Storm's in Volt, Divine's in Blaze, Shadow's
 // in Cosmic. Each is glided between the room's snapshots as the figures are, drawn through its start, its life and
 // its end (`spellDrawers.ts`), leaves what it lands with (`spellLands.ts`), and an Anima has its moment
-// (`animaMoment.ts`). The statuses that show on the world are drawn here too: streaks behind the Hasted, motes off the
-// Linked, and Volt crackling on a Charged foe. All of it is laid at the figures as drawn, the ground first, then what
-// stands far to near.
+// (`animaMoment.ts`). The statuses that show on the world are drawn here too: motes off the Linked, and Volt crackling
+// on a Charged foe; the Hasted are lit on their own figures (`player/cardLooks.ts`). All of it is laid at the figures
+// as drawn, the ground first, then what stands far to near.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { Glides } from '../player/glide.ts';
-import { statusesOf } from '../rules/fighters.ts';
+import { type Statuses, statusesOf } from '../rules/fighters.ts';
 import { AnimaMoments, type AnimaScreen, QUIET, animaOf } from './animaMoment.ts';
 import { chainMarks, chainVerdict } from './chainLooks.ts';
 import { EVENT, HOW } from './cues.ts';
@@ -19,7 +19,7 @@ import type { Sparks } from './sparks.ts';
 import { DRAWERS, type Kept, TRAILED, TRAIL_S, ended, landed } from './spellDrawers.ts';
 import type { KeptSpell } from './spellEffects.ts';
 import { Lands } from './spellLands.ts';
-import { Tails, risingMotes, trailLine } from './spellLines.ts';
+import { Tails, risingMotes } from './spellLines.ts';
 import {
   BLAZE,
   CHEST_M,
@@ -34,17 +34,6 @@ import {
 } from './spellPlaces.ts';
 import { GLINTS, Laid, STAR, billboard } from './spellPixels.ts';
 
-/** A Hasted player's streaks: how long each lasts (seconds), each line's way aside of their path and height (metres),
- *  how far they must have moved in the streaks' time to leave any, and how wide they are drawn (three of a figure's
- *  pixels at their newest). */
-const STREAK_S = 0.3;
-const STREAK_LINES = [
-  [-0.22, 0.55],
-  [0.22, 1.05],
-  [0, 1.5],
-] as const;
-const STREAK_MOVING_M = 0.4;
-const STREAK_SCALE = 0.8;
 /** The sparks a Charged foe throws a second. */
 const CRACKLE_SPARKS = 24;
 /** Past this long with no new snapshot (seconds), the room's word has stopped (the link lost, or sent away): its
@@ -90,33 +79,24 @@ function foesOf(fight: Fighting, drawn: Drawn | null): SeenFoe[] {
   });
 }
 
-/** Whether player `id` is Veiled as the fight last had them: their figure is drawn faint and shimmering. */
-export function veiledIn(fight: Fighting, id: number): boolean {
+/** Player `id`'s statuses as the fight last had them: the player's own as predicted, another's as the room sent. */
+function statusesIn(fight: Fighting, id: number): Statuses | undefined {
   const fighter = fight.others.get(id)?.fighter;
-  const statuses = id === fight.player ? fight.own?.statuses : fighter ? statusesOf(fighter) : undefined;
-  return (statuses?.veiled ?? 0) > 0;
+  return id === fight.player ? fight.own?.statuses : fighter ? statusesOf(fighter) : undefined;
+}
+
+/** Whether player `id` is Veiled: their figure is drawn faint and shimmering. */
+export function veiledIn(fight: Fighting, id: number): boolean {
+  return (statusesIn(fight, id)?.veiled ?? 0) > 0;
+}
+
+/** Whether player `id` is Hasted: their figure is lit round its edge in Volt. */
+export function hastedIn(fight: Fighting, id: number): boolean {
+  return (statusesIn(fight, id)?.haste ?? 0) > 0;
 }
 
 /** The element player `id`'s cast glows in: the Art of the last spell of theirs the room sent; none before one. */
 export const castLookOf = (fight: Fighting, id: number): GlowLook => elementOfArt(fight.spells.arts.get(id));
-
-/** A Hasted player's streaks, from where they have been lately (newest first): none while they stand or barely
- *  move. */
-function streaks(frame: Frame, tail: readonly { readonly at: Point; readonly age: number }[]): void {
-  const [newest, oldest] = [tail[0], tail.at(-1)];
-  if (!newest || !oldest) return;
-  const [wayX, wayY] = [newest.at[0] - oldest.at[0], newest.at[1] - oldest.at[1]];
-  const moved = Math.hypot(wayX, wayY);
-  if (moved < STREAK_MOVING_M) return;
-  const [sideX, sideY] = [-wayY / moved, wayX / moved];
-  for (const [aside, up] of STREAK_LINES) {
-    const line = tail.map(({ at: place, age }) => ({
-      at: [place[0] + sideX * aside, place[1] + sideY * aside, place[2] + up] as const,
-      age,
-    }));
-    trailLine(frame.out, frame.eye, line, VOLT, STREAK_S, STREAK_SCALE);
-  }
-}
 
 /** A Charged foe crackling where its feet stand: Volt's sparks thrown off it. Its arcs are its card's own, inside
  *  its figure (player/cardLooks.ts). */
@@ -150,7 +130,6 @@ export class SpellLooks {
   private readonly shown = new Map<number, Shown>();
   private readonly glides = new Glides();
   private readonly trails = new Tails();
-  private readonly streaks = new Tails();
   private readonly lands = new Lands();
   private readonly anima = new AnimaMoments();
   private readonly heals = new HealLights();
@@ -283,18 +262,11 @@ export class SpellLooks {
     this.chains.length = 0;
   }
 
-  /** The jobs of the statuses that show on the world: streaks behind the Hasted, motes off the Linked, a Charged
-   *  foe's crackle. */
+  /** The jobs of the statuses that show on the world: motes off the Linked, a Charged foe's crackle. */
   private statuses(fight: Fighting, frame: Frame, jobs: Job[]): void {
-    const hasted = new Set<number>();
     for (const player of frame.players) {
       const { id, feet, statuses } = player;
       const far = apartFrom(frame.eye, feet);
-      if ((statuses?.haste ?? 0) > 0) {
-        hasted.add(id);
-        const tail = this.streaks.add(id, feet, frame.clock, STREAK_S);
-        jobs.push({ far, run: () => streaks(frame, tail) });
-      }
       if ((statuses?.linked ?? 0) <= 0) continue;
       jobs.push({
         far,
@@ -304,7 +276,6 @@ export class SpellLooks {
         },
       });
     }
-    this.streaks.keep(hasted);
     for (const foe of frame.foes) {
       if ((fight.foes.get(foe.id)?.statuses?.charge ?? 0) <= 0) continue;
       jobs.push({ far: apartFrom(frame.eye, foe.feet), run: () => crackle(frame, foe.feet) });

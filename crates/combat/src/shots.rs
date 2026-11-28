@@ -171,14 +171,19 @@ pub enum Flight {
 const GROUND_STEP: f64 = 1.0;
 const GROUND_PROBES: f64 = 256.0;
 
-/// How far along the segment (0 to 1) it goes into the ground, if it does: in the first stretch between probes where it
-/// sinks below the ground, sinking toward it, where it meets the ground's line across that stretch. On level ground
-/// that is where the segment crosses the ground's height.
+/// How far along the segment (0 to 1) it goes into the ground, if it does: at once when it starts inside it (loosed
+/// inside a cliff); else in the first stretch between probes where it sinks below the ground, sinking toward it, where
+/// it meets the ground's line across that stretch. On level ground that is where the segment crosses the ground's
+/// height.
 fn into_ground(terrain: &dyn Terrain, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
     let (east, south) = (to[0] - from[0], to[1] - from[1]);
     let across = (east * east + south * south).sqrt();
     let probes = (across / GROUND_STEP).ceil().clamp(1.0, GROUND_PROBES) as u32;
     let ground = terrain.floor_under(from[0], from[1], from[2]);
+    // Below the ground from the first, the ground's line would meet it behind its start, or a level one never.
+    if from[2] < ground {
+        return Some(0.0);
+    }
     let mut before = (0.0, ground, from[2] - ground);
     for probe in 1..=probes {
         let share = f64::from(probe) / f64::from(probes);

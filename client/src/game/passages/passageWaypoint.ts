@@ -1,4 +1,4 @@
-// Where the compass points in a passage zone, as the owner asked of every objective: at what the zone's deal asks of
+// Where the compass points in a passage zone, as for every objective: at what the zone's deal asks of
 // the player next, in the zone's own frame, the nearest where there are several; once its mouths are open for them,
 // the lamp to light in a lamp's zone, then the nearest way on (the lamp again where there is none: Home is there).
 // A round done before the player came points at nothing: it begins again where they stand.

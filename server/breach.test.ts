@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { characters } from './accounts/characters.ts';
 import { launchedFor } from './accounts/companies.ts';
@@ -8,17 +9,21 @@ import {
   ASK_AGAIN_MS,
   Breach,
   type BreachDeps,
+  CHECKPOINT_KEPT_MS,
+  FORGET_AGAIN_MS,
   GATE_SHUT,
   LAUNCH_ARRIVES_MS,
   breachAsked,
   breachHeard,
   breachRoom,
+  restoring,
   toldBreach,
 } from './breach.ts';
 import { NO_WAY_HERE } from './arrival.ts';
 import { Keeper } from './keeping.ts';
 import { roomOf } from './keepingForTests.ts';
-import type { RoomDoor } from './roomDoor.ts';
+import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
+import { breachAsk } from './roomNames.ts';
 
 const RUN = 'node-gullwing-vale--breach-hard--run-k3j4h5g6';
 
@@ -28,13 +33,15 @@ function host(opened = false, launched = true) {
   const room = {
     breachCompany: (player: number, word: string) => said.company.push([player, word]) > 0,
     breachProgress: () => JSON.stringify({ tier: 1, encounter: 3 }),
+    breachKept: () => 'null',
   } as unknown as RoomDoor;
   const deps: BreachDeps = {
     room,
     zone: (name) => ({
-      breachWord: (kind, text) =>
+      breachWord: (kind, text, zone) =>
         Promise.resolve(
-          kind === 'opened' ? said.asked.push(`${name} ${text}`) > 0 && opened : said.inside.push(text) > 0,
+          zone === name &&
+            (kind === 'opened' ? said.asked.push(`${name} ${text}`) > 0 && opened : said.inside.push(text) > 0),
         ),
     }),
     launched: () => Promise.resolve(launched),
@@ -231,4 +238,154 @@ test('a zone’s room is given the minute before it says whether a run’s gate 
   } as unknown as RoomDoor;
   assert.equal(breachHeard(room, 'opened', RUN, 99), true);
   assert.equal(breachHeard(room, 'opened', RUN, 100), false, 'its day out, though the room never ticked');
+});
+
+/** A room's Breach keeping `kept` as it changes, and a storage that writes down what it is given. */
+function keeping(first: string | undefined, unreadable = false) {
+  const stored = new Map<string, string>(first === undefined ? [] : [['breach', first]]);
+  const [alarms, forgotten, restored, keptRuns] = [[] as number[], [] as string[], [] as string[], [] as string[]];
+  let kept = 'null';
+  const { deps } = host();
+  const room = {
+    ...deps.room,
+    breachKept: () => kept,
+    breachRestore: (text: string) => (restored.push(text), (kept = text), true),
+  } as unknown as RoomDoor;
+  const storage = {
+    get: <T>(key: string) =>
+      unreadable ? Promise.reject(new Error('unread')) : Promise.resolve(stored.get(key) as T | undefined),
+    put: (key: string, value: string) => Promise.resolve(void stored.set(key, value)),
+    setAlarm: (when: number) => Promise.resolve(void alarms.push(when)),
+  };
+  // The accounts fail to forget while `failing` holds, as a blip would.
+  const accounts = { failing: false };
+  const runs = {
+    forgetRun: (run: string) =>
+      accounts.failing ? Promise.reject(new Error('blip')) : Promise.resolve(forgotten.push(run)),
+    keepRun: (run: string) => Promise.resolve(keptRuns.push(run)),
+  };
+  const set = (text: string) => void (kept = text);
+  return { deps: { ...deps, room, storage, runs }, stored, alarms, forgotten, restored, keptRuns, accounts, set };
+}
+
+test('a run given back its checkpoint as it opens stores it again as it moves, let go a day after it last moved', async () => {
+  const { deps, stored, alarms, restored, set } = keeping('{"stage":2,"chests":[]}');
+  const run = new Breach(RUN, deps);
+  await run.restore();
+  assert.deepEqual(restored, ['{"stage":2,"chests":[]}'], 'given back before anyone joins');
+  run.tick(1_000);
+  assert.deepEqual(alarms, [], 'nothing moved, nothing stored');
+  set('{"stage":3,"chests":[]}');
+  run.tick(2_000);
+  assert.equal(stored.get('breach'), '{"stage":3,"chests":[]}');
+  assert.deepEqual(alarms, [2_000 + CHECKPOINT_KEPT_MS]);
+  set('null');
+  run.tick(3_000);
+  assert.equal(stored.get('breach'), '{"stage":3,"chests":[]}', 'a room that trapped answers null: never stored');
+  const fresh = keeping(undefined);
+  await new Breach(RUN, fresh.deps).restore();
+  assert.deepEqual(fresh.restored, [], 'none kept: opened as it is');
+});
+
+test('a gate stores its runs as a word changes them, never with an alarm, and has the accounts forget each it shuts', async () => {
+  const opened = JSON.stringify({ opened: { [RUN]: 100 }, spent: {} });
+  const shut = JSON.stringify({ opened: {}, spent: { [RUN]: 100 } });
+  const { deps, stored, alarms, forgotten, restored, set } = keeping(opened);
+  const zone = new Breach('node-gullwing-vale', deps);
+  await zone.restore();
+  assert.deepEqual(restored, [opened]);
+  const room = { minute: () => true, breachInside: () => (set(shut), true) } as unknown as RoomDoor;
+  assert.equal(zone.heard(room, 'inside', JSON.stringify({ run: RUN, encounter: 6 }), 6_000_000), true);
+  assert.equal(stored.get('breach'), shut, 'stored as the word is heard, though the zone does not tick');
+  zone.tick(6_001_000);
+  assert.deepEqual(forgotten, [RUN], 'forgotten once, so its company’s next Launch starts anew');
+  assert.deepEqual(alarms, [], 'a gate lets its runs go itself');
+});
+
+test('a room opens once, its Breach restored; one that did not open is asked again', async () => {
+  const restoredBy: string[] = [];
+  const breach = { restore: () => Promise.resolve(void restoredBy.push('restored')) } as unknown as Breach;
+  let again = 0;
+  assert.equal(
+    await restoring(
+      Promise.resolve(true),
+      () => breach,
+      () => (again += 1),
+    ),
+    true,
+  );
+  assert.equal(
+    await restoring(
+      Promise.resolve(false),
+      () => breach,
+      () => (again += 1),
+    ),
+    false,
+  );
+  assert.equal(
+    await restoring(
+      Promise.reject(new Error('no file')),
+      () => breach,
+      () => (again += 1),
+    ),
+    false,
+  );
+  assert.deepEqual([restoredBy, again], [['restored'], 2]);
+});
+
+test('the room module keeps a run’s checkpoint and gives it back to a run opened afresh, never a gate’s runs', async () => {
+  const compiled = new WebAssembly.Module(
+    await readFile(new URL('../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
+  );
+  const room = startRoomDoor(compiled);
+  assert.ok(room.openBreach(breachAsk(RUN, 29_000_000) ?? ''));
+  assert.deepEqual(JSON.parse(room.breachKept()), { stage: 0, chests: [] }, 'opened at its start');
+  assert.equal(room.breachRestore('{"stage":2,"chests":[1]}'), true);
+  assert.deepEqual(JSON.parse(room.breachKept()), { stage: 2, chests: [1] });
+  assert.equal(room.breachRestore('{"opened":{},"spent":{}}'), false, 'a run takes no gate’s runs');
+});
+
+test("a gate has the accounts keep a run it opens, so its company launches back into it all its gate's day", async () => {
+  const { deps, keptRuns, set } = keeping(JSON.stringify({ opened: {}, spent: {} }));
+  const zone = new Breach('node-gullwing-vale', deps);
+  await zone.restore();
+  set(JSON.stringify({ opened: { [RUN]: 200 }, spent: {} }));
+  zone.tick(12_000_000);
+  assert.deepEqual(keptRuns, [RUN], 'kept from the minute its gate opened');
+  zone.tick(12_001_000);
+  assert.deepEqual(keptRuns, [RUN], 'once');
+});
+
+test('a run the accounts could not forget is asked of them again until they do', async () => {
+  const shut = JSON.stringify({ opened: {}, spent: { [RUN]: 100 } });
+  const { deps, forgotten, accounts, set } = keeping(JSON.stringify({ opened: { [RUN]: 100 }, spent: {} }));
+  const zone = new Breach('node-gullwing-vale', deps);
+  await zone.restore();
+  accounts.failing = true;
+  set(shut);
+  zone.tick(6_000_000);
+  await Promise.resolve();
+  assert.deepEqual(forgotten, []);
+  accounts.failing = false;
+  zone.tick(6_000_000 + FORGET_AGAIN_MS);
+  await Promise.resolve();
+  assert.deepEqual(forgotten, [RUN], 'asked again once the accounts are back');
+});
+
+test('a storage that could not be read as the room opened is never written over', async () => {
+  const { deps, stored, set } = keeping('{"stage":4,"chests":[]}', true);
+  const run = new Breach(RUN, deps);
+  await run.restore();
+  set('{"stage":1,"chests":[]}');
+  run.tick(1_000);
+  assert.equal(stored.get('breach'), '{"stage":4,"chests":[]}', 'what it kept before stands for the next opening');
+});
+
+test('a Breach stores what it keeps as a player leaves, not only on the next second', async () => {
+  const { deps, stored, set } = keeping(undefined);
+  const run = new Breach(RUN, deps);
+  await run.restore();
+  set('{"stage":2,"chests":[1]}');
+  run.left(7);
+  assert.equal(stored.get('breach'), '{"stage":2,"chests":[1]}');
 });

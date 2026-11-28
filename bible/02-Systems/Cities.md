@@ -60,6 +60,7 @@ code:
   - client/src/city/pictures.ts#pictureBook
   - client/src/city/windowCuts.ts#cutAtWindows
   - client/src/city/painter.ts#CityPainter
+  - client/src/city/keptLayers.ts#keptLayers
   - client/src/city/cityShaders.ts#PULL_SHARE
   - client/src/city/ruins.ts#buildingRuin
   - client/src/city/overtaken.ts#buildingGrowth
@@ -303,7 +304,8 @@ an open building's windows draw them as nothing (`CLEAR_GLASS`), so they are see
 behind each (`cutAtWindows`), while a closed building's windows are drawn whole. Daggerfall's stone is dark, so a
 solid's picture may be painted lighter or warmer, a factor a channel, as its own layer. The ground's tiles and the
 solids' pictures come first, then the forged models' by how much the city wears them. Up to four workers paint them; a
-layer shows its guessed colour until painted, and what is painted is kept for the next city. Gold, iron, bone, cloth
+layer shows its guessed colour until painted, and what is painted is kept for the next city, up to two cities'
+whole arrays (504 layers, some 44 MB), the least lately worn let go first (`keptLayers.ts`). Gold, iron, bone, cloth
 and water are painted in the shader on the texels a picture would have, 24 a metre
 ([[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]): wrought iron's hammer marks, pits and rust,
 most on what faces up; gilding burnished and worn through to the bronze; bone's grain and yellowing; cloth's dye under
@@ -500,8 +502,9 @@ building's place to the centimetre in the page, the same on every machine.
   its ship's, one about every 3 m, three in ten missing, set out as large as the wreck is drawn (the ships' size: at
   sea larger, true size on foot), drawn at every distance. It is written again only once the ships' size has moved
   by more than a fiftieth since it was last written (`WreckCrust`), into the same instances.
-- **The plaza stays clear:** nothing the page lays reaches into the 110 m window round the plaza, as no rubble lies
-  there; only the crown on the landmark stands within it.
+- **The plaza stays clear:** no crystal the page lays reaches over the plaza, where a body walks; the buildings round
+  it are overtaken as any other, but the works' great formations keep out of the 110 m window round it, as no rubble
+  lies there, and only the crown on the landmark stands within it.
 - **Near and far.** Each formation is laid by chunk (`crystalInstances.ts`), and a pass draws only the chunks it sees
   (the view's, or a shadow cascade's), each formation's chunks joined into as few draws as run. The great formations are
   drawn at every distance; a heavy building's clusters and mass in the middle distance, the chunks within 1 200 m of the
@@ -515,11 +518,11 @@ building's place to the centimetre in the page, the same on every machine.
   0.45), breathing, so a ruin is a scatter of red on a dark coast; each great formation lights a lamp of the crystal's
   light (`CRYSTAL_LAMP`) a third of the way up it, reaching 6 m more than it stands tall, at most 30 m; with the
   crown's three, the sky's nearest lamps are chosen from them as from any city's.
-- **Its cost**, over the six ruins (`ruinBudget.test.ts` holds each under its limits): 101 276 to 157 326 triangles of
-  solids (the crown, the heaps, the works); 1 172 to 1 439 great formations, 287 120 to 352 356 triangles, and as many
-  lamps, of which a view sees a part (from each plaza looking at its landmark 161 844 to 182 240; measured once from the
-  sea 600 m off Mistfall's harbour, 297 860); from the landmark, before the view's culling, 861 980 to 1 001 722
-  triangles of the middle distance's crystal and 483 380 to 586 910 of the near cells'; each city built in 0.96 to 1.24
+- **Its cost**, over the six ruins (`ruinBudget.test.ts` holds each under its limits): 101 276 to 161 962 triangles of
+  solids (the crown, the heaps, the works); 1 184 to 1 455 great formations, 290 152 to 356 356 triangles, and as many
+  lamps, of which a view sees a part (from each plaza looking at its landmark 164 876 to 186 240; measured once from the
+  sea 600 m off Mistfall's harbour, 297 860); from the landmark, before the view's culling, 882 098 to 1 011 682
+  triangles of the middle distance's crystal and 517 334 to 637 880 of the near cells'; each city built in 0.96 to 1.24
   s where its buildings whole take 0.48 to 0.68 s.
 
 ## Limits

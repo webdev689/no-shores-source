@@ -1,4 +1,4 @@
-// The owner's eighth beat: in first person, flat on the deck, the eyes blinking, the view swimming, the ears ringing;
+// The story's eighth beat: in first person, flat on the deck, the eyes blinking, the view swimming, the ears ringing;
 // rising to the feet and looking round at two ships jammed into one and burning; then the camera eases out of the eyes
 // to over the player's shoulder, where their control begins, their sword and shield gone from them.
 import { Cues } from '../../cinema/cues.ts';
@@ -27,6 +27,8 @@ const STAND_S = 10.5;
 const SHEET_AT_S = 0.1;
 const LEAVE_S = 13;
 const CONTROL_S = LEAVE_S + 2.5;
+/** The least a run that opens late is eased to over, seconds: control waits for it rather than the camera jumping. */
+const LATE_EASE_S = 1;
 /** How far out of the eyes the camera stands before the player's own figure is drawn, metres. */
 const SEEN_FROM_M = 1;
 
@@ -51,6 +53,8 @@ export class Wake implements Beat {
   /** The run once it has opened, whose resting shot the camera eases out to, taken as it leaves the eyes. */
   private run: WreckRun | null = null;
   private shouldered = false;
+  /** When control comes: `CONTROL_S`, or later for a run that opened too near it to be eased to by then. */
+  private controlAt = CONTROL_S;
   /** Whether the run's camera has worked out its course: once, while the player still lies on the deck. */
   private warmed = false;
   private sheeted = false;
@@ -120,7 +124,7 @@ export class Wake implements Beat {
     this.cues.finish();
     this.leave();
     // The director frames a beat once more after its skip: that frame is the wake's last, eyes open.
-    this.since = CONTROL_S;
+    this.since = this.controlAt;
     this.done = true;
   }
 
@@ -162,7 +166,7 @@ export class Wake implements Beat {
       screen.darken(darkAt(this.since, motionReduced() ? undefined : this.heart));
       screen.blur(blurAt(this.since, this.heart));
     }
-    if (this.since >= CONTROL_S) this.done = true;
+    if (this.since >= this.controlAt) this.done = true;
     const shot = this.shotAt(this.since);
     return {
       shot,
@@ -197,10 +201,11 @@ export class Wake implements Beat {
       // A run come once the camera has left the eyes is eased to from where the camera is, never jumped to.
       const easing = since > LEAVE_S && since < CONTROL_S;
       const here = easing && restingKey({ ...LENS, ...railShot(this.back, since, LENS.fov, 'both') });
+      if (here) this.controlAt = Math.max(CONTROL_S, since + LATE_EASE_S);
       this.back = here
         ? [
             { at: since, ...here },
-            { at: CONTROL_S, ...restingKey(rest) },
+            { at: this.controlAt, ...restingKey(rest) },
           ]
         : this.backKeys(rest);
       this.shouldered = true;

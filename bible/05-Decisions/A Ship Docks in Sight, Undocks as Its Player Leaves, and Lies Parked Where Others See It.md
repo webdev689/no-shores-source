@@ -61,5 +61,6 @@ the page no longer knows the ship docked; ships lying by the island are drawn as
 players' dress ([[Game]], "Limits"); a guest's ship never parks, being its session's alone; a ship is still seen
 ashore up to 15 seconds after its player sails it again; parked ships live only in the sea room's memory, so a
 deploy, a restart or the host evicting it idle loses them ([[Server]], "Parked ships"). A docking within reach that
-finds no way in to its berth leaves the ship at sea, the voyage's line saying why: what it should do then is the
-owner's to say ([[Open Questions]], "Docking with no way in").
+finds no way in to its berth leaves the ship at sea, the voyage's line saying why, as the owner kept it
+([[What the Owner Kept, Walking the Open Questions]]). A parked ship's plate is to follow its player's username and
+guild tag too ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]).

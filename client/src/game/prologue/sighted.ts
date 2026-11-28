@@ -1,4 +1,4 @@
-// The owner's fourth and fifth beats begin: the crew cry out through the storm, ships inbound, each with a mark over
+// The story's fourth and fifth beats begin: the crew cry out through the storm, ships inbound, each with a mark over
 // their head; the camera pulls out to show the ships coming out of the dark, then comes back to the Brig, where the
 // fight's own camera will take it up.
 import type { AmbienceLevels } from '../../cinema/ambience.ts';

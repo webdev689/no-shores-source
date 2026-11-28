@@ -70,8 +70,16 @@ pub fn foe_health_times(foe_level: u8) -> f64 {
 /// the level gap leaves. So a player matched to a foe at any level fells it in the blows combat is tuned for.
 #[must_use]
 pub fn by_player(attack: u32, player_level: u8, foe_level: u8) -> f64 {
+    by_weapon(attack, false, player_level, foe_level)
+}
+
+/// As `by_player`, by a weapon Forged or not: a Forged weapon's reach may stand one level past the foe's, the level its
+/// Attack climbs past a Normal one's, so it strikes that level harder even where the foe's level caps a Normal one.
+#[must_use]
+pub fn by_weapon(attack: u32, forged: bool, player_level: u8, foe_level: u8) -> f64 {
     let past_xp = f64::from(player_level.saturating_sub(XP_LEVEL_MOST));
-    let reached = (f64::from(attack) / ATTACK_PER_LEVEL + past_xp).min(f64::from(foe_level));
+    let most = f64::from(foe_level) + if forged { 1.0 } else { 0.0 };
+    let reached = (f64::from(attack) / ATTACK_PER_LEVEL + past_xp).min(most);
     libm::pow(PER_LEVEL, reached) * gap(player_level, foe_level)
 }
 

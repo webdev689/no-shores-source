@@ -11,7 +11,7 @@ import type { FightVessel } from '../rules/fightRules.ts';
 import { shipAbilities } from '../ships/shipAbilities.ts';
 import type { Box } from '../ui/quads.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
-import { type OnFoot, type StripHint, footStrip, stripOf, withMapKey } from './hints.ts';
+import { type OnFoot, type StripHint, footStrip, stripOf, withMapAndChat } from './hints.ts';
 import { Hud } from './hud.ts';
 import { placeNode } from './hudPieces.ts';
 import { forwardOf, poseOf } from '../overworld/overworldCamera.ts';
@@ -239,7 +239,7 @@ const REST: OnFoot = {
 test('the key strip stands clear of the prompt in the middle where a narrow view would bring them together', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
-  hud.strip(withMapKey(footStrip(REST)));
+  hud.strip(withMapAndChat(footStrip(REST)));
   hud.usePrompt.show('Talk to the Quartermaster');
   for (const [width, height] of [
     [1280, 720],
@@ -259,7 +259,7 @@ test('the key strip stands clear of the prompt in the middle where a narrow view
 
 test('the key strip fits under the tracker and the feed of gains: its head goes first, then rows, never All controls', () => {
   const quest = { name: 'The Opening', task: 'Meet the houses', steps: [{ text: 'Hear the three houses' }] };
-  const strip = withMapKey(footStrip(REST));
+  const strip = withMapAndChat(footStrip(REST));
   for (const [width, height, tracked] of [
     [1280, 720, false],
     [1280, 720, true],
@@ -314,8 +314,8 @@ test('the key strip as shown holds eight entries at most, the key to every contr
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
   const rest = REST;
-  const away = withMapKey(footStrip(rest));
-  const drawn = withMapKey(footStrip({ ...rest, worn: 1, drawn: true }));
+  const away = withMapAndChat(footStrip(rest));
+  const drawn = withMapAndChat(footStrip({ ...rest, worn: 1, drawn: true }));
   const melee = footStrip({ ...rest, drawn: true });
   const boarded: StripHint[] = [['use', 'Back aboard your ship · 30 s left'], ...melee.hints];
   for (const strip of [away, drawn, { ...melee, hints: boarded }]) {

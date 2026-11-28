@@ -8,7 +8,7 @@ import { PIECES } from './seaFight.ts';
 /** The sea's own told words, by the code each line's first number holds (crates/room/src/harbour.rs): washed up at a
  *  port city, what a gathered piece held, who joined the fight, its ship given back where the room kept it, and how a
  *  travel by the held map went (crates/room/src/sea_travel.rs). */
-export const TOLD = { WASHED_UP: 20, HELD: 21, JOINED: 22, MOORED: 23, TRAVELLED: 24 } as const;
+export const TOLD = { WASHED_UP: 20, HELD: 21, JOINED: 22, MOORED: 23, TRAVELLED: 24, LET_OFF: 25 } as const;
 
 /** A piece of what floats for one player: theirs, its number, where it floats and what it looks like. */
 export interface SeenFlotsam {

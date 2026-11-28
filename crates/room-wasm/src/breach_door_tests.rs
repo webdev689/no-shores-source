@@ -1,6 +1,7 @@
 //! A Breach's door: its run opens from its ask at either tier and refuses what names none, a joined player stands at
 //! the Descent's top and is sent the Breach, the page reads its plan and the host how far its company has come, a
-//! patrol's node file with a gate stands it and hears the host's words, and the predictor stands the run's blocks.
+//! patrol's node file with a gate stands it and hears the host's words, what either keeps reads back into it opened
+//! afresh, and the predictor stands the run's blocks.
 
 use super::*;
 use crate::{open_node, room_join, room_tick, snapshot};
@@ -89,6 +90,28 @@ fn a_patrols_node_file_with_a_gate_stands_it_and_hears_the_hosts_words() {
     ungated.as_object_mut().expect("an object").remove("breach");
     assert!(open_node(ungated.to_string().as_bytes()));
     assert!(!breach_company(room_join(), word.as_bytes()), "no gate to hold them");
+}
+
+#[test]
+fn what_a_breach_keeps_reads_back_into_its_room_opened_afresh_and_no_other_room_keeps_any() {
+    let read = || serde_json::from_str::<Value>(&kept_json()).expect("JSON");
+    assert!(open_node(gated_patrol().to_string().as_bytes()));
+    let gate = json!({ "opened": { "run-a": 29_919_420_u64 }, "spent": { "run-b": 29_919_000_u64 } });
+    assert!(breach_restore(gate.to_string().as_bytes()));
+    assert_eq!(read(), gate);
+    assert!(breach_opened(b"run-a"), "open to its company again");
+    assert!(!breach_restore(br#"{"stage":2}"#), "a gate takes no run's checkpoint");
+    assert!(!breach_restore(b"no word"));
+    assert!(open_breach(&ask("gullwing-vale", 0)));
+    assert_eq!(read(), json!({ "stage": 0, "chests": [] }), "a run opened afresh at its start");
+    let checkpoint = json!({ "stage": 3, "chests": [1] });
+    assert!(breach_restore(checkpoint.to_string().as_bytes()));
+    assert_eq!(read(), checkpoint);
+    let mut ungated = gated_patrol();
+    ungated.as_object_mut().expect("an object").remove("breach");
+    assert!(open_node(ungated.to_string().as_bytes()));
+    assert_eq!(kept_json(), "null");
+    assert!(!breach_restore(gate.to_string().as_bytes()), "no gate to take it");
 }
 
 #[test]

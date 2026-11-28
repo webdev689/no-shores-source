@@ -181,9 +181,9 @@ export interface CardMore {
   readonly said?: { readonly words: string; readonly icon: IconName | null };
 }
 
-/** A bounty's card: its name and kind on a band of its poster's colour; its task and, once taken, its count; what
- *  it pays (XP, and the town's Aurem or the faction's reputation), resting once turned in; what a faction's asks;
- *  and along its foot its press, or a word on its state. */
+/** A bounty's card: its name and kind on a band of its poster's colour; its task, a line of its tale under it and,
+ *  once taken, its count; what it pays (XP, and the town's Aurem or the faction's reputation), resting once turned
+ *  in; what a faction's asks; and along its foot its press, or a word on its state. */
 export function bountyCardNode(row: BountyRow, pay: Pay, sizes: Sizes, more: CardMore = {}): Node {
   const size = sizes.label;
   const paid = row.state === 'paid';
@@ -217,6 +217,11 @@ export function bountyCardNode(row: BountyRow, pay: Pay, sizes: Sizes, more: Car
   else pays.push(earnLine(glyphNode('aurem', 24), `+${pay.aurem.toLocaleString('en')} Aurem`, size, colour));
   const body: Child[] = [
     { width: 'grow', text: { words: row.words, size, colour: INK.word } },
+    // A line of its tale under its task, leaning and faint, as Destiny's bounties carry theirs.
+    row.tale !== '' && {
+      width: 'grow',
+      text: { words: [{ words: row.tale, style: 'italic' }], size, colour: INK.faint },
+    },
     row.state !== 'open' && {
       width: 'grow',
       gap: 8,

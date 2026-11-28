@@ -319,10 +319,12 @@ impl Room {
     fn power_on(&self, player: PlayerId, hand: Slot, foe: FighterId) -> f64 {
         let (Some(found), Some(foe)) = (self.players.get(&player), self.foes.get(&foe)) else { return 0.0 };
         let character = &found.character;
-        // A shot's by the Attack it was loosed with, as its own blow was.
-        let loosed = self.shot_loosed.filter(|_| hand == Slot::Ranged).map(|loosed| loosed.attack);
-        let attack = loosed.or_else(|| character.attack(hand)).unwrap_or(0);
-        gear::power::by_player(attack, character.level(), foe.level) * PLAYER_HARM
+        // A shot's by the Attack and the item it was loosed with, as its own blow was.
+        let loosed = self.shot_loosed.filter(|_| hand == Slot::Ranged);
+        let attack = loosed.map(|loosed| loosed.attack).or_else(|| character.attack(hand)).unwrap_or(0);
+        let item = loosed.map_or_else(|| character.worn(hand), |loosed| loosed.item.and_then(|id| character.item(id)));
+        let forged = item.is_some_and(gear::Item::forged_weapon);
+        gear::power::by_weapon(attack, forged, character.level(), foe.level) * PLAYER_HARM
     }
 
     /// How far a foe's feet stand from a point across the ground.

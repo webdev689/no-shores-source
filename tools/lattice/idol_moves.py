@@ -1,4 +1,4 @@
-"""The Idol's own moves for the Sprite Forge. After the owner's own in project-final: it never walks, it blinks; at rest
+"""The Idol's own moves for the Sprite Forge. After their design in project-final: it never walks, it blinks; at rest
 its emitter is held low and to its right, dormant; to fire it raises it, thrust forward and level, locks its line and
 holds its facing through the charge, the tell, its lens's glow growing as the game draws it; then the beam, and it
 blinks away to a perch. Both wrists stay welded at the breech in every pose, the right hand pointing the barrel.

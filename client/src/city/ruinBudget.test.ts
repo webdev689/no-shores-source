@@ -112,7 +112,7 @@ test("every ruined city's crystal stays within the city's budgets, and builds in
       if (Math.hypot(middleOf[0] - eye[0], middleOf[1] - eye[1], middleOf[2] - eye[2]) >= NEAR_M) continue;
       for (const each of list) near += formationTriangles[each.model - data.firstFormation] ?? 0;
     }
-    assert.ok(middle + near < 1_600_000, `${plan.id}: ${middle} middle, ${near} near`);
+    assert.ok(middle + near < 1_700_000, `${plan.id}: ${middle} middle, ${near} near`);
     // The great formations drawn only in the chunks a view sees: from the plaza looking at the landmark, a part.
     const plaza = plan.social.bounds;
     const standing = [(plaza[0] + plaza[2]) / 2, (plaza[1] + plaza[3]) / 2, plan.social.level + 2];

@@ -409,6 +409,15 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[An Enclosed Light Hides Its Flame]]
 - [[The Passages' New Interface Says Less and Reads Better]]
 - [[The Islands and the Passages' Hollows Wear the Procedural Textures]]
+- [[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]]
+- [[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]
+- [[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]
+- [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]
+- [[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]
+- [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]
+- [[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]
+- [[Sign-In Is Rate-Limited, Two Checks Join the Repo, and Comments Stop Saying Who Chose]]
+- [[What the Owner Kept, Walking the Open Questions]]
 - [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]
 - [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]
 - [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]
@@ -426,6 +435,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 Claude's choices where the owner handed a system over ("take some autonomy"), each the owner's to change. They
 are not decisions: each links the owner's decision it builds on, and is typed `claude-calls`.
 
+- [[The Open Questions' Answers as Claude Builds Them]], by the owner's answers to the Open Questions
 - [[The World as Claude Shapes It]]
 - [[The Enemies as Claude Builds Them]]
 - [[Gear as Claude Shapes It]]

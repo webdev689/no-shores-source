@@ -30,6 +30,7 @@ import { BlurView } from './blur.ts';
 import { DepthCopy } from './depthCopy.ts';
 import { DrainView } from './drain.ts';
 import { groundTiles } from './groundTiles.ts';
+import { shadowsOn } from './graphicsChoices.ts';
 import { sceneScale, sceneSize } from './renderScale.ts';
 import { Upscale } from './upscale.ts';
 
@@ -359,7 +360,7 @@ export class GameScene {
     const skyEye = [shot.eye[0] + placed.at[0], shot.eye[1] + placed.at[1], shot.eye[2]] as const;
     const { look } = this.sky.frame(skyEye, placed.climate, lamps, ground);
     // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
-    this.shadow.update(shot.eye, shot.yaw, above, look.key);
+    this.shadow.update(shot.eye, shot.yaw, above, look.key, shadowsOn());
     perfZone('shadows');
     this.shadow.cast(encoder, (cast) => {
       for (const drawer of drawers) drawer.castInto?.(cast, fromEye, shot, time, this.shadow);

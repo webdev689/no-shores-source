@@ -36,8 +36,13 @@ fn block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, bottom: f64, top: f64) 
 
 /// The body run up to the ledge north of it and leaping at it looking along `yaw`, until it hangs.
 fn caught(ledge: &[Block], yaw: f64) -> Body {
+    caught_from(ledge, 0.0, yaw)
+}
+
+/// The body run north from `x` up to the ledge and leaping at it looking along `yaw`, until it hangs.
+fn caught_from(ledge: &[Block], x: f64, yaw: f64) -> Body {
     let forward = Controls { forward: 1.0, ..Controls::default() };
-    let mut body = (0..18).fold(standing(0.0, 0.0), |body, _| step_body(&body, &forward, ledge, &Flat, TICK_SECONDS));
+    let mut body = (0..18).fold(standing(x, 0.0), |body, _| step_body(&body, &forward, ledge, &Flat, TICK_SECONDS));
     let leap = Controls { forward: 1.0, jump: true, yaw, ..Controls::default() };
     body = step_body(&body, &leap, ledge, &Flat, TICK_SECONDS);
     for _ in 0..60 {
@@ -184,4 +189,79 @@ fn a_wall_with_blocks_stacked_out_over_its_face_is_held_alike_through_the_grid()
     let gridded = step_body(&hang, &Controls::default(), &grid, &Flat, TICK_SECONDS);
     assert_eq!(plain.to_floats(), gridded.to_floats());
     assert_eq!(plain.lip, 3.0, "the coping tops the stacked wall");
+}
+
+#[test]
+fn a_lip_caught_off_square_is_hung_as_caught_shimmied_along_its_face_and_gone_over() {
+    let ledge = [block(-5.0, -4.0, 5.0, -1.0, 0.0, 2.3)];
+    let hanging = caught(&ledge, 0.6);
+    assert_eq!(hanging.facing, 0.6, "hung as it was caught, not turned square");
+    for sideways in [-1.0, 1.0] {
+        let shimmied = clear_for(hanging, Controls { sideways, yaw: 0.6, ..Controls::default() }, &ledge, 1.0);
+        assert_eq!((shimmied.mode, shimmied.facing, shimmied.y), (Mode::Hang, 0.6, hanging.y), "kept to the lip");
+        let along = (shimmied.x - hanging.x) * sideways;
+        assert!((along - TUNING.shimmy).abs() < 0.05, "a second along the lip at the shimmy's pace: {along}");
+    }
+    let over = clear_for(hanging, Controls { forward: 1.0, yaw: 0.6, ..Controls::default() }, &ledge, 1.0);
+    let stood = clear_for(over, Controls::default(), &ledge, 0.5);
+    assert_eq!((stood.mode, stood.z), (Mode::Ground, 2.3), "gone over onto the top, and standing there");
+}
+
+#[test]
+fn a_wall_caught_off_square_at_a_seam_is_climbed_along_and_up_as_caught_and_gone_over() {
+    let lower = block(-5.0, -4.0, 5.0, -1.0, 0.0, 2.3);
+    let upper = block(-5.0, -4.0, 5.0, -1.0, 2.3, 6.0);
+    let blocks = [lower, upper];
+    let held = caught(&blocks, 0.6);
+    let climbing = step_body(&held, &Controls { yaw: 0.6, ..Controls::default() }, &blocks, &Flat, TICK_SECONDS);
+    assert_eq!((climbing.mode, climbing.facing), (Mode::Climb, 0.6), "climbs on from the seam as caught");
+    let along = clear_for(climbing, Controls { sideways: 1.0, yaw: 0.6, ..Controls::default() }, &blocks, 1.0);
+    assert_eq!((along.mode, along.y), (Mode::Climb, climbing.y), "kept to the wall");
+    assert!((along.x - climbing.x - TUNING.climb).abs() < 0.05, "along the wall: x {}", along.x);
+    // Forward held until it stands on the top, and no longer, so it does not walk on off the far side.
+    let held = Controls { forward: 1.0, yaw: 0.6, ..Controls::default() };
+    let mut stood = along;
+    for _ in 0..600 {
+        stood = step_body(&stood, &held, &blocks, &Flat, TICK_SECONDS);
+        if stood.mode == Mode::Ground {
+            break;
+        }
+    }
+    assert_eq!((stood.mode, stood.z), (Mode::Ground, 6.0), "up the wall and over its top");
+}
+
+/// The body hanging from the ledge pressed forward along `yaw` until it lets go of the hang, then let be: where it
+/// stands.
+fn gone_over(hanging: Body, yaw: f64, ledge: &[Block]) -> Body {
+    let held = Controls { forward: 1.0, yaw, ..Controls::default() };
+    let mut body = hanging;
+    for _ in 0..60 {
+        if body.mode != Mode::Hang {
+            break;
+        }
+        body = step_body(&body, &held, ledge, &Flat, TICK_SECONDS);
+    }
+    clear_for(body, Controls { yaw, ..Controls::default() }, ledge, 1.0)
+}
+
+#[test]
+fn a_lip_caught_off_square_past_its_end_is_gone_over_onto_its_top_never_off_its_end() {
+    let ledge = [block(-5.0, -4.0, 5.0, -1.0, 0.0, 2.3)];
+    let hanging = caught_from(&ledge, -5.2, 0.6);
+    assert!(hanging.x < -5.0, "hung with its middle past the ledge's end: x {}", hanging.x);
+    let stood = gone_over(hanging, 0.6, &ledge);
+    assert_eq!((stood.mode, stood.z), (Mode::Ground, 2.3), "gone over onto the top at x {}", stood.x);
+}
+
+#[test]
+fn a_hang_off_square_shimmied_to_a_lips_end_stays_on_its_face_and_goes_over_onto_its_top() {
+    let ledge = [block(-5.0, -4.0, 5.0, -1.0, 0.0, 2.3)];
+    let hanging = caught(&ledge, 0.6);
+    for sideways in [-1.0, 1.0] {
+        let end = clear_for(hanging, Controls { sideways, yaw: 0.6, ..Controls::default() }, &ledge, 7.0);
+        assert_eq!((end.mode, end.y), (Mode::Hang, hanging.y), "held at the end, on the face");
+        assert!(end.x.abs() <= 5.0 + TUNING.radius, "no farther past the end than its reach: x {}", end.x);
+        let stood = gone_over(end, 0.6, &ledge);
+        assert_eq!((stood.mode, stood.z), (Mode::Ground, 2.3), "gone over onto the top at x {}", stood.x);
+    }
 }

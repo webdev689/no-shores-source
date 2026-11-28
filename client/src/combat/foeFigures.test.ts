@@ -64,6 +64,19 @@ test('a foe stands in its type’s dress where the room saw it, flashing once st
   assert.deepEqual([marked?.name, marked?.faction, marked?.view.x], ['Collector', 'The Grey Tithe', 3]);
 });
 
+test('a Miniboss is drawn larger than the ranks under it, and a Boss larger still', () => {
+  const sizeOf = (rank: number) => {
+    const fight = fightWith(3, -4, 10);
+    const kept = fight.foes.get(7);
+    if (kept) fight.foes.set(7, { ...kept, rank });
+    const [drawn] = new FoeFigures(roster).cards(fight, forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes());
+    return drawn?.scale ?? 1;
+  };
+  const [minor, major, elite, miniboss, boss] = [1, 2, 3, 4, 5].map(sizeOf);
+  assert.deepEqual([minor, major, elite], [1, 1, 1], 'a man’s size');
+  assert.ok((miniboss ?? 1) > 1 && (boss ?? 1) > (miniboss ?? 1), `${miniboss}, ${boss}`);
+});
+
 test('a foe the room names (a Warden, Marrow, the growth) is marked by its own name', () => {
   const fight = fightWith(3, -4, 10);
   const kept = fight.foes.get(7);

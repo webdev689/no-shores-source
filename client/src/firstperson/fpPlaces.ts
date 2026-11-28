@@ -28,7 +28,7 @@ export const CAST_STEP = 0.04;
 const CAST_SCREEN_WIDTH = 300;
 const CAST_SMALL_INSET = 0.134;
 
-/** How far below its own place a sword rests, in design pixels, as the owner placed it. Its strikes keep their own
+/** How far below its own place a sword rests, in design pixels. Its strikes keep their own
  *  places: lowered as far, they leave the screen. */
 export const SWORD_DROP = 60;
 /** How far right of its own place a sword rests, its blade clear of the crosshair; in the left hand, as far left. */

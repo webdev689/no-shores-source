@@ -235,7 +235,7 @@ fn held_surface(points: &[(f64, f64)], height: impl Fn(f64, f64) -> f64) -> Vec<
 }
 
 impl Ground {
-    /// The ground of a landmass: its land (the 1 km grid with the owner's strokes), its lakes, the rivers the water
+    /// The ground of a landmass: its land (the 1 km grid with the brush strokes), its lakes, the rivers the water
     /// gathered into, and the places in its edits. `coast` holds each cell's distance from the painted coast.
     #[must_use]
     pub fn new(land: &Grid, coast: &Grid, lake_level: &[f64], rivers: &[River], edits: &Edits, seed: u32) -> Self {

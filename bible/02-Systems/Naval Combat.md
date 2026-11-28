@@ -258,11 +258,18 @@ so they never tack.
   64 in a hundred (5 to 34 a minute) (`captain_gunnery`, six fights of 4 minutes a rank). Their misjudged elevation never passes
   what their carriage depresses or raises to. One run out too long unfired, or that loses its mark, is run in.
 - **When they break off.** A captain runs below their rank's share of their hull (a Major's 30%); a wary one runs from a
-  ship that outguns them. A chase that gains nothing in 150 s is given up. They leave the fight when they have sunk, or,
-  not fighting, lie past 1.9 km from every ship they may fight (each player's, and each afloat captain's of another
-  faction), or, engaged by no captain, have lain out of all their guns' reach for 150 s, as long as they give a chase:
-  so a wary ship a player chased into a fight it will not take breaks off, and the fight ends for both. The editor's
-  fight ends when its one captain leaves.
+  ship that outguns them. A chase in which they neither fire nor, out of their fighting range (1.8 times the range
+  they keep), close by a tenth in 150 s is given up, and its quarry spared for 5 minutes, till it strikes them: so a
+  ship that sails away gets clear, by its way or by keeping its stern to them. A quarry that struck them in the last 5
+  minutes is never given up, the 150 s counted from when its blow is let go: one that strikes and runs is chased at
+  least 7 and a half minutes after its last blow. A Sloop sailing away from a Boss, which runs it down at 1.3 times
+  its way, is not struck and is clear of the fight in 10 to 15 minutes in any wind; a lone Sloop
+  that stands and fights a Boss is sunk in 10 fights of 12 standing off and in all 12 closing to 150 m (measured by
+  hand in the naval crate's open water, eight winds and twelve fights a row). They leave the fight when they have
+  sunk, or, not fighting, lie past 1.9 km from every ship they may fight (each player's, and each afloat captain's of
+  another faction), or, engaged by no captain, have lain out of all their guns' reach for 150 s, as long as they give
+  a chase: so a wary ship a player chased into a fight it will not take breaks off, and the fight ends for both. The
+  editor's fight ends when its one captain leaves.
 
 ## Ranks and factions
 
@@ -615,16 +622,18 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   their ball is in), and lays and pays nothing as it goes down ([[Quests]], "The lessons").
 
 - **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 30 to 70 s
-  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]); a roll that
-  falls due while they fight comes as the fight ends. Every travel, in the ship's own water or to another, waits the next roll at least half a
-  minute, never sooner than it would have come, so travelling on brings no more ships than sailing. While fewer than three hostile ships sail within their sight of
-  them, a roll brings a hostile ship by the band of the water the player is in, so their water sets how many come
-  (`hostile_chance`): 0.18 in the first island's band (1 to 4), rising evenly by 0.0225 a band to 0.36 in the last (26
-  to 30); a water with no band rolls as the first. (DFO's open sea brought one 0.24 of the time in every water.)
-  The water at the player's ship decides who comes ([[The Waters Come From the Islands]], [[World Map]], "Waters"):
-  none in Overlook's home waters, within 10 km of its coast (the roll is spent), a Tithe ship in every other, the
-  Lantern Sea past them and the Lattice's waters too
-  ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Its rank comes by the lowest level of its water's band:
+  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]); a
+  roll that falls due while they fight comes as the fight ends. A travel, in the ship's own water or to another, leaves
+  the roll's clock where it stood, so travelling on meets as many ships as sailing
+  ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]). While fewer than three hostile
+  ships sail within their sight of them, a roll brings a hostile ship by the band of the water the player is in, so
+  their water sets how many come (`hostile_chance`): 0.18 in the first island's band (1 to 4), rising evenly by 0.0225 a
+  band to 0.36 in the last (26 to 30); a water with no band rolls as the first. (DFO's open sea brought one 0.24 of the
+  time in every water.) The water at the player's ship decides who comes ([[The Waters Come From the Islands]],
+  [[World Map]], "Waters"): none in Overlook's home waters, within 10 km of its coast (the roll is spent), a Tithe ship
+  in every other, the Lantern Sea past them and the Lattice's waters too
+  ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Its rank comes by the lowest level
+  of its water's band:
 
   | Band starts at | Minor | Major | Elite | Miniboss |
   |---|---|---|---|---|
@@ -646,7 +655,8 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   No Boss comes by a roll: the Boss Frigate sails only at the Grey Tithe's sea strike, which is not built. Its level is
   drawn evenly from the band, as a garrison foe's is, and raised by the sea's tier as a foe's on land: two levels in an
   Elite sea, three in an Abyss one (`Difficulty::raise`), the ranks that come the same. A host sets a sea's tier as its
-  sets a node's room's (`Sea::set_difficulty`, the door's `room_difficulty`); the server opens one sea, at Normal.
+  sets a node's room's (`Sea::set_difficulty`, the door's `room_difficulty`); the server opens one sea, at Normal,
+  whatever tier a voyage sets out at.
   Its level raises its strength
   in a fight (above, "Ranks and factions"). Its faction and rank are drawn as it comes and kept on it
   (`sighting.rs`). The rolls wait real seconds, and

@@ -12,7 +12,7 @@ export interface ViewMode {
   readonly boom?: number;
 }
 
-/** DFO's third-person camera, as the owner chose its numbers: 2 m behind the head and 0.5 m up, 0.2 m a wheel notch,
+/** DFO's third-person camera: 2 m behind the head and 0.5 m up, 0.2 m a wheel notch,
  *  back to first person once nearer than 0.8 m, never farther than 10 m, and easing in about a tenth of a second. */
 export const CAMERA = { back: 2, up: 0.5, notch: 0.2, nearest: 0.8, farthest: 10, ease: 10 } as const;
 

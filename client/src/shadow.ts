@@ -321,10 +321,10 @@ export class ShadowMap {
 
   /** Sets the maps for a frame from an eye at `eye` (world metres) looking along `yaw`, `aboveM` over the ground, cast
    *  along the key light `key` (east, south, up): each square stands ahead of the camera, where most of what it sees
-   *  lies, the far one where it is held (`heldView`). */
-  update(eye: Vector, yaw: number, aboveM: number, key: Vector = AFTERNOON_SUN): void {
+   *  lies, the far one where it is held (`heldView`); none cast where `casting` is false (Settings turned them off). */
+  update(eye: Vector, yaw: number, aboveM: number, key: Vector = AFTERNOON_SUN, casting = true): void {
     const toward = heldToward(key);
-    this.active = aboveM < SHADOW_HIGHEST_M;
+    this.active = casting && aboveM < SHADOW_HIGHEST_M;
     const views = CASCADES.map((cascade, layer) => {
       const wanted = viewOf(cascade, eye, yaw, toward);
       return cascade === FAR ? heldView(this.views[layer] ?? null, wanted) : wanted;

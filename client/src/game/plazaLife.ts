@@ -1,7 +1,7 @@
 // A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, set each
 // frame where the world clock has them, standing on the plaza's floor at their moves; and the station a player stands
 // at, whose counter offers what it deals in, the bounty board's among them. A ruin's plaza keeps no station (the city
-// crate's `ruins`), and no one lives there.
+// crate's `ruins`), and no one lives there. A patrol zone's folk (`zoneFolk.ts`) are placed the same way.
 
 import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
@@ -12,6 +12,7 @@ import { HARBOURMASTER, KEEPERS, KEEPER_KINDS } from './keepers.ts';
 import type { StationInfo } from './nodes.ts';
 import { Townsfolk, plazaOf, shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
+import { ZoneFolk } from './zoneFolk.ts';
 
 /** How near a counter a player stands to be served, metres. */
 export const SERVED_M = 3;
@@ -82,9 +83,9 @@ export function floorOver(
   };
 }
 
-/** The figures of a social space's people, kept among those drawn while the player is there. */
+/** The figures of a social space's people, or a patrol zone's folk, kept among those drawn while the player is here. */
 export class PlazaLife {
-  private readonly folk: Townsfolk | null;
+  private readonly folk: Pick<Townsfolk, 'peopleAt'> | null;
   private readonly figures = new Map<number, Placed>();
   /** Where each person's floor was last found: it is found again only once they have walked a step from there. */
   private readonly floored = new Map<number, readonly [number, number]>();
@@ -96,7 +97,9 @@ export class PlazaLife {
     const plaza = plazaOf(node);
     // Seeded by the plaza, so its people are the same each visit and in every browser.
     // A ruin's plaza keeps no station, and no one lives there.
-    this.folk = node.stations?.length ? new Townsfolk(plaza, Math.round(plaza.bounds[0] * 31 + plaza.bounds[1])) : null;
+    const seed = Math.round(plaza.bounds[0] * 31 + plaza.bounds[1]);
+    const zone = node.folk?.length ? new ZoneFolk(node.folk, node.paths ?? []) : null;
+    this.folk = node.stations?.length ? new Townsfolk(plaza, seed) : zone;
     this.visitorSpots = plaza.visitorSpots ?? [];
     this.others = others;
     this.floor = floor;

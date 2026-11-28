@@ -17,7 +17,7 @@ import type { Foot } from './foot.ts';
 import { type Fallen, ReviveNotices } from './footRevive.ts';
 import { contextOf, interfaceKeys, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
-import { stripOf, withFollow, withMapKey } from './hints.ts';
+import { stripOf, withFollow, withMapAndChat } from './hints.ts';
 import { runPlaceWords } from './breachWords.ts';
 import { chestsCounted } from './finds.ts';
 import { ofRun, releaseRunModules } from '../city/modules.ts';
@@ -116,9 +116,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   const showStanding = (shown: Standing, fallen: Fallen | null = null) => {
     hud.reach(shown, fallen);
-    // Death's grey over the world is the one mark of it, once death is told (a fall plays out in colour first) or as
-    // the player falls in the fight: standing again, or leaving the place, takes it off. A fall in a fight keeps the
-    // pointer, to look round while an ally comes; Respawn's key works either way.
+    // Death's grey over the world is the one mark of it, the same for every death, from the moment the player dies:
+    // standing again, or leaving the place, takes it off. A fall in a fight keeps the pointer, to look round while an
+    // ally comes; Respawn's key works either way.
     const [dead, wasDead] = [greyed(shown) || fallen !== null, drain.dead];
     if (greyed(shown) && !wasDead) document.exitPointerLock();
     drain.toward(dead);
@@ -265,7 +265,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The fight's crosshair, plates and compass give way to the map while it is up.
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
-    const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
+    const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock, here.held.taken);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, her welcome, and her
     // gift asked of this room.
     const met = playing.after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', {
@@ -325,7 +325,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const placing = placingStrip();
     // Fallen in a Breach, the camera follows the company: its key, naming whom, is shown while anyone may be followed.
     const strip = here.followable !== null ? withFollow(shown.hints, here.followable) : shown.hints;
-    hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? strip : withMapKey(strip))));
+    hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? strip : withMapAndChat(strip))));
     // The leave held through takes the player to their ship: not under a window, the sheet, the held map or the chat,
     // nor while she speaks; fallen, it says why not.
     const refused = here.fallen ? refusedWords(FALLEN) : null;

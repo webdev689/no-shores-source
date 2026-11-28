@@ -1,8 +1,8 @@
-// The street lamps along a lit city's blocks' own streets ([[Overlook's City Below Is Lit at Night, in Detail]]). The
-// plan places the avenues', the ramps' and the harbour's lights (the city crate's `lights`); a block's streets are its
-// dirt tiles, which only the page holds, so their lamps are placed here, by one rule from the blocks as laid, the same
-// on every machine: on a street tile's edge where the street ends beside it, never in or before a building, nor in a
-// prop, and never nearer another lamp than STREET_APART_M.
+// The street lamps along a lit city's blocks' own streets. The plan places the avenues', the ramps' and the harbour's
+// lights (the city crate's `lights`); a block's streets are its dirt tiles, which only the page holds, so their lamps
+// are placed here, by one rule from the blocks as laid, the same on every machine: on a street tile's edge where the
+// street ends beside it, never in or before a building, nor in a prop, and never nearer another lamp than
+// STREET_APART_M.
 import type { BuildingTable, PropTable } from '../models/tables.ts';
 import { groundTiles, type RmbBlock, TILE_M, TILES } from './blocks.ts';
 import { cellCorner, type CityLight, type CityPlan, type PlanCell } from './plan.ts';

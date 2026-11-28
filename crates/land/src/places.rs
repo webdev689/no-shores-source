@@ -1,4 +1,4 @@
-//! What the owner draws on a landmass besides its shape: rivers carved by hand, roads, town areas and ports. Kept in
+//! What the editor draws on a landmass besides its shape: rivers carved by hand, roads, town areas and ports. Kept in
 //! the landmass's edits file with its strokes, each with an id that never changes, so saves and quests can name it.
 //! The ground under them is shaped where it is sampled (see `ground.rs`): a river's channel cut, a road's bed eased,
 //! a town's ground levelled.

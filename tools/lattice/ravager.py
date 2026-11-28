@@ -1,4 +1,4 @@
-"""The Ravager, the Husk gone ranged. After the owner's own in project-final: the Husk's body, red, reading apart by
+"""The Ravager, the Husk gone ranged. After its design in project-final: the Husk's body, red, reading apart by
 what it carries, not its colour: a ragged crystal hood closed over its skull in place of the Husk's great crystal,
 open at the front so the face reads in its shadow with two eyes glowing through, swept back to a peak; a mantle of
 two rows of dark shards hanging from the shoulders, open at the front and longer behind; and a crystal blade grown

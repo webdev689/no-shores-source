@@ -1,7 +1,7 @@
 // A horse's sounds, from Freesound as the world's are: its hooves at a walk, a gallop and a boost on the ground, stone
 // or water (`stepCue`'s grounds, wood ringing as stone), a stride's recording after another as it goes; the rider
 // mounting, the horse whinnying as they do, and getting down; a snort now and then while it stands; and the boost's
-// start. Each is silent until the owner picks its recording on the sound sheet, as every cue of the world's is, but a
+// start. Each is silent until its recording is picked on the sound sheet, as every cue of the world's is, but a
 // hoofbeat on stone or in water, which plays its gait's on the ground until it has its own.
 import { lengthOfCue, recorded } from '../soundSamples.ts';
 import { type StepGround, stepCue } from './worldCues.ts';
@@ -35,7 +35,7 @@ export const hoofGround = (step: ReturnType<typeof stepCue>): Exclude<typeof ste
   step === 'step.wood' ? 'step.stone' : step;
 
 /** The hooves' cue at `gait` on the ground a footstep there would sound on; on stone or in water with no recording
- *  of its own (`picked`), the gait's on the ground in its place, on the owner's "play a sound in their place". */
+ *  of its own (`picked`), the gait's on the ground in its place, never silence. */
 export function hoofCue(gait: Gait, step: ReturnType<typeof stepCue>, picked: (cue: string) => boolean): string {
   const own = `horse.${gait}.${hoofGround(step).slice('step.'.length)}`;
   return picked(own) ? own : `horse.${gait}.ground`;

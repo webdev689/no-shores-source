@@ -1,6 +1,6 @@
-// Which windows of a lit city glow at night ([[Overlook's City Below Is Lit at Night, in Detail]]): a share of each
-// district's lit as the daylight fades, each window going dark at its own hour, drawn from its own seed. The rule is
-// written once here and handed to the city's shaders as WGSL, so a test reads the numbers the GPU draws by.
+// Which windows of a lit city glow at night: a share of each district's lit as the daylight fades, each window going
+// dark at its own hour, drawn from its own seed. The rule is written once here and handed to the city's shaders as
+// WGSL, so a test reads the numbers the GPU draws by.
 import { lampsLit } from '../sky/lamps.ts';
 
 /** The districts a cell may belong to, in the order the cell table numbers them (1 on): what the city crate's

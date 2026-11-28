@@ -37,3 +37,16 @@ test("every figure is placed for a cutscene's eye while one holds the camera, no
   assert.deepEqual(figuresEye(null, [1, 2, 1.6], true), { x: 1, y: 2, nearest: CARD_NEAREST_M, held: false });
   assert.deepEqual(figuresEye(undefined, [1, 2, 1.6], false), { x: 1, y: 2, nearest: 0, held: false });
 });
+
+test("the player's own figure is lit while they are Hasted, and not once it runs out", () => {
+  const walker = inTheirOwnEyes();
+  const flashes = { flashOf: () => undefined } as unknown as Flashes;
+  const feel = { shift: () => [0, 0, 0] as const, smear: () => null, drawnAt: new Map() };
+  const hastedFor = (haste: number) => {
+    const statuses = { crit: 0, expose: 0, charge: 0, haste, linked: 0, veiled: 0, chargeImmune: 0 };
+    const fight = { player: 1, own: { statuses }, others: new Map() } as unknown as Fighting;
+    return ownCard(walker, fight, flashes, undefined, figuresEye([3, 0, 1.6], [0, 0, 1.6], true), feel)?.hasted;
+  };
+  assert.equal(hastedFor(300), true);
+  assert.equal(hastedFor(0), false);
+});

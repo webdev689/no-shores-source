@@ -49,7 +49,7 @@ export interface Piece {
 }
 
 /**
- * The land the owner paints: one byte a square-kilometre cell over the whole frame, 0 for sea and 1 to 9 for the
+ * The land painted in the editor: one byte a square-kilometre cell over the whole frame, 0 for sea and 1 to 9 for the
  * continent that holds it.
  */
 export class LandMask {

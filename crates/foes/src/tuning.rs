@@ -184,7 +184,7 @@ pub const STOREYS_APART_M: f64 = 4.0;
 pub const SQUARE: f64 = 1e-9;
 /// A foe runs to a spot farther than this.
 pub const RUN_FROM: f64 = 5.0;
-/// A foe walks and runs at most this share of a player's pace, at the owner's word, so a running player outruns it.
+/// A foe walks and runs at most this share of a player's pace, so a running player outruns it.
 pub const FOE_PACE: f64 = 0.75;
 /// Foes steer apart inside this, by up to this share of a walk: DFO's push of 3 m/s, as steering. Nearer than CLEAR,
 /// a little more than a body's width, a foe's move into an ally turns wholly aside round it.
