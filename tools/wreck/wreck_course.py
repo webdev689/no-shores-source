@@ -13,7 +13,8 @@ from mathutils.bvhtree import BVHTree
 
 PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
 FLOOR = {'hull', 'deck'}
-SOLID = {'hull', 'deck', 'spar', 'iron'}
+# A window's pane (`glass`) is as solid as iron.
+SOLID = {'hull', 'deck', 'spar', 'iron', 'glass'}
 # A face this near level is ground: its normal's height, of 1.
 UPWARD = 0.5
 # The grid's cell, metres, and the block's square, in cells (as client/src/game/prologue/wreckDecks.ts takes them).

@@ -1,9 +1,12 @@
 // The wreck at sea as drawn: one mesh built in Blender (tools/wreck), each face in its part's picture as the ships'
 // are, lit by the light baked into it there. The fires' light, with its shadows and what the timber throws back,
 // flickers as the fires burn; the storm sky's lights every face as much as nothing over it hides. The heaps of
-// wreckage that close the way are runs of the same mesh, each drawn while it stands.
+// wreckage that close the way are runs of the same mesh, each drawn while it stands. Its ships' window panes burn as
+// a lit ship's do.
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../../gpu.ts';
 import { contentBytes } from '../../contentCache.ts';
+import { GLASS_SHELL } from '../../ships/lanternMesh.ts';
+import { GLASS_BURN_WGSL } from '../../ships/shipShader.ts';
 import { FRONT_FACE, holdPictures, releasePictures } from '../../ships/shipView.ts';
 import { LIGHT_MOTION_WGSL } from '../../sky/flicker.ts';
 import { SKY_WGSL, skyUniformFor } from '../../sky/skyUniform.ts';
@@ -11,7 +14,8 @@ import { SHIP_PICTURE_TEXELS } from '../../textures/shipPictures.ts';
 import { SAMPLES } from '../../water/waterView.ts';
 
 /** Bytes a vertex: its position (3 × float32, metres), normal (4 × snorm8), the picture's UV (2 × float32, metres),
- *  its part and piece (4 × uint8), and the light's UV (2 × unorm16). */
+ *  its part, piece and shell (4 × uint8: a window's pane is iron with the shell GLASS_SHELL, as a ship's is), and the
+ *  light's UV (2 × unorm16). */
 export const WRECK_VERTEX_BYTES = 32;
 /** A part's picture repeats at this many texels a metre, as a ship's does. */
 const TEXELS_PER_METRE = 40;
@@ -106,6 +110,9 @@ struct Place {
 
 ${SKY_WGSL}
 ${LIGHT_MOTION_WGSL}
+${GLASS_BURN_WGSL}
+
+const GLASS_SHELL = ${GLASS_SHELL}u;
 
 // The share of the near light added whole over the timber's own colour.
 const NEAR_WASH = 0.06;
@@ -123,6 +130,7 @@ struct Drawn {
   @location(3) world: vec3f,
   @location(4) normal: vec3f,
   @location(5) from_eye: vec3f,
+  @location(6) @interpolate(flat) shell: u32,
 };
 
 @vertex
@@ -138,6 +146,7 @@ fn vertex_main(
   drawn.clip = place.from_eye * vec4f(from_eye, 1.0);
   drawn.uv = uv * PICTURE_PER_M;
   drawn.part = part.x;
+  drawn.shell = part.z;
   // Blender's UVs rise from the picture's foot; the picture's rows run from its head.
   drawn.light_uv = vec2f(light_uv.x, 1.0 - light_uv.y);
   drawn.world = position;
@@ -170,6 +179,12 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   let toward = place.near.xyz - drawn.from_eye;
   let fall = saturate(1.0 - length(toward) / max(place.near.w, 0.001));
   let near = place.near_light.rgb * fall * fall * (0.25 + 0.75 * max(dot(normal, normalize(toward)), 0.0));
+  // A window's pane burns as a lit ship's does: evenly, its glow at the middle of her lanterns', flickering as a
+  // lantern does, each stretch of the wreck on a beat of its own.
+  if (drawn.shell == GLASS_SHELL) {
+    let stretch = floor(drawn.world.x * 0.13 + drawn.world.y * 0.09);
+    return vec4f(glass_burn(0.5 * light_flicker(stretch, place.look.w, 0.35)), 1.0);
+  }
   return vec4f(colour * (fire + sky + near) + near * NEAR_WASH, 1.0);
 }
 `;

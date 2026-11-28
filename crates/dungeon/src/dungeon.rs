@@ -418,6 +418,16 @@ impl Dungeon {
         boxes
     }
 
+    /// Which of `boxes` are the doorways' jambs, and which stand loose on the floor: the props' and the fixtures' (a
+    /// rock, rubble, a brazier). The rest, the pillars and the landmarks', are built into the dungeon.
+    #[must_use]
+    pub fn jamb_and_loose_boxes(&self) -> (core::ops::Range<usize>, core::ops::Range<usize>) {
+        let (jambs, first) = (self.frames.len() * 2, self.frames.len() * 2 + self.pillars.len());
+        let props = self.props.iter().filter(|prop| prop.solid.is_some()).count();
+        let fixtures = self.fixtures.iter().filter(|fixture| fixture.solid.is_some()).count();
+        (0..jambs, first..first + props + fixtures)
+    }
+
     /// The storey a point at a height is in, or a solid with that top stands on: the highest floor at or under it.
     #[must_use]
     pub fn storey_under(&self, z: f64) -> usize {

@@ -9,9 +9,16 @@ use dungeon::{Cell, Dungeon, FLIGHT_CELLS, Span, Stair, storey_at, storey_floor}
 use movement::heights::WALL_RISE_M;
 use movement::{Heights, TUNING, Terrain};
 
+/// How far apart the rings `standing_clear` looks on are, how many there are (out to 0.6 m), and how many points each
+/// holds.
+const CLEAR_STEP_M: f64 = 0.05;
+const CLEAR_RINGS: u32 = 12;
+const CLEAR_BEARINGS: u32 = 16;
+
 /// A dungeon's ground: each storey's plane of open cells (a flight's and a Void's open), its cells, each column's
 /// spans, the flights, its solids (min x, min y, max x, max y, bottom, top, as the dungeon's `boxes` give them) with
-/// the storey each stands on, and for each column the solids within a body's half-width of it.
+/// the storey each stands on, which of them are the jambs and which stand loose on the floor
+/// (`Dungeon::jamb_and_loose_boxes`), and for each column the solids within a body's half-width of it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DungeonGround {
     planes: Vec<Heights>,
@@ -23,6 +30,8 @@ pub struct DungeonGround {
     spans: Vec<Vec<Span>>,
     stairs: Vec<Stair>,
     pub(crate) solids: Vec<[f64; 6]>,
+    pub(crate) jambs: core::ops::Range<usize>,
+    pub(crate) loose: core::ops::Range<usize>,
     solid_storeys: Vec<usize>,
     pub(crate) near: Vec<Vec<usize>>,
 }
@@ -76,7 +85,22 @@ impl DungeonGround {
         }
         let spans = (0..plane).map(|at| dungeon.spans(at)).collect();
         let (storeys, stairs) = (dungeon.storeys, dungeon.stairs.clone());
-        Some(Self { planes, cell, columns, rows, storeys, cells, spans, stairs, solids, solid_storeys, near })
+        let (jambs, loose) = dungeon.jamb_and_loose_boxes();
+        Some(Self {
+            planes,
+            cell,
+            columns,
+            rows,
+            storeys,
+            cells,
+            spans,
+            stairs,
+            solids,
+            jambs,
+            loose,
+            solid_storeys,
+            near,
+        })
     }
 
     /// The solids, each (min x, min y, max x, max y, bottom, top).
@@ -194,6 +218,34 @@ impl DungeonGround {
         nearest
     }
 
+    /// Where a body nearest `at` (its feet) stands a body's radius clear of every rock and solid of its storey: `at`
+    /// where it does, else the first of the points on rings round it, `CLEAR_STEP_M` apart out to
+    /// `CLEAR_RINGS` of them, that does and is reached in a straight line clear of them all but any `at` stands in,
+    /// else `at`. The navmesh keeps less than a body's radius off a free-standing solid (`dungeon_room::SOLID_TRIM_M`),
+    /// and its outlines may cut a solid's corner, so a point it gives is moved clear by this.
+    pub(crate) fn standing_clear(&self, at: [f64; 3]) -> [f64; 3] {
+        let storey = self.storey_of_feet(at[0], at[1], at[2]);
+        let clear = |x: f64, y: f64| self.clearance(x, y, storey) >= TUNING.radius - 1e-9;
+        if clear(at[0], at[1]) {
+            return at;
+        }
+        let inside = |number: usize| {
+            let [min_x, min_y, max_x, max_y, _, _] = self.solids[number];
+            apart_from(at[0], at[1], min_x, min_y, max_x, max_y) <= 0.0
+        };
+        for ring in 1..=CLEAR_RINGS {
+            let reach = f64::from(ring) * CLEAR_STEP_M;
+            for nth in 0..CLEAR_BEARINGS {
+                let turn = core::f64::consts::TAU * f64::from(nth) / f64::from(CLEAR_BEARINGS);
+                let (x, y) = (at[0] + reach * libm::cos(turn), at[1] + reach * libm::sin(turn));
+                if clear(x, y) && self.clear_between_but([at[0], at[1]], [x, y], 0.0, storey, inside) {
+                    return [x, y, at[2]];
+                }
+            }
+        }
+        at
+    }
+
     /// How deep a point with feet at `z` lies inside a solid of their storey, metres: 0 on open floor.
     pub(crate) fn depth_in_solid(&self, x: f64, y: f64, z: f64) -> f64 {
         (-self.clearance(x, y, self.storey_of_feet(x, y, z))).max(0.0)
@@ -204,6 +256,18 @@ impl DungeonGround {
     /// tested against the line as `clear_of` tests a rectangle.
     #[must_use]
     pub fn clear_between(&self, from: [f64; 2], to: [f64; 2], keep: f64, storey: usize) -> bool {
+        self.clear_between_but(from, to, keep, storey, |_| false)
+    }
+
+    /// `clear_between`, passing over the solids `skipped` says by their number.
+    fn clear_between_but(
+        &self,
+        from: [f64; 2],
+        to: [f64; 2],
+        keep: f64,
+        storey: usize,
+        skipped: impl Fn(usize) -> bool,
+    ) -> bool {
         let first_cell = storey * self.columns * self.rows;
         let ends = [from, to].map(|[x, y]| self.column_at(x, y).map(|at| first_cell + at));
         let first = |low: f64| ((low - keep) / self.cell).floor() as isize;
@@ -225,9 +289,14 @@ impl DungeonGround {
             })
         });
         rock_clear
-            && self.solids.iter().enumerate().filter(|(number, _)| self.on_storey(*number, storey)).all(|(_, solid)| {
-                crate::dungeon_lines::clear_of([solid[0], solid[1], solid[2], solid[3]], from, to, keep)
-            })
+            && self
+                .solids
+                .iter()
+                .enumerate()
+                .filter(|(number, _)| self.on_storey(*number, storey) && !skipped(*number))
+                .all(|(_, solid)| {
+                    crate::dungeon_lines::clear_of([solid[0], solid[1], solid[2], solid[3]], from, to, keep)
+                })
     }
 
     /// The highest floor or solid top at or below `reach` at a point; none where nothing is.
