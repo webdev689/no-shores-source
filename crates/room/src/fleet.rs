@@ -5,7 +5,7 @@
 //! It has no network and no clock: whatever hosts it hands it orders and ticks, and sends out what it sees.
 
 use crate::battle::QUIET;
-use crate::players::{CATCH_UP, PLAYERS_MOST, SLACK_TICKS, VIEW_LAG, WAITING_LIMIT};
+use crate::players::{CATCH_UP, PLAYERS_MOST, SLACK_TICKS, VIEW_LAG, WAITING_LIMIT, resumed};
 use crate::sea_weather::open_sea_at;
 use crate::{PlayerId, Refused};
 use land::sea::Swell;
@@ -77,12 +77,14 @@ impl Input {
     }
 }
 
-/// A player as the fleet room keeps them: when they joined, how many of their orders have been taken, the number of the
-/// last received and the last taken, the orders waiting, and whether their ship is at sea.
+/// A player as the fleet room keeps them: when they joined, how many ticks have been theirs since, whether they were
+/// stood a tick since their last orders taken (or have had none taken), the number of the last received and the last
+/// taken, the orders waiting, and whether their ship is at sea.
 #[derive(Debug)]
 struct Helmsman {
     joined: u64,
     stepped: u64,
+    stalled: bool,
     received: u32,
     acknowledged: u32,
     waiting: VecDeque<Input>,
@@ -188,6 +190,7 @@ impl Fleet {
         let helmsman = Helmsman {
             joined: self.clock,
             stepped: 0,
+            stalled: true,
             received: 0,
             acknowledged: 0,
             waiting: VecDeque::new(),
@@ -285,6 +288,9 @@ impl Fleet {
                 let Some(input) = found.waiting.pop_front() else { break };
                 taken += 1;
                 found.stepped += 1;
+                if std::mem::take(&mut found.stalled) {
+                    found.stepped = resumed(found.stepped, clock - found.joined, found.waiting.len());
+                }
                 found.acknowledged = found.acknowledged.wrapping_add(1);
                 if let (false, Some([x, y, heading])) = (found.at_sea, input.put_to_sea) {
                     let heading = heading.rem_euclid(TAU);
@@ -305,9 +311,10 @@ impl Fleet {
                     break;
                 }
             }
-            // They stand from the moment they join, as on land: time spent in harbour is not banked to catch up on.
+            // They stand from the moment they join, as on land: time spent in harbour is not banked to catch up on; and
+            // as there, the orders coming again count from then (`resumed`).
             if taken == 0 && found.stepped + VIEW_LAG < clock - found.joined {
-                found.stepped += 1;
+                (found.stepped, found.stalled) = (found.stepped + 1, true);
                 if found.at_sea {
                     orders.push((id, QUIET));
                 }

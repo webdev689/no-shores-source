@@ -104,10 +104,15 @@ function fightingPlayer(right = 'sword_iron', start: { readonly x: number; reado
   const player = new PlayerFight(fighting, rules, walker);
   const steps = fighting.steps(movement);
   let clock = 0;
-  const frame = (input: InputFrame, bearer: { readonly charged: boolean } | null = null, running = true) => {
-    clock += TICK;
+  const frame = (
+    input: InputFrame,
+    bearer: { readonly charged: boolean } | null = null,
+    running = true,
+    seconds = TICK,
+  ) => {
+    clock += seconds;
     const asked = { running, hands: true, markOf: () => null, zoomOf: () => 1, bearer };
-    return player.frame(input, steps, TICK, clock, asked);
+    return player.frame(input, steps, seconds, clock, asked);
   };
   return { fighting, walker, shown, frame, said, warmed, loads, sent };
 }
@@ -356,6 +361,23 @@ test('while a cutscene holds the room still, the page sends it no inputs, so non
   assert.equal(sent.count, before, 'a second held sends nothing');
   frame(controls());
   assert.equal(sent.count, before + 1, 'running again, one input a tick');
+});
+
+test("a slow frame's ticks are each sent, the room in the page run as far, and its word agrees with the prediction", () => {
+  const { fighting, frame, sent } = fightingPlayer();
+  frame(controls());
+  const [before, tick] = [sent.count, fighting.roomTick];
+  // A quarter second's frame, held to the page's cap of a tenth, the rest made up: fifteen ticks and a half.
+  fighting.late = 0.15 + TICK / 2;
+  frame(controls(['forward']), null, true, 0.1);
+  assert.equal(sent.count - before, 15, 'every tick of it sent');
+  assert.equal(fighting.roomTick - tick, 15, "and the room's clock as far");
+  fighting.late = 0;
+  const predicted = fighting.own;
+  frame(controls(['forward']));
+  const room = fighting.own;
+  assert.ok(predicted && room, 'the player stands in the room');
+  assert.ok(room.y < predicted.y, 'walking on, not pulled back');
 });
 
 test('the click that draws the weapon swings it too: one click with it put away, as the game begins', () => {

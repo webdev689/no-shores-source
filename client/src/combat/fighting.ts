@@ -175,6 +175,9 @@ export class Fighting {
   reviving = false;
   /** Whether a menu is open on the player's screen, sent with each input for others to see over their head. */
   menuOpen = false;
+  /** The seconds a slow frame ran past the page's cap, set each frame on foot: the player's own ticks and a room in
+   *  the page make them up (`lateTicks.ts`). */
+  late = 0;
   /** Where the player stands with a node's section, as the room last said: dead, by a fall or past its edge, the room
    *  takes their inputs without steering them, and their body falls under its own weight to lie where it lands. */
   standing: Standing = { kind: 'inside' };
