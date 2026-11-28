@@ -1,13 +1,15 @@
 // Each gear item's own picture, as the forge draws it worn: the player's figure is drawn with the item alone and
 // without it, and what the item adds is kept, cropped round it. A piece in hand is its own layer, drawn by itself in
 // the pose that holds it, so the hand over its grip takes nothing from it. A loadout is the forge's large picture of
-// what its hands hold where it publishes one: the right hand's level, the left's behind it. The same picture is a
-// slot's icon and an item page's large drawing. Drawn once each, on the player's own body, from the front; a horse is
-// its own layer in its coat, from the side, as the Appearance screen's barding tiles draw it.
+// what its hands hold where it publishes one: the right hand's level, the left's behind it. An armour piece, a cloak
+// or clothes is the forge's large picture of what it wears, standing, from the front, where it publishes one. The
+// same picture is a slot's icon and an item page's large drawing. Drawn once each, on the player's own body, from the
+// front; a horse is its own layer in its coat, from the side, as the Appearance screen's barding tiles draw it.
 
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
+import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
 import { HORSE_LAYER } from '../forge/looks.ts';
 import { coatOfHorse, isModule, KINDS, MELEE, WORN } from './gear.ts';
 import { gearOutfit } from './gearLooks.ts';
@@ -32,6 +34,33 @@ const HELD_IN: Readonly<Record<string, string>> = {
 };
 /** No figure: what a layer drawn alone adds to it is all of the layer. */
 const NOTHING: Picture = { width: 0, height: 0, pixels: new Uint8ClampedArray(0) };
+/** The armour slots, by the gear crate's numbers: the name the forge gives a set's look in each (armourart.py
+ *  `SLOTS`), and the piece it is dyed as. The cloak slot wears garments alone. */
+const ARMOUR_SLOTS: Readonly<Record<number, { readonly name: string; readonly piece: ArmourPiece }>> = {
+  2: { name: 'head', piece: 'helm' },
+  3: { name: 'torso', piece: 'cuirass' },
+  4: { name: 'arms', piece: 'gauntlets' },
+  5: { name: 'legs', piece: 'greaves' },
+};
+const CLOAK_SLOT = 6;
+
+/** The forge's large picture of what an item worn alone in `slot` wears (armourart.py), and the layer of the figure it
+ *  is dyed as: an armour set's slot and set (`torso_steel`, dyed as its cuirass), else its garments joined by `+` in
+ *  the order put on (`shirt_long_round+short_tunic`, dyed as the first's own layer or its drape, whichever the body
+ *  `draws`); null in any other slot or with nothing worn. */
+export function wornArt(
+  outfit: Outfit,
+  slot: number,
+  draws: (layer: string) => boolean,
+): { readonly look: string; readonly layer: string } | null {
+  const armour = ARMOUR_SLOTS[slot];
+  if (!armour && slot !== CLOAK_SLOT) return null;
+  const set = armour && outfit.armour[armour.piece];
+  if (armour && set) return { look: `${armour.name}_${set}`, layer: `${armour.piece}_${set}` };
+  const [first] = outfit.garments;
+  const layer = first === undefined ? undefined : [first, `${first}_drape`].find(draws);
+  return layer ? { look: outfit.garments.join('+'), layer } : null;
+}
 
 /** Gear holding nothing but `items`. */
 const holding = (items: readonly GearItem[]): GearState => ({
@@ -73,6 +102,7 @@ export class ItemPictures {
       view: number;
       onePiece: boolean;
       alone: string | null;
+      art: { readonly look: string; readonly layer: string } | null;
     }
   >();
 
@@ -87,7 +117,7 @@ export class ItemPictures {
     if (isModule(item.kind)) return null;
     const look = this.lookOf(item, body);
     if (!look) return null;
-    const { key, worn, bare, anim, view, onePiece, alone } = look;
+    const { key, worn, bare, anim, view, onePiece, alone, art } = look;
     if (this.kept.has(key)) {
       // Asked for again, it is kept the longest of all.
       const picture = this.kept.get(key) ?? null;
@@ -104,7 +134,11 @@ export class ItemPictures {
               ([withIt, without]) => (withIt && without ? addedBy(withIt, without, onePiece) : null),
             );
       // A large picture that fails to load gives way to the cut-out, as one not published does.
-      const large = onePiece ? this.largeOf(worn).catch(() => null) : Promise.resolve(null);
+      const large = onePiece
+        ? this.largeOf(worn).catch(() => null)
+        : art
+          ? this.forge.armourArt(worn, art.look, art.layer).catch(() => null)
+          : Promise.resolve(null);
       large
         .then((picture) => picture ?? cutOut())
         .then((picture) => {
@@ -147,6 +181,7 @@ export class ItemPictures {
     view: number;
     onePiece: boolean;
     alone: string | null;
+    art: { readonly look: string; readonly layer: string } | null;
   } | null {
     const known = this.looks.get(item);
     if (known && known.body === body) return known;
@@ -163,6 +198,7 @@ export class ItemPictures {
         view: HORSE_VIEW,
         onePiece: false,
         alone: HORSE_LAYER,
+        art: null,
       };
       this.looks.set(item, look);
       return look;
@@ -186,7 +222,9 @@ export class ItemPictures {
     const alone = held && this.forge.draws(body.body, anim, held) ? held : null;
     // A loadout is one piece: anything else the figure shows with it (a sheath at the hip) is not it.
     const key = JSON.stringify([worn, bare, anim, alone]);
-    const look = { body, key, worn, bare, anim, view: VIEW, onePiece: slot <= 1, alone };
+    // An armour piece, a cloak or clothes asks for the forge's large picture of what it wears, standing.
+    const art = wornArt(worn.outfit, slot, (layer) => this.forge.draws(body.body, 'idle', layer));
+    const look = { body, key, worn, bare, anim, view: VIEW, onePiece: slot <= 1, alone, art };
     this.looks.set(item, look);
     return look;
   }

@@ -306,6 +306,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Heal Is a Subtle Swirl]]
 - [[Heavy Renders Run on the Owner's PC, Not on Actions]]
 - [[Heavy Forge Renders May Run on the Public Forge Mirror]]
+- [[Armour, Cloaks and Clothes Are Forged Large for the Gear Screens]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

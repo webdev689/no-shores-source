@@ -1,0 +1,25 @@
+{
+  "comment": "The garment looks armourart.py draws large: each as an item wears it alone in its slot, its garments in the order put on (client gearLooks.ts CLOTHES, dressing.ts PLAIN_CLOTHES): a Normal torso's shirt, a Magic one's shirt and what goes over it, a Normal or Magic legs piece's bottoms and what is on its feet, plain clothes' breeches and boots, and the two cloaks. An item's number picks each garment, so only these pairs are worn. armourArt.test.ts holds the list to what the gear wears.",
+  "garments": [
+    ["shirt_long_v"],
+    ["shirt_long_round"],
+    ["shirt_long_deep"],
+    ["peasant_blouse"],
+    ["shirt_short_round"],
+    ["shirt_long_round", "short_tunic"],
+    ["shirt_long_v", "formal_tunic"],
+    ["peasant_blouse", "vest"],
+    ["breeches", "shoes"],
+    ["casual_pants", "shoes"],
+    ["casual_pants", "sandals"],
+    ["long_skirt", "shoes"],
+    ["tights", "shoes"],
+    ["tights", "sandals"],
+    ["breeches", "tall_boots"],
+    ["casual_pants", "tall_boots"],
+    ["tights", "tall_boots"],
+    ["breeches", "boots"],
+    ["casual_cloak"],
+    ["formal_cloak"]
+  ]
+}

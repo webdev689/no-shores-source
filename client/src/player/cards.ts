@@ -115,6 +115,9 @@ const WARM_LOOKS = 32;
 /** Where the forge's large picture of a layer in hand lies (weaponart.py): a left hand's twin (`dagger_iron_l`) is its
  *  right hand's. */
 export const weaponArtPath = (layer: string): string => `@art/weapons/${layer.replace(/_l$/, '')}.png`;
+/** Where the forge's large picture of a worn look lies (armourart.py), drawn on its body: an armour set's slot
+ *  (`torso_steel`) or garments joined by `+` (`formal_cloak`, `shirt_long_round+short_tunic`). */
+export const armourArtPath = (body: string, look: string): string => `@art/armour/${body}/${look}.png`;
 
 /** Each figure's frames, composed from the forge's strips once and kept as textures; while a frame is being composed,
  *  the figure keeps showing the last one it had. */
@@ -225,10 +228,25 @@ export class Cards {
   }
 
   /** A layer in hand as the forge draws it large and alone (`weaponArtPath`), level with its business end to the
-   *  right: dyed as `dress` dyes the layer in a figure's frame, then, at `share` of its size, shrunk by an area average
-   *  and its cover cut at a half, and snapped to the palette as a frame is. Null where the forge publishes none. */
+   *  right, at `share` of its size (`largeArt`). Null where the forge publishes none. */
   async weaponArt(dress: Dress, layer: string, share = 1): Promise<Picture | null> {
-    const art = await this.store.strip(weaponArtPath(layer));
+    const art = await this.largeArt(dress, weaponArtPath(layer), layer, share);
+    return art && { ...art, level: true };
+  }
+
+  /** A worn look as the forge draws it large and alone, standing, seen from the front (`armourArtPath`), on `dress`'s
+   *  body: dyed as `dress` dyes `layer`, one of its layers, in a figure's frame (`largeArt`). Null where the forge
+   *  publishes none. */
+  async armourArt(dress: Dress, look: string, layer: string): Promise<Picture | null> {
+    const art = await this.largeArt(dress, armourArtPath(dress.body, look), layer);
+    return art && { ...art, upright: true };
+  }
+
+  /** The forge's large picture at `path` dyed as `dress` dyes `layer` in a figure's frame, then, at `share` of its
+   *  size, shrunk by an area average and its cover cut at a half, and snapped to the palette as a frame is. Null where
+   *  the forge publishes none. */
+  private async largeArt(dress: Dress, path: string, layer: string, share = 1): Promise<Picture | null> {
+    const art = await this.store.strip(path);
     if (!art) return null;
     const { ramps, whole, trimmed } = layerRamps([layer], dress.outfit, this.looks, this.dyes);
     const ramp = this.looks.dye?.includes(layer) ? (ramps[layer] ?? null) : null;
@@ -260,7 +278,7 @@ export class Cards {
     }
     this.snap?.snap(pixels);
     const { snap } = this;
-    return { width, height, pixels, level: true, ...(snap ? { snap: (shown) => snap.snap(shown) } : {}) };
+    return { width, height, pixels, ...(snap ? { snap: (shown) => snap.snap(shown) } : {}) };
   }
 
   /** A picture as a card the scene draws among the figures, standing on the middle of its foot unless it says where:
