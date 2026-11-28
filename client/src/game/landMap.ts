@@ -166,7 +166,7 @@ export function landSheetOf(
   const landings = (node.landings ?? []).map((zone) => ({ name: zone.name, at: local(zone.at) }));
   const zoneMarks = landings
     .slice(1)
-    .map((zone): LandMark => ({ glyph: 'landing', at: zone.at, word: 'Landing zone' }));
+    .map((zone): LandMark => ({ glyph: 'landing', at: zone.at, word: SITE_WORDS.landing }));
   return {
     ...sheet,
     ...laid,
@@ -197,6 +197,8 @@ export function landSheetOf(
           const resource = resources.resources.find((each) => each.id === site.holds);
           return resource && site.node ? [{ glyph: 'resource', at: local(site.node), word: resource.name }] : [];
         }
+        // A way's patrol walks its way: no mark holds it to one point (`layout::sites::WAY_PATROL`).
+        if (site.kind === 'foes' && site.holds === 'patrol') return [];
         const glyph = site.kind;
         return isGlyph(glyph) && glyph in SITE_WORDS
           ? [{ glyph, at: local(site.at), word: SITE_WORDS[glyph as keyof typeof SITE_WORDS] }]

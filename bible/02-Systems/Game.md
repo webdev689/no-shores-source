@@ -373,7 +373,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 
 ## A dungeon
 
-A patrol's three dungeons and each Elite Dungeon ([[Dungeons]], [[Activities]]) are entered on foot from their
+A patrol's six dungeons and each Elite Dungeon ([[Dungeons]], [[Activities]]) are entered on foot from their
 node's entrances, and a sea island's from its door at sea, each through the Game's veil (`footTrips.ts`,
 `dungeonTrips`).
 

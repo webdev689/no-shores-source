@@ -43,15 +43,7 @@ fn zones() -> Vec<(bake::NodeFile, Vec<layout::runs::Run>, Vec<[f64; 2]>)> {
                 )
             });
             // Its ways' patrols stand at points of its ways (`layout::sites::way_patrols`).
-            let on_a_way = |at: [f64; 2]| {
-                laid.paths
-                    .iter()
-                    .any(|path| path.points.windows(2).any(|pair| layout::paths::off_line(at, pair[0], pair[1]) < 0.5))
-            };
-            let patrols = laid.sites.iter().filter(|site| {
-                let beat = laid.runs.iter().flat_map(|run| &run.beats).any(|beat| beat.at == site.at);
-                site.kind == layout::sites::SiteKind::Foes && site.holds.is_none() && on_a_way(site.at) && !beat
-            });
+            let patrols = laid.sites.iter().filter(|site| site.holds.as_deref() == Some(layout::sites::WAY_PATROL));
             (node, laid.runs.clone(), held.map(|area| area.at).chain(patrols.map(|site| site.at)).collect())
         })
         .collect()

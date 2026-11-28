@@ -240,9 +240,12 @@ const WAY_PATROL_EVERY_M: f64 = 200.0;
 const WAY_PATROL_CLEAR_M: [f64; 3] = [60.0, 150.0, 80.0];
 const WAY_PATROLS_MOST: usize = 8;
 
+/// What a way's patrol's foes' site holds, so the map leaves it unmarked, as it walks.
+pub const WAY_PATROL: &str = "patrol";
+
 /// The foes' sites of a patrol area's patrols on its ways, where its brief asks for them: a point of a way every
 /// `WAY_PATROL_EVERY_M` along it that keeps off every place, every foes' site in `sites` and every landing zone in
-/// `landings`; the room stands each site's group to walk its beat along the way there.
+/// `landings`, holding `WAY_PATROL`; the room stands each site's group to walk its beat along the way there.
 #[must_use]
 pub fn way_patrols(areas: &[Area], ways: &[Path], sites: &[Site], landings: &[[f64; 2]]) -> Vec<Site> {
     let [place_clear, site_clear, landing_clear] = WAY_PATROL_CLEAR_M;
@@ -262,7 +265,8 @@ pub fn way_patrols(areas: &[Area], ways: &[Path], sites: &[Site], landings: &[[f
             }
             travelled = 0.0;
             found.push(at);
-            patrols.push(Site { kind: SiteKind::Foes, at, radius: 0.0, holds: None, node: None, facing: None });
+            let holds = Some(WAY_PATROL.to_owned());
+            patrols.push(Site { kind: SiteKind::Foes, at, radius: 0.0, holds, node: None, facing: None });
         }
     }
     patrols

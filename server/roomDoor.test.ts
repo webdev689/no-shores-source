@@ -511,7 +511,7 @@ test('a patrol’s dungeon opens from its patrol’s file; a patrol’s room joi
   const room = startRoomDoor(compiled);
   const patrol = JSON.parse(nodeFile().text) as Record<string, unknown>;
   assert.equal(room.openDungeon(JSON.stringify({ ...patrol, kind: 'mission' }), 0), false, 'a mission has none');
-  assert.equal(room.openDungeon(nodeFile().text, 3), false, 'a patrol has three');
+  assert.equal(room.openDungeon(nodeFile().text, 6), false, 'a patrol has six');
   assert.equal(room.openDungeon(nodeFile().text, 2), true);
   assert.equal(room.difficulty(1), true, 'at the room name’s seas');
   assert.equal(room.joinAt(0), 0, 'a dungeon has no entrances');
@@ -524,7 +524,7 @@ test('a patrol’s dungeon opens from its patrol’s file; a patrol’s room joi
   ];
   const wide = { ...patrol, continent: 'continent-1', ring, bounds: [-900, -900, 900, 900] };
   assert.equal(room.openNode(JSON.stringify(wide)), true);
-  assert.equal(room.joinAt(3), 0, 'no such entrance');
+  assert.equal(room.joinAt(6), 0, 'no such entrance');
   const player = room.joinAt(0);
   assert.notEqual(player, 0);
   room.tick();

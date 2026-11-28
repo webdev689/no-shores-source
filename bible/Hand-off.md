@@ -164,8 +164,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
     edge); `reached_from` is filled again for each area placed, where once a node would do.
   - Unchecked: whether a Sunday Elite clear of the Downs' first dungeon keeps the day's Vestige as its item (a test
     saw none laid or kept there, its record marked; every other day's clear paid one).
-  - With three dungeons the island's dungeon of the day draws the same one on runs of days, as on every island; the
-    garrison pace figures in `gear::band` were measured on the three zones before the cut.
+  - The garrison pace figures in `gear::band` were measured on the three zones before the cut.
 - **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
   and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
   the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.

@@ -94,7 +94,7 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 | Breaches | The Drowned Vale, launched to the Sunken Gate ([[Breaches]]) | Normal, foes at 26; Hard, at 30 | Campaign's end, level 24; Hard at 28, once Normal is won |
 
 - **Draws** are `gear::activities`, seeded by the clock's day or week number alone, so every room and page sees the
-  same. Each island's dungeon of the day is one of its patrol zone's three dungeons (on Saltmere the Saltgrass
+  same. Each island's dungeon of the day is one of its patrol zone's six dungeons (on Saltmere the Saltgrass
   Downs'), evenly; the day's modifier is one of the eight,
   and Burn's Art one of the three. The week's two are two of the 18 Elite Dungeons, never the same one; the Elite's
   has one modifier, the Abyss's three of different kinds.

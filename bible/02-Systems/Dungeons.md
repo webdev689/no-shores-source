@@ -424,7 +424,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   searchable, 16 at most, none in a seal's room nor one that rock and solids leave no body room to stand beside. All
   are drawn again as the cache shuts, when the end foe stands again, never at an Abyss wipe. Each player opens each once, as a patrol's
   ([[Server]], "Chests and containers").
-- **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
+- **The entrances**: a patrol's room lays its six dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
   draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for
   the Caverns and the Mines. An Elite Dungeon's node keeps its open-air approach and lays one entrance, to the

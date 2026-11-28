@@ -336,6 +336,10 @@ WebAssembly, so names, factions and weapons are read in one place.
   garrison sent away calls none. No two places a garrison gives ground to stand within 1 m of each other or of a wave's
   where the floor round them has room: each is tried round three rings of twelve, 2.5 m apart, and in a pocket too small
   for them all the last go on their ring regardless.
+- **The ways' patrols**: in a patrol zone whose brief asks for them (the Saltgrass Downs), a foes' site on a way
+  ([[Layouts]], "How a layout is planned") stands its band as a territory's does as a player comes near, and walks
+  its beat along the way, over the points of the room's lattice within 4 m of it; the held map marks none, as it
+  walks ([[Held Map]], "On land").
 - **Standing again**: a group whose last foe has fallen stands again by airship under the open sky ("Arrivals"),
   whole and idle at its places at its post and its beat begun again from there, 120 s later (a group with a Miniboss or a Boss, 10 minutes later, so neither is
   farmed: [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]), once

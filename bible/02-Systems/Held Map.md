@@ -253,8 +253,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler, and the Postmaster, who
     keeps no stall, a sealed letter on a slate coin, the blue of his vest toward the ink; each faction's coin in its
     cloth with its banner's emblem (the Stormcallers' bolt, the Lamplighters' flame over a lamp, the Veiled's crescent
-    and star). Each site: a landing's chevrons, a public event's red-brown diamond, a gate's open arch and a sealed
-    door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
+    and star). Each site: a landing's chevrons (at each landing zone too), a public event's red-brown diamond, a gate's open arch and a sealed
+    door's barred one, an objective's target, foes' crossed blades (none for a way's patrol, which walks), a beacon's tower, and a resource node's small ring with
     a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
     where they look.
   - **What moves on it** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]): every other player in the room the player stands in, a patrol zone's or a social

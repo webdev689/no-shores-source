@@ -266,7 +266,10 @@ from the sea, fresh water and the claim's edge), then:
    the land under it once the sites are marked, each resource 12 m from every other and from each beacon, and where
    foes hold ground: a foes' site at the middle of every area but a landing, a gate, an entrance, a hamlet, a wilds, a
    Breach's hollow and a guild's plot, its patrol's territories
-   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]; [[Enemies]], "Territories and runs"). Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
+   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]; [[Enemies]], "Territories and runs");
+   and where the brief asks for `way_patrols` (the Saltgrass Downs), a way's patrol's foes' site, holding `patrol`, at
+   a point of a way every 200 m along it, 60 m or more off every place's reach, 150 m off every other foes' site and
+   80 m off the landing and its landing zones, eight at most (`sites::way_patrols`). Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
    nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside
    the section's ring, on water, within a metre of a solid taller than a step or within 1.5 m of a planting, once all is
    laid), and a patrol stands its material nodes there, every one at once ([[Server]]). Each beacon and
