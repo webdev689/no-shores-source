@@ -15,7 +15,6 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - #251 Drops are larger and brighter, and weapons and armour lie on the ground as real pickups
 - #253 Record No Shores (Mobile): rebuilt in Rust, beside the browser game
 - #254 Sea polish: the aim swings between sides, lamps hold still, ships ride high waves, the map travels to every place
-- #256 Weapon glow fixes, a great-room Holdfast with lighter waves, and pathing round rocks
 - #257 Lines in the bible and code comments held to 120 characters, every longer one rewrapped (review 8)
 - #258 Armour, cloaks and clothes get large icons in the gear screens, as the weapons do
 - #259 The wreck exports again, its stern windows glowing as a lit ship's
