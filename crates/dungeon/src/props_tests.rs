@@ -283,3 +283,18 @@ fn a_rooms_foes_stand_on_its_free_cells_nearest_its_middle_quiet_first_each_coun
         }
     }
 }
+
+#[test]
+fn the_loose_boxes_are_the_props_and_the_fixtures_solids_and_nothing_built_in() {
+    for dungeon in every_dungeon(16) {
+        let (boxes, (jambs, loose)) = (dungeon.boxes(), dungeon.jamb_and_loose_boxes());
+        assert_eq!(jambs, 0..dungeon.frames.len() * 2, "two jambs a doorway, first");
+        let expected: Vec<[f64; 5]> = (dungeon.props.iter().filter_map(|prop| prop.solid))
+            .chain(dungeon.fixtures.iter().filter_map(|fixture| fixture.solid))
+            .collect();
+        assert_eq!(loose.len(), expected.len());
+        for (solid, wanted) in boxes[loose].iter().zip(&expected) {
+            assert_eq!([solid[0], solid[1], solid[2], solid[3], solid[5]], *wanted);
+        }
+    }
+}

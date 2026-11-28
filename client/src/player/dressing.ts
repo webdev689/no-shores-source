@@ -1,4 +1,5 @@
 import looks from '../../../content/gear/looks.json' with { type: 'json' };
+import type { GlowLook } from '../elementGlow.ts';
 import { CLOTHING_DYES, type DyeTable, type Rgb, metalOfLayer } from '../forge/dyes.ts';
 import { type CosmeticKind, bardingLayer, cosmeticOf, cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 import { type Figure, type ForgeBody, type ForgeLooks, HORSE_LAYER, type IndexLook } from '../forge/looks.ts';
@@ -66,6 +67,17 @@ export interface Dress {
   readonly race: Race;
   readonly tone: number;
   readonly outfit: Outfit;
+  /** The element each hand's weapon glows in, the right then the left, as the wearer's page sends it with their dress:
+   *  another player's figure glows in it while their weapon is drawn (`weaponGlow`). None glows in nothing. */
+  readonly glow?: readonly [GlowLook, GlowLook];
+}
+
+/** An element a dress's weapon may glow in: none, Blaze, Volt or Cosmic. */
+const isGlowLook = (value: unknown): value is GlowLook => value === 0 || value === 1 || value === 2 || value === 3;
+
+/** The element a figure in `dress` glows in: its right hand's while its weapon is drawn, else none. */
+export function weaponGlow(dress: Dress): GlowLook {
+  return dress.outfit.drawn ? (dress.glow?.[0] ?? 0) : 0;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -81,7 +93,7 @@ const CLOAK = /(^|_)cloak(_|$)/;
 const COVERED = /^(shield|bow|staff)_/;
 
 /** The dress another player's browser sent, as text, if it is one: each field of a dress's shape, its names short, so
- *  a broken or hostile one never reaches the forge. */
+ *  a broken or hostile one never reaches the forge; a glow it cannot read is dropped, the dress kept. */
 export function dressFrom(text: string): Dress | null {
   let value: unknown;
   try {
@@ -104,7 +116,13 @@ export function dressFrom(text: string): Dress | null {
   if (!(hair === null || (isRecord(hair) && isName(hair['style']) && isName(hair['colour'])))) return null;
   if (!isWorn(outfit['dye'], 'dye') || !isWorn(outfit['coat'], 'coat') || !isWorn(outfit['barding'], 'barding'))
     return null;
-  return value as unknown as Dress;
+  // A glow it cannot read (a later page's element, a broken one) is left out, the rest of the dress kept.
+  const glow = value['glow'];
+  if (glow === undefined || (Array.isArray(glow) && glow.length === 2 && glow.every(isGlowLook)))
+    return value as unknown as Dress;
+  const plain: Record<string, unknown> = { ...value };
+  delete plain['glow'];
+  return plain as unknown as Dress;
 }
 
 /** The forge figure a dress stacks in a move: the race's own body or the human tone, and its outfit's layers and hair,

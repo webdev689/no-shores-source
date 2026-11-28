@@ -136,10 +136,19 @@ fn placed(position: vec3f, normal: vec3f, part: vec4u) -> Placed {
 }
 `;
 
+/** The light within burning through glass, as a lit ship's lanterns and stern windows show it: `glass_burn(share)`,
+ *  amber at `share` of its brightest, paler by day. It reads the sky's uniform (`sky_state`). */
+export const GLASS_BURN_WGSL = /* wgsl */ `
+fn glass_burn(share: f32) -> vec3f {
+  return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * share;
+}
+`;
+
 /** The ship shader proper, lit as the land is and in the sun's shadows (`SHADOW_WGSL`). */
 export const SHIP_DRAW_SHADER = /* wgsl */ `
 ${PLACE_SHADER}
 ${SHADOW_WGSL}
+${GLASS_BURN_WGSL}
 const BOUNCE = 0.15;
 // A pane of glass (shell byte GLASS_SHELL: a stern window's, a hung lantern's), pale horn while its ship's lanterns
 // are out.
@@ -167,7 +176,7 @@ fn vertex_main(
 
 // The light within burning through glass, 'share' of its brightest: amber, flickering with its ship's lanterns.
 fn glass_fire(share: f32) -> vec3f {
-  return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * place.shade.y * share;
+  return glass_burn(place.shade.y * share);
 }
 
 // A lantern's glass, lit from inside, at 'at' in its frame: an enclosed light, it shows no flame, only an amber glow

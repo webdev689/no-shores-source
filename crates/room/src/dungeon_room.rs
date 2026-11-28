@@ -44,6 +44,16 @@ pub(crate) struct Cache {
 /// The navmesh's cell in a dungeon: an eighth of the Forge's, so every wall lies on a cell's edge, and the bake holds
 /// about a third of the columns the land's 0.25 m would over the dungeon's whole rectangle.
 const NAV_CELL_M: f64 = CELL_M / 8.0;
+/// How much of a free-standing solid's footprint the bake leaves out each way (m), down to `SOLID_KEPT_M` across: a
+/// prop's or a fixture's (a rock, rubble, a brazier), and a pillar's or a landmark's no more than `FREE_MOST_M` each way
+/// (a standing stone). The bake walls every cell a solid touches and erodes one cell more, so a rock would be kept 0.4
+/// to 0.8 m off where a body keeps its radius (0.35 m), closing the gaps beside it a body walks through and leaving the
+/// floor round it off the mesh, where no foe finds a way to a player. Trimmed, the margin is 0.15 to 0.55 m, about a
+/// body's, and the narrowest gap the mesh opens between two is 0.7 m, a body's width. A wall lies on a cell's edge and
+/// keeps its 0.4 m, as do the jambs and a landmark's greater pieces, whose outlines a path must never cut.
+const SOLID_TRIM_M: f64 = 0.25;
+const SOLID_KEPT_M: f64 = 0.02;
+const FREE_MOST_M: f64 = CELL_M / 2.0;
 
 /// A dungeon room's navmesh: over the whole dungeon, its ground's lowest floors, the slabs between its storeys, its
 /// solids and its blocks (an Ascent's pads), kept to the floor the way in stands on, in cells of NAV_CELL_M.
@@ -64,18 +74,25 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
         // On the lowest floors, the slabs over them and the solids its colliders: a solid read as ground would make the
         // floor beside it too steep to walk, and narrow every doorway past a body's width. Each solid stands a body's
         // height at least over its own floor, since the ground walls a solid however low: no path runs over a pool's
-        // rim or a dais.
+        // rim or a dais. A free-standing one's footprint is trimmed by SOLID_TRIM_M, so the mesh keeps off a rock about
+        // as far as a body does.
         Floor::Dungeon(ground) => {
-            let standing = |&[min_x, min_y, max_x, max_y, bottom, top]: &[f64; 6]| Block {
-                min_x,
-                min_y,
-                max_x,
-                max_y,
-                top: top.max(bottom + agent.height),
-                bottom,
+            let trimmed = |low: f64, high: f64| {
+                let cut = SOLID_TRIM_M.min((high - low - SOLID_KEPT_M) / 2.0).max(0.0);
+                (low + cut, high - cut)
+            };
+            let standing = |(number, &[min_x, min_y, max_x, max_y, bottom, top]): (usize, &[f64; 6])| {
+                let small = max_x - min_x <= FREE_MOST_M && max_y - min_y <= FREE_MOST_M;
+                let free = ground.loose.contains(&number) || (small && !ground.jambs.contains(&number));
+                let ((min_x, max_x), (min_y, max_y)) = if free {
+                    (trimmed(min_x, max_x), trimmed(min_y, max_y))
+                } else {
+                    ((min_x, max_x), (min_y, max_y))
+                };
+                Block { min_x, min_y, max_x, max_y, top: top.max(bottom + agent.height), bottom }
             };
             let mut solids: Vec<Block> = ground.slabs();
-            solids.extend(ground.solids().iter().map(standing));
+            solids.extend(ground.solids().iter().enumerate().map(standing));
             // An Ascent's pads too, so no foe paths up their sides or off their tops.
             solids.extend(blocks.iter().map(|pad| Block { top: pad.top.max(pad.bottom + agent.height), ..*pad }));
             NavMesh::bake_anchored(&solids, &crate::dungeon_bake::Lowest(ground), bounds, &agent, anchor)
@@ -273,7 +290,7 @@ impl Room {
     }
 
     /// Where `count` foes stand in a room: its free cells nearest its middle on its own storey's floor, each on the
-    /// navmesh.
+    /// navmesh and a body's radius clear of its rock and solids.
     fn placed(&self, dungeon: &Dungeon, room: usize, count: usize) -> Vec<[f64; 3]> {
         dungeon
             .nearest_middle(room, count)
@@ -281,7 +298,7 @@ impl Room {
             .map(|cell| {
                 let [x, y, z] = dungeon.standing_point(cell);
                 let place = [x, y, self.floor.height_under(x, y, z)];
-                self.nav.nearest_point(place).unwrap_or(place)
+                self.floor.standing_clear(self.nav.nearest_point(place).unwrap_or(place))
             })
             .collect()
     }

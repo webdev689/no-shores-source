@@ -1,7 +1,7 @@
 //! The repository's own checks, run as `cargo xtask <command>`.
 //! `check` is the one command every change passes: the repo's structure first, then format, lints and tests. CI runs
-//! it in its three parts side by side (`check rest`, `check rust`, `check page`), the Rust tests shared over runners
-//! (`1/2`).
+//! it in its three parts side by side (`check rest`, `check rust`, `check page`), the Rust tests built once into an
+//! archive (`archive <file>`) that runners each run a share of (`1/2 <archive>`).
 //! `repo` runs only the structure checks, which take about a second.
 #![allow(clippy::print_stdout, reason = "a command-line tool reports to the terminal")]
 
@@ -19,6 +19,8 @@ commands:
   check   everything CI runs: the repo checks first, then format, lints, tests; its last line the verdict
           check rest | rust | page: one of the parts CI runs side by side (rest holds the repo checks);
           check rust 1/2: that share of the Rust tests, with cargo-nextest
+          check rust archive <file>: every Rust test built into a nextest archive, none run
+          check rust 1/2 <archive>: that share run from the archive, in this checkout
   shaders only the shaders: every one the client compiles, written out and validated as WGSL
   repo    only the repo checks: layout, file size, comments, layers, html, assets, versions, crates, vault links,
           dialogue, client tests, pins, schema and python
@@ -38,12 +40,17 @@ fn main() -> ExitCode {
                     return ExitCode::from(2);
                 }
             };
-            let slice = std::env::args().nth(3);
-            if slice.is_some() && part != Some(toolchain::Part::Rust) {
-                println!("{USAGE}");
-                return ExitCode::from(2);
-            }
-            check(part, slice.as_deref())
+            let words: Vec<String> = std::env::args().skip(3).collect();
+            let words: Vec<&str> = words.iter().map(String::as_str).collect();
+            let share = match toolchain::Share::named(&words) {
+                Some(toolchain::Share::All) => toolchain::Share::All,
+                Some(share) if part == Some(toolchain::Part::Rust) => share,
+                _ => {
+                    println!("{USAGE}");
+                    return ExitCode::from(2);
+                }
+            };
+            check(part, share)
         }
         Some("repo") => {
             if repo_checks_pass() {
@@ -72,7 +79,7 @@ fn main() -> ExitCode {
 
 /// The check, or one part of it: the repo checks first, as they take a second, then every toolchain step, and last a
 /// line with the verdict and the commit, so a log's tail says both what failed and what it covered.
-fn check(part: Option<toolchain::Part>, slice: Option<&str>) -> ExitCode {
+fn check(part: Option<toolchain::Part>, share: toolchain::Share) -> ExitCode {
     let root = files::repo_root();
     if let Some(reason) = files::foreign_build(
         &root,
@@ -93,7 +100,7 @@ fn check(part: Option<toolchain::Part>, slice: Option<&str>) -> ExitCode {
     if matches!(part, None | Some(toolchain::Part::Rest)) && !repo_checks_pass() {
         failed.push("repo checks".to_owned());
     }
-    let steps = part.map_or_else(toolchain::run_all, |part| toolchain::run_part(part, slice));
+    let steps = part.map_or_else(toolchain::run_all, |part| toolchain::run_part(part, share));
     failed.extend(steps.err());
     let changed = if tree() == before { "" } else { "; the tree changed during the check" };
     if failed.is_empty() {

@@ -10,7 +10,7 @@ import type { FoeFigures } from '../combat/foeFigures.ts';
 import { castLookOf, hastedIn, veiledIn } from '../combat/spellLooks.ts';
 import type { Smear, Vector } from '../combat/swingArcs.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
-import type { Dress } from '../player/dressing.ts';
+import { type Dress, weaponGlow } from '../player/dressing.ts';
 import type { GlowLook } from '../elementGlow.ts';
 import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
@@ -65,8 +65,8 @@ export function otherCards(
     const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eyeX, eyeY);
     const frames = forge.frames(placed.dress.body, placed.anim);
     const frame = placed.frame === null ? frameAt(clock, frames, OTHERS_FPS) : Math.min(placed.frame, frames - 1);
-    // A cast's spark glows in the caster's Art, as the player's own does.
-    const glow = placed.anim === 'cast' ? castLookOf(fight, number) : 0;
+    // A cast's spark glows in the caster's Art, and a drawn weapon in its element, as the player's own do.
+    const glow = placed.anim === 'cast' ? castLookOf(fight, number) : weaponGlow(placed.dress);
     const feet = [placed.x, placed.y, placed.z] as const;
     const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip, glow, feet);
     const flash = effects.flashes.flashOf(number);

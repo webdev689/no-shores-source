@@ -19,6 +19,7 @@ code:
   - client/src/combat/fighting.ts#Fighting
   - crates/room/src/players.rs#SLACK_TICKS
   - crates/room/src/players.rs#WAITING_LIMIT
+  - crates/room/src/players.rs#resumed
   - crates/room/src/sea.rs#Sea
   - crates/room/src/sea.rs#PACES
   - crates/room/src/plates.rs#take_plate_changes
@@ -251,7 +252,10 @@ on Cloudflare.
 - **A player whose inputs stop** is stepped standing still once they fall a view's lag (24 ticks) behind, so nothing
   they were doing (a dodge's safe stretch, a parry window) outlasts its time, and time away is never banked to spend as
   speed; a body the section killed is stepped with no controls of its own, so it falls on and lies where it lands, its
-  ticks counting the same. Past 30 waiting inputs, the oldest
+  ticks counting the same. Once their inputs come again, and at their first, the room counts their time from then: it
+  keeps no more of the clock unspent for them than their waiting inputs and the slack need (`resumed`). A screen
+  that fell behind once, by a load or a slow frame its clock does not make up, is then not stood still again at each
+  late input after, which its prediction never foresees and shows as a pull back. Past 30 waiting inputs, the oldest
   is let go as though taken, so a burst after a stall never breaks the order. The room tick a player says their screen
   showed moves on at most 4 ticks an input, so they cannot pick the moment they are judged at. A dress change is taken
   at most once a second.
@@ -381,7 +385,8 @@ will take it, by the room's own tick.
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
   out of order or with controls that are not numbers or ask past a whole pace; never more than the ticks since they
   left the helm and 6 of slack, and 3 a tick at most to catch up; past 30 waiting the oldest is let go as taken. One
-  whose steps stop coming is stood out a tick at a time once a view's lag (24 ticks) behind, as on land.
+  whose steps stop coming is stood out a tick at a time once a view's lag (24 ticks) behind, and counted from their
+  steps' coming again, as on land.
 - **Its helmsman** keeps its course meanwhile: under way it sails on, at rest it stays. A course is refused but one
   that keeps its way, at any pace the room takes: the course it sails, its points to the whole metre, or one point
   straight on along its heading (within 0.01 radians of it), the page's course straight on, set again as it nears
@@ -470,7 +475,8 @@ rank each, fight whom they choose, all in one fight ([[Naval Combat]]).
   tick; past 30 waiting, the oldest let go as though taken. Each order taken steps their ship once, so late ones catch
   it up and a browser's prediction of it is their orders stepped in turn. A player whose orders stop lies as they were,
   riding the swell, until they fall a view's lag (24 ticks) behind; then they stand, a tick at a time, from the moment
-  they join (their helm too once they are at sea), so time spent before putting to sea is not banked to catch up on.
+  they join (their helm too once they are at sea), so time spent before putting to sea is not banked to catch up on;
+  their orders coming again count from then, as on land.
 - **Captains.** An order may call a captain onto the ring round the player's ship, while the room holds fewer than
   four, or send every captain off. A captain who sinks, or lies past every ship it may fight (each player's, and
   each afloat captain's of another faction) and is not fighting, leaves the room.

@@ -2,17 +2,32 @@
 //! corridor) whose outlines the contours trace. Slivers merge into their largest neighbour, and every part not joined
 //! to the largest one (or to the one under an anchor, when a bake names one), by a walk or a link's climb or drop, is
 //! dropped from the walkable surface; over the open sea, where no ground joins the parts, only those too small to
-//! stand in are.
+//! stand in are. No region meets itself, flat, where no walk joins it, by growing or merging: where a way winds back
+//! over or beside itself, as a dungeon's does up a flight, the floor it comes back to is another region, so every
+//! outline stays a plain loop.
 
 use crate::compact::CompactField;
 
-/// The walkable spans laid out flat: each one's distance, where it lives, its neighbours by flat index, and each
-/// column's spans' flat indices.
+/// The walkable spans laid out flat: each one's distance, where it lives, its neighbours by flat index, each
+/// column's spans' flat indices, and the spans apart from each, those of span `at` from `apart_from[at]` on.
 struct Flat {
     dist: Vec<i32>,
     owner: Vec<(usize, usize)>,
     neighbours: Vec<[Option<usize>; 4]>,
     index_of: Vec<Vec<Option<usize>>>,
+    apart: Vec<usize>,
+    apart_from: Vec<usize>,
+}
+
+impl Flat {
+    /// The spans over, under or beside a span that no walk joins it to: the others of its column, and those of the
+    /// columns beside it but the one it links to each way. A region holding a span and one of these would meet
+    /// itself, flat, where no walk joins it, as one wound up a flight and back over its own floor does: its outline
+    /// would cross or run back along itself, and its corners there, at two heights, weld into one. Most spans, on a
+    /// floor with none over or under it, have none.
+    fn apart(&self, at: usize) -> &[usize] {
+        &self.apart[self.apart_from[at]..self.apart_from[at + 1]]
+    }
 }
 
 fn flatten(field: &CompactField) -> Flat {
@@ -33,7 +48,7 @@ fn flatten(field: &CompactField) -> Flat {
         index_of.push(indices);
     }
     let cells_x = field.grid.cells_x;
-    let neighbours = owner
+    let neighbours: Vec<[Option<usize>; 4]> = owner
         .iter()
         .map(|&(column, index)| {
             let (ix, iy) = (column % cells_x, column / cells_x);
@@ -47,7 +62,25 @@ fn flatten(field: &CompactField) -> Flat {
             found
         })
         .collect();
-    Flat { dist, owner, neighbours, index_of }
+    let (mut apart, mut apart_from) = (Vec::new(), Vec::with_capacity(owner.len() + 1));
+    for (at, &(column, _)) in owner.iter().enumerate() {
+        apart_from.push(apart.len());
+        let mut keep = |column: usize, joined: Option<usize>| {
+            for &other in index_of[column].iter().flatten() {
+                if Some(other) != joined {
+                    apart.push(other);
+                }
+            }
+        };
+        keep(column, Some(at));
+        for (direction, &joined) in neighbours[at].iter().enumerate() {
+            if let Some((next_x, next_y)) = field.beside(column % cells_x, column / cells_x, direction) {
+                keep(next_x + next_y * cells_x, joined);
+            }
+        }
+    }
+    apart_from.push(apart.len());
+    Flat { dist, owner, neighbours, index_of, apart, apart_from }
 }
 
 /// The watershed's working state: each flat span's region (0 for none yet).
@@ -59,8 +92,14 @@ struct Watershed<'flat> {
 }
 
 impl Watershed<'_> {
+    /// Whether a span over, under or beside a span, unjoined (`Flat::apart`), is already the region's.
+    fn holds(&self, at: usize, region: usize) -> bool {
+        self.flat.apart(at).iter().any(|&other| self.region[other] == region)
+    }
+
     /// Grows the regions into the unassigned spans of `fringe`, `rounds` times or until none grows. Each span takes
-    /// the neighbouring region whose own distance is least, every span of a round at once, so their order is no matter.
+    /// the neighbouring region whose own distance is least, every span of a round at once, so their order is no matter;
+    /// never one that holds a span apart from it, and of two spans apart offered one region in a round, the first.
     fn expand(&mut self, fringe: &[usize], rounds: Option<usize>) {
         let mut round = 0;
         while rounds.is_none_or(|rounds| round < rounds) {
@@ -72,16 +111,17 @@ impl Watershed<'_> {
                 let mut taken = 0;
                 let mut best = i32::MAX;
                 for near in self.flat.neighbours[at].iter().flatten() {
-                    if self.region[*near] != 0 && self.flat.dist[*near] + 2 < best {
+                    let region = self.region[*near];
+                    if region != 0 && self.flat.dist[*near] + 2 < best && !self.holds(at, region) {
                         best = self.flat.dist[*near] + 2;
-                        taken = self.region[*near];
+                        taken = region;
                     }
                 }
                 self.buffer[at] = taken;
             }
             let mut changed = false;
             for &at in fringe {
-                if self.region[at] == 0 && self.buffer[at] != 0 {
+                if self.region[at] == 0 && self.buffer[at] != 0 && !self.holds(at, self.buffer[at]) {
                     self.region[at] = self.buffer[at];
                     changed = true;
                 }
@@ -94,7 +134,8 @@ impl Watershed<'_> {
     }
 
     /// Floods a new region from a seed at a water level. A span that already touches another region stays out, so
-    /// two regions keep a one-span seam that the next expansion fills. Answers whether any span was taken.
+    /// two regions keep a one-span seam that the next expansion fills, and so does one apart from a span the region
+    /// already holds. Answers whether any span was taken.
     fn flood(&mut self, seed: usize, level: i32, region: usize) -> bool {
         let lowest = if level >= 2 { level - 2 } else { 0 };
         self.stack.clear();
@@ -109,7 +150,7 @@ impl Watershed<'_> {
             }
             count += 1;
             for near in neighbours.into_iter().flatten() {
-                if self.region[near] == 0 && self.flat.dist[near] >= lowest {
+                if self.region[near] == 0 && self.flat.dist[near] >= lowest && !self.holds(near, region) {
                     self.region[near] = region;
                     self.stack.push(near);
                 }
@@ -232,9 +273,29 @@ pub(crate) fn partition(
         }
     }
     shed.expand(rising.to(0, &flat.dist, &shed.region), None);
+    // A span no region beside it may take, as each holds a span apart from it, starts a region of its own, the first
+    // by index first.
+    loop {
+        let left = rising.to(0, &flat.dist, &shed.region);
+        let Some(&seed) = left.first() else { break };
+        shed.region[seed] = next_region;
+        next_region += 1;
+        shed.expand(left, None);
+    }
     let region = shed.region;
     let regions = next_region;
 
+    // The regions over, under or beside each where no walk joins them: two of them merged would meet themselves.
+    let mut apart: Vec<Vec<usize>> = vec![Vec::new(); regions];
+    for at in 0..count_spans {
+        for &other in flat.apart(at) {
+            let (one, other) = (region[at], region[other]);
+            if one != 0 && other != 0 && one != other {
+                add_once(&mut apart[one], other);
+                add_once(&mut apart[other], one);
+            }
+        }
+    }
     let mut count = vec![0_i64; regions];
     let mut adjacent: Vec<Vec<usize>> = vec![Vec::new(); regions];
     for at in 0..count_spans {
@@ -269,7 +330,8 @@ pub(crate) fn partition(
         let mut best_count = -1;
         for &other in &adjacent[own] {
             let other = resolve(&remap, other);
-            if other != own && count[other] > best_count {
+            let meets = apart[own].iter().any(|&away| resolve(&remap, away) == other);
+            if other != own && count[other] > best_count && !meets {
                 best_count = count[other];
                 best = other;
             }
@@ -280,6 +342,11 @@ pub(crate) fn partition(
         remap[own] = best;
         count[best] += count[own];
         count[own] = 0;
+        for away in apart[own].clone() {
+            let away = resolve(&remap, away);
+            add_once(&mut apart[best], away);
+            add_once(&mut apart[away], best);
+        }
         for other in adjacent[own].clone() {
             let other = resolve(&remap, other);
             if other != best {
@@ -365,3 +432,7 @@ fn components(remap: &[usize], count: &[i64], adjacent: &[Vec<usize>]) -> (Vec<O
     }
     (component, area_of)
 }
+
+#[cfg(test)]
+#[path = "regions_tests.rs"]
+mod regions_tests;

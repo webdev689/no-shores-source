@@ -31,6 +31,15 @@ impl Floor {
         DungeonGround::of(dungeon).map(|ground| Floor::Dungeon(Box::new(ground)))
     }
 
+    /// Where a body nearest feet at `at` stands clear of a dungeon's rock and solids (`DungeonGround::standing_clear`);
+    /// `at` itself on any other floor.
+    pub(crate) fn standing_clear(&self, at: [f64; 3]) -> [f64; 3] {
+        match self {
+            Floor::Dungeon(ground) => ground.standing_clear(at),
+            _ => at,
+        }
+    }
+
     /// How deep a point with feet at `z` lies inside a solid nobody may stand on, metres: a dungeon's, since its
     /// ground walls every solid however low; 0 elsewhere, where a body climbs a low block.
     pub(crate) fn depth_in_solid(&self, x: f64, y: f64, z: f64) -> f64 {

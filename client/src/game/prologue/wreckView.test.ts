@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readWreckMesh, WRECK_VERTEX_BYTES } from './wreckView.ts';
+import { GLASS_SHELL } from '../../ships/lanternMesh.ts';
+import { readWreckMesh, WRECK_VERTEX_BYTES, WRECK_WGSL } from './wreckView.ts';
 
 /** A mesh file as tools/wreck/export_wreck.py writes it: its header's length, the header, vertices and corners. */
 function meshFile(header: object, vertices: number, indices: readonly number[]): ArrayBuffer {
@@ -38,4 +39,11 @@ test("a wreck's mesh that does not hold together is refused", () => {
   assert.throws(() => readWreckMesh(meshFile(HEADER, 4, [0, 1, 2, 1, 2, 4])), /names no vertex/);
   assert.throws(() => readWreckMesh(meshFile({ ...HEADER, pieces: [] }, 4, [0, 1, 2, 1, 2, 3])), /no run/);
   assert.throws(() => readWreckMesh(meshFile({ ...HEADER, indices: 9 }, 4, [0, 1, 2, 1, 2, 3])), /not \d+ bytes/);
+});
+
+test("a window's pane, its vertices' third byte GLASS_SHELL as the export writes it, burns as a ship's glass", () => {
+  assert.match(WRECK_WGSL, new RegExp(`const GLASS_SHELL = ${GLASS_SHELL}u;`));
+  assert.match(WRECK_WGSL, /drawn\.shell = part\.z;/);
+  assert.match(WRECK_WGSL, /if \(drawn\.shell == GLASS_SHELL\) \{\n.*\n\s*return vec4f\(glass_burn\(/);
+  assert.match(WRECK_WGSL, /fn glass_burn\(share: f32\)/, "the ships' own glass glow");
 });
