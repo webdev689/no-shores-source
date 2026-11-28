@@ -63,7 +63,10 @@ and their firing spots by it, and climb and drop where its links say.
    (0.5 m, two voxels). The floor is then eroded by the body's radius (0.35 m), so a path's centre keeps clear of
    every wall and drop.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
-   of corridor. Slivers under 2 m² join their largest neighbour. Only the largest part a walk or a link joins is
+   of corridor. Slivers under 2 m² join their largest neighbour. No region takes, by growing or merging, a cell
+   over, under or beside one of its own that no walk joins it to: where a way winds back over or beside itself, as a
+   dungeon's does up a flight and back over its own floor, the floor it comes back to is another region, so every
+   outline stays a plain loop and the two floors meet by an edge (`regions.rs`). Only the largest part a walk or a link joins is
    kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the water is
    no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are. An
    anchored bake keeps instead the part joined to the floor nearest a point it is given, the way in of a dungeon, whose
@@ -73,7 +76,15 @@ and their firing spots by it, and climb and drop where its links say.
    between a storey's ceiling and the floor over it stands as a block with a bottom, so the storey under is walked
    beneath it; its jambs, pillars and solids, each on its own floor, are the bake's colliders, and an Elite
    Dungeon's Ascents' pads and a gallery's balustrades with them, so no foe paths onto a pad or over a balustrade. A
-   path between storeys goes by a flight. A dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is
+   free-standing solid (a prop's or a fixture's: a rock, rubble, a brazier; and a pillar's or a landmark's no more
+   than half a cell each way, a standing stone) is baked 0.25 m smaller each way, down to 2 cm across
+   (`SOLID_TRIM_M`): a cell is walled wherever a solid touches it and the erosion takes one more, so it would keep
+   0.4 to 0.8 m off where a body keeps 0.35 m, shutting the gaps beside it a body walks through and leaving the floor
+   round it off the mesh. Trimmed, it keeps 0.15 to 0.55 m, and the narrowest gap the mesh opens between two is
+   0.7 m, a body's width; the jambs and a landmark's greater pieces keep their whole footprint, so no path cuts their
+   outline. As the mesh keeps less than a body's radius off them, a point the room takes from it to stand a foe at or
+   walk one to (a post, a wave's place, a path's corner) is moved where a body stands clear of the rock and solids
+   round it, the nearest such within 0.6 m (`DungeonGround::standing_clear`). A path between storeys goes by a flight. A dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is
    taken up to the higher cell beside alone, never down, so a storey's way over a room of the storey under it (whose
    column's lowest floor is that room's) and the edge of a flight's landing stay floor where they meet the drop.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
@@ -170,6 +181,11 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 - An underside between 1.75 and 1.8 m over a floor rounds up to 2 m, so the mesh may run a path under it that a body
   stoops for; within a voxel.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
+- Of the floor a body stands on within a metre of a dungeon's solids, the mesh finds a way to 98% or more in each
+  dungeon (the patrols' nine, the 18 Elite Dungeons and four passage dungeons of chalk and barrow,
+  `dungeon_room_tests`): what is left are
+  rock-to-wall gaps of 0.7 to 0.95 m, which the 0.4 m cell cannot open, and pockets more than 0.8 m off the mesh,
+  where a foe walks the last stretch straight.
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
 - The grid's cells stay 0.25 m however large the room, so a bake's time and memory grow with its area. Tested
   offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course, its 115 links among it, bakes in about

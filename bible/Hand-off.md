@@ -145,6 +145,13 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **#256's leftovers**: the outline's fix and other players' glow unseen on a real GPU and in a deployed room; the
+  Holdfast, the waves' caps, the trimmed navmesh and foes placed clear of solids unplayed; a navmesh region kept from
+  meeting itself costs `partition` some 2 ms more on a 70 m square (release, a noisy machine), and two floors of one
+  region touching only diagonally can still weld one corner at the wrong height. The audit's low findings left: a
+  Court in a 2 by 2 end room stands its anchors inside the slam (an anchor keeps what it holds, so stepping out costs
+  nothing); a passage Hold's ring can stand a mouth 5.5 m off under ground; a lamp's zone whose 64 seeds all miss
+  lays its lamp unchecked; a vein's gathers each call a wave, never waiting.
 - **Intents still counted by hand** (observations 0218, 0346): `publicBots.ts`'s `decide`, `roomDoor.test.ts`'s `walk`
   and `play`, and `combatRules.test.ts`'s scripted fight write 18 numbers out; right today, they would go stale as
   the lying intent did. `intentOf` (`rules/fighters.ts`) builds them by the layout.
