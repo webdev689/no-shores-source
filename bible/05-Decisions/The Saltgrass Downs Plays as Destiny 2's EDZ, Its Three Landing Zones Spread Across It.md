@@ -28,6 +28,16 @@ The owner's answers to the questions on the Downs' design pass, its enemies, and
 >
 > Asked what a player should see standing at one of the Downs' landing zones: a landing lantern, a beacon fire (a
 > stone fire basket burning on a low cairn), or a moored skiff: "A beacon fire"
+>
+> Asked which game's map the polish of the held map on land and its legend should look like: the parchment it has
+> now, cleaner (clearer glyphs, names and legend), Destiny 2's Director, or Elden Ring's map: "Keep the parchment,
+> cleaner"
+>
+> Asked how soon one of the Downs' enemy camps, once cleared, should stand again: a few minutes after it falls, as
+> Destiny 2's EDZ groups do; once no player is near it; or when the next public event begins: "A few minutes"
+>
+> Asked how many of Destiny 2's lost sectors (small caves with a boss and a chest at the end) the Downs should hide:
+> "None. Just multiple procedural dungeons"
 
 ## What it settles
 
@@ -35,10 +45,11 @@ The owner's answers to the questions on the Downs' design pass, its enemies, and
   so any part of the Downs is a short walk from one. Shingle Landing, where players come ashore, is the middle one.
 - **Each landing zone is marked by a beacon fire**: a stone fire basket burning on a low cairn.
 - **Fast travel between them is Destiny 2's**: a short fade from the map, then the player stands at the landing zone.
-- **The Downs' design pass plays like Destiny 2's EDZ**: public events, hidden lost sectors, and patrol tasks picked up
-  in the field.
-- **The Downs' enemies stand both ways**: camps at its places that stand again a while after they fall, and patrols
-  walking the ways between the places.
+- **The Downs' design pass plays like Destiny 2's EDZ**: public events and patrol tasks picked up in the field. It
+  holds no lost sectors: procedural dungeons in their place.
+- **The Downs' enemies stand both ways**: camps at its places, each standing again a few minutes after it falls, and
+  patrols walking the ways between the places.
+- **The held map on land keeps its parchment**, made cleaner: clearer glyphs, names and legend.
 
 It builds on [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]] (the three landing
 zones, the zone's map to choose one from, and their fast travel).
