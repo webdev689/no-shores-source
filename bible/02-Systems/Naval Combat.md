@@ -53,6 +53,8 @@ code:
   - crates/naval/src/fight.rs#meet
   - crates/naval/src/wire.rs#view_numbers
   - crates/room/src/hostiles.rs#Hostiles
+  - crates/room/src/hostiles.rs#BUMP_M
+  - client/src/game/seaHostiles.ts#hostileUnder
   - crates/room/src/friendlies.rs#Friendlies
   - crates/room/src/threat.rs#held_pace
   - client/src/game/seaCombat.ts#SeaCombat
@@ -698,15 +700,24 @@ ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chas
   heading to where their ship will be when it can reach it at its way on that player's clock (lead pursuit; straight at
   them where it cannot reach them, as when they sail away faster), turning at most at a Sloop's helm rate, 10 degrees a
   second of its clock. It keeps after the one it came for while they stay in its sight and out of a fight, until it
-  meets them (750 m) or loses them. A wary ship keeps its own course: the player may chase it, evade it or let it pass.
-  On the voyage's clock a hostile ship sails at a fifth of the player's ship's way (a Major; 0.18 to 0.24 by rank), so
-  it can meet a ship holding its course only from within the cone sin(angle) <= its way / 12 m/s off it (11.5 degrees
-  for a Major); lead pursuit cannot widen it. So a bold ship comes there (above, "Where"), and a player who holds their
-  course meets it, one who turns away evades it, until it loses them. The voyage's hold keeps its own law as it comes
-  near along the way.
+  meets them (750 m) or loses them. A wary ship keeps its own course: the player may chase it, evade it or let it pass,
+  though never through it ("Sailed into"). On the voyage's clock a hostile ship sails at a fifth of the player's ship's
+  way (a Major; 0.18 to 0.24 by rank), so it can meet a ship holding its course only from within the cone sin(angle) <=
+  its way / 12 m/s off it (11.5 degrees for a Major); lead pursuit cannot widen it. So a bold ship comes there (above,
+  "Where"), and a player who holds their course meets it, one who turns away evades it, until it loses them. The
+  voyage's hold keeps its own law as it comes near along the way.
 - **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of it
   begins the fight with it whatever its temper (outside home waters), as a bold ship that meets a player does; a wary
-  one runs as captains run. The room lets go of the chase once it has left the sea.
+  one runs as captains run. The room lets go of the chase once it has left the sea. A click on a sighted hostile
+  ship's hull or rig, its boxes as the view draws it (four times its size from the raised view), chases it as a click
+  on its mark does, where nothing nearer stands under the click (`hostileUnder`): close to, its mark stands high over
+  its masthead.
+- **Sailed into.** Any hostile ship a player's ship comes within 60 m of (`BUMP_M`, their hulls all but touching)
+  meets them, whatever its temper, by day or night, outside home waters and out of a fight, so no ship is sailed
+  through another
+  ([[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]). Within
+  a hostile's sight the voyage sails at ×5 at most ("The voyage held"), a metre a tick, so none passes through it
+  between two ticks.
 - **Its clock.** As DFO's sea keeps the world's time, a hostile ship sails on the clock of the player nearest it past
   home waters, who keeps it at sea (a player inside them sets neither its clock nor its sight): their
   voyage's pace as it is held (144 m/s at ×60), the world's own while they lie at rest, and real time where another
@@ -768,8 +779,17 @@ eye's station and where it looks, which follow Black Flag ([[Aiming a Ship Follo
 from DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZoom.js`:
 
 - **The side** is the one the camera looks toward as the aim is taken, the nearer one even over the bow or the stern,
-  and it is held until the aim is let go ([[A Held Aim Keeps the Camera on Its Side]]). Taken again on the other side,
-  the view eases home first and then to the other battery, never across the ship. Between the camera's own place and
+  and it is held until the aim is let go ([[A Held Aim Keeps the Camera on Its Side]]) or swung to the other. Taken
+  again on the other side, the view eases home first and then to the other battery, never across the ship.
+- **Swinging to the other side**
+  ([[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]): a drag
+  across of 120 px while the aim is held, its last fading over 0.3 s and each move counted only where it goes more
+  across than down, so a flick laying range swings nothing (the right stick leant whole, in half a second), holds the
+  other side and turns the aim's home round the ship to look along the keel the way the drag turns the
+  view (`AimCamera.drag`): from starboard astern for a drag to the right and ahead for one to the left, the mirror
+  from port, so the eye comes round over the bow or the stern. The view eases out there and in to the other battery
+  as an aim taken again does, aiming all the while. Nothing is laid on the way round, so letting go then fires
+  nothing. Between the camera's own place and
   the battery the eye goes out to one distance that clears its hull and every sail's swing all the way round, and 0.6 m
   over and under each, felt every 5° and every half metre of its climb or drop (`roundShip`), round at that distance
   the shorter way to a point abeam of its station at its height, and then straight in over the rail, square to the side
@@ -795,8 +815,8 @@ from DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and 
   (`AIM_ZOOM`) in the sea's fights and the story's. Once it is there, no way round is looked for again, however the ship
   heels. A sinking ship's guns are silent: its eye never moves.
 - **Where it looks**: off the side, at the water its guns are laid on square off its battery's middle, so the crosshair
-  at the view's middle stands on the landing zone. A drag left or right does nothing while the aim is held; a drag up or
-  down lays the guns farther or nearer, the range read from the drag as DFO's lookReach reads a look from the eye's
+  at the view's middle stands on the landing zone. A smaller drag across lays nothing while the aim is held; a drag up
+  or down lays the guns farther or nearer, the range read from the drag as DFO's lookReach reads a look from the eye's
   height (where it meets the water, then on at 30 m a degree past the dip, up to 0.15 rad over the horizon), and the
   view pitched down to that point. The range is held between the guns' nearest (their lowest elevation, -10°, from their
   mouths, or, while the rules answer that the guns stand there, where their balls fall as the ship lies now, which a
@@ -838,7 +858,7 @@ from DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and 
 
 The World Editor's fight and its fleet room aim the same way (`easedAimOf`) but for the zoom, keeping their field of
 view, their look laid from the aim's last
-frame, and draw the lay with `AimView` after the water; a drag across while aiming turns nothing there either. Let
+frame, and draw the lay with `AimView` after the water; a drag across while aiming turns nothing there, nor swings. Let
 go, the editor's camera eases back to its own place round the ship. The editor keeps its own camera: a drag past
 the guns' nearest or longest runs on unheld until it comes back, and its fight's orbit keeps no clearance off the
 ship (its zoom comes to 3 m).

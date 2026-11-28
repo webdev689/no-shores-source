@@ -33,6 +33,11 @@ export const SEA_CELLS = { windowM: 2_000, frameM: 8_192 } as const;
  */
 export const ROUTE = { marginM: 4_000, marginCost: 4, landingReachM: 10_000 } as const;
 
+/** The most points the sea room takes in one course (crates/room/src/sea.rs `COURSE_LIMIT`), and how many of them a
+ *  route leaves for its bends round the sea's islands (`detour`), which come after it is planned: a route round a
+ *  great island's coast would hold more, and the room would sail none of it. */
+export const COURSE_POINTS = { most: 64, bends: 16 } as const;
+
 /** Why no route: a point off the mask, a start on land far from the water, a goal too far inland, or no water
  *  joining the two. */
 export type RouteRefusal = 'outside' | 'aground' | 'inland' | 'no way';
@@ -342,7 +347,13 @@ export function planSeaRoute(
   mask: SeaMask,
   from: Point2,
   to: Point2,
-  options: { readonly marginM?: number; readonly marginCost?: number; readonly landingReachM?: number } = {},
+  options: {
+    readonly marginM?: number;
+    readonly marginCost?: number;
+    readonly landingReachM?: number;
+    /** The most points the route may hold; past it, those it can best do without are left out (`fewest`). */
+    readonly mostPoints?: number;
+  } = {},
 ): SeaRoute {
   const { marginM = ROUTE.marginM, marginCost = ROUTE.marginCost, landingReachM = ROUTE.landingReachM } = options;
   let [start, goal] = [cellOf(mask, from), cellOf(mask, to)];
@@ -377,11 +388,39 @@ export function planSeaRoute(
     pulled.push(points[reached]);
     anchor = reached;
   }
+  const kept = fewest(mask, pulled, options.mostPoints ?? Infinity, marginM);
   let lengthM = 0;
-  for (let i = 1; i < pulled.length; i++) {
-    lengthM += Math.hypot(pulled[i][0] - pulled[i - 1][0], pulled[i][1] - pulled[i - 1][1]);
+  for (let i = 1; i < kept.length; i++) {
+    lengthM += Math.hypot(kept[i][0] - kept[i - 1][0], kept[i][1] - kept[i - 1][1]);
   }
-  return { ok: true, points: pulled, lengthM, toShore };
+  return { ok: true, points: kept, lengthM, toShore };
+}
+
+/** A route's `points` over `mask` with no more than `most`, its ends kept: each time, the point whose loss lengthens
+ *  the way least, of those whose neighbours a straight leg joins as clear of land as the nearer of their cells lies
+ *  (no nearer than the pull itself keeps), is left out; past those, any whose neighbours a leg joins over water a
+ *  cell from land, as the pull's own legs run at a coast. Where none can go, the rest stand. */
+function fewest(mask: SeaMask, points: readonly Point2[], most: number, marginM: number): Point2[] {
+  const kept = [...points];
+  const apart = (one: Point2, other: Point2) => Math.hypot(other[0] - one[0], other[1] - one[1]);
+  const coastOf = (point: Point2) => mask.coastM[cellOf(mask, point)] ?? 0;
+  const floors = [
+    (before: Point2, after: Point2) => Math.min(marginM, coastOf(before), coastOf(after)),
+    () => Math.min(marginM, mask.cellM),
+  ];
+  for (const floorOf of floors) {
+    while (kept.length > Math.max(2, most)) {
+      let [drop, least] = [-1, Number.POSITIVE_INFINITY];
+      for (let index = 1; index < kept.length - 1; index++) {
+        const [before, middle, after] = [kept[index - 1], kept[index], kept[index + 1]];
+        const longer = apart(before, middle) + apart(middle, after) - apart(before, after);
+        if (longer < least && lineClear(mask, before, after, floorOf(before, after))) [drop, least] = [index, longer];
+      }
+      if (drop < 0) break;
+      kept.splice(drop, 1);
+    }
+  }
+  return kept;
 }
 
 /** `mask` with every cell whose middle lies within `reachM` of a locked sea's (`locked` at a world point) made land,

@@ -38,6 +38,10 @@ pub const SPAWN_CLEAR_M: f64 = 450.0;
 pub const HOSTILE_WAY_M_S: f64 = 2.4;
 /// Waters another player sails within this of are shared, and keep real time (metres).
 pub const SHARE_M: f64 = 1_200.0;
+/// A hostile ship a player's ship comes within this of meets them, whatever its temper, by day or night: their hulls
+/// all but touch (a Frigate's length and half again, metres), so no ship sails through another. Within a hostile's
+/// sight a voyage sails at ×5 at most, a metre a tick, so none passes through it between two ticks.
+pub const BUMP_M: f64 = 60.0;
 #[cfg(test)]
 const STREAM_SEED: u32 = 0x5ea_9a7e;
 
@@ -228,8 +232,9 @@ impl Hostiles {
 
     /// One tick of `seconds` on `chart`, each player's ship at sea in `ships`. Each ship takes the sight of the player
     /// past home waters nearest it if it is farther than the ship's, sails on and goes once no player past home waters
-    /// keeps it; then each player's roll comes due. Answers each bold ship that came within `ENGAGE_RANGE` of a player
-    /// this tick, with that player, for their fight; it leaves the sea.
+    /// keeps it; then each player's roll comes due. Answers each bold ship (or the one a player chases) that came
+    /// within `ENGAGE_RANGE` of a player this tick, and any within `BUMP_M`, with that player, for their fight; it
+    /// leaves the sea.
     pub fn tick(&mut self, seconds: f64, ships: &[Voyager], chart: &impl Chart) -> Vec<(PlayerId, Hostile)> {
         let nearest = |at: [f64; 2]| ships.iter().map(|ship| apart(at, ship.at)).fold(f64::INFINITY, f64::min);
         for index in 0..self.sailing.len() {
@@ -268,11 +273,11 @@ impl Hostiles {
                 continue;
             }
             let chased = self.chasing.get(&ship.player).copied();
-            let meets = |hostile: &Hostile| hostile.bold || chased == Some(hostile.id);
-            let sighted = self
-                .sailing
-                .iter()
-                .position(|hostile| meets(hostile) && apart([hostile.x, hostile.y], ship.at) <= ENGAGE_RANGE);
+            let meets = |hostile: &Hostile| {
+                let away = apart([hostile.x, hostile.y], ship.at);
+                away <= BUMP_M || ((hostile.bold || chased == Some(hostile.id)) && away <= ENGAGE_RANGE)
+            };
+            let sighted = self.sailing.iter().position(meets);
             if let Some(index) = sighted {
                 met.push((ship.player, self.sailing.remove(index)));
             }

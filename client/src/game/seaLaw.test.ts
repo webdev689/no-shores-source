@@ -26,6 +26,7 @@ import {
   timeText,
   WORLD_PACE,
   paceToAskAgain,
+  seaNote,
 } from './seaLaw.ts';
 
 /** The Sloop drawn 75 m long on the sea's view. */
@@ -239,4 +240,16 @@ test('the sea’s note speaks of its room only when the link is lost or being jo
   assert.equal(roomWords({ rejoining: true }, false), ' · Reconnecting…');
   assert.equal(roomWords(null, true), ' · The sea room was lost: sailing on alone');
   assert.equal(roomWords(null, false), '');
+});
+
+test("the sea's line says the fight, the voyage and who has the helm, then the room's words; off the ship's view, the room's alone", () => {
+  const sailing = { fighting: false, overShip: true, voyage: 'Sailing · 3 km to go', helmsman: false };
+  const lost = ' · The sea room was lost: sailing on alone';
+  assert.equal(seaNote('', sailing), 'Sailing · 3 km to go');
+  assert.equal(
+    seaNote(lost, { ...sailing, helmsman: true }),
+    `Sailing · 3 km to go · Your helmsman has the helm${lost}`,
+  );
+  assert.equal(seaNote(lost, { ...sailing, fighting: true }), `Fighting${lost}`);
+  assert.equal(seaNote(lost, { ...sailing, overShip: false }), 'The sea room was lost: sailing on alone');
 });

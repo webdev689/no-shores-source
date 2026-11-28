@@ -7,6 +7,7 @@ import { hullOfCaptain, hullSails, hullWaterline, SLOOP_HULL } from '../ships/hu
 import { SailRig, windOff } from '../ships/sails.ts';
 import { captainAtSea, plainCrew } from '../ships/shipCrew.ts';
 import { FAIR_LINE, HULLS } from '../water/hullMask.ts';
+import { sprayOf } from '../ships/swellPose.ts';
 
 /** Every hull's line the fair one: no mesh is fetched. */
 const FAIR_LINES = { line: () => FAIR_LINE };
@@ -89,7 +90,7 @@ test("each ship's footprint is its own hull at its drawn size, and its bow slams
   assert.deepEqual([own?.scale, theirs?.scale], [4, 4]);
   assert.equal(own?.line, lines[SLOOP_HULL], 'its own hull line');
   assert.equal(theirs?.line, lines[hullOfCaptain(hostile)], "a captain's ship theirs");
-  // A steep, quick sea running at its bow: as its bow drops into the next crest it slams.
+  // A steep, quick sea running at its bow: as the next crest rises past its bow faster than the bow lifts, it slams.
   const wave = {
     direction: [0, 1] as const,
     number: (2 * Math.PI) / 30,
@@ -119,6 +120,32 @@ test("each ship's footprint is its own hull at its drawn size, and its bow slams
     calmMost = Math.max(calmMost, calm.hulls(lies, [], [], 1)[0]?.spray ?? 0);
   }
   assert.ok(most > 0.5 && most > calmMost * 2, `rough ${most}, calm ${calmMost}`);
+});
+
+test('a view easing a ship from the raised size to its true one throws no slam of its own', () => {
+  // A sea a bow meets without slamming at either size, running along its keel.
+  const wave = {
+    direction: [0, 1] as const,
+    number: (2 * Math.PI) / 40,
+    frequency: 1.24,
+    amplitude: 1,
+    shift: 0,
+    phase: 0,
+  };
+  const water = {
+    swell: { waves: [wave], fullDepthM: 15, goneDepthM: 1, bearing: 0, state: 0.4 },
+    depthAt: () => Infinity,
+  };
+  const ships = new SeaShips(undefined, FAIR_LINES);
+  const lies = { ...OWN.lies, heading: 0, underWay: true };
+  const slammed: number[] = [];
+  for (let step = 0; step < 600; step++) {
+    // Ten seconds raised, a second easing down, then at sea level.
+    const scale = step < 300 ? 4 : step < 360 ? 4 - (3 * (step - 300)) / 60 : 1;
+    ships.placeOf('own', lies, scale, water, 1 / 60, step / 60);
+    if (ships.hulls(lies, [], [], scale)[0]?.spray === sprayOf(1, 0.4, 0)) slammed.push(step);
+  }
+  assert.deepEqual(slammed, [], 'no slam as the size eases, nor before or after');
 });
 
 test("every other ship carries its people: a player's Sloop its plain crew, a captain's its faction and rank", () => {

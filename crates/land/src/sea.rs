@@ -132,9 +132,10 @@ impl Swell {
         self.lagged_displacement(x, y, time, depth, 0.0)
     }
 
-    /// As `displacement`, the height as a hull of time constant `lag` seconds feels it: each wave answered as a first
-    /// order lag answers a sine, its height shrunk by 1 / √(1 + (frequency x lag)^2) and its crest come late, from
-    /// + - * / alone. A lag of 0 is the water itself, to the bit.
+    /// As `displacement`, the height as a hull of time constant `lag` seconds feels it: each wave shrunk as a first
+    /// order lag shrinks a sine, by 1 / √(1 + (frequency x lag)^2), its crest kept on time. A crest come late as well
+    /// would leave the hull low as the water rises round it, and a storm's would stand over its deck. A lag of 0 is
+    /// the water itself, to the bit.
     fn lagged_displacement(&self, x: f64, y: f64, time: f64, depth: f64, lag: f64) -> [f64; 3] {
         let share = reach(depth);
         let mut out = [0.0; 3];
@@ -148,7 +149,7 @@ impl Swell {
             out[1] += wave.shift * wave.direction[1] * cosine;
             if lag > 0.0 {
                 let slowness = wave.frequency * lag;
-                out[2] += wave.amplitude * (sine + slowness * cosine) / (1.0 + slowness * slowness);
+                out[2] += wave.amplitude * sine / (1.0 + slowness * slowness).sqrt();
             } else {
                 out[2] += wave.amplitude * sine;
             }

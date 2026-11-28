@@ -521,13 +521,13 @@ sails out from its berth ("Landings").
   is eased down to instead. On each view near the ship every ship is its true size, its pose on the swell, its footprint
   on the water and everyone aboard with it.
 - **Two views** ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). The Oversea
-  view is DFO's raised camera over the ship (`stepCamera`): drag to orbit, the wheel to zoom it between its lowest and
-  highest, the arrow keys to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the
-  island stands in it. The Sealevel view (`seaClose.ts`) brings the eye down along the camera's own look to 25 m from
-  the point 4.5 m over its waterline that the World Editor looks at, every ship drawn as its size coming in has it, from
-  whatever height the Oversea view stood at. V (the pad's left) or the console's switch moves between them, eased over
-  about a second; the wheel never does, and at sea level it changes nothing. Docking switches to the Oversea view
-  ("Landings"), and going ashore the view eases back up as it flies off. Clicks and marks
+  view is DFO's raised camera over the ship (`stepCamera`): drag to orbit and the arrow keys to turn, at the height it
+  first stood at: the wheel zooms neither view. The ship first lies facing the island, and the view looks 30 degrees
+  down, so the island stands in it. The Sealevel view (`seaClose.ts`) brings the eye down along the camera's own look to
+  25 m from the point 4.5 m over its waterline that the World Editor looks at, every ship drawn as its size coming in
+  has it, from whatever height the Oversea view stood at. V (the pad's left) or the console's switch moves between them,
+  eased over about a second; the wheel never does, and at sea level it changes nothing. Docking switches to the Oversea
+  view ("Landings"), and going ashore the view eases back up as it flies off. Clicks and marks
   are taken on the picture as shown.
 - **The pace follows the view** (`easedPace`). In the Oversea view a voyage sails at the pace it was set at: ×200
   planned on the held map, ×60 set by a click (`PLANNED_PACE`, `CLICK_PACE`). Once the view comes down to sea level,
