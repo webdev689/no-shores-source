@@ -5,9 +5,10 @@ status: in force
 ---
 # The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them
 
-Every call Claude made building [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]
-and [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]], on the owner's "treat all this work as
-your baby". Each is the owner's to change.
+Every call Claude made building
+[[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]] and
+[[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]], on the owner's "treat all this work as your
+baby". Each is the owner's to change.
 
 ## The keepers' gifts and the weapon choice
 

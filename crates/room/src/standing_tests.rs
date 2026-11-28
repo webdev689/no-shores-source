@@ -1,6 +1,7 @@
 //! Where a player stands beyond their gear, in the room: an Art below its highest level casting its share, a spell
 //! already out keeping its Art's level and Core, the factions', the Tailor's and the Tack's asks served only at their
-//! own counters, Shape on the plaza only from Friday to Sunday, and the Shapes a kill gives at the Elite and Abyss seas.
+//! own counters, Shape on the plaza only from Friday to Sunday, and the Shapes a kill gives at the Elite and Abyss
+//! seas.
 
 use crate::arts::Cast;
 use crate::arts::arts_tests::{cast, room_with_player, stand_foe, wearing};

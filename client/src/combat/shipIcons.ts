@@ -1,8 +1,8 @@
 // The pictures of the ship's bar, drawn pixel by pixel as the Arts' icons are (`player/artGlyphs.ts`), 12 cells a
 // side: a cannon on its carriage facing the side it fires to, a sail filled by the wind with lines of speed behind it,
-// a shield for the brace, a horseshoe for a rider's boost, and each load's shot (a round ball, a cluster of grape, two balls on a chain, a ball glowing
-// hot). Each map's letters are its own colours in turn: an outline, a deep shade, its body, its light, a highlight,
-// and wood or brass. They stand in the Tenets' ring, drawn in brass.
+// a shield for the brace, a horseshoe for a rider's boost, and each load's shot (a round ball, a cluster of grape, two
+// balls on a chain, a ball glowing hot). Each map's letters are its own colours in turn: an outline, a deep shade, its
+// body, its light, a highlight, and wood or brass. They stand in the Tenets' ring, drawn in brass.
 import { paletteSvg, TENET_RING } from '../player/artGlyphs.ts';
 import type { ShipIcon } from '../plus/seaFight.ts';
 import { TONES } from '../plus/tones.ts';

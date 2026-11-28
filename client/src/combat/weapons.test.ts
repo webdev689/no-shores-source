@@ -150,7 +150,8 @@ test('a swap trades the rows for the swap’s time, a reload fills its line, and
   assert.equal(rows.node(), null, 'no gear, no rows');
 });
 
-/** The forge's pictures, as `drawn` says: one weapon's picture, or none (still drawing, or never, as a 404 leaves it). */
+/** The forge's pictures, as `drawn` says: one weapon's picture, or none (still drawing, or never, as a 404 leaves
+ *  it). */
 const forge = (drawn: () => Picture | null): ItemPictures => ({ pictureOf: drawn }) as unknown as ItemPictures;
 const blade: Picture = { width: 2, height: 2, pixels: new Uint8ClampedArray(16).fill(255) };
 const pictured = (rows: WeaponRows) => allOf(rows.node()).filter((node) => node.picture?.key.startsWith('weapon'));

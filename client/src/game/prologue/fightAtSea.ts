@@ -163,7 +163,8 @@ export class StoryFight {
   /** Sets `ambushers` upon the player's `ship` on the land worker's open landmass at `now`, every captain's Sloop
    *  drawn with `hull`'s sails and the fight's balls and arcs with its marks. A ship coming on with `way` (m/s) comes
    *  under sail; each ship's sails go on from the rig `rigs` hands it (the player's, then each ambusher's), as last
-   *  drawn. Every ship sails in the story's `wind` (m/s east and south), the storm drawn round it, never the world's. */
+   *  drawn. Every ship sails in the story's `wind` (m/s east and south), the storm drawn round it, never the
+   *  world's. */
   static async begin(
     land: LandWorker,
     ship: { x: number; y: number; heading: number; way?: number },

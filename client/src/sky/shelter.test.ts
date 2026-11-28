@@ -70,8 +70,8 @@ test('a piece narrower than a cell overhead (a brazier, a lamp) keeps no square 
 });
 
 test('a room walked into is dry everywhere inside its lining, wherever its walls fall on the grid', () => {
-  // Its ceiling's box spans it to its outer faces, as a room's does (crates/layout/src/interiors.rs); its lining's inner
-  // face stands 0.24 m inside them.
+  // Its ceiling's box spans it to its outer faces, as a room's does (crates/layout/src/interiors.rs); its lining's
+  // inner face stands 0.24 m inside them.
   const inside = 0.24;
   for (let step = 0; step < 40; step++) {
     const offset = step * 0.05;

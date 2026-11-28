@@ -38,7 +38,8 @@ export type CityPipelines = {
  *  many times its size it is drawn. */
 export const MODEL_INSTANCE_BYTES = 32;
 
-/** The models' instance as the pipeline reads it: where it stands and its yaw, its cell and tier, its break, its size. */
+/** The models' instance as the pipeline reads it: where it stands and its yaw, its cell and tier, its break, its
+ *  size. */
 export const MODEL_INSTANCE_LAYOUT = {
   arrayStride: MODEL_INSTANCE_BYTES,
   stepMode: 'instance',

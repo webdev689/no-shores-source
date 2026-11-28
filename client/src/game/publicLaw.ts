@@ -65,7 +65,8 @@ export function mapEventOf(
   return { at: [event.ground[0], event.ground[1]], name: NAMES[event.kind] ?? '', clock: clockOf(event.ticksLeft) };
 }
 
-/** What the player is to do now: carry shards, or kill the Warden; hold the stores through the wave, or break Marrow. */
+/** What the player is to do now: carry shards, or kill the Warden; hold the stores through the wave, or break
+ *  Marrow. */
 function objectiveOf(event: PublicEvent): string {
   if (event.kind === PUBLIC_KIND.fissure)
     return event.stage >= 2 ? 'Kill the Warden of the Fissure' : 'Carry shards to the fissure to seal it';
@@ -75,8 +76,8 @@ function objectiveOf(event: PublicEvent): string {
     : `Hold the stores: wave ${event.stage} of ${event.stages}`;
 }
 
-/** What a won event says: to a player it left a chest, that chest as the room tiers it (crates/room/src/public/chest.rs:
- *  heroic, and the bonus); to one who took no part, only that it was won. */
+/** What a won event says: to a player it left a chest, that chest as the room tiers it
+ *  (crates/room/src/public/chest.rs: heroic, and the bonus); to one who took no part, only that it was won. */
 function chestWords(event: PublicEvent, hasChest: boolean): string {
   if (!hasChest) return event.kind === PUBLIC_KIND.raid ? 'The Tithe gave up' : 'The fissure is sealed';
   const heroic = event.heroic === HEROIC.met;

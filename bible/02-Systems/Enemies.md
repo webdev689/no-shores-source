@@ -62,9 +62,10 @@ ground, after Bungie's ([[Foes Fight in Groups That Lead, Break and Give Ground,
 stand already while others arrive, the Grey Tithe's by airship and the Lattice's under crystal, in varied groups and
 more present in patrol ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]);
 the roster, the numbers and how the groups and the arrivals do it are Claude's ([[The Enemies as Claude Builds Them]],
-[[Foe Groups as Claude Builds Them]], [[Foe Arrivals as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
-The Lattice, the next faction, has its types in the roster and comes out of the Fissure, a public event
-([[Public Events]]); its look is drawn ([[The Lattice Are the Ruined Ports' People, Overtaken]], [[Lattice]]).
+[[Foe Groups as Claude Builds Them]], [[Foe Arrivals as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships'
+ranks are [[Naval Combat]]'s. The Lattice, the next faction, has its types in the roster and comes out of the Fissure, a
+public event ([[Public Events]]); its look is drawn ([[The Lattice Are the Ruined Ports' People, Overtaken]],
+[[Lattice]]).
 
 ## Factions
 
@@ -232,13 +233,13 @@ WebAssembly, so names, factions and weapons are read in one place.
   or three a Major and the rest Minors. The sentry and the watch hold their posts, their first facing the nearest spawn,
   the rest round it facing out; the others walk beats as any group does.
 - **Levels and shields** ([[Garrisons Take the Gear Loop's Levels and Shields]]): each foe stands at a level drawn
-  evenly from its island's band ([[Gear]], "Where foes stand"), raised by the difficulty its voyage set out at, and one foe in
-  five, a Boss or a Miniboss never, with a shield of an element drawn evenly, holding half its health; both are drawn
-  from the node's id, so a group stands again with the same. Its level sets its power against a player's gear, and its
-  rank multiplies on top: a Grey Tithe Elite at level 13 has 2.2 times a Major's health, times 1.07 to the 13th (2.41),
-  5.30 times in all, and its blow is 1.15 times a Major's, times 2.41 on a level-13 player with no Defense. A Boss's
-  called foes fight at its level, with no shield. A kill pays every player whose blow landed in its last ten seconds, as
-  any foe's does ([[Gear]], "In the rooms").
+  evenly from its island's band ([[Gear]], "Where foes stand"), raised by the difficulty its voyage set out at, and one
+  foe in five, a Boss or a Miniboss never, with a shield of an element drawn evenly, holding half its health; both are
+  drawn from the node's id, so a group stands again with the same. Its level sets its power against a player's gear, and
+  its rank multiplies on top: a Grey Tithe Elite at level 13 has 2.2 times a Major's health, times 1.07 to the 13th
+  (2.41), 5.30 times in all, and its blow is 1.15 times a Major's, times 2.41 on a level-13 player with no Defense. A
+  Boss's called foes fight at its level, with no shield. A kill pays every player whose blow landed in its last ten
+  seconds, as any foe's does ([[Gear]], "In the rooms").
 - **The posts** are on a 5 m lattice over the room's navmesh, 10 m inside the section's edge and 5 m inside the
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
   farthest from the nearest spawn. A point its group cannot stand at is passed over, and only a post that stands
@@ -252,13 +253,13 @@ WebAssembly, so names, factions and weapons are read in one place.
   zone's layout marks foes' sites, and its room stands a group of the Grey Tithe at each: its territories across the
   zone, every area but where players arrive or pass (its landing, gates and entrances), where folk live (a hamlet),
   where public events are fought (wilds), a Breach's hollow and a guild's plot, at the area's middle ([[Layouts]],
-  "How a layout is planned"); and its runs' beats short of their end arenas, which hold their objective's site ([[Layouts]], "Runs").
-  One in the garrison's own square stands none, its ground held already, and none within 60 m of the edge of a
-  public event's ground, which the event's own foes hold. A site's group stands when a player comes within 150 m of
-  it while it stands none, none is within 40 m, and the room's living foes leave room for all of it, on a navmesh
-  baked round the site then, a slice a tick, as a quest's place's is ([[Navmesh]]): within a second or two, a
-  keep's walls and floors within three. So a room opens as quickly as before. Saltmere's three zones hold 15 territories (Saltgrass
-  Downs five, Gullwing Vale five, Driftwood Moors five) beside their runs' beats. It is drawn as a
+  "How a layout is planned"); and its runs' beats short of their end arenas, which hold their objective's site
+  ([[Layouts]], "Runs"). One in the garrison's own square stands none, its ground held already, and none within 60 m of
+  the edge of a public event's ground, which the event's own foes hold. A site's group stands when a player comes within
+  150 m of it while it stands none, none is within 40 m, and the room's living foes leave room for all of it, on a
+  navmesh baked round the site then, a slice a tick, as a quest's place's is ([[Navmesh]]): within a second or two, a
+  keep's walls and floors within three. So a room opens as quickly as before. Saltmere's three zones hold 15 territories
+  (Saltgrass Downs five, Gullwing Vale five, Driftwood Moors five) beside their runs' beats. It is drawn as a
   patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
   raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
   stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes
@@ -295,9 +296,10 @@ WebAssembly, so names, factions and weapons are read in one place.
   posts. Its levels, shields, leash and standing again are any garrison's, at its patrol's island band.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
   place in its group or, farther than 14 m from the foe, stands on the ground off the room's navmesh
-  ([[A Foe Gives Up Only When the Player Is Far Away]]), and walks back there, healing as it goes, to stand idle again; one whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight
-  began, so it walks back to its place round that spot, and the group walks its beat on once all its foes are idle in
-  their places. It is still its group's: a walk home never clears a group or stands it again.
+  ([[A Foe Gives Up Only When the Player Is Far Away]]), and walks back there, healing as it goes, to stand idle again;
+  one whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight began, so it walks
+  back to its place round that spot, and the group walks its beat on once all its foes are idle in their places. It is
+  still its group's: a walk home never clears a group or stands it again.
 - **Its leader** is its highest rank, a Captain first among equals, else the first of them. When it falls, every other
   foe of its group that is stirred and not walking home breaks, once each time the group stands: one of them that fights
   a target rages (a brute first, then a skirmisher, then a swordsman, the one nearest its target; never a shooter or a
@@ -308,8 +310,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   gives ground there), its foes fighting elsewhere fall back to them, each fighter hand to hand holds near its place,
   coming for a target that stands near it a while, and its shooters hide longer between their looks out ([[Foes]], "Its
   group"). In a patrol zone, as a Destiny patrol area resets once no one is near, it is made whole once no player has
-  come within 40 m of its post for 120 s, its living foes are idle and the living foes leave room for its fallen: they stand at their places,
-  it is led afresh, defends no more and walks its beat again.
+  come within 40 m of its post for 120 s, its living foes are idle and the living foes leave room for its fallen: they
+  stand at their places, it is led afresh, defends no more and walks its beat again.
 - **The Grey Tithe's tactic**, its shield front: its shield-bearers hold the line before their target, and a leader that
   fights hand to hand, under a Miniboss, is screened by its lower ranks that fight hand to hand. While one of them that
   is not broken fights at its target, within its range and neither falling back nor holding ground away from it, the
@@ -327,21 +329,22 @@ WebAssembly, so names, factions and weapons are read in one place.
   groups stand again the share rises, and they go back.
 - **A mission's waves**: as its garrison falls back, a wave comes, and another for its last stand, both at once if it
   gives up both at once: each a band drawn as its bands are (two to four Runners, Collectors and Crossbowmen, Minor or
-  Major), each wave its own, at the island's levels, a shield drawn as any foe's, brought by airship ("Arrivals"). It stands at the open point of the
-  post lattice nearest the players that is at least 25 m from each of them, 20 m from every wave standing and 10 m from
-  every foe and the place it keeps to, hunts the nearest player standing and seen, and holds there: its places are where
-  it stood. A wave has its own leader and break, but no breaking point: it comes on whatever it loses. It never stands
-  again once fallen. It comes once each time the garrison holds its territory, but not while a wave of before stands,
-  not with no player standing and seen to hunt, and only while the room's living foes leave room for all of it; a
-  garrison sent away calls none. No two places a garrison gives ground to stand within 1 m of each other or of a wave's
-  where the floor round them has room: each is tried round three rings of twelve, 2.5 m apart, and in a pocket too small
-  for them all the last go on their ring regardless.
+  Major), each wave its own, at the island's levels, a shield drawn as any foe's, brought by airship ("Arrivals"). It
+  stands at the open point of the post lattice nearest the players that is at least 25 m from each of them, 20 m from
+  every wave standing and 10 m from every foe and the place it keeps to, hunts the nearest player standing and seen, and
+  holds there: its places are where it stood. A wave has its own leader and break, but no breaking point: it comes on
+  whatever it loses. It never stands again once fallen. It comes once each time the garrison holds its territory, but
+  not while a wave of before stands, not with no player standing and seen to hunt, and only while the room's living foes
+  leave room for all of it; a garrison sent away calls none. No two places a garrison gives ground to stand within 1 m
+  of each other or of a wave's where the floor round them has room: each is tried round three rings of twelve, 2.5 m
+  apart, and in a pocket too small for them all the last go on their ring regardless.
 - **Standing again**: a group whose last foe has fallen stands again by airship under the open sky ("Arrivals"),
-  whole and idle at its places at its post and its beat begun again from there, 120 s later (a group with a Miniboss or a Boss, 10 minutes later, so neither is
-  farmed: [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]), once
-  no player stands within 40 m of its post and the room's living foes leave room for all of it. In a dungeon run a
-  band whose fall won a checkpoint holds its ground instead while anyone is in the room; elsewhere, a mission's group
-  among them, its checkpoint falls back as it stands again ([[Revives]]).
+  whole and idle at its places at its post and its beat begun again from there, 120 s later (a group with a Miniboss or
+  a Boss, 10 minutes later, so neither is farmed:
+  [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]), once no player stands within
+  40 m of its post and the room's living foes leave room for all of it. In a dungeon run a band whose fall won a
+  checkpoint holds its ground instead while anyone is in the room; elsewhere, a mission's group among them, its
+  checkpoint falls back as it stands again ([[Revives]]).
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a patrol's 32, 8 more
   for its territories standing near its players (48 in a zone that holds public events); a course's room 12.
   Only the living count when a group stands again or a Boss calls, so the fallen, lying their ten seconds, never
@@ -359,14 +362,15 @@ companions, and a foe a page asks for. The rest arrive (`arrivals.rs`):
   they are stood): a garrison group standing again, a half-fallen patrol group's fallen, a mission's waves, the raid's
   waves and its tithe-taker ([[Public Events]]), a quest defence's waves ([[Quests]]), the War Horn's Assessor and his
   four ([[Outposts]]), and a territory's group retaken (above). No foe comes on a timer
-  ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]). A ship carries six at most; it comes in toward the nearest living player (swung up to 0.6 rad off
-  that line), its flight 8 s; it hangs 16 m over the middle of its foes' places, lets the first down 1 s after it hangs
-  and each next 0.5 s after, each built over 1 s; it lingers 1.2 s after the last stands and flies on for 9 s. A ship
-  to ground another's is over (within 40 m) sets out 1.5 s later and hangs 24 m abeam of the first, either
-  side in turn, clear of its outriggers.
+  ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]). A ship carries six at most; it comes in
+  toward the nearest living player (swung up to 0.6 rad off that line), its flight 8 s; it hangs 16 m over the middle of
+  its foes' places, lets the first down 1 s after it hangs and each next 0.5 s after, each built over 1 s; it lingers
+  1.2 s after the last stands and flies on for 9 s. A ship to ground another's is over (within 40 m) sets out 1.5 s
+  later and hangs 24 m abeam of the first, either side in turn, clear of its outriggers.
 - **Under a crown**, the Lattice's: the Fissure's waves and its Warden, the Sunken Gate's Waking and the Bulwarks it
-  sends to claim a mooring, and the Drowned Vale's waves, a crown over each mouth or perch they come out of. It forms over 1.2 s; each foe begins forming 0.25 s
-  after the one before and forms over 1.3 s; it holds 0.6 s after the last and breaks over 0.8 s.
+  sends to claim a mooring, and the Drowned Vale's waves, a crown over each mouth or perch they come out of. It forms
+  over 1.2 s; each foe begins forming 0.25 s after the one before and forms over 1.3 s; it holds 0.6 s after the last
+  and breaks over 0.8 s.
 - **Called**: a Boss's called foes are built where they stand, over 0.6 s.
 
 A foe arriving neither thinks, steps nor hears (no noise reaches its brain), breaks with no fallen leader, and holds
@@ -386,7 +390,8 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
   players' side (the Brig's crew) has its bar in green and no "?" or "!".
 - **Over a figure, a plate's size goes with its rank**, as Destiny's bars do
   ([[Fewer Plates Show, Sized by Rank, After Destiny]]): a Minor's bar short and thin, a Major's as a ship's, an
-  Elite's and a Miniboss's longer and cut in thirds ([[Interface]]). A Miniboss's second phase, at 35%, comes just over its lower third.
+  Elite's and a Miniboss's longer and cut in thirds ([[Interface]]). A Miniboss's second phase, at 35%, comes just over
+  its lower third.
 - **Plates are never overbearing.** The cone round the crosshair shows one plate: the foe whose body the crosshair is
   on, the nearest of them, else the foe in sight nearest it, within 6 degrees of its body (a Boss there takes the cone
   and shows none over its head); the foe the soft lock holds shows its plate wherever it is, and so do the foes fought
@@ -418,8 +423,8 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
   surcoat; the Hookman in leather and a vest; the Enforcer in full iron and a short grey cloak; the Bosun in iron with
   a grey sash; the Reeve in iron with a grey surcoat and cloak; Thule in full steel plate, a grey surcoat and a long
   grey cloak; Corvane in full iron plate, a grey surcoat and a long grey cloak); the crew's own five types in the Test
-  Ground's first foes' clothes. A page may dress a foe in clothes of its own instead, its type's weapons drawn: the wreck dresses its
-  crew as the Brig's hands ([[Prologue]]).
+  Ground's first foes' clothes. A page may dress a foe in clothes of its own instead, its type's weapons drawn: the
+  wreck dresses its crew as the Brig's hands ([[Prologue]]).
 - **Arriving**, a foe is drawn only once it is let down or begins forming, and wears no plate, nor stops a player's
   aimed shot on the page, until it lands. A
   Grey Tithe foe is built from the feet up as a player arriving is, each 2 by 2 cell white as it lands and then a
@@ -440,7 +445,8 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
 
 - A garrison stands within its room's navmesh, a 70 m square by the first spawn, never across the whole section:
   baking a section's whole ring costs more time and memory than a room has. A garrison foe gives up a player who
-  leaves the mesh more than 14 m from it; a foe a player asked for, or one a Boss called, chases them off it and walks straight.
+  leaves the mesh more than 14 m from it; a foe a player asked for, or one a Boss called, chases them off it and walks
+  straight.
 - A cleared group stands again only while no player is within 40 m of its post, so a player waiting nearby holds it.
 - A wave is brought by airship and set down at least 25 m from every player: its room's navmesh has no ground beyond
   its square to walk it in from.

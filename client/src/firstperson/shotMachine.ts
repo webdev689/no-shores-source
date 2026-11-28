@@ -15,7 +15,8 @@ export interface ShooterFeel {
   readonly dip: number;
 }
 
-/** DFO's numbers, as its gun and pistol labs settled them. A crossbow's frames draw its own reload, so it never dips. */
+/** DFO's numbers, as its gun and pistol labs settled them. A crossbow's frames draw its own reload, so it never
+ *  dips. */
 export const SHOOTER_FEEL: Readonly<Record<ShooterKind, ShooterFeel>> = {
   thunderlock: { fps: 14, reload: 1.7, hitFrame: 1, frames: 7, kick: 5, sunk: 5, dip: 0.55 },
   pistolet: { fps: 12, reload: 1.4, hitFrame: 1, frames: 6, kick: 3, sunk: 3, dip: 0.7 },

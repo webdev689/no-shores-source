@@ -27,9 +27,9 @@ export interface MapRect {
 export const SEA_CELLS = { windowM: 2_000, frameM: 8_192 } as const;
 
 /**
- * How a route keeps off the coast: a step within `marginM` of land costs up to `1 + marginCost` times as much, so a route
- * runs that far out where it can and still hugs the coast where it must, into a harbour or a strait. A goal on land
- * within `landingReachM` of the water is sailed to the nearest water; farther inland it is refused.
+ * How a route keeps off the coast: a step within `marginM` of land costs up to `1 + marginCost` times as much, so a
+ * route runs that far out where it can and still hugs the coast where it must, into a harbour or a strait. A goal on
+ * land within `landingReachM` of the water is sailed to the nearest water; farther inland it is refused.
  */
 export const ROUTE = { marginM: 4_000, marginCost: 4, landingReachM: 10_000 } as const;
 

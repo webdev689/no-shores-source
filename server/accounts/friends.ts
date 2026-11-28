@@ -47,9 +47,9 @@ export async function friendsOf(database: Db, own: string, now: number): Promise
   };
 }
 
-/** What account `own` asks of the player named `name`: to be friends, to accept their ask, or to end what is between them.
- *  A name no one holds is answered as a name held by someone who never asked, so accepting and removing tell no one
- *  which names exist. */
+/** What account `own` asks of the player named `name`: to be friends, to accept their ask, or to end what is between
+ *  them. A name no one holds is answered as a name held by someone who never asked, so accepting and removing tell no
+ *  one which names exist. */
 export async function friendAsk(
   database: Db,
   own: string,

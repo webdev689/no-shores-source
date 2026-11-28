@@ -84,8 +84,8 @@ fn apart(chosen: &[Ledge], ledge: &Ledge) -> bool {
 
 /// A ledge's stair on the land as carved (its slot cut): its module, its run, and the heights of its foot on the
 /// slot's floor and its top `OVER_M` onto the high floor, metres; none where it would not climb 3 to 24 m. The stair is
-/// the lowest baked rise at or over the climb measured at its foot, which a longer stair stands further down: so twice. None
-/// where the slot's floor steps before the stair's foot, or the land stands over its steps.
+/// the lowest baked rise at or over the climb measured at its foot, which a longer stair stands further down: so twice.
+/// None where the slot's floor steps before the stair's foot, or the land stands over its steps.
 #[must_use]
 pub fn measured(ledge: &Ledge, ground: &Ground, carved: &Sculpts) -> Option<(u32, f64, f64, f64)> {
     let land =

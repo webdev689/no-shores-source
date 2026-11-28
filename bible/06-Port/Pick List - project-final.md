@@ -13,10 +13,10 @@ samples with no per-file licence are not. Read it with [[Port]] for the verdicts
 [[Overlook Is a Shared World After Destiny 1]] for the scope, and [[Pick List]] for DFO's side.
 
 Scope: every file on `main` at `b0ac719`. Rows come from file headers, import lists and name searches. Section sizes
-are `wc -l` lines for code and notes, and bytes for maps, public and art. The tests were not run. **Cut** with "Destiny's
-names" means the logic is ours, but the code or note uses Destiny's or another game's names and terms (engram,
-Warlock, Titan, strike, Halo, Doom): the logic comes, the names stay. Whether a system belongs in No Shores is the
-owner's call; this list only says what can come.
+are `wc -l` lines for code and notes, and bytes for maps, public and art. The tests were not run. **Cut** with
+"Destiny's names" means the logic is ours, but the code or note uses Destiny's or another game's names and terms
+(engram, Warlock, Titan, strike, Halo, Doom): the logic comes, the names stay. Whether a system belongs in No Shores is
+the owner's call; this list only says what can come.
 
 | Area | Rows | Clean | Cut | Can't |
 |---|---|---|---|---|
@@ -200,8 +200,8 @@ owner's call; this list only says what can come.
 - **The Requiem** is one gun model by someone other than the owner, in three places: `art/models/BFGlike.fbx`,
   `src/game/meshes/bfglike.js` and `public/sprites/gun-silhouettes/requiem.png`. Its frame in `weaponRegistry.js`,
   its reload and its tests refer to it.
-- **Audio samples.** `public/audio/` is CC0 by description only, and the sampled cue modules in `src/game/` play it. The music, the synth and
-  the playback code are the owner's.
+- **Audio samples.** `public/audio/` is CC0 by description only, and the sampled cue modules in `src/game/` play it. The
+  music, the synth and the playback code are the owner's.
 - **Drawing.** Every canvas except the world's goes through the CPU rasteriser or Canvas 2D, so those rows land as a
   WebGPU rewrite whatever their verdict. The hub and item screens are DOM.
 - **The rules' shape.** The sims keep plain serialisable state and a pure host tick, written for a host peer that

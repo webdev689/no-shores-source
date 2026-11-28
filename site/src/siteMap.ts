@@ -7,7 +7,8 @@ export const SITE_ORIGIN = 'https://noshores.online';
 export interface SitePage {
   /** The page's name in code and in its words' keys (`world.title`). */
   readonly id: string;
-  /** Its folder under `site/`, `''` for the home page; the page is `<folder>/index.html` and is served at `/<folder>/`. */
+  /** Its folder under `site/`, `''` for the home page; the page is `<folder>/index.html` and is served at
+   *  `/<folder>/`. */
   readonly folder: string;
   /** Whether the top bar names it. */
   readonly inBar: boolean;

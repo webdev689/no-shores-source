@@ -1,6 +1,6 @@
 // The owner's logo as the interface draws it, the game's title on the intro and the tap to start, and the loading
-// screen it heads: its cells (`logoPicture.ts`) as pixels of its own, laid at a whole multiple so each cell stays square
-// and crisp.
+// screen it heads: its cells (`logoPicture.ts`) as pixels of its own, laid at a whole multiple so each cell stays
+// square and crisp.
 import type { Child, Node } from '../ui/node.ts';
 import { breath, dropped } from './cinemaParts.ts';
 import { LOGO } from './logoPicture.ts';

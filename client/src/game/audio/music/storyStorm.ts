@@ -1,8 +1,8 @@
 // The story's dark songs. The storm: D minor driving in the low strings, the theme's sigh in the drive, the theme
 // itself slowed on the horns, tense but no villain's, in layers the beats bring in as the storm grows and the Grey
-// Tithe come. The ram: the Frigate coming out of the storm in Thule's own half step (the Boarding's E against F), swelling
-// till the crash cuts it off. The deep: the theme slowed again on voices under the sea, a celesta glinting its first
-// notes high above as the fires do through the surface.
+// Tithe come. The ram: the Frigate coming out of the storm in Thule's own half step (the Boarding's E against F),
+// swelling till the crash cuts it off. The deep: the theme slowed again on voices under the sea, a celesta glinting its
+// first notes high above as the fires do through the surface.
 
 import { chordAt, measured, roll } from './craft.ts';
 import { type Song, lay, midiNote } from './score.ts';

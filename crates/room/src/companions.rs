@@ -75,8 +75,9 @@ pub fn type_of(post: Post) -> u8 {
     }
 }
 
-/// Where the `place`th of `count` companions stands behind a leader: BEHIND back along the way they look (a body standing
-/// still keeps the way it last walked), and with two, ASIDE to the left for the first and to the right for the second.
+/// Where the `place`th of `count` companions stands behind a leader: BEHIND back along the way they look (a body
+/// standing still keeps the way it last walked), and with two, ASIDE to the left for the first and to the right for the
+/// second.
 fn place_behind(leader: &Fighter, place: usize, count: usize) -> [f64; 3] {
     let body = &leader.body;
     let aside = if count < 2 {
@@ -158,8 +159,8 @@ impl Room {
         standing.find(|(_, companion)| companion.leader == leader && companion.officer == officer).map(|(id, _)| *id)
     }
 
-    /// An officer stands as a companion at their place behind their leader, facing the way the leader looks: their post's
-    /// type at Major, at the officer's level, with their perks.
+    /// An officer stands as a companion at their place behind their leader, facing the way the leader looks: their
+    /// post's type at Major, at the officer's level, with their perks.
     fn stand_companion(&mut self, leader: PlayerId, place: usize, count: usize, officer: &Officer) {
         let (Some(at), Some(foe_type)) = (self.fighter(leader).copied(), foe_type(type_of(officer.post))) else {
             return;
@@ -190,7 +191,8 @@ impl Room {
     }
 
     /// A companion's post moves to their place behind their leader, and their level keeps the officer's as kills raise
-    /// it; one who strayed STRAYED from the leader, or fell FALLEN below a leader on the ground, is stood there at once.
+    /// it; one who strayed STRAYED from the leader, or fell FALLEN below a leader on the ground, is stood there at
+    /// once.
     fn heel(&mut self, id: FighterId, leader: PlayerId, place: usize, count: usize, level: u8) {
         if let Some(companion) = self.ashore.standing.get_mut(&id) {
             companion.level = level;

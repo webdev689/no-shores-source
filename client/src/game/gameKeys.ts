@@ -44,8 +44,8 @@ export interface Controlled {
   readonly islandBack: () => boolean;
 }
 
-/** Where the player's controls act now: in a window, dead (past the edge, or fallen in a fight), at the helm, in a fight
- *  at sea, or on foot (on land, or walking a deck). */
+/** Where the player's controls act now: in a window, dead (past the edge, or fallen in a fight), at the helm, in a
+ *  fight at sea, or on foot (on land, or walking a deck). */
 export function contextOf(playing: Pick<Playing, 'flow' | 'sea' | 'foot'>): Context {
   const { flow, sea, foot } = playing;
   const down = (here: Pick<NonNullable<Playing['foot']>, 'standing' | 'fell'> | null | undefined) =>
@@ -126,7 +126,8 @@ export function listenForControls(game: Controlled): void {
     else if (escape && flow.mode === 'landing') {
       sea?.view.backToSea();
       change({ kind: 'back' });
-      // With nothing else over the game, on foot or at sea, Escape opens Settings, as other games' own menus open on it.
+      // With nothing else over the game, on foot or at sea, Escape opens Settings, as other games' own menus open on
+      // it.
     } else if (escape && (flow.mode === 'foot' || flow.mode === 'sea') && !playing.helmMap.busy && !overGame())
       openGearWindow({ view: 'settings' });
     else if (acts('confirm') && sailing && sea?.chaseChosen()) return;

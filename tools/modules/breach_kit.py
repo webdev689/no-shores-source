@@ -362,10 +362,10 @@ def shaft(module, at, radius, height, lesser=5):
 
 def arch(module, at, radius, deep, thick, stones=11, material='trim', turn=0.0, pointed=False, broken=0, whole=False):
     """An arch of wedged stones, its springing line's middle at `at`, `radius` to its stones' inner edge (half its
-    span), `deep` through and `thick` from inner edge to outer, facing south (Blender's -y) turned `turn` about z; round,
-    or `pointed` as two arcs struck from a third of the span in from each side meeting at its crown, or `whole`, a ring
-    of stones all round `at`. The keystone is a little proud; `broken` stones fallen from its crown leave its springers
-    standing. Drawn only."""
+    span), `deep` through and `thick` from inner edge to outer, facing south (Blender's -y) turned `turn` about z;
+    round, or `pointed` as two arcs struck from a third of the span in from each side meeting at its crown, or `whole`,
+    a ring of stones all round `at`. The keystone is a little proud; `broken` stones fallen from its crown leave its
+    springers standing. Drawn only."""
     if pointed:
         centre, reach = radius * 0.5, radius * 1.5
         crown = math.acos(-centre / reach)

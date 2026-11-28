@@ -23,6 +23,8 @@ when to install it and what each session does at its start and end; this note sa
   each start of one, where nothing the install adds exists yet. A session on the owner's own computer is told nothing.
 - After any change to the kit, run `bash tools/claude-toolkit/check-tools.sh --worker` and expect no FAIL line. It
   checks the repository it sits in (its main checkout), unless `REPO_DIR` names another.
+- When `cargo xtask repo` refuses a note's or a comment's line past 120 characters, `cargo xtask repo | python3 -I
+  tools/rewrap/rewrap.py` rewraps each one it names, changing no word: only where the lines break.
 - After editing a file, run its own lint, types or clippy (`npx eslint <file>`, `npm run -s types`,
   `cargo clippy -p <crate> --all-targets`).
 - A session or worker tests what it changed and runs `cargo xtask repo`, never the whole `cargo xtask check`: the tests

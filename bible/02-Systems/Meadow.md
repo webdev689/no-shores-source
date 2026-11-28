@@ -15,9 +15,10 @@ code:
 # Meadow
 
 The owner's handcrafted grass over the land: a tall tuft, the same tuft cut short, a tuft of flowers, a dry tuft and a
-bush, five pixel sprites the owner made for DFO ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]], [[Pick - Meadow Grass]],
-[[The Owner's Handcrafted Meadow Grows Over the Grass]]), stood up as crossed cards round the eye. It grows beside the
-[[Nature]] layer's plants and is drawn after them, in the land's pass.
+bush, five pixel sprites the owner made for DFO
+([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]],
+[[Pick - Meadow Grass]], [[The Owner's Handcrafted Meadow Grows Over the Grass]]), stood up as crossed cards round the
+eye. It grows beside the [[Nature]] layer's plants and is drawn after them, in the land's pass.
 
 ## The sprites
 
@@ -52,8 +53,8 @@ A cell holds 288 tufts where all of it is grass, about one and an eighth a squar
 and its number, so a cell grows the same meadow whenever it comes back:
 
 - where it stands in the cell, a little clustered, and whether it grows there (its grass share);
-- its height, 0.25 m to 0.72 m, and how lush its patch is: its own tint pulled a little over half way to noise over the cells at
-  about 16 m and 64 m, so whole patches run lush or poor;
+- its height, 0.25 m to 0.72 m, and how lush its patch is: its own tint pulled a little over half way to noise over the
+  cells at about 16 m and 64 m, so whole patches run lush or poor;
 - its sprite: of each 256 draws, a poor patch grows 72 tall tufts, 118 short, 2 flowering, 61 dry and 3 bushes, a lush
   one 147, 63, 35, 5 and 6 (`pick`);
 - its card's side: its height times its sprite's scale (4/3 a tuft, 2.25 the bush) and its patch's (0.8 poor to 1.25
@@ -70,18 +71,18 @@ The owner's green is lighter and bluer than a grass ground, so each texel is mov
 ground over the ground the tall tuft's green would stand a shade darker over
 ([[The Meadow's Green Stands a Shade Darker]]), held between 0.5 and 1.6. A texel takes
 that ratio's hue as far as it is green and only its light where it is not, so the green becomes the ground's own and
-the petals and dry stalks keep their colours (`texelOver`). A patch's tint lightens or darkens it in four bands, each rounded to its middle, and
-from 0.12 of the reach to 0.6 it gives way to the ground's colour. It is lit as the plants are (the sky, the sun
-through the shadow map, the lamps), darkened by rain with no sky's glare on it, as the plants' leaves are, its foot
-shaded and its light leaning across its lean, and each card's face
+the petals and dry stalks keep their colours (`texelOver`). A patch's tint lightens or darkens it in four bands, each
+rounded to its middle, and from 0.12 of the reach to 0.6 it gives way to the ground's colour. It is lit as the plants
+are (the sky, the sun through the shadow map, the lamps), darkened by rain with no sky's glare on it, as the plants'
+leaves are, its foot shaded and its light leaning across its lean, and each card's face
 takes a low sun's or the moon's own light whole when turned to it and half when turned away; the sky, the lamps and
 the light through it fall on every card alike.
 
 ## Drawing
 
-Cells in view with any grass are drawn nearest first, a draw a cell, its tufts thinned toward the reach: from 88 m a cell draws a
-falling share of its tufts, the last of them fading out by the samples of the pixel as the plants fade. The shader
-draws a tuft it does not grow, or one past its share, nowhere.
+Cells in view with any grass are drawn nearest first, a draw a cell, its tufts thinned toward the reach: from 88 m a
+cell draws a falling share of its tufts, the last of them fading out by the samples of the pixel as the plants fade. The
+shader draws a tuft it does not grow, or one past its share, nowhere.
 
 ## Limits
 

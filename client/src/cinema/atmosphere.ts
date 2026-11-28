@@ -1,5 +1,6 @@
 // The weather drawn over the finished picture in one full-screen draw, after the water and the light layer and before
-// the first person's hands. The game's sun is fixed in every shader, so a storm dims it here, once, rather than in each.
+// the first person's hands. The game's sun is fixed in every shader, so a storm dims it here, once, rather than in
+// each.
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { ATMOSPHERE_WGSL } from './atmosphereShader.ts';
 import type { Weather } from './weather.ts';

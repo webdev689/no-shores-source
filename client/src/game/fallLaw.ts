@@ -21,7 +21,8 @@ const FRAMED_M = 14;
 const NARROWEST_FOV = 0.3;
 /** How fast a tumbling body spins about, turns a second. */
 export const TUMBLE_TURNS_A_SECOND = 1.5;
-/** The whistle's pitch as the fall begins, and the lowest it drops to, hertz; it falls an octave in this many seconds. */
+/** The whistle's pitch as the fall begins, and the lowest it drops to, hertz; it falls an octave in this many
+ *  seconds. */
 const WHISTLE_FROM_HZ = 1900;
 const WHISTLE_FLOOR_HZ = 320;
 const WHISTLE_OCTAVE_S = 1.1;

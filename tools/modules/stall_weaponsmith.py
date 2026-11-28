@@ -157,7 +157,8 @@ def build(module):
                     turn=(0.0, 0.0, module.draw(-0.1, 0.1)))
     fittings.lantern(module, (0.0, 0.3, 3.2), size=0.3, hung_from=WALL_M + 0.1)
     tool_wall(module, 0.9, HALF_Y - 0.62)
-    # Where a hanging shop sign's bracket is fixed, high on the east front post, facing along the front away from its middle.
+    # Where a hanging shop sign's bracket is fixed, high on the east front post, facing along the front away from its
+    # middle.
     module.socket('sign', (HALF_X - 0.14, FRONT_Y, 3.6), (1, 0))
     module.socket('counter', (0.0, FRONT_Y - 1.4, 0.0), (0, -1))
     module.socket('keeper', (0.0, FRONT_Y + 0.25, 0.12), (0, -1))

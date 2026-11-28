@@ -67,7 +67,8 @@ export function landable(side: readonly Mark[], id: string): Mark | null {
 }
 
 /** The marks laid over the ship (`sail`; none over an island's side or elsewhere), the ship at `ship` among
- *  `hostiles`, from `pose` on a picture of `viewport`: those placed, for a click to pick, and each as the HUD shows it. */
+ *  `hostiles`, from `pose` on a picture of `viewport`: those placed, for a click to pick, and each as the HUD shows
+ *  it. */
 export function seaMarks(
   view: 'sail' | 'landing' | 'other',
   island: readonly Mark[],

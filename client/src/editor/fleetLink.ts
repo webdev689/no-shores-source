@@ -105,7 +105,8 @@ export function offerFleet(harbour: FleetHarbour | null): void {
   offered = harbour;
 }
 
-/** The captains' plates as the interface draws them, as the page offers that drawing (the game's); none until it does. */
+/** The captains' plates as the interface draws them, as the page offers that drawing (the game's); none until it
+ *  does. */
 let plates: (bars: readonly PlacedBar[]) => readonly Node[] = () => [];
 
 /** Offers the drawing of the captains' plates. */

@@ -65,9 +65,9 @@ export class Callout {
   }
 }
 
-/** Where a call's top stands in a view `height` tall at `zoom`: under the compass's column (its foot `under`), no higher
- *  than a quarter down the view, above the crosshair where it fits there; else under the crosshair, and under it too
- *  where above it would cover more of the Boss's figure (`boss`, the span down the view it stands in). */
+/** Where a call's top stands in a view `height` tall at `zoom`: under the compass's column (its foot `under`), no
+ *  higher than a quarter down the view, above the crosshair where it fits there; else under the crosshair, and under it
+ *  too where above it would cover more of the Boss's figure (`boss`, the span down the view it stands in). */
 export function callTop(
   height: number,
   under: number,

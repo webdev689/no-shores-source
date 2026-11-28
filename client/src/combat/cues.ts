@@ -65,7 +65,8 @@ export const cameFrom = (event: FightEvent): number =>
   (event.how === HOW.leap || event.how === HOW.burst) && event.from ? event.from : event.striker;
 
 /** Whether a blow is no weapon's own swing or shot on its foe: a shot, a blow that lands as a spell's, or an Atheric's
- *  bite back on a block, which flashes on the foe bitten but neither kicks the view, holds the fight nor flares the arc. */
+ *  bite back on a block, which flashes on the foe bitten but neither kicks the view, holds the fight nor flares the
+ *  arc. */
 export const notABlow = (event: FightEvent): boolean =>
   event.how === HOW.shot || event.how === HOW.bite || landsAsSpell(event);
 

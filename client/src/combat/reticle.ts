@@ -1,8 +1,8 @@
 // The crosshair, after Destiny's. A ranged weapon's own shape while it aims or is out in first person: a bow a
 // chevron, a crossbow brackets, a pistolet a dot with four ticks, a thunderlock a circle. It turns red on a foe's
 // body, is ringed in gold by a bow's draw and in white by a reload, and marked as a shot lands: white for a hit, gold
-// for a crit, red for a kill. With a melee weapon drawn, a small dot closes into red brackets over a foe in reach. Drawn
-// by the interface at the view's middle, each look one picture drawn in 2D.
+// for a crit, red for a kill. With a melee weapon drawn, a small dot closes into red brackets over a foe in reach.
+// Drawn by the interface at the view's middle, each look one picture drawn in 2D.
 import type { FightEvent } from '../network/messages.ts';
 import { FIGHT_TICKS } from '../player/fightMoves.ts';
 import { SHOOTERS } from '../player/walker.ts';
@@ -27,7 +27,8 @@ export interface CrosshairFrame {
 export const MARK_SECONDS = 0.25;
 /** A double pistolet's wait between its barrels, in ticks (crates/combat/src/shots.rs BRACE_GAP): no reload. */
 const BRACE_TICKS = 30;
-/** How far above or below a foe may stand and still be struck, in metres (crates/combat/src/tuning.rs STRIKE_HEIGHT). */
+/** How far above or below a foe may stand and still be struck, in metres (crates/combat/src/tuning.rs
+ *  STRIKE_HEIGHT). */
 const STRIKE_HEIGHT_M = 1.4;
 /** The foe's colour on the display, as its alert and the arrows to it are drawn. */
 const FOE_RED = '#ff5a4a';

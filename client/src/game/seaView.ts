@@ -46,8 +46,8 @@ export type SeaLevel = 'oversea' | 'sealevel';
 
 /**
  * The view over the player's ship at sea: the Oversea view, DFO's raised camera turned round it at one height, or the
- * Sealevel view close on it, switched between and never by the wheel, which zooms neither; the flight up over an island's side to choose a landing and
- * back down; and the way down to the helm and up again.
+ * Sealevel view close on it, switched between and never by the wheel, which zooms neither; the flight up over an
+ * island's side to choose a landing and back down; and the way down to the helm and up again.
  */
 export class SeaView {
   private camera: OverworldCamera;
@@ -146,7 +146,8 @@ export class SeaView {
     if (this.where.kind === 'helm') this.where = { ...this.where, going: 'up' };
   }
 
-  /** Flies the view up from over the ship to `rig`, over an island, its landings `side`, `docked` at its port or not. */
+  /** Flies the view up from over the ship to `rig`, over an island, its landings `side`, `docked` at its port or
+   *  not. */
   flyToSide(side: readonly Mark[], rig: Rig, docked = false): void {
     [this.side, this.sideRig, this.chosen, this.docked] = [side, rig, null, docked];
     this.close.set(false);

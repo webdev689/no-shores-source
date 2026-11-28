@@ -486,8 +486,8 @@ fn lamps_paid(level: u8) -> Hour {
 }
 
 /// An hour in the passages at `depth` for a player of `level`: its zones in turn, a lamp's one in five standing its
-/// guard alone, their kills and caches, the haul's finds less the share a death takes at that depth, and the day's and the week's lamps; none
-/// at a depth they do not play for its pay (`depths`).
+/// guard alone, their kills and caches, the haul's finds less the share a death takes at that depth, and the day's and
+/// the week's lamps; none at a depth they do not play for its pay (`depths`).
 #[must_use]
 pub fn passage(depth: u8, level: u8) -> Option<Hour> {
     if !depths(level).contains(&depth) {

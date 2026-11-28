@@ -13,7 +13,8 @@ status: in force
 
 - DFO's meadow comes over ([[Pick - Meadow Grass]]): the five handcrafted sprites DFO keeps as the owner's (a tall
   tuft, the same cut short, a tuft of flowers, a dry tuft and a bush), stood up as crossed cards over the grass
-  ([[Meadow]]). They are the owner's own ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
+  ([[Meadow]]). They are the owner's own
+  ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
 - That the texture brings DFO's whole meadow with it (where it grows, its pick, sizes, colour and wind), not its
   blades or its pixel grass, is Claude's reading of the ask.
 - The details are Claude's to call, below.

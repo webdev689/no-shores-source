@@ -149,8 +149,9 @@ impl Sent {
             parked.iter().map(|&(_, number, ship, look)| (number, ship, look)).collect()
         };
         let ships = sent(&latest.parked);
-        // Tick 0 is a screen that showed nothing yet, never a base, even where a snapshot was taken before the first tick.
-        // Parked ships left out stand as the base's, so a snapshot that has none where its base had some is sent whole.
+        // Tick 0 is a screen that showed nothing yet, never a base, even where a snapshot was taken before the first
+        // tick. Parked ships left out stand as the base's, so a snapshot that has none where its base had some is sent
+        // whole.
         let base = self.held.iter().find(|held| held.tick == shown && shown > 0 && shown < now.tick);
         let base = base.filter(|held| !ships.is_empty() || held.parked.is_empty());
         let ships = if base.is_some_and(|held| sent(&held.parked) == ships) { Vec::new() } else { ships };

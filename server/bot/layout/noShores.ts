@@ -48,7 +48,8 @@ export interface LayoutChannel {
   readonly tags?: readonly ForumTag[];
   /** A forum's default reaction on each post. */
   readonly reaction?: string;
-  /** Other names it is found by when there before the layout, such as the voice channel Discord starts a server with. */
+  /** Other names it is found by when there before the layout, such as the voice channel Discord starts a server
+   *  with. */
   readonly also?: readonly string[];
 }
 

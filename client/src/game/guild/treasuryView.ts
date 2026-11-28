@@ -1,6 +1,6 @@
-// The Guild tab's Treasury page: what the guild holds, the ledger's latest lines (who moved what, and the balance after),
-// and, for a member standing at one of the guild's outposts, a field to put their own Aurem in. The treasury is spent
-// only on outposts and never paid out to a player (`server/accounts/treasury.ts`).
+// The Guild tab's Treasury page: what the guild holds, the ledger's latest lines (who moved what, and the balance
+// after), and, for a member standing at one of the guild's outposts, a field to put their own Aurem in. The treasury is
+// spent only on outposts and never paid out to a player (`server/accounts/treasury.ts`).
 
 import type { LedgerLine, OutpostsFace } from '../../network/accounts.ts';
 import { ASKS, type GearAsk } from '../../network/gearMessages.ts';

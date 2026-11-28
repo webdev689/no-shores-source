@@ -27,8 +27,8 @@ status: in force
   Cloudflare: inputs and events that survive a loss, snapshots small enough for one datagram, and their lag and loss
   measured.
 - No relay of the game's own on a server outside Cloudflare for now: its host, its cost, its address and keys wait
-  until the measures show the WebSocket's stalls hurt play ([[Claude Makes the Four Points' Open Calls]]). Safari and iOS stay on the WebSocket until
-  WebKit's open bugs are fixed.
+  until the measures show the WebSocket's stalls hurt play ([[Claude Makes the Four Points' Open Calls]]). Safari and
+  iOS stay on the WebSocket until WebKit's open bugs are fixed.
 - The game's files stay on `r2.dev`, which is rate-limited and meant for development, until the owner has a domain on
   Cloudflare; then the bucket takes it as its own address ([[Claude Makes the Four Points' Open Calls]]).
 

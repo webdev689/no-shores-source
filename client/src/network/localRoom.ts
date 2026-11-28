@@ -173,8 +173,8 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens a passage zone's room from its ask (`open_passage`'s JSON: the island, the week of its web, the zone, the
-   *  route and the minute) from the compiled `room-wasm` module, its player joined at its arrival; the player's own gear
-   *  goes to `gear`. */
+   *  route and the minute) from the compiled `room-wasm` module, its player joined at its arrival; the player's own
+   *  gear goes to `gear`. */
   static openPassage(
     module: WebAssembly.Module,
     ask: string,
@@ -204,8 +204,8 @@ export class LocalRoom implements RoomLink {
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
    *  joined, their ship not yet at sea; its hostiles come as `seed` draws them, a new sea each time by default, and the
    *  Grey Tithe patrols the lanes between those of `ports` that are port cities (none with none); its ships come at
-   *  the difficulty `seas` raises them to (0 Normal, 1 Elite, 2 Abyss); the player's own gear, as the sea keeps it, goes
-   *  to `gear`. */
+   *  the difficulty `seas` raises them to (0 Normal, 1 Elite, 2 Abyss); the player's own gear, as the sea keeps it,
+   *  goes to `gear`. */
   static openSea(
     module: WebAssembly.Module,
     layoutText: string,

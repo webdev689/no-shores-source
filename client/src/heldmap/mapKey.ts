@@ -7,8 +7,8 @@ import type { Rect } from './heldMapLaw.ts';
 import { HATCHES, HOLDER_WORDS, levelColour, washedOver, type WaterHolder } from './watersWash.ts';
 
 /** The face the key is lettered in, as the map's smaller words: the mended glyphs first (face.ts), then Pixelify Sans
- *  under the name the interface loads it by where the game runs (ui/faceReader.ts). Its inks: iron-gall, and the parchment's own colour, which fills the
- *  panel. Its lengths are units, pixels at a scale of 1. */
+ *  under the name the interface loads it by where the game runs (ui/faceReader.ts). Its inks: iron-gall, and the
+ *  parchment's own colour, which fills the panel. Its lengths are units, pixels at a scale of 1. */
 export const FACE = CANVAS_FACE;
 export const KEY_FONT = `500 13px ${FACE}`;
 export const INK = '#3a2816';

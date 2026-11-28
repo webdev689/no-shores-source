@@ -92,9 +92,9 @@ over B5, no note's partials reach past 6 kHz, no struck tone over
   freesound.json and `publish.py` copies it onto the pick in `sounds.json`, where the page reads it. A textural or
   percussive cue has none and plays from the note its score names its home. A note longer than the recording plays
   on in further plays of its middle (from a quarter in), each crossfaded into the last at equal power. A drum plays
-  its recording `shift` semitones off, shaped as its kit drum is (rising over its attack, dying over its decay), the high ones
-  (metal, the bowed cymbal, the riser) cut a tenth of a second after their peak; a swell is started, or entered
-  part way, so its recording ends on the beat the kit drum's lands on. Each channel's sampled voices pass two
+  its recording `shift` semitones off, shaped as its kit drum is (rising over its attack, dying over its decay), the
+  high ones (metal, the bowed cymbal, the riser) cut a tenth of a second after their peak; a swell is started, or
+  entered part way, so its recording ends on the beat the kit drum's lands on. Each channel's sampled voices pass two
   lowpasses in a row at 5.6 kHz (24 dB an octave; 8 kHz some 20 dB down), so no partial of a recording played high
   passes the music's ceiling; the score's B5 ceiling, the 30 Hz high-pass and the soft ceilings hold for it as for
   the FM bank. Until a recording has come, or while a pitched cue has no pick or no root, the track plays its FM
@@ -198,7 +198,8 @@ on, and the sky over it.
 - **Bosses.** Captain Brannoc Thule plays the Boarding; High Assessor Corvane plays the Reckoning; any other Boss
   plays the Wrath. The phase is the boss's health: a phase a third, the last stand in its last tenth (the Wrath, with
   none, keeps its third phase). An Elite Dungeon's Boss, whose wards hold its health at two thirds and one third,
-  plays its phase by its wards broken instead, its last stand still by its health (`courtPart`). A new phase begins on the bar line, on one of its opening takes.
+  plays its phase by its wards broken instead, its last stand still by its health (`courtPart`). A new phase begins on
+  the bar line, on one of its opening takes.
 - **Stings.** A boss engaged plays its wake if its score has one, straight into its first phase. A boss fallen plays
   its fall; the player dead plays the score's defeat. A fight that ends plays the family's cadence, or its victory
   if the player killed a foe in it; a family has two of each, heard in its own turn (`stingOf`). A sting holds the
@@ -295,9 +296,9 @@ on, and the sky over it.
   choir or its strings as another feel does.
 - **The Wrath**: D minor on low brass, organ, choir, a tolled bell and low drums; three phases at 132, 138 and 150,
   the third on the Neapolitan; its fall turns to D major. Each phase is twelve takes: the march of stabs, the theme
-  (its own, or the one it recalls with the strings over it), the theme answered by the strings, in full, over turned chords,
-  and the drums stopped to the ostinato and the surdo under the theme's head; the march and the stopped drums voice
-  the strings as the next feel does.
+  (its own, or the one it recalls with the strings over it), the theme answered by the strings, in full, over turned
+  chords, and the drums stopped to the ostinato and the surdo under the theme's head; the march and the stopped drums
+  voice the strings as the next feel does.
 - **The Reckoning**: C minor and a clock: a broken quarter chime, a harpsichord's escapement, wood blocks ticking;
   three phases at 136, 142 and 152 (the second a canon), a last stand at 160 counting on the bell, and the chime
   mended in C major as the boss falls. Each phase is twelve takes: the clock alone, the theme, the theme answered (or

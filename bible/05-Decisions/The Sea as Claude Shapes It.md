@@ -51,14 +51,15 @@ Its rank, by the lowest level of its water's band:
 - **How often one comes**: a roll's chance is 0.18 and 0.0225 more for each band out, to 0.36 at levels 26 to 30.
   A water with no band rolls as the first; home water rolls none.
 - **No Boss by a roll.** Its level comes from its water's band, and its hull, men and guns' harm grow with it by the
-  land foes' own law. A harder voyage raises its Vestige chance by the land's own reward. Its way is the Sloop's times 0.9 for a Minor, 1 for a
-  Major, 1.1 for an Elite and 1.2 for a Miniboss.
+  land foes' own law. A harder voyage raises its Vestige chance by the land's own reward. Its way is the Sloop's times
+  0.9 for a Minor, 1 for a Major, 1.1 for an Elite and 1.2 for a Miniboss.
 - **Sighted** half a minute of the two closing head-on, 432 m a step of the voyage's pace, never under 5 km. It is
   kept until 1.1 times that; no roll launches while three sail in sight.
 - **Where it comes** (how far out replaced by
-  [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]). A bold ship comes within the cone from which it meets a voyage that holds its course: 0.8 of
-  the arcsine of its way over the ship's. A wary one comes within 60 degrees of the course, and at x10 and under both
-  do. A pirate takes the place nearest a coast; a Tithe ship the place nearest a lane, along it.
+  [[Hostile Ships Come Out 1 km Off at the Helm, and Go Only Far Off]]). A bold ship comes within the cone from which it
+  meets a voyage that holds its course: 0.8 of the arcsine of its way over the ship's. A wary one comes within
+  60 degrees of the course, and at x10 and under both do. A pirate takes the place nearest a coast; a Tithe ship the
+  place nearest a lane, along it.
 - **The chase**: a click on its mark sails to meet it, and within 750 m the fight begins.
 - **Leaving**: a captain that hunts no one and is hunted by no captain sails off once it has been out of every foe's
   reach for 150 s.
@@ -67,7 +68,8 @@ Its rank, by the lowest level of its water's band:
 
 ### Friendly ships
 
-Their courses, number and pace are replaced by [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]].
+Their courses, number and pace are replaced by
+[[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]].
 
 - **Three lanes**, one between each pair of port cities, every leg more than 800 m clear of every coast.
 - **A ship** leaves each end every 1,200 s of world time at 5 m/s and is gone on arriving. Its hull comes from a hash
@@ -94,10 +96,12 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
 
 - **Its pace eases** down the voyage's steps to the world's own time while it is watched close (close in, the helm,
   Manage, the deck), a step each 0.15 s, and back up as the view rises. The dial keeps its step (replaced: no dial;
-  the voyage keeps the pace it was set at, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
+  the voyage keeps the pace it was set at,
+  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
 - **Its size grows** by the same ratio each notch of the wheel coming in, never under its true size (replaced: the
-  wheel no longer brings the view in; it grows the same way as the view eases down to sea level, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]) ([[Game]], "Its
-  size coming in").
+  wheel no longer brings the view in; it grows the same way as the view eases down to sea level,
+  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]) ([[Game]], "Its size coming
+  in").
 
 ### The ruins
 
@@ -148,13 +152,14 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
 
 - **Sinking**: any ship at no hull goes down over 20 s. It leaves each player who fought it 3, 4, 5, 6 or 8 pieces,
   Minor to Boss, each a kill's drop by the gear loop's law; from an Elite up, one piece is a chest a rank higher.
-  Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: the ship drops as one foe of its rank, in its first piece.
-  They lie within 30 m, drift downwind at 0.3 m/s, are gone after 180 s, and are gathered within 25 m.
+  Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: the ship drops as one
+  foe of its rank, in its first piece. They lie within 30 m, drift downwind at 0.3 m/s, are gone after 180 s, and are
+  gathered within 25 m.
 - **Striking**: a struck ship lies hove to 90 s, then is scuttled.
-- **Boarding**: within 30 m of it, both ships under 2 m/s, never a ship with no crew on its deck. Its crew are 3 hands at a Minor, 3 and a heavy at a
-  Major, 4 and a heavy at an Elite, 5 and a mate at a Miniboss, 6 and its Boss at a Boss. Boarders come over its rail
-  on their own ship's side, 0.5 m in, facing its bow, and a fallen one stands again at the nearest rail. A deck won is
-  held 60 s, then it is scuttled.
+- **Boarding**: within 30 m of it, both ships under 2 m/s, never a ship with no crew on its deck. Its crew are 3 hands
+  at a Minor, 3 and a heavy at a Major, 4 and a heavy at an Elite, 5 and a mate at a Miniboss, 6 and its Boss at a Boss.
+  Boarders come over its rail on their own ship's side, 0.5 m in, facing its bow, and a fallen one stands again at the
+  nearest rail. A deck won is held 60 s, then it is scuttled.
 - **On its deck**: the view cuts to the boarder, no pan. The third-person eye keeps clear of its masts (0.3 m), spars
   (0.2 m) and sides (0.3 m thick, 6 m up), for the camera alone. Its name heads the place line, with "Aboard: its
   crew stands to meet you"; won, "Its deck is yours" and its hold's take.
@@ -173,8 +178,8 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
 - **Rig**: a third of each sail's 7 by 6 cells shot through at no canvas left; a torn sail and a fallen mast fall to
   leeward and float 40 s; a mast falls in 3 s, taking every piece whose top lies within 2.5 m along it and 3 m over
   its foot; colours come down in 4 s.
-- **Going down**: drawn in the pose the room sends, trimmed 10 degrees by its end with more holes, listing to the side with more; 80 flecks of foam a
-  second over it from halfway down.
+- **Going down**: drawn in the pose the room sends, trimmed 10 degrees by its end with more holes, listing to the side
+  with more; 80 flecks of foam a second over it from halfway down.
 - **What floats**: each piece under a gold mark 2.5 m over it, never under about ten pixels across.
 - **The aim** (in part replaced by [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]]: the view looks
   square off the side at the lay, and a ship alongside blocks by its widest): the look runs from the eye as drawn,
@@ -186,9 +191,10 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
   and the others at stamina's, each as long as the vitals' health, with no words inside, as the vitals have none; its
   fire and brace chips and its battery rose under them, as the buffs stand under the vitals, the laid side glowing
   gold (the brace chip and the rose replaced by the ship's bar at the bottom left,
-  [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]). In a fight the place's name gives way to them, as it does to the ships' plates. The card stands under
-  the compass on the ship its laid guns fall on, else the nearest. The volley's tally stands under the sight for 4 s,
-  the fight's status line at the top right. DFO's lights on nearby hulls are not drawn yet.
+  [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]). In a fight the place's name gives way to them, as it
+  does to the ships' plates. The card stands under the compass on the ship its laid guns fall on, else the nearest. The
+  volley's tally stands under the sight for 4 s, the fight's status line at the top right. DFO's lights on nearby hulls
+  are not drawn yet.
 - **The sea's words are notices**, as DFO's toasts are: a ship sighted, other waters entered, who joins a fight,
   colours struck, boarders away, what floats gathered and washing up, each standing 6 s at the top right; the status
   line keeps the state alone.
@@ -197,4 +203,5 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
   bounties count the ships sunk or taken in the sea room itself once the activities branch lands, so the sea tells
   its hosts no word of a ship gone down.
 
-Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the pirates, their colours and their places by the coasts are gone; the Grey Tithe sails every hostile ship.
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the pirates, their colours and their places by the
+coasts are gone; the Grey Tithe sails every hostile ship.

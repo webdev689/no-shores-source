@@ -13,7 +13,8 @@ status: in force
 ## What it settles
 
 The owner asked for a deep comprehensive audit and a detailed design pass, to AAA detail and as near bug free as can
-be; the calls below are the work after it. Claude's choices for [[Armour and Weapon Looks Belong to the Content That Gives Them]],
+be; the calls below are the work after it. Claude's choices for
+[[Armour and Weapon Looks Belong to the Content That Gives Them]],
 [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]] and
 [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]. The owner can change any of them.
 

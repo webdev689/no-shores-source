@@ -34,8 +34,8 @@ export interface GearView {
 /** How long a Fruit of Dagon is held before it is eaten, in milliseconds. */
 const HOLD_MS = 800;
 
-/** Words shown under `id` while the pointer is over it or the keys' focus is on it; the pointer passes through it to what
- *  lies under. */
+/** Words shown under `id` while the pointer is over it or the keys' focus is on it; the pointer passes through it to
+ *  what lies under. */
 function tip(ui: Interface, id: string, words: string): Node | false {
   return (
     (ui.hovered(id) || (ui.keyFocused && ui.focused(id))) && {

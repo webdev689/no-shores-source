@@ -1,6 +1,7 @@
 // Which figures a frame draws and how often each is posed: a card is drawn only where a sphere about its feet meets the
-// view, casts into the near shadow map only where that sphere's box may reach the map's square, and is posed (its move's
-// frame chosen and its card asked of the forge) every frame near the eye, less often farther off or out of sight.
+// view, casts into the near shadow map only where that sphere's box may reach the map's square, and is posed (its
+// move's frame chosen and its card asked of the forge) every frame near the eye, less often farther off or out of
+// sight.
 
 /** How far past its card a figure's sphere is taken, metres: a shake, a weapon's outline and a smear stand a little
  *  outside the card. */

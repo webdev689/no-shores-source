@@ -130,8 +130,9 @@ Server side lands as a Rust rebuild with DFO as the specification; client side a
 Verdict: **Cut as design, Can't as code.** The architecture is the closest DFO came to the new game's server and is
 the best specification for the Rust rebuild. The rule code is not: `game-server/src/foes.js` steps the client's
 Daggerfall `EnemyAI`/`EnemyAttack`, `combat/formulas.js` and `TextureFile`; `mods.js` installs Daggerfall Enemy
-Expansion and Meaner Monsters; `levels.js` reads `MapsFile`/`BlocksFile`/`Arch3dFile`; `src/net/realm/stockClassTable.js`
-is generated from `CLASS*.CFG`. Lands as: Rust rebuild (server, home, vault, judge), Practice (rollout and cheat bots).
+Expansion and Meaner Monsters; `levels.js` reads `MapsFile`/`BlocksFile`/`Arch3dFile`;
+`src/net/realm/stockClassTable.js` is generated from `CLASS*.CFG`. Lands as: Rust rebuild (server, home, vault, judge),
+Practice (rollout and cheat bots).
 
 Design lessons it proves:
 1. **One rules library both sides run.** The game server imports the client's own modules, so "index i names the same
@@ -202,17 +203,18 @@ Design lessons it proves:
   `systems/item/itemLaw.js`, `itemTemplatesData.js`, `enchantmentCatalogue.js` and `characters/weapons.js`; referees
   copy DFU damage tables. Every economy route needs the new game's item model first.
 - **"Law both ends run" splits in two.** About 130k lines in `src/net` are pure JS imported by the page, the relay
-  (93 modules imported directly) and the account service (121). The account service is a thin store over those laws. A Rust
-  server and a TS client means a second implementation of each, or a Rust crate compiled to WASM for the client.
-- **Cloudflare mechanics that do not carry**: Durable Object hibernation, alarms and storage (354 storage calls in the `Room` file alone,
-  `server/src/index.js`), D1 replicas, bookmarks and Time Travel, Analytics Engine, cron triggers, workers.dev URLs, and code
-  that exists to cut DO billing (`drainWindows.js`, lone sleep, `REGION_SHARDS` off). `infra-to-server` already ran
-  the same relay and account code off Cloudflare.
+  (93 modules imported directly) and the account service (121). The account service is a thin store over those laws. A
+  Rust server and a TS client means a second implementation of each, or a Rust crate compiled to WASM for the client.
+- **Cloudflare mechanics that do not carry**: Durable Object hibernation, alarms and storage (354 storage calls in the
+  `Room` file alone, `server/src/index.js`), D1 replicas, bookmarks and Time Travel, Analytics Engine, cron triggers,
+  workers.dev URLs, and code that exists to cut DO billing (`drainWindows.js`, lone sleep, `REGION_SHARDS` off).
+  `infra-to-server` already ran the same relay and account code off Cloudflare.
 - **Misfiled**: `src/net/raid/` is our ledger over a mod port (Raiding Parties: the key and a `UnityEngine.Random`
   roll pinned to the mod, a towns table the client hands in by SHA because the relay may not hold ARENA2 data);
-  `net/arena`'s colosseum is mod data, which comes over rebuilt in our formats; `patronLaw` prices through Roleplay Realism Items; `peer/peerBodies`
-  imports Morrowind readers; guest names come from Daggerfall's name banks. Looks Daggerfall but ours:
-  `gate/gateBrain.js` is the generic boss kernel under lore names, and `invasion/` and `delve/` are Clean.
+  `net/arena`'s colosseum is mod data, which comes over rebuilt in our formats; `patronLaw` prices through Roleplay
+  Realism Items; `peer/peerBodies` imports Morrowind readers; guest names come from Daggerfall's name banks. Looks
+  Daggerfall but ours: `gate/gateBrain.js` is the generic boss kernel under lore names, and `invasion/` and `delve/` are
+  Clean.
 - **Port from tests and the bible, not the comments.** The `Room` class is ~12k lines in one file; `wire.js` is
   1.38 MB with 3,696 comment lines and a `RELAY_VERSION` line that is a changelog. The new repo's 600-line and
   8-line-comment checks force a split. The behaviour is pinned by `test/net` (527 files) and `test/server` (202).

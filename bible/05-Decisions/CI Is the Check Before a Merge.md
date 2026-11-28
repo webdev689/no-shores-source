@@ -18,4 +18,5 @@ in CI on the PR's head'."
 - Before a push, `cargo xtask repo` and the tests of what changed run; the whole check need not run first
   ([[Making a Change]], [[Testing]]).
 - `main` still runs the whole check before it deploys ([[The Rooms Deploy When Their Code Changes]]). Replaced by
-  [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]: `main` deploys code its pull request's check passed without checking it again.
+  [[Main Deploys What Its Pull Request Passed, and the Check Runs in Three Parts]]: `main` deploys code its pull
+  request's check passed without checking it again.

@@ -29,8 +29,8 @@ export function fightAsk(sea: {
   return ask;
 }
 
-/** A control pressed on a struck ship's deck (`pressed` says which; `escape` for Escape): Use asks the sea (to leave the
- *  won deck), Respawn respawns, and Escape is the game's; every other is the fight's on foot, so the sea's own (a
+/** A control pressed on a struck ship's deck (`pressed` says which; `escape` for Escape): Use asks the sea (to leave
+ *  the won deck), Respawn respawns, and Escape is the game's; every other is the fight's on foot, so the sea's own (a
  *  voyage, the pace, the map) wait. Answers whether it was taken here. */
 export function deckKey(
   pressed: (id: 'use' | 'respawn') => boolean,
@@ -143,8 +143,8 @@ export class SeaWord {
     return this.said.map((each) => each.line);
   }
 
-  /** Once the landmass holding the port city the player washed up at is open, its social space to walk into, standing there
-   *  as on arriving, and the veil's words saying why; taken once. */
+  /** Once the landmass holding the port city the player washed up at is open, its social space to walk into, standing
+   *  there as on arriving, and the veil's words saying why; taken once. */
   ashore<Node extends { readonly id: string }>(landmass: {
     readonly id: string;
     readonly nodes: readonly Node[];

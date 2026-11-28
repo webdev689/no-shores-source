@@ -190,9 +190,9 @@ pub(crate) fn layout_json(laid: &Dungeon, name: &str) -> Value {
 
 /// An Elite Dungeon's encounters as JSON: each seal's kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the
 /// Holdfast), its room, its pieces (x, y, z: runes in the order they light, plates, the seal stone or the relic), its
-/// pads (min x, min y, max x, max y, top, bottom), the cells its drowned floor covers and its doorways' middles; the Court's
-/// anchors (x, y, z); and how near a piece's middle a player stands on it, and how far round the warded Boss its slam
-/// reaches (m), as the room judges it.
+/// pads (min x, min y, max x, max y, top, bottom), the cells its drowned floor covers and its doorways' middles; the
+/// Court's anchors (x, y, z); and how near a piece's middle a player stands on it, and how far round the warded Boss
+/// its slam reaches (m), as the room judges it.
 fn encounters_json(plan: &room::encounter_plan::EncounterPlan) -> Value {
     let seals: Vec<Value> = plan
         .seals

@@ -23,9 +23,10 @@ const MARKS_EVERY_S = 0.1;
 /** What the map at the helm draws over the finished picture. */
 export type MapDraw = (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
 
-/** What the map is made with: the GPU, every continent's coast, the forge's art, the interface it draws its marks on, and
- *  the ship at sea, if one is; what a destination set does (sails for it, in the sea room of the difficulty the map
- *  set, or travels there, the prompt answered yes); what is handed to the map once it is made (the waters' tint); and the nodes the quest walked names. */
+/** What the map is made with: the GPU, every continent's coast, the forge's art, the interface it draws its marks on,
+ *  and the ship at sea, if one is; what a destination set does (sails for it, in the sea room of the difficulty the map
+ *  set, or travels there, the prompt answered yes); what is handed to the map once it is made (the waters' tint); and
+ *  the nodes the quest walked names. */
 export interface HelmMapContext {
   readonly gpu: Gpu;
   readonly outlines: readonly (readonly Point2[])[];

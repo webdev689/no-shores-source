@@ -220,9 +220,10 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
-Its words call a ship "it" ([[Ships Are It, Not Her]]), and the sea wears it too ([[The Sea's Screens Wear Enhanced Plus]]).
-The game draws every screen itself, and by the owner's word no HTML is laid over the canvas
-([[The Interface Uses No HTML, Now or Later]]): the game's page is one canvas ("Drawn by the game", below).
+Its words call a ship "it" ([[Ships Are It, Not Her]]), and the sea wears it too
+([[The Sea's Screens Wear Enhanced Plus]]). The game draws every screen itself, and by the owner's word no HTML is laid
+over the canvas ([[The Interface Uses No HTML, Now or Later]]): the game's page is one canvas ("Drawn by the game",
+below).
 
 ## Drawn by the game
 
@@ -272,16 +273,16 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   0.35 s and fades back in over 0.25 s once they end. The pointer passes through it. Each is read to a screen reader as
   it stands, its key named. On a phone (under 600 px) its words a step smaller. DFO's messages stay toasts, standing
   over the dialogue box.
-- **Announced.** A toast's words, a notice's, each press's label as focus reaches it (by the keys or the pad, or given by a
-  screen), and a slider's value as the keys step it go to a screen reader through `document.ariaNotify` where the
+- **Announced.** A toast's words, a notice's, each press's label as focus reaches it (by the keys or the pad, or given
+  by a screen), and a slider's value as the keys step it go to a screen reader through `document.ariaNotify` where the
   browser has it.
 - **A tree of the game's own.** Each frame the interface is built afresh as plain nodes (`Node`): a box that is a
   fixed size, fits its content, grows into the room left or takes a share of its parent; lays its children in a row,
   a column or wrapping lines, with padding, gaps and alignment; and shows a role's paint, a fill, an outline, words
-  (spans in their own colours, bold or italic, wrapped at spaces with a paragraph's leading spaces kept and the spaces at a break
-  dropped, or kept to one line and cut short with '...', a newline a space there; with a hard shadow or a halo), a picture, or its own
-  drawing. A node can float over the rest, against its parent or the screen, clip or scroll its children, and be
-  drawn moved or faded. `layout` lays it out after Clay's model, every length in whole CSS pixels.
+  (spans in their own colours, bold or italic, wrapped at spaces with a paragraph's leading spaces kept and the spaces
+  at a break dropped, or kept to one line and cut short with '...', a newline a space there; with a hard shadow or a
+  halo), a picture, or its own drawing. A node can float over the rest, against its parent or the screen, clip or scroll
+  its children, and be drawn moved or faded. `layout` lays it out after Clay's model, every length in whole CSS pixels.
 - **Pictures.** A picture is laid into the atlas at the size it is drawn, as it is first wanted: a file, SVG markup,
   RGBA pixels, 2D drawing, or a live image copied in again as its version changes; pixel art keeps its own texels. The
   atlas grows a layer at a time, up to 8 of 2048 square; full, it is laid afresh once the frame is
@@ -310,15 +311,15 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked
   to look round presses nothing.
 - **The pad's cursor** (`padCursor.ts`, [[Pick - Pad Cursor and Gauntlet]]). Wherever the interface takes the pad (a
-  window, the sheet, the creation, a field being typed in, the Test Ground's panels while a control there has focus), the left stick thrown from rest past its 0.2 lean brings
-  out a cursor, the gauntlet drawn over everything: at the focus's middle, else where the mouse last was, else the
-  view's. A stick already leant as a window opens moves nothing until it has come back. It moves as DFO's does: 900
-  CSS pixels a second at a full lean, the lean past the rest curved to the power 1.7; it eases in over 0.1 s and stops
-  dead as the stick is let go; a full lean (0.95 of the throw) held past 0.45 s climbs to 1.6 times over 0.3 s. Over a
-  press it goes at 0.4 of its speed, unless boosted. With the stick under half its throw, or at rest, it is drawn
-  toward the middle of the press it is over, or the nearest whose edge is within 28 CSS pixels, closing 10 times a
-  second's share of the gap, the lighter the stick the more; a step under 0.05 pixels is none. Every press the pad
-  can reach pulls it, so it settles on presses in every window.
+  window, the sheet, the creation, a field being typed in, the Test Ground's panels while a control there has focus),
+  the left stick thrown from rest past its 0.2 lean brings out a cursor, the gauntlet drawn over everything: at the
+  focus's middle, else where the mouse last was, else the view's. A stick already leant as a window opens moves nothing
+  until it has come back. It moves as DFO's does: 900 CSS pixels a second at a full lean, the lean past the rest curved
+  to the power 1.7; it eases in over 0.1 s and stops dead as the stick is let go; a full lean (0.95 of the throw) held
+  past 0.45 s climbs to 1.6 times over 0.3 s. Over a press it goes at 0.4 of its speed, unless boosted. With the stick
+  under half its throw, or at rest, it is drawn toward the middle of the press it is over, or the nearest whose edge is
+  within 28 CSS pixels, closing 10 times a second's share of the gap, the lighter the stick the more; a step under
+  0.05 pixels is none. Every press the pad can reach pulls it, so it settles on presses in every window.
 - **Pressing with the pad's cursor.** While it is out it is the pointer: what it is over is lit as under the mouse,
   and A goes down at it and comes up as A is let go, so a hold or a drag works, the gauntlet's finger drawn in
   meanwhile. Y is the right button there (inspecting an item), and X a press with Shift there (on a press the press,
@@ -341,37 +342,40 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   death's words and Respawn (for a fall in a fight, the seconds to Respawn, who revives the player or why no Respawn
   comes, `fallenNode`; [[Revives]], "On the page"), the key strip's panel, the task tracker, the
   toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the offers
-  at the foot of the screen, Manage's panel, the prompt for E and the leave held in its place, the veil (the loading screen, `loadingNode`, with the
-  trip's words; [[One Loading Screen Covers Every Trip Until the Place Is Ready]]) and the sheet of every control. Each stands where the page's sheet stood
-  it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
-  let a click through to the world; the marks, presses and panels take it. A mark's glyph is
-  drawn into a picture in the mended face (`CANVAS_FACE`), which holds the ones Pixelify lacks. It gives way to the fight's display as that says it shows, and to the
-  dialogue box while a named speaker's words are up (`speaking`).
+  at the foot of the screen, Manage's panel, the prompt for E and the leave held in its place, the veil (the loading
+  screen, `loadingNode`, with the trip's words; [[One Loading Screen Covers Every Trip Until the Place Is Ready]]) and
+  the sheet of every control. Each stands where the page's sheet stood it, gives way as it did, and eases, slides and
+  flashes as it did. Words laid over the world, and the darkened edge, let a click through to the world; the marks,
+  presses and panels take it. A mark's glyph is drawn into a picture in the mended face (`CANVAS_FACE`), which holds the
+  ones Pixelify lacks. It gives way to the fight's display as that says it shows, and to the dialogue box while a named
+  speaker's words are up (`speaking`).
 - **The menu.** The menu's frame (its tabs, the account's mark, the banner, the footer and the world dimmed behind
-  it), the Character, Inventory, Ship, Social and Settings pages and the pages to come, an item's page, the hover card, the holds and their bursts, what the player
-  gains and the company on the heads-up display are one layer of the game's drawing (`startGearWindow`).
+  it), the Character, Inventory, Ship, Social and Settings pages and the pages to come, an item's page, the hover card,
+  the holds and their bursts, what the player gains and the company on the heads-up display are one layer of the game's
+  drawing (`startGearWindow`).
 - **A page of the menu** is a function of what the menu gives it (`MenuContext`) answering its nodes each frame: the
   gear and the way to ask of it, the pictures, the room its body leaves, the menu's sizes on this screen, the holds,
   the one hover card (shown beside a press while the pointer is over it or the keys gave it the focus, floated over
   everything on the screen and kept above the footer, the pointer passing through it to what it describes where
-  there is no room beside it; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's and Appearance screens' doors. It
-  reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view (the hints
-  wrapping in their row on a phone, the presses beside them), and Escape's steps. The worn Art's screen, Appearance and the keepers' screens with the vault are drawn pages too; the
-  Art's, Appearance and every station's (a keeper's, the Harbourmaster's, the board's) stand to the body's edges, the Art's scene a live picture the game paints a step at a time, and
-  the figures, the horse and the keepers drawn from the forge's pixels, kept whole. A page that needs no gear (Ship,
-  Social, Settings and the pages to come) takes only the interface, the room, the sizes and the holds
-  (`PlainContext`); Social and Settings keep what the accounts answered while they show, asked again each time they
-  open, and the Roster takes Escape's step first while its panel or a player's details are open. The page's own
-  services a screen asks for are `ui/page.ts`: a link opened in a new tab, the address left or loaded again, words
-  copied, a file saved or opened from the player's chooser, a yes or no asked in the browser's dialog; each borrows the
-  page for a moment, and nothing of them is drawn interface.
+  there is no room beside it; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's
+  and Appearance screens' doors. It reads what was done to it through the interface; the menu chooses the footer's hints
+  and presses by the view (the hints wrapping in their row on a phone, the presses beside them), and Escape's steps. The
+  worn Art's screen, Appearance and the keepers' screens with the vault are drawn pages too; the Art's, Appearance and
+  every station's (a keeper's, the Harbourmaster's, the board's) stand to the body's edges, the Art's scene a live
+  picture the game paints a step at a time, and the figures, the horse and the keepers drawn from the forge's pixels,
+  kept whole. A page that needs no gear (Ship, Social, Settings and the pages to come) takes only the interface, the
+  room, the sizes and the holds (`PlainContext`); Social and Settings keep what the accounts answered while they show,
+  asked again each time they open, and the Roster takes Escape's step first while its panel or a player's details are
+  open. The page's own services a screen asks for are `ui/page.ts`: a link opened in a new tab, the address left or
+  loaded again, words copied, a file saved or opened from the player's chooser, a yes or no asked in the browser's
+  dialog; each borrows the page for a moment, and nothing of them is drawn interface.
 - **The story's screens** are layers of their own, each where the page stood it: the tap to start over everything,
-  the cinema's screen (its veils, bars, darkening, flash, title, prompt, skip and loading screen) over the HUD and the menu, a boss's
-  nameplate, the dialogue box and the barks over heads under every other layer, and the
+  the cinema's screen (its veils, bars, darkening, flash, title, prompt, skip and loading screen) over the HUD and the
+  menu, a boss's nameplate, the dialogue box and the barks over heads under every other layer, and the
   creation's two windows at the helm, whose fields are typed through the interface and whose keys are the
-  interface's while either is up (`creationOpen`); each window is modal while up. Words over the world and the veils let the pointer through to the
-  view; the tap to start and the windows take it. The tap's own wake of the browser's sound is still heard from the
-  page's pointer and keys.
+  interface's while either is up (`creationOpen`); each window is modal while up. Words over the world and the veils let
+  the pointer through to the view; the tap to start and the windows take it. The tap's own wake of the browser's sound
+  is still heard from the page's pointer and keys.
 - **The held map's** names, the ship's arrow and the card to set sail are a layer over the parchment the GPU draws,
   rising and falling with it; the card's presses take the pointer, so a click on them never picks a place.
 - **The dungeon's map** ([[Dungeon Map]]): its words (the dungeon's name, the storey looked at, the chests counted) and
@@ -410,8 +414,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `inspectCompare` draws Inspect with each piece set against that gear. A shot may hear its events on a later frame
   (`at`), once a screen has put its focus where it wants it, each event on a frame of its own where it says one, and a
   pointer's event may name a node (`on`) in place of a place, heard at the middle of where it was laid; it may take
-  more frames (`frames`) for many pictures to come; the page asks for reduced motion, so a screen stands settled, unless the
-  shots ask for `"motion": true`. The
+  more frames (`frames`) for many pictures to come; the page asks for reduced motion, so a screen stands settled, unless
+  the shots ask for `"motion": true`. The
   tool serves on port 5173 where it is free, the only origin R2 answers, so the forge's pictures come.
 - **Read and driven headless.** The interfaces that hear a page's canvas (the game's, the World Editor's, the Test
   Ground's panels) are listed by `__ui()`, on the page or in the game's worker (`ui/seen.ts`): each node shown with an
@@ -441,9 +445,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   Grey Tithe's balance in grey stone, by faction number (a friendly ship's plate bears none), on
   ships' plates (a foe's plate shows its level there instead); an Elite's brass chevron and a Miniboss's two.
 - **A hostile ship's mark at sea** is a port's mark in its own dress (`hostileLook`): the ship's faction's emblem in the
-  ring, the ring and its arrow in the ship's rank's colour (red Minor, orange Major, yellow Elite and Miniboss), a Miniboss's
-  two chevrons over it as the ship's plate bears them, the ship's name under it and under that "Hostile", its level and its
-  distance.
+  ring, the ring and its arrow in the ship's rank's colour (red Minor, orange Major, yellow Elite and Miniboss), a
+  Miniboss's two chevrons over it as the ship's plate bears them, the ship's name under it and under that "Hostile", its
+  level and its distance.
 - **Bars over figures never overlap** (`BarLayout`), but for a plate fading out of the cone, which holds its place for
   its quarter second. Each frame the nearest keeps its place over its figure, in front, and each farther one that would
   cover a bar already placed is lifted just above it. The order changes only when a figure comes 6% nearer, a lifted bar
@@ -454,15 +458,16 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the status line is a chip; the key strip is a panel of dark glass edged in brass at its left. At sea, every surface
   wears its role:
   - sailing: the ship's console (window, rail), the status line (chip), the place line and the hints (the on-foot
-    words, outlined), the landing's confirmation (window) and Take the helm (primary); a sighting's hostile marks wear its rank's colour
-    and emblem; the status line keeps the state alone ("Under way", "Fighting"), and the sea's word (a ship
-    sighted, another water or the Lantern Sea's 10 km line crossed, who joins, colours struck, boarders away, what floats gathered, washing up) stands
-    as notices, DFO's toasts;
-  - the fight: the player's plate (the vitals' thin bars), the ship's bar (the Arts' rings and keycaps) and the card (the target plate), the bars (track and meter), the tally and the
-    broadside warning directly under the card at the top's middle (under the compass while no card shows), never over
-    the sight or the ship aimed at, written over the sea with no panel as the game's other warnings are, each captain's plate
-    over its masthead; DFO's messages are notices (`plus/notices.ts`: a panel at the top right, under the status line, its right edge 28 px in
-    as the chip's, its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;
+    words, outlined), the landing's confirmation (window) and Take the helm (primary); a sighting's hostile marks wear
+    its rank's colour and emblem; the status line keeps the state alone ("Under way", "Fighting"), and the sea's word (a
+    ship sighted, another water or the Lantern Sea's 10 km line crossed, who joins, colours struck, boarders away, what
+    floats gathered, washing up) stands as notices, DFO's toasts;
+  - the fight: the player's plate (the vitals' thin bars), the ship's bar (the Arts' rings and keycaps) and the card
+    (the target plate), the bars (track and meter), the tally and the broadside warning directly under the card at the
+    top's middle (under the compass while no card shows), never over the sight or the ship aimed at, written over the
+    sea with no panel as the game's other warnings are, each captain's plate over its masthead; DFO's messages are
+    notices (`plus/notices.ts`: a panel at the top right, under the status line, its right edge 28 px in as the chip's,
+    its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;
   - the ship's deck: the place line (the ship's hold's take on its second line) and the hints, as on foot;
   - washing up: its notice, then the veil's own words; on land the sea's own pieces go (`seaHud.ts` `hideSeaHud`):
     the ships' plates and the sight, the readout, Manage's panel and the wheel's offer, and the sea's own layer with
@@ -473,13 +478,13 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
   A boss's bar under the compass, and ships' plates in a sea fight, take the top from the place's name, which gives
   way while they show; so does a public event's banner at a phone's width (600 px or less), but for the one line an
-  Elite Dungeon or a Breach shows between its encounters. On foot the vitals hold the top left, so the place's name and the status line under it stand at the top
-  right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
-  and in a sea fight in the top right corner, off the sky the aim looks at. On foot the company stands under the
-  vitals, and the prompt for E stands over the Arts and weapons. The key strip stands at the bottom right, under the
-  dialogue box's foot, 8 px over whatever stood under it at the view's foot the frame before (the Arts and weapons,
-  the ship's console, the landing's confirmation, the offers to take the helm or go through a gate, the ship's bar in a
-  sea fight, the prompt for E or the leave held),
+  Elite Dungeon or a Breach shows between its encounters. On foot the vitals hold the top left, so the place's name and
+  the status line under it stand at the top right, the line under a boss's bar while one shows; at sea the status line
+  stands under the compass, and in a sea fight in the top right corner, off the sky the aim looks at. On foot the
+  company stands under the vitals, and the prompt for E stands over the Arts and weapons. The key strip stands at the
+  bottom right, under the dialogue box's foot, 8 px over whatever stood under it at the view's foot the frame before
+  (the Arts and weapons, the ship's console, the landing's confirmation, the offers to take the helm or go through a
+  gate, the ship's bar in a sea fight, the prompt for E or the leave held),
   which on a wide view is nothing. The task tracker stands
   at the right under the place's name, above the Acquired feed, and under the compass's column in a view 900 px wide
   or less, and gives way to a public event's banner in a view under 1024 px wide; the toasts in the middle over the
@@ -525,9 +530,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   drawn pixel for pixel and never scaled. Health is 12 px tall, stamina 10 and poise 8, 4 px apart (16, 14 and 10, 5
   apart, at the larger step). Health's bar is 26% of the view's width, 150 to 600 px, kept 16 px clear of the
   compass; stamina's and poise's are as long as what they hold beside health's most. No words stand on health or
-  stamina; poise says Iron, Staggered or Open beside its bar, and each bar is labelled with its name and its share. Health at
-  a quarter or less flashes its frame to blood; stamina's lights white for a swing or a dodge asked with none; poise's
-  turns brass while open. Under the bars stand the healing charges ([[Combat]], "Healing charges"):
+  stamina; poise says Iron, Staggered or Open beside its bar, and each bar is labelled with its name and its share.
+  Health at a quarter or less flashes its frame to blood; stamina's lights white for a swing or a dodge asked with none;
+  poise's turns brass while open. Under the bars stand the healing charges ([[Combat]], "Healing charges"):
   three diamonds 12 px tall (16 at the larger step), as far apart as the bars, each drawn cell by cell as the bars'
   frames are (`plus/barFrame.ts`), an outline over a stone line lit on its upper half and shaded on its lower, the
   inside the bars' see-through track. A charge held is whole in health's red, and the next fills from its foot by
@@ -547,16 +552,17 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
   name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
   name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key as bound now
-  (1 or 2 at first; the pad's button, drawn on the cap, while the pad was played last) and its own shots. A weapon with an element bears its glyph just past its picture's top right, in the row's
-  margin clear of a blade's point, as a gear tile bears it in its corner, 16 px in hand and 12 under it (22 and 16 at the larger step), and its row's words name the element. The rows
-  change weapons as the fight's rules take them up, only at rest: one pressed, or put
-  away, during a swing, a guard, a draw or a reload waits with the hands until it ends. A swap trades the two rows over
-  its 0.4 s, and a swap pressed during one trades them again from
-  the start; a reload fills a line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys
-  its picture and words over the row's own dark band. In a view too narrow for the vitals beside the compass, the
-  weapons stand over the Arts, so the corner keeps clear of the view's middle and the hands drawn there
-  (`combat/weapons.ts`). The display is built afresh each frame from what its pieces keep; an arrow at the edge keeps
-  clear of the corners where they were laid the frame before, and reads the HUD's key strip only while it shows.
+  (1 or 2 at first; the pad's button, drawn on the cap, while the pad was played last) and its own shots. A weapon with
+  an element bears its glyph just past its picture's top right, in the row's margin clear of a blade's point, as a gear
+  tile bears it in its corner, 16 px in hand and 12 under it (22 and 16 at the larger step), and its row's words name
+  the element. The rows change weapons as the fight's rules take them up, only at rest: one pressed, or put away, during
+  a swing, a guard, a draw or a reload waits with the hands until it ends. A swap trades the two rows over its 0.4 s,
+  and a swap pressed during one trades them again from the start; a reload fills a line under the count, a weapon drawn
+  flashes for 0.3 s, and one put away dims and greys its picture and words over the row's own dark band. In a view too
+  narrow for the vitals beside the compass, the weapons stand over the Arts, so the corner keeps clear of the view's
+  middle and the hands drawn there (`combat/weapons.ts`). The display is built afresh each frame from what its pieces
+  keep; an arrow at the edge keeps clear of the corners where they were laid the frame before, and reads the HUD's key
+  strip only while it shows.
 - **Status icons** ([[Combat]], "Statuses"): each a 12 by 12 pixel glyph drawn as the elements' are, in its element's
   colours (Crit a burst and Linked two rings in Blaze; Expose a diamond cracked through, the mark the Arts' fragments
   give it, and Veiled a crescent in Cosmic; Charge a crackling bolt and Haste two chevrons in Volt), over a thin line
@@ -643,12 +649,12 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   slides in as the banner does at a beat, stands 1.8 s and fades over its last 0.4 s, and is read out. Its top stands
   16 px under the compass's column, no higher than a quarter down the view, or under the crosshair where above it
   would cover the crosshair, or more of the Boss's figure (standing within 200 px of the view's middle, at the
-  display's zoom) than under it would. A view under 480 px tall has no room under the column: there the call, its words two steps tall,
-  stands in the banner's place while it shows. Each new call shows afresh; one held on (the slam still shown) shows
-  once; once its mechanic ends (the slam landed) a call still standing fades at once.
+  display's zoom) than under it would. A view under 480 px tall has no room under the column: there the call, its words
+  two steps tall, stands in the banner's place while it shows. Each new call shows afresh; one held on (the slam still
+  shown) shows once; once its mechanic ends (the slam landed) a call still standing fades at once.
 - **Foul water's edge.** While an Ascent's foul water harms the player (from the room's harm told to them, while
-  their feet stay on its floor), the view's edge turns sick green, drawn as the struck edge is: it rises over 0.25 s, is held from one
-  harm to the next (1.5 s), and fades over 0.6 s from the moment they leave it.
+  their feet stay on its floor), the view's edge turns sick green, drawn as the struck edge is: it rises over 0.25 s, is
+  held from one harm to the next (1.5 s), and fades over 0.6 s from the moment they leave it.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round (a word's `halo` edge, `ui/drawLaid.ts`), as a ship's plate strokes its words, so they read over bright sky. The
   [[Game]]'s place name and key strip, laid straight on the world too, carry the same outline.
@@ -660,9 +666,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   140 px with an 8 px bar under the whole name; a Minor's as wide, since "? Crossbowman" fills it in the face, but its
   bar 6 px and only three fifths as long, still a row of its red and of a shield's colour when drawn at three quarters
   far off; an Elite's and up 176 px with a 10 px bar, cut in thirds by dark marks edged light, so they read over the
-  fill and the empty trough alike. Ships' plates are drawn alike by the interface, at the sizes in `PLATES`: a Major's 140 by
-  26 px over a figure, and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
-  wide at most, and never wider than 76% of the view. Its name stands at 11 px and the
+  fill and the empty trough alike. Ships' plates are drawn alike by the interface, at the sizes in `PLATES`: a Major's
+  140 by 26 px over a figure, and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name.
+  The soft lock's is 340 px wide at most, and never wider than 76% of the view. Its name stands at 11 px and the
   boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
   foe's health does, and its bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
   seen starts whole at its bar.
@@ -681,50 +687,50 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   ([[The Passages' New Interface Says Less and Reads Better]]).
 - **A sea fight's task**: the fight's task in the tracker says to defeat their crews, counts the ships fighting the
   player still afloat and their men, and says they need not be sunk, as the rules strike a ship whose men are gone
-  or whose hull is beaten low. The ship's own state is the fight's readout ([[The Sea's Screens Wear Enhanced Plus]]). At sea DFO's messages are the
-  notices; in the prologue's fight they are toasts.
+  or whose hull is beaten low. The ship's own state is the fight's readout ([[The Sea's Screens Wear Enhanced Plus]]).
+  At sea DFO's messages are the notices; in the prologue's fight they are toasts.
 - **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
   3.5 s), rising in over 0.2 s; one already shown keeps its place. A keeper's gift is not one: it is a notice of what
   is obtained, its title and line made by `giftNotice` ("The Armorsmith's gift", "Head, torso, arm and leg armour.").
 - **The key strip** shows only the controls of what the player is doing now (`hints.ts`), in plain verbs, as a compact
-  panel at the bottom right (`keyStrip.ts`, [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]):
-  dark glass edged in brass at its left, as the notices are; at its head the moment's name in faint capitals beside a
-  small brass diamond, over a rule; then a row a control, its keys on small caps in a column of their own,
-  right-aligned so the words beside them line up, each control its first key or button as bound now (the sheet has
-  the rest); and last All controls under a rule of its own, its words faint. A key stands on its 17 px cap; an arrow
-  key is drawn on its cap; a mouse button is drawn as a small pixel mouse with that button lit in brass, the wheel, a
-  side button or a drag (the mouse with a two-headed arrow) likewise, a texel a pixel and edged dark (`keyIcons.ts`).
-  While the pad was the last thing played, the strip shows the pad's buttons drawn instead (`padIcons.ts`), a stick's
-  ways as the stick with those ways lit, and the pad's own words where they differ (a ranged weapon's RT fires, LT
-  aims; View held, Leave); a mouse's gesture the pad has no way for is left out, a drag is the right stick, Escape is
-  B. The leave's cap is ringed, on the keys and the pad, traced round as far as it is held. Its words stand at the
-  face's 11 px, a row 18 px tall, doubled where the view is 2400 by 1300 or more, as the rest of the display is. It
-  fits under what stands over it: the Acquired feed's foot, where gains come in (whether or not they show, so the
-  strip keeps its size as they come), and the task tracker where it stands across from it, 8 px clear of each; with
-  too little room it gives up its head first, then its rows, those just before All controls first, never All
-  controls. A last row that is not All controls is drawn as the others are. The moment's names: on foot, On
-  foot, Melee, Ranged, Aiming, Dusk Daggers, Ledge, Climbing, Riding, Fallen and Map (the land's held map); at sea,
-  Oversea, Sea level, Manage, On deck, Sea fight, Guns laid, Chart (the helm's map) and Landing; on a boarded deck,
-  the stance's, its keys less the leave held.
+  panel at the bottom right (`keyStrip.ts`,
+  [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]): dark glass edged in brass at its
+  left, as the notices are; at its head the moment's name in faint capitals beside a small brass diamond, over a rule;
+  then a row a control, its keys on small caps in a column of their own, right-aligned so the words beside them line up,
+  each control its first key or button as bound now (the sheet has the rest); and last All controls under a rule of its
+  own, its words faint. A key stands on its 17 px cap; an arrow key is drawn on its cap; a mouse button is drawn as a
+  small pixel mouse with that button lit in brass, the wheel, a side button or a drag (the mouse with a two-headed
+  arrow) likewise, a texel a pixel and edged dark (`keyIcons.ts`). While the pad was the last thing played, the strip
+  shows the pad's buttons drawn instead (`padIcons.ts`), a stick's ways as the stick with those ways lit, and the pad's
+  own words where they differ (a ranged weapon's RT fires, LT aims; View held, Leave); a mouse's gesture the pad has no
+  way for is left out, a drag is the right stick, Escape is B. The leave's cap is ringed, on the keys and the pad,
+  traced round as far as it is held. Its words stand at the face's 11 px, a row 18 px tall, doubled where the view is
+  2400 by 1300 or more, as the rest of the display is. It fits under what stands over it: the Acquired feed's foot,
+  where gains come in (whether or not they show, so the strip keeps its size as they come), and the task tracker where
+  it stands across from it, 8 px clear of each; with too little room it gives up its head first, then its rows, those
+  just before All controls first, never All controls. A last row that is not All controls is drawn as the others are.
+  The moment's names: on foot, On foot, Melee, Ranged, Aiming, Dusk Daggers, Ledge, Climbing, Riding, Fallen and Map
+  (the land's held map); at sea, Oversea, Sea level, Manage, On deck, Sea fight, Guns laid, Chart (the helm's map) and
+  Landing; on a boarded deck, the stance's, its keys less the leave held.
   On foot: with the weapon put away, draw, run, jump, crouch and the leave held; a melee weapon drawn, the swing, the
   guard or parry, the dodge, the drink and the Ranged loadout; a ranged one, the aim, the fire, the dodge, the drink
   and the Melee loadout; aiming, the fire and letting go; Dusk Daggers aimed, only letting go of the first Tenet;
-  riding, getting down, the gallop, the boost and the leave held; hanging from a ledge, the climb and letting go, and on a wall
-  the kick off too, whatever is drawn; the Arts' three while one is worn and the hands are free to cast, Shadow's
+  riding, getting down, the gallop, the boost and the leave held; hanging from a ledge, the climb and letting go, and on
+  a wall the kick off too, whatever is drawn; the Arts' three while one is worn and the hands are free to cast, Shadow's
   first Tenet apart as held to aim Dusk Daggers; the held map's key wherever it can be raised, before the leave's;
   the click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told and
   the room would take it, and nothing while the fall plays out; fallen in a fight, Respawn once it may be pressed,
-  and nothing before it or in a darkness zone; Follow first in a Breach while a company member stands. The prompt for Use says what it does, with Use's key or button, so the strip
-  leaves it out. At sea: in the Oversea view the click to sail there, the map and the switch to sea level; at sea level
-  the helm's controls and the switch back (the console names its own presses' keys); in
-  Manage, the drag, the wheel and Manage's key back; on the deck, the click to look round as on foot, run, jump and
-  Use to take the helm; at the map, the drag, the wheel, its click, Set sail and Escape; choosing a landing, the
-  click, Enter for the lit tile and Escape; with the land's held map raised, the drag, the wheel and its key or Escape
-  to close it (the pad's B); in a fight, the helm, the sails, the burst, the aim and the brace, and while aiming,
-  letting go to fire (the pad's RT), holding fire, the shot and the drag. Eight entries at most, counted as shown on the
-  keys or the pad: past eight, those just before All controls give way, the last first, so the leave's goes, then the
-  map's, then the Arts' ([[The Key Strip Follows the Moment, and K Opens Every Control]]). It stands 28 px in and 22
-  up, over whatever stood at the view's foot beneath it ("Nothing covers another").
+  and nothing before it or in a darkness zone; Follow first in a Breach while a company member stands. The prompt for
+  Use says what it does, with Use's key or button, so the strip leaves it out. At sea: in the Oversea view the click to
+  sail there, the map and the switch to sea level; at sea level the helm's controls and the switch back (the console
+  names its own presses' keys); in Manage, the drag, the wheel and Manage's key back; on the deck, the click to look
+  round as on foot, run, jump and Use to take the helm; at the map, the drag, the wheel, its click, Set sail and Escape;
+  choosing a landing, the click, Enter for the lit tile and Escape; with the land's held map raised, the drag, the wheel
+  and its key or Escape to close it (the pad's B); in a fight, the helm, the sails, the burst, the aim and the brace,
+  and while aiming, letting go to fire (the pad's RT), holding fire, the shot and the drag. Eight entries at most,
+  counted as shown on the keys or the pad: past eight, those just before All controls give way, the last first, so the
+  leave's goes, then the map's, then the Arts' ([[The Key Strip Follows the Moment, and K Opens Every Control]]). It
+  stands 28 px in and 22 up, over whatever stood at the view's foot beneath it ("Nothing covers another").
 - **The leave held** (`leaveHold.ts`, [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]):
   on foot, wherever the player stands (a social space, a patrol area, a dungeon, an island's beach), holding the leave
   key (N, or the pad's View held) for 1.5 s returns them to their ship, as Destiny's Ghost does. While it is held the
@@ -744,18 +750,18 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   header band, then its groups, Move, Fight, Arts, Camera, Menus, Sea and Sea fight (`CONTROL_GROUPS`), each its name
   in faint capitals over a rule and its rows under it (Menus holds Continue dialogue, the press that moves a line of
   the dialogue box on; [[Speech]], "Moving on"): a few words on what the row does, bright, then beside them its keys
-  and the pad's buttons, drawn as the strip draws them, so each row reads as a line ([[M Is the Map, N the Leave, and the Players' First Asks Are Built]]); a footer band holds a line
-  of a few words and Reset to defaults. Every key
-  and button shown is as bound now, so the sheet always says what the game hears; the side the player used last stands
-  bright and the other faint, and the words are that side's ("Swing; fire" on the pad). The groups stand in as many
-  400 px columns as the view holds (two at 1280 by 720, one on a phone), in their order, each column near an even
-  share of the rows; the words take their larger step at 1500 by 900 and up. The list scrolls inside a window kept
-  16 px from the view's edges. Opening it lets the mouse go and moves the focus to the first key; while it is open the
-  keys are the interface's, and Tab, the arrows and the pad move among the keys, the focused one lit in brass. A screen
-  reader hears "All controls", then each key with its row's words as it takes focus, a sign by its name (Comma, Left
-  bracket). While it is open no key reaches the game (a key let go still does, so none stays held) and its scrim takes
-  the pointer, so nothing behind it is clicked, the held map no more than the world; the world goes on, as under the
-  menu. Settings' Controls lays the same list (`bindingColumns`), bound the same way.
+  and the pad's buttons, drawn as the strip draws them, so each row reads as a line
+  ([[M Is the Map, N the Leave, and the Players' First Asks Are Built]]); a footer band holds a line of a few words and
+  Reset to defaults. Every key and button shown is as bound now, so the sheet always says what the game hears; the side
+  the player used last stands bright and the other faint, and the words are that side's ("Swing; fire" on the pad). The
+  groups stand in as many 400 px columns as the view holds (two at 1280 by 720, one on a phone), in their order, each
+  column near an even share of the rows; the words take their larger step at 1500 by 900 and up. The list scrolls inside
+  a window kept 16 px from the view's edges. Opening it lets the mouse go and moves the focus to the first key; while it
+  is open the keys are the interface's, and Tab, the arrows and the pad move among the keys, the focused one lit in
+  brass. A screen reader hears "All controls", then each key with its row's words as it takes focus, a sign by its name
+  (Comma, Left bracket). While it is open no key reaches the game (a key let go still does, so none stays held) and its
+  scrim takes the pointer, so nothing behind it is clicked, the held map no more than the world; the world goes on, as
+  under the menu. Settings' Controls lays the same list (`bindingColumns`), bound the same way.
 - **Binding a control** (`rebinding.ts`): a key chosen in the sheet or in Settings' Controls (a click, Enter or the
   pad's A) is lit and waits; one waits at a time (`REBINDING`), and the sheet hears the keys for it wherever it was
   chosen. While it waits, the frame the key that bound it comes in, and until the mouse button that bound it has come
@@ -774,9 +780,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   where that clashes with nothing it acts with there, and the footer says "Swapped with" them; where one would be
   left with nothing, the binding is refused and the footer says that control "needs it". No two controls that act
   in one place ever share a key. Reset to defaults binds every control as it came. A mouse's gesture (the click to
-  look or to sail there, a drag, the wheel), Tab walking a window's focus, Escape, the arrows on the menu's tabs, the pad's sticks and their
-  ways and the pad's buttons in a window (the cross and left stick, A, B, the bumpers) are written, not bound, and
-  never given in a swap. What the player binds is kept with their account ([[Accounts]], "Binds").
+  look or to sail there, a drag, the wheel), Tab walking a window's focus, Escape, the arrows on the menu's tabs, the
+  pad's sticks and their ways and the pad's buttons in a window (the cross and left stick, A, B, the bumpers) are
+  written, not bound, and never given in a swap. What the player binds is kept with their account ([[Accounts]],
+  "Binds").
 - **The pad** (`pad.ts`, `Input`) is read each frame through the browser's Gamepad API, the first pad with the standard
   mapping: a stick at rest inside a 0.2 lean is still, and leant past it moves as far as it leans (the walk, the helm,
   the look); a trigger is pressed past 0.3; a stick's way counts as pressed past half its lean. Its layout is Destiny's
@@ -815,8 +822,8 @@ Every word on the game's pages, the Test Ground's and the editor's is set in Pix
 so every size is one: 11 for words, 22 for names and titles, 33 to 66 for the numbers that lead a page. Letters stand
 1/22 of their size apart (3/22 for labels, 5/22 for titles), each word a little more than the face's own space, each
 rounded up to a whole pixel, with no kerning and no ligature. Where the menu is wide, the Character page's labels, the
-banner's numbers and the footer's keys stand at 22. It is set at one weight, 500, so emphasis is in size and colour; it is never slanted, as
-it has no italic. Shadows under it are hard, a pixel's step.
+banner's numbers and the footer's keys stand at 22. It is set at one weight, 500, so emphasis is in size and colour; it
+is never slanted, as it has no italic. Shadows under it are hard, a pixel's step.
 
 Six of its glyphs misread and eleven symbols are missing, so a second face, listed first, stands in for just those
 ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]): a 2, a 5, a B, a Z and square brackets, and the
@@ -829,41 +836,41 @@ font made where the face is read (`useMendedFace`, `trueType.ts`), first in its 
 ## The menu
 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
-the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild and Settings fill the top of its header, each a
-whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not fit
-its tab at the names' size);
+the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild and Settings fill the top of its header,
+each a whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not
+fit its tab at the names' size);
 keys on keycaps where the menu is wide enough, for the keys or the pad played last (the pad's button drawn as the key
-strip draws it; none where the pad has none, as for Inventory); Guild opens the player's guild after Destiny 2's clan screen
-([[Guilds]]), with its Outposts page (each outpost's plan from above, a structure a block in its colour saying its
-mark and tier as the key does, with its front, hollow while built and banded while it rises, the decoration as dots,
+strip draws it; none where the pad has none, as for Inventory); Guild opens the player's guild after Destiny 2's clan
+screen ([[Guilds]]), with its Outposts page (each outpost's plan from above, a structure a block in its colour saying
+its mark and tier as the key does, with its front, hollow while built and banded while it rises, the decoration as dots,
 the key naming each by the law and each mark; the footprint's ghost green or red as one is placed, kept on the plot,
 its words beside the plan; the grid one Tab stop walked by the arrows, which speak the ghost's words; the plan beside
 the outpost's rows, its cells shrinking before that column would pass the room, and the building in a third column
-where wide; the page scrolls with a More below chip, every word at the label step; for a founder or admin standing there, a Decorate
-part listing each piece with its price and what the hall holds, whose choice closes the menu and stands the piece's
-ghost a metre past its own reach before the player, green or red, turned with [ and ], placed with the use key, let go
-with Escape or the pad's B, which then does nothing else) and
-its Treasury page (the ledger in words in four columns, each as wide as its words), both headed and framed as the Journal is ([[Outposts]]). The chosen tab is a lit brass press; a tab with something new on it
-(the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
-read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's
+where wide; the page scrolls with a More below chip, every word at the label step; for a founder or admin standing
+there, a Decorate part listing each piece with its price and what the hall holds, whose choice closes the menu and
+stands the piece's ghost a metre past its own reach before the player, green or red, turned with [ and ], placed with
+the use key, let go with Escape or the pad's B, which then does nothing else) and
+its Treasury page (the ledger in words in four columns, each as wide as its words), both headed and framed as the
+Journal is ([[Outposts]]). The chosen tab is a lit brass press; a tab with something new on it (the Compendium, while a
+chapter found waits unread) wears Destiny's small diamond at its top right, and its name is read with ", new"; the arrow
+keys move between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
 face in it, a hooded silhouette until their figure is drawn, and a gem on its rim, filled for an account kept with a
-username or Discord and hollow for a guest's; pressed, it opens Settings at its Account tab. On the Journal its place is DFO's timer
-hourglass in a sunk well, edged in brass under the pointer, which stands turned over while its timers are down;
-pressed, or T, it drops the timers from the Journal's top
+username or Discord and hollow for a guest's; pressed, it opens Settings at its Account tab. On the Journal its place is
+DFO's timer hourglass in a sunk well, edged in brass under the pointer, which stands turned over while its timers are
+down; pressed, or T, it drops the timers from the Journal's top
 ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]). Under them, the whole width of
-the menu, stands the player's banner
-([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]): their emblem drawn to the banner's width at three times its
-cells, so it is never cut off, their name, level, Prestige and Defense over it, and their Aurem at its end, left blank
-on the Inventory, which shows it. Once shown it stays, though the room's word goes; only its numbers wait for it. It opens with a short
-stepped rise; the world behind is dimmed, the pointer is free, the game's keys and the HUD under it rest, and the
-focus stays within it, marked in white. Its window is modal: Tab, the arrows and the pad walk only its presses, and
-Enter presses nothing under it; Escape or the pad's B steps back. A focused press that goes (dismantled, worn, sold,
-moved) gives the focus to the one beside it, else to the chosen tab. On a screen past 1440p the menu, its cards and the HUD's words stand at
-twice their size, the 1280 by 720 layout doubled. Escape steps back: a page's own step first (the Roster's panel, a player's
-details), then an item's page, then a slot's flyout, then the Art's screen, then the menu; with the room lost none
-of those is shown, and it closes the menu. A tile the focus is given back to (an item's, the Art's diamond) is
-forgotten once it has it. Gear shows as the
+the menu, stands the player's banner ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]): their emblem drawn to
+the banner's width at three times its cells, so it is never cut off, their name, level, Prestige and Defense over it,
+and their Aurem at its end, left blank on the Inventory, which shows it. Once shown it stays, though the room's word
+goes; only its numbers wait for it. It opens with a short stepped rise; the world behind is dimmed, the pointer is free,
+the game's keys and the HUD under it rest, and the focus stays within it, marked in white. Its window is modal: Tab, the
+arrows and the pad walk only its presses, and Enter presses nothing under it; Escape or the pad's B steps back. A
+focused press that goes (dismantled, worn, sold, moved) gives the focus to the one beside it, else to the chosen tab. On
+a screen past 1440p the menu, its cards and the HUD's words stand at twice their size, the 1280 by 720 layout doubled.
+Escape steps back: a page's own step first (the Roster's panel, a player's details), then an item's page, then a slot's
+flyout, then the Art's screen, then the menu; with the room lost none of those is shown, and it closes the menu. A tile
+the focus is given back to (an item's, the Art's diamond) is forgotten once it has it. Gear shows as the
 player's room last sent it ([[Gear]]), built again only when that is new or the player moves within the menu, and
 never while a press is held. Each press is an ask the room answers.
 
@@ -892,22 +899,24 @@ never while a press is held. Each press is an ask the room answers.
   Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a card or page takes its rarity's band;
   pips mark it.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
-  corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
-  bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
+  corner; a green gauge along its foot that fills as its nodes are bought
+  ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is bought, a gilded frame in place
+  of the gauge, as Destiny 2's masterworks are.
 - **Character.** The player's figure large in the middle, under two plaques side by side
-  ([[Prestige Stands Beside Level on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]): the level in brass and Prestige
-  in pale steel, each its number alone, and under both the meter to the next level and what it takes; under the figure
-  the Melee and Ranged loadouts' Attack and Defense ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and
-  Ranged loadouts, the cloak and the Appearance button stand to its left, under the worn Art's diamond, the armour to
-  its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading
-  ([[The Weapons Heading Stands Under the Art]]) level with the Armour heading across, under the Mount slot, in the Art's
-  row, so each row stands level with the armour's across from it; under the Ranged slot's, the ammunition left of its capacity
-  ("Ammo 18 of 24"), or "No ammo" in the loss colour, at 22 where the menu is wide. A kind is named as the screens name
-  it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the
-  focus to it; a click opens its flyout of the nine it may carry, toward the figure, upward from each side's two lowest
-  slots, moved back inside the screen wherever it would run off it, at every size; a click there wears one, and F held over one dismantles it. A flyout closes once the mouse is off its slot and
-  itself, a strip over the gap between them keeping it while the mouse crosses, or on a click or Escape; a key's focus
-  in it goes back to its slot.
+  ([[Prestige Stands Beside Level on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]):
+  the level in brass and Prestige in pale steel, each its number alone, and under both the meter to the next level and
+  what it takes; under the figure the Melee and Ranged loadouts' Attack and Defense
+  ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and Ranged loadouts, the cloak and the Appearance button
+  stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its names,
+  the worn Art's diamond first, then the Weapons heading ([[The Weapons Heading Stands Under the Art]]) level with the
+  Armour heading across, under the Mount slot, in the Art's row, so each row stands level with the armour's across from
+  it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the loss colour,
+  at 22 where the menu is wide. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A
+  slot's card shows as the pointer moves over it or the keys bring the focus to it; a click opens its flyout of the nine
+  it may carry, toward the figure, upward from each side's two lowest slots, moved back inside the screen wherever it
+  would run off it, at every size; a click there wears one, and F held over one dismantles it. A flyout closes once the
+  mouse is off its slot and itself, a strip over the gap between them keeping it while the mouse crosses, or on a click
+  or Escape; a key's focus in it goes back to its slot.
 - **The Mount slot** ([[Horses Are Items Worn in a Mount Slot]]): the horse worn, its picture the horse in its coat
   from the side as the forge draws it, or a horse's head in grey while none is worn. Its flyout lists the horses
   carried, worn with a click and never dismantled (their cards offer no hold), and beside them BARDING, counting those
@@ -927,19 +936,20 @@ never while a press is held. Each press is an ask the room answers.
   horse's head and chest wearing it, cut from 4 to 16 texels over the bare horse's ears so a crest shows and the head
   stays in. Hovering or focusing a dye shows it on the display before it is worn; after the pointer leaves, a piece
   keeps its preview only if the keys focused it. The display keeps the figure's pictures without coat or barding, and
-  the barding tiles' horse pictures without the dyes, 96 at most, letting go of the least lately shown. Escape goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
+  the barding tiles' horse pictures without the dyes, 96 at most, letting go of the least lately shown. Escape goes back
+  to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
 - **The card.** An item's name (its set's and its kind's, "Portwatch Helm", or a named piece's own; [[Gear]],
   "Names") on its rarity's band, its kind, pips and element; its picture in a sunk well (its initials while there is
   none) beside its main number large and its lines (level, Prestige, where it was earned); its fight numbers as rows
   ("The stats", below); its chosen traits, each its glyph and its short line, a cost's in the colour of a loss under it
-  ([[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]); its words. A carried piece's card, a ware's, a vault cell's and a
-  letter's are set beside the piece worn in its own slot, a module's beside the module fitted, a horse's beside none
-  (`wornFor`): the main number's change and each row's in green or red, and under the number "Against your" the worn
-  piece's name; never a piece beside itself, the same object, whatever its id. Along its foot what its presses do.
-  Where the menu is wide, every card's words stand at 22, as the menu's labels do, in a card 440 px wide. It shows
-  only for a pointer that moves or a focus the keys moved: a page built anew under a resting pointer, or a focus a
-  click left, opens none over what the player looks at. Any other card of the menu (an Art's, a fragment's, an
-  emblem's) keeps its icon over its number.
+  ([[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]); its words. A carried
+  piece's card, a ware's, a vault cell's and a letter's are set beside the piece worn in its own slot, a module's beside
+  the module fitted, a horse's beside none (`wornFor`): the main number's change and each row's in green or red, and
+  under the number "Against your" the worn piece's name; never a piece beside itself, the same object, whatever its id.
+  Along its foot what its presses do. Where the menu is wide, every card's words stand at 22, as the menu's labels do,
+  in a card 440 px wide. It shows only for a pointer that moves or a focus the keys moved: a page built anew under a
+  resting pointer, or a focus a click left, opens none over what the player looks at. Any other card of the menu (an
+  Art's, a fragment's, an emblem's) keeps its icon over its number.
 - **The stats** ([[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]],
   [[The Inspect Panel as Claude Shapes It]]), as Destiny 1's weapon page draws them: each name in capitals set right
   against a bone bar on a faint track, its value beside it (`statBars.ts`), a page's bar 10 px tall (14 at the larger
@@ -975,10 +985,10 @@ never while a press is held. Each press is an ask the room answers.
   the keys (over one under a resting pointer), that is not chosen shows on the rows what choosing it would change,
   and the main number then shows no compare. Its card stands beside it: its name and its state (Chosen, Bought, Locked,
   or "Not enough Aurem" in the colour of a loss where the player cannot pay; none where it can be bought), along its
-  foot its press in a word ("Hold, Buy"; "Click, Choose"), its words, "Replaces" the perk chosen in its column, and until
-  it is bought each thing it costs (Aurem, the item's fragments and Essence, its island's resource) with its glyph,
-  what the player has over what it asks, enough in green and short in red; a locked one says, in its own words, that
-  its square fills as the item, or an officer, is used; a ship's module's and an officer's nodes say their price in
+  foot its press in a word ("Hold, Buy"; "Click, Choose"), its words, "Replaces" the perk chosen in its column, and
+  until it is bought each thing it costs (Aurem, the item's fragments and Essence, its island's resource) with its
+  glyph, what the player has over what it asks, enough in green and short in red; a locked one says, in its own words,
+  that its square fills as the item, or an officer, is used; a ship's module's and an officer's nodes say their price in
   words. With a piece worn in its slot (a carried or vaulted piece's page) the footer offers Compare, and C (the Compare
   control, rebound as any is, not with Ctrl or Cmd) does the same: the worn piece's card stands in the art's place
   under "Worn", scrolling where it is long, the art's place kept (a hold still charges it) and the page beside it as
@@ -987,15 +997,17 @@ never while a press is held. Each press is an ask the room answers.
   piece last, which wraps them onto a second line where they do not fit: wear it, take it off, put it in the vault or
   take it out (at the vault's counter), and, held, dismantle it (never a horse, on its
   page, its vault cell or its flyout).
-- **Inventory.** Aurem and the Shapes held along the top, each named under its count; under it the Vestiges carried, "Vestiges 3/10" over ten places
-  in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Mage;
-  then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
-  first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
-  shown only while one is held, then empty places to the end of its row of ten. Consumables holds the Fruit of Dagon and
-  the Ammo crate; a Fruit is held (its hint "Hold, Use", a plain verb as [[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]] has it) to grow every piece worn, and offers nothing while nothing worn can
-  grow, when it says so ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]); the crate is held ("Hold, Use") to fill the Ranged weapon's ammunition, and offers
-  nothing at full, nor with no Ranged weapon worn, when it says to wear one first. The gear is on the Character page
-  alone.
+- **Inventory.** Aurem and the Shapes held along the top, each named under its count; under it the Vestiges carried,
+  "Vestiges 3/10" over ten places in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a
+  click opening one at the Mage; then shelves, each counting what it holds: Consumables, and Materials, the Weapon and
+  Armor Fragments and Essence first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a
+  stack in a cell with its count, shown only while one is held, then empty places to the end of its row of ten.
+  Consumables holds the Fruit of Dagon and the Ammo crate; a Fruit is held (its hint "Hold, Use", a plain verb as
+  [[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]] has it) to grow every piece worn, and offers
+  nothing while nothing worn can grow, when it says so
+  ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]); the crate is held ("Hold, Use") to fill
+  the Ranged weapon's ammunition, and offers nothing at full, nor with no Ranged weapon worn, when it says to wear one
+  first. The gear is on the Character page alone.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
   through a tile, and its picture brightens and quivers toward the end, as Destiny's dismantle does. A piece is held
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks
@@ -1004,24 +1016,25 @@ never while a press is held. Each press is an ask the room answers.
   the focus leaving a press held by Enter or Space, or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
   shows a pickup: a row each, its picture in a well of its rarity, its name and how many; every dye or barding
-  newly kept among them, a horse as any item, and a ship or a ship's dress newly kept ([[Shipyard]]). Rows slide in, stay four
-  and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
-  once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
-  word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
-  claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
+  newly kept among them, a horse as any item, and a ship or a ship's dress newly kept ([[Shipyard]]). Rows slide in,
+  stay four and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch
+  chimes once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's
+  first word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character
+  is claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
   used is spent, not gained. Letters newly in the mail show as one row, "Sent to the mail" and how many, under the
   Postmaster's mark; a letter taken is not a gain, though what it held is. A Normal piece a kill, a chest or a clear
   gives in a Vestige's place shows as its item's row, as any item new to them does
   ([[Gear]], "Commons drop as themselves"). A chest opened in a patrol or a dungeon shows as "Chest", a dungeon's
-  vault's as "Vault chest", and a container searched as "Searched the" and its kind, under its mark and with no count, over the Aurem and the resource it gave
-  (`gainsOf`; [[Chests and Searchable Containers as Claude Builds Them]]): told once the room names it as the last
-  find it paid the player for (the gear's `opened`), so a chest that moved on is no gain.
-  Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
-  lines over the rows, as Destiny shows them: the count, its word where the icon alone is not enough, and its icon,
-  with no band; five stand at most, apart from the rows' six, so a kill's lines never push its drops out. An Art's
-  level, a fragment of its Core, the ship's materials and a module gained are rows. Prestige is not a gain: it is
-  what the armour worn is worth. At sea the feed reads the gear the sea sends (`Sea.gear`), which the menu there does
-  not show: what a piece gathered held, the ship's XP from a sinking, an officer won, and a boarder's kills.
+  vault's as "Vault chest", and a container searched as "Searched the" and its kind, under its mark and with no count,
+  over the Aurem and the resource it gave (`gainsOf`; [[Chests and Searchable Containers as Claude Builds Them]]): told
+  once the room names it as the last find it paid the player for (the gear's `opened`), so a chest that moved on is no
+  gain. Currency, XP, each faction's reputation ("Reputation") and an Art's XP
+  ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short lines over the rows, as Destiny
+  shows them: the count, its word where the icon alone is not enough, and its icon, with no band; five stand at most,
+  apart from the rows' six, so a kill's lines never push its drops out. An Art's level, a fragment of its Core, the
+  ship's materials and a module gained are rows. Prestige is not a gain: it is what the armour worn is worth. At sea the
+  feed reads the gear the sea sends (`Sea.gear`), which the menu there does not show: what a piece gathered held, the
+  ship's XP from a sinking, an officer won, and a boarder's kills.
 - **The ammunition counter.** While the Ranged loadout is drawn, its shots left stand beside the crosshair whenever
   that shows (aiming, or in first person, the pointer held or not), counted as the fight's rules count them on the
   player's own fighter, so a shot takes one at once: 22 px with the HUD's outline, in brass at a fifth of the capacity
@@ -1079,12 +1092,12 @@ never while a press is held. Each press is an ask the room answers.
     an arc, Exposure's broken heart) and its pay (the Vestige
     in its rarity, Essence, the boon's star); the Abyss boon while held, by XP's glyph; Breaches (a rift), each
     encounter paying once a week at each tier, launched from the Playlist; and each island's four lamps in its
-    passages, each gold once lit this week and grey while cold. The panel's foot says in words whatever the pointer or the focus rests on, and each mark's words are read
-    to a screen reader with its row as the focus takes it; the arrows step between the rows. Each countdown is drawn
-    afresh each frame. The panel drops from under the hourglass, or with T, on its own ground, edged and ruled in
-    brass, the focus going to its Close; Escape, Close, T or the hourglass takes it up, the focus going back to the
-    hourglass, and it goes up as the Journal is left; the page under it rests, dimmed and out of the keys' and the
-    pointer's reach.
+    passages, each gold once lit this week and grey while cold. The panel's foot says in words whatever the pointer or
+    the focus rests on, and each mark's words are read to a screen reader with its row as the focus takes it; the arrows
+    step between the rows. Each countdown is drawn afresh each frame. The panel drops from under the hourglass, or with
+    T, on its own ground, edged and ruled in brass, the focus going to its Close; Escape, Close, T or the hourglass
+    takes it up, the focus going back to the hourglass, and it goes up as the Journal is left; the page under it rests,
+    dimmed and out of the keys' and the pointer's reach.
   - It reads the rules and the last word of the character a room sent, so it reads the same at sea.
 - **Compendium** ([[Lore]], [[The Compendium Holds the Lore Books, After Destiny's]]): the lore books, laid as Destiny's
   Collections and Lore screens.
@@ -1096,19 +1109,19 @@ never while a press is held. Each press is an ask the room answers.
     covers. `compendium/compendiumShots.ts` pictures it over sample lore (`loreForTests.ts`) with `tools/uiShot.mjs`.
   - **A category open**: "‹ LORE" (a press back to the front, as Escape steps), the category's name in capitals and how
     much of it is found; then, side by side: its books, covers in rows of three (48 px wide, 96 px larger), each found
-    one a press edged in brass while chosen, one not found an empty slot outlined in dots that does nothing; the book chosen, its
-    cover large (144 px, 192 px) in a column 48 px wider, its name whole on as many lines as it takes (or
+    one a press edged in brass while chosen, one not found an empty slot outlined in dots that does nothing; the book
+    chosen, its cover large (144 px, 192 px) in a column 48 px wider, its name whole on as many lines as it takes (or
     "Undiscovered"), how much of it is found and a bar of it (under 900 px it is named on a line over its chapter
     instead, so everything stays in view); and the chapter chosen in a panel as tall as the book beside it, its title in
-    lit brass at the names' larger size and its words block by block at the names' size (bold and italic as the file marks them, a document set in on a darker
-    ground, a break a short brass rule), scrolled within the page's room, with the
-    book's chapters numbered under it (the panel takes the keys' focus, so a screen reader reads the chapter whole), each found one a press (the
-    one shown a lit brass press), one not found dim, its title and words never shown. A category opens at its first
-    book with a chapter unread, else its first found, and a book at its first chapter unread, else its first found; the
-    focus goes to that book, or to "‹ LORE" while nothing of the category is found.
+    lit brass at the names' larger size and its words block by block at the names' size (bold and italic as the file
+    marks them, a document set in on a darker ground, a break a short brass rule), scrolled within the page's room, with
+    the book's chapters numbered under it (the panel takes the keys' focus, so a screen reader reads the chapter whole),
+    each found one a press (the one shown a lit brass press), one not found dim, its title and words never shown. A
+    category opens at its first book with a chapter unread, else its first found, and a book at its first chapter
+    unread, else its first found; the focus goes to that book, or to "‹ LORE" while nothing of the category is found.
   - **Covers** are printed as posters and bound, one design for every book in its cloth and with its motif
-    ([[The Lore Books' Covers Are Drawn in Detail]], `coverPixels`), drawn from shapes at the size each stands, a pixel a
-    CSS pixel under 96 and two from there: a spine and the pages' edge under the board; a face banded light to dark
+    ([[The Lore Books' Covers Are Drawn in Detail]], `coverPixels`), drawn from shapes at the size each stands, a pixel
+    a CSS pixel under 96 and two from there: a spine and the pages' edge under the board; a face banded light to dark
     with a sunburst and a print's grain; a thin brass frame with corner brackets, diamonds, a chevron and studs; rings
     about a dark disc rimmed in brass, the motif raised large in its middle. A book whose every chapter is found turns
     down a gold corner; one not yet found is an empty slot outlined in dots (`slotPixels`).
@@ -1123,18 +1136,19 @@ never while a press is held. Each press is an ask the room answers.
   With no gear it shows the papers alone.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
   Roster"): three columns, Game, Friends and Guild, each a page of fourteen rows, fewer where the screen is too short
-  to show them without scrolling, with arrows between pages; its empty rows kept so each column keeps its length. Game holds invites to a company, then the company (its leader marked with a
-  gold corner, or the player alone, who leads their own), then those in the same room; over it the company's privacy.
-  Friends holds those asking, then friends playing, those asked, and friends away; over it a press to add a friend.
-  Guild holds its members playing, then away, each with their rank, then those invited; over it the guild's name, motto and presses, or, with none, a
-  press to found one and the invites. Each row is a player's emblem and its nameplate behind their name and tag, at
-  twice the emblem's cells; one away is grey and bare. A long name gives way before its tag. Choosing a row opens a
-  panel beside it, or over it near the page's foot: who and where, then all that may be done with them, what cannot
-  be undone held and saying so ("Hold to …"), blocking and reporting apart under a rule. A member of the company
-  playing elsewhere can be gone to. Details shows another player's nameplate, guild, power and
-  worn pieces, each under its slot's name (a horse under MOUNT, with its rarity and no power). A join goes to them if they are on foot on this landmass, unless the player is in a fight at sea or
-  has fallen; then they go to them once it is over. The Roster is asked for again every 15
-  seconds while it is seen.
+  to show them without scrolling, with arrows between pages; its empty rows kept so each column keeps its length. Game
+  holds invites to a company, then the company (its leader marked with a gold corner, or the player alone, who leads
+  their own), then those in the same room; over it the company's privacy. Friends holds those asking, then friends
+  playing, those asked, and friends away; over it a press to add a friend. Guild holds its members playing, then away,
+  each with their rank, then those invited; over it the guild's name, motto and presses, or, with none, a press to found
+  one and the invites. Each row is a player's emblem and its nameplate behind their name and tag, at twice the emblem's
+  cells; one away is grey and bare. A long name gives way before its tag. Choosing a row opens a panel beside it, or
+  over it near the page's foot: who and where, then all that may be done with them, what cannot be undone held and
+  saying so ("Hold to …"), blocking and reporting apart under a rule. A member of the company playing elsewhere can be
+  gone to. Details shows another player's nameplate, guild, power and worn pieces, each under its slot's name (a horse
+  under MOUNT, with its rarity and no power). A join goes to them if they are on foot on this landmass, unless the
+  player is in a fight at sea or has fallen; then they go to them once it is over. The Roster is asked for again every
+  15 seconds while it is seen.
 - **The company on the heads-up display**: each other member's nameplate under the place's name, with where they are,
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], `settingsPage.ts`) is
@@ -1167,10 +1181,11 @@ never while a press is held. Each press is an ask the room answers.
     shows the recorded sounds' credits in the volumes' place: each one's name, author, licence and source, and what was
     changed, with ‹ Audio, or Escape, back.
   - **Controls**: under Dialogue, how a line of the dialogue box moves on ("Dialogue": Click to continue, the first
-    and the default, or Auto, kept in this browser; [[Speech]], [[Dialogue Waits for a Click by Default, With Auto as a Setting]]), a line under it
-    saying that Auto moves each line on by itself and that lines said in a fight always do; then every control as the
-    sheet of every control lists it, each key and button bound anew there the same way ("Binding a control"), and
-    Reset to defaults; its line says what a waiting key wants or what the last binding came to.
+    and the default, or Auto, kept in this browser; [[Speech]],
+    [[Dialogue Waits for a Click by Default, With Auto as a Setting]]), a line under it saying that Auto moves each line
+    on by itself and that lines said in a fight always do; then every control as the sheet of every control lists it,
+    each key and button bound anew there the same way ("Binding a control"), and Reset to defaults; its line says what a
+    waiting key wants or what the last binding came to.
   - **Account** ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a username and
     password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held. Under it,
     the players blocked, each with a press to unblock them, and the muted.
@@ -1200,8 +1215,9 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
   no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
 - **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
-  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea; a dungeon has none) or on the ground. A jump as a body
-  rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
+  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the
+  sea; a dungeon has none) or on the ground. A jump as a body rises, a landing after a fall of 0.6 m or more, and a
+  dodge's roll.
 - **Foes' voices** ([[The Grey Tithe and the Lattice Each Have Their Own Voice]]). A foe of the Grey Tithe or the
   Lattice, by its faction, is heard in its faction's voice as it spots the player (the shared `foe.alert` until its
   own is picked), as its blow swings, as it is struck, and as it falls; a killing blow is its death alone
@@ -1209,13 +1225,14 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   is never kept back, and one foe's swing or hurt is heard at most once in 2 s; only a foe's voice that began counts
   (`WorldSounds.playHeard`). A cue picked as several recordings plays
   them as variations, each credited.
-- **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `combat/horseSounds.ts`). A rider's hooves instead of their steps, a
-  stride heard as the last one's recording ends while the horse moves, at a walk, a gallop (over 8 m/s) or boosted (while the
-  rider's boost runs: another player's as the room last stepped their body) on the ground, stone or water, a
-  footstep's wood (only the wreck's) heard as stone (`horse.<gait>.<ground>`, nine cues); mounting (`horse.mount`, and the horse's `horse.whinny`) and getting down (`horse.dismount`); a snort
-  each 9 s a ridden horse stands (`horse.snort`); and the boost's start (`horse.boost`). The player's and every other
-  player's horse, another's riding read from its moves. Each is silent until it has its pick on the sound sheet, but a
-  hoofbeat on stone or in water, which plays its gait's on the ground until then.
+- **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]],
+  `combat/horseSounds.ts`). A rider's hooves instead of their steps, a stride heard as the last one's recording ends
+  while the horse moves, at a walk, a gallop (over 8 m/s) or boosted (while the rider's boost runs: another player's as
+  the room last stepped their body) on the ground, stone or water, a footstep's wood (only the wreck's) heard as stone
+  (`horse.<gait>.<ground>`, nine cues); mounting (`horse.mount`, and the horse's `horse.whinny`) and getting down
+  (`horse.dismount`); a snort each 9 s a ridden horse stands (`horse.snort`); and the boost's start (`horse.boost`). The
+  player's and every other player's horse, another's riding read from its moves. Each is silent until it has its pick on
+  the sound sheet, but a hoofbeat on stone or in water, which plays its gait's on the ground until then.
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
   Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
   they are given (Exposed, Charged and Haste make no sound: [[Exposed, Charged and Haste Make No Sound]]).
@@ -1224,8 +1241,8 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
 
 Each is heard through a panner (equal power, fading with distance past 2 m, none past 40 m), the listener at the eye
 facing its yaw. At most 16 play at once: the farthest gives way to a nearer one. One fighter's cue plays once in
-0.1 s, and a step, a swing, a blow and a horse's stray up to 4% in pitch. A figure first seen makes no sound for what it was
-already doing. In the game they play through the interface's engine at the World volume, beside the interface's in
+0.1 s, and a step, a swing, a blow and a horse's stray up to 4% in pitch. A figure first seen makes no sound for what it
+was already doing. In the game they play through the interface's engine at the World volume, beside the interface's in
 Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea
 but on a boarded deck.
 The Test Ground makes its own sound at full volume on the first click into its view.
@@ -1271,9 +1288,10 @@ dot and fading every 2 s, or a padlock while it is shut. Under it its name in ca
 broken before "of"), and its level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10"
 before it), or, shut, why in neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no separator
 ends or starts a line. The chosen crest's name is lit over a brass rule as wide as the name, its shield drawn 8% larger,
-its glow breathing over 3 s; a crest under the pointer or the focus glows a little. A light sweeps an open crest's shield once
-as it is lit or chosen, in nine steps; a shut crest's never. The crests rise into place one after another as the screen opens. Each part is a
-picture drawn once (the sweep once a step) and turned, faded or grown as it moves; under reduced motion nothing moves.
+its glow breathing over 3 s; a crest under the pointer or the focus glows a little. A light sweeps an open crest's
+shield once as it is lit or chosen, in nine steps; a shut crest's never. The crests rise into place one after another as
+the screen opens. Each part is a picture drawn once (the sweep once a step) and turned, faded or grown as it moves;
+under reduced motion nothing moves.
 
 On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
 before its edges, faint stars, two wide rings, and dotted lines from each playlist to the Breach between them and to
@@ -1293,13 +1311,13 @@ right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
 
 The card: its name on a brass band (balanced over two lines where it is long) with its level and what its runs drop
 by its content's name, never a metal's ("Drops Elite Dungeon gear", "Drops Abyss Dungeon gear", from
-`content/gear/looks.json`; [[No Elder Scrolls Metal Names Reach the Player]]); why it is shut, led by a padlock in neutral ink (red is kept for a refusal); its rules
-(the Abyss Playlist's "One of the 18 Elite Dungeons, at Abyss, drawn as each run starts."); its modifiers, each led by
-its icon with what it does; its rewards, kept while it is shut, each its words ("a Vestige in a Boss's colours"),
-then "Taken" (with the timers' tick) or "Not taken", a playlist's weekly as three marks filling with its clears ("2 of
-3", then "Paid"), each with the time to its reset at the right; and "Every clear pays its kills and its cache, as any
-run does." Words come from `playlistScreenOf` (`playlistWords.ts`), built again each second it stands (its countdowns)
-and as the character's word changes.
+`content/gear/looks.json`; [[No Elder Scrolls Metal Names Reach the Player]]); why it is shut, led by a padlock in
+neutral ink (red is kept for a refusal); its rules (the Abyss Playlist's "One of the 18 Elite Dungeons, at Abyss, drawn
+as each run starts."); its modifiers, each led by its icon with what it does; its rewards, kept while it is shut, each
+its words ("a Vestige in a Boss's colours"), then "Taken" (with the timers' tick) or "Not taken", a playlist's weekly as
+three marks filling with its clears ("2 of 3", then "Paid"), each with the time to its reset at the right; and "Every
+clear pays its kills and its cache, as any run does." Words come from `playlistScreenOf` (`playlistWords.ts`), built
+again each second it stands (its countdowns) and as the character's word changes.
 
 The pointer over a crest only lights it; a click, Enter, Space or the pad's A on it chooses it. The arrows choose the
 next (up and down between a playlist and its week's dungeon), and the card follows the focus as the pad's cross moves
@@ -1320,49 +1338,53 @@ menu's acts behind it.
 
 At sea, while the ship is the player's to sail (over it, out of a fight, not aboard, at the helm or on a travel), the
 sea's own layer (`seaScreen.ts`, over the display and under the game's windows) stands the ship's console at the foot of
-the screen, 760 px across (`shipConsole.ts`; [[Game]], "At sea"; [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). Its header names the
-ship in brass (its own name from the Harbourmaster, else "The" and its class) beside its class, and holds the switch between the
+the screen, 760 px across (`shipConsole.ts`; [[Game]], "At sea";
+[[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). Its header names the ship in
+brass (its own name from the Harbourmaster, else "The" and its class) beside its class, and holds the switch between the
 Oversea and the Sealevel views: two presses, the view shown a primary, and the key V beside them. Its body has three
 columns, the last behind a rail:
 
-- **The compass**: a card 92 px across, north up, its rim ticked every 10 degrees, longer every 30 and longest at N, E, S and W, N in red; the
-  ship's brass needle and the wind's pale arrow are pictures drawn once and turned to their bearings each frame. Under
-  it the heading ("274° W", of the sixteen winds) and the wind ("Wind 6 m/s from the ENE", or "Calm" under 0.5 m/s).
-- **The voyage**: under way, hove to or at anchor in brass, with its speed in m/s while it sails; its pace ("Pace ×200", eased "×1 (×200
-  set) · true speed while watched", held near a hostile ship the room's "×5 (×200 set)"), or at rest how a voyage is
-  set in the view ("Click the sea to sail at ×60; plan on the map for ×200.", at sea level "W sails on; A and D
-  steer."); where it is bound while it makes for a landing; a bar of the way sailed on a voyage to a point; its line,
-  where it says more than the words over it.
-- **The ship**: hull, canvas and crew as bars of whole, green over 60%, amber over 30%, red under, with their shares; and
-  the water it is in.
+- **The compass**: a card 92 px across, north up, its rim ticked every 10 degrees, longer every 30 and longest at N, E,
+  S and W, N in red; the ship's brass needle and the wind's pale arrow are pictures drawn once and turned to their
+  bearings each frame. Under it the heading ("274° W", of the sixteen winds) and the wind ("Wind 6 m/s from the ENE", or
+  "Calm" under 0.5 m/s).
+- **The voyage**: under way, hove to or at anchor in brass, with its speed in m/s while it sails; its pace ("Pace ×200",
+  eased "×1 (×200 set) · true speed while watched", held near a hostile ship the room's "×5 (×200 set)"), or at rest how
+  a voyage is set in the view ("Click the sea to sail at ×60; plan on the map for ×200.", at sea level "W sails on; A
+  and D steer."); where it is bound while it makes for a landing; a bar of the way sailed on a voyage to a point; its
+  line, where it says more than the words over it.
+- **The ship**: hull, canvas and crew as bars of whole, green over 60%, amber over 30%, red under, with their shares;
+  and the water it is in.
 
 Its footer holds how this view sails ("Click the sea to sail · ×60", or the steering keys) and the view's own presses,
 the first a primary: Plan a voyage and Stop or Resume voyage in the Oversea view; Sail on, Heave to (dim at rest),
 Manage and Leave the helm (dim out of a room) at sea level. A press lets go of the focus, so Space never presses it
 again. Narrower than 840 px the console is the view's width less 40, the compass and the voyage side by side over the
-ship, whose three bars then stand side by side so the console stays low. Its node is `sea:bar`, which the key strip stands clear of.
+ship, whose three bars then stand side by side so the console stays low. Its node is `sea:bar`, which the key strip
+stands clear of.
 
 ## The landing's confirmation
 
 A click that asks to land (a port's icon, its island, a coast with no port, a sea island's water; [[Game]], "Landings")
-stands a window 420 px across a little above the middle of the view, clear of the console under it (`landingAskNode`): its question in brass
-at the face's larger size ("Dock at Overlook?"), what yes does under it in dim ink, and Cancel (Esc) and its yes (a
-primary, with Enter's key) on its footer; Cancel names the pad's B while the pad is in use.
+stands a window 420 px across a little above the middle of the view, clear of the console under it (`landingAskNode`):
+its question in brass at the face's larger size ("Dock at Overlook?"), what yes does under it in dim ink, and Cancel
+(Esc) and its yes (a primary, with Enter's key) on its footer; Cancel names the pad's B while the pad is in use.
 
 ## The island's tiles
 
 Over an island docked at or gone ashore on, no node is marked on the map; the island's tiles hold them
 (`islandPanel.ts`, `islandWords.ts`, `islandArt.ts`, `islandScenes.ts`;
-[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]],
-[[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). On an island cut into regions ([[World Map]], "Regions") they are the places of
-the region the ship lies off, the one whose centre is nearest it: those its nodes list, and any place no region lists;
-the port and the Playlist only where that region holds the living port. They
-are rectangles of one size in a grid with 16 px between them, across the view under the place's name (104 px down, 24
-in from each side), centred: each 280 to 340 px wide (narrower only on a view too narrow for one of 280), as many a row
-as fit up to five, as tall as three rows fit (176 to 220 px), their sides in 4-pixel steps so each is even and a
-resize paints a few sizes, 292 by 184 on a 1280 by 720 view, four a row (`gridOf`); more than fit scroll as the
-Playlist's card does (`scrolledNode`), with no fade over the island at their foot. They rise into place one after another as the view opens, each 0.04 s after the one before, over
-0.35 s from 14 px below (none under reduced motion).
+[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]],
+[[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]],
+[[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]]). On an island cut into regions
+([[World Map]], "Regions") they are the places of the region the ship lies off, the one whose centre is nearest it:
+those its nodes list, and any place no region lists; the port and the Playlist only where that region holds the living
+port. They are rectangles of one size in a grid with 16 px between them, across the view under the place's name (104 px
+down, 24 in from each side), centred: each 280 to 340 px wide (narrower only on a view too narrow for one of 280), as
+many a row as fit up to five, as tall as three rows fit (176 to 220 px), their sides in 4-pixel steps so each is even
+and a resize paints a few sizes, 292 by 184 on a 1280 by 720 view, four a row (`gridOf`); more than fit scroll as the
+Playlist's card does (`scrolledNode`), with no fade over the island at their foot. They rise into place one after
+another as the view opens, each 0.04 s after the one before, over 0.35 s from 14 px below (none under reduced motion).
 
 Each is a pixel scene painted as the website's pictures are (`client/src/art/`, [[Website]]), on a sheet half the
 tile's size, each texel two pixels across, dithered in one of the sheet's lights and seeded by its place, so no two
@@ -1398,31 +1420,31 @@ A tile's words are its name in brass at the larger size and under it its levels 
 Patrol zone"; the island's own "Island", then Port, Playlist, Patrol zone, Elite Dungeon, Mission, World boss and
 Outposts), the kind left out where the name says it already, as the Playlist's does; every other detail is a
 glyph at its head, each saying its words in the tile's label and, with the pointer on it, in a small dark card over
-it (a padlock "Shut:" and why; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]), in the Journal's icons (`journalIcons.ts`) and the
-tiles' own in their style (`islandIconMaps.ts`): the port's counters (a stall under its awning) and its moorings (an
-anchor); a patrol zone's dungeons (its door), its resources (a rock veined with ore), its foes (two blades crossed),
-its Elite and Abyss seas (dim while shut) and today's modifier; an Elite Dungeon's blocks (courses of stone), seals (a
-wax seal), company (two of it), pay (the cache's chest), its week, the Elite's or the Abyss's, and its modifiers; the
-Playlist's today, its week's two and its rewards; a mission's and a world boss's foes and named places (a pin); the
-Outposts tile's sites (a stake flying a grey pennant over a roped plot, one a site) and how many hold the player's
-guild's outposts (a palisade each, one dim at none); a padlock on a place that is shut. Nine fit a tile at its narrowest;
-more wrap onto a second row. Its label reads all of it out: its name, its line, every glyph's meaning and its
-details. The tile the keys or the pad have focused is lit, else the one under the pointer, else the first place's: a
-brass edge two pixels wide, raised 2 px, its chevron bright. Over the tiles the interface takes the keys and the pad:
-Tab, the arrows and the pad's cross walk them, and Enter or A presses the one focused, the game's own Enter then
-yielding to it; with none focused, Enter does what the lit tile does. A tile still rising takes no click. A shut
-tile's name is dim and a click on it does nothing. A landing chooses its node before it lands, as the flow lands
+it (a padlock "Shut:" and why; [[M Is the Map, N the Leave, and the Players' First Asks Are Built]]), in the Journal's
+icons (`journalIcons.ts`) and the tiles' own in their style (`islandIconMaps.ts`): the port's counters (a stall under
+its awning) and its moorings (an anchor); a patrol zone's dungeons (its door), its resources (a rock veined with ore),
+its foes (two blades crossed), its Elite and Abyss seas (dim while shut) and today's modifier; an Elite Dungeon's blocks
+(courses of stone), seals (a wax seal), company (two of it), pay (the cache's chest), its week, the Elite's or the
+Abyss's, and its modifiers; the Playlist's today, its week's two and its rewards; a mission's and a world boss's foes
+and named places (a pin); the Outposts tile's sites (a stake flying a grey pennant over a roped plot, one a site) and
+how many hold the player's guild's outposts (a palisade each, one dim at none); a padlock on a place that is shut. Nine
+fit a tile at its narrowest; more wrap onto a second row. Its label reads all of it out: its name, its line, every
+glyph's meaning and its details. The tile the keys or the pad have focused is lit, else the one under the pointer, else
+the first place's: a brass edge two pixels wide, raised 2 px, its chevron bright. Over the tiles the interface takes the
+keys and the pad: Tab, the arrows and the pad's cross walk them, and Enter or A presses the one focused, the game's own
+Enter then yielding to it; with none focused, Enter does what the lit tile does. A tile still rising takes no click. A
+shut tile's name is dim and a click on it does nothing. A landing chooses its node before it lands, as the flow lands
 only at the node chosen. A desolate city's social space is listed nowhere.
 
 The Outposts tile's sites stand in the tiles' place as the Playlist's screen opens from its tile (`outpostsNode` in
 `islandPanel.ts`): a panel 104 px down, dark and nearly opaque, its region's name in brass, its levels and kind with
 "Choose a slot to land at", and a card for each site in a row that wraps, each 260 px wide: its name in brass, a small
-chart of the region (the coast round its sites, four times as wide as they lie apart, every site a dot, its own brass in a ring, one
-holding the player's guild's outpost green), and a palisade with "Your guild's outpost" or a stake with "No outpost of
-your guild's" (the guild read as the map's marks read it, [[Guilds]]); a shut one says why. The card the keys or the
-pad have focused is lit, else the one under the pointer, else the first open one, a brass edge raised 2 px. A click on
-a card, or Enter or A, lands at its site as a place's tile does; the arrows, Tab and the pad's cross walk the cards,
-the keys and the pad held to the panel while it stands. Back, Escape or the pad's B close it, back to the tiles.
+chart of the region (the coast round its sites, four times as wide as they lie apart, every site a dot, its own brass in
+a ring, one holding the player's guild's outpost green), and a palisade with "Your guild's outpost" or a stake with "No
+outpost of your guild's" (the guild read as the map's marks read it, [[Guilds]]); a shut one says why. The card the keys
+or the pad have focused is lit, else the one under the pointer, else the first open one, a brass edge raised 2 px. A
+click on a card, or Enter or A, lands at its site as a place's tile does; the arrows, Tab and the pad's cross walk the
+cards, the keys and the pad held to the panel while it stands. Back, Escape or the pad's B close it, back to the tiles.
 
 ## The character screen
 
@@ -1536,11 +1558,12 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
 (`combat/ringSlot.ts`).
 
 - **The ship's plate**, at the top left, is the vitals' long thin bars, as on foot
-  ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]; `thinBarNode`, the one build both wear): Hull over Sails over Crew (hull red as health and at its height, sails bone, crew green as stamina, both at
-  stamina's height), each as long as the vitals' health is laid for the view, stepping and doubling with the display,
-  with no words inside; a reader hears each by its name and percentage. The hull's frame flashes blood at a quarter or
-  less as health's does. Under them an "On fire" chip while it burns, the kit's chip, as the buffs stand under the
-  vitals. In a fight the place's name gives way to the plate.
+  ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]; `thinBarNode`, the one build both wear): Hull over Sails
+  over Crew (hull red as health and at its height, sails bone, crew green as stamina, both at stamina's height), each as
+  long as the vitals' health is laid for the view, stepping and doubling with the display, with no words inside; a
+  reader hears each by its name and percentage. The hull's frame flashes blood at a quarter or less as health's does.
+  Under them an "On fire" chip while it burns, the kit's chip, as the buffs stand under the vitals. In a fight the
+  place's name gives way to the plate.
 - **The ship's bar** (`combat/shipAbilityBar.ts`) holds the ship's abilities at the bottom left, where the Arts'
   bar stands on foot ([[Arts]], "The ability bar"): the same corner (28 px in, 22 up), the same rings (44 px, 66 at
   the larger step, 88 past 1440p) and gaps, each icon in a ring over its key's keycap. A reader hears it as
@@ -1568,18 +1591,19 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
   lit in brass, drawn on the cap, and the pad's button as its picture; the load's is the wheel while no key steps the
   load. The bar is laid from a list of abilities (`ships/shipAbilities.ts`), so another ability is one more entry,
   and it goes with the readout.
-- **The horse's ring** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): while the player rides, the rider's boost stands at the
-  bottom left in the Arts' place (no Art is cast from the saddle), one ring of the ship's bar's own build
-  (`combat/rideBoost.ts`), a horseshoe in iron, its keycap the jump's key as bound (Space, or the pad's A). A reader
-  hears it as "Your Horse", "Boost (Space), ready". It is lit once ready, near white and draining over its 4 s while
-  it runs, then swept dark as its 12 s recharge, its last seconds counted, flashing as the boost begins, as the
-  burst's ring does. Getting down, the Arts' bar comes back.
+- **The horse's ring**
+  ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): while the
+  player rides, the rider's boost stands at the bottom left in the Arts' place (no Art is cast from the saddle), one
+  ring of the ship's bar's own build (`combat/rideBoost.ts`), a horseshoe in iron, its keycap the jump's key as bound
+  (Space, or the pad's A). A reader hears it as "Your Horse", "Boost (Space), ready". It is lit once ready, near white
+  and draining over its 4 s while it runs, then swept dark as its 12 s recharge, its last seconds counted, flashing as
+  the boost begins, as the burst's ring does. Getting down, the Arts' bar comes back.
 - **The card**, centred under the compass, is the target's plate (as `combat/foePlate.ts` builds it), light and never a
-  box, on the ship the look is on (while the Sloop's guns are laid, the captain nearest where they fall; else the nearest
-  captain): its faction's emblem framed, its name, one hull bar in its rank's colour (an ally's blue), and as small
-  words its class and how far ("Brig - 70 m") and its state: "Hostile", "Colors struck", "Colors struck - E: board"
-  once it can be boarded, or "Going down". The name keeps its first three letters, cut short after them, however long
-  its class and state. The ships' plates keep under it while it shows, as under the compass.
+  box, on the ship the look is on (while the Sloop's guns are laid, the captain nearest where they fall; else the
+  nearest captain): its faction's emblem framed, its name, one hull bar in its rank's colour (an ally's blue), and as
+  small words its class and how far ("Brig - 70 m") and its state: "Hostile", "Colors struck", "Colors struck - E:
+  board" once it can be boarded, or "Going down". The name keeps its first three letters, cut short after them, however
+  long its class and state. The ships' plates keep under it while it shows, as under the compass.
 - **The broadside warning** stands under the card while a hostile captain afloat has a battery run out at the Sloop
   (the Sloop within 45° of that side's beam), written over the sea with no panel, as "Return to the area" is, in three
   large lines ([[The Broadside Warning Is Written Over the Sea, Not a Panel]]): "BROADSIDE" in blood red capitals at
@@ -1598,15 +1622,15 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
 
 Every keeper in the social space who deals with a player, the Postmaster and Shape among them, keeps a screen, as
 Destiny's keep theirs in the Tower ([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]);
-E at one opens it in the menu's window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
-serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
+E at one opens it in the menu's window, its name where the tabs stand. The prompt names the keeper by their title ("The
+Mage", "Shape"). The room serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
 - **The Harbourmaster's counter** stands in the keepers' frame (below), the Harbourmaster at the left, in four parts
-  chosen as the inventory's shelves are ([[Shipyard]], `harbourPage`), laid in the room beside him: the shipyard, each hull's panel with its numbers as bars and its price, held to buy and clicked to
-  sail; the paint yard, a chip for each ship kept and a row of swatches a part, each clicked to lay one kept, held to buy
-  one sold, its hover card beside it; the register, two rows of words to name the ship chosen; and the Shipwright's six
-  modules of the day, each held to buy, its hover card beside it, as a keeper's wares are. With no ship kept yet, the
-  Ship tab says so.
+  chosen as the inventory's shelves are ([[Shipyard]], `harbourPage`), laid in the room beside him: the shipyard, each
+  hull's panel with its numbers as bars and its price, held to buy and clicked to sail; the paint yard, a chip for each
+  ship kept and a row of swatches a part, each clicked to lay one kept, held to buy one sold, its hover card beside it;
+  the register, two rows of words to name the ship chosen; and the Shipwright's six modules of the day, each held to
+  buy, its hover card beside it, as a keeper's wares are. With no ship kept yet, the Ship tab says so.
 - **The muster** stands on the pledged faction's keeper's screen, under its wares: each officer offered, signed on by
   a hold; one the player cannot afford stands flat and takes no press (`musterAt`).
 - **The vault**, after Destiny 1's, in the keepers' screen's right column under the vault keeper, who greets and thanks
@@ -1665,9 +1689,10 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   Ranged kind ([[Gear]], "Vendors"); while her gift is owed TO START comes first instead, each starter piece of a slot
   still owed at no price: its tile says "Free" in place of the price, its card says "My gift to you: one Melee weapon
   and one Ranged, your choice.", and holding it takes it as a purchase would ([[Quests]], "The opening"). Eighteen
-  pieces fill the screen, so once the gift is taken the day's wares lead. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's six. The Tack: MOUNT,
-  the Bay Horse first, then the day's four horses and bardings, a horse as any item ware is, its picture, its card and
-  "Normal Horse", kept once a horse in its coat is held. A piece kept says so.
+  pieces fill the screen, so once the gift is taken the day's wares lead. The Tailor: DYES, the day's four, each a
+  swatch of its ramp, then EMBLEMS, the day's six. The Tack: MOUNT, the Bay Horse first, then the day's four horses and
+  bardings, a horse as any item ware is, its picture, its card and "Normal Horse", kept once a horse in its coat is
+  held. A piece kept says so.
 - **A faction's rows** (`factionRows`), the faction's own services first and its wares after, so a short screen scrolls
   to its armour: REPUTATION (the rank, the meter, what the next ranks keep, and each package waiting held to collect),
   PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a Legendary cloak worn at any
@@ -1714,8 +1739,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
     its card; then in a scroll of their
     own, so every row stays in reach on a short screen, "Available bounties" ruled under (a step smaller on a phone);
     the town's eight in a row (the passages' two after its six) and the pledged faction's three under them, then any
-    other faction's held that day, or three locked wells with a padlock while pledged to none; and right under the tiles, as the Tracker lays its
-    refresh, a sunk well with "New bounties" and the time to the next board.
+    other faction's held that day, or three locked wells with a padlock while pledged to none; and right under the
+    tiles, as the Tracker lays its refresh, a sunk well with "New bounties" and the time to the next board.
   - **A tile** has no words. Its face says who posts it (`bountyFaces.ts`), a sign 24 cells square grounded and
     framed as an emblem's: every town bounty a pinned writ under a red wax seal with two ribbons on slate, every
     faction's its faction's emblem (the Stormcallers' bolt, the Lamplighters' lantern, the Veiled's moon). The face is
@@ -1727,11 +1752,12 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   - **The card** of the tile pointed at or holding the keys floats beside it (`bountyCardNode`): its name in capitals
     and its kind ("Land bounty" by the mark of where it counts, two peaks, a wave, an arched door, or for the
     passages' "Passage bounty" a lamp; or "Lamplighters bounty" by its faction's emblem) on a
-    band in its poster's colour; its words; its count once taken, green once done; "Rewards" with what it pays the player now by its tier (`payOf`: XP by its
-    letters, and the town's Aurem by its coin or the faction's reputation by its emblem), resting once turned in; for
-    a faction's, "Counts while pledged to them and wearing their cape", ticked while it is met (`serves`); and along
-    its foot "Click / E" with its press, Take on one not held or Turn in on one done, or "Turned in". A locked well's card says "Pledge
-    to a faction at its counter in Overlook to take its bounties."
+    band in its poster's colour; its words; its count once taken, green once done; "Rewards" with what it pays the
+    player now by its tier (`payOf`: XP by its letters, and the town's Aurem by its coin or the faction's reputation by
+    its emblem), resting once turned in; for a faction's, "Counts while pledged to them and wearing their cape", ticked
+    while it is met (`serves`); and along its foot "Click / E" with its press, Take on one not held or Turn in on one
+    done, or "Turned in". A locked well's card says "Pledge to a faction at its counter in Overlook to take its
+    bounties."
   - **Its keys**: a click, Enter or E on a tile takes or turns it in; E, heard on any tile, padlock or coin holding the
     focus, the one whose card shows, and none while no bounty's card shows; nothing takes the focus for the player,
     so the pad's A or Enter never takes a bounty unseen. Each is asked by its place with the day of the board shown;
@@ -1784,19 +1810,20 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   its slot with its card, their level and Prestige, their power and the Art they wear, from what their room kept for
   others to see. Each piece's card is set against the player's own in that slot (at sea, the sea's word on their
   gear), "Against your" it, "not counting nodes": the room tells no one another player's nodes, so neither's chosen
-  nodes count in the rows. Each piece keeps its own id there, so its pictures make the look's choices its figure makes. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
-  back to their menu.
+  nodes count in the rows. Each piece keeps its own id there, so its pictures make the look's choices its figure makes.
+  Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes back to their
+  menu.
 - **Settings**' Account tab lists the muted under the blocked, each with Unmute.
 
 ## Emblems
 
 An emblem is a sign 24 cells square and the nameplate it heads, 120 by 24, whose left square is the sign's own ground,
-as Destiny's are ([[Cosmetics Follow Destiny, Shown in Many Places]]). Each is drawn in the page from its colours, a pattern
-and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
+as Destiny's are ([[Cosmetics Follow Destiny, Shown in Many Places]]). Each is drawn in the page from its colours, a
+pattern and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
 multiples. Behind a row or a header, its band runs the nameplate on, unframed, and the colour it ends in fills on past
 it; the menu's banner carries its pattern the whole way, as Destiny 2's heads its character screen. It shows on the
-Roster's rows, the menu's banner and Inspect's, another player's details, the company on the heads-up display, the Appearance
-button's corner and screen, and the Tailor's wares.
+Roster's rows, the menu's banner and Inspect's, another player's details, the company on the heads-up display, the
+Appearance button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
@@ -1855,7 +1882,8 @@ button's corner and screen, and the Tailor's wares.
   the press's label.
 - The tap to start shows once the face is read, a moment after the page opens.
 - A screen reader hears what the game draws only in Chromium (`ariaNotify`): a toast, a new task, a broadside run out
-  at the player's ship (said once as the warning appears), the prompt for E, the menu's answers, what is gained, and each press's label as focus reaches it.
+  at the player's ship (said once as the warning appears), the prompt for E, the menu's answers, what is gained, and
+  each press's label as focus reaches it.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not

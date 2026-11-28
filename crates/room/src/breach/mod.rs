@@ -535,7 +535,8 @@ impl Breach {
 const BAKED_MOST: usize = 96;
 
 /// A navmesh baked over blocks laid on the dark within bounds, kept for the process: every run of a Breach bakes each
-/// space over the same blocks, so the runs a host opens, and the tests, bake each once. Past BAKED_MOST it bakes afresh.
+/// space over the same blocks, so the runs a host opens, and the tests, bake each once. Past BAKED_MOST it bakes
+/// afresh.
 fn baked(blocks: &[Block], bounds: navmesh::Bounds) -> navmesh::NavMesh {
     static BAKES: OnceLock<Mutex<BTreeMap<Vec<u64>, navmesh::NavMesh>>> = OnceLock::new();
     let edges =

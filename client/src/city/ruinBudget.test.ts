@@ -14,7 +14,8 @@ const LAND_WASM = new URL('../../../target/wasm32-unknown-unknown/release/land_w
 /** The six ruined cities' continents. */
 const RUINS = ['continent-2', 'continent-3', 'continent-5', 'continent-6', 'continent-7', 'continent-8'];
 
-/** The ruins' plans as the land's worker plans them, their blocks and the forged tables, from the repository's files. */
+/** The ruins' plans as the land's worker plans them, their blocks and the forged tables, from the repository's
+ *  files. */
 async function ruinsForBudget(): Promise<{ plans: CityPlan[]; blocks: Map<string, RmbBlock>; tables: object }> {
   const land = await startLand(
     await readFile(LAND_WASM).catch(() => {

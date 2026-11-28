@@ -17,7 +17,8 @@ const COLOURS: Record<PaperMark['kind'], string> = {
   portal: '#6b3fa0',
   stairs: '#3a2816',
 };
-/** A mark's size (CSS px), how much a mark on another storey shows, and how fast the way in's staff pulses (a second). */
+/** A mark's size (CSS px), how much a mark on another storey shows, and how fast the way in's staff pulses (a
+ *  second). */
 const MARK_PX = 18;
 const FAINT = 0.4;
 const PULSE_HZ = 0.8;

@@ -43,11 +43,12 @@ export const SWING_ATTRIBUTES = [
 
 /**
  * The arc's fragment. Its shape is (age along the streak, 0 at the head; across it; the blade's speed there; its
- * part), or for a solid part (its stop; its cover; a measure running across it); its tint carries the metal and its strength, and `extra` its ramp
- * and how many figure pixels it spans across. Each part is cut into whole figure pixels and lit in one stop: a band's
- * cutting edge white-hot over a dark rim, its body in lanes that each trail their own length; a strip hot along its
- * middle; a flare a star of four rays, or a blunt head's square; the oldest fifth of a streak dithered out in a 4 by 4
- * order. A stronger arc burns a stop hotter, a dim one a stop darker. `swingLight` is its light for the light layer.
+ * part), or for a solid part (its stop; its cover; a measure running across it); its tint carries the metal and its
+ * strength, and `extra` its ramp and how many figure pixels it spans across. Each part is cut into whole figure pixels
+ * and lit in one stop: a band's cutting edge white-hot over a dark rim, its body in lanes that each trail their own
+ * length; a strip hot along its middle; a flare a star of four rays, or a blunt head's square; the oldest fifth of a
+ * streak dithered out in a 4 by 4 order. A stronger arc burns a stop hotter, a dim one a stop darker. `swingLight` is
+ * its light for the light layer.
  */
 export const SWING_WGSL = /* wgsl */ `
 const SWING_ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);

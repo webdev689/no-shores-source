@@ -104,7 +104,8 @@ export class Hud {
   readonly leaving = new LeaveHold();
   /** Every control, opened with K over everything else. */
   readonly controls = new ControlsSheet();
-  /** The sea fight's readout: the ship's plate and its abilities' bar, the card and the tally; and what it shows now. */
+  /** The sea fight's readout: the ship's plate and its abilities' bar, the card and the tally; and what it shows
+   *  now. */
   private readonly fight = new SeaFightReadout(capFace);
   private fightModel: SeaFightModel | null = null;
   /** The sight while the guns are laid, its aim line while a lay is held. */

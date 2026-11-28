@@ -32,8 +32,9 @@ pub const USE_CRATE: u8 = 15;
 pub const BUY_CRATE: u8 = 16;
 /// A module fed into another: the kept one in `item`, the fed one in `count`.
 pub const INFUSE: u8 = 17;
-/// The crew's asks: an officer of the day signed on (`column` the faction, `node` the offer), one stationed (`item` the officer, `slot` the
-/// duty: 0 aboard, 1 at their post, 2 ashore), paid off, and their nodes bought and chosen (`column`, `node`).
+/// The crew's asks: an officer of the day signed on (`column` the faction, `node` the offer), one stationed (`item` the
+/// officer, `slot` the duty: 0 aboard, 1 at their post, 2 ashore), paid off, and their nodes bought and chosen
+/// (`column`, `node`).
 pub const RECRUIT: u8 = 58;
 pub const STATION: u8 = 59;
 pub const DISMISS: u8 = 60;

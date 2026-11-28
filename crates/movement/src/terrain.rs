@@ -26,8 +26,8 @@ pub trait Terrain {
         None
     }
 
-    /// The ground a shot falls onto at (x, y): the terrain's height, but under the walls `wall_entry` answers, the floor
-    /// they stand on, so a shot meets a wall at its face and never a slope up to its top.
+    /// The ground a shot falls onto at (x, y): the terrain's height, but under the walls `wall_entry` answers, the
+    /// floor they stand on, so a shot meets a wall at its face and never a slope up to its top.
     fn floor_at(&self, x: f64, y: f64) -> f64 {
         self.height_at(x, y)
     }

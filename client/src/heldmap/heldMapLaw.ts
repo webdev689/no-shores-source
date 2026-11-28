@@ -17,7 +17,8 @@ export function seasChoices(
   return { picked: open.at(-1) ?? 'normal', why: shut.find((reason) => reason) ?? null };
 }
 
-/** The forge's held-map painting, pixels: the sheet and each frame of the hands, drawn six times over, are this size. */
+/** The forge's held-map painting, pixels: the sheet and each frame of the hands, drawn six times over, are this
+ *  size. */
 export const SPRITE = { width: 1648, height: 1086 } as const;
 /** The parchment on the painting, as shares of its width and height (the sheet's opaque extent). */
 export const SHEET = { x0: 330 / 1648, x1: 1320 / 1648, y0: 168 / 1086, y1: 804 / 1086 } as const;

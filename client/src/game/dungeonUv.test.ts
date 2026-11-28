@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { uvOf } from './dungeonUv.ts';
 
-/** Each way a wall faces, and the way that is right of one facing it: x east, y south, so facing north east is right. */
+/** Each way a wall faces, and the way that is right of one facing it: x east, y south, so facing north east is
+ *  right. */
 const FACINGS = [
   { normal: [0, 1, 0], right: [1, 0] },
   { normal: [0, -1, 0], right: [-1, 0] },

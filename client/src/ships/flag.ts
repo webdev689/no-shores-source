@@ -7,7 +7,8 @@ type Point = readonly [number, number, number];
 /** A flag flies a tenth of its waterline's length, and is two thirds as deep as it flies. */
 export const FLAG_FLY_SHARE = 0.1;
 const FLAG_DEPTH = 2 / 3;
-/** Its wave: how far a crest stands out at the fly's end, a share of the fly; its crests along it; how fast they run. */
+/** Its wave: how far a crest stands out at the fly's end, a share of the fly; its crests along it; how fast they
+ *  run. */
 const WAVE = { share: 0.08, crests: 1.5, perS: 1.4 } as const;
 /** The metres of picture its UVs span either way: one picture of the ship's pictures, laid once over the flag. */
 export const FLAG_PICTURE_M = 1.6;

@@ -233,7 +233,8 @@ export class ScapePlayer {
     this.recorded(cue, point, heard, { gain, pitch: between(this.random, [0.95, 1.05]), near: FIGHT_NEAR_M });
   }
 
-  /** A bed's recording given its gain by its law, and placed where it stands: silent where there is no such place near. */
+  /** A bed's recording given its gain by its law, and placed where it stands: silent where there is no such place
+   *  near. */
   private bed(playing: BedPlaying, clock: number, heard: Heard): void {
     const { layer } = playing;
     const points = this.pointsOf(layer, heard);

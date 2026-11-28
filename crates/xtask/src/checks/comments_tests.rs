@@ -148,3 +148,23 @@ fn python_comments_follow_the_same_rules() {
     let problems = problems_in("forge/body.py", &text);
     assert_eq!(problems.len(), 2);
 }
+
+#[test]
+fn a_comment_line_past_the_width_is_refused_unless_it_cannot_wrap() {
+    let words = "word ".repeat(30);
+    assert_eq!(overlong(&format!("    // {words}")), Some(157));
+    assert_eq!(overlong(&format!("// {}", "w".repeat(117))), None, "120 is allowed");
+    assert_eq!(overlong(&format!("// see https://{}", "u".repeat(120))), None, "a URL");
+    assert_eq!(overlong(&format!("/// `{}`", "c ".repeat(70))), None, "one code span, the line's only word");
+    assert_eq!(overlong(&format!("- [[{}]]", "Note ".repeat(30))), None, "one wiki link");
+    let problems = problems_in("crates/core/src/sail.rs", &format!("// {words}\nfn sail() {{}}\n"));
+    assert_eq!(problems.len(), 1);
+    assert_eq!(problems[0].line, Some(1));
+    assert!(problems[0].message.contains("153-character"), "{}", problems[0].message);
+}
+
+#[test]
+fn a_wide_line_inside_a_comment_s_example_is_left() {
+    let text = format!("/// ```\n/// let x = \"{}\";\n/// ```\nfn sail() {{}}\n", "y".repeat(120));
+    assert!(problems_in("crates/core/src/sail.rs", &text).is_empty());
+}

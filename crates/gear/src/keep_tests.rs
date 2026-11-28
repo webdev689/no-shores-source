@@ -82,7 +82,8 @@ fn a_kept_named_module_keeps_each_bought_perk_where_it_moved_and_never_takes_on_
         character.items.insert(id, (item, At::Carried));
         id
     };
-    // Gallowglass Rigging kept from before the merge, Quick Braces bought and chosen in its first column's second place.
+    // Gallowglass Rigging kept from before the merge, Quick Braces bought and chosen in its first column's second
+    // place.
     let old = vec![
         pair("doubled_shrouds", "quick_braces"),
         pair("boarding_nets", "grapnels"),

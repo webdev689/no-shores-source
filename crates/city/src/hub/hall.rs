@@ -70,9 +70,9 @@ pub fn hall(frame: &Frame, laid: &mut Laid) {
     laid.stall(StationKind::Veiled, veiled);
     let lamps = stand_against("chapel-lamplighters", "counter", frame.at(far, 0.0), frame.level, frame.seaward);
     laid.stall(StationKind::Lamplighters, lamps);
-    // Its own paved floor, wall to wall but round the rug, and a raised stone walk on from the rug to the war table. The
-    // rug lies on the levelled land itself: the city is drawn a few centimetres nearer than it stands, a bend across
-    // a face this large, so a thin rug laid over such a face can lose to it.
+    // Its own paved floor, wall to wall but round the rug, and a raised stone walk on from the rug to the war table.
+    // The rug lies on the levelled land itself: the city is drawn a few centimetres nearer than it stands, a bend
+    // across a face this large, so a thin rug laid over such a face can lose to it.
     let [rug_wide, rug_long, _] =
         crate::modules::number_of("rug-long").map_or([0.0; 3], |number| crate::modules::all()[number as usize].size);
     let (rug_near, rug_far) = (near - RUG_FROM_DOOR_M + rug_long / 2.0, near - RUG_FROM_DOOR_M - rug_long / 2.0);

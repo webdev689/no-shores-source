@@ -73,7 +73,8 @@ export function compassPlace(bearing: number, heading: number, span = COMPASS_SP
 }
 
 /** Where a mark at `spot` stands on the strip of a player at `from` looking at `heading`: at its bearing while on the
- *  strip, held at the end nearer it, the side to turn toward, while off it; dead ahead where the player stands on it. */
+ *  strip, held at the end nearer it, the side to turn toward, while off it; dead ahead where the player stands on
+ *  it. */
 export function markPlace(
   spot: readonly [number, number],
   from: readonly [number, number],

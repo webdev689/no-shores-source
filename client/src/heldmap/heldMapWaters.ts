@@ -1,6 +1,6 @@
 // The waters on the held map: each water's name, arched across its sea from its label point and held inside the map,
-// its label point where a locked sea's padlock stands, and the places it names, a city that is no port named as the ruins it is. What is lettered is laid out
-// (mapLayout.ts) and painted with the parchment's ink (mapLetters.ts).
+// its label point where a locked sea's padlock stands, and the places it names, a city that is no port named as the
+// ruins it is. What is lettered is laid out (mapLayout.ts) and painted with the parchment's ink (mapLetters.ts).
 import { ruinedName } from '../ruinedName.ts';
 import type { CoastField } from './coastField.ts';
 import type { MapPlace } from './heldMapScene.ts';

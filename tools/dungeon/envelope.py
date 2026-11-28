@@ -20,7 +20,8 @@ FAR = 1000.0
 # crates/dungeon/src/dungeon.rs), so a door piece's reveal is where a body stops.
 DOORWAY_HALF_M = 0.8
 # How far an arch round the portal or the exit reaches from its middle along its wall, and a sconce from its torch
-# (m). The portal's torches stand past both with PORTAL_CLEAR_M between (PORTAL_TORCH_M in crates/dungeon/src/torches.rs).
+# (m). The portal's torches stand past both with PORTAL_CLEAR_M between (PORTAL_TORCH_M in
+# crates/dungeon/src/torches.rs).
 ARCH_HALF_M = 1.3
 SCONCE_HALF_M = 0.2
 PORTAL_CLEAR_M = 0.05

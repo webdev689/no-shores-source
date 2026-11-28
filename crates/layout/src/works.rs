@@ -235,7 +235,8 @@ fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path]
             (0..=(span / 2.0 / 0.5) as i32).map(|step| along + out * f64::from(step) * 0.5).find(|&at| clear(at))
         })
         .collect();
-    // The fallen span is the one holding the point a span and a half past the middle's, as it was before any pier moved.
+    // The fallen span is the one holding the point a span and a half past the middle's, as it was before any pier
+    // moved.
     let fallen = -reach + (f64::from(spans / 2 + 1) + 0.5) * span;
     for &along in &piers {
         kit.solid(pier(along));

@@ -146,8 +146,8 @@ test('two scripted players meet a raid’s heroic task and fight to its end, to 
   assert.equal(hash, RAID_HASH);
 });
 
-/** A dev page's own room (`&speed=`, `&bots=`, `&heroic=`) playing an event from `minute` with its bots beside the page's
- *  own player, who stands still: the event as it ended (its kind, phase and heroic task). */
+/** A dev page's own room (`&speed=`, `&bots=`, `&heroic=`) playing an event from `minute` with its bots beside the
+ *  page's own player, who stands still: the event as it ended (its kind, phase and heroic task). */
 function playInPage(minute: number, heroic: boolean): readonly number[] {
   let ended: readonly number[] | null = null;
   // The world's minute held still, so the event starts at `minute` however long the play takes.

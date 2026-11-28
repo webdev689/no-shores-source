@@ -16,7 +16,7 @@ status: in force
 
 ## How it works
 
-- The pool is thirteen perks marked `breach` in `content/gear/traits.json`; a Breach's armour or weapon made by a Vestige
-  rolls every node of its perk columns from them, never one twice on the piece, and its other columns from the shared pools, and keeps what it rolled
-  ([[Gear]], "Verbs", "The Breaches' perks"; the calls in [[Gear as Claude Shapes It]], "The Breaches' perks"). The
-  Drowned Vale's Vestiges make them ([[Breaches]]).
+- The pool is thirteen perks marked `breach` in `content/gear/traits.json`; a Breach's armour or weapon made by a
+  Vestige rolls every node of its perk columns from them, never one twice on the piece, and its other columns from the
+  shared pools, and keeps what it rolled ([[Gear]], "Verbs", "The Breaches' perks"; the calls in
+  [[Gear as Claude Shapes It]], "The Breaches' perks"). The Drowned Vale's Vestiges make them ([[Breaches]]).

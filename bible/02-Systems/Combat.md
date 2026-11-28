@@ -88,9 +88,9 @@ as its lone weapon. Holding the button swings again as each blow ends. A swing c
   target first, then the nearest.
 - **Stamina.** 100. It comes back at 45 a second once it has rested half a second since it was last spent, slower
   behind a guard. A fighter with none cannot swing or dodge; spending never takes it below none.
-- **The guard and the parry.** Holding the guard raises it; pressing it opens a parry window of a quarter of a second (15
-  ticks, [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]; a foe's 9, as it reads a swing
-  at the fight's pace, [[Foes]]), which stays open for its
+- **The guard and the parry.** Holding the guard raises it; pressing it opens a parry window of a quarter of a second
+  (15 ticks, [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]; a foe's 9, as it reads a
+  swing at the fight's pace, [[Foes]]), which stays open for its
   whole length even if the button is let go at once, so a tap parries. A blow that lands in the window, from within the
   guard's arc, is parried: it does nothing, its striker staggers for 54 ticks, the parrier's lock turns on it, and the
   parrier's next swing at it within that time is a riposte, twice as hard, which no guard stops (it does not also count
@@ -213,9 +213,9 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   or a body stops it; a pistolet's or
   thunderlock's ball reaches 60 m along its line at once from a player's gun, and flies from a foe's, at 70 m/s and
   110 m/s, so it can be dodged; a foe's ball strikes two thirds of its gun's damage (`FOE_GUN`), so an Elite
-  Marksman's aimed shot fells a player of its level in three, not two. A foe's arrow and bolt strike whole. A body is an upright cylinder
-  0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
-  one coming down over a head meets its top.
+  Marksman's aimed shot fells a player of its level in three, not two. A foe's arrow and bolt strike whole. A body is an
+  upright cylinder 0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it
+  flew from, and one coming down over a head meets its top.
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a
   pistolet's 1.9, a thunderlock's 2.2. A double pistolet fires its right, then its left once the right's firing frames
   have played (0.5 s, the pistolet's in first person), and only then reloads both, for 2.85 s, half again a
@@ -299,16 +299,16 @@ A foe never drinks.
   (`combat/healLight.ts`): a faint ring glints at the feet for its first quarter, and six small motes and three small
   crosses swirl up round the figure, each leaving the feet in its own time and turning round it once and a quarter to
   just over the head, before the figure on the near side of the turn and behind it on the far, red, then pale red,
-  then a single cell of pale pink that goes out, never in the blood's dark. Through the drinker's own eyes the figure's light is
-  not drawn: a faint red light comes in from the screen's edge in six held steps, warm red at the rim paling inward,
-  with motes drifting up its sides in a gentle sway ([[First Person]], [[Interface]]). Reduced motion keeps only the
-  still glint and the edge held at one faint light: nothing circles, rises or pulses.
+  then a single cell of pale pink that goes out, never in the blood's dark. Through the drinker's own eyes the figure's
+  light is not drawn: a faint red light comes in from the screen's edge in six held steps, warm red at the rim paling
+  inward, with motes drifting up its sides in a gentle sway ([[First Person]], [[Interface]]). Reduced motion keeps only
+  the still glint and the edge held at one faint light: nothing circles, rises or pulses.
 - **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
   their meter toward the next charge by the share it took of the foe's most health and most shield together, times
   half the share its rank's kill gives; a companion's or a boarding hand's blow fills its leader's, as its XP is
   theirs. A kill adds the kill's share whole to every player whose blow, or whose companion's, landed on the foe in
-  its last 10 s while it fought, as its XP and drops are shared: a third of a charge for a Minor or a Major, two thirds for
-  an Elite or a Miniboss, a whole one for a Boss. So a Minor fought whole gives half a charge, an Elite a whole one,
+  its last 10 s while it fought, as its XP and drops are shared: a third of a charge for a Minor or a Major, two thirds
+  for an Elite or a Miniboss, a whole one for a Boss. So a Minor fought whole gives half a charge, an Elite a whole one,
   and a Boss half a charge over its health and a whole one at its end, besides its adds'. A full meter is a charge;
   none come past three, and the meter stands empty while all three are full, but while a drink is under way the
   charge it drinks counts as spent: the meter fills to one whole and becomes a charge as the drink spends one. As a

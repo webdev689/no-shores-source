@@ -37,8 +37,8 @@ for (Destiny 1, Star Trek Online, Black Desert, Deadfire, DFO's own crew), and t
 ## The crew
 
 - **Two kinds.** Named officers, few and rare; and hands, a headcount that works its guns and sails.
-- **Officers** hold a post aboard (First Mate, Gunner, Bosun, Carpenter, Lookout), each changing how the ship plays, not a
-  flat number. Two may come ashore as companions, fighting with the foes' own minds on the player's side. Each has
+- **Officers** hold a post aboard (First Mate, Gunner, Bosun, Carpenter, Lookout), each changing how the ship plays, not
+  a flat number. Two may come ashore as companions, fighting with the foes' own minds on the player's side. Each has
   experience from fights at sea and on land, a grid of nodes and perks of their own.
 - **Companions** follow DFO's own: each officer ashore fights as a pirate of their post's role at their own level, by
   the power a player matched to it has; knocked out, never killed, they rest eight minutes; a kill they had a hand in

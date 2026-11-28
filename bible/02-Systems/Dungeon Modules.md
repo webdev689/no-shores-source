@@ -144,17 +144,17 @@ lamp is cold or lit by its `glow`, which the game lights or leaves dark.
 
 ## The pack
 
-One file a style, and one for the passages' pieces: the header's length, the header in JSON (its format, style, parts, and each module's vertices,
-corners and bounds), then 28 bytes a vertex (position, normal, UV in metres, part) and each module's corners counted
-from its own first vertex. It lives on R2 under its hash ([[Generated Files on Cloudflare R2]]), with the build's
-`.blend` beside it. `content/dungeon/modules.json` names them.
+One file a style, and one for the passages' pieces: the header's length, the header in JSON (its format, style, parts,
+and each module's vertices, corners and bounds), then 28 bytes a vertex (position, normal, UV in metres, part) and each
+module's corners counted from its own first vertex. It lives on R2 under its hash
+([[Generated Files on Cloudflare R2]]), with the build's `.blend` beside it. `content/dungeon/modules.json` names them.
 
 ## Publishing
 
 The `dungeon-modules` workflow runs on every push that changes the tools or the contracts. It checks the envelopes
 without Blender, builds every style with its contact sheets (kept as the run's artifact), and checks the packs. It
-builds them again to the same bytes, and publishes them with the repository's `CLOUDFLARE_TOKEN`. Its log ends with the manifest
-on one line, which a commit takes into `content/dungeon/modules.json`.
+builds them again to the same bytes, and publishes them with the repository's `CLOUDFLARE_TOKEN`. Its log ends with the
+manifest on one line, which a commit takes into `content/dungeon/modules.json`.
 
 ## In the Game
 

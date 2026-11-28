@@ -43,23 +43,23 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   its own rules on top (`breach/fallen.rs`). At Normal the fallen in a running encounter stand again of themselves,
   unasked, after 10 s at its stage, unless revived sooner; at Hard they never stand again of themselves, and each
   revive spends one of the attempt's 5 revives, none left meaning none (`breach_lets_revive`). Outside a running
-  encounter the fallen stand again after 6 s at either tier (`stands_after`); a fall into the dark is not revived (one who leaves so comes back so), and
-  waits as long. Every stand at the stage reached is a respawn there, the stage the Breach's checkpoint, told
-  `Checkpoint` as it moves on. At the Waking the same holds for the company holding the gate in its hollow, standing
-  again at the gate's arrival, its fallen revived only by its own company. At Hard every blow on a player
-  in the run, or of the company in its Waking, weighs 1.25 times. The whole company unwritten (`unwrite_all`) loses the attempt 3 s on, whoever stands again meanwhile
-  (`Breach::lost`); and every living player down 3 s at once wipes the
-  attempt: its foes go, the company stands whole at its stage, its revives are whole again, and it begins again as
-  they walk in. A player who leaves and comes back keeps what the Breach laid on them: down if they left down (a fall
-  too), their mark and its time, and a shore they were taken to (`breach/rejoin.rs`).
+  encounter the fallen stand again after 6 s at either tier (`stands_after`); a fall into the dark is not revived (one
+  who leaves so comes back so), and waits as long. Every stand at the stage reached is a respawn there, the stage the
+  Breach's checkpoint, told `Checkpoint` as it moves on. At the Waking the same holds for the company holding the gate
+  in its hollow, standing again at the gate's arrival, its fallen revived only by its own company. At Hard every blow on
+  a player in the run, or of the company in its Waking, weighs 1.25 times. The whole company unwritten (`unwrite_all`)
+  loses the attempt 3 s on, whoever stands again meanwhile (`Breach::lost`); and every living player down 3 s at once
+  wipes the attempt: its foes go, the company stands whole at its stage, its revives are whole again, and it begins
+  again as they walk in. A player who leaves and comes back keeps what the Breach laid on them: down if they left down
+  (a fall too), their mark and its time, and a shore they were taken to (`breach/rejoin.rs`).
 - **Its great foes** are matched to everyone who has played in the run, living, fallen or away (`Breach::company`), and
   matched again as more come in, keeping their share of health (each player past the first adds 0.45
   of its health; a Keeper is matched to half the company), then stand at their own times: the Scrivener six, the
   Steward six and a half, the Mender and the Warden one and a half.
 - **The company.** Companies hold eight, as a Breach is taken on by up to eight
-  ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); a Breach's run holds eight and every other run four. It is
-  launched from the Playlist: the finder (`/v1/find/node-gullwing-vale--breach-<tier>?launch`) starts the run for the
-  launcher's company at once, at its tier's level. Its room is `node-gullwing-vale--breach-<tier>--run-<8>`.
+  ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); a Breach's run holds eight and every other run four.
+  It is launched from the Playlist: the finder (`/v1/find/node-gullwing-vale--breach-<tier>?launch`) starts the run for
+  the launcher's company at once, at its tier's level. Its room is `node-gullwing-vale--breach-<tier>--run-<8>`.
 - **The opening, in the patrol zone.** The bake writes where the layout stood the Sunken Gate (the `breach-gate`
   module, area kind `breach`) into Gullwing Vale's node file, and its room stands the gate there. A launched player
   joins the zone with `?breach=<run>`, may arrive there from anywhere, and stands at the gate in their run's company.
@@ -68,13 +68,14 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   a mooring left empty, which holds nothing while it stands. Waves come from the hollow's four growths, two and one
   more for every two of the company's living holders, six at most, each growth's foes forming under a crown of the
   Lattice's crystal over it, and its perch's Ravager under its own; a Bulwark sent out forms under a crown over its
-  mouth ([[Enemies]], "Arrivals"; [[Foe Arrivals as Claude Builds Them]]). The Spire woken, the gate opens to that company
-  alone until its Breach is cleared or a day has passed, and no company whose run opened takes the gate again; lost
-  (a wipe, or the Spire standing empty a whole minute), the company stands whole at the gate's arrival and the gate is
-  free. The zone hears only the runs it opened, so a run no one was let into shows no company inside. The gate's
+  mouth ([[Enemies]], "Arrivals"; [[Foe Arrivals as Claude Builds Them]]). The Spire woken, the gate opens to that
+  company alone until its Breach is cleared or a day has passed, and no company whose run opened takes the gate again;
+  lost (a wipe, or the Spire standing empty a whole minute), the company stands whole at the gate's arrival and the gate
+  is free. The zone hears only the runs it opened, so a run no one was let into shows no company inside. The gate's
   company holds eight at most, and only those the Breach would let in (its tier's level, and Hard's Normal win); one
   refused is told why (`ShutOut`). The gate stands only in the Gullwing Vale's room at Normal seas, its doorway shut by
-  rock behind its seal. Everyone in the zone sees the Waking, and the companies inside the run by the name of their run's first player, tier and encounter.
+  rock behind its seal. Everyone in the zone sees the Waking, and the companies inside the run by the name of their
+  run's first player, tier and encounter.
 - **Into the run.** The run's room lets a character in only once the zone's room says its company's gate opened
   (`server/breach.ts`), and its first player must be one the run was launched for. The zone's room judges a gate's day
   by the minute its host gives it as it is asked, so a zone no one stands in, which does not tick, still shuts it. Its
@@ -86,8 +87,9 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 - **The Lodestone.** The Breach's relic, taken from its plinth within 2.5 m and set down again. Its bearer fights bare
   handed: their swing is its Strike (three times a blow); Guard raises Hold True (4 m round the bearer, 6 s at most,
   10 s to rest), which cleanses the Rewritten and halves a foe's blow there; the Art key Grounds it once charged
-  (20 s): within 8 m it breaks a ward. Left lying 6 s (Hard 4) it unwrites the company. Hold True rests from whenever it ends, a set-down or a pass
-  too; the stone is set down only standing; fallen into the dark with its bearer, it goes home to its plinth.
+  (20 s): within 8 m it breaks a ward. Left lying 6 s (Hard 4) it unwrites the company. Hold True rests from whenever it
+  ends, a set-down or a pass too; the stone is set down only standing; fallen into the dark with its bearer, it goes
+  home to its plinth.
 - **Rewritten.** A mark the encounters lay on players; when its time comes the Rewritten are unwritten (killed)
   unless cleansed first.
 
@@ -230,7 +232,8 @@ slowly and glints with the lamps over it ([[Modules]], "In the game").
 - **The Drowned horse is not rendered yet.** Its ridden strips come only from a forge run started by hand
   (`figures.yml`, `anims` = `horseidle,horsewalk,horsegallop`, `layers` = `horse_drowned`), which writes to R2 and so
   waits for the owner's named yes; its first-person frames (`fpride.py --looks`) are in no workflow. Until then the page
-  draws the bare horse under it. The swatches' count sets every look's stripes, so that run redraws the other four looks too.
+  draws the bare horse under it. The swatches' count sets every look's stripes, so that run redraws the other four looks
+  too.
 - **The Scrivener and the Steward** wear the Idol's and the Heart's bodies until their own are drawn.
 - **The page copies some of the rules' numbers** (the standing-again times, the hollow's reach, the Choir's rounds and
   the font's rest, a Watcher's hearing, a shore's strand, the Scrivener's fury, a Bulwark's claim, the court's

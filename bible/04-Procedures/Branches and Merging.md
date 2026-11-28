@@ -22,7 +22,8 @@ type: procedure
 - **Before taking a new wire number**, run `bash tools/claude-toolkit/numbers-in-flight.sh`: the asks, refusals and
   foe types each open pull request adds over `main`. Take one none of them holds.
 - **Merge a pull request with a merge commit** once the owner says yes ([[Ask Before Deploying]]), so `main` reads as
-  one merge per change, and delete the branch ([[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]).
+  one merge per change, and delete the branch
+  ([[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]).
 - **Bring it up to date first.** Just before the merge, merge `main` into the pull request's branch, and merge once
   CI is green on that head with `main` unmoved: `main` then deploys the code its pull request's check passed without
   checking it again. If `main` moved meanwhile, catch up again

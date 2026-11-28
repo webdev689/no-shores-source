@@ -485,8 +485,8 @@ fn the_harbourmaster_and_the_chandler_keep_stalls_in_the_beacon_walks_market() {
 #[test]
 fn the_platform_round_the_plaza_is_floored_as_the_plaza_is_never_left_to_the_land() {
     // The city's plate is drawn a few centimetres under its level, where the land's grass stands: a walk floored by
-    // the plate alone shows the two in turn as the eye moves. Every walked point needs a floor of the hub's own, its top
-    // at the level or over it, or a piece standing on it.
+    // the plate alone shows the two in turn as the eye moves. Every walked point needs a floor of the hub's own, its
+    // top at the level or over it, or a piece standing on it.
     use crate::solids::Shape;
     let (_, plan) = planned();
     let social = &plan.social;

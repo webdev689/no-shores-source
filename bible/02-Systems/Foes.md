@@ -70,9 +70,9 @@ strikes ([[Public Events]]).
   fighter on the players' side, as the Brig's crew are ([[Enemies]]): it fights the factions by a foe's rules (its
   reach, parry window, telegraphed blows and stir), and its telegraphed blows are never judged against a player, nor
   a player's spells against it. What the room saw happen (a swing begun, a shot loosed, a blow landed on it or by it,
-  its telegraphed blow's landing, a noise, an ally's shout) it tells the brain, which notes it for its next thought. The foes of a room share a board of turns.
-  Chance comes from a hash of the room's seed, the tick, the foe and what is being decided, so the same seed plays the
-  same fight.
+  its telegraphed blow's landing, a noise, an ally's shout) it tells the brain, which notes it for its next thought. The
+  foes of a room share a board of turns. Chance comes from a hash of the room's seed, the tick, the foe and what is
+  being decided, so the same seed plays the same fight.
 - **Roles.** Every type of foe fights as one of five roles; its rank scales the role's numbers ([[Enemies]]). Reaction
   is the ticks from seeing a swing begin to answering it; the shares say how often it parries, blocks or dodges a swing
   at it, the rest it takes. As a Major:
@@ -93,8 +93,9 @@ strikes ([[Public Events]]).
 
   A foe may have a level: its health is its rank's times 1.07 for each, and its blows on a player and theirs on it
   are made with the power of [[Gear]], its rank's might and its phase's on top. A player's blows on it strike half
-  again and its blows on a player three quarters, at every level ([[Gear]], "Blows"; [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]). A foe of level 0 has no power, and fights by
-  these numbers and those two alone. A garrison's foes stand at their island's levels ([[Enemies]]).
+  again and its blows on a player three quarters, at every level ([[Gear]], "Blows";
+  [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]). A foe of level 0 has no power, and fights
+  by these numbers and those two alone. A garrison's foes stand at their island's levels ([[Enemies]]).
 
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.
 - **Awareness.** A foe's awareness is one level from 0 to 1, raised each tick by the strongest thing that stirs it, and
@@ -158,31 +159,33 @@ strikes ([[Public Events]]).
 - **The leash.** A garrison foe ([[Enemies]]) is leashed to its place in its group, at its post or on its beat, which
   holds still while the group fights ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands 50
   m from that place, or, farther from the foe than the 14 m it engages a target it sees within, stands on the ground
-  off the room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up once no wind-up of its own is under way: its target, its turn,
-  the blow it saw coming and its answer, its hunt, its search, its awareness, and a roar its health no longer calls for.
-  Within its leash, a target within those 14 m on its storey (in a dungeon, one half a storey or more over or under it with another floor between is not close) it never gives up on, wherever the target stands
-  ([[A Foe Gives Up Only When the Player Is Far Away]]).
-  It sheds its Expose and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing each tick the
-  share of what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 12 s),
-  then turns to face as its place does and stands idle. A foe on another storey than its place (half a storey, 4 m,
-  or more apart in height: `storeys_apart`) is not home, however close across, so it walks on. Walking back it heeds nothing it sees or hears and shows as
-  idle, so the one it gave up on cannot draw it out again at once. A blow on it brings it back, alert with the striker
-  as its target; one struck from past its leash it gives up again. A foe a player asked for, or one a Boss called, has
-  no post and never leashes. A foe a page playing a course alone stands where it wants it ([[Server]], "A course a page
-  plays alone") is posted where it stands and leashes to it; a Boss stood so calls no one in its phases, so a scene that
-  places its own foes keeps them as it placed them. A target in the air, hanging, climbing or going over a lip is judged
-  by its distance alone, so a foe fights on at one on a wall or over a ledge. Seeing one past its leash on ground its
-  routes reach stirs it (it searches toward them) but it takes them as no target; one on ground its routes do not reach
-  from its place, a part of the navmesh with no way to it, stirs it not at all (`leash::reachable`), unless it stands
-  within those 14 m of the foe and within its leash.
+  off the room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its
+  fight up once no wind-up of its own is under way: its target, its turn, the blow it saw coming and its answer, its
+  hunt, its search, its awareness, and a roar its health no longer calls for. Within its leash, a target within those
+  14 m on its storey (in a dungeon, one half a storey or more over or under it with another floor between is not close)
+  it never gives up on, wherever the target stands ([[A Foe Gives Up Only When the Player Is Far Away]]). It sheds its
+  Expose and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing each tick the share of
+  what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 12 s), then turns
+  to face as its place does and stands idle. A foe on another storey than its place (half a storey, 4 m, or more apart
+  in height: `storeys_apart`) is not home, however close across, so it walks on. Walking back it heeds nothing it sees
+  or hears and shows as idle, so the one it gave up on cannot draw it out again at once. A blow on it brings it back,
+  alert with the striker as its target; one struck from past its leash it gives up again. A foe a player asked for, or
+  one a Boss called, has no post and never leashes. A foe a page playing a course alone stands where it wants it
+  ([[Server]], "A course a page plays alone") is posted where it stands and leashes to it; a Boss stood so calls no one
+  in its phases, so a scene that places its own foes keeps them as it placed them. A target in the air, hanging,
+  climbing or going over a lip is judged by its distance alone, so a foe fights on at one on a wall or over a ledge.
+  Seeing one past its leash on ground its routes reach stirs it (it searches toward them) but it takes them as no
+  target; one on ground its routes do not reach from its place, a part of the navmesh with no way to it, stirs it not at
+  all (`leash::reachable`), unless it stands within those 14 m of the foe and within its leash.
 - **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds back
   first) walks home the same way, healing (from 20 m, about 6 s). On this walk it heeds what it sees and hears as ever:
   they raise its awareness, and once it is alert it takes its target or searches again; short of that it walks on home,
   so a passing stir never leaves it standing short of its post. Either walk home takes a Boss or a Miniboss back to its
   first phase, and the foes it called fall ([[Enemies]]); walking home after a search it roars into no later phase, so
   it arrives whole in its first. A foe still arriving, let down from an airship or forming under a crown, neither
-  thinks, steps nor hears, and breaks with no fallen leader, until it lands ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]; [[Enemies]], "Arrivals").
-  With nothing stirring it, a garrison foe keeps to its place: one a stir drew off, or an
+  thinks, steps nor hears, and breaks with no fallen leader, until it lands
+  ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]; [[Enemies]],
+  "Arrivals"). With nothing stirring it, a garrison foe keeps to its place: one a stir drew off, or an
   ally walking past moved, walks back to it once idle. While its group walks its beat it keeps up with its place,
   walking at the share of a walk that its distance behind is of 2 m, its own walk at most, and faces its way.
 - **Its group.** A garrison foe does as its group asks ([[Enemies]], "A garrison";

@@ -1,6 +1,6 @@
 //! Where each cell's water goes. A priority flood from the window's edge and the sea (Barnes, Lehman and Mulla 2014,
-//! with an epsilon) fills every closed hollow to its spill, so water crosses a lake to its outlet; each cell then drains
-//! to its steepest lower neighbour on the filled ground. The flood's pop order runs downstream to upstream.
+//! with an epsilon) fills every closed hollow to its spill, so water crosses a lake to its outlet; each cell then
+//! drains to its steepest lower neighbour on the filled ground. The flood's pop order runs downstream to upstream.
 
 use crate::grid::{D8_LENGTH, D8_X, D8_Y};
 use crate::heap::CellHeap;

@@ -18,9 +18,9 @@ export const zoneLayout = (plan: PassagePlan): DungeonLayout | null =>
   plan.ground.kind === 'under' ? readDungeon(plan.ground.layout) : null;
 
 /** A zone above ground as the islands' layer shows an island, in the zone's own frame at `at` in the world: its
- *  modules on its heights (`room_passage_heights`), drawn from the kit of the climate the room dressed it in. The rest of an
- *  island's plan (its landing, its dungeon door, its wrecks) the zone has none of, and the layer draws none of it.
- *  Null for a zone under ground. */
+ *  modules on its heights (`room_passage_heights`), drawn from the kit of the climate the room dressed it in. The rest
+ *  of an island's plan (its landing, its dungeon door, its wrecks) the zone has none of, and the layer draws none of
+ *  it. Null for a zone under ground. */
 export function zoneIsle(plan: PassagePlan, heights: Float64Array, place: Point2 = [0, 0]): IsleShown | null {
   const ground = plan.ground;
   if (ground.kind !== 'open') return null;

@@ -30,9 +30,10 @@ fn seed_of(low: u32, high: u32) -> u64 {
 }
 
 /// An island's plan as JSON: its kind and its dungeon's style, its radius and reach, where it is landed and anchored
-/// off, its spawns and the bearing a player landed faces, its door, landmark, guards' posts, camp, wrecks and resource nodes, its
-/// section's ring, every module set on it as [its number in the contract, x, y, z, turn, scale, lift], and the blocks
-/// its modules' solids stand as [west, north, east, south, top]. Empty for a climate the contract does not dress.
+/// off, its spawns and the bearing a player landed faces, its door, landmark, guards' posts, camp, wrecks and resource
+/// nodes, its section's ring, every module set on it as [its number in the contract, x, y, z, turn, scale, lift], and
+/// the blocks its modules' solids stand as [west, north, east, south, top]. Empty for a climate the contract does not
+/// dress.
 #[must_use]
 pub fn plan_json(seed: u64, climate: &str) -> String {
     let json = |plan: &Plan| {

@@ -18,11 +18,11 @@ code:
 ---
 # Hulls
 
-The ships No Shores sails beyond the Sloop, chosen in the Sloop's style for each rank of ship, the player's own hulls and the
-merchantmen ([[Enemies Come in Five Ranks, After Destiny]], [[The Ships as Claude Shapes Them]],
-[[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]).
-The Sloop, the Schooner, the Brig and the Frigate are built and sail ([[Sailing]]): each captain sails its rank's
-([[Naval Combat]], "Ranks and factions").
+The ships No Shores sails beyond the Sloop, chosen in the Sloop's style for each rank of ship, the player's own hulls
+and the merchantmen ([[Enemies Come in Five Ranks, After Destiny]], [[The Ships as Claude Shapes Them]],
+[[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]],
+[[The Sea as Claude Shapes It]]). The Sloop, the Schooner, the Brig and the Frigate are built and sail ([[Sailing]]):
+each captain sails its rank's ([[Naval Combat]], "Ranks and factions").
 
 ## The Sloop's style
 
@@ -125,8 +125,8 @@ Done for the Schooner, the Brig and the Frigate:
   the Sloop's times its rank's, and its hull's gain shapes its handling (how its way comes and goes, and its
   steerage); a player's is the Sloop's times its hull's class, at the Sloop's gain ([[Shipyard]]).
 - **A ship's hull, everywhere** in the rules: every ship in a fight carries its hull and sails, fights, is struck and
-  rams as it; a captain's rank picks it (`Rank::hull`) and names the ship (the Tithe Brig, the Tithe Frigate; a friendly ship keeps the traffic's hull, the Merchant Brig); the
-  snapshots, a fight's view and the doors carry it.
+  rams as it; a captain's rank picks it (`Rank::hull`) and names the ship (the Tithe Brig, the Tithe Frigate; a friendly
+  ship keeps the traffic's hull, the Merchant Brig); the snapshots, a fight's view and the doors carry it.
 - **Never a captain's strength**: its canvas drives it no harder than the Sloop's, and its side's broadside takes as
   much from a ship as the Sloop's, however many guns share it ([[Naval Combat]], "Ranks and factions").
 - **A player's hull's own numbers**: a player sails any of the four the Harbourmaster keeps, each by its class: how

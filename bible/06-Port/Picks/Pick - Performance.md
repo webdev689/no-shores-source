@@ -29,7 +29,8 @@ and hot paths that make nothing new each frame. The owner asked for all of it to
 
 ## What comes over
 
-- **Measuring**: GPU time pass by pass on timestamp queries, and a readout behind `?perf` (`perfMeter.js`, `gpuTrail.js`).
+- **Measuring**: GPU time pass by pass on timestamp queries, and a readout behind `?perf` (`perfMeter.js`,
+  `gpuTrail.js`).
 - **Render scale**: its tiers, 100, 85, 75, 67 and 50% (`renderScale.js`), and, ours, an Auto that steps between them.
 - **Culling**: planes read from the view's matrix, the box's farthest corner tested, spheres against unit planes, one
   bounds an object for every pass (`frustum.js`, `bounds.js`).

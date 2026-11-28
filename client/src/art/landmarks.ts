@@ -1,6 +1,7 @@
 // What stands on a scene's land, side on, at the few cells a patrol zone's picture gives it: the far land in two
 // ranges, trees, a windmill whose sails may be broken, standing stones, a fence along the ground, a watchtower with a
-// lit window, a shrine's posts and roof, and a small fire. Each stands on `ground`, a row, at `x`, its foot there; inks come from the scene's own light.
+// lit window, a shrine's posts and roof, and a small fire. Each stands on `ground`, a row, at `x`, its foot there; inks
+// come from the scene's own light.
 import { lantern, type Light, range } from './light.ts';
 import { box, dot, glow, line, patternOn, shape, type Ink, type Sheet } from './sheet.ts';
 
@@ -37,7 +38,8 @@ export function tree(sheet: Sheet, x: number, ground: number, tall: number, pine
     }
 }
 
-/** A windmill: its tapering tower, a cap, a lit window, and four sails turned by `turn` radians, `broken` ones short. */
+/** A windmill: its tapering tower, a cap, a lit window, and four sails turned by `turn` radians, `broken` ones
+ *  short. */
 export function windmill(
   sheet: Sheet,
   [x, ground]: readonly [number, number],

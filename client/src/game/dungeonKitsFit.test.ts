@@ -36,8 +36,8 @@ function patrolDungeon(id: string, number: number): DungeonLayout {
   return askDungeon(module, id, node.name, number);
 }
 /** Real dungeons of every style, and the ones the game was seen in with a pilaster through a picture or a piece and
- *  an arch in a cave's rock (the Greystone Tors' since cut from their island, laid by their id and name); each storey of
- *  them as the page lays its kits, as a dungeon of one storey. */
+ *  an arch in a cave's rock (the Greystone Tors' since cut from their island, laid by their id and name); each storey
+ *  of them as the page lays its kits, as a dungeon of one storey. */
 const DUNGEONS: readonly DungeonLayout[] = [
   patrolDungeon('saltgrass-downs', 1),
   patrolDungeon('gullwing-vale', 1),
@@ -172,7 +172,8 @@ function rocksOf(model: ForgedModel, layout: DungeonLayout): Map<number, number[
 }
 
 /** How far into the rock a cave cell's side stands at a spot as its lattice lays it, with nothing flat on it:
- *  `caveBulge` at its 5 × 5 points, flat across each quad's two triangles, cut from its first corner to its opposite. */
+ *  `caveBulge` at its 5 × 5 points, flat across each quad's two triangles, cut from its first corner to its
+ *  opposite. */
 function latticeRock(layout: DungeonLayout, cell: number, side: number, along: number, up: number): number {
   const [east = 0, south = 0] = SIDE_STEPS[side] ?? [];
   const half = layout.cell / 2;

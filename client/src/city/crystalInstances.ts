@@ -131,7 +131,8 @@ export const crustMoved = (written: number, now: number, last: number): boolean 
 export class WreckCrust {
   readonly bytes: ArrayBuffer;
   readonly draws: readonly InstancedDraw[];
-  /** The ships' size the crust was last written at (0 before its first), and the size the view drew it at last frame. */
+  /** The ships' size the crust was last written at (0 before its first), and the size the view drew it at last
+   *  frame. */
   written = 0;
   lastFrame = 0;
   private readonly sorted: readonly { readonly wreck: Wreck; readonly place: CrystalPlace }[];

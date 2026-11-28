@@ -25,7 +25,8 @@ code:
 
 The sea, the lakes and the rivers over the [[Land]], in stylised realism ([[The Water Is Stylised Realism]]). The
 World Editor's 3D view draws it, and its walker wades, swims and dives in it. DFO's water was a reference for ideas;
-none of its code came over. The sea's weather, swell and wakes are tuned as Claude chose ([[The Sea as Claude Shapes It]]).
+none of its code came over. The sea's weather, swell and wakes are tuned as Claude chose
+([[The Sea as Claude Shapes It]]).
 
 ## The swell
 
@@ -81,8 +82,8 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
   bed apart from it (the land's shader, `terrainView.ts`).
 - **The weather.** The wind's chop runs along the local wind, to the nearest of sixteen bearings, and grows with it:
   near glassy in a calm, steep in a gale. As the wind veers past a bearing, the chop fades over 8 s from the old
-  bearing's waves to the new. From a fresh breeze up the wind raises whitecaps in patches that break and fade. Rain roughens the surface and
-  dots it near the eye with spreading rings.
+  bearing's waves to the new. From a fresh breeze up the wind raises whitecaps in patches that break and fade. Rain
+  roughens the surface and dots it near the eye with spreading rings.
 - **Blurred reflections.** Waves too small to draw fan each reflected pixel's rays about 0.2 radians at sea in a
   moderate breeze, more in a strong wind, less on calm fresh water. So the reflected clouds lose their fine detail
   and keep their mean cover. Looking down, their shapes still show; near the horizon they smear into a lighter sky.
@@ -124,11 +125,11 @@ of foam the fight throws up there ([[Naval Combat]],
 ## A ship on it
 
 A ship drawn with the land hides the water behind it and is seen through it below its waterline. It rides the swell
-through its inertia: each wave shrunk as a first-order lag shrinks it, its crest on time, its time constant 0.02 s a metre of its
-waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sailing]]). Its bow slams when the crest
-at its stem rises past it faster than 0.8 m/s, outrunning the lift it gives, and throws spray: some one a ship's two
-minutes in the highest sea, none in a lesser one. A ship first seen, or drawn at another size than the frame before as
-a view eases between the raised one and sea level, has closed on nothing, so no ease throws spray of its own.
+through its inertia: each wave shrunk as a first-order lag shrinks it, its crest on time, its time constant 0.02 s a
+metre of its waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sailing]]). Its bow slams when
+the crest at its stem rises past it faster than 0.8 m/s, outrunning the lift it gives, and throws spray: some one a
+ship's two minutes in the highest sea, none in a lesser one. A ship first seen, or drawn at another size than the frame
+before as a view eases between the raised one and sea level, has closed on nothing, so no ease throws spray of its own.
 
 Its footprint is its own hull line at its waterline, read from its mesh where its faces cross it (16 stations, stern
 to bow, closer together at its ends, where the line turns fastest; a fair hull until its mesh comes, read once as its

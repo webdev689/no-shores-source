@@ -118,8 +118,8 @@ pub struct Hostiles {
     chasing: BTreeMap<PlayerId, u32>,
     /// The sea's tier, which raises the levels of the ships it sends as it raises foes on land.
     pub difficulty: gear::Difficulty,
-    /// The world time over the sea, seconds since the Unix epoch, as its room tells it each tick: by night a ship sights
-    /// a player only within night sight. Until told, its ships sight as by day.
+    /// The world time over the sea, seconds since the Unix epoch, as its room tells it each tick: by night a ship
+    /// sights a player only within night sight. Until told, its ships sight as by day.
     pub clock_s: Option<f64>,
 }
 
@@ -232,9 +232,9 @@ impl Hostiles {
 
     /// One tick of `seconds` on `chart`, each player's ship at sea in `ships`. Each ship takes the sight of the player
     /// past home waters nearest it if it is farther than the ship's, sails on and goes once no player past home waters
-    /// keeps it; then each player's roll comes due. Answers each bold ship (or the one a player chases) that came within
-    /// `ENGAGE_RANGE` of a player this tick, and any within `BUMP_M`, with that player, for their fight; it leaves the
-    /// sea.
+    /// keeps it; then each player's roll comes due. Answers each bold ship (or the one a player chases) that came
+    /// within `ENGAGE_RANGE` of a player this tick, and any within `BUMP_M`, with that player, for their fight; it
+    /// leaves the sea.
     pub fn tick(&mut self, seconds: f64, ships: &[Voyager], chart: &impl Chart) -> Vec<(PlayerId, Hostile)> {
         let nearest = |at: [f64; 2]| ships.iter().map(|ship| apart(at, ship.at)).fold(f64::INFINITY, f64::min);
         for index in 0..self.sailing.len() {

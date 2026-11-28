@@ -297,8 +297,8 @@ export interface DotInk {
 }
 
 /** Other players' ships at sea (world metres) as their dots on the sheet `ink` (`inkOf`), those on it alone, to the
- *  quarter pixel; marks of no company (hostile ships) as of none. With `half`, a mark reaching that far from its middle,
- *  ink pixels, only those whole on it. */
+ *  quarter pixel; marks of no company (hostile ships) as of none. With `half`, a mark reaching that far from its
+ *  middle, ink pixels, only those whole on it. */
 export function dotInks(
   others: readonly { readonly at: Point2; readonly company?: boolean }[],
   inkOf: (x: number, y: number) => readonly [number, number],

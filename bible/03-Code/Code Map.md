@@ -219,8 +219,8 @@ and `sky`), `layout` (imports `city`), `heldmap` (imports `forge`, `overworld`, 
 drawer and `ui`), `ui` (imports `plus`), `thread` (imports `ui`), `islands` (imports `rules`, `water`, `textures`,
 `models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus`, `sky` and `ui`;
 [[The Cinema May Import the Sky Layer]]) and `game` (imports the layers it wires, `combat`, `cinema` and `speech`
-among them; [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
-import.
+among them; [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any
+layer may import.
 
 ## The Rust crates
 
@@ -236,12 +236,12 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement` and `libm`; `reach` and
   `dungeon`, which use no other crate; `isle`, which may use `movement`, `serde`, `serde_json` and `libm`; `passage`,
   which may use `dungeon`, `gear` (the week's modifiers its currents keep clear of,
-  [[A Passage Kill's Share Scales the XP That Follows It, and the Passages Read Gear's Week]]), `isle`, `movement`, `serde`, `serde_json` and `libm`; and
-  `gear`, which may use `serde`, `serde_json` and `libm`.
+  [[A Passage Kill's Share Scales the XP That Follows It, and the Passages Read Gear's Week]]), `isle`, `movement`,
+  `serde`, `serde_json` and `libm`; and `gear`, which may use `serde`, `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
   own platform crates, never on the client. Its core is `room`, which may use `combat`, `dungeon`, `foes`, `gear`,
-  `isle`, `land`, `movement`, `naval`, `navmesh`, `passage`, `reach`, `sailing`, `sky`, `world` and `libm`; its messages are
-  `protocol`, which may use `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and
+  `isle`, `land`, `movement`, `naval`, `navmesh`, `passage`, `reach`, `sailing`, `sky`, `world` and `libm`; its messages
+  are `protocol`, which may use `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and
   `room-wasm` puts them behind a WebAssembly door for the Cloudflare shell in `server/`, and for a browser playing
   alone or predicting its ship in a fleet, reading a node's baked file, an island's word and the layout with
   `combat`, `dungeon`, `foes`, `gear`, `isle`, `land`, `movement`, `naval`, `passage`, `protocol`, `room`, `sailing`,

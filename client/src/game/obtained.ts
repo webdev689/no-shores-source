@@ -186,8 +186,8 @@ function lineNode(notice: Notice, size: number): Node | null {
 
 /** The band for `notice` across the foot of a view `view` pixels, `come` of the way in (it rises and brightens as
  *  it comes): its cyan edge, its icon, title and line in the middle, and at the far right the key and what it
- *  opens. On a phone (under 600 pixels) its words a step smaller; under 900 the right's hint left out. The hint stands in
- *  the row's flow, with an empty match at its left, so the middle stays centred while there is room for both and
+ *  opens. On a phone (under 600 pixels) its words a step smaller; under 900 the right's hint left out. The hint stands
+ *  in the row's flow, with an empty match at its left, so the middle stays centred while there is room for both and
  *  moves left of the hint, never under it, where there is not. */
 export function noticeNode(
   notice: Notice,
@@ -211,7 +211,8 @@ export function noticeNode(
             {
               gap: 8,
               alignY: 'center',
-              // The line's ink, not a dimmer one: over a white scene through the translucent band a dimmer reads under 4.5:1.
+              // The line's ink, not a dimmer one: over a white scene through the translucent band a dimmer reads under
+              // 4.5:1.
               children: [capNode(cap, 2), { text: { words: notice.opens, size: 2, colour: LINE_INK, wrap: false } }],
             },
           ],

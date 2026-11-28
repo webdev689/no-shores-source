@@ -62,4 +62,5 @@ recorded in [[Enemies]]. The owner can change any of them.
 | A blow on a foe fighting another | Draws it to the striker at once, unless the one it fights stands within its reach and 0.3 m, or a blow drew it in the last 5 s; never one backing off or running | The striker is its threat, as DFO's foes turn on their attacker unless their target stands in sight within 2 m; the hold keeps two players striking in turn from turning it at each blow |
 | A foe struck while it fights one beside it | It keeps to the one beside it, within its reach and a little more; struck while its target stands farther, it turns on the striker | A foe trading blows at arm's length does not turn its back on the fighter before it; the group's sharing out sends other foes to the striker |
 
-Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the pirates are no faction; the Grey Tithe sails every hostile ship and mans every deck.
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the pirates are no faction; the Grey Tithe sails every
+hostile ship and mans every deck.

@@ -37,7 +37,8 @@ async function giveRoles(context: BotContext, guildId: string, userId: string, r
     });
 }
 
-/** Post the welcome for one member: whether there was anything to post, and what Discord made of it (null if refused). */
+/** Post the welcome for one member: whether there was anything to post, and what Discord made of it (null if
+ *  refused). */
 async function welcome(
   context: BotContext,
   guildId: string,

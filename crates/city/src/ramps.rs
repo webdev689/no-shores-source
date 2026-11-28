@@ -216,8 +216,8 @@ fn paving(pad: &Pad) -> Solid {
 }
 
 /// A wall guarding a sloped way along a frame's `along` (from..to) at `across`, the way's level running from
-/// `surface[0]` to `surface[1]`, on ground at `ground`: a foot up to the way's lower end, a leaned block under the way's
-/// slope, and a leaned parapet over it.
+/// `surface[0]` to `surface[1]`, on ground at `ground`: a foot up to the way's lower end, a leaned block under the
+/// way's slope, and a leaned parapet over it.
 fn sloped_wall(frame: &Frame, across: f64, along: [f64; 2], surface: [f64; 2], ground: f64) -> [Solid; 3] {
     let (from, to) = (frame.at(across, along[0]), frame.at(across, along[1]));
     let low = surface[0].min(surface[1]);

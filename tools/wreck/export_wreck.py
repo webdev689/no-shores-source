@@ -4,9 +4,9 @@
 
 Writes content/prologue/wreck.json: the mesh's and the light's keys on R2, the ground a body walks on as blocks, each
 heap's block, the fires, where the sea is not drawn, and the level (where the player wakes, the way to Thule, the zones
-with their waves and the Brig's crew, the arena), all in the game's frame (x east, y south, z up from the sea, metres). It refuses a level its own ground does
-not hold (wreck_level.check). With --dry-run it writes `wreck.mesh` into the working folder and uploads nothing; the
-keys are those the files would be published under.
+with their waves and the Brig's crew, the arena), all in the game's frame (x east, y south, z up from the sea, metres).
+It refuses a level its own ground does not hold (wreck_level.check). With --dry-run it writes `wreck.mesh` into the
+working folder and uploads nothing; the keys are those the files would be published under.
 """
 import argparse
 import hashlib

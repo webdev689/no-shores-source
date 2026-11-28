@@ -340,8 +340,8 @@ fn every_fallen_stone_rests_on_the_carved_ground() {
         });
         for solid in rubble {
             stones += 1;
-            // A stone is sunk a quarter of its height; one sunk further was heighted on the ground before the carving, or
-            // on a ground another layout's sculpt has since raised; one whose foot shows floats.
+            // A stone is sunk a quarter of its height; one sunk further was heighted on the ground before the carving,
+            // or on a ground another layout's sculpt has since raised; one whose foot shows floats.
             let ground = laid.ground.height_at(solid.at[0], solid.at[1]);
             let sunk = ground - (solid.at[2] + solid.size[2] * 0.25);
             if sunk > 0.5 || solid.at[2] > ground + 0.05 {

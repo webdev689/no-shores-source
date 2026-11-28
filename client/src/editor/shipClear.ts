@@ -166,7 +166,8 @@ export function orbitClearance(ship: ClearShip, target: Point, yaw: number, pitc
 }
 
 /** How far out from its middle, level at `up` over its waterline, a look along `bearing` (radians from its bow, to
- *  starboard positive) leaves every part of a hull (by its number) it passes through, metres; 0 where it passes none. */
+ *  starboard positive) leaves every part of a hull (by its number) it passes through, metres; 0 where it passes
+ *  none. */
 export function clearAround(hull: number, bearing: number, up: number): number {
   const from: Point = [0, 0, up];
   const way: Point = [Math.cos(bearing), Math.sin(bearing), 0];

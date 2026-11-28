@@ -20,7 +20,8 @@ MAKE = {'scale': 3.0, 'torso_w': 1.22, 'torso_d': 1.3, 'chest_w': 1.08, 'waist_w
         'hand': 1.4, 'head': 0.78}
 WORK = (760, 700)
 BELOW = {'heart_walk': 40, 'heart_idle': 30, 'heart_stand': 30, 'heart_slam': 50, 'heart_sweep': 30,
-         'heart_stomp': 30, 'heart_tear': 30, 'heart_hurt': 30, 'heart_stagger': 40}   # rows under the ground for the anchor's crown before its feet
+         'heart_stomp': 30, 'heart_tear': 30,
+         'heart_hurt': 30, 'heart_stagger': 40}   # rows under the ground for the anchor's crown before its feet
 FLESH = (0.075, 0.062, 0.055)     # the fused people's skin: a corpse's grey, darker than the giant's own
 HOLLOW = (0.012, 0.002, 0.003)    # their open mouths and eyes, and the wet dark in its chest
 HEART = (0.14, 0.006, 0.012)      # the heart's wet flesh, deep crimson, lit from within

@@ -44,7 +44,8 @@ const STROKE_TIP: Readonly<Record<ReturnType<typeof directionOf>, Point>> = {
   up: [0.6, 0.15, 1.2],
 };
 
-/** A glint's stage `elapsed` ticks into a wind-up whose blow lands at `lands`: 0 white-hot, 1 a stop cooler, or none. */
+/** A glint's stage `elapsed` ticks into a wind-up whose blow lands at `lands`: 0 white-hot, 1 a stop cooler, or
+ *  none. */
 export function glintStage(elapsed: number, lands: number): 0 | 1 | null {
   const since = elapsed - Math.floor(GLINT.at * lands);
   if (since < 0 || since >= GLINT.ticks) return null;

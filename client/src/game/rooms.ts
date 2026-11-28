@@ -5,8 +5,9 @@ import { BREACH_TIERS, testRoom } from '../../../server/roomNames.ts';
 
 /**
  * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, the rooms' worker
- * running each room); a whole `ws://` or `wss://` address names a server (`?room=ws://127.0.0.1:8787` under `npm run server`),
- * anything else the deployed rooms. The answer names each room's address: `node-<id>` for a node, `sea` for the sea.
+ * running each room); a whole `ws://` or `wss://` address names a server (`?room=ws://127.0.0.1:8787` under
+ * `npm run server`), anything else the deployed rooms. The answer names each room's address: `node-<id>` for a node,
+ * `sea` for the sea.
  */
 export function roomsFrom(given: string | null): ((name: string) => string) | null {
   if (given === null) return null;
@@ -20,7 +21,8 @@ const LOOPBACK = /^(?:https?|wss?):\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+
 /** Where the game's accounts are, from its page's `?room=` and `?accounts=`. The deployed rooms keep characters on the
  *  deployed accounts; a room server on this machine keeps them on accounts named on this machine
  *  (`?accounts=http://127.0.0.1:8788` under `npm run accounts`). A session goes nowhere else, so a crafted link
- *  cannot send it to another's room or accounts: offline, or with a room server or accounts elsewhere, none are kept. */
+ *  cannot send it to another's room or accounts: offline, or with a room server or accounts elsewhere, none are
+ *  kept. */
 export function accountsFrom(rooms: string | null, given: string | null): string | null {
   if (rooms === null) return null;
   const named = /^wss?:\/\//.test(rooms);
@@ -147,8 +149,8 @@ export {
 } from '../../../server/roomNames.ts';
 export { NO_WAY_HERE } from '../../../server/arrival.ts';
 
-/** The copy of a Breach's gate's zone a test run of it is opened from, named by the run's instance; null for a room that
- *  is no Breach's test run. */
+/** The copy of a Breach's gate's zone a test run of it is opened from, named by the run's instance; null for a room
+ *  that is no Breach's test run. */
 export function testZoneOf(room: string): string | null {
   const named = nodeOfRoom(room);
   return named?.test && named.breach !== null ? `node-${named.id}--test-${named.run ?? ''}` : null;

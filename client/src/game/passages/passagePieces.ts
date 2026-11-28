@@ -1,8 +1,8 @@
 // The passages' own pieces as the page stands them until their packs are published (tools/dungeon, tools/islands:
-// `passage.*`): each piece built of plain boxes to the sizes its solids are (crates/passage/src/plan.rs `Kind::solids`),
-// grey-green stone, iron and timber, with the lamp's and a dead lamp's light gold when lit and grey when cold, and a
-// mouth's iron leaf standing in its frame while it is shut. A vein's nodes are the game's own resource nodes, drawn
-// from the room's word as anywhere (`nodeCards`), so none is built here.
+// `passage.*`): each piece built of plain boxes to the sizes its solids are (crates/passage/src/plan.rs
+// `Kind::solids`), grey-green stone, iron and timber, with the lamp's and a dead lamp's light gold when lit and grey
+// when cold, and a mouth's iron leaf standing in its frame while it is shut. A vein's nodes are the game's own resource
+// nodes, drawn from the room's word as anywhere (`nodeCards`), so none is built here.
 import type { PassagePiece } from '../../rules/passageRules.ts';
 
 type Colour = readonly [number, number, number];
@@ -139,7 +139,8 @@ export function pieceMesh(pieces: readonly PassagePiece[], state: PieceState): P
       ring.forEach(([x, y], side) => {
         const [nextX, nextY] = ring[(side + 1) % 4] ?? [x, y];
         const length = Math.hypot(nextY - y, x - nextX) || 1;
-        // Wound clockwise on the map from the north-west corner (x east, y south), an edge (dx, dy) faces out (dy, -dx).
+        // Wound clockwise on the map from the north-west corner (x east, y south), an edge (dx, dy) faces out (dy,
+        // -dx).
         const normal = [(nextY - y) / length, (x - nextX) / length, 0];
         face(
           [

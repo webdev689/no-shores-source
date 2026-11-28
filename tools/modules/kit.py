@@ -35,8 +35,8 @@ class Module:
         self.objects = []
         # An object's materials by its faces' material index, with each one's glow: [(material, glow), ...].
         self.slots = {}
-        # Whether each corner's normal is worked out from the rounded positions in doubles (`_steady_normals`): the event
-        # props'; the other modules keep Blender's own normals.
+        # Whether each corner's normal is worked out from the rounded positions in doubles (`_steady_normals`): the
+        # event props'; the other modules keep Blender's own normals.
         self.steady = False
         # Where the module opens the land under its foot (a chasm's mouth): its two lips, each a line of points along
         # it at the ground, the land between them not drawn.
@@ -418,8 +418,8 @@ def _in_order(group):
 
 
 def exported(module):
-    """The module's surfaces by material, each a list of vertices (position, normal, glow) and triangles, its parts and its
-    sockets, all in the game's frame (x east, y south, z up), and its size: the box round its surfaces and parts."""
+    """The module's surfaces by material, each a list of vertices (position, normal, glow) and triangles, its parts and
+    its sockets, all in the game's frame (x east, y south, z up), and its size: the box round its surfaces and parts."""
     depsgraph = bpy.context.evaluated_depsgraph_get()
     groups = {}
     low = [math.inf] * 3

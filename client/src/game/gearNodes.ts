@@ -346,7 +346,8 @@ const GILDED_CORNER: Node = {
 /** How a tile stands: at rest, lit under the pointer or the keys' focus, open (its flyout shown), or vacant. */
 export type TileState = 'rest' | 'lit' | 'open';
 
-/** A tile's colours where a rarity's are not used: its lit and shaded edges, its colour lit, and its glow's channels. */
+/** A tile's colours where a rarity's are not used: its lit and shaded edges, its colour lit, and its glow's
+ *  channels. */
 export interface TileTone {
   readonly lit: string;
   readonly shade: string;

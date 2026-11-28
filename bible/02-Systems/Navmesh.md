@@ -66,9 +66,9 @@ and their firing spots by it, and climb and drop where its links say.
    of corridor. Slivers under 2 m² join their largest neighbour. No region takes, by growing or merging, a cell
    over, under or beside one of its own that no walk joins it to: where a way winds back over or beside itself, as a
    dungeon's does up a flight and back over its own floor, the floor it comes back to is another region, so every
-   outline stays a plain loop and the two floors meet by an edge (`regions.rs`). Only the largest part a walk or a link joins is
-   kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the water is
-   no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are. An
+   outline stays a plain loop and the two floors meet by an edge (`regions.rs`). Only the largest part a walk or a link
+   joins is kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the
+   water is no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are. An
    anchored bake keeps instead the part joined to the floor nearest a point it is given, the way in of a dungeon, whose
    rock stands as walls 10 m tall with flat tops larger than its floor. A dungeon bakes in cells of 0.4 m, an eighth
    of its own, so every wall of it lies on a cell's edge and the bake holds a third of the columns 0.25 m would. Its
@@ -84,9 +84,10 @@ and their firing spots by it, and climb and drop where its links say.
    0.7 m, a body's width; the jambs and a landmark's greater pieces keep their whole footprint, so no path cuts their
    outline. As the mesh keeps less than a body's radius off them, a point the room takes from it to stand a foe at or
    walk one to (a post, a wave's place, a path's corner) is moved where a body stands clear of the rock and solids
-   round it, the nearest such within 0.6 m (`DungeonGround::standing_clear`). A path between storeys goes by a flight. A dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is
-   taken up to the higher cell beside alone, never down, so a storey's way over a room of the storey under it (whose
-   column's lowest floor is that room's) and the edge of a flight's landing stay floor where they meet the drop.
+   round it, the nearest such within 0.6 m (`DungeonGround::standing_clear`). A path between storeys goes by a flight. A
+   dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is taken up to the higher cell beside alone,
+   never down, so a storey's way over a room of the storey under it (whose column's lowest floor is that room's) and the
+   edge of a flight's landing stay floor where they meet the drop.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles (a diagonal that only touches a bridge's
@@ -121,11 +122,11 @@ it joins (step 3). Ramps are not blocks the rules know: no link is tried over on
 through the shared edges (the funnel), on either side of each link. A walker standing on a shared edge is already
 through it: the funnel opens past it, never back to the edge's far end. Its waypoints run from the start to the goal,
 both included, each on the surface walked there, on the poly nearest the level of the waypoint before it, so a path
-that runs under a bridge and climbs onto it ends on its deck; a link's start and end stand in it, one after the other. There is no
-path when an end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk or a link joins, so
-a goal on another island has no path without a search. A path's length, as a foe weighs a walk, counts each link at its
-cost rather than its leg across. The search keeps its buffers from one path to the next, so a path costs the polys it
-visits, not the whole mesh.
+that runs under a bridge and climbs onto it ends on its deck; a link's start and end stand in it, one after the other.
+There is no path when an end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk or a
+link joins, so a goal on another island has no path without a search. A path's length, as a foe weighs a walk, counts
+each link at its cost rather than its leg across. The search keeps its buffers from one path to the next, so a path
+costs the polys it visits, not the whole mesh.
 
 **Obstacles** are circles that can be laid over the mesh, such as a big foe's body; no room lays any yet, so they are
 held by the crate's own tests alone. Each blocks every poly it touches. A path goes round them where it can, and through
@@ -174,10 +175,15 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 
 - A node's room bakes a 70 m square of its [[Land]] (its first spawn 15 m inside the edge toward the middle of its
   section), and a 70 m square round each place a kill goal stands a group at, each with only the boxes that reach into
-  it. Elsewhere a node has no mesh, so a foe leashed there gives up a fight with one more than 14 m from it ([[A Foe Gives Up Only When the Player Is Far Away]]). Each place's square (a kill group's, a defence's, a puzzle's, an unseen step's watch, an escort's ambush, a foes' site's, a territory's among them: [[Enemies]], "Territories and runs") is baked the first time it is needed and kept, a slice a tick and one at a time (some 150 ms of work in all natively, over some 45 ticks), what waits on it standing the tick it is whole; where the node's own square holds all the step stands things in, it is used instead. WebAssembly's cost is unmeasured. A larger square would hold more of a node, at a bake's cost.
-  A zone that holds public events also bakes a rectangle round each of its grounds and joins it to the node's square as
-  a part of one mesh: a path runs within one part, never from one to another, and a point is placed on whichever part
-  has it nearest ([[Public Events]], with what it adds to the room's open).
+  it. Elsewhere a node has no mesh, so a foe leashed there gives up a fight with one more than 14 m from it
+  ([[A Foe Gives Up Only When the Player Is Far Away]]). Each place's square (a kill group's, a defence's, a puzzle's,
+  an unseen step's watch, an escort's ambush, a foes' site's, a territory's among them: [[Enemies]], "Territories and
+  runs") is baked the first time it is needed and kept, a slice a tick and one at a time (some 150 ms of work in all
+  natively, over some 45 ticks), what waits on it standing the tick it is whole; where the node's own square holds all
+  the step stands things in, it is used instead. WebAssembly's cost is unmeasured. A larger square would hold more of a
+  node, at a bake's cost. A zone that holds public events also bakes a rectangle round each of its grounds and joins it
+  to the node's square as a part of one mesh: a path runs within one part, never from one to another, and a point is
+  placed on whichever part has it nearest ([[Public Events]], with what it adds to the room's open).
 - An underside between 1.75 and 1.8 m over a floor rounds up to 2 m, so the mesh may run a path under it that a body
   stoops for; within a voxel.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
@@ -194,8 +200,8 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 - A node's room bakes every box inside its square, links and all: its layout's, and its city's where any reach in
   (a social space's). Its links' tries step bodies through the movement rules' grid of blocks. On the
   Saltgrass Downs, its square moved to where its boxes stand thickest (1,093 of them), the room opens natively in
-  about 168 ms bare and 202 ms among its boxes (`cargo test --release -p room --test near_blocks -- --ignored --nocapture`,
-  tested offline on an idle machine).
+  about 168 ms bare and 202 ms among its boxes
+  (`cargo test --release -p room --test near_blocks -- --ignored --nocapture`, tested offline on an idle machine).
 - A link is tried only from the highest floor beside a block's side, and off a block's top only where nothing stands
   over its edge. So a floor under a deck or a roof gets no link onto a block beside it, and its foes go round.
 - A link crosses one side. A wall too thin to stand on is crossed only where it is vaulted (1.2 m high and 0.8 m

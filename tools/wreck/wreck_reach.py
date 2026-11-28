@@ -42,8 +42,8 @@ class Reach:
     def flood(self, start, closed=(), climb=STEP_M, roomy=True):
         """Every square reached from the game's point `start`, never into a box of `closed` (minX, minY, maxX,
         maxY): the gates still standing. A body goes up no more than `climb` from a square to the next, down any drop,
-        and, with `roomy`, only into a square with room for it (`roomy`): a step by default, a jump's climb to find every
-        way round a gate. Without it, every square of ground its feet could reach, for the ground's size."""
+        and, with `roomy`, only into a square with room for it (`roomy`): a step by default, a jump's climb to find
+        every way round a gate. Without it, every square of ground its feet could reach, for the ground's size."""
         first = self.square_of(*start)
         if self.height(*first) is None:
             return set()

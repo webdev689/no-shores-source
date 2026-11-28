@@ -102,12 +102,13 @@ pub fn web_json(island: &str, week: u64) -> String {
     with_web(island, week, json).unwrap_or_default()
 }
 
-/// A zone laid whole as JSON: the zone (as `web_json` gives it), the climate its hollow is dressed in, its ground (under ground the Forge's layout as a
-/// dungeon's is given, above ground every module set in it as [number, x, y, z, turn, scale, lift], the blocks its
-/// modules stand as and its section's ring), its sites (where a body arrives and faces, the way in, the onward
-/// mouths in the zone's order, the farthest of them by its place, the lamp, the foes' posts and the spots) and its
-/// pieces (each its module's name, its kind, its number among its kind, where it stands (x, y, z) and the way its
-/// front faces), with every piece's solids as [west, north, east, south, top]. Empty for a zone the web does not hold.
+/// A zone laid whole as JSON: the zone (as `web_json` gives it), the climate its hollow is dressed in, its ground
+/// (under ground the Forge's layout as a dungeon's is given, above ground every module set in it as [number, x, y, z,
+/// turn, scale, lift], the blocks its modules stand as and its section's ring), its sites (where a body arrives and
+/// faces, the way in, the onward mouths in the zone's order, the farthest of them by its place, the lamp, the foes'
+/// posts and the spots) and its pieces (each its module's name, its kind, its number among its kind, where it stands
+/// (x, y, z) and the way its front faces), with every piece's solids as [west, north, east, south, top]. Empty for a
+/// zone the web does not hold.
 #[must_use]
 pub fn zone_plan_json(island: &str, week: u64, number: u16) -> String {
     let json = |plan: &Plan| {

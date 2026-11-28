@@ -457,10 +457,11 @@ impl Fights {
         true
     }
 
-    /// After the sea's ships sailed: each ship that met a player (`met`) begins their fight; each player at sea not fighting (`ships`) who comes within `ENGAGE_RANGE` of a fight joins it, or of a
-    /// clash takes it for their fight; and each hostile ship within `ENGAGE_RANGE` of a fight joins it. `heave` brings
-    /// a player's ship to rest for it and answers the ship with the hurts it keeps. Answers who joined a fight under
-    /// way (a player, or a hostile ship's commission) and the players already in it.
+    /// After the sea's ships sailed: each ship that met a player (`met`) begins their fight; each player at sea not
+    /// fighting (`ships`) who comes within `ENGAGE_RANGE` of a fight joins it, or of a clash takes it for their fight;
+    /// and each hostile ship within `ENGAGE_RANGE` of a fight joins it. `heave` brings a player's ship to rest for it
+    /// and answers the ship with the hurts it keeps. Answers who joined a fight under way (a player, or a hostile
+    /// ship's commission) and the players already in it.
     pub(crate) fn take_in(
         &mut self,
         met: Vec<(PlayerId, Hostile)>,

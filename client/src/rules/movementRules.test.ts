@@ -13,7 +13,8 @@ async function movement() {
   return startMovementRules(bytes);
 }
 
-/** The movement crate's agreement test holds the same fingerprint, course and script (crates/movement/tests/agree.rs). */
+/** The movement crate's agreement test holds the same fingerprint, course and script
+ *  (crates/movement/tests/agree.rs). */
 const RUN_HASH = pinned('movement.run');
 
 /** A ledge to catch and climb, a low thin wall to vault, a tower to climb, and a step. */

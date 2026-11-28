@@ -179,8 +179,9 @@ impl Room {
         }
     }
 
-    /// Every living body within reach of a rift's mouth carried through to `to`; going in (`turned_back` the hall's side
-    /// of the mouth), the Lodestone's bearer is carried back there instead at Hard when they were its last to cross.
+    /// Every living body within reach of a rift's mouth carried through to `to`; going in (`turned_back` the hall's
+    /// side of the mouth), the Lodestone's bearer is carried back there instead at Hard when they were its last to
+    /// cross.
     fn carry_through(&mut self, breach: &mut Breach, from: [f64; 3], to: [f64; 3], turned_back: Option<[f64; 3]>) {
         let near: Vec<PlayerId> = self
             .players

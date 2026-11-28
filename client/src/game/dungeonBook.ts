@@ -27,8 +27,8 @@ export const DUNGEON_LAYERS = {
   crystal: 251,
 } as const;
 
-/** A picture wanted: Daggerfall's archive and record (a negative archive for a glow drawn as a colour), what it is named for,
- *  and the factor each channel is painted at, if any. */
+/** A picture wanted: Daggerfall's archive and record (a negative archive for a glow drawn as a colour), what it is
+ *  named for, and the factor each channel is painted at, if any. */
 export type Wanted = readonly [
   archive: number,
   record: number,

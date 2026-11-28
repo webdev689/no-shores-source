@@ -1,8 +1,8 @@
 //! The Harbourmaster's sailing lesson at sea: each tick, a captain whose task asks a sailing act is watched as the sea
-//! sails their ship (`gear::quests::SailAct`): aboard at sea, under way, turned off a heading, the pace dial moved under
-//! way, and the held map raised (the page's word, `charted`); and for the gunnery, a Tithe hulk struck and moored off
-//! Overlook's roadstead, which the sea puts into a fight of the captain's own as they come near: a ball of theirs that
-//! strikes it is the act. It lays nothing and pays nothing as it goes down, and no one boards it.
+//! sails their ship (`gear::quests::SailAct`): aboard at sea, under way, turned off a heading, the pace dial moved
+//! under way, and the held map raised (the page's word, `charted`); and for the gunnery, a Tithe hulk struck and moored
+//! off Overlook's roadstead, which the sea puts into a fight of the captain's own as they come near: a ball of theirs
+//! that strikes it is the act. It lays nothing and pays nothing as it goes down, and no one boards it.
 
 use super::Sea;
 use crate::PlayerId;

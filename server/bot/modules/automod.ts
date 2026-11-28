@@ -129,7 +129,8 @@ function hostOf(link: string): string {
   }
 }
 
-/** Whether a host is an allowed site or under one: whole names only, so `evilnoshores.online` is not `noshores.online`. */
+/** Whether a host is an allowed site or under one: whole names only, so `evilnoshores.online` is not
+ *  `noshores.online`. */
 const allowedHost = (host: string, allowed: readonly string[]) =>
   host !== '' && allowed.some((site) => host === site || host.endsWith(`.${site}`));
 const isOn = (config: Settings, filter: string) => (config[filter] ?? 'off') !== 'off';
@@ -167,7 +168,8 @@ export function breaks(
   return null;
 }
 
-/** Who wrote a message auto-mod reads, or null: a member without Manage Messages, outside the exempt roles and channels. */
+/** Who wrote a message auto-mod reads, or null: a member without Manage Messages, outside the exempt roles and
+ *  channels. */
 async function watchedAuthor(context: BotContext, data: EventData, config: Settings): Promise<Who | null> {
   const author = recordOf(data.author);
   if (!data.guild_id || author.bot || data.webhook_id || !data.member) return null;

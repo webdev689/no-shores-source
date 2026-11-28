@@ -57,15 +57,16 @@ The Arts are the game's subclasses ([[Arts Are Overlook's Subclasses]]): Storm, 
 Anima, two Tenets and a Core of fragments ([[Arts and Loadouts as Claude Shapes Them]]). Every name, word and number
 the client shows comes from `content/arts/arts.json`, the file the rules read too, the fragments' numbers with it.
 An Art, its Anima and each Tenet are earned on its house's road ([[Quests]]): a new character wears none until
-then, and a character made before earns them all. This note covers what the player sees (the Art's screen in the menu, the Art's diamond on the Character page, the
-ability bar on the HUD), how the rules cast each spell, how the browser asks for a cast, and how each spell looks.
+then, and a character made before earns them all. This note covers what the player sees (the Art's screen in the menu,
+the Art's diamond on the Character page, the ability bar on the HUD), how the rules cast each spell, how the browser
+asks for a cast, and how each spell looks.
 
 ## How it works
 
 - **The Art's diamond** is the first row under the Character page's Weapons heading, as tall as a slot's row, so the
   weapons' rows stand level with the armour's: the worn Art's emblem, "Art" and its name in its element's colour, its
-  level as five small pips under the name. Its card names the Art, its spells and its words. Pressed, it opens the Art's screen in the Character page's place, the
-  focus on its Anima, the footer's Back closing it as Escape does.
+  level as five small pips under the name. Its card names the Art, its spells and its words. Pressed, it opens the Art's
+  screen in the Character page's place, the focus on its Anima, the footer's Back closing it as Escape does.
 - **The Art's screen**, after Destiny's subclass screen: the Art's scene behind it (below), its drama in the room right
   of the rows, over a dark ground lit in the Art's colour, strongest at the right and darkened at the top and foot. At
   the top left, the worn Art's name, its element, its emblem large in a double diamond of its colours with brass at
@@ -126,27 +127,30 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   stands in the room right of the rows, and it fades out toward the left in a dither. Its still cells are worked out
   only when the Art or the screen's size changes; it steps six times a second round a loop of 48 steps, only while
   shown. With less motion asked for, it stands still.
-- **Motion**, in steps: opening, the scene fades in, the emblem opens from its middle, and the rows rise in turn, all within 0.4 s; wearing another Art flashes the screen in its colour and opens
-  its emblem again. The Anima's tile breathes. With less motion asked for, none of it plays.
+- **Motion**, in steps: opening, the scene fades in, the emblem opens from its middle, and the rows rise in turn, all
+  within 0.4 s; wearing another Art flashes the screen in its colour and opens its emblem again. The Anima's tile
+  breathes. With less motion asked for, none of it plays.
 - **The ability bar** stands at the bottom left, left of the weapons, after Destiny's abilities ([[Interface]], "The
-  Arts and weapons"); in a sea fight the ship's abilities stand there in a bar of its build ([[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]). The Anima's own icon, the one the Art's screen shows, stands in a diamond 68 px across: unlit but
-  for its outline, it fills with colour a row of cells at a time from the bottom as it charges, and full, the diamond
-  glows in the Art's colour. Each Tenet's icon stands in a ring 44 px across, dimmed while it recharges, under a dark
-  wedge that sweeps away clockwise from the top in 6-degree steps; with 9 seconds or fewer left, the seconds stand in
-  it, rounded up, the icon stepping back so they read. Ready, its ring is lit in the element. Each key stands on a keycap
-  under its icon, and a screen reader hears it after the ability's name: the key bound now (R, Q and G at first), or
-  while the pad was played last its button, drawn on the cap as the ship's bar draws one (`hudKeys`, `capFace`). A
-  spell just cast flashes its frame white for 0.5 s; while the player cannot cast (staggered, down, drinking or dead),
-  every icon greys under a hatch. While a house's horde runs for the player (the room's `quest_horde`; [[Quests]], "A
-  house's horde"; [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]), the Art is unbounded and the bar shows it: each ability glows in the Art's colour, stronger than a
-  ready one and swelling slowly from 2 to 4 px over 4 s (still at 3 px with less motion asked for), under an infinity
-  mark, 11 by 5 cells, standing above it to say it costs nothing; a screen reader hears "unbounded, ready". The glow
-  and the marks go the frame the room's word no longer holds the horde, and while the player cannot cast; an ability
-  not earned keeps its padlock alone. At the display's larger step (1500 by 900 and up) the diamond is 102 px and a
-  ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and each Tenet's recharge, as
-  shares, and drawn afresh each frame by the game. With no Art worn it is not shown. The
-  ship's bar in a sea fight is built of the same rings and keycaps (`combat/ringSlot.ts`; [[Interface]], "The sea
-  fight's readout").
+  Arts and weapons"); in a sea fight the ship's abilities stand there in a bar of its build
+  ([[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]). The Anima's own icon, the one the Art's screen
+  shows, stands in a diamond 68 px across: unlit but for its outline, it fills with colour a row of cells at a time from
+  the bottom as it charges, and full, the diamond glows in the Art's colour. Each Tenet's icon stands in a ring 44 px
+  across, dimmed while it recharges, under a dark wedge that sweeps away clockwise from the top in 6-degree steps; with
+  9 seconds or fewer left, the seconds stand in it, rounded up, the icon stepping back so they read. Ready, its ring is
+  lit in the element. Each key stands on a keycap under its icon, and a screen reader hears it after the ability's name:
+  the key bound now (R, Q and G at first), or while the pad was played last its button, drawn on the cap as the ship's
+  bar draws one (`hudKeys`, `capFace`). A spell just cast flashes its frame white for 0.5 s; while the player cannot
+  cast (staggered, down, drinking or dead), every icon greys under a hatch. While a house's horde runs for the player
+  (the room's `quest_horde`; [[Quests]], "A house's horde";
+  [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]), the Art is
+  unbounded and the bar shows it: each ability glows in the Art's colour, stronger than a ready one and swelling slowly
+  from 2 to 4 px over 4 s (still at 3 px with less motion asked for), under an infinity mark, 11 by 5 cells, standing
+  above it to say it costs nothing; a screen reader hears "unbounded, ready". The glow and the marks go the frame the
+  room's word no longer holds the horde, and while the player cannot cast; an ability not earned keeps its padlock
+  alone. At the display's larger step (1500 by 900 and up) the diamond is 102 px and a ring 66, the keycaps at 22. The
+  bar is worked out from the Art worn, the Anima's charge and each Tenet's recharge, as shares, and drawn afresh each
+  frame by the game. With no Art worn it is not shown. The ship's bar in a sea fight is built of the same rings and
+  keycaps (`combat/ringSlot.ts`; [[Interface]], "The sea fight's readout").
 
 ## In the rules
 
@@ -164,9 +168,9 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   heals by the share of the Sunwell that gave it, even after its caster leaves. The cards show each number with the
   worn Core folded in, and a fragment's words name its seconds at the level worn. A Test Ground player starts every
   Art at level 5 owning every fragment.
-- **A room without Arts.** A room told to forbid them (`Room::forbid_arts`), as the prologue's wreck's is (`Room::story_wreck`), takes no
-  cast and charges nothing, a kill's share included; no fragment of a Core works; a blow in an Art's element is no
-  more than another; and the player's gear says Art 0, its Anima and Tenets empty.
+- **A room without Arts.** A room told to forbid them (`Room::forbid_arts`), as the prologue's wreck's is
+  (`Room::story_wreck`), takes no cast and charges nothing, a kill's share included; no fragment of a Core works; a blow
+  in an Art's element is no more than another; and the player's gear says Art 0, its Anima and Tenets empty.
 - **The story's Storm.** On the wreck, once the wisp engulfs the player, the room gives them the Storm
   (`Room::story_storm`): its Arts work again, and the Storm is worn, its Anima (Tempest) and both Tenets (Quicken,
   Arc Lash) earned and charged full, so its bar shows and each is cast as anywhere ([[Prologue]], "The teaching"). The
@@ -234,10 +238,11 @@ The numbers are an Art's at level 5.
 - **The snapshot** carries `spells`, left out when there are none: each one's number, kind (its spell's number, or 10
   for a bolt), caster, Art, where it is, where it heads (the Dawnflare's end, Arc Lash's reach ahead), the foe it
   seeks, its age and life in ticks, and its radius.
-- **The player's own gear** carries `art` (0 where none works), `cores` (three slots an Art in the Arts' order, 255 for none), `anima` and
-  `tenets`, each share as the tick that sent it had it, and `recharge`, how much longer the room takes to recharge them
-  (1.5 under a run's Trickle, [[Activities]]). It is sent whenever a cast releases, a kill gives charge or an ask
-  changes them; between, the browser runs each share on by its recharge times `recharge` (`abilitiesAt`).
+- **The player's own gear** carries `art` (0 where none works), `cores` (three slots an Art in the Arts' order, 255 for
+  none), `anima` and `tenets`, each share as the tick that sent it had it, and `recharge`, how much longer the room
+  takes to recharge them (1.5 under a run's Trickle, [[Activities]]). It is sent whenever a cast releases, a kill gives
+  charge or an ask changes them; between, the browser runs each share on by its recharge times `recharge`
+  (`abilitiesAt`).
 - **The asks** are numbered 40 (`wearArt`, the Art in `column`), 41 (`setCore`, the Art in `column`, the slot in
   `slot`, the fragment in `node`) and, in the Test Ground alone, 36 (the Anima full and the Tenets ready).
 
@@ -313,16 +318,16 @@ The numbers are an Art's at level 5.
   then a ring swelling and cooling in four steps, 33 cells across; eight crosses of light rising off the caster; a
   burst of embers.
 - **Dawnflare.** A bird of fire 1.5 m over the ground, the forge's phoenix (below), its cells a figure's own pixels,
-  turned to the eye in eight directions as it flies, its wings beating in four steps ten times a second, its outline flickering, embers trailing behind it; within 2 m of
-  the eye, as it flies out past the camera, only its embers show. The ground burns where it passed: a lane 1.5 m wide, a
-  core of light flaring white-hot between broken tongues of the element's body, flickering 12 times a second and cooling
-  to its dark over 1.5 s. A foe it burns bursts in three tongues of flame with an impact star; at its flight's end the
-  bird bursts in flame and embers.
+  turned to the eye in eight directions as it flies, its wings beating in four steps ten times a second, its outline
+  flickering, embers trailing behind it; within 2 m of the eye, as it flies out past the camera, only its embers show.
+  The ground burns where it passed: a lane 1.5 m wide, a core of light flaring white-hot between broken tongues of the
+  element's body, flickering 12 times a second and cooling to its dark over 1.5 s. A foe it burns bursts in three
+  tongues of flame with an impact star; at its flight's end the bird bursts in flame and embers.
 - **Duskraven.** A raven of Cosmic light off its caster's right shoulder, the forge's raven (below), its cells a
-  figure's own pixels, its wings beating six times a second; the player's own sits on their figure as the page predicts it, and is not drawn within a
-  metre of the eye, as in first person. It comes in a pop and goes in a pop and smoke. While a bolt flies, a diamond
-  broken at its corners blinks over the foe it seeks. Each bolt is a star of four points trailing a line of light 0.1 s
-  long, glinting stars and Cosmic motes, and it ends in an impact star.
+  figure's own pixels, its wings beating six times a second; the player's own sits on their figure as the page predicts
+  it, and is not drawn within a metre of the eye, as in first person. It comes in a pop and goes in a pop and smoke.
+  While a bolt flies, a diamond broken at its corners blinks over the foe it seeks. Each bolt is a star of four points
+  trailing a line of light 0.1 s long, glinting stars and Cosmic motes, and it ends in an impact star.
 - **Dusk Daggers.** Its ring, as it is aimed and where it lies, is a rune ring: a floor dithered an eighth in the
   element's dark, a dotted circle in its body 0.35 m in, and an edge in its light, white-hot for two ticks at each
   strike, when a slash crosses each foe inside it (white-hot one frame, light two). Eight blades whirl over it, each

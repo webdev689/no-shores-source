@@ -30,19 +30,23 @@ The owner's words, as the owner wrote them ([[The Game Is Named No Shores]]):
 >
 > Beyond the known waters lies The Pale Expanse, a vast ocean stretching between nine continents.
 >
-> For as long as anyone can remember, civilization has clung to the coast. Great port cities once connected the region through commerce, exploration, and war.
+> For as long as anyone can remember, civilization has clung to the coast. Great port cities once connected the region
+> through commerce, exploration, and war.
 >
 > Today, only three remain.
 >
 > The others stand in ruin.
 >
-> Some were burned. Others were abandoned. And some appear to have suffered something far stranger. Their streets, buildings, and inhabitants have changed in ways that defy explanation.
+> Some were burned. Others were abandoned. And some appear to have suffered something far stranger. Their streets,
+> buildings, and inhabitants have changed in ways that defy explanation.
 >
 > Even history itself cannot be trusted.
 >
-> Old maps contradict the coastlines they describe. Settlements appear older than their own records. People remember events differently, and nobody seems capable of establishing which account is true.
+> Old maps contradict the coastlines they describe. Settlements appear older than their own records. People remember
+> events differently, and nobody seems capable of establishing which account is true.
 >
-> Across these uncertain waters, the Grey Tithe maintains its authority. Its unmarked vessels demand a tenth of everything carried across the sea. Those who refuse risk losing their ships entirely.
+> Across these uncertain waters, the Grey Tithe maintains its authority. Its unmarked vessels demand a tenth of
+> everything carried across the sea. Those who refuse risk losing their ships entirely.
 >
 > But one port refuses to surrender.
 >
@@ -50,7 +54,8 @@ The owner's words, as the owner wrote them ([[The Game Is Named No Shores]]):
 >
 > It is here that your story begins.
 >
-> A captain, bound for Overlook, is ambushed at sea. After surviving an initial engagement, their vessel is shattered by the flagship of Captain Brannoc Thule.
+> A captain, bound for Overlook, is ambushed at sea. After surviving an initial engagement, their vessel is shattered by
+> the flagship of Captain Brannoc Thule.
 >
 > Defeated, the captain is thrown into the depths.
 >
@@ -60,11 +65,13 @@ The owner's words, as the owner wrote them ([[The Game Is Named No Shores]]):
 >
 > Beyond the safety of Overlook, an unsettling truth awaits.
 >
-> Across the ruined continents, crystalline growth overtakes the remains of civilization. Familiar places become unrecognizable. The living are transformed into something else.
+> Across the ruined continents, crystalline growth overtakes the remains of civilization. Familiar places become
+> unrecognizable. The living are transformed into something else.
 >
 > Whatever is responsible is not confined to one island, one kingdom, or one stretch of ocean.
 >
-> And as the captain ventures farther into the Pale Expanse, the distinction between what the world is and what it once was becomes increasingly uncertain.
+> And as the captain ventures farther into the Pale Expanse, the distinction between what the world is and what it once
+> was becomes increasingly uncertain.
 >
 > There are countless shores in the Pale Expanse.
 >

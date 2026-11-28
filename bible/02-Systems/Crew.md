@@ -39,10 +39,10 @@ Other ships show their hands and captain on deck ([[Ships Show Their People, and
   complement.
 - **Boarding** (`room::boarding_hands`): over a struck ship's rail with each player come as many of their hands as their
   hull's class sends (two from a Sloop or a Schooner, three from a Brig, four from a Frigate) and as many more as the
-  player's First Mate and perks lead aboard, never more than their ship has left. They fight the struck ship's crew on the players'
-  side with a foe's own brain, as swordsmen of the deck roster at their ship's level, by gear's power as a matched
-  player's; a kill they have a hand in is their player's, and the deck is won once that crew is down whoever of them
-  stands. Each who falls is a man the player's ship has lost once the player is back aboard, or once they leave the
+  player's First Mate and perks lead aboard, never more than their ship has left. They fight the struck ship's crew on
+  the players' side with a foe's own brain, as swordsmen of the deck roster at their ship's level, by gear's power as a
+  matched player's; a kill they have a hand in is their player's, and the deck is won once that crew is down whoever of
+  them stands. Each who falls is a man the player's ship has lost once the player is back aboard, or once they leave the
   sea from that deck.
 
 ## Officers
@@ -82,9 +82,10 @@ Each post changes how it plays in a fight, its officer's strength times (`ship::
 ## Signing on
 
 - **At the muster**, the counter of the faction a player is pledged to in a social space ([[Factions]];
-  `room::crew::recruiting_at`), that faction offers three officers a day, from 09:00 UTC as the clock turns ([[Activities]]), the same to everyone that day (`recruit::offers`): the first Able, the second
-  Seasoned from rank 2 with it, the third Veteran from rank 4, at the player's level (to 20). Wages are 1,500,
-  4,000 and 9,000 Aurem. An officer already kept is not signed on twice.
+  `room::crew::recruiting_at`), that faction offers three officers a day, from 09:00 UTC as the clock turns
+  ([[Activities]]), the same to everyone that day (`recruit::offers`): the first Able, the second Seasoned from rank
+  2 with it, the third Veteran from rank 4, at the player's level (to 20). Wages are 1,500, 4,000 and 9,000 Aurem. An
+  officer already kept is not signed on twice.
 - **The pledge** is read in one place (`room::crew::pledge_of`): the faction pledged to and the rank with it, as the
   faction rules keep them (`Allegiance`, `Character::rank`); with no pledge no officer is offered, and another
   faction's counter offers none.

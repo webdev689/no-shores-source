@@ -61,7 +61,8 @@ test('a place standing off its island is sailed for out from the island past it,
 });
 
 test('a place by a narrow inlet whose far wall stands across the way out is sailed for out of its mouth instead', () => {
-  // An island 20 km square, an inlet 500 m wide cut 14 km into it from the east; a node just north of it, near its mouth.
+  // An island 20 km square, an inlet 500 m wide cut 14 km into it from the east; a node just north of it, near its
+  // mouth.
   const inlet: [number, number][] = [
     [0, 0],
     [20_000, 0],

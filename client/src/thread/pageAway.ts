@@ -1,8 +1,8 @@
 // The page as the game's worker sees it. A worker has no page, so the game's code, written for one, finds stand-ins
 // where a page's would be: its storage (read here, every write sent on), its address, its size, its media queries,
 // its document (hidden or not, the pointer's lock, a screen reader's announcements), its pads (as the page read them
-// last), and its canvas (the page's, drawn on from here, its events heard as the page sends them). Each asks the page, through `send`, for what only a
-// page can do.
+// last), and its canvas (the page's, drawn on from here, its events heard as the page sends them). Each asks the page,
+// through `send`, for what only a page can do.
 import { canvasSize } from '../canvasSize.ts';
 import { desktopChanged, useDesktop } from '../desktop.ts';
 import { FrameGuard } from '../frameGuard.ts';

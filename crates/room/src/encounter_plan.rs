@@ -22,10 +22,10 @@ pub const PLATES_APART_M: f64 = 2.0 * CELL_M;
 pub const PLATES_AHEAD: f64 = 0.35;
 /// An Ascent's pads: half a pad's side; the first's top, mantled from the dry doorway (within `TUNING.reach`); how
 /// much higher each next stands than the one before at the most, and how far every pad after the first stands over a
-/// mantle's reach from the floor at the least; the fewest and the most of them; the leap from each to the next, edge to edge along the line
-/// between their middles, the least and the most (m), which a run off the edge never crosses and a running jump does;
-/// and the room kept between a body's head on the top pad and the ceiling, and on any other pad, which a running jump
-/// (`TUNING.jump`, rising about half a metre) leaves from (m).
+/// mantle's reach from the floor at the least; the fewest and the most of them; the leap from each to the next, edge to
+/// edge along the line between their middles, the least and the most (m), which a run off the edge never crosses and a
+/// running jump does; and the room kept between a body's head on the top pad and the ceiling, and on any other pad,
+/// which a running jump (`TUNING.jump`, rising about half a metre) leaves from (m).
 pub const PAD_HALF_M: f64 = 0.8;
 pub const FIRST_PAD_TOP_M: f64 = 1.6;
 pub const PAD_RISE_M: f64 = 0.4;

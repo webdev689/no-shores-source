@@ -154,8 +154,8 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const task = fight && !deck && !here.sighted?.hulk ? fight.readout(state.clock) : null;
   hud.tasks.show(task ? seaFightQuest('Sea fight', task.left, task.men) : state.quests.tracked);
   hud.marks(shown.marks);
-  // The player's plate, its abilities' bar, the card and the tally in a fight (on a struck ship's deck, the fight on foot's own),
-  // before the ships' plates, which keep under its card.
+  // The player's plate, its abilities' bar, the card and the tally in a fight (on a struck ship's deck, the fight on
+  // foot's own), before the ships' plates, which keep under its card.
   hud.seaFight(deck ? null : (here.fight?.display(state.clock) ?? null));
   const { eye, yaw, pitch, fov } = shown.shot;
   // Aboard it the ships' plates give the view to the fight on foot's display, as on land.

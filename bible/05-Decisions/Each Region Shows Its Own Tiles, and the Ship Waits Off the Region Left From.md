@@ -38,4 +38,5 @@ The owner's answers to the questions that followed:
 - **The server lands a place from the sea only while the ship lies off its region**, as the tiles offer it
   ([[Server]]).
 
-Links: [[Interface]], [[Game]], [[World Map]], [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].
+Links: [[Interface]], [[Game]], [[World Map]],
+[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].

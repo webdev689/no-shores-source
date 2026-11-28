@@ -246,9 +246,9 @@ impl Room {
     /// The perks a player's blow on a foe takes on as it is struck: Honed on every blow, Executioner on a staggered
     /// foe (a riposte, the stagger's own answer, aside, as combat counts it), Undertow on one below half its health,
     /// Exploit on a swing at an Exposed foe, Attuned on a blow in the worn Art's element, Thunderhead on a Charged foe,
-    /// Vein Strike on an Exposed one, Shared Flame while its striker was Linked and From the Dark's crit while they were
-    /// Veiled, as the blow was struck or the shot loosed (`held`), and what an Atheric's own adds (`struck_harder`)
-    /// (`perk_on`: of the loadout the blow came from, never a spell's).
+    /// Vein Strike on an Exposed one, Shared Flame while its striker was Linked and From the Dark's crit while they
+    /// were Veiled, as the blow was struck or the shot loosed (`held`), and what an Atheric's own adds
+    /// (`struck_harder`) (`perk_on`: of the loadout the blow came from, never a spell's).
     pub(crate) fn sharpened(&self, blow: Blow, defender: FighterId, held: &Loosed) -> Blow {
         let Some(foe) = self.fighter(defender) else { return blow };
         let Some(player) = self.players.get(&blow.striker).filter(|_| self.foes.contains_key(&defender)) else {
@@ -294,8 +294,8 @@ impl Room {
 
     /// What a verdict sets off of a player's perks: a parry or a block gives the defender back stamina, a block with
     /// Lattice Wall drawn, a perfect dodge in Resonance and a parry in Fracture Expose the foe who struck, a guard
-    /// broken in Shardburst Exposes every foe near the wearer, and a kill gives its striker stamina and may reload their
-    /// weapon at once.
+    /// broken in Shardburst Exposes every foe near the wearer, and a kill gives its striker stamina and may reload
+    /// their weapon at once.
     pub(crate) fn perks_after(&mut self, striker: FighterId, defender: FighterId, verdict: &Verdict, killed: bool) {
         let back = |fighter: &mut combat::Fighter, stamina: f64| {
             fighter.stamina = (fighter.stamina + stamina).min(STAMINA);
@@ -367,8 +367,8 @@ impl Room {
     /// fourth blow or shot, Thunderclap on a guard a swing breaks, Nightfall's veil on a riposte, Marked Shot on the
     /// player's first shot to land on a foe, Shocking Rounds on every fifth shot landed, and Keen Eye's Crit and
     /// Kindling's Link on a kill; the Breaches' Shatterpoint on a guard a swing breaks, Crystal Sight on a shot landing
-    /// 20 m or more off, Bloom on a kill, Splinter on a riposte that lands and Shard Round's Charge on a shot landing on
-    /// an Exposed foe; each the loadout's the blow came from (`perk_on`), none a spell's. And
+    /// 20 m or more off, Bloom on a kill, Splinter on a riposte that lands and Shard Round's Charge on a shot landing
+    /// on an Exposed foe; each the loadout's the blow came from (`perk_on`), none a spell's. And
     /// Regrowth's health on a kill, the armour's, so a spell's kill gives it too.
     pub(crate) fn verbs_after(&mut self, blow: &Blow, defender: FighterId, verdict: &Verdict, killed: bool) {
         if !self.foes.contains_key(&defender) {

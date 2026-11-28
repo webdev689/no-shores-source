@@ -157,7 +157,8 @@ const GUARD: Kit = { idle: 'guard', walk: 'march', attack: 'slash' };
 const PAIR: Kit = { idle: 'twinguard', walk: 'twinmarch', attack: 'twinslash' };
 
 /** The moves the right hand's weapon plays on its own: at rest, walking, and its own attack. A bow drawn in its own
- *  holds (the forge's bowhold.py) stands, walks and sprints in them, both hands on it; else it rests in the left fist. */
+ *  holds (the forge's bowhold.py) stands, walks and sprints in them, both hands on it; else it rests in the left
+ *  fist. */
 function ownKit(right: string | null, left: string | null, draws: Draws): Kit {
   const kind = right?.split('_')[0] ?? '';
   if (kind === 'bow')

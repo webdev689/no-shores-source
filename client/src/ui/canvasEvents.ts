@@ -1,8 +1,8 @@
 // The page's side of the interface's input: what the pointer, wheel, keys, pad and typing do on the canvas, gathered
 // as plain events (`ui.ts`) for the interface to hear each frame, wherever it runs. Typing goes through the browser's
 // `EditContext` where it has one (Chromium), so composition and its keyboards work on the canvas; elsewhere, and for a
-// hidden field (whose words are never handed to the browser), through keys and paste. What the interface is typing in is handed back each frame (`sync`), so the browser's typing starts
-// from the same words, caret and place.
+// hidden field (whose words are never handed to the browser), through keys and paste. What the interface is typing in
+// is handed back each frame (`sync`), so the browser's typing starts from the same words, caret and place.
 import { GAUNTLET_CURSOR, gauntletCss } from './gauntlet.ts';
 import { PAD_CURSOR, STICK_REST } from './padCursor.ts';
 import type { PadButton, Typing, UiEvent } from './uiEvent.ts';

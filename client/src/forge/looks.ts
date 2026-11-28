@@ -72,10 +72,10 @@ export const hipTwin = (layer: string): string | null => (HIP.test(layer) ? othe
 
 /**
  * A figure's gear as a mirrored view of `anim` composes it. The forge draws a right-handed body, so a mirror hangs each
- * hip piece at the other hip and puts what each fist holds (`held`) in the other. Each is swapped for its twin first, so
- * the mirror lays it back where it was: the hips' pieces together, and the fists' together, so none ends beside another.
- * Where a twin is not drawn in `anim` (a sword in the left fist through the walk), or a piece with none hangs at a hip
- * (the quiver), that side's pieces are left to the mirror.
+ * hip piece at the other hip and puts what each fist holds (`held`) in the other. Each is swapped for its twin first,
+ * so the mirror lays it back where it was: the hips' pieces together, and the fists' together, so none ends beside
+ * another. Where a twin is not drawn in `anim` (a sword in the left fist through the walk), or a piece with none hangs
+ * at a hip (the quiver), that side's pieces are left to the mirror.
  */
 export function mirroredGear(
   gear: readonly string[],

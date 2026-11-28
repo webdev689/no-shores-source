@@ -1,6 +1,7 @@
 //! One tick of a fighter by its own hand: its stamina and poise resting, its statuses running down (a Charge holding it
 //! still), what it is doing carried on or ended, a new swing, guard, dodge, shot or telegraphed blow begun, its body
-//! moved by the movement rules as that allows (faster Hasted), and its aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
+//! moved by the movement rules as that allows (faster Hasted), and its aim turned. What it does to others is the
+//! host's: a blow that lands now is said, and the host judges it.
 
 use crate::arms::{Ranged, weapon};
 use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Swing};

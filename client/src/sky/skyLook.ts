@@ -68,7 +68,8 @@ export function cloudDrift(steeringMS: number, worldS: number): Pick<SkyLook, 'd
   ];
   return { drift: placed(index), driftNext: placed(index + 1), driftFade: smooth(1 - CLOUD_FADE, 1, spells - index) };
 }
-/** The sun's height (its sine) where its light is gone and the key passes to the moon, and where the moon's is whole. */
+/** The sun's height (its sine) where its light is gone and the key passes to the moon, and where the moon's is
+ *  whole. */
 const SUN_GONE = -0.03;
 const MOON_KEYED = -0.08;
 /** The fog's density, per metre, in a thick bank, a heavy fall and a sandstorm. */
@@ -83,7 +84,8 @@ function clearSky(up: number, night: Colour, civil: Colour, set: Colour, day: Co
   return mix(set, day, smooth(0, DAY_SUN, up));
 }
 
-/** The air mass the sun's light crosses at a height whose sine is `up` (Kasten and Young's), held finite at the horizon. */
+/** The air mass the sun's light crosses at a height whose sine is `up` (Kasten and Young's), held finite at the
+ *  horizon. */
 function airMass(up: number): number {
   const degrees = (Math.asin(Math.max(-1, Math.min(1, up))) * 180) / Math.PI;
   return 1 / (Math.max(up, 0) + 0.50572 * Math.pow(Math.max(degrees, 0) + 6.07995, -1.6364));

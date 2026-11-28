@@ -107,3 +107,14 @@ fn a_symbol_only_imported_called_or_commented_on_is_not_defined() {
         assert!(!holds_symbol("tools/sail.py", python, symbol), "{symbol}");
     }
 }
+
+#[test]
+fn a_note_line_past_the_width_is_refused_but_front_matter_code_and_tables_are_not() {
+    let long = "word ".repeat(30);
+    let text = format!("---\ntags: [{long}]\n---\n{long}\n```\n{long}\n```\n| {long} |\n- {long}\n# {long}\n");
+    let lines: Vec<usize> = wide_lines(&text).into_iter().map(|(line, _)| line).collect();
+    assert_eq!(lines, vec![4, 9]);
+    let problems = check(&note("bible/Sea.md", &text), &files(&["bible/Sea.md"]), |_| None);
+    assert_eq!(problems.len(), 2);
+    assert!(problems[0].message.contains("150-character"), "{}", problems[0].message);
+}

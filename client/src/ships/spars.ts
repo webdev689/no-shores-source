@@ -1,8 +1,8 @@
 // A hull's masts and spars as boxes on its deck, from its sails in the ships manifest (tools/ships write it): each mast
-// a column from its deck up to its highest sail on it, each gaff sail's boom along its foot and its gaff along its head,
-// and each square sail's yards across it; and its sides, a wall past its outermost plank on each row and across its
-// bow and stern. The camera on its deck keeps a clear line to the boarder past them and stays inboard, as on land it
-// keeps off walls; nothing else stands on them, since its deck room knows only its planks.
+// a column from its deck up to its highest sail on it, each gaff sail's boom along its foot and its gaff along its
+// head, and each square sail's yards across it; and its sides, a wall past its outermost plank on each row and across
+// its bow and stern. The camera on its deck keeps a clear line to the boarder past them and stays inboard, as on land
+// it keeps off walls; nothing else stands on them, since its deck room knows only its planks.
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import type { Block } from '../rules/movementRules.ts';
 import { cellHeight, type Deck, HULL_DECKS } from './deck.ts';

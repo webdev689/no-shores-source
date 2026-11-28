@@ -43,8 +43,8 @@ const FRAME_S = 1 / 60;
 /** The Anima a spell is, if it is one. */
 export const animaOf = (spell: number) => ANIMAS.get(spell) ?? null;
 
-/** Where the Sunwell's sun stands over a well at `well` cast aiming along `aim`: ahead of its caster, high in their view,
- *  never straight over their head. */
+/** Where the Sunwell's sun stands over a well at `well` cast aiming along `aim`: ahead of its caster, high in their
+ *  view, never straight over their head. */
 export function sunAbove(well: Point, aim: number): Point {
   return [well[0] + Math.sin(aim) * SUN_AHEAD_M, well[1] - Math.cos(aim) * SUN_AHEAD_M, well[2] + SUN_UP_M];
 }

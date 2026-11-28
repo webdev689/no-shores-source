@@ -91,7 +91,8 @@ export function seaPlace(continent: string, layout: DungeonLayout): NodeInfo {
 }
 
 /** Takes a run's word from a snapshot: an Abyss run's revives left, whether it told this player their company fell,
- *  an Elite Dungeon's encounters, the room's darkness and revives under way, and a Breach, in its run or at its gate. */
+ *  an Elite Dungeon's encounters, the room's darkness and revives under way, and a Breach, in its run or at its
+ *  gate. */
 export function heardRun(
   held: Pick<Held, 'revives' | 'wiped' | 'encounter' | 'darkness' | 'reviving' | 'breach'>,
   snapshot: Pick<Snapshot, 'revives' | 'events' | 'encounter' | 'darkness' | 'reviving'> & {
@@ -142,8 +143,8 @@ export function takeWipe(held: { wiped: boolean }, onFoot: boolean): boolean {
 }
 
 /** A dungeon's room played alone, in the rooms' worker: a patrol's shared dungeon from the patrol's node file at the
- *  voyage's `seas`, any other room (a run, a sea island's dungeon) from its name, which carries its tier, a patrol's run
- *  with the patrol's file too, as the servers open them (`runAsk`). */
+ *  voyage's `seas`, any other room (a run, a sea island's dungeon) from its name, which carries its tier, a patrol's
+ *  run with the patrol's file too, as the servers open them (`runAsk`). */
 export function openAlone(
   module: WebAssembly.Module,
   outsideText: string,

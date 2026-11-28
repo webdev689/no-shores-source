@@ -97,8 +97,8 @@ impl Room {
             .is_some_and(|found| self.dark_at([found.fighter.body.x, found.fighter.body.y, found.fighter.body.z]))
     }
 
-    /// Whether a body at (x, y, z) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell of an
-    /// Elite Dungeon's Court while its Boss stands, so one come back down at the way in may still respawn.
+    /// Whether a body at (x, y, z) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell
+    /// of an Elite Dungeon's Court while its Boss stands, so one come back down at the way in may still respawn.
     fn dark_at(&self, at: [f64; 3]) -> bool {
         let in_court = self.encounters.as_ref().is_some_and(|encounters| {
             encounters.plan.cell_at(at).is_some_and(|cell| encounters.court_cells.contains(&cell))

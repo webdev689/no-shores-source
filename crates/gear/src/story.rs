@@ -37,7 +37,8 @@ impl Story {
     }
 }
 
-/// The prologue's own item of `kind`, numbered `id`: Normal, of level 1, worn in its kind's slot and marked the story's.
+/// The prologue's own item of `kind`, numbered `id`: Normal, of level 1, worn in its kind's slot and marked the
+/// story's.
 #[must_use]
 pub fn story_item(id: u32, kind: Kind) -> Item {
     Item { story: true, ..Item::new(id, kind, Rarity::Normal, 1, kind.slot()) }

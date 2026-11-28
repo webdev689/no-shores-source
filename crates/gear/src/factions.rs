@@ -202,8 +202,8 @@ impl Character {
     }
 
     /// Pledges to a faction at its counter: freely the first time, for Aurem after; reputation with each is kept, the
-    /// opening is told of it, and the house gives its own torso piece at Magic the first time the character pledges to it
-    /// (`give_house_piece`).
+    /// opening is told of it, and the house gives its own torso piece at Magic the first time the character pledges to
+    /// it (`give_house_piece`).
     pub(crate) fn pledge(&mut self, faction: u8, here: Here, dice: &Dice) -> Result<Option<Done>, Refusal> {
         factions().faction(faction).ok_or(Refusal::NoSuchFaction)?;
         if !here.social {

@@ -46,7 +46,8 @@ const BEAT_STREAM: u64 = 0x6265_6174;
 /// A group as the seed draws it: its foes by type and rank.
 pub(crate) struct Group {
     pub members: Vec<(u8, Rank)>,
-    /// Its first stands in its middle facing the nearest spawn, the rest round it: a Boss's, and an isle's at its landmark.
+    /// Its first stands in its middle facing the nearest spawn, the rest round it: a Boss's, and an isle's at its
+    /// landmark.
     pub leads: bool,
     /// It takes the post farthest from the spawns and holds it, walking no beat: a Boss's or a Miniboss's.
     pub farthest: bool,
@@ -386,7 +387,8 @@ impl Room {
         (draws, beats): (&mut Mulberry32, &mut Mulberry32),
     ) -> Option<Post> {
         let mesh = self.mesh_at([x, y, 0.0]);
-        // Each place on the mesh and a body's radius clear of a dungeon's rock and solids, which the mesh keeps less off.
+        // Each place on the mesh and a body's radius clear of a dungeon's rock and solids, which the mesh keeps less
+        // off.
         let at = self.floor.standing_clear(mesh.nearest_point([x, y, self.floor.height_at(x, y)])?);
         let round = &group.members[usize::from(group.leads)..];
         let start = draws.draw() * TAU;

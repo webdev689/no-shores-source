@@ -33,7 +33,8 @@ pub struct Social {
     pub solids: Vec<Solid>,
     /// The stations in its arcades' alcoves (`stations`).
     pub stations: Vec<Station>,
-    /// Overlook's bounty board, on its hub's landing (`board`); none in any other city's plaza, whose plan says nothing.
+    /// Overlook's bounty board, on its hub's landing (`board`); none in any other city's plaza, whose plan says
+    /// nothing.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub board: Option<Board>,
     /// Where a visitor of no counter may stand, one a week (`visitor_spots`): Shape's places.
@@ -50,8 +51,8 @@ pub struct Social {
     /// Its places by name, as the held map names them (`hub`): a court, a walk, a yard.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub areas: Vec<NamedPlace>,
-    /// The grain of each walk piece among `solids` (`hub::ground`), and of the hub's paving (`hub::courts`): every other
-    /// piece of ground takes the world's pattern, and every other solid its own.
+    /// The grain of each walk piece among `solids` (`hub::ground`), and of the hub's paving (`hub::courts`): every
+    /// other piece of ground takes the world's pattern, and every other solid its own.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub grains: Vec<Grain>,
 }

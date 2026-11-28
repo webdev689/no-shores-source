@@ -43,19 +43,21 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   as the pledge is taken, the first time the character pledges to it (`give_house_piece`): the house's torso entry's
   look and name (the Stormcaller Hauberk, the Lamplighter Hauberk, the Veiled Hauberk) made at Magic, the game's
   Uncommon, at the player's level and rolled as any Magic torso is (`vestige::house_piece`, as the house's pieces
-  that drop in the world are: [[Gear]], "The house's pieces in the world's loot"). It is kept given by the entry's name beside the
-  keepers' gifts ([[Gear]], "The keepers' gifts"), so a switch to another house gives that house's piece once and a
-  switch back gives none; carried, else laid in the vault, else posted as itself. The catalogue's entry stays the
+  that drop in the world are: [[Gear]], "The house's pieces in the world's loot"). It is kept given by the entry's name
+  beside the keepers' gifts ([[Gear]], "The keepers' gifts"), so a switch to another house gives that house's piece once
+  and a switch back gives none; carried, else laid in the vault, else posted as itself. The catalogue's entry stays the
   Legendary the house sells: the gift is no ware and changes nothing a house sells. Its leader says a line of their
   own as it is given (`giftStorm`, `giftLamp`, `giftVeil` in `content/story/houses.json`), unless the house's road
   begins in the same moment, when its begin is said as it stands and the notice alone tells of the piece; the page
   shows it as the
-  leader's gift notice (`houseGiftNotice`). A pledge begins that house's road ([[Quests]]), on which its Art, its two Tenets and three
-  of its fragments are earned, the Art first shown off unbounded against a horde. Reputation with every faction is kept across a switch. A saved character from before
-  the factions reads pledged to none, and a broken one is made whole.
+  leader's gift notice (`houseGiftNotice`). A pledge begins that house's road ([[Quests]]), on which its Art, its two
+  Tenets and three of its fragments are earned, the Art first shown off unbounded against a horde. Reputation with every
+  faction is kept across a switch. A saved character from before the factions reads pledged to none, and a broken one is
+  made whole.
 - **The houses introduced.** Before the pledge the opening quest has the player hear all three, each keeper
   introducing their house when spoken to at its counter (`content/story/houses.json`): Arlo Kestrel the Stormcallers,
-  Elder Maren Hale the Lamplighters, Sable the Veiled. How the keepers speak: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
+  Elder Maren Hale the Lamplighters, Sable the Veiled. How the keepers speak:
+  [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 - **Reputation.** Every deed's XP, as the room pays it after the seas' share (a kill, a clear, a chest, a sinking, a
   bounty, the day's and the week's clears and a road's task; [[Gear]], "XP"), goes as reputation to the faction
   pledged, but only while the player wears that faction's cape (`earn_reputation`), and a kill's a quarter more while
@@ -84,19 +86,20 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
 - **Its own colour.** Each faction's armour and weapons are drawn in a colour no dye sells (`factions.json`'s
   `gear.look`, four colours laid as a 16-step ramp and snapped to the game's palette): the armour in its guild set
   (`gear.armour`), each layer and the padding under it named for its faction in the outfit's dyes (`gearOutfit`), which
-  `layerRamps` lays over any dye worn, covering every texel of the piece by its light (`whole`); the weapons in its metal
-  (`gear.metal`), their colour covering a bow, a staff and a shield whole by their light, in hand or put away, while a
-  blade (a sword, a dagger, or any melee weapon) keeps its metal and wears the colour on its hilt, guard and trim, the
-  texels the forge marks (`layerRamps` `trimmed`; [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]]).
-  The Stormcallers' Squall, the Lamplighters' Lampglass, and the Veiled's Nightveil, black into a faint cold violet
+  `layerRamps` lays over any dye worn, covering every texel of the piece by its light (`whole`); the weapons in its
+  metal (`gear.metal`), their colour covering a bow, a staff and a shield whole by their light, in hand or put away,
+  while a blade (a sword, a dagger, or any melee weapon) keeps its metal and wears the colour on its hilt, guard and
+  trim, the texels the forge marks (`layerRamps` `trimmed`;
+  [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]]). The Stormcallers' Squall, the Lamplighters'
+  Lampglass, and the Veiled's Nightveil, black into a faint cold violet
   ([[Faction Weapons Wear Their Colour and Roll Their Faction's Perks]]). A faction's cape wears its faction's dye. The
   dress carries it, so other players see it; first person lays it on the gauntlets, boots, bow, staff, shield and a
   blade's trim.
 - **An Art's level.** Each Art keeps a level (1 to 5), XP toward the next and the fragments it owns, one bit each
-  (`WornArts`). Every deed's XP fills the worn Art's bar ([[Gear]], "XP"; `content/arts/arts.json` `levels.xp`: 8,000, 16,000, 32,000
-  and 64,000) and stops when it is full. At the Art's faction's counter a full bar rises a level for its price
-  (`levels.rise`), and the ask names one fragment not owned, which becomes the player's; one who owns all six,
-  bought before rising, rises taking none. The bar starts again.
+  (`WornArts`). Every deed's XP fills the worn Art's bar ([[Gear]], "XP"; `content/arts/arts.json` `levels.xp`:
+  8,000, 16,000, 32,000 and 64,000) and stops when it is full. At the Art's faction's counter a full bar rises a level
+  for its price (`levels.rise`), and the ask names one fragment not owned, which becomes the player's; one who owns all
+  six, bought before rising, rises taking none. The bar starts again.
 - **Fragments.** A Core slot holds only a fragment owned; the room refuses another (answer 114). The faction sells
   fragments for 7,500 Aurem each from its first rank. A character kept before fragments were owned owns those its
   Cores held, and every Art starts at level 1.

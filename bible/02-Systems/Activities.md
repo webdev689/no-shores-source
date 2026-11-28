@@ -39,12 +39,14 @@ code:
 
 The days and the weeks of play, after Destiny 1's first year: what is on today and this week, how hard it is, what
 it pays once, and what opens it. The owner's decisions are
-[[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]],
+[[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]],
+[[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]],
 [[The Story Is Nine Missions, With Side Quests Between Them]],
-[[Where You Go and the Seas You Choose Set the Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
-and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
-([[The Activities Are Built in Full, Before the Story's Missions]]). All five steps are built: the core, the
-dungeons, the screens, companies with Find a Company, and the bounties, ships sunk at sea among them.
+[[Where You Go and the Seas You Choose Set the Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything
+else here is Claude's call, listed at the end, and the owner can change any of it. The owner approved it to be built in
+full, the story's missions apart ([[The Activities Are Built in Full, Before the Story's Missions]]). All five steps are
+built: the core, the dungeons, the screens, companies with Find a Company, and the bounties, ships sunk at sea among
+them.
 
 ## What it is for
 
@@ -67,9 +69,9 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 - `gear::clock` gives the day and the week from Unix minutes, which the room's host passes in, and the minutes to
   the next of each. The rules keep no clock of their own.
 - **Everything that turns reads it**: the smiths' wares, the Tailor's emblems and dyes, the Tack's pieces, the
-  Shipwright's modules and the officers at each muster ([[Ship Power]], [[Crew]]), each a day's; Shape's week, his place and his wares (he comes Friday 09:00 and goes Sunday 21:00 inside it); the
-  keepers' countdowns to the next stock and to Shape's leaving, which the page reads from the rules; and the
-  activities and the bounties.
+  Shipwright's modules and the officers at each muster ([[Ship Power]], [[Crew]]), each a day's; Shape's week, his place
+  and his wares (he comes Friday 09:00 and goes Sunday 21:00 inside it); the keepers' countdowns to the next stock and
+  to Shape's leaving, which the page reads from the rules; and the activities and the bounties.
 
 ## The tiers
 
@@ -154,9 +156,10 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
 
 - **Where.** The Playlist's banner stands among the island's tiles docked at each port city, Overlook, Sunspire and
   Rimeholt, open whether or not the city's social space is
-  ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]], [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]; [[Interface]], "The
-  island's tiles"); it is marked nowhere at sea or on the map. A click on it opens the Playlist screen for that port ([[Interface]],
-  "The Playlist"). The screen and its queues are the same from every port.
+  ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]],
+  [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]; [[Interface]], "The
+  island's tiles"); it is marked nowhere at sea or on the map. A click on it opens the Playlist screen for that port
+  ([[Interface]], "The Playlist"). The screen and its queues are the same from every port.
 - **What it holds.** The Elite Playlist and the Abyss Playlist, then the Elite Dungeon of the week and the Abyss
   Dungeon of the week. The Journal's lines for the week's two say they are queued from the Playlist beside any port.
 - **A playlist's run** (`gear::playlist`, `room::playlist_run`) is one of the 18 Elite Dungeons, laid as its run at
@@ -180,9 +183,9 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
   Company"); the server draws the Elite Dungeon as the company is found. Launch asks the same finder for a run at
   once, alone, which the player's company joins by the Roster; the server draws its Elite Dungeon too, as the owner
   chose ([[A Playlist's Launch Is Drawn by the Server]]), and a playlist's room lets in first only an account the server
-  drew it for, or one of its company ([[Server]], "A run keeps to its company"). The Elite Dungeon of the week is found or launched; the Abyss Dungeon
-  of the week is launched only, never matched, each the week's own dungeon, which the room checks. Offline, where
-  nothing is kept, the page draws a playlist's Launch.
+  drew it for, or one of its company ([[Server]], "A run keeps to its company"). The Elite Dungeon of the week is found
+  or launched; the Abyss Dungeon of the week is launched only, never matched, each the week's own dungeon, which the
+  room checks. Offline, where nothing is kept, the page draws a playlist's Launch.
 - **Going and coming back.** A run found or launched is gone into from the sea or over the island's side, through a
   voyage's veil; out of it by its door, its portal or a wipe, the player is back on the sea where the ship lies,
   beside the port it was launched from, as a sea island's dungeon leaves back to the sea. The rooms take a player
@@ -236,13 +239,13 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
 
 - **Each character keeps its day and its week** with the account (`Character.activity`): `today` holds the tiers of
   the dungeon of the day it has cleared, its bounties, each by its board place with its count, and the places it
-  turned in (`turned_in`), the town's eight (its six and the passages' two) under those keys and the factions' under keys of their own
-  (`faction_bounties`, `faction_turned_in`), so a room built before them carries them through a rollback; `this_week`
-  holds whether it cleared each of the week's two dungeons, whether it holds the Abyss boon, the playlists' clears
-  counted, and each Breach's finds paid at each tier (`breaches`, one bit each: its encounters in order, then its hidden
-  chests; [[Breaches]]). Each begins anew at its first touch in a later day or week, and never turns back, so a room whose
-  clock is behind cannot pay twice. `today` and `story` keep any key a later build wrote in them, so a rollback to
-  this build loses none.
+  turned in (`turned_in`), the town's eight (its six and the passages' two) under those keys and the factions' under
+  keys of their own (`faction_bounties`, `faction_turned_in`), so a room built before them carries them through a
+  rollback; `this_week` holds whether it cleared each of the week's two dungeons, whether it holds the Abyss boon, the
+  playlists' clears counted, and each Breach's finds paid at each tier (`breaches`, one bit each: its encounters in
+  order, then its hidden chests; [[Breaches]]). Each begins anew at its first touch in a later day or week, and never
+  turns back, so a room whose clock is behind cannot pay twice. `today` and `story` keep any key a later build wrote in
+  them, so a rollback to this build loses none.
 - **What a first clear pays** is `gear::clears`. Each writes the record, and none pays for a day or a week behind the
   one the record holds, so a room a few seconds behind 09:00 cannot write yesterday's clear into today.
 - **The dungeon of the day**, the first clear at each tier each day, on any island's: beside the cache's own pay
@@ -427,16 +430,17 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   which reads a character's level and prologue into `shut_at`: a social space never shuts; a patrol, its dungeons
   and an Elite Dungeon (its node, its approach and its run at Normal) need the prologue; the week's two need it and
   then their own level, 24 or 28, whatever the seas; a Breach's run and its gate's company need its tier's level, 24
-  or 28, and Hard a win at Normal; then Elite seas need level 10 and Abyss seas level 20, anywhere else. A room asks it before it gives a player their kept character, with the story they already hold in the room
-  carried forward (`Story::merged`, which never goes back), and a new one is judged as it starts. The reasons read
-  "This place opens after the prologue.", "This dungeon opens at level 24." (or 28), "A Breach at Normal opens at
-  level 25." (or Hard at 29), "A Breach at Hard opens once you have won it at Normal.", "Elite seas open at level 10."
-  and "Abyss seas open at level 20.". The sea's room, a sea island's room and a sea island's dungeon are gated by
-  their seas alone: the sea's tier is its room's name's (`sea--elite`, `sea--abyss`), and an island's is its sea's
-  (`Sea::shut`, an island's room `Place::Node`), so the server keeps a character below the tier's level off those
-  seas, and the voyage's card never sets sail at a tier it shuts. The screens show what is
-  shut and why: the Journal's timers, an entrance's card and the voyage's card. The page reads every gate's reason for a level
-  from the rules (`room_gates`), so it never judges a gate itself.
+  or 28, and Hard a win at Normal; then Elite seas need level 10 and Abyss seas level 20, anywhere else. A room asks it
+  before it gives a player their kept character, with the story they already hold in the room carried forward
+  (`Story::merged`, which never goes back), and a new one is judged as it starts. The reasons read "This place opens
+  after the prologue.", "This dungeon opens at level 24." (or 28), "A Breach at Normal opens at level 25." (or Hard at
+  29), "A Breach at Hard opens once you have won it at Normal.", "Elite seas open at level 10." and "Abyss seas open at
+  level 20.". The sea's room, a sea island's room and a sea island's dungeon are gated by their seas alone: the sea's
+  tier is its room's name's (`sea--elite`, `sea--abyss`), and an island's is its sea's (`Sea::shut`, an island's room
+  `Place::Node`), so the server keeps a character below the tier's level off those seas, and the voyage's card never
+  sets sail at a tier it shuts. The screens show what is shut and why: the Journal's timers, an entrance's card and the
+  voyage's card. The page reads every gate's reason for a level from the rules (`room_gates`), so it never judges a gate
+  itself.
 
 ## The screen
 
@@ -455,12 +459,12 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
 - **At the bounty board**, E opens its screen in the menu ([[Interface]], "The social space's counters"), after
   Destiny's Bounty Tracker and laid as a keeper's: the board drawn on its lit stage under its mark and title; "When
   Overlook needs a hand, it posts a bounty here. The factions post their own.", the player's Aurem and their faction's
-  rank; "Available bounties" with the town's eight in a row (the passages' two after its six) and the pledged faction's three under them (three locked
-  slots while pledged to none); and the time to the next board. Every town bounty wears one face and every faction's
-  its faction's emblem; each has a short name of its own, carried with the board to the page. The card of the tile
-  pointed at or holding the keys floats beside it (its name, its kind, its task, its count, what it pays, for a
-  faction's whether it counts now, and its press, Take or Turn in, with E). Arrows move between tiles; a click, Enter
-  or E takes or turns one in. Before the prologue the tiles are grey and their cards say why.
+  rank; "Available bounties" with the town's eight in a row (the passages' two after its six) and the pledged faction's
+  three under them (three locked slots while pledged to none); and the time to the next board. Every town bounty wears
+  one face and every faction's its faction's emblem; each has a short name of its own, carried with the board to the
+  page. The card of the tile pointed at or holding the keys floats beside it (its name, its kind, its task, its count,
+  what it pays, for a faction's whether it counts now, and its press, Take or Turn in, with E). Arrows move between
+  tiles; a click, Enter or E takes or turns one in. Before the prologue the tiles are grey and their cards say why.
 - **At a dungeon's entrance**, E opens a card ([[Interface]], "At a dungeon's entrance"): the run's tier and level,
   its rules and modifiers, what it pays or that it is taken, and why it is shut if it is, with Enter. A patrol's
   dungeon carries the day's modifier at Elite and Abyss seas while it is its island's dungeon of the day. An Elite

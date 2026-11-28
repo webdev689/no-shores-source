@@ -210,9 +210,9 @@ renderer's `drawScreenQuad`/`uploadTexture`; raw WebGL lives only in `ui/intro/i
   composes a record on demand, nearest depth per pixel, snaps to the Daggerfall palette (`dfLook`), dyes with DFU's
   tables, and stands it in place of TEXTURE.488 etc. A production build swaps each PNG for lossless WebP
   (`scripts/forgeWebp.mjs` + `tools/studioWebp.py`, flag `FORGE_WEBP`, ~62% of the bytes).
-- **Generated files in git:** 117,567 forge files (~2.27 GB, nearly all layer strips) are committed, and 257 `forge-*` shard branches each
-  commit their slice of PNGs. `forgeViewer/pack.py`'s WebP packs with a byte-offset index are a ready format for strips
-  kept outside git.
+- **Generated files in git:** 117,567 forge files (~2.27 GB, nearly all layer strips) are committed, and 257 `forge-*`
+  shard branches each commit their slice of PNGs. `forgeViewer/pack.py`'s WebP packs with a byte-offset index are a
+  ready format for strips kept outside git.
 - **Hardest seams:** the four hosts (one closure each; `world.js` 1,217 imports) carry no code over, only their wiring
   order. The Morrowind layer (`fpArm.js` 7.4k, `npcBodies`, `bodyMotion`, `mwCamera`, `ownModels`) needs the user's
   Morrowind files. `bodyMotion`'s gait and solve and `climbRig`'s reach solve are the salvage.

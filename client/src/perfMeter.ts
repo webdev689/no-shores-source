@@ -128,7 +128,8 @@ export class PerfMeter {
     this.timer?.mark(name);
   }
 
-  /** Says the scene's drawn size this frame, `width` by `height`, its `share` of the canvas each way, for the readout. */
+  /** Says the scene's drawn size this frame, `width` by `height`, its `share` of the canvas each way, for the
+   *  readout. */
   scene(width: number, height: number, share: number): void {
     if (this.shown) this.drawn = { width, height, share };
   }

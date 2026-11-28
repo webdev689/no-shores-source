@@ -1,7 +1,7 @@
 //! Ammunition for the Ranged loadout: each kind's capacity, kept on the character as a share of the full one so a
-//! different Ranged weapon worn keeps the same share; a shot spends one; an Ammo box taken gives back a quarter, an Ammo
-//! crate used fills it. Crates are carried five at most and sold by the Weaponsmith. A kill drops a box by the foe's
-//! rank, and a Miniboss or a Boss a crate.
+//! different Ranged weapon worn keeps the same share; a shot spends one; an Ammo box taken gives back a quarter, an
+//! Ammo crate used fills it. Crates are carried five at most and sold by the Weaponsmith. A kill drops a box by the
+//! foe's rank, and a Miniboss or a Boss a crate.
 
 use crate::asks::{Done, Here, Refusal};
 use crate::character::Character;

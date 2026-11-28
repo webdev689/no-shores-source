@@ -231,6 +231,54 @@ fn words_of(body: &str) -> &str {
     body.trim_start().trim_start_matches(['/', '!', '*']).trim()
 }
 
+/// How wide a comment or note line may be, by the owner's choice: past it, the line wraps.
+pub const MAX_LINE_WIDTH: usize = 120;
+
+/// The width of a line past `MAX_LINE_WIDTH` that could wrap, or `None`. A line cannot wrap where the word that
+/// crosses the limit is a URL, or is the first word after the line's lead (`//`, `#`, `-`, `>`, `1.`): no break
+/// before it would help. A code span or wiki link counts as one word, since a wrap never splits one.
+pub fn overlong(line: &str) -> Option<usize> {
+    let width = line.chars().count();
+    if width <= MAX_LINE_WIDTH {
+        return None;
+    }
+    let chars: Vec<char> = line.chars().collect();
+    let mut index = 0;
+    let mut content_before = false;
+    while index < chars.len() {
+        if chars[index].is_whitespace() {
+            index += 1;
+            continue;
+        }
+        let start = index;
+        while index < chars.len() && !chars[index].is_whitespace() {
+            let closer = match (chars[index], chars.get(index + 1)) {
+                ('`', _) => Some("`"),
+                ('[', Some('[')) => Some("]]"),
+                _ => None,
+            };
+            index += 1;
+            if let Some(closer) = closer {
+                let rest: String = chars[index..].iter().collect();
+                index = rest.find(closer).map_or(chars.len(), |at| index + rest[..at].chars().count() + closer.len());
+            }
+        }
+        let word: String = chars[start..index].iter().collect();
+        if index > MAX_LINE_WIDTH {
+            return (content_before && !word.contains("://")).then_some(width);
+        }
+        let lead = word.chars().all(|ch| "/!*#->+|".contains(ch))
+            || (word.ends_with(['.', ')']) && word[..word.len() - 1].chars().all(|ch| ch.is_ascii_digit()));
+        content_before |= !lead;
+    }
+    None
+}
+
+/// The message for a line past `MAX_LINE_WIDTH`: the comments and vault checks say it the same way.
+pub fn too_wide(width: usize) -> String {
+    format!("a {width}-character line: wrap it at {MAX_LINE_WIDTH} (tools/rewrap does it without changing a word)")
+}
+
 /// History belongs in git and pull requests. These mark it in a comment.
 fn history_marker(words: &str) -> Option<&'static str> {
     if has_date(words) {
@@ -343,6 +391,7 @@ pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
         } else {
             rust_comments(text)
         };
+        let source_lines: Vec<&str> = text.lines().collect();
         for comment in comments {
             let mut in_example = false;
             let mut counted = 0;
@@ -360,6 +409,9 @@ pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
                     example_lines += 1;
                 } else if !words.is_empty() {
                     counted += 1;
+                }
+                if let Some(width) = overlong(source_lines[line - 1]).filter(|_| !in_example) {
+                    problems.push(Problem::new("comments", path, Some(*line), too_wide(width)));
                 }
             }
             // A fence never closed is no example: its lines count like any other.

@@ -84,8 +84,8 @@ export function otherHand(dress: Dress): Dress | null {
 }
 
 /** Whether the figure and the hands hold the weapon out in a fight this frame. While the rules are busy they keep the
- *  weapon the frame before held (`kept`): they take up another only at rest. The drink's flask takes the hands, so it is
- *  put away while a drink lasts; and the frame after one (`drank`) it comes from the player's own dress (`worn`), as
+ *  weapon the frame before held (`kept`): they take up another only at rest. The drink's flask takes the hands, so it
+ *  is put away while a drink lasts; and the frame after one (`drank`) it comes from the player's own dress (`worn`), as
  *  the frame before had it put away only for the drink. */
 export function drawnInFight(hands: {
   readonly holding: boolean;

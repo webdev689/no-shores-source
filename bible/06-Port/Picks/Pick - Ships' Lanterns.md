@@ -38,8 +38,8 @@ only close. The owner asked for it to come over, Come Sail Away's port with it, 
 ## What stays behind
 
 The lantern's picture DFO read from Daggerfall's files, and the mod's prefabs it hung them on: the lanterns are drawn
-on our own hulls. The crew's night watch and the lookout's cry, and DFO's struck pirate showing her lanterns, which the decision does
-not ask for. A lantern lit by a
+on our own hulls. The crew's night watch and the lookout's cry, and DFO's struck pirate showing her lanterns, which the
+decision does not ask for. A lantern lit by a
 ship's guns firing. The stern windows lit with the lanterns: our hulls' windows are not told apart in their meshes.
 
 ## Our version

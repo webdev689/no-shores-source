@@ -125,14 +125,15 @@ passages' own pieces standing in it with their solids.
   stands 0.45 m further out (`MOUTH_BACK_M`), its whole piece in front of the wall's face, so its way on's daylight
   shows through its arch. Its lamp stands in its greatest room but the
   way in's, three cells or more each way, on the quiet cell nearest the room's middle where its plinth and stones,
-  facing the arrival, stand on its rooms' floor clear of every prop, fixture, landmark, pillar and doorway, else in the next room as great
-  and as tall. A zone is forged one storey deep (`forge_storeys`) from the first of its seeds where its floor gives
-  its deal every spot it wants, every way on its mouth and its foes a post; a
+  facing the arrival, stand on its rooms' floor clear of every prop, fixture, landmark, pillar and doorway, else in the
+  next room as great and as tall. A zone is forged one storey deep (`forge_storeys`) from the first of its seeds where
+  its floor gives its deal every spot it wants, every way on its mouth and its foes a post; a
   lamp's zone also where a room but the way in's is tall enough and the lamp stands clear, and a Hold's where its ring
-  lies whole on the room floor at its spot (no rock or corridor cell, nor the dungeon's edge, within 6 m of its middle), the spot
-  where the ring lies whole, else where most of it does. A band's post is the
+  lies whole on the room floor at its spot (no rock or corridor cell, nor the dungeon's edge, within 6 m of its middle),
+  the spot where the ring lies whole, else where most of it does. A band's post is the
   middle of a room's cells that no prop, fixture or landmark fills, the way in's room's none but in a zone laid as one
-  great room, whose post is its clear floor farthest from the arrival; a room with no such floor stands no post; the deal's spots are quiet cells that hold none.
+  great room, whose post is its clear floor farthest from the arrival; a room with no such floor stands no post; the
+  deal's spots are quiet cells that hold none.
 - **Above ground**: a hollow 38, 55 or 75 m across, its floor's outline of its form (round, a winding ravine with
   rounded ends, terraced shelves, a squared court, a long strand, a grove) on a grid of heights 2 m apart, rolling a
   little and stepping down in shelves, each easing into the next over an 8 m bank; its walls rise 12 to 25 m within
@@ -145,32 +146,33 @@ passages' own pieces standing in it with their solids.
   their feet (the round and the split, never the small stacked one), trees, shrubs and grass by its form, a court's
   ruins, a strand's wrecks, each keeping its footprint (a plant's at least 2 m, as far as the page's plant for it
   spreads) 5 m from the arrival, 2.5 m from a mouth, 4.5 m from the lamp, 1 m past each band's 2.5 m spread and a metre
-  past a Hold's ring, tried at up to eight places (a wreck 16 whole, then 16 at seven tenths its size and 16 at half); a plant whose
-  footprint meets a ruin's or a wreck's is pulled up. A Hold's ring stands the farthest from the way in where it lies
-  whole inside the floor's ring and its stones keep 2.5 m from a mouth, its floor
+  past a Hold's ring, tried at up to eight places (a wreck 16 whole, then 16 at seven tenths its size and 16 at half); a
+  plant whose footprint meets a ruin's or a wreck's is pulled up. A Hold's ring stands the farthest from the way in
+  where it lies whole inside the floor's ring and its stones keep 2.5 m from a mouth, its floor
   levelled a metre past it and eased into the floor round it over 4 m, so its stones lie in it; the page grows no meadow
   there.
   Its mouths stand a metre inside its edge, its floor's ring (`Hollow::ring`, where the page grows its
   meadow) half a metre inside it.
 - **Laid where a body walks** (`Walk`): a zone is laid until a body, kept 0.5 m off every wall and solid and walking
   no steeper than 0.7, walks from the arrival to within 2.5 m of every onward mouth, the lamp and every spot, and
-  within a blow (1.45 m) of every post and a Reckoning's collectors' spots: under ground (one storey, the only plane a walk maps) from each next seed, above
-  ground dressed again, up to eight times, the laying that misses fewest kept. The page's door keeps the last zone it
-  laid, so a zone's plan, its heights and its local room are laid once.
+  within a blow (1.45 m) of every post and a Reckoning's collectors' spots: under ground (one storey, the only plane a
+  walk maps) from each next seed, above ground dressed again, up to eight times, the laying that misses fewest kept. The
+  page's door keeps the last zone it laid, so a zone's plan, its heights and its local room are laid once.
 - **The pieces**: the way in, the onward mouths, the lamp (a plinth 1.6 m square in a ring of five standing stones
   3.5 m out, facing the arrival turned half a stone's step, so the way from it comes in between two stones, each
   stone's solid its drawn slab at its widest, 1.08 m across its broad face and 0.58 m through, in three pieces along
-  its face, each turned with it and held as the square round its turned corners: `Kind::solids_at`), and what the deal stands on the spots farthest from the way in: three dead lamps for a Kindle, three
-  tally posts for a Sever, six nodes for a vein, a reliquary, a Hold's ring (`passage.ring`, no solid: 32 worn flat stones of the grey-green
-  stone laid end to end in the floor on its 6 m, none 5 cm over it, so a body walks over it).
+  its face, each turned with it and held as the square round its turned corners: `Kind::solids_at`), and what the deal
+  stands on the spots farthest from the way in: three dead lamps for a Kindle, three tally posts for a Sever, six nodes
+  for a vein, a reliquary, a Hold's ring (`passage.ring`, no solid: 32 worn flat stones of the grey-green stone laid end
+  to end in the floor on its 6 m, none 5 cm over it, so a body walks over it).
 
 ## A dive
 
 - **A dive is kept with the character** (`gear::dive::Dive`): its island and week, its route, the patrol zone's
   mouth it began at and the seas that zone's room was at (Home goes back to them), the zone it is in, that zone's
   depth and the depth it began at, whether the zone's deal was done while the player was in it, the deepest lamp lit,
-  the zones whose caches it was paid, whether the sea has kept it, and its haul. An old save reads with none, and a dive kept before its seas at Normal; a later build's
-  keys are kept.
+  the zones whose caches it was paid, whether the sea has kept it, and its haul. An old save reads with none, and a dive
+  kept before its seas at Normal; a later build's keys are kept.
 - **The haul** holds what is found in a passage zone: Vestiges picked up, items found as themselves, gathered
   resources, a cache's fragments, Vestiges left lying as the player goes on, and the cold lantern. While the player
   stands in a zone of their dive, the gear's own keeping (`pick_up`, `keep_found`, `gather`, `post`) sends each find
@@ -209,25 +211,26 @@ passages' own pieces standing in it with their solids.
   lamp's guard is an Elite band at the first lamp, the Reeve and an Elite band at the second, the Tithe-Mate and an
   Elite band at the third, and at the fourth one of the island's two Elite Dungeons' Bosses, the week's by turns, and
   two Elite bands. Above ground a band's places and its beat keep inside the hollow's floor, its beat a band's spread
-  in from the floor's edge, as under ground they keep inside the section. A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
-  Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
-  A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find
-  (`lamps::KILL_SHARE`), and so of the officer and boon XP that follow it; Bountiful's more Vestiges are paid whole
+  in from the floor's edge, as under ground they keep inside the section. A vault stands a dungeon's garrison with its
+  Miniboss in the end room (the Reeve to depth 10, the Tithe-Mate past it), and no cache chest of its own: its cache is
+  the passage's. A guard never stands again by itself. A foe of a passage zone pays three quarters of a kill as it
+  falls, its XP, Aurem and chances of a find (`lamps::KILL_SHARE`), and so of the officer and boon XP that follow it;
+  Bountiful's more Vestiges are paid whole
   ([[A Passage Kill's Share Scales the XP That Follows It, and the Passages Read Gear's Week]]).
 - **The most foes** a zone's bands stand is by its size (`Size::foes_most`): 7, 9 and 12 (small, medium, large), a
   hollow laying half as many posts (`Size::posts`); Crowded's extra foes are not counted, so it holds as many bands,
   and a band past it is held back. Its waves are held to the same most apart from the
-  bands (Crowded's more in a wave on top), so a reliquary's keepers and a vein's waves come while its bands stand. It rises
-  by three for each player in the zone past the first (`zone_foes_most`), and a band held back stands once the bands
-  stood leave room for it and no player is within 12 m of its post. A wave brings a foe more for each player past the
-  first, three at most, and a Miniboss or a Boss stands with half its health more for each, the most players seen at
+  bands (Crowded's more in a wave on top), so a reliquary's keepers and a vein's waves come while its bands stand. It
+  rises by three for each player in the zone past the first (`zone_foes_most`), and a band held back stands once the
+  bands stood leave room for it and no player is within 12 m of its post. A wave brings a foe more for each player past
+  the first, three at most, and a Miniboss or a Boss stands with half its health more for each, the most players seen at
   once, as a public event's waves and great foes do ([[Public Events]]). Every one who takes part is paid the whole
   cache.
 - **The week's two modifiers** are the zone's run's, weighing the runs' hooks (`run.rs`); **the zone's currents**
   weigh them too at the depth's strength: Kindled and Sharpened a blow, Shielded the share shielded, Frail a heal, Spent
   a recharge, Hardened every foe's health, Crowded and Veteran each band, Gloom a darkness while the deal runs (no
-  respawn, only a revive, and a company all down falls back to the arrival, its hauls lost), Bountiful more Vestiges from a kill, Rich
-  Seam one more from a node.
+  respawn, only a revive, and a company all down falls back to the arrival, its hauls lost), Bountiful more Vestiges
+  from a kill, Rich Seam one more from a node.
 
 ## The deal
 
@@ -248,12 +251,13 @@ A dead lamp kindles, a reliquary opens and the ring is held only while no foe st
 (`CONTEST_M`); a hold begun with one near is refused so (`FoesNear`). A wave is two to four of the zone's roster
 taking its currents (Crowded's more, Veteran's Majors, Hardened's health) standing at the post or spot nearest a
 player but 12 m from every one, each hunting the nearest player. A wave's foe, and a deal's target, stands on the
-floor at the navmesh's point nearest its place, never on a dungeon's rock or on a solid's top. Done, the deal has it done for the dive of each player in the zone, opening their mouths,
-and pays its cache, once a dive, to those who took part: who brought down one of its foes, lit a dead lamp, opened
-the reliquary, gathered a node of the vein, held the ring or reached the far mouth; only they count it toward the passages' bounties and the Atheric bounties. In a public room it begins again 60 s on, its guards and targets standing again, its bands as the players there
-now make room for (a Hunt's marked band always among them), the rest standing again as more come; a player who came after
-it was done goes on once that round is done. A company's room does not begin again, and a member who comes after it
-was done finds it done.
+floor at the navmesh's point nearest its place, never on a dungeon's rock or on a solid's top. Done, the deal has it
+done for the dive of each player in the zone, opening their mouths, and pays its cache, once a dive, to those who took
+part: who brought down one of its foes, lit a dead lamp, opened the reliquary, gathered a node of the vein, held the
+ring or reached the far mouth; only they count it toward the passages' bounties and the Atheric bounties. In a public
+room it begins again 60 s on, its guards and targets standing again, its bands as the players there now make room for (a
+Hunt's marked band always among them), the rest standing again as more come; a player who came after it was done goes on
+once that round is done. A company's room does not begin again, and a member who comes after it was done finds it done.
 
 ## Rewards
 
@@ -285,33 +289,35 @@ was done finds it done.
   gathered. A deal counts, toward them and the Atheric bounties, only for those its cache paid, once a zone
   a dive, so a public round camped counts nothing more and a late Gauntlet nothing. A depth counts as a player goes
   on into a zone, as the zones the dive has gone into from the depth it began at (`Dive::zones_deep`), so a begin at
-  a lamp reaches no depth by itself. They are the town's, at places 15 and 16 after the factions' 6 to 14 (`PASSAGE_PLACES_FROM`,
-  `town_places`), so the town's six keep 0 to 5; the day's record keeps them under the town's keys (`is_town_place`).
+  a lamp reaches no depth by itself. They are the town's, at places 15 and 16 after the factions' 6 to
+  14 (`PASSAGE_PLACES_FROM`, `town_places`), so the town's six keep 0 to 5; the day's record keeps them under the town's
+  keys (`is_town_place`).
 - **Lanternfall** comes only from the first Atheric bounty, its data in `content/gear/atheric_bounties.json`: the
-  cold lantern drops into the haul from a cache past depth 14, 3 times in a hundred, or from the fourth lamp's, 12, for a
-  character of level 27 or more on Saltmere who holds none and has not finished its bounty, each zone rolling only on
+  cold lantern drops into the haul from a cache past depth 14, 3 times in a hundred, or from the fourth lamp's, 12, for
+  a character of level 27 or more on Saltmere who holds none and has not finished its bounty, each zone rolling only on
   the character's first cache of it in a week (`ThisWeek::passage_finds`). 27 is the least level that harms every
   foe of depth 20, as a test holds it to the band and `power::gap`. Kept at a lamp, lit or gone
   home from, the bounty is held and its first step done; then five Kindle missions finished on Saltmere, 100 foes
   brought down there with a thunderlock, and the fourth lamp kindled: at its last step it stands cold for the holder
   (`lamp_cold`), held 3 s as a Kindle's dead lamp is, a wave of the Tithe coming at its guard's fall and every 30 s
-  after while they have not lit it (`keep_cold_lamp`); the last step done, Lanternfall is kept as found. No Vestige or Shape gives it.
+  after while they have not lit it (`keep_cold_lamp`); the last step done, Lanternfall is kept as found. No Vestige or
+  Shape gives it.
 
 ## On the wire
 
-The gear carries the dive (homeward or not, and the seas it began at) and its haul, each island's lamps lit this week and its day's lamp (each
-only where the record is of the room's week and day), and
-the Atheric bounties held and finished; the snapshot the zone's deal as it stands for the player (`PassageSeen`): its key, done,
-the dead lamps lit and targets down, the ring's share held, the seconds left, the waves, whether the mouths are open
-and the lamp lit for the player (their dive in the zone having lit it), and their hold under way (a dead lamp's
+The gear carries the dive (homeward or not, and the seas it began at) and its haul, each island's lamps lit this week
+and its day's lamp (each only where the record is of the room's week and day), and
+the Atheric bounties held and finished; the snapshot the zone's deal as it stands for the player (`PassageSeen`): its
+key, done, the dead lamps lit and targets down, the ring's share held, the seconds left, the waves, whether the mouths
+are open and the lamp lit for the player (their dive in the zone having lit it), and their hold under way (a dead lamp's
 number, 253 for a reliquary, 255 for the lamp). The asks are numbered 91 to 96 (`passage_wire`), after the ships' 86
-to 90, the reliquary's open 96. A page or the host opens a zone's room with `open_passage` (the island, the week, the zone,
-the route and the minute); once the
-week on its clock is past the web's, judged as each join comes, the room refuses players: "The passage has shifted". The passages' refusals are
-`Refusal`'s 173 to 184, answered one more: no dive, no such mouth, the deal not done, no lamp, the lamp not lit, the
-lamp guarded, out of reach, not in a passage; `Shifted`, every ask of a zone whose week's web has turned but Home at a
-lamp already lit; `AlreadyLit`, a dead lamp or the lamp lit already; `Fallen`, any ask while the player is down; and
-`FoesNear`, a hold begun with a foe within 8 m of its piece.
+to 90, the reliquary's open 96. A page or the host opens a zone's room with `open_passage` (the island, the week, the
+zone, the route and the minute); once the
+week on its clock is past the web's, judged as each join comes, the room refuses players: "The passage has shifted". The
+passages' refusals are `Refusal`'s 173 to 184, answered one more: no dive, no such mouth, the deal not done, no lamp,
+the lamp not lit, the lamp guarded, out of reach, not in a passage; `Shifted`, every ask of a zone whose week's web has
+turned but Home at a lamp already lit; `AlreadyLit`, a dead lamp or the lamp lit already; `Fallen`, any ask while the
+player is down; and `FoesNear`, a hold begun with a foe within 8 m of its piece.
 
 ## On the server
 
@@ -334,11 +340,11 @@ lamp already lit; `AlreadyLit`, a dead lamp or the lamp lit already; `Fallen`, a
 room-wasm's passage door (`startPassageDoor`, in an instance of the room module of its own) hands a page a week's web
 (`room_passage_web`, each zone with its foes' levels as its room stands them), a zone laid whole (`room_passage_zone`,
 under ground the Forge's layout as a dungeon's is handed over, above ground the climate its hollow is dressed in, whose
-kit the page draws it from) and a hollow's heights (`room_passage_heights`), built by the same crate; each is read whole and refused, saying
-why, where it does not read. An island with no passages, a zone the web lacks or a style the Forge does not lay yet
-answers empty, read as none. The gear's dive, haul, lamps and Atheric bounties (`passagesOf`) and the snapshot's
-`PassageSeen` (`passageSeenOf`) are read as the page reads the rest of the gear and the snapshot; the asks 91 to 96 go
-as its other asks do, and a refusal is said in the room's words (174 to 185).
+kit the page draws it from) and a hollow's heights (`room_passage_heights`), built by the same crate; each is read whole
+and refused, saying why, where it does not read. An island with no passages, a zone the web lacks or a style the Forge
+does not lay yet answers empty, read as none. The gear's dive, haul, lamps and Atheric bounties (`passagesOf`) and the
+snapshot's `PassageSeen` (`passageSeenOf`) are read as the page reads the rest of the gear and the snapshot; the asks
+91 to 96 go as its other asks do, and a refusal is said in the room's words (174 to 185).
 
 ### Played
 
@@ -349,10 +355,10 @@ The page says only what a choice or an act needs, in short words:
   doors matched by name to the web's mouths) opens the mouths' card (`MouthsCardView`): the run's name; the zone
   beyond as its sign says it and the week's modifiers; the routes ("Public", and "Your company" in a company, else
   "Alone"); Go in (the Use key as bound), a begin for each lamp lit this week ("Lamp 2 · Foes 7-10", the foes of that
-  lamp's zone at the mouth's place, where the room begins it), and Close (Esc). A choice asks to begin, by the mouth's place, its route and the lamp.
-  The card closes once its place is left: another room, the ship or the map, or 10 m from the door. Playing alone,
-  the patrol zone's node file the page writes names its runs' doors as the bake's does (`doorsOf`), so its room lays
-  the same mouths.
+  lamp's zone at the mouth's place, where the room begins it), and Close (Esc). A choice asks to begin, by the mouth's
+  place, its route and the lamp. The card closes once its place is left: another room, the ship or the map, or 10 m from
+  the door. Playing alone, the patrol zone's node file the page writes names its runs' doors as the bake's does
+  (`doorsOf`), so its room lays the same mouths.
 - **The room's yes**: an ask of the passages is yes once the dive has moved (begun, gone on to another zone, or for
   a lamp's Home turned homeward, as the gear carries it); it plays the way between zones while the room gone to is
   joined. A passage refusal is said in a toast, as is no answer in 10 s; other asks answered meanwhile, done or not,
@@ -360,77 +366,84 @@ The page says only what a choice or an act needs, in short words:
   said, as the room's next answer ("Not while foes are near.", "It is lit already.", "Come closer."), and nothing
   waits on it.
 - **A zone's room**: the server's by its name (`passageRoomName`, spelled as the server spells it): the first public
-  room, the next copy (`--2`, `--3`) when one says "This passage is full." (judged full, or at its most sockets), or a company's route's own, a member's
-  room found as runs are. A room is joined once the gear's dive names its zone: a room holds a player it has not
-  judged and sends its snapshots meanwhile, and says it is full only after the judge. A zone gone on to that refuses
-  the dive as come by no way there (the room left shut before the move was saved) sends the page back into the zone
-  it left, where the accounts still keep the dive, saying "You cannot reach this place from where you were."; should
-  the zone left refuse it in turn (its move saved meanwhile), the zone gone on to is joined once more; or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s
-  JSON), the character the last room let go of given to it so the dive goes on. Under ground the zone is a dungeon to
-  the page, its layout drawn by the dungeon's renderer; above ground its hollow is an island to the islands' layer
-  (`zoneIsle`, by an id no sea island has), stood on as a sea island's beach, and drawn alone: no land or sea of the
-  island round it and none of the sea's islands, under its own climate's sky read where its zone lies on the island
-  (`hollowAir`). Its floor is its form's ground (`hollowGround`): a hollow the land's own grass or, named so, chalk; a
-  ravine stony earth; shelves turf, or bare rock; a court paved; a strand sand, or a shell bed's dry sea floor; a
-  grove leaf litter; a chalk hollow's walls chalk; each wearing the land's ground tile for its ground and the walls
-  the caverns' rock ([[Island Drawing]], [[The Islands and the Passages' Hollows Wear the Procedural Textures]]);
-  and the page grows the islands' kit's grass and shrubs over it by its form (`meadow`), which stand nothing solid,
-  so the room's ground is as it lays it. Under ground its way in offers no Leave. Either way the body is predicted on the zone's own ground from the same ask (`fighter_passage`,
-  `set_passage`): the ground and blocks its room stands bodies on (`passage_ground`), under ground the Forge's floor
-  and the pieces' solids, above ground the hollow's heights, its dressing's blocks and the pieces' solids.
+  room, the next copy (`--2`, `--3`) when one says "This passage is full." (judged full, or at its most sockets), or a
+  company's route's own, a member's room found as runs are. A room is joined once the gear's dive names its zone: a room
+  holds a player it has not judged and sends its snapshots meanwhile, and says it is full only after the judge. A zone
+  gone on to that refuses the dive as come by no way there (the room left shut before the move was saved) sends the page
+  back into the zone it left, where the accounts still keep the dive, saying "You cannot reach this place from where you
+  were."; should the zone left refuse it in turn (its move saved meanwhile), the zone gone on to is joined once more;
+  or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s JSON), the character the
+  last room let go of given to it so the dive goes on. Under ground the zone is a dungeon to the page, its layout drawn
+  by the dungeon's renderer; above ground its hollow is an island to the islands' layer (`zoneIsle`, by an id no sea
+  island has), stood on as a sea island's beach, and drawn alone: no land or sea of the island round it and none of the
+  sea's islands, under its own climate's sky read where its zone lies on the island (`hollowAir`). Its floor is its
+  form's ground (`hollowGround`): a hollow the land's own grass or, named so, chalk; a ravine stony earth; shelves turf,
+  or bare rock; a court paved; a strand sand, or a shell bed's dry sea floor; a grove leaf litter; a chalk hollow's
+  walls chalk; each wearing the land's ground tile for its ground and the walls the caverns' rock ([[Island Drawing]],
+  [[The Islands and the Passages' Hollows Wear the Procedural Textures]]); and the page grows the islands' kit's grass
+  and shrubs over it by its form (`meadow`), which stand nothing solid, so the room's ground is as it lays it. Under
+  ground its way in offers no Leave. Either way the body is predicted on the zone's own ground from the same ask
+  (`fighter_passage`, `set_passage`): the ground and blocks its room stands bodies on (`passage_ground`), under ground
+  the Forge's floor and the pieces' solids, above ground the hollow's heights, its dressing's blocks and the pieces'
+  solids.
 - **Home**: the lamp's Home turns the dive homeward; the page joins the patrol zone's room at the seas the dive began
   at, and the way comes down to where the room stands the player, 2 m before the mouth the dive began at toward its
   run's end arena and facing away from the door (`stand_before_mouth`, `homeSpot` alone), once its first snapshot of
   the body has come.
 - **In a zone**: the deal stands in the tracker (`dealTracker`), keyed to the room's word: headed where the zone lies
-  ("Depth 7 · lamp 2 in 3"), its kind ("Kindle") over its steps, the zone's own name the place's; the deal's steps ("Light the dead lamps 1/3", a
-  hold's clock; a vein's guard, then its six nodes counted; a reliquary's guard), all done once the player's mouths
-  are open, whatever the round does after; a public round done before the player came, "Done before you came: begins
-  again" with its clock (a route's round, never begun again, stands done); a Gauntlet's clock until its far
-  mouth is reached; in a lamp's zone "Light the lamp"; then the way on ("Go on through a mouth", at a lit
-  lamp "Go on, or Home at the lamp", at the deepest "Home at the lamp"); and in the last ten minutes before
+  ("Depth 7 · lamp 2 in 3"), its kind ("Kindle") over its steps, the zone's own name the place's; the deal's steps
+  ("Light the dead lamps 1/3", a hold's clock; a vein's guard, then its six nodes counted; a reliquary's guard), all
+  done once the player's mouths are open, whatever the round does after; a public round done before the player came,
+  "Done before you came: begins again" with its clock (a route's round, never begun again, stands done); a Gauntlet's
+  clock until its far mouth is reached; in a lamp's zone "Light the lamp"; then the way on ("Go on through a mouth", at
+  a lit lamp "Go on, or Home at the lamp", at the deepest "Home at the lamp"); and in the last ten minutes before
   Tuesday 09:00 UTC "The web shifts" with its clock. The compass points at what the deal asks next, in place of the
   houses' roads ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]], `passageWaypoint`): the nearest
   foe standing, the Marked or a collector; a dead lamp still cold, a tally post whole, a node ungathered; the ring or
-  the reliquary; a Gauntlet's far mouth, though its mouths are open from the start; once the player's mouths are open, a lamp's zone's lamp until lit, then the
-  nearest way on (the lamp again where there is none, for Home); a round done before they came, nothing. Each mission is named by its kind (Kindle, Hold, Hunt, Reckoning,
-  Gauntlet, Ambush, Sever) on its sign, the card, the tracker and the map. Near an onward mouth its sign shows a Gauntlet's far mouth as its goal ("The far mouth: reach it in time"), the
-  zone beyond by name; on one line its kind ("Kindle", a lamp's "Lamp 3"), depth ("Depth 8"), foes' levels ("Foes
-  15-18", in the loss's colour where the strongest stands three or more over the player) and "Public way" where it
-  lies on the week's public way; what its deal asks ("Light 3 dead lamps", "Hold the ring 90 s"); its currents; and,
-  shut, "Shut until this place's work is done.", the room's own words; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts
-  the hold, with its second line beneath ("Keeps what you carry"; once lit, "Or go on"); once lit E there is Home. The fourth lamp standing cold for one on Lanternfall's last step says "Kindle
-  the lamp" ("The Tithe come while you hold"), and the tracker "Kindle the cold lamp". E held at a dead lamp kindles it; one lit already is passed over for a mouth beside it. A vein's six nodes stand
-  as the island's resource nodes do, drawn where the room stands them for the player and gathered by E held, under
-  ground among the dungeon's figures. A begin at a lamp lays the lamp's zone the room begins it at (the mouth's place
-  among the mouths, or the last). E let go ends a hold, as a gather's. The haul
-  stands on the right while anything is carried, its first five lines and then "and 4 more" (on a phone's narrow view two, under the tracker), no wider than the view,
-  with "Lost if you fall or leave"; the leave held adds "What you carry is lost"; a respawn
-  that empties it says "What you carried is lost." The cold lantern found stands a moment low in the view (on a narrow one in
-  the haul's place), its name in the Atheric colour and its words. Home asked again once the dive has turned homeward goes home at once. The place's
-  line reads "Passage"; a company member in one is "In the passages", and Go to them says to go in at a mouth.
+  the reliquary; a Gauntlet's far mouth, though its mouths are open from the start; once the player's mouths are open, a
+  lamp's zone's lamp until lit, then the nearest way on (the lamp again where there is none, for Home); a round done
+  before they came, nothing. Each mission is named by its kind (Kindle, Hold, Hunt, Reckoning, Gauntlet, Ambush, Sever)
+  on its sign, the card, the tracker and the map. Near an onward mouth its sign shows a Gauntlet's far mouth as its goal
+  ("The far mouth: reach it in time"), the zone beyond by name; on one line its kind ("Kindle", a lamp's "Lamp 3"),
+  depth ("Depth 8"), foes' levels ("Foes 15-18", in the loss's colour where the strongest stands three or more over the
+  player) and "Public way" where it lies on the week's public way; what its deal asks ("Light 3 dead lamps", "Hold the
+  ring 90 s"); its currents; and, shut, "Shut until this place's work is done.", the room's own words; E there goes on
+  through it once open. E held at the lamp lights it, its prompt ringed as the room counts the hold, with its second
+  line beneath ("Keeps what you carry"; once lit, "Or go on"); once lit E there is Home. The fourth lamp standing cold
+  for one on Lanternfall's last step says "Kindle the lamp" ("The Tithe come while you hold"), and the tracker "Kindle
+  the cold lamp". E held at a dead lamp kindles it; one lit already is passed over for a mouth beside it. A vein's six
+  nodes stand as the island's resource nodes do, drawn where the room stands them for the player and gathered by E held,
+  under ground among the dungeon's figures. A begin at a lamp lays the lamp's zone the room begins it at (the mouth's
+  place among the mouths, or the last). E let go ends a hold, as a gather's. The haul stands on the right while anything
+  is carried, its first five lines and then "and 4 more" (on a phone's narrow view two, under the tracker), no wider
+  than the view, with "Lost if you fall or leave"; the leave held adds "What you carry is lost"; a respawn that empties
+  it says "What you carried is lost." The cold lantern found stands a moment low in the view (on a narrow one in the
+  haul's place), its name in the Atheric colour and its words. Home asked again once the dive has turned homeward goes
+  home at once. The place's line reads "Passage"; a company member in one is "In the passages", and Go to them says to
+  go in at a mouth.
 - **The pieces** stand as the deal stands for the player (`PieceState`): a mouth open or shut, the lamp and the dead
   lamps lit (gold) or cold (grey), a tally post whole or broken, the reliquary shut or opened. Above ground they are
   the islands' kit's `passage` modules, placed in the hollow (`withPieces`), a lamp's and a dead lamp's lantern (the
-  kit's ember) glowing once lit and the kit's stone while cold, no flame seen in its cage ([[An Enclosed Light Hides Its Flame]]) and its light a
-  lantern's at the glass, as the islands light every ember ([[Island Drawing]], "The lights"); only while that pack
-  has not come do they stand as plain boxes. Under ground they are the dungeon pack `passage`'s modules (`passagePiecesLaid`), laid at each piece's
-  foot turned to its facing, in the pictures of the cell it stands on, into a mesh of the dungeon's own made again as
-  the deal's state changes; a lamp's and a dead lamp's `glow` part is lit, or the cell's stone while cold, and an open
-  mouth's is daylight, drawn as light. The lamp lit burns with no flame seen, its caged glass glowing and its light at
-  the cage's middle 3.2 m up, across its room, and each dead lamp lit as a lantern at its small cage off its crook,
-  each glass flickering with its light ([[Dungeons]], "Its flames"); an open mouth shows its way on in daylight's
-  pale light behind its face (`passagePieceLights`), lighting the room as its torches do. While the pack is
-  coming, or if it fails, they are plain boxes to their solids' sizes (`pieceMesh`).
+  kit's ember) glowing once lit and the kit's stone while cold, no flame seen in its cage
+  ([[An Enclosed Light Hides Its Flame]]) and its light a lantern's at the glass, as the islands light every ember
+  ([[Island Drawing]], "The lights"); only while that pack has not come do they stand as plain boxes. Under ground they
+  are the dungeon pack `passage`'s modules (`passagePiecesLaid`), laid at each piece's foot turned to its facing, in the
+  pictures of the cell it stands on, into a mesh of the dungeon's own made again as the deal's state changes; a lamp's
+  and a dead lamp's `glow` part is lit, or the cell's stone while cold, and an open mouth's is daylight, drawn as light.
+  The lamp lit burns with no flame seen, its caged glass glowing and its light at the cage's middle 3.2 m up, across its
+  room, and each dead lamp lit as a lantern at its small cage off its crook, each glass flickering with its light
+  ([[Dungeons]], "Its flames"); an open mouth shows its way on in daylight's pale light behind its face
+  (`passagePieceLights`), lighting the room as its torches do. While the pack is coming, or if it fails, they are plain
+  boxes to their solids' sizes (`pieceMesh`).
 
 ### The way between zones
 
 `wayOf` lays the way's rails and `wayAt` plays it, on the cinema's rails ([[Cinema]]), kept under way by
-`WayBetween`, which a crossing gate between two patrol zones plays too ([[Layouts]], "Gates"); in the flow ([[Game]], "The
-flow") a mouth, a begin or a Home is `passing`, drawn over the island from the way's camera with the web's places and
-the way's dots over it, the place's prompt, tracker, crosshair and fight display stood down (`heldHud`); in the leave
-and from the way down the place is drawn as on foot, the player's inputs held, and the flow is on foot again once the
-way has played. The walks are the room's own: the way steps the body forward (`FootAsk.walk`), so it walks as any
+`WayBetween`, which a crossing gate between two patrol zones plays too ([[Layouts]], "Gates"); in the flow ([[Game]],
+"The flow") a mouth, a begin or a Home is `passing`, drawn over the island from the way's camera with the web's places
+and the way's dots over it, the place's prompt, tracker, crosshair and fight display stood down (`heldHud`); in the
+leave and from the way down the place is drawn as on foot, the player's inputs held, and the flow is on foot again once
+the way has played. The walks are the room's own: the way steps the body forward (`FootAsk.walk`), so it walks as any
 body does and stops where the ground and solids stop it. A way on is asked of the room only once the zone beyond is
 laid (`laidOrTold`), or the player is told it cannot be. A way that fails brings the veil down and takes the player
 back, to the patrol zone from a zone, or to the hub, told why (`wayOut`, `tripOrBack`).
@@ -449,10 +462,12 @@ back, to the patrol zone from a zone, or to the hub, told why (`wayOut`, `tripOr
 Held in a passage zone, under ground or above, the held map shows the web as a land sheet (`passageSheet`,
 [[Held Map]], "On land") in place of the land's: every zone a mark at its place by its deal's glyph, each mission by
 its kind's own (the map's table saying each), named beside its mark by its foes' levels alone ("15-18"; a lamp by its
-number too, "Lamp 2 lit · 7-10" once lit this week), in the loss's ink where they stand too strong for the player; the patrol zone by its name; every way of the
-web washed faint, the week's public way inked from zone to zone, the way come this dive a track and the ways on from the player's zone footpaths; "You" at the
-player's zone. It opens on the whole web, every mark inside it; a zone's name stands under, over or beside its mark or
-not at all, and those too close to be lettered at that scale come as the wheel draws in. Over the island, the way's places are every zone's and the patrol zone's.
+number too, "Lamp 2 lit · 7-10" once lit this week), in the loss's ink where they stand too strong for the player; the
+patrol zone by its name; every way of the web washed faint, the week's public way inked from zone to zone, the way come
+this dive a track and the ways on from the player's zone footpaths; "You" at the player's zone. It opens on the whole
+web, every mark inside it; a zone's name stands under, over or beside its mark or not at all, and those too close to be
+lettered at that scale come as the wheel draws in. Over the island, the way's places are every zone's and the patrol
+zone's.
 
 ### The Journal and the board
 
@@ -473,12 +488,13 @@ and a file of one's own asks for any other. Every picture is drawn by the game's
   style (`ground`) and `size`; the pieces' `state` and `done`; the size in pixels; and the eye behind the arrival
   (`eye`: metres back and up, and its pitch), over the zone (`above`), some metres before the first piece of a kind
   (`aim`; a lamp from its arrival's side), or from the game's own camera behind a body at the arrival (`own`, and under
-  ground wherever no `eye` is asked, its boom kept off the way in's leaf), or above ground some metres (`back`, 3 unless said)
-  short of the placement nearest it whose module begins `near` (a strand's wreck), facing it. Above ground the hollow is the islands' layer's ground and modules and the land's own plants
-  (`IslesNature`), lit and shadowed by the sky of its climate where it lies at the world's `hour`, its embers' fires
-  burning and their lamps lit as the game's scene draws them, under a plain sky
-  colour where the game draws its dome; under ground the dungeon's scene (`DungeonScene`) with its torches and the
-  pieces' lights. The pieces' boxes are drawn only while their pack has not come, as in the game.
+  ground wherever no `eye` is asked, its boom kept off the way in's leaf), or above ground some metres (`back`, 3 unless
+  said) short of the placement nearest it whose module begins `near` (a strand's wreck), facing it. Above ground the
+  hollow is the islands' layer's ground and modules and the land's own plants (`IslesNature`), lit and shadowed by the
+  sky of its climate where it lies at the world's `hour`, its embers' fires burning and their lamps lit as the game's
+  scene draws them, under a plain sky colour where the game draws its dome; under ground the dungeon's scene
+  (`DungeonScene`) with its torches and the pieces' lights. The pieces' boxes are drawn only while their pack has not
+  come, as in the game.
 - **The way between zones**: `wayShot`, its dots framed over the island at the moment `loadDoor` is given (seconds
   from the way's start), over a plain ground: the island's land is the sea's view's, not drawn here.
 - **The map and the panels**: `mapShot` (a call), the mouths' card (`mouthsShot`), the sign, haul and lamp's prompt
@@ -489,7 +505,8 @@ and a file of one's own asks for any other. Every picture is drawn by the game's
 - A body may scramble aslant up a hollow's wall to its lip (`crates/passage/src/hollow.rs`). No foe walks there, but a
   foe pressed into a hollow's cliff, backing off or fleeing, takes hold of it and climbs to its top, where only a
   player who climbs after it reaches it.
-- A small strand stands its three hulls, some at seven tenths or half their size, and its mast and planks only where they fit.
+- A small strand stands its three hulls, some at seven tenths or half their size, and its mast and planks only where
+  they fit.
 - The way comes down over a hollow's arrival clear of its ground and blocks (`passageZone.test.ts`, four weeks'
   hollows), and the foot's camera keeps off the hollow's heights and its dressing's blocks; where a module's mesh
   reaches past the blocks it stands as (a cliff's face, a wreck's timbers), the eye behind the body can still stand

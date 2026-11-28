@@ -72,7 +72,8 @@ async function withHands(
 
 /** Each gun's name among the forge's held layers. */
 const GUN_ARCHIVE = { thunderlock: 'THUNDERLOCK', pistolet: 'PISTOLET' } as const;
-/** A gun's sprint, its carry at a run, sits this far under the screen's foot so the stride's dip never shows its cut. */
+/** A gun's sprint, its carry at a run, sits this far under the screen's foot so the stride's dip never shows its
+ *  cut. */
 const CARRY_SUNK = 4;
 
 /** A gun's frame (`record` 0 its shot, 1 its carry at a run): the gun as drawn, plain or gilded, under the hands in the

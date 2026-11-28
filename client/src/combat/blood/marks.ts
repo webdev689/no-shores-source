@@ -267,9 +267,9 @@ export class BloodMarks {
     return false;
   }
 
-  /** One spray of `count` drops within `radius` of `where`. Each finds its own surface: the wall between it and the body
-   *  first, else the floor below, or one in four a ceiling above; one that finds none leaves nothing. Drop zero, the
-   *  pool, is laid at once; every other flies to its mark. */
+  /** One spray of `count` drops within `radius` of `where`. Each finds its own surface: the wall between it and the
+   *  body first, else the floor below, or one in four a ceiling above; one that finds none leaves nothing. Drop zero,
+   *  the pool, is laid at once; every other flies to its mark. */
   private spray(
     where: Vector,
     count: number,

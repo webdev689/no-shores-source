@@ -223,8 +223,9 @@ fn an_alerted_foe_wakes_an_idle_ally_within_twelve_metres_and_not_one_at_twenty(
     assert_eq!(room.shouts.len(), 1, "a woken ally does not shout again");
 }
 
-/// A crew archer standing as a foe, already alert, shooting at a player 20 m off, and a foe of the type numbered `number` 3.6 m behind
-/// the archer, facing away: how alert that foe is each tick, until the archer's second shot, and the shots.
+/// A crew archer standing as a foe, already alert, shooting at a player 20 m off, and a foe of the type numbered
+/// `number` 3.6 m behind the archer, facing away: how alert that foe is each tick, until the archer's second shot, and
+/// the shots.
 fn beside_an_archer(number: u8) -> (Vec<foes::Alertness>, usize) {
     let room = Room::new(2).player(PLAYER, 0.0, 0.0, 0.0).foe(10, ARCHER, Major, 0.0, -20.0, PI);
     let mut room = room.foe(11, number, Major, 3.0, -22.0, 0.0).alert(10, PLAYER);

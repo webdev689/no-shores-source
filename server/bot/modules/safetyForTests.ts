@@ -191,7 +191,8 @@ export function slash(
   };
 }
 
-/** The Worker with the safety modules, moderation's settings saved, the ranked server seen, and a remembering Discord. */
+/** The Worker with the safety modules, moderation's settings saved, the ranked server seen, and a remembering
+ *  Discord. */
 export async function standSafetyWorker(moderation: Settings = {}, enabled = true) {
   const bot = await standWorker({ modules: SAFETY });
   const discord = safetyDiscord(bot.discord.fetch);

@@ -1,5 +1,6 @@
-// What Use (E, or as bound) does where the player stands, shown as Destiny shows it: a keycap and the deed, low in the middle of the
-// view, above the player's bars; gone when nothing is within reach. The game draws it as a layer of its own.
+// What Use (E, or as bound) does where the player stands, shown as Destiny shows it: a keycap and the deed, low in the
+// middle of the view, above the player's bars; gone when nothing is within reach. The game draws it as a layer of its
+// own.
 import { TONES } from '../plus/tones.ts';
 import { boundCap } from './controls.ts';
 import { keycap } from './hudParts.ts';

@@ -1,7 +1,7 @@
 //! The Gullwing Vale's handcrafted modules (tools/modules) as the bake lays them, walked by the movement rules: up the
-//! Old Stones' flights onto their upper tier, from the coven through the tunnel's mouth into the cavern and up the chamber's steps onto its shelf,
-//! through the citadel's gate to its ward and its wall-walk, and over every stone bridge; and up every ledge's cliff
-//! stair of Saltmere's three zones to the high place.
+//! Old Stones' flights onto their upper tier, from the coven through the tunnel's mouth into the cavern and up the
+//! chamber's steps onto its shelf, through the citadel's gate to its ward and its wall-walk, and over every stone
+//! bridge; and up every ledge's cliff stair of Saltmere's three zones to the high place.
 
 use city::solids::{Shape, Solid};
 use movement::terrain::Terrain;

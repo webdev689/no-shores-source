@@ -381,9 +381,9 @@ def banner(module, at, facing, field, band):
 
 
 def shore(module, was):
-    """A shore's dressing: as it was, a long table set before the lit hearth, benches, a rug, stained glass in its windows,
-    lit sconces and banners in the colours of no house the vale knows; as it is, the same walls fallen to ragged tops,
-    the table broken, rubble, and crystal."""
+    """A shore's dressing: as it was, a long table set before the lit hearth, benches, a rug, stained glass in its
+    windows, lit sconces and banners in the colours of no house the vale knows; as it is, the same walls fallen to
+    ragged tops, the table broken, rubble, and crystal."""
     for west, south, east, north, toward in ((-18.0, -14.0, -14.0, 14.0, (1.0, 0.0)), (14.0, -14.0, 18.0, 14.0, (-1.0, 0.0)),
                                              (-14.0, 14.0, 14.0, 18.0, (0.0, -1.0))):
         # Bays of 5.6 m leave the north wall's middle to the hearth and its pilasters' faces to banners and sconces.

@@ -1,8 +1,8 @@
-//! A player's part in their guild's week, after Destiny 2's clan XP and weekly clan engrams: a tenth of the XP they earn
-//! given to the guild, at most so much a week; what they did toward each of the week's four guild bounties; and which
-//! of those the guild finished they have claimed. The rooms count it; the accounts add each member's to their guild's
-//! as they save it, and say which bounties the guild has done. The numbers are `content/guilds/guilds.json`, which the
-//! accounts and the page read too.
+//! A player's part in their guild's week, after Destiny 2's clan XP and weekly clan engrams: a tenth of the XP they
+//! earn given to the guild, at most so much a week; what they did toward each of the week's four guild bounties; and
+//! which of those the guild finished they have claimed. The rooms count it; the accounts add each member's to their
+//! guild's as they save it, and say which bounties the guild has done. The numbers are `content/guilds/guilds.json`,
+//! which the accounts and the page read too.
 
 use crate::asks::Refusal;
 use crate::character::{Character, UnknownKeys};
@@ -159,8 +159,8 @@ pub struct GuildWeek {
     pub unknown: UnknownKeys,
 }
 
-/// What the accounts say of a player's guild in a week, as the room holds it: which of the week's bounties the guild has
-/// done, whether the player was in it before the week turned, and the week they read it for (none when they did not
+/// What the accounts say of a player's guild in a week, as the room holds it: which of the week's bounties the guild
+/// has done, whether the player was in it before the week turned, and the week they read it for (none when they did not
 /// say, which judges no claim).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Standing {

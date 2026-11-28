@@ -141,7 +141,8 @@ export async function outpostWorld() {
       .bind(await accountOf(who), JSON.stringify(body))
       .run();
   };
-  /** A socket joining a room and signing in: held until kept; the room told their guild, as the worker's next second. */
+  /** A socket joining a room and signing in: held until kept; the room told their guild, as the worker's next
+   *  second. */
   const join = async (who: string, into = outpost) => {
     const player = into.room.join();
     into.room.hold(player, true);

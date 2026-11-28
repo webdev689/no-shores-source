@@ -57,10 +57,10 @@ stands on it: no beacon or resource is marked there, a way ends at its rim, and 
 corners. Of the 155 drawn nodes, the 74 that are not outpost sites each have their own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
-and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (Saltmere's
-three zones, [[Zones Rise and Fall, Above and Below Ground]]), and an area's `level`, in hundredths of the massif's
-height, sets its own height in place of its kind's (the Vale's Water Meadows lie by the river at 0). A layout
-carries its `stone` out with it, and the client wears it (below).
+and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands
+its places at heights (Saltmere's three zones, [[Zones Rise and Fall, Above and Below Ground]]), and an area's `level`,
+in hundredths of the massif's height, sets its own height in place of its kind's (the Vale's Water Meadows lie by the
+river at 0). A layout carries its `stone` out with it, and the client wears it (below).
 
 ## How a layout is planned
 
@@ -92,37 +92,39 @@ from the sea, fresh water and the claim's edge), then:
    ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]: "Buildings are now open spaces"): its
    doorways stand open, and inside its outline it is lined with plaster, gaps left at its doors with lintels over
    them, and where a taller room opens onto a lower one beside it, lined above that room's top, so its wall over the
-   lower roof is not seen through from inside; floored with planks and ceiled under its eaves, each of the building's windows a hole through its wall and
-   the lining, its picture on both faces and its panes clear, so the room is seen into and out of through it. The planks stand 3 cm over the highest ground under the room
-   (7 cm over its base at least, 40 cm at most), so neither the land nor the model's own floor shows through, and a
-   body walks on them. A wing tall enough has an upper floor on a slab and a stair of 0.2 m risers up to it, along a
-   long wall and from whichever end leaves every door clear: none in its wall within a metre of its run or the
-   landing at its top, none in the end wall at its foot. The well over it is 0.45 m wider than the steps on each
-   side, more than a body's radius, so a head going up beside their edge clears the slab. Its main room is furnished by its kind: a tavern's counter, hearth and benches, a
-   house's bed, hearth and wardrobe, a temple's benches and lectern, a shop's counter and shelves, a table and chairs
-   in the middle. Stone steps lead down from a door whose sill stands over the ground. Wings too low to stand in,
-   outdoor steps and platforms stay solid.
+   lower roof is not seen through from inside; floored with planks and ceiled under its eaves, each of the building's
+   windows a hole through its wall and the lining, its picture on both faces and its panes clear, so the room is seen
+   into and out of through it. The planks stand 3 cm over the highest ground under the room (7 cm over its base at
+   least, 40 cm at most), so neither the land nor the model's own floor shows through, and a body walks on them. A wing
+   tall enough has an upper floor on a slab and a stair of 0.2 m risers up to it, along a long wall and from whichever
+   end leaves every door clear: none in its wall within a metre of its run or the landing at its top, none in the end
+   wall at its foot. The well over it is 0.45 m wider than the steps on each side, more than a body's radius, so a head
+   going up beside their edge clears the slab. Its main room is furnished by its kind: a tavern's counter, hearth and
+   benches, a house's bed, hearth and wardrobe, a temple's benches and lectern, a shop's counter and shelves, a table
+   and chairs in the middle. Stone steps lead down from a door whose sill stands over the ground. Wings too low to stand
+   in, outdoor steps and platforms stay solid.
 4. **The set pieces** of the kinds no block stands, each of forged props and the city's solids, facing the way it
    is entered: a landing's boardwalk, lanterns, stores and a beached boat; a gate's stone arch between palisades; a
    camp's palisade round tents and a fire, its gap toward the path, no stake within a cell and a metre (9 m) of the
    line out through it along the grid's rows or columns, whichever lie more across it, so a cell's middle always lies
-   in the gap for a way to reach the camp by (how it is measured waits on the owner: [[Open Questions]]); a watchtower with a brazier on its battlements; a
-   lighthouse; a jetty; a mill and its wheel; a quarry's stepped faces and crane; a wreck; a graveyard of hulls; ribs
-   and a skull; a broken causeway; a cave's mouth; the wilds' outcrops and broken walls, set every 10 m round a ring
-   at about 0.58 of its reach (an arena's every 8 m) with a share left out, round its standing stone.
+   in the gap for a way to reach the camp by (how it is measured waits on the owner: [[Open Questions]]); a watchtower
+   with a brazier on its battlements; a lighthouse; a jetty; a mill and its wheel; a quarry's stepped faces and crane; a
+   wreck; a graveyard of hulls; ribs and a skull; a broken causeway; a cave's mouth; the wilds' outcrops and broken
+   walls, set every 10 m round a ring at about 0.58 of its reach (an arena's every 8 m) with a share left out, round its
+   standing stone.
 5. **The paths.** A tree of the shortest links between the areas is laid as tracks (4.5 m, at most 18 % steep) and a
    loop or two closed with footpaths (2.6 m, at most 32 %), as Destiny's public areas form a loop; each gate is
    reached by a footpath. Each is the least-cost way over the 8 m grid in sixteen headings (Galin et al.): a step costs
    more the steeper it climbs, water is bridged at a price, a way already laid costs a third so later ways branch
    off it, and a slow noise bends it as worn tracks wander. It ends on a block's own streets and leaves a village
-   between its buildings. No way steps from dry land over a river without setting foot in it, so every crossing is found and
-   bridged; two ways crossing at one place, the second's deck lying on the first's, cross by the first bridge alone
+   between its buildings. No way steps from dry land over a river without setting foot in it, so every crossing is found
+   and bridged; two ways crossing at one place, the second's deck lying on the first's, cross by the first bridge alone
    (`pieces_land.rs` `deck_over`). A way too steep for its tier is laid as a footpath, then stepped; an area no way
    reached is
    joined to the nearest that is. A way that ends at an area's middle stops short of what stands there (a gate's
-   arch, a tower, a hull, the wilds' standing stone), so the piece stays. Bridges carry paths over rivers: a timber deck 0.5 m
-   thick, so a body walks on it, 0.3 m over the land at its higher end, 3 m past each bank and on out along a lower
-   bank until its two ends' land stands within 0.15 m, so a body steps onto it at either end; rails 0.8 m past the
+   arch, a tower, a hull, the wilds' standing stone), so the piece stays. Bridges carry paths over rivers: a timber deck
+   0.5 m thick, so a body walks on it, 0.3 m over the land at its higher end, 3 m past each bank and on out along a
+   lower bank until its two ends' land stands within 0.15 m, so a body steps onto it at either end; rails 0.8 m past the
    walked width; deck and rails laid in lengths short enough that each one's box keeps close to it on a slant, so no
    rail's box reaches onto the way.
    Along every way, beside it and clear of every other way and of what stands: a signpost where it leaves a place and
@@ -141,8 +143,9 @@ from the sea, fresh water and the claim's edge), then:
    runs through near its block (a yard's wall), with its pad and plinth, are left out, and a way bends round the corner
    of a building walked into rather than graze it. A way may not cross a cell reaching under a building walked into, nor
    one whose middle stands under anything else or within a metre of it (`KEEP_OFF_M`), each taken at least a cell wide
-   so a thin wall never slips between the grid's cells; and a work's or a wall's turned pieces are laid in lengths whose boxes keep close to them, each kept
-   off the ways, as the drystone walls, the climbs' kerbs, the viaduct's piers and the great wall are.
+   so a thin wall never slips between the grid's cells; and a work's or a wall's turned pieces are laid in lengths whose
+   boxes keep close to them, each kept off the ways, as the drystone walls, the climbs' kerbs, the viaduct's piers and
+   the great wall are.
 6. **The land carved.** Each area becomes a basin shaped by its kind, holding its reach and 32 m of floor round each of
    its buildings:
    - a farm: a straight-sided field along the run of its yards and buildings, 1.8 times as long as it is wide; a
@@ -156,10 +159,10 @@ from the sea, fresh water and the claim's edge), then:
      cutting through no building. A ramp runs on from one of its ends along the rim down to the floor, and rows of
      headstones stand on the shelf, askew, a few gone, either side of a lane down its middle, the last pieces stood,
      none in a building, a prop, a solid or on a ramp;
-   - a keep, a camp and a plot: such a bowl with a platform round the middle, ramped wherever a way crosses its edge or ends
-     short of it, each way its own ramp unless one already climbs there on the same bearing. A keep's reaches 6 m past its buildings and 34 m at the least, at 0.18 of the massif's height; a
-     camp's reaches 6 m past its palisade, at 0.12; a plot's 6 m past its square's corners, at 0.12, so its whole square
-     stands level;
+   - a keep, a camp and a plot: such a bowl with a platform round the middle, ramped wherever a way crosses its edge or
+     ends short of it, each way its own ramp unless one already climbs there on the same bearing. A keep's reaches 6 m
+     past its buildings and 34 m at the least, at 0.18 of the massif's height; a camp's reaches 6 m past its palisade,
+     at 0.12; a plot's 6 m past its square's corners, at 0.12, so its whole square stands level;
    - every other kind: a round bowl 32 m wider than its reach.
 
    A shelf and a platform are level climbs, and a ramp a climb from the floor to their level ([[Land]]), 9 m wide,
@@ -167,12 +170,12 @@ from the sea, fresh water and the claim's edge), then:
    a ramp or the fall of their edges is lifted onto the land as the last cut leaves it: a building whole by the raise
    at its middle, with its pad, plinth, rooms and walls and all in its footprint, a handcrafted module by the least
    the carving raises the land under its foot, so no edge of it stands off the land, every other prop and solid by
-   the raise under it. Each path becomes a canyon, segment by segment: 15 m either side of a track and 11 of a footpath, closing
-   to a slot (11 and 7 m) where the way runs 80 m or more with every point 60 m past any area's reach, and opening
-   to a bay (22 and 18 m) at a bend sharper than 0.5 rad or by a river crossing; the great works take the half-width
-   where they stand. The edges of basins and canyons wander outward with a noise; a gorge runs out of the claim from each gate toward its instance and from
-   the landing toward the sea. Everything else in the claim is raised into a
-   massif whose faces fall to the floor over 16 m in four ledges of strata, its top rough, as high as the biome's
+   the raise under it. Each path becomes a canyon, segment by segment: 15 m either side of a track and 11 of a footpath,
+   closing to a slot (11 and 7 m) where the way runs 80 m or more with every point 60 m past any area's reach, and
+   opening to a bay (22 and 18 m) at a bend sharper than 0.5 rad or by a river crossing; the great works take the
+   half-width where they stand. The edges of basins and canyons wander outward with a noise; a gorge runs out of the
+   claim from each gate toward its instance and from the landing toward the sea. Everything else in the claim is raised
+   into a massif whose faces fall to the floor over 16 m in four ledges of strata, its top rough, as high as the biome's
    land stands (38 m in the highland, 12 m in the swamp). Outcrops stand up in the wilds and arenas (up to five) and
    at the rims of the wider basins (two), for cover and to break the long views, all of one shape ([[Land]]): the
    brief's `rock`, or else the climate's (mesas in the desert, steppe and savanna, tors on the temperate coast and in
@@ -216,19 +219,19 @@ from the sea, fresh water and the claim's edge), then:
    as the great wall would keep 12 m off every outcrop (the outcrops are placed first): a colossal
    ruined wall of ashlar dammed across the longest track's straightest run (the next run's where its wall would
    cross another way but at its breach), as high as the lower of its canyon's two
-   cliff tops (each the highest the carved land stands within its face) and 10 m over, its ends sunk in the cliffs, buttressed
-   and battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from
-   cliff top to cliff top on piers and arches, its deck 0.92 of the way up to the lower top, one span fallen into the gorge, a pier that would stand on a way moved
-   out from the middle until it stands clear (half a span at most) or left out, so each arch spans two piers that
-   stand; a natural arch of rock (the rock arch,
+   cliff tops (each the highest the carved land stands within its face) and 10 m over, its ends sunk in the cliffs,
+   buttressed and battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon
+   from cliff top to cliff top on piers and arches, its deck 0.92 of the way up to the lower top, one span fallen into
+   the gorge, a pier that would stand on a way moved out from the middle until it stands clear (half a span at most) or
+   left out, so each arch spans two piers that stand; a natural arch of rock (the rock arch,
    [[Cities]]) left standing over a third canyon, its feet on the canyon's floor either side of the way and out into
-   its cliffs, its opening the way and 6 m either side, its crown 2 to 6 m over the lower cliff top, the way running under it; and
-   retaining walls along part of the wider basins' feet, each length where the cliff really rises from the floor and
-   clear of every way, the climbs' and runs' too, and of every outcrop. Along the cliff tops round the section, every
-   130 to 210 m where the massif stands over the floor, its top level enough to hold one and no way runs out, stand
-   the ruins of an older frontier: round towers broken off at their tops with a few merlons left, and runs of curtain
-   wall in lengths broken to different heights, some buttressed, so the bounds read as a border once held. They are
-   laid once every layout is planned, on the land as all the sculpts leave it, which is the ground as settled: a
+   its cliffs, its opening the way and 6 m either side, its crown 2 to 6 m over the lower cliff top, the way running
+   under it; and retaining walls along part of the wider basins' feet, each length where the cliff really rises from the
+   floor and clear of every way, the climbs' and runs' too, and of every outcrop. Along the cliff tops round the
+   section, every 130 to 210 m where the massif stands over the floor, its top level enough to hold one and no way runs
+   out, stand the ruins of an older frontier: round towers broken off at their tops with a few merlons left, and runs of
+   curtain wall in lengths broken to different heights, some buttressed, so the bounds read as a border once held. They
+   are laid once every layout is planned, on the land as all the sculpts leave it, which is the ground as settled: a
    neighbour's massif can rise over a rim or its floor hold one down.
 8. **The rock.** Rock fallen from the faces lies on the floor where each face meets it, never up the face, so every
    stone rests on level ground as if it had rolled there: along the section's edge every 11 m, a third of the way
@@ -236,51 +239,53 @@ from the sea, fresh water and the claim's edge), then:
    out onto the floor too low to trip on; and such heaps all round each outcrop's foot, a whaleback's ends too, more
    the longer its footprint is round. A face's foot is found by walking in from the section's edge to where the
    carving no longer raises the floor. No stone that lies in what a run built, on the ground its climb takes or within
-   1.2 m of its way (its line and on to its door, `WAY_CLEAR_M`) is laid, and a run's own loose stones (its cover's boulders, a stump's fallen courses) keep off the rest of what it
-   built. All of it is the solids' rubble, which wears the ground's stone in the grey the
-   terrain draws its cliffs in; in a layout with a `stone` of chalk its rubble wears chalk's white instead (the client
-   turns its rubble solids to the `chalk` material, a picture of the same stone tile brought to white).
+   1.2 m of its way (its line and on to its door, `WAY_CLEAR_M`) is laid, and a run's own loose stones (its cover's
+   boulders, a stump's fallen courses) keep off the rest of what it built. All of it is the solids' rubble, which wears
+   the ground's stone in the grey the terrain draws its cliffs in; in a layout with a `stone` of chalk its rubble wears
+   chalk's white instead (the client turns its rubble solids to the `chalk` material, a picture of the same stone tile
+   brought to white).
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, each hamlet's three stores, its raiders' approach and their two banners, where
-   each wilds' fissure opens beside its obelisk and its growth spot ([[Public Events]]), two patrol beacons at each place's rim, up to sixteen resource nodes off the
-   paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
-   5 m clear of every way's edge and a metre clear of every building and of every module's foot, whose floors level
-   the land under it once the sites are marked, each resource 12 m from every other and from each beacon, and where
-   foes hold ground: a foes' site at the middle of every area but a landing, a gate, an entrance, a hamlet, a wilds, a
-   Breach's hollow and a guild's plot, its patrol's territories
-   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]; [[Enemies]], "Territories and runs"). Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
-   nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside
-   the section's ring, on water, within a metre of a solid taller than a step or within 1.5 m of a planting, once all is
-   laid), and a patrol stands its material nodes there, every one at once ([[Server]]). Each beacon and
-   resource is a place (`marks`): a beacon's brazier glowing on a stone plinth in a ring of standing stones; and at each
-   resource node the place its resource comes from, built of the solids' own materials: Brineglass's tide pool ringed
-   with wet stones and salt shards, Cairn Iron's stacked cairn seamed with iron, Heartwood Resin's broad old stump with
-   amber bled down it, Sunstone's desert stones bedded in sand and glowing, Goldgrass's stand of tall gold grass,
-   Mistbloom's low mound of pale flowers, Windthistle's thistles gone to down, Bog Pearl's black pool rimmed with
-   shells, and Rimecrystal's frozen rock grown with spikes of frost. Last, once everything stands where it will, a
-   patrol's chest places (`chests`, [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]): round
-   each area a body comes to but its landing, gates and way in, round each climb's lookout (10 m) and each run's beat,
-   before a face of something standing at least 1 m tall from the ground, never overhead (a box of a building, a
-   ruin's wall, a rock, a tent, a stack of crates, a lookout's parapet), its middle 0.75 m out, square to the world
-   and facing away from it, each place's
-   faces tried in an order drawn on the layout's seed. A place is kept where its swing (`swing`: its box, 1.1 by 0.8
-   m, and behind it the band its lid swings back into, to 5 cm short of the face) stands clear of every box and prop
-   over its ground, on dry, open land in the ring that rises or falls 0.2 m at most under it, 1.5 m off every way's
-   edge (the climbs', the runs' and each run's way on to its door), 1.5 m off a building walked into and 0.1 m off
-   any other, 1 m from a planting, 25 m from every other chest place, 10 m from a resource place, its node and a
-   beacon, 3 m past a public event's fissure, growth, store, banner or approach, and 15 m from a spawn: two a place
-   at most and 24 a layout. Once everything stands, the ruins along the cliffs' tops and the stores among it, the
-   settle drops a place whose swing any box or prop then reaches, or that no longer stands before something tall
-   (`keep_clear`). Continent 1's three patrols lay 22 to 24 each; a test holds them to four or more
-   (`crates/room/tests/chests_planned.rs`).
+   each wilds' fissure opens beside its obelisk and its growth spot ([[Public Events]]), two patrol beacons at each
+   place's rim, up to sixteen resource nodes off the paths, each holding its island's resource
+   (content/gear/resources.json, by the landmass's continent;
+   [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource 5 m clear of every
+   way's edge and a metre clear of every building and of every module's foot, whose floors level the land under it once
+   the sites are marked, each resource 12 m from every other and from each beacon, and where foes hold ground: a foes'
+   site at the middle of every area but a landing, a gate, an entrance, a hamlet, a wilds, a Breach's hollow and a
+   guild's plot, its patrol's territories ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]];
+   [[Enemies]], "Territories and runs"). Each resource lies in a pocket the carving leaves off its path, a side way 18 m
+   wide in from the path's nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of
+   it (`node`; none where that lies outside the section's ring, on water, within a metre of a solid taller than a step
+   or within 1.5 m of a planting, once all is laid), and a patrol stands its material nodes there, every one at once
+   ([[Server]]). Each beacon and resource is a place (`marks`): a beacon's brazier glowing on a stone plinth in a ring
+   of standing stones; and at each resource node the place its resource comes from, built of the solids' own materials:
+   Brineglass's tide pool ringed with wet stones and salt shards, Cairn Iron's stacked cairn seamed with iron, Heartwood
+   Resin's broad old stump with amber bled down it, Sunstone's desert stones bedded in sand and glowing, Goldgrass's
+   stand of tall gold grass, Mistbloom's low mound of pale flowers, Windthistle's thistles gone to down, Bog Pearl's
+   black pool rimmed with shells, and Rimecrystal's frozen rock grown with spikes of frost. Last, once everything stands
+   where it will, a patrol's chest places (`chests`,
+   [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]): round each area a body comes to but its
+   landing, gates and way in, round each climb's lookout (10 m) and each run's beat, before a face of something standing
+   at least 1 m tall from the ground, never overhead (a box of a building, a ruin's wall, a rock, a tent, a stack of
+   crates, a lookout's parapet), its middle 0.75 m out, square to the world and facing away from it, each place's faces
+   tried in an order drawn on the layout's seed. A place is kept where its swing (`swing`: its box, 1.1 by 0.8 m, and
+   behind it the band its lid swings back into, to 5 cm short of the face) stands clear of every box and prop over its
+   ground, on dry, open land in the ring that rises or falls 0.2 m at most under it, 1.5 m off every way's edge (the
+   climbs', the runs' and each run's way on to its door), 1.5 m off a building walked into and 0.1 m off any other, 1 m
+   from a planting, 25 m from every other chest place, 10 m from a resource place, its node and a beacon, 3 m past a
+   public event's fissure, growth, store, banner or approach, and 15 m from a spawn: two a place at most and 24 a
+   layout. Once everything stands, the ruins along the cliffs' tops and the stores among it, the settle drops a place
+   whose swing any box or prop then reaches, or that no longer stands before something tall (`keep_clear`). Continent
+   1's three patrols lay 22 to 24 each; a test holds them to four or more (`crates/room/tests/chests_planned.rs`).
 10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, no cell of it touching
     the sea, and the bridges over water a cell wider either side, in the claim, as one piece with its holes filled,
     traced into a ring: the layout's bounds are its cliffs and walls. Narrow gaps of rock between floors are closed
     into it, but never beside a rampart or a ledge: their floor is taken as far as it reaches and the rock's top beside
     them is left out of bounds ([[A Run on the Rock's Top Is Held by Out of Bounds]]). What a body walks and fights in
     lies inside it a metre either side: every way, each run's line to 3 m short of its door and its beats, each climb
-    and lookout, each ledge's stair, each cavern's tunnel and hollow. Every cell of the claim within 4 m of those is taken, and where
-    the ring's simplifying would cut one off, its corners within 24 m are kept as traced.
+    and lookout, each ledge's stair, each cavern's tunnel and hollow. Every cell of the claim within 4 m of those is
+    taken, and where the ring's simplifying would cut one off, its corners within 24 m are kept as traced.
     Its three spawns stand round the landing or the
     way in (`spawns::round`), each on walkable ground in the section and clear of everything a body runs into (a
     gate's arch stands on its way in): the first three points that are, of the anchor itself, six metres east and
@@ -326,10 +331,11 @@ out past its edge.
   it keeps to it; a building run (a keep, a mine, an undercroft) keeps to the land's own level, its entry built for
   level ground, and where it breaks off a raised place a ramp 2 m wider than its passage is cut down through that
   place's floor to its mouth, no steeper than 0.6, so a body walks in and back out; a run whose ramp would come
-  within its half-width of the place's middle, where what the place holds stands, is not laid there. A climbing run ends at 0.55 so the face
-  behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries the claim out round
-  it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but not bedded as a
-  road. Its beats are marked as foes' sites, where its room stands a group as a player first comes near ([[Enemies]], "Territories and runs"); its end arena is an objective's site and its door a door's.
+  within its half-width of the place's middle, where what the place holds stands, is not laid there. A climbing run ends
+  at 0.55 so the face behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries
+  the claim out round it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but
+  not bedded as a road. Its beats are marked as foes' sites, where its room stands a group as a player first comes near
+  ([[Enemies]], "Territories and runs"); its end arena is an objective's site and its door a door's.
 - **What stands in it** (`run_kits`, `run_halls`, `halls`): its mouth marked so the zone sees where it goes (a fallen
   arch of rock, two standing stones, a broken gateway of towers, a gatehouse, a head-frame and its spoil, a ruined
   chapel); cover on every beat no more than 10 m from any point of its floor (rock, broken masonry, crates, stone
@@ -382,8 +388,8 @@ nature keeps off them, every window of the ground carries them, and a node's roo
 land ([[Land]], [[Server]]). Every prop and stone that stood on the ground as it was planned then follows it as it is
 laid, by as far as the pads and roads moved it (`follow_ground`), and what stands on one (a lantern's cage on its
 post) moves with it; a pile in the water, a battlement or a building's plinth keeps its height. A bridge's timbers
-move together, by as far as the land under its deck's higher end moved, never one length on its own. The streets' and paths' heights
-are then read from the ground as it lies. Saltmere's ten
+move together, by as far as the land under its deck's higher end moved, never one length on its own. The streets' and
+paths' heights are then read from the ground as it lies. Saltmere's ten
 layouts are planned and laid in about 0.65 s natively. The bake and the land's worker settle them alike; a node's
 file takes its section, spawns and boxes from its layout.
 
@@ -408,20 +414,23 @@ solid tilted so little none of it moves 0.45 m is boxed as if upright, standing 
 moves it, and a piece of 2 m or less is not halved for its tilt alone, standing off it as far as its tilt throws its
 box out. A box's underside is its own, so a body walks under a viaduct's deck and a lintel.
 
-What a solid or a turned prop may cost is held, as the owner approved ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]; `city::collision::kept`,
-`layout::collide::prop_kept`): at most 64
+What a solid or a turned prop may cost is held, as the owner approved
+([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]];
+`city::collision::kept`, `layout::collide::prop_kept`): at most 64
 of its boxes over a 2 m square of ground, on a grid laid from its north-west corner (2 m is the finest cell of the
 movement rules' grid, every box of which a tick tests), and at most a box a square metre of its footprint, never
 fewer than 256. A solid's layers come first, as they take the fewest boxes; where they stack too thick over the
 ground, the same layers are laid as terraces, each boxed only where no layer over it stands, up from the foot, which
 holds the same and stands no further off. One that still costs more is boxed with its keep a quarter looser at a time
-until it fits (and halving that stops short of its keep costs more), never leaving more than 0.45 m of it out. Over every landmass 268,489 of 270,438 solids are boxed unloosened, and 11,659 of 12,016 laid props; on continent
-1's zones the loosened are small tilted stones and domes to within 0.56 to 1.1 m, the mills' two roofs 0.7 m, the
-Saltgrass Downs' wide dome 1.7 m, and the beached ships' strips 0.6 to 1.2 m; the cities' leaning spires are to
-within 13 m at most, nine in ten of their tilted columns unloosened. Continent 1's zones hold 86,909 boxes, every
-landmass's zones and cities 1,433,893, a city boxed natively in 0.05 to 0.3 s (tested offline). Boxes are written to the centimetre, grown out so none shrinks. No box of a solid, prop or building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
-body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every upper floor, as the bake
-lays them (`crates/room/tests/rooms_walked.rs`).
+until it fits (and halving that stops short of its keep costs more), never leaving more than 0.45 m of it out. Over
+every landmass 268,489 of 270,438 solids are boxed unloosened, and 11,659 of 12,016 laid props; on continent 1's zones
+the loosened are small tilted stones and domes to within 0.56 to 1.1 m, the mills' two roofs 0.7 m, the Saltgrass Downs'
+wide dome 1.7 m, and the beached ships' strips 0.6 to 1.2 m; the cities' leaning spires are to within 13 m at most, nine
+in ten of their tilted columns unloosened. Continent 1's zones hold 86,909 boxes, every landmass's zones and cities
+1,433,893, a city boxed natively in 0.05 to 0.3 s (tested offline). Boxes are written to the centimetre, grown out so
+none shrinks. No box of a solid, prop or building stands across a way's walked width under head height on continent
+1 (`crates/room/tests/layouts_laid.rs`). A body walks in at every ground-floor door of the Saltgrass Downs' buildings,
+and up to every upper floor, as the bake lays them (`crates/room/tests/rooms_walked.rs`).
 
 ## Heights
 
@@ -449,17 +458,17 @@ the plaza, one whose ramp would run along a way and one whose terrace would stan
 plaza's floor. No hamlet or ruin building on Saltmere stands on more than a metre of the massif's own roll, every
 place stands at its brief's height, and every ruin's spoke is walked from its plaza onto its tier
 (`crates/room/tests`). A way's points on a basin hold the level of the floor under them. What stands
-where a raised floor's edge has wandered past its reach is lifted with it. A way between two areas whose reaches stand within 120 m of each other opens its
-canyon to 0.7 of the smaller's reach along its length, so the two read as one large place at their two heights, not
-two bowls and a lane. A raised area's floors and every stretch of way off the land's own
+where a raised floor's edge has wandered past its reach is lifted with it. A way between two areas whose reaches stand
+within 120 m of each other opens its canyon to 0.7 of the smaller's reach along its length, so the two read as one large
+place at their two heights, not two bowls and a lane. A raised area's floors and every stretch of way off the land's own
 level are carved as the sculpt's raised floors ([[Land]]), each way's in stretches between its points kept wherever
 it bends on the ground (3 m) or in height (0.25 m), so a way held flat across a low place, then ramped, keeps flat
 there; a terrace stands its area's level higher, a ramp's foot at the level of the land under it; a lookout's climb
 starts at its floor's share of the massif's height, and a pocket opens at its way's. What was stood on the land
-before the carving is lifted onto it, and the great works stand on the land as carved. A retaining wall stands only where a cliff rises from the
-floor: past a raised floor's edge the land may fall away instead. In each of Saltmere's zones every way and climb is
-walked without a step a body cannot take, and none is carved steeper than a track climbs but up a basin's ramp
-(`crates/room/tests/map_planned.rs`). The Vale stands its keep highest,
+before the carving is lifted onto it, and the great works stand on the land as carved. A retaining wall stands only
+where a cliff rises from the floor: past a raised floor's edge the land may fall away instead. In each of Saltmere's
+zones every way and climb is walked without a step a body cannot take, and none is carved steeper than a track climbs
+but up a basin's ramp (`crates/room/tests/map_planned.rs`). The Vale stands its keep highest,
 then its shrine, its hamlet and its farm, its mill, meadows and coven by the river.
 
 With heights a shrine, a keep and every cavern stand handcrafted [[Modules]] in place of their blocks, set pieces
@@ -480,8 +489,9 @@ top landing 3 m onto the high floor, past where the slot and the floor blend. Th
 most, each measured on the land with its slot cut: one is kept only where its stair climbs 3 to 24 m there, its slot's
 floor runs from its start to the stair's foot without a step, and no land stands over the steps as they climb. Up to
 three are cut, 60 m apart, each keeping every stair cut before it climbing and its slot off every run's line. The
-stair's top landing (3 m, from the high floor's edge) stands at the highest the land does under it. The map joins each ledge's two nearest places by a `Stair`. In the Vale they climb from the
-ways below Gullwing, Valeguard and the Old Stones straight up onto their floors.
+stair's top landing (3 m, from the high floor's edge) stands at the highest the land does under it. The map joins each
+ledge's two nearest places by a `Stair`. In the Vale they climb from the ways below Gullwing, Valeguard and the Old
+Stones straight up onto their floors.
 
 With heights a gate stands in a cleft of the rock, a floor of 14 m reach where its way arrives and its gorge leaves,
 and once the land is carved its palisade runs on from its last stakes, a stake every 1.1 m, until each side meets the
@@ -528,20 +538,20 @@ moved 1.5 km: a plan of placed pieces (each building and prop where its layout s
 its doorways open) and solids (plinths, set pieces, great works, rock, rooms), on a grid of cells just large enough
 to hold them, with no plates. Their lights are the city's ([[Cities]], `cityLights.ts`): a camp's, a watchtower's and
 a brazier's fire burns on its coals and casts its light, a post's lantern and the lighthouse's lantern room glow
-with their lamps, a sunstone breathes. Nature keeps off the buildings' yards, each place's open ground and the paths, and grows each
-layout's plantings where they were planted, as its own kind (`plantedOf`).
+with their lamps, a sunstone breathes. Nature keeps off the buildings' yards, each place's open ground and the paths,
+and grows each layout's plantings where they were planted, as its own kind (`plantedOf`).
 
 The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within
 2.5 km of the eye (`paintOfLayouts`) as a distance from their edges, a metre a texel at finest, the paths and a
-block's dirt in one channel, its paving in the next, and a third (only where a chalk layout is painted) holds that layout's claim, its wings and the 140 m fade band past them,
-where its cliffs stand, up to any other layout's claim; the claim is filled a row at a time and measured by a distance
-transform, so its cost is the texels, not the texels times its edges. A block's tiles are read by their records'
-classes at their corners, as Daggerfall's tile map lays them, across each tile and the next, so a street has no seam
-between its tiles and fades out across the first tile not laid. The terrain draws them in its dirt's and paving's
-grain, their edges wandering as trodden ones do, a path paler in its middle and darker where the grass is worn into
-it. The terrain lays carved cliffs in strata of rock, white in a chalk claim and only on its raised, steep ground, so
-its floors keep their grass, and draws the land's carving as far as the layouts are drawn
-(the middle ground, [[Game]]).
+block's dirt in one channel, its paving in the next, and a third (only where a chalk layout is painted) holds that
+layout's claim, its wings and the 140 m fade band past them, where its cliffs stand, up to any other layout's claim; the
+claim is filled a row at a time and measured by a distance transform, so its cost is the texels, not the texels times
+its edges. A block's tiles are read by their records' classes at their corners, as Daggerfall's tile map lays them,
+across each tile and the next, so a street has no seam between its tiles and fades out across the first tile not laid.
+The terrain draws them in its dirt's and paving's grain, their edges wandering as trodden ones do, a path paler in its
+middle and darker where the grass is worn into it. The terrain lays carved cliffs in strata of rock, white in a chalk
+claim and only on its raised, steep ground, so its floors keep their grass, and draws the land's carving as far as the
+layouts are drawn (the middle ground, [[Game]]).
 
 ## In the World Editor
 
@@ -562,4 +572,5 @@ whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]])
   wait on the server.
 - After every change in the World Editor all of a landmass's layouts are planned again, not only those it touches:
   about 2.3 s natively for continent 1's ten on a cloud session's machine, and about 3.5 s for the land's worker's
-  whole settle of continent 1 there (WebAssembly, measured under node). The layouts' streets are not painted on its ground.
+  whole settle of continent 1 there (WebAssembly, measured under node). The layouts' streets are not painted on its
+  ground.

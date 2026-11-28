@@ -20,8 +20,8 @@ function toward(colour: string, share: number): string {
   return `rgba(${red}, ${green}, ${blue}, 1)`;
 }
 
-/** The bar of a ship's hull inside the box it is drawn over: trough, losses, fill, its lit top, its edge, the flash of a
- *  bite and the pieces falling. */
+/** The bar of a ship's hull inside the box it is drawn over: trough, losses, fill, its lit top, its edge, the flash of
+ *  a bite and the pieces falling. */
 function hullBar(bar: PlacedBar): Drawing {
   return (ui, box, scale, clip, shown) => {
     const add = (part: Box, css: string, alpha = 1) => {

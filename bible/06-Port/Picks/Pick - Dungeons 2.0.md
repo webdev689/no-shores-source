@@ -27,10 +27,10 @@ DFO's Dungeons 2.0: the Forge, which lays every dungeon in blocks of DFO's own, 
 - **The Forge's six styles**: its crypt, hall, cells and temple, and its cave and mine, each in its own pair of
   painted picture sets.
 - **The Forge's block law**: the 16 by 16 grid; rooms by a seeded split, in each style's count, size, height and shape
-  (rectangles, and by style Ls, crosses, octagons, alcoves and caves); the edge contracts between blocks; ways through the rock by the cheapest
-  route; the check that a block is one walk, a failed seed taking the next sub-seed, sixteen times, then the simplest
-  form. Its rooms are joined one after another rather than by its spanning tree and loops, and its blocks laid in a
-  chain, as the owner wants a run and not a labyrinth.
+  (rectangles, and by style Ls, crosses, octagons, alcoves and caves); the edge contracts between blocks; ways through
+  the rock by the cheapest route; the check that a block is one walk, a failed seed taking the next sub-seed, sixteen
+  times, then the simplest form. Its rooms are joined one after another rather than by its spanning tree and loops, and
+  its blocks laid in a chain, as the owner wants a run and not a labyrinth.
 - **The Forge's mesh**: floors, ceilings and walls from the cells, trim bands at a wall's foot and head, doorway
   frames where a room meets a corridor, pillars at a great room's inner corners, each face by its picture's role.
 - **Its population**, as far as No Shores uses it: the way in's exit door against rock, markers on a room's quiet

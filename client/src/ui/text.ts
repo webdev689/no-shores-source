@@ -44,7 +44,8 @@ export const styled = (words: string, style: Style): string =>
     return char === ' ' || char === '\n' || code > 0xffff ? char : String.fromCodePoint(code + STYLED[style]);
   }).join('');
 
-/** A bold glyph: each cell doubled into the next column, so a stroke stands two cells wide; the pen a column further. */
+/** A bold glyph: each cell doubled into the next column, so a stroke stands two cells wide; the pen a column
+ *  further. */
 function emboldened(glyph: Glyph): Glyph {
   const { width, height, cells } = glyph;
   const wide = width + 1;

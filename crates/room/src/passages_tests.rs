@@ -14,7 +14,8 @@ pub(super) fn web(week: u64) -> Web {
     Web::of(passage::island(ISLAND).expect("Saltmere's passages"), week)
 }
 
-/// The first zone over the weeks from 2_900 whose deal is `deal`, under ground or not as `under` asks (either for none).
+/// The first zone over the weeks from 2_900 whose deal is `deal`, under ground or not as `under` asks (either for
+/// none).
 pub(super) fn plan_of(deal: Deal, under: Option<bool>) -> (u64, Plan) {
     for week in 2_900..2_960 {
         let web = web(week);

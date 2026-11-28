@@ -1,10 +1,10 @@
 // The character page, after Destiny's: the player's own figure in the middle under their level and its meter, their
 // power beneath it; the worn Art's diamond, the Melee and Ranged loadouts (the Ranged with its shots left), the cloak
 // and the Appearance button in rows to its left, level with the Mount (a horse's head while none is worn) and the
-// armour's rows to its right, each slot its item's own picture in a frame of its rarity. Hovering or focusing a slot shows its
-// item's card; a click opens its flyout of the nine it carries, toward the figure, each worn by a click and dismantled
-// by holding F (never a horse), the Mount's with the bardings beneath; a right press (or X) on any opens the item's
-// page.
+// armour's rows to its right, each slot its item's own picture in a frame of its rarity. Hovering or focusing a slot
+// shows its item's card; a click opens its flyout of the nine it carries, toward the figure, each worn by a click and
+// dismantled by holding F (never a horse), the Mount's with the bardings beneath; a right press (or X) on any opens the
+// item's page.
 
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
 import { ELEMENTS, HORSE, MOUNT_SLOT, RANGED_SLOT, RARITIES, itemName, slotName } from '../player/gear.ts';

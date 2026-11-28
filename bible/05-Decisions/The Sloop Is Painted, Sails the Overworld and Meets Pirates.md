@@ -44,4 +44,5 @@ And after: "We need to bring the animated sails over from dfo also"
 - **The encounter.** Once a pirate that means to fight comes within sight, the Overworld pans down to the Sloop at
   true scale and the fight begins; when it ends, the view pans back up.
 
-Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the AI ships that sail the Overworld and meet the Sloop are the Grey Tithe's.
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the AI ships that sail the Overworld and meet the Sloop
+are the Grey Tithe's.

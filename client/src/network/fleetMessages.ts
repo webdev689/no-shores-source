@@ -175,7 +175,8 @@ export interface NavalEvent {
   readonly left: number;
 }
 
-/** What a fleet room's snapshot holds beyond the rest: every ship, the balls aloft, what happened, the fight's clock. */
+/** What a fleet room's snapshot holds beyond the rest: every ship, the balls aloft, what happened, the fight's
+ *  clock. */
 export interface FleetPart {
   readonly vessels: readonly SeenVessel[];
   readonly balls: readonly AloftBall[];

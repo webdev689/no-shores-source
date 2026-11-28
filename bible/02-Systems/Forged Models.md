@@ -63,7 +63,8 @@ with a soffit under them, and up to two chimneys. A flat wing gets a parapet; a 
 Windows are laid a storey apart along each wall, clear of every door and of a lower wing's gable whose end stands
 in the wall, each its glass picture's window and frame
 alone, without the wall the picture paints round it (`frameOf`, the textures' `windowFrameOf` in the city's climate):
-2 m wide at the frame's proportions, narrower where a storey holds no more over its 0.9 m sill ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]). An open
+2 m wide at the frame's proportions, narrower where a storey holds no more over its 0.9 m sill
+([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]). An open
 building's (one walked into) are holes through its wall, the window laid again on its room's lining facing in and its
 panes clear, so it is seen through from either side; `openingsOf` says where they go through. `withoutDoors` builds a
 model again with its faces whole and no door, for a town wall or gate that opens into nothing.
@@ -92,7 +93,8 @@ Columns are joined whose tops lie within 0.25 m and whose undersides are both th
 gate's arch its piers and bar. No part's top stands more than 0.45 m from the mesh (`propParts.test.ts`).
 `node tools/forgedParts.mjs` writes every piece's parts into `content/forged/parts.json`, but for a piece its box
 keeps to or one stepped over whole, and a test holds the file to what the forge builds; the rules read it with the
-props' measures ([[Layouts]], "Boxes"). It is kept in git by the owner's word ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
+props' measures ([[Layouts]], "Boxes"). It is kept in git by the owner's word
+([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
 
 ## The room kit
 

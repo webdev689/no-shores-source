@@ -1,10 +1,10 @@
 //! A passage zone's deal, run by its room each tick once a player is in it: a skirmish, a vault and a lamp are done as
-//! their guard is down, a reliquary once opened and a vein once its nodes are gathered; a mission as the design gives it (Kindle's three dead lamps lit while
-//! waves come, Hold's ring held 90 s against waves, Hunt's marked band down, Reckoning's three collectors down, who
-//! run once found, Gauntlet's farthest mouth reached, in time or late, Ambush's three waves beaten, Sever's three tally
-//! posts broken). Done, it pays its cache to each player in the zone who took part, once a dive, and opens their
-//! mouths; in a public room it begins again 60 s on, and a player who came after it was done goes on once its next
-//! round is done.
+//! their guard is down, a reliquary once opened and a vein once its nodes are gathered; a mission as the design gives
+//! it (Kindle's three dead lamps lit while waves come, Hold's ring held 90 s against waves, Hunt's marked band down,
+//! Reckoning's three collectors down, who run once found, Gauntlet's farthest mouth reached, in time or late, Ambush's
+//! three waves beaten, Sever's three tally posts broken). Done, it pays its cache to each player in the zone who took
+//! part, once a dive, and opens their mouths; in a public room it begins again 60 s on, and a player who came after it
+//! was done goes on once its next round is done.
 
 use super::Round;
 use crate::{PlayerId, Room};

@@ -1,7 +1,7 @@
-//! The door a guild's outpost's room runs its errands through. The host makes a node's room an outpost (`room_outpost`),
-//! takes the errands its players' asks hold each tick (`room_outpost_errands`), asks the accounts, and gives each
-//! answer back (`room_outpost_answered`); it says each time it stood the plot anew (`room_outpost_stood`), and which
-//! player is leaving while their errands settle (`room_outpost_parting`).
+//! The door a guild's outpost's room runs its errands through. The host makes a node's room an outpost
+//! (`room_outpost`), takes the errands its players' asks hold each tick (`room_outpost_errands`), asks the accounts,
+//! and gives each answer back (`room_outpost_answered`); it says each time it stood the plot anew
+//! (`room_outpost_stood`), and which player is leaving while their errands settle (`room_outpost_parting`).
 
 use crate::{hand_over, on_land};
 use room::{Errand, Room, What};

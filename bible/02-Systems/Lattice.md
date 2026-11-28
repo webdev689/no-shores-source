@@ -100,9 +100,10 @@ workflow renders every move of every foe and the wave this way, a job a move, an
 ## In the game
 
 - **Types and dress.** `foeDress.ts` dresses types 39 Husk, 40 Flicker, 41 Idol, 42 Ravager, 43 Bulwark and 44 the
-  Heart, the numbers the public events give them for the rules' roster, each on its own body in the cloth it still wears, dyed, then its crystal, gore, veins and
-  own parts. Their skin is published with their bodies, the man's in the ashen grey-green of the dead, whatever tone
-  is asked. 45 the Tithe-Taker, a Grey Tithe officer, wears the forge's own pieces.
+  Heart, the numbers the public events give them for the rules' roster, each on its own body in the cloth it still
+  wears, dyed, then its crystal, gore, veins and own parts. Their skin is published with their bodies, the man's in the
+  ashen grey-green of the dead, whatever tone is asked. 45 the Tithe-Taker, a Grey Tithe officer, wears the forge's own
+  pieces.
 - **Moves.** `lattice.ts` `latticeMove` plays each foe's own moves in the man's place: the Husk lunges at a thrust
   and gores at any other blow; the Flicker slashes left and right in turn and brings both blades down; the Idol
   charges as it draws and fires its beam; the Ravager hurls its shards as it shoots and mauls up close; the Bulwark
@@ -110,7 +111,8 @@ workflow renders every move of every foe and the wave this way, a job a move, an
   slams its maul; the Heart slams, sweeps, stomps and tears. A telegraphed blow holds in its tell (the first 0.35 of
   the move) while the rules hold it; once they end it, landed or missed, `blowPlayedOn` plays the move on from past
   its tell at 1/14 s a frame, a missed one then held on its last frame while the foe is open. A feint or an aimed
-  shot plays nothing on. The Flicker and the Idol never walk: the rules' dodge is a blink, out through their landing backwards and in through it.
+  shot plays nothing on. The Flicker and the Idol never walk: the rules' dodge is a blink, out through their landing
+  backwards and in through it.
 - **Its parts.** `latticeHidden` takes away the Ravager's shards from its first throw to its hurl's end, the
   Bulwark's maul until it changes and its shield from then, and the Heart's torn one but from its grip to its fling.
 - **What the game draws over the pictures** (`latticeLooks.ts`): the Idol's lens glowing through its charge, its
@@ -121,8 +123,9 @@ workflow renders every move of every foe and the wave this way, a job a move, an
 - **Its blows** (`latticeStrikes.ts`), each in the foe's crystal and at its size, by the share of the move played:
   through the tell (its first 0.35) a star of crystal grows where the blow comes from; the strike (to 0.55) is a cut
   across it (the Flicker's slashes left and right and its overhead, the Ravager's maul, the Bulwark's sweep and slam,
-  the Heart's slam and sweep; a diagonal one mirrored as the figure's card is) or a rush's streak behind it (the Husk's lunge and gore, the Heart's stomp); then (to
-  0.8) a ring of shards on the ground where it lands, widening and breaking up, a flash at its heart.
+  the Heart's slam and sweep; a diagonal one mirrored as the figure's card is) or a rush's streak behind it (the Husk's
+  lunge and gore, the Heart's stomp); then (to 0.8) a ring of shards on the ground where it lands, widening and breaking
+  up, a flash at its heart.
 - **Its shots** (`tracers.ts`): the Idol's shots, an archer's in the rules, fly as its crystal, not as steel arrows: a
   trail twice an arrow's in its crystal's body and white-hot, its head a glint (`FightEffects` asks each shooter's
   type).
@@ -137,12 +140,12 @@ workflow renders every move of every foe and the wave this way, a job a move, an
 - **The ruined cities** are overtaken by its crystal, drawn by code in the city's crystal material: the landmark
   crowned, the buildings, heaps, rubble and wrecks grown through ([[Cities]], "Overtaken by the Lattice").
 - **Its coming** ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]],
-  [[Foe Arrivals as Claude Builds Them]], [[Enemies]], "Arrivals"): its foes form under a crown of its crystal, the `lattice-crown` module ([[Modules]]), built
-  from the same shards its foes are grown with. The crown grows out of its heart 6.4 m over the ground, its crystal
-  drawn in out of the air; each foe forms under it from the head down, its cells landing in its crystal, a thread of
-  the crown's light down to it and a ring round its feet; the crown holds a moment, cracks and breaks in its wave,
-  2.4 times a man's size, its shards falling and sinking into the ground (`arrivalsView.ts`, `crownLife.ts`). One of its
-  own a great foe calls forms where it stands, in its crystal.
+  [[Foe Arrivals as Claude Builds Them]], [[Enemies]], "Arrivals"): its foes form under a crown of its crystal, the
+  `lattice-crown` module ([[Modules]]), built from the same shards its foes are grown with. The crown grows out of its
+  heart 6.4 m over the ground, its crystal drawn in out of the air; each foe forms under it from the head down, its
+  cells landing in its crystal, a thread of the crown's light down to it and a ring round its feet; the crown holds a
+  moment, cracks and breaks in its wave, 2.4 times a man's size, its shards falling and sinking into the ground
+  (`arrivalsView.ts`, `crownLife.ts`). One of its own a great foe calls forms where it stands, in its crystal.
 - **Before the pictures are published** a Lattice foe is drawn as a plain man in grey and brown at its size, and dies
   in its fade alone.
 

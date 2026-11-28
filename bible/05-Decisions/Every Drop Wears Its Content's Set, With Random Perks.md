@@ -24,4 +24,5 @@ Asked what a Legendary or Atheric drop should be, the owner chose:
 
 How it works: [[Gear]].
 
-Replaced in part by [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]: one in ten of the world's Magic and Rare drops is a piece of the player's house.
+Replaced in part by [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]: one in ten of the world's
+Magic and Rare drops is a piece of the player's house.

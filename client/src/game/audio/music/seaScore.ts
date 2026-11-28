@@ -1,8 +1,8 @@
-// The sea's nine songs. Three are the band's (seaBand.ts): the storm (D Aeolian, the low strings driving in eighths under
-// stabs in open fifths: tense, never a villain's), landfall (3/4, D Mixolydian, broad: the fiddle over held strings
-// and horn) and the sea fight (D minor, a snare's march, a swashbuckler's turns on the minor four and the falling
-// i-VII-VI-V). Landfall is played once through; the storm and the fight are written as takes (seaFights.ts). The
-// still sea, the open sea and the sea at night have two calm pieces each (seaPieces.ts), played once through out
+// The sea's nine songs. Three are the band's (seaBand.ts): the storm (D Aeolian, the low strings driving in eighths
+// under stabs in open fifths: tense, never a villain's), landfall (3/4, D Mixolydian, broad: the fiddle over held
+// strings and horn) and the sea fight (D minor, a snare's march, a swashbuckler's turns on the minor four and the
+// falling i-VII-VI-V). Landfall is played once through; the storm and the fight are written as takes (seaFights.ts).
+// The still sea, the open sea and the sea at night have two calm pieces each (seaPieces.ts), played once through out
 // of danger.
 
 import { type BandSong, HARMONY, TUNES, bandSpec, floored, stack, voicing } from './seaBand.ts';

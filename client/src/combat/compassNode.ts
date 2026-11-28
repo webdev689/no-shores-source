@@ -1,5 +1,5 @@
-// The compass as the fight's display draws it in the interface the game draws (`ui/`): its strip of points, its needle and its ships' marks,
-// laid afresh each frame from the way the view looks, as `compass.ts` places them.
+// The compass as the fight's display draws it in the interface the game draws (`ui/`): its strip of points, its needle
+// and its ships' marks, laid afresh each frame from the way the view looks, as `compass.ts` places them.
 import type { Node } from '../ui/node.ts';
 import {
   COMPASS,

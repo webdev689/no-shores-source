@@ -90,7 +90,8 @@ pub struct Bank {
 }
 
 /// The words a name takes before it when it is used again: "the Old Ossuary". A dungeon has twenty rooms at most,
-/// eighteen of them drawn, and a shape suits five of a bank's six purposes at least, so none is used past a fourth time.
+/// eighteen of them drawn, and a shape suits five of a bank's six purposes at least, so none is used past a fourth
+/// time.
 const AGAIN: [&str; 6] = ["Old", "Lower", "Far", "Hidden", "Silent", "Forgotten"];
 
 /// A purpose's name the `times`-th time it is used in a dungeon, from 0.

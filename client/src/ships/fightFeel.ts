@@ -17,8 +17,8 @@ import { shipAxes } from './shipAxes.ts';
 import { magazineOf, NEAR_MISS_M, NEAR_SPLASH_M } from './fightMoments.ts';
 import { KICKS } from './shake.ts';
 
-/** The fight's events as the feel reads them: the World Editor's, a ball's hit naming where on the ship it struck in its
- *  own frame and what it struck (from the room's `Hit` told with it), and the room's own. */
+/** The fight's events as the feel reads them: the World Editor's, a ball's hit naming where on the ship it struck in
+ *  its own frame and what it struck (from the room's `Hit` told with it), and the room's own. */
 export type FeelEvent =
   | Exclude<FightEvent, { kind: 'hit' } | { kind: 'splash' }>
   | {

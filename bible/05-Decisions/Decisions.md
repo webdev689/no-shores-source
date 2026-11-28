@@ -481,15 +481,20 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
   [[Patrol Zones Stay as Built and Gain Linear Combat Areas]]
 - [[PostgreSQL]], by [[Accounts Start as Guests, on Cloudflare D1]]
 - [[New Ships Are Planned in the Sloop's Style, After the System]], by [[The Ships as Claude Shapes Them]]
-- [[The Vitals Keep Their Panel Under DFO's Compass]], by [[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]
+- [[The Vitals Keep Their Panel Under DFO's Compass]], by
+  [[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]
 - [[The Player's Display Takes DFO's Compass and Bar Layout]], by [[The Vitals Keep Their Panel Under DFO's Compass]]
 - [[The Rooms Deploy on Each Merge]], by [[The Rooms Deploy When Their Code Changes]]
 - [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]], by [[The Tiers Are Normal, Elite and Abyss]]
 - [[Pirates Must Be Met at Sea]], by [[Pirates Are Replaced by the Grey Tithe]]
 - [[Private Repo overlook-source]], by [[The Game Is Named No Shores]]
-- [[The Prologue's Elites Are as Hard to Bring Down as a Major]], by [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]
-- [[Elder Maren Hale Welcomes the Player to Overlook]], by [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
+- [[The Prologue's Elites Are as Hard to Bring Down as a Major]], by
+  [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]
+- [[Elder Maren Hale Welcomes the Player to Overlook]], by
+  [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
 - [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]], by
   [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
-- [[The Asset Workflows Publish to R2 With a Token for R2 Alone]], by [[The Asset Workflows Publish to R2 With the Cloudflare Token]]
-- [[The Playlist Shows Over Its Island, Not Only at Sea]], by [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]
+- [[The Asset Workflows Publish to R2 With a Token for R2 Alone]], by
+  [[The Asset Workflows Publish to R2 With the Cloudflare Token]]
+- [[The Playlist Shows Over Its Island, Not Only at Sea]], by
+  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]

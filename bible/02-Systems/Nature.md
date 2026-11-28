@@ -27,7 +27,8 @@ The trees, plants and rocks that dress each continent's [[Land]], one cast for i
 baked into a textured near mesh and sprites for far away ([[Flora]], [[Flora Is Baked From Detailed Models]]), all
 of it by our own code ([[Own Work]]), drawn with WebGPU ([[WebGPU Only]]). The same ground grows the same plants for
 every player. The casts are Claude's choices ([[The World Is Claude's to Mold]]). Over their grass the owner's
-handcrafted [[Meadow]] ([[The Owner's Handcrafted Meadow Grows Over the Grass]]) grows from the same ground, drawn after them.
+handcrafted [[Meadow]] ([[The Owner's Handcrafted Meadow Grows Over the Grass]]) grows from the same ground, drawn after
+them.
 
 ## The casts
 
@@ -51,7 +52,8 @@ leaves. The client's casts (`coolCasts.ts`, `warmCasts.ts`) keep each kind's gro
 | `swamp` | Cypresses flaring onto dark buttresses under broad drooping tiers, short clumps of dark moss under their edges, mangroves only by water, reeds at the water's edge, marsh ferns |
 | `tundra` | Stunted spruces, dead trees, dwarf shrubs, snowy rocks |
 
-A near tree is about 600 triangles (900 at most), a shrub 240, grass, ferns and reeds 60, a rock 300; far off each is one quad.
+A near tree is about 600 triangles (900 at most), a shrub 240, grass, ferns and reeds 60, a rock 300; far off each is
+one quad.
 
 ## Where they grow
 
@@ -93,10 +95,10 @@ width, and from the exact close patch where it reaches, eased in over its outer 
 
 - **Round the eye.** Tiles are kept round the eye: the tall layer out to 6 km, the low one to 0.9 km. A tile is
   scattered once, nearest first, a few milliseconds' worth a frame (6 ms; 30 ms behind a trip's veil, whose frames no
-  one sees, [[One Loading Screen Covers Every Trip Until the Place Is Ready]]). Its plants go into slots of a store on the GPU
-  that stay put while the tile is kept, a page of sixteen at a time, and leave when it is let go. A tile whose nearest
-  point lies past 3 km keeps only the trees drawn that far and only those the thinning leaves, its ground read for
-  no others; it is scattered whole again when the eye comes within 3 km. When the eye crosses into another tile, or
+  one sees, [[One Loading Screen Covers Every Trip Until the Place Is Ready]]). Its plants go into slots of a store on
+  the GPU that stay put while the tile is kept, a page of sixteen at a time, and leave when it is let go. A tile whose
+  nearest point lies past 3 km keeps only the trees drawn that far and only those the thinning leaves, its ground read
+  for no others; it is scattered whole again when the eye comes within 3 km. When the eye crosses into another tile, or
   newly scattered tiles arrive (at most four times a second while some still wait), only the list of which slots to
   draw is made again, and each tile's corner: a few hundred tiles at a step, 2 ms a frame (behind a veil 30 ms), the
   old list drawn until the new one is whole, and begun afresh if a tile is let go meanwhile, so no list names a slot
@@ -121,13 +123,13 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   bounding sphere's frames the plant fills: the two azimuths of its impostor sheet either side of the view blended
   by how near each is (`impostor.ts`), and of the two elevations either side the nearer one, dithered pixel by
   pixel across the middle third between them, lit by their normals turned with the plant. A card reads its picture
-  from one mip level, a sprite from two, and a card's normal only where its leaves survive the cut. Trees are drawn to 6 km, small trees to 2 km, rocks to
-  1.8 km, shrubs to 700 m; grass, ferns and reeds go at 160 m. From 1 km far trees thin out to a share kept at 3 km
-  and on to the reach (a seventh in the rainforest, a fifth in the woodland, nearly all in the desert), each widened
-  to fill in, and sinking toward its crown's foot as their crowns round it would hide its trunk, so a far wood reads
-  as one roof of crowns, not crowns on poles. On steep ground they thin out further from half a kilometre, so a
-  mountainside reads as trees fading out, not a speckle, and far off a plant's colour leans toward the biome's
-  ground. Moss is drawn to 150 m.
+  from one mip level, a sprite from two, and a card's normal only where its leaves survive the cut. Trees are drawn to
+  6 km, small trees to 2 km, rocks to 1.8 km, shrubs to 700 m; grass, ferns and reeds go at 160 m. From 1 km far trees
+  thin out to a share kept at 3 km and on to the reach (a seventh in the rainforest, a fifth in the woodland, nearly all
+  in the desert), each widened to fill in, and sinking toward its crown's foot as their crowns round it would hide its
+  trunk, so a far wood reads as one roof of crowns, not crowns on poles. On steep ground they thin out further from half
+  a kilometre, so a mountainside reads as trees fading out, not a speckle, and far off a plant's colour leans toward the
+  biome's ground. Moss is drawn to 150 m.
   Distances are taken from the eye in three dimensions.
 - **No popping.** A plant fades by its samples, not by blending: across the last eighth of the near range the near
   mesh hands its samples to the far quad, each taking exactly what the other leaves (`handover.ts`), and toward the
@@ -157,7 +159,8 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   the ground under the groves already takes most of the canopy's colour, so the gaps between the widened trees
   read as more crowns. So a forest reads from the sea and over an
   island's side, and stands where its trees stand. In rain the painted canopy, as much of the ground as it covers,
-  takes no sky's glare, as the crowns take none ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
+  takes no sky's glare, as the crowns take none
+  ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
 - **Contact shade.** Each plant drawn far lays a soft dark disc on the ground under it,
   as wide as its crown, leaning a little the way the sun throws shadows and laid on the ground's slope at its foot,
   fading out by half its near range. Trunks darken toward the ground to meet it.

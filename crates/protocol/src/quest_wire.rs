@@ -1,7 +1,7 @@
-//! What the gear message carries of the houses' roads: the quest walked, the keeper offering it while it waits, its task and that task's counts, each quest
-//! done, each Art's earned bits and fragment choices, where the task's first unmet goal with a place stands in the
-//! player's room, and their step there: its clock, each goal's failures, its points, its figure, its ward and its
-//! horde.
+//! What the gear message carries of the houses' roads: the quest walked, the keeper offering it while it waits, its
+//! task and that task's counts, each quest done, each Art's earned bits and fragment choices, where the task's first
+//! unmet goal with a place stands in the player's room, and their step there: its clock, each goal's failures, its
+//! points, its figure, its ward and its horde.
 
 use flatbuffers::{FlatBufferBuilder, Vector, WIPOffset};
 use gear::Character;

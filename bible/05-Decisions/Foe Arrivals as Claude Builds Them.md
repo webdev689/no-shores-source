@@ -10,8 +10,9 @@ status: in force
 
 ## What it settles
 
-Claude's choices in building [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]].
-The owner can change any of them. How it works is in [[Enemies]] ("Arrivals"), [[Lattice]] and [[Modules]].
+Claude's choices in building
+[[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]. The owner can change any
+of them. How it works is in [[Enemies]] ("Arrivals"), [[Lattice]] and [[Modules]].
 
 | Choice | Chosen | Why |
 |---|---|---|

@@ -1,5 +1,5 @@
-// The character screen as the game draws it, after Destiny 1's: the title's scene held back behind a vignette; along the
-// top, "Characters", the account and its Aurem; the chosen character standing large on a lit floor at the left, its
+// The character screen as the game draws it, after Destiny 1's: the title's scene held back behind a vignette; along
+// the top, "Characters", the account and its Aurem; the chosen character standing large on a lit floor at the left, its
 // plaque under it; down the right, the four slots as emblem banners, the chosen one lit a step larger; under them Play,
 // Delete held, and for a developer the Test Room; and the keys along the foot. Narrow, it stacks in one column.
 import { SCREEN_Z } from '../../cinema/screen.ts';

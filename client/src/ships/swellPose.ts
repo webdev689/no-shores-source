@@ -92,8 +92,8 @@ export function sprayOf(way: number, state: number, sinceSlamS: number): number 
   return Math.min(1, going * (0.1 + 0.4 * state) + going * burst);
 }
 
-/** Come Sail Away's heel in a turn, radians to starboard: into it, by its swing (radians a second, to starboard) and its
- *  way (m/s), once it makes a wake (crates/sailing/src/pose.rs `turn_heel`). */
+/** Come Sail Away's heel in a turn, radians to starboard: into it, by its swing (radians a second, to starboard) and
+ *  its way (m/s), once it makes a wake (crates/sailing/src/pose.rs `turn_heel`). */
 export function turnHeel(turn: number, way: number): number {
   if (way < SAIL.moveSpeed * 0.25) return 0;
   const lean = ((turn * 180) / Math.PI / SAIL.turnSpeedDeg) * ((way * 0.1) / SAIL.moveSpeed);

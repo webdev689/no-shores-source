@@ -186,8 +186,8 @@ const KINDLE_LIGHT = { out: 0.17, up: 2.16 } as const;
 const LAMP_LIT = { ...LIGHT_KINDS.lantern, colour: [1.8, 1.25, 0.65], reach: 13 } as const;
 
 /** The lights a passage zone's pieces burn under ground as `state` finds them, numbered from 0 among their own: the
- *  lamp lit and each dead lamp lit burn as a lantern, their caged glass glowing with no flame seen, and an open mouth shows its way on
- *  in daylight's pale light behind its face; cold and shut, none. */
+ *  lamp lit and each dead lamp lit burn as a lantern, their caged glass glowing with no flame seen, and an open mouth
+ *  shows its way on in daylight's pale light behind its face; cold and shut, none. */
 export function passagePieceLights(pieces: readonly PassagePiece[], state: PieceState): Light[] {
   const lights: Light[] = [];
   const burn = (place: readonly [number, number, number], burning: Light['burning']) =>

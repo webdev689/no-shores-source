@@ -61,6 +61,9 @@ Claude's choices in building [[Pirates Are Replaced by the Grey Tithe]],
 | Night | The crystal glows at its core and the great formations light lamps of their own, within the city's lamp budget | A ruin reads as a red scatter on a dark coast |
 | Cost | Formations meshed once and placed by instance; a ruin builds in about 1.1 to 1.4 s on landing, a port in under 1 s | Drawn at every distance without stalling the landing |
 
-Replaced in part by [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]: a travel into the ship's own water is taken as any other.
+Replaced in part by
+[[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]: a travel
+into the ship's own water is taken as any other.
 
-Replaced in part by [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]: the cinematic is a fade out and in.
+Replaced in part by [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]: the
+cinematic is a fade out and in.

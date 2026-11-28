@@ -1,8 +1,8 @@
-//! A fight at sea: players' ships in their own hulls and captains of each faction in their ranks', the balls between them, and the
-//! harm they do, stepped together a tick at a time. Each player orders their own helm, a lay (the look's bearing off
-//! their bow and its range), the fire, the brace and the load; each captain decides for itself whom it fights, a player
-//! or a captain of another faction. A ball strikes only a ship under another flag. One seeded stream decides every
-//! chance, in a fixed order, so a fight is the same on every machine.
+//! A fight at sea: players' ships in their own hulls and captains of each faction in their ranks', the balls between
+//! them, and the harm they do, stepped together a tick at a time. Each player orders their own helm, a lay (the look's
+//! bearing off their bow and its range), the fire, the brace and the load; each captain decides for itself whom it
+//! fights, a player or a captain of another faction. A ball strikes only a ship under another flag. One seeded stream
+//! decides every chance, in a fixed order, so a fight is the same on every machine.
 
 use crate::arms::{Arms, arms_of, posed};
 use crate::ballistics::Ball;

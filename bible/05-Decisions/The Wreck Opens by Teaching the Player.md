@@ -30,7 +30,8 @@ flyover: Go straight from waking into the gear and lessons; the wreck is seen as
 
 - Waking, the eyes are curved, soft-edged lids that close unevenly, with a fringe of lashes, warm red light through
   them when shut, and the blur clearing in pulses with the heartbeat. The lids, their light and their lashes are
-  replaced by [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]: the view darkens and pulses instead; the blur's pulses stand.
+  replaced by [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]: the view darkens and pulses instead; the
+  blur's pulses stand.
 - The flight over the wreck is dropped: from waking the player goes straight into the gear and the lessons.
 - The player is prompted to find their dropped sword and shield and equip them, teaching them the inventory.
 - Then the basic movement and combat are taught, and the healing charges.

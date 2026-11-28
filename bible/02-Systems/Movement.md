@@ -21,9 +21,9 @@ code:
 ---
 # Movement
 
-How a body moves, by rules built to run the same on a server and in every browser: walking, running and crouching, up steps and off
-edges, jumping and falling, catching a lip to hang, mantle or vault, shimmying along it, and climbing a wall too high
-to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as in DFO]]).
+How a body moves, by rules built to run the same on a server and in every browser: walking, running and crouching, up
+steps and off edges, jumping and falling, catching a lip to hang, mantle or vault, shimmying along it, and climbing a
+wall too high to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as in DFO]]).
 
 ## How it works
 
@@ -35,7 +35,8 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   sideways (held to -1 to 1), the look's bearing (wrapped within half a turn either way, as the fight's rules take it,
   so a browser's step and a room's agree), run, mounted, and jump, crouch and the rider's boost pressed. A control
   that is not a number counts as none, so a body never takes one in. A press between two ticks is kept for the next.
-  The view turns every frame. The body is drawn eased from the tick before toward the last, so it moves smoothly, a tick behind.
+  The view turns every frame. The body is drawn eased from the tick before toward the last, so it moves smoothly, a tick
+  behind.
 - **A rider's boost.** A boost tapped while mounted, once the last has recharged, sets the body's two clocks,
   `boosting` to `boost_seconds` and `recharging` to `recharge_seconds`. Each tick `boost_run` runs `boosting` down
   first and `recharging` only once it is spent, so a boost lasts 4 s and the next is taken 12 s after it ends. While
@@ -45,11 +46,12 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 - **Blocks.** A course is a list of blocks, each a footprint, a top and an underside (`bottom`): a block from the
   ground up has its underside at or below the ground where it stands; a floor, a bridge or a roof has it over the
   ground. Each crosses as six numbers: west, north, east, south, top, bottom. The body, a square reaching 0.35 m each
-  way from its centre, stands on the highest top under its centre within a step (0.5 m) of its feet (a footprint holds its own edges, so
-  blocks laid side by side hold every point of their seam) and slides along a block's sides. A block is in the way only where it overlaps the body's column: its top over a step above the feet
-  and its underside below the head. A move is judged where the feet end it: stepping down beside a taller block, the
-  body is held where the drop would leave it overlapping that block, and slides on. A body walks under a block whose
-  underside is over its head, stands on an upper floor's top, and falls off its edge as off any block.
+  way from its centre, stands on the highest top under its centre within a step (0.5 m) of its feet (a footprint holds
+  its own edges, so blocks laid side by side hold every point of their seam) and slides along a block's sides. A block
+  is in the way only where it overlaps the body's column: its top over a step above the feet and its underside below the
+  head. A move is judged where the feet end it: stepping down beside a taller block, the body is held where the drop
+  would leave it overlapping that block, and slides on. A body walks under a block whose underside is over its head,
+  stands on an upper floor's top, and falls off its edge as off any block.
 - **Never inside a block.** Falling past the top of a block beside it, too slowly to clear it, the body is pushed out
   of it the shortest way, never past its far side. A body set down overlapping a block, as a blow's charge may leave
   it, is pushed out the same way before it moves. So no edge or corner holds a body fast. A block overhead, clear of
@@ -90,10 +92,10 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   the highest cell, a wall at that cell's edge that no step or slope takes and no climb starts on, a climb holding
   to blocks alone. A wall is judged along the whole of a move, each cell it passes through in turn and both cells
   beside a corner it crosses, so a run's tick, longer than a cell, never carries a body through a wall one cell thick,
-  nor between two walls that meet at a corner. So a passage one cell wide is walked to its end. A vault or a mantle is never
-  taken across one of these walls, nor a shimmy along a wall: at a deck's edge the body stays on its side of a rail
-  it jumps at or hangs from. A course of blocks laid over the open sea is held so by its rim (`Heights::rim`, cells of
-  `RIM_CELL_M`): open under the blocks wherever one covers a cell's middle, a wall everywhere else, so no body leaves
+  nor between two walls that meet at a corner. So a passage one cell wide is walked to its end. A vault or a mantle is
+  never taken across one of these walls, nor a shimmy along a wall: at a deck's edge the body stays on its side of a
+  rail it jumps at or hangs from. A course of blocks laid over the open sea is held so by its rim (`Heights::rim`, cells
+  of `RIM_CELL_M`): open under the blocks wherever one covers a cell's middle, a wall everywhere else, so no body leaves
   the blocks for the sea. The browser's doors make the same rim from the blocks (`movement_set_rim`, `fighter_rim`).
   No body climbs over it (`Terrain::climbs`): it takes hold of no wall, hangs from no lip, and goes over only a lip
   within a vault (1.2 m) of the floor under it, foes alike ([[Climbing Is Off in the Prologue]]).
@@ -120,7 +122,10 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 | Air | Falls under gravity. Pressed into a wall with the lip within reach (1.95 m in the air), it hangs, or goes over a low lip |
 | Hang | Sideways shimmies along the lip; forward goes over; crouch lets go |
 | Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs. The
-lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past, and a hold caught at a seam climbs on. A block on the wall's top is stacked on it only where its face is as near as the wall's, it reaches back over the wall's face, and it runs along the wall where the body holds it: one set back on the top, one standing wholly out past the face, or a post beside the hold, is not |
+lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past, and a hold caught at a
+seam climbs on. A block on the wall's top is stacked on it only where its face is as near as the wall's, it reaches back
+over the wall's face, and it runs along the wall where the body holds it: one set back on the top, one standing wholly
+out past the face, or a post beside the hold, is not |
 | Mantle | Rises first, then goes over onto the lip |
 | Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing 0.2 m past it, met head on or slantwise |
 

@@ -2,10 +2,10 @@
 
 `crates-barrels`, 3 x 2: crates stacked, barrels standing and lying, sacks against them. `lamp-post`, 4 m: a
 cast-iron post on a stone foot, a scrolled arm each side carrying a lantern. `bench`, 2.4 m: a stone bench with a
-timber seat and back, its sitter facing -y (socket `front`; every piece here has one, the way it is stood). `anvil-yard`, 6 x 4: an anvil on its stump, a quench
-trough, a grindstone, a heap of coal and a rack of bar iron, where two smiths stand at work (sockets `smith-1` and
-`smith-2`). `hay-cart`, 4 x 2: a two-wheeled cart heaped with hay, its shafts resting on the ground. `bollards`: three
-iron mooring bollards along a quay's edge, a rope made fast round one.
+timber seat and back, its sitter facing -y (socket `front`; every piece here has one, the way it is stood).
+`anvil-yard`, 6 x 4: an anvil on its stump, a quench trough, a grindstone, a heap of coal and a rack of bar iron, where
+two smiths stand at work (sockets `smith-1` and `smith-2`). `hay-cart`, 4 x 2: a two-wheeled cart heaped with hay, its
+shafts resting on the ground. `bollards`: three iron mooring bollards along a quay's edge, a rope made fast round one.
 """
 import math
 

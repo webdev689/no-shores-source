@@ -37,4 +37,5 @@ The owner's answers to the questions that followed:
 | How many, how drawn | Three slots a region, drawn once from the island's seed, the same for everyone and stable; each island's existing site is one of its region's three | The owner had no preference; an outpost built on a slot must stay where it stands |
 | Where the tile shows | In every region's view, opening that region's slots | Each region gets its own, as the owner said |
 
-Links: [[Outposts]], [[Interface]], [[World Map]], [[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]].
+Links: [[Outposts]], [[Interface]], [[World Map]],
+[[Each Region Shows Its Own Tiles, and the Ship Waits Off the Region Left From]].

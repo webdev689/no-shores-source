@@ -1,6 +1,6 @@
-"""The ships' own hull taken into modules: a hull in the Sloop's style built by the ships' builder (tools/ships/ship_hull.py)
-from a hull's numbers, its five painted parts each read as one of the kit's materials, so a module built on a ship's
-hull (the Grey Tithe's airship) is the same vessel the sea sails, retrofitted.
+"""The ships' own hull taken into modules: a hull in the Sloop's style built by the ships' builder
+(tools/ships/ship_hull.py) from a hull's numbers, its five painted parts each read as one of the kit's materials, so a
+module built on a ship's hull (the Grey Tithe's airship) is the same vessel the sea sails, retrofitted.
 """
 import copy
 import os

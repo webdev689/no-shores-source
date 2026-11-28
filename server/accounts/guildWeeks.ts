@@ -2,9 +2,9 @@
  * Guilds' weeks, as the accounts keep them. Each character holds its part in its guild's week (the rules' `GuildWeek`:
  * the XP it gave, its counts toward the week's four guild bounties, and its claims). As a room saves a member's
  * character, what came since their record was last counted goes to their guild: its XP to the guild's, its counts to
- * the guild's week. A count reaching its bounty's target marks the bounty done, which pays the guild its XP once. Joining
- * a guild counts the record as it stands, so nothing done before it is given. The rooms read here which bounties a
- * member's guild has done, and whether they joined before the week turned.
+ * the guild's week. A count reaching its bounty's target marks the bounty done, which pays the guild its XP once.
+ * Joining a guild counts the record as it stands, so nothing done before it is given. The rooms read here which
+ * bounties a member's guild has done, and whether they joined before the week turned.
  */
 
 import { BOUNTY_XP, GUILD_BOUNTIES, bountiesOf, weekOf, weekStart } from '../../client/src/game/guild/guildLaw.ts';

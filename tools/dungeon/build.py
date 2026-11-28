@@ -6,7 +6,8 @@ For each style (all of kits.json's, and its passage pack, by default) it runs st
 refuses a missing or extra name, and checks every module (envelope.py). It writes DIR/<style>.modules for each style
 that passes, DIR/modules.blend with every style in a collection of its own, and with --preview
 DIR/previews/<style>.png: in the game's pictures by torchlight (from --pictures, else painted by previewPictures.ts
-into DIR/pictures), or flat parts. It fails listing every problem. Point --out outside the repository: packs, models and renders are kept out of git.
+into DIR/pictures), or flat parts. It fails listing every problem. Point --out outside the repository: packs, models and
+renders are kept out of git.
 """
 import argparse
 import importlib

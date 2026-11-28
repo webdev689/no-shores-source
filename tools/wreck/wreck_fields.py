@@ -14,8 +14,8 @@ from wreck_ships import SEA_Z
 
 # Each raft: its name; its middle (x, y of the wreck's frame); its half length along its heading (degrees
 # counter-clockwise from east) and its half breadth across; the height its planking's top lies at. Their order is the
-# way's: the Brig's waist and her torn deck between her halves, the raft off her fore deck, the wreckage the Sloop drifted
-# into, and off the Frigate's port bow and port quarter.
+# way's: the Brig's waist and her torn deck between her halves, the raft off her fore deck, the wreckage the Sloop
+# drifted into, and off the Frigate's port bow and port quarter.
 FIELDS = (
     ('Waist', (-7.5, 7.8), 9.5, 8.0, 0.0, 3.15),
     ('TornDeck', (8.0, 8.6), 9.5, 6.5, 0.0, 3.15),

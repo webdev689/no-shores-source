@@ -59,7 +59,8 @@ impl TryFrom<SavedGround> for Ground {
 impl Ground {
     /// The ground over the rect between `west` and `east` and between `north` and `south`, world metres, cut small: its
     /// `height_at` and `water_at` give the same bits as this ground's anywhere in the rect. It keeps the cells the
-    /// spline, the coast's meeting and the lakes read there, and each course and town that reaches into the rect, whole.
+    /// spline, the coast's meeting and the lakes read there, and each course and town that reaches into the rect,
+    /// whole.
     #[must_use]
     pub fn window(&self, west: f64, north: f64, east: f64, south: f64) -> Self {
         let (west, east, north, south) = (west.min(east), west.max(east), north.min(south), north.max(south));

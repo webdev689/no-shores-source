@@ -228,9 +228,9 @@ export function chooser(
   return { chosen: made.chosen, node: { ...dressed(made.node, made.chosen, widest + 22), ...focusRing(ui, id) } };
 }
 
-/** A line of words to type, as a browser's own field looks, `width` pixels wide (a 24 character field's). Its value is `value` until it is
- *  typed in; what is typed is handed to `commit` once Enter is pressed or the focus leaves it, so each edit is one
- *  undo step. */
+/** A line of words to type, as a browser's own field looks, `width` pixels wide (a 24 character field's). Its value is
+ *  `value` until it is typed in; what is typed is handed to `commit` once Enter is pressed or the focus leaves it, so
+ *  each edit is one undo step. */
 export function textField(
   ui: Interface,
   id: string,

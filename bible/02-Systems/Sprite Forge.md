@@ -40,8 +40,8 @@ The [[Test Ground]] shows them.
   a pair's left blade holds at guard while the right strikes.
 - **Actions on the move**: each blow, the bow's shot, a gun's and the braced pistols' shots, the reloads and the cast
   drawn again with the walk's hips and legs under the action's chest, which keeps the action's turn and half its lean
-  (`onthemove.py`, named `over1hwalk`, `bowshotwalk`, `castwalk`, `quaffwalk` and so on). The sprint's fists close thumb up, the
-  wrist straight.
+  (`onthemove.py`, named `over1hwalk`, `bowshotwalk`, `castwalk`, `quaffwalk` and so on). The sprint's fists close thumb
+  up, the wrist straight.
 - **The dodge roll**: drawn by DFO for No Shores, outside its own studio, on both adult bodies and what they wear, but
   no weapon, held or worn: a weapon is not seen through a roll
   ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
@@ -84,10 +84,11 @@ caster's element. They are published as `@art/arts/birds/<bird>-<view>-<beat>.pn
 It draws the weapons large for the weapon rows and gear screens (`weaponart.py`,
 [[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): each look a loadout's hand takes, in every metal
 the forge makes it in, each bow long and short, each shield buckler, round, kite and tower, plain or in a metal,
-the orcish short sword and each gun plain and gilded, 145 in all, its model alone at four times the man's pixels a metre (about 250), level with its
-business end to the right. Each is made, lit, graded (a bow's grip on the armour's leather, as the weapon run's) and
-laid grey for its dye as the man's layer in hand is, so the page colours it as it colours that layer. They are published as `@art/weapons/<layer>.png`; a left hand's twin
-(`dagger_iron_l`) is its right hand's picture.
+the orcish short sword and each gun plain and gilded, 145 in all, its model alone at four times the man's pixels a metre
+(about 250), level with its business end to the right. Each is made, lit, graded (a bow's grip on the armour's leather,
+as the weapon run's) and laid grey for its dye as the man's layer in hand is, so the page colours it as it colours that
+layer. They are published as `@art/weapons/<layer>.png`; a left hand's twin (`dagger_iron_l`) is its right hand's
+picture.
 
 The Lattice's foes are drawn by it, with their own looks and moves, from beside it: [[Lattice]].
 
@@ -95,8 +96,8 @@ The Lattice's foes are drawn by it, with their own looks and moves, from beside 
 
 `tools/forge/` holds the forge as DFO laid it out, so its paths work unchanged: the code in `tools/sprite-forge/`, the
 packer in `tools/forgeViewer/`, and the horse's sources in `src/assets/horse/`. The size, comment and assets checks
-skip the folder. What it makes stays out of git ([[Generated Files Stay Out of Git]]): strips go in `public/art/studio/`,
-tables in `src/systems/studioArt/`, packs in `packs/`.
+skip the folder. What it makes stays out of git ([[Generated Files Stay Out of Git]]): strips go in
+`public/art/studio/`, tables in `src/systems/studioArt/`, packs in `packs/`.
 
 `tools/forge_publish.py` publishes them to the `overlook-forge` bucket on R2 ([[Generated Files on Cloudflare R2]]):
 
@@ -151,14 +152,14 @@ A change to `layers.py` or `stage.py` leaves the code's digest in `keys/version.
 Where the change draws nothing new, run `python3 -I tools/sprite-forge/rendercache.py --record` to write it again.
 
 A layer takes its set's or metal's own grades by its name (`layers.set_of`), a pair's left twin (`_l`) and a short
-sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
-`python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
-The `forge` workflow renders the Arts' birds, the weapons drawn large, the material nodes and the first person's flask,
-and adds them to what is published whenever `artbirds.py`, `weaponart.py`, the item forge's models (`items/`, which
-the nodes are laid from), `itempics.py`, the nodes' rows, `fpflask.py`, the flask's specs or their pinned packages
-change on main, or when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends with the
-manifest; a second job uploads them with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes the
-manifest into `content/forge/renders.json`.
+sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a
+large render into shards. Then `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the
+manifest for a pull request. The `forge` workflow renders the Arts' birds, the weapons drawn large, the material nodes
+and the first person's flask, and adds them to what is published whenever `artbirds.py`, `weaponart.py`, the item
+forge's models (`items/`, which the nodes are laid from), `itempics.py`, the nodes' rows, `fpflask.py`, the flask's
+specs or their pinned packages change on main, or when a run is asked for on a branch. The job that renders holds no
+secret and stages them, and its log ends with the manifest; a second job uploads them with the repository's
+`CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes the manifest into `content/forge/renders.json`.
 A run asked for may also draw the first person's dagger and sword blade layers (`firstperson`: runs split by `;`, each
 `weapon|metals`, the weapon `dagger` or `sword`, the metals empty for every make), for the right hand and the left's
 twin, into the studio's `forge/WEAPON02/layers` or `forge/WEAPON04/layers`, with a limit of 90 minutes (every make of
@@ -171,19 +172,20 @@ The `figures` workflow draws figure strips for both bodies and publishes them, o
 (`anims`, the moves, and `layers`, empty for every layer), or by a push to a branch other than `main` that changes
 `tools/forge/figures-request.txt`, its first line the moves and its second the layers; a push whose request file is
 `main`'s own, as a merge of `main` brings it in, asks for nothing. A cloud session holds no
-Cloudflare key, so this is how a figure strip reaches R2 from one. It runs a job for each set of layers (`layers.py --set`: classic, wardrobe, armour), body and move
-in parallel, and one for each body's hair and beasts' layers in every move (`forge_publish.py jobs`), each with up to
-360 minutes and no secret. Each draws from an index begun empty, so its move's cell is reckoned from its own layers. One
-job then lays them all into the published tables (`forge_publish.py figures`, held by `tools/test_forge_figures.py`):
-the classic set's job gives a move its cell, a layer drawn in another cell keeps that cell as its own, and a published
-layer not drawn again keeps the cell its strip was drawn in. It publishes only once every job has drawn, and its log
-ends with the manifest. `tools/forge_figures_local.py --run <id>` does the same on one machine of the owner's,
-costing no Actions minutes, as a heavy render does ([[Heavy Renders Run on the Owner's PC, Not on Actions]]): it
-takes the jobs a run finished from its artifacts (`gh`), draws the rest side by side, and publishes them with the
-first person's flask. A heavy redraw may instead run on the runners of the public mirror `webdev689/no-shores-forge`,
-which cost no Actions minutes, when the owner says so; its strips are laid into the studio on the owner's PC, the
-publish staged there (`R2_STAGE=<folder> python3 -I tools/forge_publish.py add`) and the stage uploaded where the
-repository's token is held, with `python3 -I tools/r2.py upload <folder>` as `forge.yml`'s publish job does
+Cloudflare key, so this is how a figure strip reaches R2 from one. It runs a job for each set of layers
+(`layers.py --set`: classic, wardrobe, armour), body and move in parallel, and one for each body's hair and beasts'
+layers in every move (`forge_publish.py jobs`), each with up to 360 minutes and no secret. Each draws from an index
+begun empty, so its move's cell is reckoned from its own layers. One job then lays them all into the published tables
+(`forge_publish.py figures`, held by `tools/test_forge_figures.py`): the classic set's job gives a move its cell, a
+layer drawn in another cell keeps that cell as its own, and a published layer not drawn again keeps the cell its strip
+was drawn in. It publishes only once every job has drawn, and its log ends with the manifest.
+`tools/forge_figures_local.py --run <id>` does the same on one machine of the owner's, costing no Actions minutes, as a
+heavy render does ([[Heavy Renders Run on the Owner's PC, Not on Actions]]): it takes the jobs a run finished from its
+artifacts (`gh`), draws the rest side by side, and publishes them with the first person's flask. A heavy redraw may
+instead run on the runners of the public mirror `webdev689/no-shores-forge`, which cost no Actions minutes, when the
+owner says so; its strips are laid into the studio on the owner's PC, the publish staged there
+(`R2_STAGE=<folder> python3 -I tools/forge_publish.py add`) and the stage uploaded where the repository's token is held,
+with `python3 -I tools/r2.py upload <folder>` as `forge.yml`'s publish job does
 ([[Heavy Forge Renders May Run on the Public Forge Mirror]]).
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes

@@ -1,8 +1,9 @@
 """The cavern chamber: the hollow under a coven's or a cave's roof, 28 m square in a hollow of 20 m reach and under
 7 m of headroom. Its entry at its -y side is left open to the tunnel; a rock shelf 2.2 m high along its back is
-climbed by worn steps at its west end, a way kept clear to them from the entry, with the coven's dolmen, its stones and a cauldron on it; two columns of
-dripstone stand floor to roof, stalagmites crowd its sides and boulders give cover in its middle, under stalactites.
-Every natural form is `kit.organic` rock: merged, cragged and decimated, never a plain cone.
+climbed by worn steps at its west end, a way kept clear to them from the entry, with the coven's dolmen, its stones and
+a cauldron on it; two columns of dripstone stand floor to roof, stalagmites crowd its sides and boulders give cover in
+its middle, under stalactites. Every natural form is `kit.organic` rock: merged, cragged and decimated, never a plain
+cone.
 """
 import math
 

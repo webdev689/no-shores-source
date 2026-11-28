@@ -378,10 +378,12 @@ function laidOut(
       laid[index] = { text, x, y, kind, chosen, ...(quest ? { quest } : {}), side: null };
       continue;
     }
-    // Spread wide wholly on its own sea at any spot that allows it, else closer; else on no land, its middle on its sea.
+    // Spread wide wholly on its own sea at any spot that allows it, else closer; else on no land, its middle on its
+    // sea.
     const width = ask.widthOf(text, kind);
     let found: { spot: { x: number; y: number }; fit: (typeof SEA_FITS)[number]; box: Rect } | null = null;
-    // A box's size is the same at every spot, and whether a spot is clear the same in both passes: each worked out once.
+    // A box's size is the same at every spot, and whether a spot is clear the same in both passes: each worked out
+    // once.
     const shapes = SEA_FITS.map((fit) =>
       nameBox({ x: 0, y: 0, kind, text }, (width * fit.px) / SEA_PX, scale, fit.spread),
     );

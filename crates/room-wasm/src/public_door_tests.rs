@@ -261,7 +261,8 @@ fn two_scripted_players_seal_a_heroic_fissure_to_the_same_fingerprint_natively_a
 #[test]
 fn two_scripted_players_meet_a_raids_heroic_task_and_fight_to_its_end_to_the_same_fingerprint_natively_as_in_webassembly()
  {
-    // Marrow's last wave outlasts them: falling one at a time, each runs back from the spawn while he heals walking home.
+    // Marrow's last wave outlasts them: falling one at a time, each runs back from the spawn while he heals walking
+    // home.
     let (hash, event, at) = play(RAID_MINUTE);
     assert_eq!(event, (2, 3, 2), "the raid failed at its countdown's end, its heroic task met");
     assert_eq!(at, RAID_ENDED, "the tick it ended at, Marrow's wave and the stores left");

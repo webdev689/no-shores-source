@@ -46,7 +46,8 @@ export const CAST = 'cast';
 const SPARK: ReadonlySet<string> = new Set(['spark']);
 
 /** The layers of a job's frame whose ramp covers them whole (or, with `trim`, lies on their marked trim). Their
- *  sets' light is read from the body's whole table, so a piece drawn alone (an item's picture) is laid as it is worn. */
+ *  sets' light is read from the body's whole table, so a piece drawn alone (an item's picture) is laid as it is
+ *  worn. */
 const coveredOf = (job: ComposeJob, looks: ForgeLooks, trim = false): string[] =>
   layersOf(job.figure, job.anim, looksOf(job, looks)).filter((layer) =>
     (trim ? job.trimmed : job.whole)?.includes(layer),

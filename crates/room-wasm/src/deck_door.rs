@@ -73,8 +73,8 @@ pub fn hull_decks() -> &'static [Deck] {
 
 /// Each hull's build as a player sails it, as JSON, in the hulls' order: its name, its hull and canvas whole, its
 /// crew, its guns on each side and the loads they take (in the order a gunner steps through them); and its class
-/// (`naval::class::Class`): how long it lasts and its rig lasts against the Sloop, its broadside's weight, the seconds a
-/// whole crew takes to reload a side, its way and its swing against the Sloop's, and the hands who board with its
+/// (`naval::class::Class`): how long it lasts and its rig lasts against the Sloop, its broadside's weight, the seconds
+/// a whole crew takes to reload a side, its way and its swing against the Sloop's, and the hands who board with its
 /// player.
 #[must_use]
 pub fn hull_builds_json() -> String {

@@ -1,10 +1,11 @@
 // The houses' roads in the browser: once the story and the stranger's welcome are past, the tracker shows the
 // quest walked; its lines are said one scene after another (questWatch.ts), in the keeper's own screen where it is
 // open and the keeper says the scene alone, else in the dialogue box; a counter that a talk goal of the task names (or
-// whose keeper offers the quest) offers to speak with its keeper, whose screen it opens; the HUD marks where the task's next goal stands and the
-// held map the nodes its goals name; a varied step's figures and ward stand in the world (questFigures.ts); and what
-// a road gives is noticed at the foot of the screen (obtained.ts), and so is a house's horde: its Art unbounded as it
-// begins, and bound again as it ends. Each is the room's word read, never a judgement of the page's own.
+// whose keeper offers the quest) offers to speak with its keeper, whose screen it opens; the HUD marks where the task's
+// next goal stands and the held map the nodes its goals name; a varied step's figures and ward stand in the world
+// (questFigures.ts); and what a road gives is noticed at the foot of the screen (obtained.ts), and so is a house's
+// horde: its Art unbounded as it begins, and bound again as it ends. Each is the room's word read, never a judgement of
+// the page's own.
 import arts from '../../../../content/arts/arts.json' with { type: 'json' };
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import houses from '../../../../content/story/houses.json' with { type: 'json' };

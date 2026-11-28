@@ -54,4 +54,5 @@ status: in force
 - First come the ships themselves: every type, chosen by Claude, built in Blender one at a time, UV-mapped and
   painted ([[The Ships as Claude Shapes Them]], [[Hulls]]).
 
-Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the pirates' waters are the Grey Tithe's or the Lattice's ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]).
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the pirates' waters are the Grey Tithe's or the
+Lattice's ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]).

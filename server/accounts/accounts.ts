@@ -36,7 +36,8 @@ const PASSWORD_MOST = 200;
 const MINUTE = 60_000;
 /** How many times one address may ask each of these within its window, and new guests be made from everywhere at
  *  once; one username be tried from one address, and from everywhere at once; and one account take a Discord ticket.
- *  Outpost asks count with the rooms' errands in `OUTPOST_LIMIT` (`outpostStores.ts`), plot reads apart in one alike. */
+ *  Outpost asks count with the rooms' errands in `OUTPOST_LIMIT` (`outpostStores.ts`), plot reads apart in one
+ *  alike. */
 const LIMITS = {
   guest: { most: 10, window: 60 * MINUTE },
   guests: { most: 500, window: 60 * MINUTE },
@@ -208,8 +209,8 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
       const account = await sessionOf(request, database, now);
       if (account === LAPSED) return refused(401, LAPSED);
       if (!account) return refused(401, 'Not signed in.');
-      // Where its character logs back in, for the page to go after the title (`lastPlace.ts`), and its slot, so the page
-      // keeps what it keeps by character under the right one however it came in.
+      // Where its character logs back in, for the page to go after the title (`lastPlace.ts`), and its slot, so the
+      // page keeps what it keeps by character under the right one however it came in.
       const playing = await database
         .prepare('SELECT slot FROM characters WHERE account_id = ?1')
         .bind(account.id)

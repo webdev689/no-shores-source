@@ -1,6 +1,6 @@
 //! A house's pieces in the world's loot: one in ten of the Magic and Rare pieces a world Vestige opens to is a piece of
-//! the player's pledged house, its four armour pieces and its weapons, at the rarity and level opened; none for a player
-//! not pledged, none from a dungeon's, a Breach's or the sea's own content, and never a ware.
+//! the player's pledged house, its four armour pieces and its weapons, at the rarity and level opened; none for a
+//! player not pledged, none from a dungeon's, a Breach's or the sea's own content, and never a ware.
 
 use crate::asks::{Ask, Done, Here};
 use crate::character::{Character, Vestige};

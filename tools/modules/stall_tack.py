@@ -206,7 +206,8 @@ def stall_tack(module):
     for ring_x in (-9.0, -5.0):
         shapes.ring(module, (ring_x, FRONT_Y - 0.17, 1.4), 0.08, 0.025, 'iron', turn=(math.pi / 2, 0.0, 0.0),
                     segments=8, sides=3)
-    # Where a hanging shop sign's bracket is fixed, high on the east front post, facing along the front away from its middle.
+    # Where a hanging shop sign's bracket is fixed, high on the east front post, facing along the front away from its
+    # middle.
     module.socket('sign', (HALF_X - 0.25, FRONT_Y, 3.6), (1, 0))
     middle = (TACK[0] + 1.2 + TACK[1] - 0.6) / 2
     module.socket('counter', (middle, FRONT_Y - 1.35, 0.0), (0, -1))

@@ -1,7 +1,7 @@
 // A social space's station's screen in the menu, and its title: a keeper's (npc/npcScreen.ts), the pledged faction's
 // with its muster of officers under its wares, or the Harbourmaster's counter of ships, their dress, their names and
-// the Shipwright's modules (harbour/harbourPage.ts) in his keeper's frame; and the bounty board's title, whose screen the menu builds with
-// the board's clock (bountyBoard.ts).
+// the Shipwright's modules (harbour/harbourPage.ts) in his keeper's frame; and the bounty board's title, whose screen
+// the menu builds with the board's clock (bountyBoard.ts).
 import type { Node } from '../ui/node.ts';
 import { BOARD_TITLE } from './bountyBoard.ts';
 import type { Station } from './gearScreen.ts';

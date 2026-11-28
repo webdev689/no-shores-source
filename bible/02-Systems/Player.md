@@ -51,14 +51,15 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   Bay the Tack gives on the opening's round ([[Gear]]), and the opening's next task teaches riding it: getting up,
   a walk, a gallop, the boost, getting down, and riding up to the Harbourmaster's stall, each ticked by the room from
   what the body did ([[Quests]], "The lessons").
-- **The boost** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): a rider taps the jump's key (Space, or the pad's A, as the jump is
-  rebound; a horse never jumps, so a rider's jump is its boost) for half again the horse's pace, walking or
-  galloping, for 4 s; then it recharges for 12 s before it may boost again. The run stays as it is. It is the
-  movement rules' (`boost_run`, `TUNING`'s `ride_boost`, `boost_seconds`, `recharge_seconds`): the controls carry
-  the tap (`boost`) and the body its two clocks (`boosting`, `recharging`), so the room steps it and the page
-  predicts it to the bit; a tap on foot, or while it runs or recharges, does nothing. The walker queues the tap to the
-  next tick as it does a jump. Its ring stands at the bottom left while riding ([[Interface]]) and its sounds are the
-  horse's ([[Interface]], "Horses").
+- **The boost**
+  ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): a rider
+  taps the jump's key (Space, or the pad's A, as the jump is rebound; a horse never jumps, so a rider's jump is its
+  boost) for half again the horse's pace, walking or galloping, for 4 s; then it recharges for 12 s before it may boost
+  again. The run stays as it is. It is the movement rules' (`boost_run`, `TUNING`'s `ride_boost`, `boost_seconds`,
+  `recharge_seconds`): the controls carry the tap (`boost`) and the body its two clocks (`boosting`, `recharging`), so
+  the room steps it and the page predicts it to the bit; a tap on foot, or while it runs or recharges, does nothing. The
+  walker queues the tap to the next tick as it does a jump. Its ring stands at the bottom left while riding
+  ([[Interface]]) and its sounds are the horse's ([[Interface]], "Horses").
 - **The boost's look** (`combat/hoofDust.ts`, laid with the fight's marks): as it begins the hind hooves dig in, dust
   bursting out round them (18 motes) and clods of earth flying up behind (8); while it runs the hooves strike in turn
   ten times a second at a boosted walk's pace or faster (fewer slower, none standing), each kicking up dust that hangs,
@@ -71,12 +72,13 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
 - **The camera** sits in the head, or behind it and up in third person on a boom (`cameraOrbit`). Through the
   head it sees 65° tall where third person sees the lens's 50°, widening as the camera comes in past third person's
   nearest, 0.6 m;
-  the first person's weapon keeps its size, zoomed by aiming alone (`handsZoom`) ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). Where a block
-  or the ground stands between the head and the boom's end, the boom comes in to stand 0.25 m short of it, eased in
-  fast and let out slowly so it never snaps (`boomFollowed`, `boom.ts`); however it eases it stands no nearer a block
-  or the ground than 0.12 m, so the near plane never cuts through a wall, and indoors it shows the room from inside.
-  A block the head stands in, as a room's volume, does not hold it. The page draws from it. An address asks for a
-  camera to arrive with, as for a spawn: `&view=first` or `&view=third,<metres>`.
+  the first person's weapon keeps its size, zoomed by aiming alone (`handsZoom`)
+  ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). Where a block or the ground stands
+  between the head and the boom's end, the boom comes in to stand 0.25 m short of it, eased in fast and let out slowly
+  so it never snaps (`boomFollowed`, `boom.ts`); however it eases it stands no nearer a block or the ground than 0.12 m,
+  so the near plane never cuts through a wall, and indoors it shows the room from inside. A block the head stands in, as
+  a room's volume, does not hold it. The page draws from it. An address asks for a camera to arrive with, as for a
+  spawn: `&view=first` or `&view=third,<metres>`.
 - **The figure** is composed from the [[Sprite Forge]]'s strips and kept as cards (`Cards`). Whatever draws the
   scene makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass.
   The game's also says on which frames a figure standing in the world has its card chosen afresh (`poseDue`; [[Game]],

@@ -48,7 +48,8 @@ const SPECK = 0.03;
 
 /** The pixels `worn` shows that `bare` does not, the two lined up by their feet, on a clear ground and cropped round
  *  them, less any speck apart from the piece, and, for a piece in one (a weapon or a shield), any part standing away
- *  from its largest (a sheath at the hip beside a sword's blade and grip); null if none differ. A worn piece can widen a frame, so the two need not be the same size. */
+ *  from its largest (a sheath at the hip beside a sword's blade and grip); null if none differ. A worn piece can widen
+ *  a frame, so the two need not be the same size. */
 export function addedBy(worn: Picture, bare: Picture, onePiece = false): Picture | null {
   const { width, height } = worn;
   const [wornX, wornY] = worn.root ?? [0, 0];

@@ -191,8 +191,8 @@ pub struct Room {
     /// The balls that stopped since the last snapshot, each as its last segment and the point it left its gun.
     pub(crate) lines: Vec<Line>,
     /// What the foes share, how hot their fight runs, the routes they walk, the most it holds, and a node's garrison;
-    /// the seed the players' loot is drawn from, and apart from it the seed the foes' chances and the camps are, since a
-    /// player sees where a foe stands and what it does.
+    /// the seed the players' loot is drawn from, and apart from it the seed the foes' chances and the camps are, since
+    /// a player sees where a foe stands and what it does.
     pub(crate) board: ::foes::Board,
     pub(crate) director: ::foes::Director,
     pub(crate) nav: navmesh::NavMesh,
@@ -465,8 +465,8 @@ impl Room {
             let Input { sequence, seen, shown, arms, dress, .. } = input;
             input = Input { sequence, seen, shown, arms, dress, ..Input::default() };
         }
-        // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
-        // One that does not read is refused, and the last that did is kept.
+        // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one
+        // shown. One that does not read is refused, and the last that did is kept.
         if let Some(dress) = input.dress.take().filter(|dress| gear::cosmetics::read_dress(dress).is_some()) {
             found.dress_next = (dress != found.dress_sent).then_some(dress);
         }

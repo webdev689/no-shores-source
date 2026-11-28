@@ -1,7 +1,7 @@
-"""The figures workflow's run, on one machine of the owner's: the jobs a GitHub run left undrawn drawn here, side by side,
-then every job laid in and published, so a large redraw costs no Actions minutes. Run from the repository's root with
-the Python that has Blender's module (Sprite Forge, "Running it"), GitHub's `gh` logged in, and CLOUDFLARE_API_TOKEN
-set for the publish:
+"""The figures workflow's run, on one machine of the owner's: the jobs a GitHub run left undrawn drawn here, side by
+side, then every job laid in and published, so a large redraw costs no Actions minutes. Run from the repository's root
+with the Python that has Blender's module (Sprite Forge, "Running it"), GitHub's `gh` logged in, and
+CLOUDFLARE_API_TOKEN set for the publish:
 
     python -I tools/forge_figures_local.py --run <figures run id> [--procs 4] [--threads 4] [--no-publish]
 

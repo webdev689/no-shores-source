@@ -286,8 +286,9 @@ function dealSteps(zone: PassageZone, word: PassageWord): Step[] {
   return steps;
 }
 
-/** The deal's tracker as the HUD's task tracker shows a quest: where the zone lies in the dive, what it is, what is to do and how far it is, the lamp to light, the way on, and in the last ten minutes before the week
- *  turns (Tuesday 09:00 UTC, by the rooms' clock `now`, milliseconds) that the web is about to shift. */
+/** The deal's tracker as the HUD's task tracker shows a quest: where the zone lies in the dive, what it is, what is to
+ *  do and how far it is, the lamp to light, the way on, and in the last ten minutes before the week turns (Tuesday
+ *  09:00 UTC, by the rooms' clock `now`, milliseconds) that the web is about to shift. */
 export function dealTracker(zone: PassageZone, word: PassageWord, now: number): Quest {
   const steps = dealSteps(zone, word);
   const open = word.open ?? word.openMouths.length > 0;

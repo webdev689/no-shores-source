@@ -138,7 +138,8 @@ const CARRIED = {
 export const HAND_M = 1.1;
 /** A lamp no brighter than this at full shows on nothing, so it takes no place among the few lit. */
 const FAINTEST = 0.05;
-/** A lamp is whole once it leads the first lamp left out by this much, metres, and fades to nothing as that one nears. */
+/** A lamp is whole once it leads the first lamp left out by this much, metres, and fades to nothing as that one
+ *  nears. */
 const CUT_FADE_M = 10;
 
 /** A light carried by someone standing with their feet at `feet` (world metres). */

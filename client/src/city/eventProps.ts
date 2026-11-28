@@ -1,7 +1,7 @@
 // What the public events' props stand as on the page: each a module (tools/modules: the Fissure's, the Grey Tithe's;
-// the chests built in code, chestModules.ts) drawn at its place, turned, scaled, risen out of the ground as far as it has come, its lid swung and its
-// crystal glowing. The props are worked out each frame from the event the room sends (its marks) and the player's
-// chests, and drawn by EventPropsDraw; their crystal also lights the night round them.
+// the chests built in code, chestModules.ts) drawn at its place, turned, scaled, risen out of the ground as far as it
+// has come, its lid swung and its crystal glowing. The props are worked out each frame from the event the room sends
+// (its marks) and the player's chests, and drawn by EventPropsDraw; their crystal also lights the night round them.
 import { CHEST_OPEN_RAD } from '../models/chest.ts';
 import { FIRELIGHT, type LampPlace } from '../sky/lamps.ts';
 import { CRYSTAL_LAMP } from './crystal.ts';

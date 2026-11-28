@@ -33,9 +33,9 @@ export interface Swing {
   readonly reload: boolean;
 }
 
-/** One hand as it is drawn: what it holds, its record and frame, mirrored about the screen's middle or not, lowered by a
- *  share of its own height, moved in toward the middle and down in design pixels, and whether a crossbow is drawn from
- *  its pair's art. */
+/** One hand as it is drawn: what it holds, its record and frame, mirrored about the screen's middle or not, lowered by
+ *  a share of its own height, moved in toward the middle and down in design pixels, and whether a crossbow is drawn
+ *  from its pair's art. */
 export interface HandView {
   readonly hand: Hand;
   readonly holding: Holding;
@@ -143,7 +143,8 @@ export class Hands {
     }
   }
 
-  /** Ends every reload under way at once: the fight's rules have loaded the weapons, so the next shot they let go plays. */
+  /** Ends every reload under way at once: the fight's rules have loaded the weapons, so the next shot they let go
+   *  plays. */
   loaded(): void {
     // A brace's rules wait only out the first gun's frames before the other fires: they load both once both have fired.
     if (this.plan?.volley && this.arms.some((arm) => arm.shot?.loaded)) return;

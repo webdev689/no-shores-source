@@ -39,7 +39,8 @@ of its own for each material, and Destiny 1's three-by-three gear shelf.
 - **Strangers see whether a player is playing or away.**
 - **A block leaves a shared company or guild as it is.**
 - **Anyone may check whether a username exists.**
-- **Names, guild names and mottos follow guidelines and a system**: [[Names Follow Guidelines, Checked by the Accounts]].
+- **Names, guild names and mottos follow guidelines and a system**:
+  [[Names Follow Guidelines, Checked by the Accounts]].
 - **Rare and Legendary keep their colours.**
 - **The HUD drops its "In the room" line**; the Social tab's Game column shows the players in the room.
 - **Joining and the text sizes are Claude's to decide**, joining as other games do it.

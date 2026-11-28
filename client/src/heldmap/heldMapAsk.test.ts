@@ -30,7 +30,8 @@ const WEST: readonly [number, number] = [500, 500];
 const EAST: readonly [number, number] = [3_500, 1_500];
 const LAND: readonly [number, number] = [1_500, 500];
 /** The exact rule (the room's): the water west of 1,500 m is the first, east of it the second, land in neither; a
- *  coast's own water reads the grid's land cell as sea. The first is home north of 2,000 m, the Grey Tithe's past it. */
+ *  coast's own water reads the grid's land cell as sea. The first is home north of 2,000 m, the Grey Tithe's past
+ *  it. */
 const exact: WaterJudge = ([x, y]) => {
   const continent = x < 1_500 ? 0 : x >= 1_600 ? 1 : null;
   if (continent === null) return null;

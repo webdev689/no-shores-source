@@ -2,9 +2,9 @@ import catalogue from '../../../../content/guilds/banners.json' with { type: 'js
 
 /**
  * A guild's banner as its founder and admins make it, after Destiny 2's clan banners: a cloth of one cut and colour, a
- * device over it in a second colour, a sign in its own colour on a ground of its own, and the staff it hangs from. Every
- * choice is from the lists in `content/guilds/banners.json`. The accounts judge a banner by this law before keeping it,
- * and the page's editor offers only what it allows, so the two never disagree.
+ * device over it in a second colour, a sign in its own colour on a ground of its own, and the staff it hangs from.
+ * Every choice is from the lists in `content/guilds/banners.json`. The accounts judge a banner by this law before
+ * keeping it, and the page's editor offers only what it allows, so the two never disagree.
  */
 
 /** A banner, each part by its id in the catalogue. */

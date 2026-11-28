@@ -61,7 +61,8 @@ export type MeshBuilder = {
     normal: readonly number[],
     mapping: readonly (readonly number[])[],
   ): void;
-  /** `normal` winds the triangle; `cornerNormals`, where given, are what each corner keeps, so a curve shades smooth. */
+  /** `normal` winds the triangle; `cornerNormals`, where given, are what each corner keeps, so a curve shades
+   *  smooth. */
   tri(
     picture: readonly number[],
     corners: readonly (readonly number[])[],

@@ -212,8 +212,8 @@ pub(crate) fn climb_ways(climbs: &[[f64; 7]]) -> Vec<Path> {
         .collect()
 }
 
-/// A layout's sculpt (its claim, its floors, its outcrops of a shape, its climbs, its massif's height and seed), each of
-/// its areas' basins, the caverns cut beside them, and the area each climb to a lookout climbs out of (`lookouts`).
+/// A layout's sculpt (its claim, its floors, its outcrops of a shape, its climbs, its massif's height and seed), each
+/// of its areas' basins, the caverns cut beside them, and the area each climb to a lookout climbs out of (`lookouts`).
 #[must_use]
 pub fn carve(
     field: &Field,
@@ -337,7 +337,8 @@ pub fn carve(
             [x1, y1, x2, y2, half, foot, lifted(to)]
         }));
     }
-    // A coven's or a cave's cavern is cut into the rock beside its floor, before the climbs, runs and dead rock are found.
+    // A coven's or a cave's cavern is cut into the rock beside its floor, before the climbs, runs and dead rock are
+    // found.
     let caverns = if grades.is_empty() {
         Vec::new()
     } else {

@@ -133,7 +133,8 @@ export function layRuns(
   }
 }
 
-/** One quad about `middle` from column `left` to `right` and row `top` to `bottom`, each a step of `across` and `up`. */
+/** One quad about `middle` from column `left` to `right` and row `top` to `bottom`, each a step of `across` and
+ *  `up`. */
 export function quadOut(
   out: number[],
   middle: Point,

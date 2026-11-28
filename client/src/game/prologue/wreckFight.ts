@@ -333,7 +333,8 @@ export class WreckFight implements Beat {
     // The lesson goes on as the menu is used (equip the bow), so its step stays in sight over the menu.
     hud.tasks.inMenu = true;
     hud.reach(shown.standing);
-    // Until the room's Thule is shown (asked of the rooms' worker, answered a moment later), the story's stands for him.
+    // Until the room's Thule is shown (asked of the rooms' worker, answered a moment later), the story's stands for
+    // him.
     const waiting = !coming && this.fought && !run.boss && !run.outcome;
     const thule = coming ? this.thuleActor(tick.clock - coming.since) : waiting ? this.thuleActor(tick.clock) : null;
     // A cutscene is watched from its own eye, never through the player's: no hands over it.

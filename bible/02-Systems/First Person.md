@@ -22,8 +22,8 @@ code:
 What the player holds in first person, from the [[Sprite Forge]]'s first-person pictures, as DFO plays it
 ([[The Player Plays as in DFO]]). The [[Test Ground]] hands `FirstPerson` the attack button and the player's state each
 frame: what is in each hand, the gauntlets and boots worn, whether the hands are drawn, walking or running, the metres
-walked, a cast, a climb, a ride and the look's bearing and tilt. It answers the blow that lands or the shot that leaves, and from
-which hand, and reports the swing or shot under way, so the figure seen from outside plays a matching move.
+walked, a cast, a climb, a ride and the look's bearing and tilt. It answers the blow that lands or the shot that leaves,
+and from which hand, and reports the swing or shot under way, so the figure seen from outside plays a matching move.
 
 ## How it works
 
@@ -142,8 +142,8 @@ it. Fists wear the gauntlets for a punch and the boots for a kick.
 A gun is its own layer, plain or gilded, under the hands in the gauntlets worn. A crossbow is a cell of its metal's
 strip: iron, steel, silver, elven, dwarven or mithril, each its own model and colours, undyed; any other metal draws
 steel's. One of a pair draws from its metal's pair strip, smaller and farther across. A shield is its metal's make,
-or the plain wooden shield, under the hand on its grip. The torch and the lantern are their own layers under a hand. The healing
-flask is its own layer, its draught's red undyed, under the right hand round its neck.
+or the plain wooden shield, under the hand on its grip. The torch and the lantern are their own layers under a hand. The
+healing flask is its own layer, its draught's red undyed, under the right hand round its neck.
 
 The forge draws every metal grey. A grey texel goes to the nearest step of Daggerfall's metal band and takes that
 step of the metal's ramp; every other colour snaps to the nearest palette colour. Steel, leather, chain and the guilds'

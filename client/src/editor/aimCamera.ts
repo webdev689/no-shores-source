@@ -19,7 +19,8 @@ const SWAP_SHARE = 0.05;
  *  side: a deliberate turn, not a slip of the hand laying range; the right stick leant whole does it in half a
  *  second. */
 export const SWING = { px: 120, fadeS: 0.3 } as const;
-/** The eye's way round the ship is felt every this many radians of bearing (5°), and every this many metres of height. */
+/** The eye's way round the ship is felt every this many radians of bearing (5°), and every this many metres of
+ *  height. */
 const ROUND_STEP = Math.PI / 36;
 const ROUND_RISE_M = 0.5;
 

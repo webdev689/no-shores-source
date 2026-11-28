@@ -17,8 +17,8 @@ Asked which Freesound licences may be used, the owner chose "CC0 and CC-BY". Ask
 On the sheet the owner then wrote of the gains: "Try to generate a unique consistant sound for each". Asked which
 sounds that meant, the owner chose "The gains only".
 
-Of a hold's sound the owner said: "It shouldnt be this overbearing sound. It should be a slight buildup, but not a sci fi
-charge", then of the airs offered, "Breath, but not a human breath", and picked the Shimmer, noting "Its not an
+Of a hold's sound the owner said: "It shouldnt be this overbearing sound. It should be a slight buildup, but not a sci
+fi charge", then of the airs offered, "Breath, but not a human breath", and picked the Shimmer, noting "Its not an
 electric charge".
 
 ## What it settles

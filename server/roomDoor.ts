@@ -42,8 +42,8 @@ export interface RoomDoor {
    *  text is not a patrol's or it has no such dungeon. */
   openDungeon(nodeText: string, dungeon: number): boolean;
   /** Opens a dungeon's run from its ask (JSON: its dungeon, its tier 0 to 2 and the Unix minute it opens, as
-   *  crates/room-wasm/src/run_door.rs reads it), and a patrol's dungeon's from its patrol's node file's text, whose lock
-   *  it keeps; false for an ask that does not read, a dungeon no rule lays, or a patrol's without its file. */
+   *  crates/room-wasm/src/run_door.rs reads it), and a patrol's dungeon's from its patrol's node file's text, whose
+   *  lock it keeps; false for an ask that does not read, a dungeon no rule lays, or a patrol's without its file. */
   openRun(ask: string, patrolText?: string): boolean;
   /** Opens a passage zone's room from its ask (JSON: its island, the week of its web, its zone, its route and the Unix
    *  minute it opens, as crates/room-wasm/src/passage_room_door.rs reads it); false for a zone no week's web holds. */
@@ -71,9 +71,9 @@ export interface RoomDoor {
   /** Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's number, its faction, its rank
    *  (1 Minor to 5 Boss) and level; false if the hull or the rank is not one. */
   openDeck(hull: number, faction: number, rank: number, level: number): boolean;
-  /** Opens the sea round the continents of a layout file's text, its hostile ships' chances drawn from `seed`, its clock
-   *  started at `worldStartS` (seconds since the Unix epoch, which sets its fights' weather); false if the text is not
-   *  a layout. */
+  /** Opens the sea round the continents of a layout file's text, its hostile ships' chances drawn from `seed`, its
+   *  clock started at `worldStartS` (seconds since the Unix epoch, which sets its fights' weather); false if the text
+   *  is not a layout. */
   openSea(layoutText: string, seed: number, worldStartS?: number): boolean;
   /** Opens a fleet room on the open sea. */
   openFleet(worldStartS?: number): boolean;
@@ -237,7 +237,8 @@ export interface RoomDoor {
   /** The story's sword and shield or its bow, by the gear's kind number, taken from the deck into `player`'s pack,
    *  unworn (`Room::story_take`): whether it was given. */
   storyTake(player: number, kind: number): boolean;
-  /** On the wreck, the wisp gives `player` the Storm, worn, earned and charged (`Room::story_storm`): whether it did. */
+  /** On the wreck, the wisp gives `player` the Storm, worn, earned and charged (`Room::story_storm`): whether it
+   *  did. */
   storyStorm(player: number): boolean;
   /** On the wreck, sends a foe at a player, alert, as a foe called to a fight is sent; whether it was. */
   storyHunt(foe: number, player: number): boolean;

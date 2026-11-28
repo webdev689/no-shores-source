@@ -308,8 +308,9 @@ impl Room {
         }
     }
 
-    /// Where a group's places are gathered: round its post once it defends, at its fallback as the encounter falls back,
-    /// at the last stand's post for its last stand; else its post and its beat as ever. A wave holds where it came.
+    /// Where a group's places are gathered: round its post once it defends, at its fallback as the encounter falls
+    /// back, at the last stand's post for its last stand; else its post and its beat as ever. A wave holds where it
+    /// came.
     fn anchor_of(&self, post: usize, stage: Option<Stage>) -> Option<[f64; 3]> {
         let found = &self.garrison[post];
         let encounter = self.encounter.as_ref();

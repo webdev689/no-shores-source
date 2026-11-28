@@ -126,7 +126,8 @@ impl Fight {
                 continue;
             };
             player.guns.braced = order.brace;
-            // A side drawn for a new load reloads as its volleys do: by its hands left, its class and its fittings' trim.
+            // A side drawn for a new load reloads as its volleys do: by its hands left, its class and its fittings'
+            // trim.
             let trimmed = self.fittings.get(id).map_or(1.0, |fitted| fitted.trim.reload);
             let pace = RELOAD_SINGLEHANDED * crate::class::class_of(player.hull).reload * trimmed;
             if let Some(shot) = order.load
@@ -337,7 +338,8 @@ impl Fight {
         self.struck_by(shooter, target, (zone, rigged), state);
     }
 
-    /// Each player's hands mend their ship if nothing hurt it lately and no hostile captain who would take it lies near.
+    /// Each player's hands mend their ship if nothing hurt it lately and no hostile captain who would take it lies
+    /// near.
     fn mend(&mut self, wind_at: &impl Fn([f64; 2]) -> [f64; 2]) {
         let captains = self.ids(true);
         for id in self.ids(false) {

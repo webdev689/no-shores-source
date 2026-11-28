@@ -129,9 +129,9 @@ impl Sea {
     }
 
     /// A place's room names the accounts of the players it holds: each one's parked ship lying at its island (the
-    /// coast nearest it, `coast_at`; any parked ship for `Ashore::Anywhere`) is seen for `NAMED_S` more, and a sea island named is held as `hold_ashore`
-    /// holds it. The answer is every parked ship seen that lies at the island, by its account: none for a room at no
-    /// island, or at a sea island that does not stand.
+    /// coast nearest it, `coast_at`; any parked ship for `Ashore::Anywhere`) is seen for `NAMED_S` more, and a sea
+    /// island named is held as `hold_ashore` holds it. The answer is every parked ship seen that lies at the island, by
+    /// its account: none for a room at no island, or at a sea island that does not stand.
     pub fn ashore(&mut self, place: Ashore<'_>, accounts: &[&str]) -> Vec<(String, Parked)> {
         let now = self.host_seconds();
         self.let_go_unnamed();

@@ -11,14 +11,16 @@ import { ELEMENTS } from './gear.ts';
 export const PALETTE_LETTERS = 'abcdef';
 /** The menu's lit brass, for a frame's fittings. */
 const BRASS = '#f3cf86';
-/** Each element's deep shade and white heat, by the gear crate's numbers, beside its glyph's outline, body and light. */
+/** Each element's deep shade and white heat, by the gear crate's numbers, beside its glyph's outline, body and
+ *  light. */
 const DEEP: Readonly<Record<number, readonly [string, string]>> = {
   1: ['#b8441a', '#fff6d8'],
   2: ['#1f6fa8', '#ffffff'],
   3: ['#5d2aa8', '#ffffff'],
 };
 
-/** An element's palette for the Arts' maps: its outline, deep shade, body, light and heat, then brass; empty for none. */
+/** An element's palette for the Arts' maps: its outline, deep shade, body, light and heat, then brass; empty for
+ *  none. */
 export function artPalette(element: number): readonly string[] {
   const glyph = ELEMENTS[element]?.palette;
   const [deep, heat] = DEEP[element] ?? [];

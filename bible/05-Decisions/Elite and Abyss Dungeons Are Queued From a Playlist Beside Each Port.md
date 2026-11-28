@@ -27,7 +27,8 @@ Shown the first Playlist screen, four tiles of words side by side:
 
 - **A Playlist node stands beside each of the three port cities**, Overlook, Sunspire and Rimeholt, on the map.
   Choosing it opens the Playlist screen rather than landing (replaced: the Playlist stands in the island's panel
-  when docked at each port, and no longer on the map, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
+  when docked at each port, and no longer on the map,
+  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
 - **The Playlist holds the Elite and the Abyss matchmade content**, dungeons alone for now. Players queue from it and
   can farm it, rather than finding it in the Journal.
 - **It shows the modifiers and the weekly rewards**, and **pays daily rewards**; each run still pays what a run pays.

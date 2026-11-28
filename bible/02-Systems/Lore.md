@@ -48,8 +48,8 @@ Houses":
 | The Keeper's Hours | Lamplighters | dark amber, the lantern | a chapter for each task of "The Keeper's Lamp" |
 | Unwritten | The Veiled | dusk purple, the moon | a chapter for each task of "What the Tithe Writes" |
 
-Each house's book's twelve chapters come one as each task of its road is done, in the road's order, the last as the road ends.
-Together they tell where each Art came from.
+Each house's book's twelve chapters come one as each task of its road is done, in the road's order, the last as the road
+ends. Together they tell where each Art came from.
 
 In "The Passages" (the lantern), "Longer Than the Chart" (grey-green, the lantern) holds one chapter, "The First
 Lamp", a Grey Tithe reckoning of the ways under Saltmere, found as the first lamp is lit.
@@ -79,10 +79,11 @@ the Breach and the find).
   alone, nor before a signed-in player's kept character has come. A chapter the room gave before then (the story's)
   is carried into it, as the story is.
 - **Checked.** Each house's book gives a chapter for every task of its road, in its order, and walking a road
-  through the rules leaves its character holding exactly the chapters of the tasks done. The file's ids are unique and hold no `/`, each category has a book and each book a chapter, each
-  book's category is one of its own, each quest and task named is one, and each chapter laid in the world lies at a
-  node the world holds, at a place that node holds, inside its ring, as the bake lays it. The file is hashed into the
-  protocol's version (`tools/numbered.json`), as chapters cross the wire by their place in it.
+  through the rules leaves its character holding exactly the chapters of the tasks done. The file's ids are unique and
+  hold no `/`, each category has a book and each book a chapter, each book's category is one of its own, each quest and
+  task named is one, and each chapter laid in the world lies at a node the world holds, at a place that node holds,
+  inside its ring, as the bake lays it. The file is hashed into the protocol's version (`tools/numbered.json`), as
+  chapters cross the wire by their place in it.
 
 ## On the wire
 

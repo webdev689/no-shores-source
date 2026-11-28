@@ -61,7 +61,8 @@ const SHEET_PATH = '@art/held-map-forge-sheet.png';
 const HANDS_FRAMES = 17;
 const handsPath = (gauntlets: string | null) =>
   `@art/held-map-forge-hands${gauntlets ? `-${forgeName(gauntlets)}` : ''}.png`;
-/** The gauntlets' fidget: the fingers of each hand flex in turn, every few seconds, a frame each twelfth of a second. */
+/** The gauntlets' fidget: the fingers of each hand flex in turn, every few seconds, a frame each twelfth of a
+ *  second. */
 const FIDGET = { every: 6, frameS: 1 / 12 } as const;
 
 type Phase =
@@ -212,8 +213,8 @@ export class HeldMap {
     this.raise(viewport, gauntlets, (ink) => viewOn(ship, ink, WORLD));
   }
 
-  /** Raises the map on foot, showing `sheet`, the land the player stands on, centred on them where they stand (`standing`,
-   *  the sheet's metres): only to look at, panned and zoomed, never clicked to go anywhere. */
+  /** Raises the map on foot, showing `sheet`, the land the player stands on, centred on them where they stand
+   *  (`standing`, the sheet's metres): only to look at, panned and zoomed, never clicked to go anywhere. */
   openLand(
     viewport: { readonly width: number; readonly height: number },
     sheet: LandSheet,

@@ -1,10 +1,10 @@
 //! What a player asks of the passages, answered in turn as every ask is (`asks.rs`): in a passage zone to go on through
-//! an onward mouth, to kindle a dead lamp, open a reliquary or light the zone's lamp (E held at it, `passage_holds.rs`),
-//! and to go home from a lit lamp; in a patrol zone with passages to begin a dive at one of its mouths, by its route,
-//! or at a lamp lit this week. Each is answered done or with why not, the dive's zone told with the gear. And what the
-//! room does for the dive as a player comes and goes: a player joining a zone of their dive finds into its haul from
-//! now; joining any other room ends their dive; a respawn empties the haul; a kill counts toward the passages'
-//! bounties and the Atheric bounties.
+//! an onward mouth, to kindle a dead lamp, open a reliquary or light the zone's lamp (E held at it,
+//! `passage_holds.rs`), and to go home from a lit lamp; in a patrol zone with passages to begin a dive at one of its
+//! mouths, by its route, or at a lamp lit this week. Each is answered done or with why not, the dive's zone told with
+//! the gear. And what the room does for the dive as a player comes and goes: a player joining a zone of their dive
+//! finds into its haul from now; joining any other room ends their dive; a respawn empties the haul; a kill counts
+//! toward the passages' bounties and the Atheric bounties.
 
 use super::passage_holds::HOLD_REACH_M;
 use super::{Held, Passage};

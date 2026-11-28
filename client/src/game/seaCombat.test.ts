@@ -301,7 +301,8 @@ test('a held aim looks off the side it was taken on at its lay: a small drag acr
   const shots = await frames(60);
   const last = shots.at(-1);
   assert.equal(orders.at(-1)?.aim?.bearing, 90);
-  // At its lay, off the battery's middle, from an eye aboard half a metre forward of it: within a few degrees of square.
+  // At its lay, off the battery's middle, from an eye aboard half a metre forward of it: within a few degrees of
+  // square.
   assert.ok(last && Math.abs(last.yaw - (heading + Math.PI / 2)) < 0.05, `it looks along ${last?.yaw}`);
   const range = orders.at(-1)?.aim?.range ?? 0;
   turn(-20);
@@ -506,7 +507,8 @@ test("the pad's brace tapped braces for that tap alone, and held braces until it
   assert.equal(orders.at(-1)?.brace, false);
 });
 
-/** A sea room on a link that does nothing, holding `FIRST` as the player's fight, and the hand its snapshots come by. */
+/** A sea room on a link that does nothing, holding `FIRST` as the player's fight, and the hand its snapshots come
+ *  by. */
 async function roomInFight() {
   let hand: (snapshot: Snapshot) => void = () => undefined;
   const link = {

@@ -85,7 +85,8 @@ interface Overhead {
 }
 
 /** Over a living foe its plate, shown for the one nearest the crosshair, the one locked and those fought lately, laid
- *  so none covers another, and under the compass the boss bar of the Boss in the fight, who shows none over its head. */
+ *  so none covers another, and under the compass the boss bar of the Boss in the fight, who shows none over its
+ *  head. */
 export class FoeBars {
   readonly boss = new FoePlate({ poise: true, remembers: 'found' });
   private readonly overheads = new Map<number, FoePlate>();

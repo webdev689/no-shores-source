@@ -100,8 +100,8 @@ impl Character {
         }
     }
 
-    /// Keeps a Vestige a first clear pays: in the carried ten, else in the vault, else posted, so it is never lost; never
-    /// in a dive's haul, which a fall loses, wherever the player stands.
+    /// Keeps a Vestige a first clear pays: in the carried ten, else in the vault, else posted, so it is never lost;
+    /// never in a dive's haul, which a fall loses, wherever the player stands.
     pub fn keep_paid(&mut self, vestige: Vestige) {
         let vaulted = self.vestiges_held(false) >= VESTIGES_MOST;
         if vaulted && self.vestiges_held(true) >= VAULT_MOST {
@@ -140,7 +140,8 @@ impl Character {
         let (mut at, mut took, mut refused) = (0, false, None);
         while at < self.mail.len() {
             let letters = self.mail.len();
-            // A letter whose Vestige and item were taken already (it stays for keys this room does not know) gives none.
+            // A letter whose Vestige and item were taken already (it stays for keys this room does not know) gives
+            // none.
             let holds = self.mail[at].vestige.is_some() || self.mail[at].item.is_some();
             match self.open_letter(at) {
                 Ok(_) => {

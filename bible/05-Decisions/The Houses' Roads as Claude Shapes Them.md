@@ -87,10 +87,12 @@ kinds came, each a goal any later mission may use ([[Quests]]), and each road to
 | Unseen | Come within 8 m of a place's middle with no foe within 60 m of it alert on the player; its watch stands round the middle facing outward, so the player slips between them | The Veiled reach the Chalk Adit past its watch (the Art comes there) |
 | Race | Pass checkpoints in order within a time, run over the ground as the player likes, not along laid paths | The Stormcallers run the river road from Weir Mill by Gullwing to the Water Meadows in 270 s under Arlo's storm |
 
-Each road is twelve tasks, a horde after its Art's ([[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]): the puzzle in order comes before its instance. A failed step says its own line (the glass broken,
-the riders gone, seen, noticed, a wrong rod, stone or mark) and is tried again: a defence or an escort after 10 s, an
-unseen step once no foe has been on the player for 10 s, a race from its first checkpoint, a puzzle from its first
-point. Every task has an `id`, and the save keeps each road and task by id, so a mission added anywhere keeps every
-player's place. A figure, a ward and a puzzle's points are the player's own: other players in the room do not see them.
+Each road is twelve tasks, a horde after its Art's
+([[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]): the puzzle in order comes before
+its instance. A failed step says its own line (the glass broken, the riders gone, seen, noticed, a wrong rod, stone or
+mark) and is tried again: a defence or an escort after 10 s, an unseen step once no foe has been on the player for 10 s,
+a race from its first checkpoint, a puzzle from its first point. Every task has an `id`, and the save keeps each road
+and task by id, so a mission added anywhere keeps every player's place. A figure, a ward and a puzzle's points are the
+player's own: other players in the room do not see them.
 
 Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the foes a road stands are the island's Grey Tithe.

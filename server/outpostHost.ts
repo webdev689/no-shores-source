@@ -59,7 +59,8 @@ export function gateDoor(plot: Plot, ground: Ground, staff: string): readonly [n
 }
 
 /** What the accounts answer an errand that takes or gives, asked under its id, at the room its id begins with: how
- *  many they moved, used or gave, or `LIMITED`; they answer as they did each time. Throws when they cannot be reached. */
+ *  many they moved, used or gave, or `LIMITED`; they answer as they did each time. Throws when they cannot be
+ *  reached. */
 export async function askedAgain(
   accounts: Pick<OutpostAccounts, 'deposit' | 'deliver' | 'takeStores'>,
   errand: Taking,

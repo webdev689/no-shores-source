@@ -68,4 +68,5 @@ to at least 30 s."
 | An island by home waters' edge | Rolled only wholly past them, its anchorage too | No Tithe island with a safe anchorage |
 | A Tithe ship left inside home waters by a clash | Takes only steps away from their coast | It sails out, never hunting deeper in |
 
-The owner's answers after its audit: [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]].
+The owner's answers after its audit:
+[[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]].

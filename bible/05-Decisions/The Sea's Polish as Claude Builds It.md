@@ -5,8 +5,9 @@ status: in force
 ---
 # The Sea's Polish as Claude Builds It
 
-How the owner's [[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]]
-is built. Each call is Claude's, and the owner's to change.
+How the owner's
+[[A Held Aim Swings Between the Sides, the Oversea View Keeps Its Height, and No Ship Is Sailed Through]] is built. Each
+call is Claude's, and the owner's to change.
 
 | Call | Chosen | Why |
 |---|---|---|

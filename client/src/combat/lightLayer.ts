@@ -17,7 +17,8 @@ const LUMA: Rgb = [0.2126, 0.7152, 0.0722];
 const ADD = { srcFactor: 'one', dstFactor: 'one', operation: 'add' } as const;
 const FORMAT = 'rgba8unorm';
 
-/** The light `colour` gives at `share` of its strength: none at or below LIGHT.from's brightness, all of it at white. */
+/** The light `colour` gives at `share` of its strength: none at or below LIGHT.from's brightness, all of it at
+ *  white. */
 export function lightOf(colour: Rgb, share = 1): Rgb {
   const luma = colour[0] * LUMA[0] + colour[1] * LUMA[1] + colour[2] * LUMA[2];
   const over = Math.min(1, Math.max(0, (luma - LIGHT.from) / (1 - LIGHT.from))) * share;

@@ -5,8 +5,9 @@ status: in force
 ---
 # The Heal Is a Subtle Swirl
 
-The heal's light, as first drawn after [[The Healing Drink Is a Red Flask, Drunk in Both Views, and Heals in Red Light]],
-flared a ring at the feet, wrapped the figure in a glow and threw motes and crosses up off it. The owner wrote:
+The heal's light, as first drawn after
+[[The Healing Drink Is a Red Flask, Drunk in Both Views, and Heals in Red Light]], flared a ring at the feet, wrapped
+the figure in a glow and threw motes and crosses up off it. The owner wrote:
 
 > "Can you do a more subtle swirl animation for the heal"
 

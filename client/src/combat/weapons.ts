@@ -60,7 +60,8 @@ export interface WeaponShown {
 }
 
 /** The two rows: the loadout in hand and the other, each null where no weapon is worn in it, from `arms` and the
- *  shots left `ammo` (the player's own fighter's count, which a shot takes from at once), each with its key in `keys`. */
+ *  shots left `ammo` (the player's own fighter's count, which a shot takes from at once), each with its key in
+ *  `keys`. */
 export function weaponsOf(
   arms: ArmsShown,
   ammo: number | null,

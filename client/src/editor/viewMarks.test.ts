@@ -24,7 +24,8 @@ test('a name, a plate and a readout over the view stand where the view shows the
   for (const ratio of FRACTIONAL) {
     const inward = ratio / uiScale(ratio);
     const viewLeft = (PANEL_WIDTH * uiScale(ratio)) / ratio;
-    // The view's point (100, 50) in CSS pixels is the page's (viewLeft + 100, 50): in the interface's pixels, times inward.
+    // The view's point (100, 50) in CSS pixels is the page's (viewLeft + 100, 50): in the interface's pixels, times
+    // inward.
     const [atX, atY] = [(viewLeft + 100) * inward, 50 * inward];
     const label = labelNode({ x: 100, y: 50, text: 'Saltmere', colour: '#fff' }, PANEL_WIDTH, inward);
     assert.ok(Math.abs((label.float?.x ?? 0) - atX) < 1e-9, `the name's x at ${ratio}`);

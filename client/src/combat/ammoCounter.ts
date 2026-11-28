@@ -1,5 +1,6 @@
 // The shots left beside the crosshair while the Ranged loadout is drawn, as the fight's rules count them on the
-// player's own fighter: in brass once a fifth of the capacity or less is left, and "No ammo" in the loss colour at none.
+// player's own fighter: in brass once a fifth of the capacity or less is left, and "No ammo" in the loss colour at
+// none.
 
 import type { Node } from '../ui/node.ts';
 

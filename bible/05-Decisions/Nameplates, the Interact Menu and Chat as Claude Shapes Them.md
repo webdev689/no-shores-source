@@ -8,9 +8,10 @@ status: in force
 > "So for other players, above their head I want like the reference shows."
 
 The owner asked for nameplates over other players
-([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]]), a menu holding Use opens on a player ([[Holding Use on a Player Opens Their Interact Menu]]) and DFO's chat
-cut to three channels ([[Chat Comes From DFO With Local, World and Whisper]]). Where Overlook must choose, the choice is
-Claude's, with its reason. The owner can change any.
+([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]]), a menu holding Use opens on a player
+([[Holding Use on a Player Opens Their Interact Menu]]) and DFO's chat cut to three channels
+([[Chat Comes From DFO With Local, World and Whisper]]). Where Overlook must choose, the choice is Claude's, with its
+reason. The owner can change any.
 
 ## What it settles
 

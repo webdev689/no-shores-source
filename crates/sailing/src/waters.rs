@@ -77,8 +77,9 @@ impl Waters for OpenSea<'_> {
 /// The weather's usual wind, m/s: the breeze a ship is rated for.
 pub const USUAL_WIND_M_S: f64 = 6.5;
 
-/// The weather's wind (m/s, east and south) as a ship's sails feel it: scaled so its usual breeze is a ship's rated wind.
-/// The helm holds it within its shares, so a gale drives it at most twice as hard and a near calm still gives way.
+/// The weather's wind (m/s, east and south) as a ship's sails feel it: scaled so its usual breeze is a ship's rated
+/// wind. The helm holds it within its shares, so a gale drives it at most twice as hard and a near calm still gives
+/// way.
 #[must_use]
 pub fn sail_wind(weather_wind: [f64; 2]) -> [f64; 2] {
     weather_wind.map(|part| part * WIND_RATED / USUAL_WIND_M_S)

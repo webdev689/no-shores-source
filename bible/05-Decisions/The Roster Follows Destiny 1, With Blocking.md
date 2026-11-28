@@ -30,5 +30,6 @@ The owner later named the group: [[A Group of Players Is a Company]].
   then friends, the guild's list and the party.
 - **Every function the Roster has comes over.** No exceptions.
 
-Links: [[The Roster and Emblems as Claude Shapes Them]], [[Accounts]], [[Interface]], [[The Menu Follows Destiny, the Vault and Vendors in the Social Space]],
+Links: [[The Roster and Emblems as Claude Shapes Them]], [[Accounts]], [[Interface]],
+[[The Menu Follows Destiny, the Vault and Vendors in the Social Space]],
 [[Cosmetics Follow Destiny, Shown in Many Places]], [[The Face Is Mended Whole, and the Gauge Counts Upgrades]].

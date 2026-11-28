@@ -77,7 +77,8 @@ export function shoulderOf(feet: Point, aim: number): Point {
 }
 
 /** A point over a figure standing at `feet` as an eye at `eye` sees it: `aside` of the way across it (0 to 1), `high`
- *  of the way up, just in front of its card, which stands a body's radius toward the eye; `nearer` metres nearer still. */
+ *  of the way up, just in front of its card, which stands a body's radius toward the eye; `nearer` metres nearer
+ *  still. */
 export function onBody(feet: Point, eye: Point, aside: number, high: number, nearer = 0): Point {
   const [toX, toY] = [eye[0] - feet[0], eye[1] - feet[1]];
   const apart = Math.hypot(toX, toY) || 1;

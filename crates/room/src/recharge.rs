@@ -2,8 +2,9 @@
 //! took of its foe's most health and most shield together, weighed by the foe's rank; and a kill gives its rank's
 //! share to every player whose blow, or whose companion's or boarding hand's, landed on it in its last ten seconds
 //! while it fought, as its XP is shared. A blow on a foe walking home, its fight given up, gives nothing and counts
-//! toward no kill: shot from where it will not follow, it would fill the meter with no fight. The rules spend the charges (`combat::drink`); here they come back. A player stands in a room with all
-//! three, and again after death; one who left comes back with the charges they left with for two minutes (`left`).
+//! toward no kill: shot from where it will not follow, it would fill the meter with no fight. The rules spend the
+//! charges (`combat::drink`); here they come back. A player stands in a room with all three, and again after death; one
+//! who left comes back with the charges they left with for two minutes (`left`).
 
 use crate::Room;
 use ::foes::Rank;

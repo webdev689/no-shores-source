@@ -21,8 +21,8 @@ pub struct Left {
     pub art: u8,
     pub anima: u16,
     pub tenets: [u16; 2],
-    /// Whether they left a dungeon by a way out, standing at its exit door or its open return portal: only then does its
-    /// patrol stand them before the dungeon's door.
+    /// Whether they left a dungeon by a way out, standing at its exit door or its open return portal: only then does
+    /// its patrol stand them before the dungeon's door.
     #[serde(default)]
     pub out: bool,
 }

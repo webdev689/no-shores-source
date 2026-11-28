@@ -19,7 +19,8 @@ fn the_ladder_steps_down_by_fives() {
 #[test]
 fn a_voyage_eases_down_as_a_hostile_comes_near_along_its_way_and_is_held_inside_its_ring() {
     let ahead = |metres: f64| held_pace(60, [0.0, 0.0], (0.0, 1.0), [([0.0, -metres], true)]);
-    // A whole Sloop closing at 12 + 2.88 m/s with 0.6 s of warning: 8.93 m of its way to the hostile's 750 m sight a step.
+    // A whole Sloop closing at 12 + 2.88 m/s with 0.6 s of warning: 8.93 m of its way to the hostile's 750 m sight a
+    // step.
     assert_eq!(ahead(2_000.0), 60, "1250 m short of its sight asks no less than the pace");
     assert_eq!(ahead(1_000.0), 25, "250 m short: 28.9, down the ladder");
     assert_eq!(ahead(800.0), 5, "50 m short: 5.8");

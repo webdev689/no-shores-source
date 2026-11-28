@@ -1,10 +1,11 @@
 //! A character kept while players wore a main hand and an off hand, read once into the Melee and Ranged loadouts, so
 //! nothing it held is lost. The main hand's piece takes its slot by kind: a sword, dagger or mace with a shield beside
 //! it becomes its "& Shield", beside its twin their pair; a lone dagger becomes Double Daggers, an axe a Great axe. A
-//! named weapon becomes its named kind's. An off-hand weapon left over is carried as its new kind. A shield is refunded as its dismantle materials, unless it is
-//! a named one, which is made again as the named loadout it is now, with what its nodes cost given back. Carried and
-//! vaulted pieces are read the same way, and a Vestige for either hand is one for Melee. A node bought on a piece whose
-//! trait no longer fits it, as a shield's Bulwark on armour, is given back as it is read.
+//! named weapon becomes its named kind's. An off-hand weapon left over is carried as its new kind. A shield is refunded
+//! as its dismantle materials, unless it is a named one, which is made again as the named loadout it is now, with what
+//! its nodes cost given back. Carried and vaulted pieces are read the same way, and a Vestige for either hand is one
+//! for Melee. A node bought on a piece whose trait no longer fits it, as a shield's Bulwark on armour, is given back as
+//! it is read.
 
 use crate::catalogue::catalogue;
 use crate::character::{At, Character, Stuff};

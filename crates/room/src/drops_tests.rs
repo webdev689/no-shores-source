@@ -1,5 +1,5 @@
-//! Drops and ammunition in the room: a kill's Ammo box by the foe's rank and a Miniboss's or a Boss's crate, each thrown
-//! out in a fan, never through a wall, and taken at rest; and a player's shots spent from their gear, the weapon
+//! Drops and ammunition in the room: a kill's Ammo box by the foe's rank and a Miniboss's or a Boss's crate, each
+//! thrown out in a fan, never through a wall, and taken at rest; and a player's shots spent from their gear, the weapon
 //! refusing to fire at none.
 
 use super::*;

@@ -122,10 +122,10 @@ answered only within reach of that counter (`ShipAsk`).
   A hull is held to buy, paid whole or refused whole, and sailed from then on; the ship sailed before stays at the
   harbour. One kept is clicked to sail it again. Nothing is sold back.
 - **Paint**: a dress is bought once and kept for every ship (`content/gear/ship_dress.json`), then clicked to lay it on
-  the ship chosen. Four parts: the hull's paint, the stripe along its gunports, its canvas (a colour, or two on alternate
-  cloths) and its flag (a ground with a device in its ink, or the emblem its player wears). Each part has a start
-  entry, the ship as built. Prices follow the Tailor's dyes: Magic 1,000 Aurem, Rare 2,500, Legendary 5,000, each from a
-  ship level; each house's canvas and colours are kept at its second rank, never sold.
+  the ship chosen. Four parts: the hull's paint, the stripe along its gunports, its canvas (a colour, or two on
+  alternate cloths) and its flag (a ground with a device in its ink, or the emblem its player wears). Each part has a
+  start entry, the ship as built. Prices follow the Tailor's dyes: Magic 1,000 Aurem, Rare 2,500, Legendary 5,000, each
+  from a ship level; each house's canvas and colours are kept at its second rank, never sold.
 - **Name**: a ship is named from two lists of words, its first word none or one of the first list's; the first name
   is free, each after 250 Aurem, held for. Read as "the Grey Gull". The ask says which it is (`count` 1 a renaming):
   a free name asked of a ship named already is refused, and so is the name it bears, so an ask sent twice never pays.

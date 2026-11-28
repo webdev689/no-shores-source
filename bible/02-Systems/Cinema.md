@@ -48,14 +48,15 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   menu's: fades to black or white over any time, a white flash, the letterbox's bars, a darkening for waking, the
   title (the owner's logo over a brass rule, at a whole multiple of its cells within half the view's width), a
   prompt that breathes under it, and over the black the loading screen (`showLoading`: the logo and a breathing
-  LOADING, said to a screen reader as it shows; `logo.ts` `loadingNode`, which every trip's veil draws too, [[One Loading Screen Covers Every Trip Until the Place Is Ready]]). Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`),
-  except the darkening, a black over the whole view, under the fades, that the story sets frame by frame
-  (`darken`; [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]). The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
-  the interface, as death's grey is, so the words over it stay sharp: a Gaussian whose deviation is the blur's CSS
-  pixels, set each frame, so it follows each frame and clears at once.
-  While it stands a touch on the canvas is the story's (`touchesHeld`), so no drag pans the page or pulls it to reload
-  and a held touch is never cut short. Once the story's black has gone after its end, the screen is taken away and the
-  canvas has its own touches back.
+  LOADING, said to a screen reader as it shows; `logo.ts` `loadingNode`, which every trip's veil draws too,
+  [[One Loading Screen Covers Every Trip Until the Place Is Ready]]). Each layer eases over its own time on the
+  interface's `ease` curve (`ui/ease.ts`), except the darkening, a black over the whole view, under the fades, that the
+  story sets frame by frame (`darken`; [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]). The blur over the
+  whole view (`BlurView`) is drawn into the scene's own picture, under the interface, as death's grey is, so the words
+  over it stay sharp: a Gaussian whose deviation is the blur's CSS pixels, set each frame, so it follows each frame and
+  clears at once. While it stands a touch on the canvas is the story's (`touchesHeld`), so no drag pans the page or
+  pulls it to reload and a held touch is never cut short. Once the story's black has gone after its end, the screen is
+  taken away and the canvas has its own touches back.
 - **The logo** (`logo.ts`) is the owner's ([[The Game Is Named No Shores]]), as a pixel picture of 255 by 64 cells
   in 11 colours (`logoPicture.ts`), written from the owner's PNG by `python3 -I tools/logo/write.py <logo.png>`: each
   cell the mean of 8 by 8 of its pixels, kept where half covered, its colours cut by median cut. The PNG is not in
@@ -193,4 +194,5 @@ starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weath
   six fires' height burns thinner and is lit only at those points.
 - Fire does not spread, die down or burn anything: a fire burns as it was lit until it is put out.
 - Ships are posed on the rules' swell, so in a storm's gained sea a hull may sit into a drawn crest.
-- Past the picture's edge the blur takes the edge's own pixels, so a blurred view keeps its brightness to the edge. The prompt's soft dark glow is not drawn, only its hard shadow under it.
+- Past the picture's edge the blur takes the edge's own pixels, so a blurred view keeps its brightness to the edge. The
+  prompt's soft dark glow is not drawn, only its hard shadow under it.

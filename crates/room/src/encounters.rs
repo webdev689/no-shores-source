@@ -90,8 +90,8 @@ impl Seal {
 
 /// The Court as it stands: when its Boss woke, how many wards it has broken, whether one is up now and was told, when
 /// it rose and how many waves it has stood, when a wave it was refused is tried again, its waves' foes, how long each
-/// anchor has been stood on and when each last was, when the Reckonings began, when Fury's clock began (a living player first in the end room), and whether the
-/// Boss's health was made a match for the company.
+/// anchor has been stood on and when each last was, when the Reckonings began, when Fury's clock began (a living player
+/// first in the end room), and whether the Boss's health was made a match for the company.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Court {
     pub woke_at: Option<u64>,
@@ -295,8 +295,9 @@ impl Room {
 
     /// `count` of the dungeon's own Majors at `spots` in turn, hunting the nearest living player; their number. An
     /// encounter's foes are never its Elites, which stand only in the garrison, and a seal's or the Court's waves, or
-    /// a group stood alone, are kept to `wave_living_most` of the `living` players they are stood against. They drop nothing, as a defence tried
-    /// again stands foes that drop nothing: an encounter's foes come again, and its seal and cache are its reward.
+    /// a group stood alone, are kept to `wave_living_most` of the `living` players they are stood against. They drop
+    /// nothing, as a defence tried again stands foes that drop nothing: an encounter's foes come again, and its seal
+    /// and cache are its reward.
     pub(crate) fn stand_foes(
         &mut self,
         encounters: &mut Encounters,

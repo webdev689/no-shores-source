@@ -17,11 +17,12 @@ export const FIXTURE = { brazier: 0, candles: 1, crystals: 2, lantern: 3, hearth
 
 /** A patrol's dungeon as `room_dungeon` answers it (crates/room-wasm/src/dungeon_door.rs): x east and y south from
  *  its north-west corner, z up from its top storey's floor, every z absolute. `cells`, `ceilings` and `cellLooks`
- *  hold a plane of `columns` by `rows` for each storey, storey by storey. A cell is -2 rock, -1 corridor, -3 a flight's,
- *  -4 open air over the storey under it, or its room's number; a side is 0 east, 1 south, 2 west, 3 north; a torch is
- *  x, y, z and its wall's side; a fixture x, y, z and its kind (`FIXTURE`); a frame is its room's cell, the side its
- *  corridor lies on and its height over its floor; a pillar its corner and its top; a box min x, min y, max x, max y,
- *  bottom and top: the jambs, then the pillars, then the props' solids, then the fixtures', then the landmarks'. */
+ *  hold a plane of `columns` by `rows` for each storey, storey by storey. A cell is -2 rock, -1 corridor, -3 a
+ *  flight's, -4 open air over the storey under it, or its room's number; a side is 0 east, 1 south, 2 west, 3 north; a
+ *  torch is x, y, z and its wall's side; a fixture x, y, z and its kind (`FIXTURE`); a frame is its room's cell, the
+ *  side its corridor lies on and its height over its floor; a pillar its corner and its top; a box min x, min y, max x,
+ *  max y, bottom and top: the jambs, then the pillars, then the props' solids, then the fixtures', then the
+ *  landmarks'. */
 export interface DungeonLayout {
   readonly name: string;
   /** The first block's style, which names the dungeon. */
@@ -90,7 +91,8 @@ export interface DungeonLayout {
    *  wall has no solid among the boxes. */
   readonly props: readonly (readonly [number, number, number, number, number])[];
   readonly boxes: readonly Box[];
-  /** Each gallery's balustrades along its edges over the open air, as boxes; none from a module older than galleries. */
+  /** Each gallery's balustrades along its edges over the open air, as boxes; none from a module older than
+   *  galleries. */
   readonly balustrades?: readonly Box[];
   /** The set pieces its rooms are remembered by (content/dungeon/landmarks.json): each its module, the north-west
    *  corner of its turned footprint (x, y) and its quarter turns clockwise. */

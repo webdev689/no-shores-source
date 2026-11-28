@@ -20,8 +20,8 @@ pub(crate) enum Won {
     Court,
 }
 
-/// One checkpoint: where a fallen player stands at it (x, y, z), the way they face, how far along the activity it lies (a
-/// dungeon room's walk from the way in, or a mission post's distance from its first spawn), and what wins it.
+/// One checkpoint: where a fallen player stands at it (x, y, z), the way they face, how far along the activity it lies
+/// (a dungeon room's walk from the way in, or a mission post's distance from its first spawn), and what wins it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Checkpoint {
     pub at: [f64; 3],

@@ -4,7 +4,8 @@ import { oklab } from '../oklab.ts';
 export type Rgb = readonly [number, number, number];
 
 /** Daggerfall's colours as the forge's figures take them (the forge's forgeDyes.json): the 256-colour palette every
- *  frame is snapped to, and the 16 colours, darkest first, each clothing dye and each metal lays the forge's greys on. */
+ *  frame is snapped to, and the 16 colours, darkest first, each clothing dye and each metal lays the forge's greys
+ *  on. */
 export interface DyeTable {
   readonly palette: readonly Rgb[];
   readonly clothing: Readonly<Record<string, readonly Rgb[]>>;

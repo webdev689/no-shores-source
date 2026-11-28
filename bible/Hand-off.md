@@ -72,13 +72,13 @@ yet played by hand or with other players in a deployed room.
 - **Played by hand**: the prologue in one run; an hour's day; a ranged weapon's fight on foot; the travel's fade
   from the helm; a hostile ship coming out 1 km off at the helm (#235); a clash of a Tithe ship and a merchant, joined;
   the welcome's tour with its 400 Aurem and a starter
-  piece bought; the key strip, the leave held and a real pad's View held; the hit fixes; the Passages (every deal, a dive's way across zones, a public round, the held
-  map's public way, the sea's new ranks and salvage, the week's Abyss Dungeon run again); the escort on its horse and
-  the hulk at sea.
+  piece bought; the key strip, the leave held and a real pad's View held; the hit fixes; the Passages (every deal, a
+  dive's way across zones, a public round, the held map's public way, the sea's new ranks and salvage, the week's Abyss
+  Dungeon run again); the escort on its horse and the hulk at sea.
 - **Live, once deployed**: a dungeon of each style; the Journal and the board (a bounty taken, counted and turned in,
   a sea bounty at sea); an arrival of each kind; a Vestige left lying and taken from the Postmaster; the accounts'
-  migration of each character's room; a lore chapter found; two players reviving; the heroic raid with players; the live flow into a Test
-  Room and its Discord role check; a sea fight in the deployed rooms.
+  migration of each character's room; a lore chapter found; two players reviving; the heroic raid with players; the live
+  flow into a Test Room and its Discord role check; a sea fight in the deployed rooms.
 - **Seen**: two players seeing each other's dyes, horses, faction gear and Veiled figure; the held map's dots for
   other players, the held map on an island, or a fall while it is up; the sun through a building's panes; a blow on a
   shield; a faction set worn; the crown's crack and break; the forge's figures on the character screen; a ruin up
@@ -178,8 +178,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   checkout's server.
 - **#221's sea map, travel and locked seas**, merged: not yet pictured headless, played by hand, on a real GPU or in a
   deployed room; the chart's marks' bytes are not measured against [[Server]]'s load figures.
-- **A body lying still**: the page's intent for it is one number short (`client/src/combat/fighting.ts`, `lying`,
-  17 where `INTENT_FLOATS` is 18), found by the review's checks and offered as its own task.
+
 - **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.
@@ -212,10 +211,10 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The cloud environment.** A cloud session runs on the `no-shores-source` environment (personal, set up with the
   owner's approval): its network allows R2's public bucket (`ships.base`), which `client/src/ships/shipTags.test.ts`
-  fetches meshes from, and its setup script runs `npm ci` (unproven until a fresh session starts on it). Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask
-  check`: Node's `fetch` ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with
-  "fetch failed" and xtask stops before the build, the bundle and the repo checks; run `cargo xtask repo` beside it.
-  The Context7 and SkillsMP keys are on neither environment.
+  fetches meshes from, and its setup script runs `npm ci` (unproven until a fresh session starts on it). Run the check
+  there as `NODE_USE_ENV_PROXY=1 cargo xtask check`: Node's `fetch` ignores `HTTPS_PROXY` without it. On the Default
+  environment those four tests fail with "fetch failed" and xtask stops before the build, the bundle and the repo
+  checks; run `cargo xtask repo` beside it. The Context7 and SkillsMP keys are on neither environment.
 - **Workflows**: `tools/install-flatc.sh` joins `CODE` in `.github/workflows/rooms.yml` (a deploy change, the owner's
   yes); the `modules` workflow bakes with the four Blender chests taken out of the manifest by hand; the forge's
   renders leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
@@ -322,10 +321,10 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   dresses are composed ahead only as room comes, small objects are made each frame, and the Test Ground's panels run
   the room while the pointer is free; `server/outpostReload.test.ts`'s three tests misreported once in a full parallel
   run and passed alone and on the next run.
-- **Zones**: the other islands' eight patrol zones' runs once the owner has looked at Saltmere's; a swamp's massif is 12 m high, low
-  enough to climb in places, so its runs' end arenas need cutting deeper or walling. The layouts' open ends
-  ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites; moving each
-  patrol's dungeon entrances onto the layouts' places (#82's plan). Some
+- **Zones**: the other islands' eight patrol zones' runs once the owner has looked at Saltmere's; a swamp's massif is
+  12 m high, low enough to climb in places, so its runs' end arenas need cutting deeper or walling. The layouts' open
+  ends ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites; moving
+  each patrol's dungeon entrances onto the layouts' places (#82's plan). Some
   retaining walls near Overlook's plaza may be dropped whole (low confidence).
 - **Latent layout flaws a re-roll exposes** (#207's description): five re-rolls of the Saltgrass Downs' brief, the same
   failures on main's code and #207's. The Tithe Barns, a keep run beyond the claim, gets a beat inside the section in
@@ -388,9 +387,10 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
     refuses a second owner of one account, so a fast reload at sea while the accounts are down keeps its flotsam;
     `power::aimed` tells an aimed shot from a quick one by comparing damage, so a bow loosed on the draw's first tick
     counts as quick (carry the flag from `combat::step::draw`); a stop pressed before the ship is at sea is
-    ignored, as the course held for the keeper's answer keeps no empty one (`hold_course`). Test-only public items (`Room::set_lore`, `place_grounds`, `Sea::fight_mut`, `Brain::fights_for`,
-    `seen_coming`, `Board::tokens_out`, `Web::ways_in`, the navmesh's `find_path_ignoring` and `reachable_from`) and
-    most of `gear::band`, used by its tests alone: kept or cut is the owner's call.
+    ignored, as the course held for the keeper's answer keeps no empty one (`hold_course`). Test-only public items
+    (`Room::set_lore`, `place_grounds`, `Sea::fight_mut`, `Brain::fights_for`, `seen_coming`, `Board::tokens_out`,
+    `Web::ways_in`, the navmesh's `find_path_ignoring` and `reachable_from`) and most of `gear::band`, used by its tests
+    alone: kept or cut is the owner's call.
   - The server: room WebAssembly calls outside `guarded` in `RoomHost.openRoom` and `joined`, so a trap there leaves
     the instance poisoned rather than the object reset.
   - The client: three copies of keeping trim, arms and arts from a gear word (`roomConnection.ts`, `roomThread.ts`,

@@ -75,4 +75,5 @@ given", then: "Give a piece of uncommon faction gear".
 Replaces in part [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]] (her Aurem, the camera
 going to each place she names, and buying the starting gear) and
 [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]] (the
-stranger's 400 Aurem). Claude's calls: [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]].
+stranger's 400 Aurem). Claude's calls:
+[[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]].

@@ -70,7 +70,8 @@ export class RunCounting {
     };
   }
 
-  /** How long ago the room paid the player the hidden chest at `nth` among the Breach's, seconds; null before it has. */
+  /** How long ago the room paid the player the hidden chest at `nth` among the Breach's, seconds; null before it
+   *  has. */
   chestOpened(nth: number, tick: number): number | null {
     const paid = this.paid.get(nth);
     return paid === undefined ? null : (tick - paid) / 60;

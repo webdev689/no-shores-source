@@ -2,9 +2,9 @@
 //! carved by a seeded split and joined through the rock by the cheapest ways, the blocks grown from the way in's and
 //! joined at their shared edges, in six styles. Each room has a purpose that furnishes and lights it, and one or two
 //! rooms a landmark. Storeys stand STOREY_M apart downward from the way in's at 0 m, joined by flights of stairs
-//! (`storeys`), each block one to three storeys deep. Rooms and corridors stand on their storey's floor, under ceilings of their own
-//! heights. The same seed lays the same dungeon on every machine: the maths is + - * / and comparisons, and every
-//! draw is made on a lane of its own (`lane`).
+//! (`storeys`), each block one to three storeys deep. Rooms and corridors stand on their storey's floor, under ceilings
+//! of their own heights. The same seed lays the same dungeon on every machine: the maths is + - * / and comparisons,
+//! and every draw is made on a lane of its own (`lane`).
 
 mod banks;
 mod block;

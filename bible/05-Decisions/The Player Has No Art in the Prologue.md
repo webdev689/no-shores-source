@@ -14,4 +14,5 @@ status: in force
 
 [[Arts Are Overlook's Subclasses]].
 
-Replaced in part by [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]: a wisp gives the player the Storm Art, Volt, for the rest of the prologue once the first boarder falls.
+Replaced in part by [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]: a wisp gives the
+player the Storm Art, Volt, for the rest of the prologue once the first boarder falls.

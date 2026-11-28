@@ -10,7 +10,8 @@ import { DAY_S } from '../../sky/worldClock.ts';
 /** The story's day: world day 3, a full moon over its night, the same for every player. */
 export const STORY_DAY_S = 3 * DAY_S;
 const HOUR_S = DAY_S / 24;
-/** How thick the story's mist and its overcast make the air, a metre (the atmosphere's own, cinema/atmosphereShader). */
+/** How thick the story's mist and its overcast make the air, a metre (the atmosphere's own,
+ *  cinema/atmosphereShader). */
 const MIST_PER_M = 0.0063;
 const OVERCAST_PER_M = 0.0005;
 /** An overcast past this is a storm's, growing to a full storm at 1. */

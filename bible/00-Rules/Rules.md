@@ -3,8 +3,8 @@ type: index
 ---
 # Rules
 
-Twelve rules. Each is in force everywhere from the first commit: no baselines, no ratchets, no list of exceptions waiting
-to shrink. Most are checked by `cargo xtask check` ([[Checks]]); the rest are held in review. Each comes from
+Twelve rules. Each is in force everywhere from the first commit: no baselines, no ratchets, no list of exceptions
+waiting to shrink. Most are checked by `cargo xtask check` ([[Checks]]); the rest are held in review. Each comes from
 something DFO Online taught us ([[Lessons from DFO]]). A new rule needs the owner's agreement.
 
 | Rule | In short | Checked by |

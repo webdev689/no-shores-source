@@ -1,7 +1,8 @@
 //! Who a roll at sea sends, and where it is seen. The water at the player's ship names its faction, none in home
 //! waters; its island's level band sets its rank and its level. It is sighted farther the faster the player sails,
 //! so one met head-on stays in sight half a minute, and it comes out about half a minute's closing ahead of them, never
-//! under 1 km, on a lane where one runs near, else by a coast. The sea's map is a `Chart`, so the law can be tried on any sea.
+//! under 1 km, on a lane where one runs near, else by a coast. The sea's map is a `Chart`, so the law can be tried on
+//! any sea.
 
 use crate::hostiles::HOSTILE_WAY_M_S;
 use crate::sea::SHIP_SPEED_M_S;

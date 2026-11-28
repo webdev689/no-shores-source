@@ -10,10 +10,11 @@ status: in force
 
 ## What it settles
 
-Claude's choices for everything [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]
-leaves open. Each follows Destiny 1's weapon page in the owner's two pictures where it can; where No Shores has no
-such thing, the choice is Claude's, and its reason says so. The owner can change any of them. How the screens draw them
-is [[Interface]], and where the numbers come from is [[Gear]].
+Claude's choices for everything
+[[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]] leaves open. Each follows
+Destiny 1's weapon page in the owner's two pictures where it can; where No Shores has no such thing, the choice is
+Claude's, and its reason says so. The owner can change any of them. How the screens draw them is [[Interface]], and
+where the numbers come from is [[Gear]].
 
 ### The stats
 

@@ -2,9 +2,10 @@
 //! corner, its floor at 0 m), one spawn at the way in, and a navmesh over the whole dungeon kept to the floor joined to
 //! the way in. Its garrison is the Grey Tithe's dungeon garrison standing where the Forge puts foes: its end foe (the
 //! Reeve, a Miniboss, or an Elite Dungeon's own Boss) alone in the end room, and a band in each other room past the
-//! way in's as far as the room's most foes allow, each room's on its free cells nearest its middle, its quiet cells first, round its props. Beside the end
-//! foe's post stands the cache, shut while it stands; when it falls the cache opens and every player then in the room
-//! finds a Vestige before it, theirs alone, and a second where the run's first clear pays (`run_room.rs`).
+//! way in's as far as the room's most foes allow, each room's on its free cells nearest its middle, its quiet cells
+//! first, round its props. Beside the end foe's post stands the cache, shut while it stands; when it falls the cache
+//! opens and every player then in the room finds a Vestige before it, theirs alone, and a second where the run's first
+//! clear pays (`run_room.rs`).
 
 use crate::dungeon_lines::clear_of;
 use crate::garrison::{DUNGEON, Post, draws_of, index, node_seed};
@@ -45,12 +46,12 @@ pub(crate) struct Cache {
 /// about a third of the columns the land's 0.25 m would over the dungeon's whole rectangle.
 const NAV_CELL_M: f64 = CELL_M / 8.0;
 /// How much of a free-standing solid's footprint the bake leaves out each way (m), down to `SOLID_KEPT_M` across: a
-/// prop's or a fixture's (a rock, rubble, a brazier), and a pillar's or a landmark's no more than `FREE_MOST_M` each way
-/// (a standing stone). The bake walls every cell a solid touches and erodes one cell more, so a rock would be kept 0.4
-/// to 0.8 m off where a body keeps its radius (0.35 m), closing the gaps beside it a body walks through and leaving the
-/// floor round it off the mesh, where no foe finds a way to a player. Trimmed, the margin is 0.15 to 0.55 m, about a
-/// body's, and the narrowest gap the mesh opens between two is 0.7 m, a body's width. A wall lies on a cell's edge and
-/// keeps its 0.4 m, as do the jambs and a landmark's greater pieces, whose outlines a path must never cut.
+/// prop's or a fixture's (a rock, rubble, a brazier), and a pillar's or a landmark's no more than `FREE_MOST_M` each
+/// way (a standing stone). The bake walls every cell a solid touches and erodes one cell more, so a rock would be kept
+/// 0.4 to 0.8 m off where a body keeps its radius (0.35 m), closing the gaps beside it a body walks through and leaving
+/// the floor round it off the mesh, where no foe finds a way to a player. Trimmed, the margin is 0.15 to 0.55 m, about
+/// a body's, and the narrowest gap the mesh opens between two is 0.7 m, a body's width. A wall lies on a cell's edge
+/// and keeps its 0.4 m, as do the jambs and a landmark's greater pieces, whose outlines a path must never cut.
 const SOLID_TRIM_M: f64 = 0.25;
 const SOLID_KEPT_M: f64 = 0.02;
 const FREE_MOST_M: f64 = CELL_M / 2.0;

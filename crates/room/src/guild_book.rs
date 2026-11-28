@@ -61,9 +61,9 @@ impl Guilds {
     }
 
     /// Gives each member's guild a tenth of the XP they gained since the mark, for `week`, and each member their
-    /// guild's boons; a player in no guild gives nothing, their mark moved on all the same. Each is given with whether their kept character is theirs yet: the
-    /// character given them in its place is measured afresh, not counted as gained. Players gone are let go. Answers
-    /// those whose record moved.
+    /// guild's boons; a player in no guild gives nothing, their mark moved on all the same. Each is given with whether
+    /// their kept character is theirs yet: the character given them in its place is measured afresh, not counted as
+    /// gained. Players gone are let go. Answers those whose record moved.
     pub fn give<'kept>(
         &mut self,
         week: u64,
