@@ -1,12 +1,23 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import type { Point2 } from '../overworld/ground.ts';
 import { SIDE } from '../overworld/islandView.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
+import { maskFromOutlines } from '../overworld/seaRoute.ts';
+import type { FootContext } from './foot.ts';
+import type { Landmass } from './landmass.ts';
+import { Sea } from './sea.ts';
+import type { SeaHull } from './seaShips.ts';
 import { SeaView } from './seaView.ts';
 
 const toward = (dt: number) => ({ feet: [0, 0, 0] as const, dt, ceiling: 3000, heightAt: () => 0 });
 const quay: Mark = { id: 'quay', kind: 'social', name: 'The Quay', at: [500, 0, 2] };
 const overSide = { focus: [500, 0, 0] as const, yaw: 0, tilt: 0.9, height: 400 };
+/** Open sea round a ship well inside the world's frame, with no land. */
+const START: Point2 = [1_000_000, 1_000_000];
+const MASK = maskFromOutlines([], { leftM: 900_000, topM: 900_000, widthM: 200_000, heightM: 200_000 });
+const LANDMASS = { id: 'continent-9', plan: null, nodes: [], outline: [], heightAt: () => -50, mask: MASK };
+const HULL = { waterline: { lengthM: 18, beamM: 5, draughtM: 2 }, shown: (hull: number) => hull, marks: {} };
 
 test('the view comes down to the helm over a second, stands there, and goes back up to the sea', () => {
   const view = new SeaView([0, 0], 0);
@@ -39,24 +50,37 @@ test('the view flies up over an island side, its landings marked, and back down 
   assert.equal(view.kind, 'sail');
 });
 
-test('the switch moves between the Oversea and the Sealevel views; the wheel zooms the Oversea camera alone', () => {
+test('the switch moves between the Oversea and the Sealevel views', () => {
   const view = new SeaView([0, 0], 0);
   assert.equal(view.level, 'oversea');
-  const height = () => view.shot(toward(10)).eye[2];
-  const start = height();
-  view.zoom(3, 3000);
-  assert.ok(height() < start, 'the wheel brings the Oversea camera down');
   assert.equal(view.switchLevel(), true);
   assert.equal(view.level, 'sealevel');
   view.step(10);
   assert.equal(view.closeShare, 1, 'eased down to sea level');
-  const atSea = height();
-  view.zoom(-5, 3000);
-  assert.equal(height(), atSea, 'at sea level the wheel changes nothing');
-  assert.equal(view.level, 'sealevel', 'and never changes the view');
   view.switchLevel('oversea');
   view.step(10);
   assert.equal(view.closeShare, 0);
+});
+
+test('the wheel zooms neither view over the ship and never changes the view; a drag still turns the Oversea camera', async () => {
+  const sea = new Sea(LANDMASS as unknown as Landmass, [], HULL as unknown as SeaHull, START, 0, {} as FootContext);
+  const feet = [...START, 0] as const;
+  const eye = () => sea.view.shot({ ...toward(10), feet }).eye;
+  const start = eye();
+  sea.zoom(3);
+  assert.deepEqual(eye(), start, 'the Oversea camera keeps its height and place, wheeled in');
+  sea.zoom(-3);
+  assert.deepEqual(eye(), start, 'and wheeled out');
+  sea.switchLevel('sealevel');
+  sea.view.step(10);
+  sea.zoom(-5);
+  assert.equal(sea.level, 'sealevel', 'never changes the view');
+  sea.switchLevel('oversea');
+  sea.view.step(10);
+  sea.view.drag({ acrossPx: 100, downPx: 0 });
+  const turned = eye();
+  assert.ok(Math.hypot(turned[0] - start[0], turned[1] - start[1]) > 1, 'turned round the ship');
+  assert.ok(Math.abs(turned[2] - start[2]) < 1e-6, 'at the same height');
 });
 
 test('the switch acts over the ship alone; flying up over an island takes the view back up, noting a dock', () => {

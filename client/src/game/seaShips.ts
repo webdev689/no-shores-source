@@ -125,9 +125,9 @@ export class SeaShips {
   private readonly shown: (hull: number) => number;
   private readonly rigs = new Map<string, { readonly hull: number; readonly rig: SailRig }>();
   private readonly swings = new Map<string, { heading: number; swing: number }>();
-  /** Each ship's pitch and the sea over its stem as last drawn, how long since its bow last slammed (seconds; negative
-   *  before any) and its bow's spray now. */
-  private readonly rides = new Map<string, { pitch: number; bowUnder: number; sinceSlamS: number; spray: number }>();
+  /** The sea over each ship's stem as last drawn and the size it was drawn at, how long since its bow last slammed
+   *  (seconds; negative before any) and its bow's spray now. */
+  private readonly rides = new Map<string, { bowUnder: number; scale: number; sinceSlamS: number; spray: number }>();
 
   /** Each hull's own line at its waterline, read from its mesh. */
   private readonly lines: Pick<HullLines, 'line'>;
@@ -181,7 +181,7 @@ export class SeaShips {
     const halfLength = (lengthM / 2) * scale;
     const pose = poseOnSwell(water.swell, water.depthAt, lies, halfLength, (beamM / 2) * scale, time);
     const heel = turnHeel(swing, lies.underWay ? SHIP_SPEED : 0) * heelShare(hull);
-    if (seconds > 0) this.ride(who, lies, pose, halfLength, water, seconds, time);
+    if (seconds > 0) this.ride(who, lies, pose, { halfLength, scale }, water, seconds, time);
     return {
       x: lies.x,
       y: lies.y,
@@ -193,29 +193,33 @@ export class SeaShips {
     };
   }
 
-  /** Follows its bow over the swell: a slam when it pitches down into a crest, and the spray it throws. */
+  /** Follows its bow over the swell: a slam when a crest rises past it, and the spray it throws. */
   private ride(
     who: string,
     lies: Lies,
     pose: { readonly heave: number; readonly pitch: number },
-    halfLength: number,
+    { halfLength, scale }: { readonly halfLength: number; readonly scale: number },
     water: SeaWater,
     seconds: number,
     time: number,
   ): void {
-    const last = this.rides.get(who) ?? { pitch: pose.pitch, bowUnder: 0, sinceSlamS: -1, spray: 0 };
     const stem: [number, number] = [
       lies.x + Math.sin(lies.heading) * halfLength,
       lies.y - Math.cos(lies.heading) * halfLength,
     ];
     const sea = water.swell ? swellHeight(water.swell, stem[0], stem[1], time, water.depthAt(stem[0], stem[1])) : 0;
     const bowUnder = sea - (pose.heave + Math.sin(pose.pitch) * halfLength);
+    // A ship first seen has closed on nothing yet, nor one drawn at another size, its stem moved along its keel as a
+    // view eases from the raised one to sea level; a slam's spray fades on all the same.
+    const kept = this.rides.get(who);
+    const steady = kept !== undefined && Math.abs(kept.scale - scale) <= 1e-3 * scale;
+    const last = { sinceSlamS: -1, ...kept, bowUnder: kept && steady ? kept.bowUnder : bowUnder };
     const closing = (bowUnder - last.bowUnder) / seconds;
-    const slammed = lies.underWay && slams((pose.pitch - last.pitch) / seconds, bowUnder, closing);
+    const slammed = lies.underWay && slams(bowUnder, closing);
     const sinceSlamS = slammed ? 0 : last.sinceSlamS < 0 ? -1 : last.sinceSlamS + seconds;
     const state = water.swell && 'state' in water.swell ? (water.swell.state ?? MODERATE_STATE) : MODERATE_STATE;
     const spray = sprayOf(lies.underWay ? 1 : 0, state, sinceSlamS);
-    this.rides.set(who, { pitch: pose.pitch, bowUnder, sinceSlamS, spray });
+    this.rides.set(who, { bowUnder, scale, sinceSlamS, spray });
   }
 
   /** The player's ship as `own` places it, every other player's and every captain's, `seconds` on at `time`, drawn

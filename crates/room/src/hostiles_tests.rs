@@ -129,6 +129,23 @@ fn a_bold_hostile_within_engage_range_of_a_player_meets_them_and_a_wary_one_sail
 }
 
 #[test]
+fn a_player_who_sails_up_against_any_hostile_ship_meets_it_whatever_its_temper_and_none_sails_through() {
+    let mut hostiles = Hostiles {
+        sailing: vec![standing(1, [BUMP_M + 5.0, 0.0], 0.0, false), standing(2, [0.0, 3_000.0], 0.0, false)],
+        ..Hostiles::default()
+    };
+    assert!(hostiles.tick(1.0, &[voyager(5, [0.0, 0.0], 0, false)], &HOSTILE_WATER).is_empty(), "a wary one passes by");
+    let met = hostiles.tick(1.0 / 60.0, &[voyager(5, [10.0, 0.0], 0, false)], &HOSTILE_WATER);
+    assert_eq!(met.iter().map(|(player, hostile)| (*player, hostile.id)).collect::<Vec<_>>(), [(5, 1)], "alongside it");
+    assert_eq!(hostiles.sailing.len(), 1, "it leaves the sea for the fight");
+    hostiles.sailing.push(standing(3, [0.0, 0.0], 0.0, false));
+    let fighting = voyager(6, [0.0, 0.0], 0, true);
+    assert!(hostiles.tick(1.0 / 60.0, &[fighting], &HOSTILE_WATER).is_empty(), "none for a fighter");
+    let home = Voyager { home: true, ..voyager(7, [0.0, 0.0], 0, false) };
+    assert!(hostiles.tick(1.0 / 60.0, &[home], &HOSTILE_WATER).is_empty(), "nor in home waters");
+}
+
+#[test]
 fn a_ship_goes_about_where_it_may_not_sail_and_none_comes_where_it_may_not() {
     let walled = OneWater { open: |_, _| false, ..HOSTILE_WATER };
     let mut hostiles = Hostiles { sailing: vec![standing(1, [0.0, 0.0], 0.0, false)], ..Hostiles::default() };
