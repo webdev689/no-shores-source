@@ -8,6 +8,7 @@ name: lattice
 # foes on its first line. A first line `publish-from <run id>` renders nothing: the publish job lays in that earlier
 # run's pictures (its `lattice-*` artifacts, while they are kept; only a run of this workflow on this repository's
 # own push or by hand) over the tables as published now, which are those main's content/forge/renders.json names.
+# A push whose request file is main's own asks for nothing: a branch that merges main in brings main's request along.
 on:
   push:
     # Never on main, where it runs only by hand: merging a branch that asked for a run must not start one there.
@@ -33,6 +34,7 @@ jobs:
     outputs:
       jobs: ${{ steps.plan.outputs.jobs }}
       from: ${{ steps.plan.outputs.from }}
+      skip: ${{ steps.plan.outputs.skip }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -41,7 +43,17 @@ jobs:
         id: plan
         env:
           FOES: ${{ inputs.foes }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            main=$(gh api "repos/$GITHUB_REPOSITORY/contents/tools/lattice/render-request.txt?ref=main" \
+              -H 'Accept: application/vnd.github.raw') || main=''
+            if [ "$main" = "$(cat tools/lattice/render-request.txt)" ]; then
+              echo "::notice::the request file is main's own, brought in by a merge: nothing is rendered"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
           foes=${FOES:-$(head -n 1 tools/lattice/render-request.txt)}
           case "$foes" in
             publish-from\ *)
@@ -54,7 +66,7 @@ jobs:
   # No token here: the renders read only the forge's public tables.
   render:
     needs: plan
-    if: needs.plan.outputs.from == ''
+    if: needs.plan.outputs.skip != 'true' && needs.plan.outputs.from == ''
     runs-on: ubuntu-latest
     timeout-minutes: 150
     strategy:
@@ -101,7 +113,7 @@ jobs:
   publish:
     needs: [plan, render]
     # After the renders, or with none when it publishes an earlier run's.
-    if: ${{ !cancelled() && needs.plan.result == 'success' && (needs.render.result == 'success' || needs.plan.outputs.from != '') }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true' && (needs.render.result == 'success' || needs.plan.outputs.from != '') }}
     runs-on: ubuntu-latest
     # Reading another run's artifacts needs the run's own token to read the repository's actions.
     permissions:
