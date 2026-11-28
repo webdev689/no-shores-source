@@ -180,7 +180,7 @@ impl NavMesh {
     }
 
     /// The mesh from its polys over a field's grid, each corner lifted onto the true surface nearest its own level
-    /// rather than its voxel's rounded top, with its firing spots, and its links laid (`Baking`'s last slice).
+    /// rather than its voxel's rounded top (within a step), with its firing spots, and its links laid (`Baking`'s last slice).
     fn assembled(
         colliders: &[Collider],
         ground: Option<Heights>,
@@ -197,7 +197,11 @@ impl NavMesh {
         };
         for corner in &mut corners {
             let (x, y) = (grid.min_x + corner.x * grid.cell, grid.min_y + corner.y * grid.cell);
-            corner.z = collider::surface_near(colliders, floor, x, y, Some(corner.z));
+            // Lifted only within a step: a surface farther off is another floor's, or rock's, met at a cell's edge.
+            let surface = collider::surface_near(colliders, floor, x, y, Some(corner.z));
+            if (surface - corner.z).abs() <= TUNING.step {
+                corner.z = surface;
+            }
         }
         let mesh = Mesh::new(corners, polys);
         let obstacles = Obstacles::new(mesh.polys.len());

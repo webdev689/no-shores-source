@@ -114,11 +114,11 @@ pub(crate) fn outline(shape: Shape, width: usize, depth: usize, lane: &mut Lane)
     Outline { takes, stones }
 }
 
-/// Leaves a core of rock standing in the middle of a ring's rectangle, the walk round it two cells wide where the
-/// room is seven cells or more that way and one where it is less: the core's cells, as stones no way cuts.
+/// Leaves a core of rock standing in the middle of a ring's rectangle, the walk round it two cells wide, so a room's
+/// furnishing and its foes keep a way past each other: the core's cells, as stones no way cuts.
 fn ring_core(takes: &mut [bool], width: usize, depth: usize) -> Vec<(usize, usize)> {
-    let walk = |side: usize| if side >= 7 { 2 } else { 1 };
-    let (inset_x, inset_y) = (walk(width), walk(depth));
+    const WALK: usize = 2;
+    let (inset_x, inset_y) = (WALK, WALK);
     let mut stones = Vec::new();
     for y in inset_y..depth.saturating_sub(inset_y) {
         for x in inset_x..width.saturating_sub(inset_x) {

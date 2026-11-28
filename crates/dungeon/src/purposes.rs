@@ -110,10 +110,12 @@ pub(crate) fn named(name: &str, times: usize) -> String {
 }
 
 impl Purpose {
-    /// Whether a room of `shape` suits it.
+    /// Whether a room of `shape` suits it. A ring suits none that lays rows: rows across its walk would leave only
+    /// lanes too narrow to pass beside its core.
     #[must_use]
     pub fn suits(&self, shape: Shape) -> bool {
-        self.shapes.is_empty() || self.shapes.contains(&shape)
+        let rows = self.lays.iter().any(|lay| matches!(lay.pattern, Pattern::Rows { .. }));
+        (self.shapes.is_empty() || self.shapes.contains(&shape)) && !(shape == Shape::Ring && rows)
     }
 }
 
