@@ -25,6 +25,7 @@ pub mod deck;
 mod deck_fight;
 mod drops;
 mod dungeon_bake;
+mod dungeon_gaps;
 pub mod dungeon_ground;
 mod dungeon_lines;
 mod dungeon_room;

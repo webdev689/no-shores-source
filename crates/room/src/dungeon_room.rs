@@ -78,6 +78,10 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
             solids.extend(ground.solids().iter().map(standing));
             // An Ascent's pads too, so no foe paths up their sides or off their tops.
             solids.extend(blocks.iter().map(|pad| Block { top: pad.top.max(pad.bottom + agent.height), ..*pad }));
+            // A gap a body fits through between a trimmed solid and another, kept open.
+            let first = solids.len() - blocks.len() - ground.solids().len();
+            let grid = (NAV_CELL_M, [bounds.min_x, bounds.min_y]);
+            crate::dungeon_gaps::open(&mut solids[first..first + ground.solids().len()], ground.solids(), grid);
             NavMesh::bake_anchored(&solids, &crate::dungeon_bake::Lowest(ground), bounds, &agent, anchor)
         }
         Floor::Flat | Floor::Dark | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => {

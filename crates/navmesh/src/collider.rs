@@ -3,6 +3,9 @@
 
 use movement::{Block, Terrain};
 
+/// How far past a footprint's edge a point still stands on it, metres: far more than a rounding, far less than a cell.
+const EDGE_M: f64 = 1e-9;
+
 /// The way a ramp rises: from its footprint's west edge to its east edge, or from its north edge to its south.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Rise {
@@ -91,10 +94,11 @@ impl Collider {
         }
     }
 
-    /// Whether (x, y) is on its footprint, edges included.
+    /// Whether (x, y) is on its footprint, edges included to within `EDGE_M`: a mesh's corner on a cell's edge, where
+    /// a dungeon's slab ends, comes back from the grid a rounding's width either side of it.
     fn covers(&self, x: f64, y: f64) -> bool {
         let [min_x, min_y, max_x, max_y] = self.footprint();
-        !(x < min_x || x > max_x || y < min_y || y > max_y)
+        !(x < min_x - EDGE_M || x > max_x + EDGE_M || y < min_y - EDGE_M || y > max_y + EDGE_M)
     }
 }
 
@@ -133,3 +137,7 @@ fn surface_top(colliders: &[Collider], floor: f64, x: f64, y: f64) -> f64 {
         .fold(f64::NEG_INFINITY, |tallest, collider| tallest.max(collider.surface(x, y)));
     if tallest == f64::NEG_INFINITY { floor } else { tallest.max(floor) }
 }
+
+#[cfg(test)]
+#[path = "collider_tests.rs"]
+mod collider_tests;
