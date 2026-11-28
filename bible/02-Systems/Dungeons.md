@@ -190,7 +190,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   dungeons a warren holds about eight loops of its own.
 - **Galleries** (`plan_gallery`, on the lane `gallery:<seed>`): in a dungeon that holds a great room under another
   storey (never under the way in's), the first (in the six styles, the first two) whose storey over it has no landing
-  over it rises through
+  over it, and is neither a great room nor keeps a gallery already, rises through
   that storey: two to four of its sides one after another round it (drawn) keep a gallery a cell wide, a way of the
   storey over, and the rest of its rectangle there is open air (`Cell::Void`, 3.2 m high) over the room's floor (over
   a cave's bitten edge or a stone the rock stays). The rock round the open air on its other sides is kept, so no room

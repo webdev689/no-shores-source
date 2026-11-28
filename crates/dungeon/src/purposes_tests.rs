@@ -130,3 +130,18 @@ fn the_mines_and_the_caverns_fall_in_as_rock_and_timber_never_as_masonry() {
         }
     }
 }
+
+#[test]
+fn a_name_used_again_takes_a_word_then_two_never_the_same_word_twice_and_never_a_name_twice() {
+    let names: Vec<String> = (0..80).map(|times| crate::purposes::named("Ossuary", times)).collect();
+    assert_eq!(&names[..3], ["the Ossuary", "the Old Ossuary", "the Lower Ossuary"]);
+    assert_eq!(names[11], "the Old Lower Ossuary");
+    let mut seen = names.clone();
+    seen.sort();
+    seen.dedup();
+    assert_eq!(seen.len(), names.len(), "every name its own");
+    for name in &names {
+        let words: Vec<&str> = name.split(' ').collect();
+        assert!(words.windows(2).all(|pair| pair[0] != pair[1]), "{name}");
+    }
+}

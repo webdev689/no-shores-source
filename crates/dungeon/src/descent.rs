@@ -359,7 +359,9 @@ impl BlockPlan {
         let Some(great) = self.storeys.get(storey).and_then(|plan| plan.great) else { return false };
         let Some(over) = storey.checked_sub(1) else { return false };
         let above = &self.storeys[over];
-        if great.cells().any(|cell| above.reserved.contains(&cell) || above.landings.contains(&cell)) {
+        // Never into a storey that is a great room itself or keeps a gallery already: two galleries may rise.
+        let taken = above.great.is_some() || above.gallery.is_some();
+        if taken || great.cells().any(|cell| above.reserved.contains(&cell) || above.landings.contains(&cell)) {
             return false;
         }
         let (count, first) = (lane.int(2, 4), lane.below(SIDES.len()));

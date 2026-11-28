@@ -341,3 +341,17 @@ fn each_torch_burns_alone_even_on_a_landing_two_flights_share() {
         }
     }
 }
+
+#[test]
+fn a_gallery_never_rises_into_a_storey_that_is_a_great_room_or_keeps_a_gallery_already() {
+    use crate::descent::{BlockPlan, Great, StoreyPlan};
+    let great = Great { x: 3, y: 3, width: 9, depth: 9 };
+    let storey = |great: Option<Great>| StoreyPlan { great, ..StoreyPlan::default() };
+    let mut plan =
+        BlockPlan { storeys: vec![storey(None), storey(Some(great)), storey(Some(great))], flights: Vec::new() };
+    let mut lane = crate::lane::Lane::new(7);
+    assert!(plan.plan_gallery(1, &mut lane), "the first great room rises into the plain storey over it");
+    assert!(!plan.plan_gallery(1, &mut lane), "never a second gallery on that storey");
+    assert!(!plan.plan_gallery(2, &mut lane), "never into the great room over the second");
+    assert!(plan.storeys[1].gallery.is_none(), "the great room keeps its floor");
+}

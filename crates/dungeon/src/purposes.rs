@@ -95,12 +95,17 @@ const AGAIN: [&str; 10] =
     ["Old", "Lower", "Far", "Hidden", "Silent", "Forgotten", "Sunken", "Nameless", "Drowned", "Deepest"];
 
 /// A purpose's name the `times`-th time it is used in a dungeon, from 0.
-fn named(name: &str, times: usize) -> String {
+pub(crate) fn named(name: &str, times: usize) -> String {
     let words = AGAIN.len();
     match times.checked_sub(1) {
         None => format!("the {name}"),
         Some(again) if again < words => format!("the {} {name}", AGAIN[again]),
-        Some(again) => format!("the {} {} {name}", AGAIN[(again / words - 1) % words], AGAIN[again % words]),
+        // Two words, never the same twice: "the Old Lower", "the Old Far", ... then "the Lower Far".
+        Some(again) => {
+            let past = again - words;
+            let first = past / (words - 1) % words;
+            format!("the {} {} {name}", AGAIN[first], AGAIN[(first + 1 + past % (words - 1)) % words])
+        }
     }
 }
 
