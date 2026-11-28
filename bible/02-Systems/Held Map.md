@@ -243,8 +243,7 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     near solid with a shadow; benches, counters and low walls light; what is walked under (a roof, a lintel, an arch's
     head) only outlined, dashed, so a passage through a range reads open. Its trees and bushes are green crowns.
   - **A patrol area's plan**: its layout's tracks cased and footpaths dashed, at their widths (4.5 m and 2.6 m), its
-    buildings and pieces as a social space's but the loose stone fallen from the rock's faces (rubble lying tipped,
-    the layout crate's `rocks::loose`), which would dot every cliff's foot, and its plantings' trees and shrubs.
+    buildings and pieces as a social space's, its plantings' trees and shrubs.
   - **Places by name**, a glyph's width under their middles, else over them, else twice as far, else beside them,
     where clear of the glyphs, the table, the names before them (a gap apart on a line) and the gauntlets, else left
     off; a place on the map by its edge has its name whole inside the map, moved along its line (the hub's: the Seaward Walk, the Watch Court, the West Court, the Forge Yard, the Beacon Walk, the Hall of

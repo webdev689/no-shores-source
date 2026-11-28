@@ -227,18 +227,13 @@ test("a patrol area's sheet is its layout: paths, buildings, plantings, areas by
   );
 });
 
-test("a patrol area's sheet leaves off loose stone and its ways' patrols, and marks each landing zone", () => {
-  const stone = { shape: 'dome', size: [2, 2, 2], turn: 0, material: 'rubble' } as const;
+test("a patrol area's sheet leaves off its ways' patrols, and marks each landing zone", () => {
   const layout = {
     id: 'reach-1',
     ring: RING,
     paths: [],
     buildings: [],
-    // A drystone wall's length, upright, and a stone fallen from a face, tipped as it lies.
-    solids: [
-      { ...stone, shape: 'block', at: [1050, 2050, 30], lean: 0, roll: 0 },
-      { ...stone, at: [1150, 2050, 30], lean: 0.2, roll: 0.1 },
-    ],
+    solids: [],
     landings: [
       [1100, 2090],
       [1020, 2010],
@@ -261,7 +256,6 @@ test("a patrol area's sheet leaves off loose stone and its ways' patrols, and ma
     ],
   };
   const sheet = landSheetOf(patrol, landmass([layout]), flat);
-  assert.equal(sheet.standing.length + sheet.low.length, 1, 'the wall, and no loose stone');
   assert.deepEqual(
     sheet.marks.map((mark) => [mark.glyph, mark.at]),
     [
