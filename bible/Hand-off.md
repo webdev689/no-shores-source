@@ -21,7 +21,7 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 - #259 The wreck exports again, its stern windows glowing as a lit ship's
 - #263 Stop a player snapping back on foot after a stall, a load or slow frames
 - #264 The hand-off says the repository is public under webdev689, and what the owner sets for it
-- #265 Saltmere keeps only the Saltgrass Downs, and everything folds into it
+- #265 Saltmere keeps only the Saltgrass Downs, everything folds into it, and its three landing zones
 - Drafts: #93 The toolkit's first review; #114 The gear message carries the pledge once
 
 ## Built
